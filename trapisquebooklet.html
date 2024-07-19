@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trapisque Rulebook</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1, h2, h3 {
+            color: #333;
+        }
+        ul {
+            list-style-type: disc;
+            margin-left: 20px;
+        }
+        ol {
+            list-style-type: decimal;
+            margin-left: 20px;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Trapisque Rulebook</h1>
+
+    <h2>Game Overview</h2>
+    <p>Trapisque is a turn-based strategy board game where players must place and cross traps to reach the treasure. Players navigate a 40-50 tile board, collecting various tokens and using their character's unique abilities to be the first to gather five treasures.</p>
+
+    <h2>Components</h2>
+    <ul>
+        <li><strong>Game Board</strong>: 1 double-sided board with different maps (Blissful Tricks, Junction Dungeon, Slimy Snares)</li>
+        <li><strong>Character Cards</strong>: 6 unique characters</li>
+        <li><strong>Tokens</strong>: Trap tokens, Assist tokens, Neutral tokens</li>
+        <li><strong>Item Cards</strong>: Corresponding to the tokens</li>
+        <li><strong>Dice</strong>: 1 six-sided die</li>
+        <li><strong>Wheels</strong>: 1 for each type of token</li>
+    </ul>
+
+    <h2>Setup</h2>
+    <ol>
+        <li><strong>Select a Map</strong>: Choose which map to play on (Blissful Tricks, Junction Dungeon, Slimy Snares).</li>
+        <li><strong>Place Tokens</strong>: Distribute the tokens on their designated spots on the board.</li>
+        <li><strong>Assign Characters</strong>: Each player draws a Character Card at random.</li>
+        <li><strong>Starting Position</strong>: All players place their characters on the Start tile.</li>
+        <li><strong>Prepare Item Cards</strong>: Shuffle the item cards and place them within reach.</li>
+    </ol>
+
+    <h2>Objective</h2>
+    <p>Be the first player to collect five treasures by reaching the treasure tile five times.</p>
+
+    <h2>Gameplay</h2>
+
+    <h3>Turn Structure</h3>
+    <ol>
+        <li><strong>Roll the Dice</strong>: The player rolls the six-sided die to determine the number of tiles they move.</li>
+        <li><strong>Move Your Character</strong>: Move the character forward the number of tiles rolled.</li>
+        <li><strong>Resolve Tile Effect</strong>: If the player lands on a tile with a token, they must spin the corresponding wheel and draw the item card associated with that token.</li>
+        <li><strong>Use Item Cards</strong>: Players can use any item cards they have during their turn.</li>
+    </ol>
+
+    <h3>Token Effects</h3>
+
+    <h4>Trap Tokens</h4>
+    <ul>
+        <li><strong>Spike</strong>: Kills the player, forcing them to repeat the current cycle.</li>
+        <li><strong>Fire</strong>: Makes the player repeat double the cycles on death or move back double the amount depending on the trap stepped on. Divides assist items by 2. Burns out after 1 cycle.</li>
+        <li><strong>Ice</strong>: Divides the player’s rolls by 2 or removes 1 from the player’s roll if it's an uneven number. Melts after 1 cycle.</li>
+        <li><strong>Mudslide</strong>: Moves the player back by 2 tiles.</li>
+        <li><strong>Mud</strong>: Moves the player back by 1 tile.</li>
+        <li><strong>Wall</strong>: Player can't move past unless they roll more than 4. If the player stands exactly on the wall, they can jump off it.</li>
+        <li><strong>Snare</strong>: Skips the player’s next turn if landed on.</li>
+        <li><strong>Grog</strong>: A monster that kills the player if they do not roll 4+.</li>
+    </ul>
+
+    <h4>Assist Tokens</h4>
+    <ul>
+        <li><strong>Regeneration</strong>: Regenerates the character's ability.</li>
+        <li><strong>Bounce Pad</strong>: Moves the player forward by 2 tiles.</li>
+        <li><strong>Speed Boost</strong>: Multiplies the player’s roll by 2 when stood on.</li>
+        <li><strong>Bridge/Key/Boots</strong>: Counters natural traps or helps the player in some way.</li>
+        <li><strong>Shield</strong>: Makes the player invincible to any trap once.</li>
+        <li><strong>Moonwalk</strong>: Move backward by any chosen amount from 1 to 3 tiles.</li>
+    </ul>
+
+    <h4>Neutral Tokens</h4>
+    <ul>
+        <li><strong>Teleporter</strong>: If two are placed, they transport the player to the other teleporter.</li>
+        <li><strong>Spore Warper</strong>: Swaps the player’s location with the nearest player.</li>
+        <li><strong>Conveyor Belt</strong>: Moves the player in the direction placed until they are off the conveyor tiles.</li>
+        <li><strong>Shifting Sands</strong>: Moves the player forward or backward depending on the cycle (forward on even cycles, backward on odd cycles).</li>
+    </ul>
+
+    <h3>Characters and Abilities</h3>
+    <ul>
+        <li><strong>Mage</strong>: Burns or freezes any player for a turn (ability regenerates every 2 cycles unless a regeneration card is used).</li>
+        <li><strong>Trapper</strong>: Starts with 3 random trap cards (does not regenerate).</li>
+        <li><strong>Fire Starter</strong>: Starts with a fire card and can burn any player on the same tile (burn effect is infinite).</li>
+        <li><strong>Naturalist</strong>: Receives natural traps instead of assist items and is invincible to natural traps but takes double damage from other traps.</li>
+        <li><strong>Warper</strong>: Can swap places with any player once per game (regenerates with a regeneration card).</li>
+        <li><strong>Overseer</strong>: Always rolls the dice first and can move any player forward or backward by 1 tile (regenerates every 2 rounds).</li>
+    </ul>
+
+    <h3>Winning the Game</h3>
+    <p>The first player to reach the treasure tile five times wins the game. Each time a player reaches the treasure, they return to the start tile and continue until they gather five treasures.</p>
+
+    <h3>Special Rules</h3>
+    <ul>
+        <li><strong>Teleporters</strong>: Cannot be placed within 8 tiles of the treasure.</li>
+        <li><strong>Item Usage</strong>: Players must either move their character or use an item card each turn.</li>
+        <li><strong>Natural Traps</strong>: Each map has unique natural traps. Players must use specific items like bridges or keys to navigate these traps.</li>
+    </ul>
+
+    <h2>Game Modes</h2>
+
+    <h3>Assist Trapisque</h3>
+    <ul>
+        <li><strong>Players</strong>: 4</li>
+        <li><strong>Teams</strong>: Players are split into 2 teams.</li>
+        <li><strong>Objective</strong>: Each team must help each other to win. The team wins when both players on the team reach the treasure 5 times.</li>
+        <li><strong>Abilities</strong>: After a player wins, they can use their abilities to help their teammate and hinder the other team.</li>
+        <li><strong>Winning Condition</strong>: The team wins when both players have collected 5 treasures each.</li>
+    </ul>
+
+    <h3>Factions</h3>
+    <ul>
+        <li><strong>Players</strong>: 6</li>
+        <li><strong>Teams</strong>: Players are divided into 3 teams of 2 players each.</li>
+        <li><strong>Objective</strong>: Similar to Assist Trapisque. The team wins when both players on the team reach the treasure 5 times.</li>
+        <li><strong>Abilities</strong>: Players can use their abilities to help their teammate and hinder the other teams.</li>
+    </ul>
+
+    <h3>World War Four</h3>
+    <ul>
+        <li><strong>Players</strong>: 6</li>
+        <li><strong>Teams</strong>: Players are divided into 2 teams of 3 players each.</li>
+        <li><strong>Objective</strong>: The team wins when they collectively reach the treasure 4 times.</li>
+        <li><strong>Abilities</strong>: Players can use their abilities to help their teammates and hinder the opposing team.</li>
+    </ul>
+
+    <h3>Chaos Trapisque</h3>
+    <ul>
+        <li><strong>Players</strong>: 2 to 6</li>
+        <li><strong>Objective</strong>: All players race to be the first to reach the treasure 5 times.</li>
+        <li><strong>Winning Condition</strong>: The first player to reach 5 wins is deemed victorious.</li>
+        <li>When a player completes all 5 cycles (or 4 cycles for World War Four), they must continue playing to assist their teammates. However, the player who has finished their cycles will not contribute to their teammate's cycle count and will not gain any additional benefits. Their role is solely to support their teammate in completing their cycles.</li>
+    </ul>
+
+    <h2>Map Details</h2>
+
+    <h3>Blissful Tricks</h3>
+    <ul>
+        <li><strong>Theme</strong>: Floating path on a body of water</li>
+        <li><strong>Tiles</strong>: 36</li>
+        <li><strong>Special Features</strong>: River traps that can be crossed with bridges.</li>
+    </ul>
+
+    <h3>Junction Dungeon (Coming Soon)</h3>
+    <ul>
+        <li><strong>Special Features</strong>: Spike traps and a gate that can be opened with a key.</li>
+    </ul>
+
+    <h3>Slimy Snares (Coming Soon)</h3>
+    <ul>
+        <li><strong>Special Features</strong>: Slime traps that divide the player's move by 2 or remove 1 from the roll if it’s an odd number. Boots can be used to cross the slime.</li>
+    </ul>
+
+    <p>Enjoy your adventure in Trapisque, and may the best strategist win!</p>
+</body>
+</html>
