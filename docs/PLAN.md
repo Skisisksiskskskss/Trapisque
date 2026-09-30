@@ -14,7 +14,7 @@ Only one WP is IN PROGRESS at a time.
 | WP-007 | Vanilla study III: plumbing (datagen, SavedData/attachments, payloads, GameTest) | 0 | M | DONE |
 | WP-010 | Vision I: fantasy, tone, pillars, journey, progression | 1 | XL | DONE |
 | WP-011 | Vision II: entry and return path (≥12 ideas) | 1 | L | DONE |
-| WP-012 | Vision III: the dimension's rules (+ env-attribute mapping) | 1 | M | TODO |
+| WP-012 | Vision III: the dimension's rules (+ env-attribute mapping) | 1 | M | DONE |
 | WP-013 | Vision IV: core systems (Tides, souls, sculk, sound, Illagers) | 1 | L | TODO |
 | WP-014 | Vision critique, freeze, Gate A | 1 | XL | TODO |
 
@@ -192,17 +192,18 @@ Deliverable: `docs/DESIGN/00_VISION.md` (the frozen vision) + focused appendices
 ### WP-012 Vision III: the dimension's rules
 - Phase / Milestone: 1 / —
 - Tier: M
-- Status: TODO
+- Status: DONE
 - Depends on: WP-010
 - Goal: Decide light, sky, fog, day/night, weather, beds/respawn, compasses/clocks/maps, natural spawning, fall/fluids, and what vanilla items do differently — marking which are environment attributes, timelines, or code.
 - Inputs (read ONLY these): 00_VISION.md pillars, VANILLA_ANALOGS W1/W4/W5, RESEARCH.md §3.
 - Deliverables: 00_VISION.md "Rules" table; docs/DESIGN/vision/rules.md if the table needs rationale.
 - Definition of Done:
-  - [ ] Every rule listed in §6 Phase 1 has a decision and an implementation route (attribute id / timeline / code).
-  - [ ] ≥5 rule-set identities compared before choosing.
+  - [x] Every rule listed in §6 Phase 1 has a decision and an implementation route. — rules.md table (light, sky, fog, day/night, weather, beds/respawn, compass/clock/maps, spawning, fall/fluids, vanilla items) with DT/ATTR/TL/CODE/VAN routes.
+  - [x] ≥5 rule-set identities compared before choosing. — 6 identities (A–F) in rules.md.
 - Iteration budget: self-check 1 pass.
 - Exit ramp: default to Nether/End precedent for any rule without a Sift-specific reason.
 - Log:
+  - 2026-09-30: verified in source that vanilla clocks read `visual/sun_angle` (so clocks show the Tide for free) and that Nether portals only light in the Overworld/Nether. Changed the exit-ramp default from 'Nether/End precedent' to 'Overworld precedent', because the evidence says the Sift is serene, not hostile. Self-check (weaknesses first): (1) the aurora needs client sky code whose Fabric hook is unverified (marked Should); (2) the sun_angle track may draw a visible sun if the skybox is 'overworld' (decide in Phase 3: accept a Sift 'sun', or use skybox none plus a custom sky); (3) the shrieker rule needs a targeted hook (mixin record if no event exists).
 
 ### WP-013 Vision IV: core systems at concept level
 - Phase / Milestone: 1 / —

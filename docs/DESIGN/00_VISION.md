@@ -56,7 +56,15 @@ Tie-breakers: canon over invention; vanilla grammar over new UI; fewer, deeper f
 5. **Return.** Walk back through the gate to its linked frame (POI pairing). A broken Sift-side gate reopens with music. Rifts remain the Illagers' tool (Phase 2 content), not the player's front door.
 Why: it uses both canon ingredients (souls and music), teaches itself through feedback, needs no new key item, and differs from the three fan mods that already use this frame. Known interaction: if another mod's portal already fills the frame, we stand aside.
 
-## 8. The dimension's rules — *WP-012 (pending)*
+## 8. The dimension's rules (full table and routes: `vision/rules.md`)
+**Rule identity:** *the Tide sets the rules; everything else behaves like home.* The Sift is serene, not hostile, so the default precedent is the Overworld, not the Nether or End.
+- **No day or night; the Tide instead.** Sky light, sky/fog colour, stars, ambient motes, music and spawn tables are keyframed on one Tide timeline. Surface monsters appear only when Endure darkens the sky, so "stronger mobs spawn" falls out of vanilla light rules. `/time` in the Sift moves the Tide, and **ordinary clocks show the Tide** (no new item).
+- **Beds set your spawn but you can't sleep:** there is no night to skip, and the Tide cannot be skipped. Respawn anchors don't work. No explosions.
+- **No weather; no raids or pillager patrols** (the occupation replaces them). Nether portals can't be lit (vanilla). Coordinates are 1:1.
+- **Compasses spin; lodestone and recovery compasses work; maps work.**
+- **Ichor** (canon hazard): a liquid that sets outsiders alight with soul fire and drains their XP. Natives are immune, and some thrive in it (Mojang: "mobs that thrive through things that hurt the player").
+- **Night-bound vanilla behaviour follows Endure** (bees stay home, eyeblossoms open). Shriekers placed in the Sift never summon wardens.
+- About 80% of this is vanilla data (dimension type + environment attributes + one timeline). Code is needed only for ichor, the shrieker rule, "stronger" spawns, and an optional aurora sky.
 
 ## 9. Core systems — *WP-013 (pending)*
 
