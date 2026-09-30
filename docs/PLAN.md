@@ -5,7 +5,7 @@ Only one WP is IN PROGRESS at a time.
 
 | WP | Title | Phase | Tier | Status |
 |----|-------|-------|------|--------|
-| WP-001 | Version ground truth & official-Sift check | 0 | S | TODO |
+| WP-001 | Version ground truth & official-Sift check | 0 | S | DONE |
 | WP-002 | Toolchain + mod scaffold (build, runServer, genSources) | 0 | M | TODO |
 | WP-003 | Sift research I: canon, areas, Tides, access, lore, palette evidence | 0 | L | TODO |
 | WP-004 | Sift research II: bestiary (every mob, boss, character) | 0 | L | TODO |
@@ -21,19 +21,21 @@ Only one WP is IN PROGRESS at a time.
 ### WP-001 Version ground truth & official-Sift check
 - Phase / Milestone: 0 / —
 - Tier: S
-- Status: TODO
+- Status: DONE
 - Depends on: —
 - Goal: Establish, from live primary sources, the exact target Minecraft version and the matching Fabric toolchain; confirm whether Mojang has shipped any official Sift content for Java (§3.3).
 - Inputs (read ONLY these): docs/00_MISSION.md §3.3, §4, §6 Phase 0; Mojang version manifest; meta.fabricmc.net; fabricmc.net/develop; Fabric blog 26.3 post; minecraft.wiki snapshot pages.
 - Deliverables: toolchain matrix + deviations in docs/DECISIONS.md (D-001…); "Official Java Sift content" section in docs/RESEARCH.md.
 - Definition of Done:
-  - [ ] Latest stable release confirmed from the manifest AND the jar's version.json (values recorded).
-  - [ ] Fabric Loader, Fabric API, Loom (+ plugin id), Gradle, JDK versions confirmed from live sources and recorded.
-  - [ ] Every deviation from §4 recorded in DECISIONS.md.
-  - [ ] Latest snapshots' jars searched for Sift content (paths + contents) and changelogs/news checked; result recorded in RESEARCH.md with sources.
+  - [x] Latest stable release confirmed from the manifest AND the jar's version.json (values recorded). — D-001 table (manifest latest.release=26.3; version.json protocol 777 / world 5023 / RP 97.1 / DP 121.0 / java 25 / stable true).
+  - [x] Fabric Loader, Fabric API, Loom (+ plugin id), Gradle, JDK versions confirmed from live sources and recorded. — D-001 (0.19.5 / 0.161.0+26.3 / Loom 1.18.2 `net.fabricmc.fabric-loom` / Gradle 9.7.1 / Temurin 25.0.4.1+1).
+  - [x] Every deviation from §4 recorded in DECISIONS.md. — D-001: Loom 1.17→1.18.2, Gradle 9.6.0→9.7.1 (template moved on); everything else matched.
+  - [x] Latest snapshots' jars searched for Sift content (paths + contents) and changelogs/news checked; result recorded in RESEARCH.md with sources. — RESEARCH.md §0, D-002 (not triggered).
 - Iteration budget: critique rounds ≤ 1, fix hypotheses ≤ 3
 - Exit ramp: if a Fabric component has no 26.3 build, record it in BLOCKERS.md and choose the newest stable combination that builds.
 - Log:
+  - 2026-09-30: manifest → 26.3 latest release (26.4-snapshot-2 latest snapshot). Downloaded client jars 26.3 / 26.4-s1 / 26.4-s2; `unzip -p version.json`; recursive grep for "sift" → only META-INF base64 noise. Fabric meta: loader 0.19.5 stable, intermediary 0.0.0, no Yarn. Fabric maven: API 0.161.0+26.3 newest for 26.3. Loom module metadata: 1.17.21 (Gradle≥9.5, JVM21), 1.18.2 (Gradle≥9.7, JVM25). Example mod HEAD: 26.3 / loom 1.18-SNAPSHOT / Gradle 9.7.1. Blog 26.3 post read (porting notes match §4 and add: registrable number/float/int providers, block-state providers, material rules/conditions; reloadable dynamic registries incl. recipes/advancements; Block codecs removed; configured features → worldgen/feature + FEATURE_TYPE registry). Wiki: The Sift / Blub / Planned versions / LIVE Sept 2026 / 26.4 read.
+  - Self-critique (1 round): weakness 1 — Loom 1.18.2 is newer than the blog's advice → mitigated by exit ramp to 1.17.21 in D-001; weakness 2 — minecraft.net recap not fetched directly (quoted via wiki) → WP-003 will try to fetch it; weakness 3 — Bedrock previews/betas not checked for Sift content → out of scope (Java target), noted in RESEARCH unknowns by WP-003.
 
 ### WP-002 Toolchain + mod scaffold
 - Phase / Milestone: 0 / —
