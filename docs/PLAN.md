@@ -11,7 +11,7 @@ Only one WP is IN PROGRESS at a time.
 | WP-004 | Sift research II: bestiary (every mob, boss, character) | 0 | L | TODO |
 | WP-005 | Vanilla study I: world (dimension, noise, biomes, env attributes, portals, jigsaw) | 0 | L | DONE |
 | WP-006 | Vanilla study II: entities (Brain, goals, vibrations/sculk, models/anims, boss bars) | 0 | L | DONE |
-| WP-007 | Vanilla study III: plumbing (datagen, SavedData/attachments, payloads, GameTest) | 0 | M | TODO |
+| WP-007 | Vanilla study III: plumbing (datagen, SavedData/attachments, payloads, GameTest) | 0 | M | DONE |
 | WP-010 | Vision (Phase 1, XL) | 1 | XL | TODO (coarse) |
 
 ---
@@ -133,19 +133,19 @@ Only one WP is IN PROGRESS at a time.
 ### WP-007 Vanilla study III: plumbing
 - Phase / Milestone: 0 / —
 - Tier: M
-- Status: TODO
+- Status: DONE
 - Depends on: WP-002
 - Goal: Document datagen (Fabric), SavedData & data attachments, networking payloads, and GameTest APIs (server + client if present) for 26.3.
 - Inputs (read ONLY these): 26.3 sources; Fabric API sources/jars; docs.fabricmc.net.
 - Deliverables: docs/VANILLA_ANALOGS.md sections P1–P4.
 - Definition of Done:
-  - [ ] Each section names real classes/entrypoints (verified), patterns, gotchas.
-  - [ ] States whether a client GameTest API exists in this Fabric API version.
+  - [x] Each section names real classes/entrypoints (verified), patterns, gotchas. — P1–P4 from Fabric API sources jars (datagen 27.2.4, gametest 4.0.32, client-gametest 6.0.7, attachment 2.2.30, networking 6.3.8, object-builder) + Loom 1.18.2 `javap`; entrypoint keys `fabric-datagen` / `fabric-gametest` / `fabric-client-gametest` read from sources.
+  - [x] States whether a client GameTest API exists. — Yes: `FabricClientGameTest` + `ClientGameTestContext` with screenshot capture/compare, input, world builder (P4).
 - Iteration budget: critique rounds ≤ 2
 - Exit ramp: as WP-005.
 - Log:
-
----
+  - 2026-09-30: findings — `@GameTest(dimension=…)` can run tests inside our dimension; Fabric's `SavedDataStorageMixin` makes a null `DataFixTypes` safe; `FabricCodecDataProvider` can generate timeline/clock JSON; Loom `configureTests { eula = true }` exists.
+  - Self-critique round 1 (weaknesses first): (1) nothing here is exercised yet — Phase 3's exit (datagen no-diff, one GameTest, CI) is the real test; (2) client GameTests under Xvfb need the Vulkan argument wired into Loom's run config — unverified, flagged in P4; (3) no networking example compiled — acceptable, P3 recommends avoiding custom packets. No must-fix.
 
 ## Phase 1 — Vision (coarse; detailed when Phase 0 exits)
 
