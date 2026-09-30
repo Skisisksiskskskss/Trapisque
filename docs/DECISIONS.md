@@ -316,3 +316,38 @@ The listed alternatives remain recorded in D-006/D-009/D-011 if the owner ever w
 
 **Revisit if.** The owner says otherwise.
 
+
+---
+
+## D-016 Content-bible round-1 fixes: the literal tide in M1, six milestones, and scope rules (2026-09-30)
+**Context.** The fresh review of the content bible (WP-024 round 1) failed it with three must-fix findings:
+- the gift of song had no quest;
+- Core content had no milestone;
+- the M1 Blub depended on M2 content.
+
+It also found that M1's Tide changed nothing in play (SF4), since the mission asks for "the thinnest slice through **everything**".
+
+**Decision.**
+1. **The literal tide moves into M1.** M1 ships ichor in core form (wade, slow, burn, drain, bucket that evaporates outside the Sift) and **one kind of tide basin** (the vent controller, filling in Endure and draining in Thrive). Both are spiked in Phase 3 (WP-034) first. Tide marks, tidewrack and Endure blooms stay in M2.
+2. **Six milestones.** M1 slice · M2 the hunt · M3 souls · M4 the occupation · M5 the Meadow's life · M6 the heart of the blight, plus a Could pool. Every Core and Should row names its milestone, and `tools/docs/check_bible.py` enforces it.
+3. **Companion fuel applies to work.** The vision says companions run "on soul blocks" (00_VISION §3; rules.md "What comes home"). This narrows it: **working** companions (echo golems) need a soul block to work; the **Blub is a pet** and needs no fuel. A player befriends a blub by playing music for it, by hand: the game event of a hand-played note block or a goat horn names the player (verified in `NoteBlock.playNote` and `InstrumentItem`).
+4. **The gift-of-song quest** (bible/items.md §1.1):
+   - Three chorus stones per Singer's grove, each filled with a soul block. Soul blocks come from camp loot (stolen) or from your own XP at a bloom heart.
+   - Music played at the Singer outside Endure completes it.
+   - The grove's restored state is shared by the world. The horn is one per player per grove (the vault's `rewarded_players` precedent).
+5. **The horn's recharge** keeps the vision's ratio: Thrive is twice Flow, and Endure gives nothing. It is read from the Tide, not proportional to `soul_flow` (whose 1.0 / 0.25 / 0.0 would make Thrive 4×). `soul_flow` still drives growth.
+6. **The horn outside the Sift** plays as an instrument, like a goat horn. So it can open an awake frame, as entry_path.md says, while its Sift effects still need `sift_life`.
+7. **Tier moves:**
+   - Trills go from the vision's Could to Core. They are the Tide timeline's ambient particle, a non-colour Thrive cue (P1), and cost nothing beyond the timeline WP.
+   - Lumen gains a Sift-only function: it repels the Sift's hunters, on the precedent of piglins avoiding soul fire.
+   - "Blub towers as platforms" stays Could. Stacking itself is Core (the vision's pick N2′).
+
+**Why.**
+- The literal tide is the vision's first pillar, and Gate A accepted a Tides · Distinct score of 3 because of the basins. A slice without it can't show why the dimension exists.
+- The companion and quest rules close gaps the vision left for Phase 2, and they use vanilla precedents (the vault, soul fire).
+
+**Consequences.**
+- M1 grows by two WPs, for ichor and the basins (PLAN.md WP-044/045). The Phase 4 WPs are renumbered to WP-040..053.
+- The M2+ content moves down a milestone as listed in the bible.
+
+**Revisit if.** The WP-034 spikes fail, in which case M1 falls back to static ichor pools and the basins move to M2. Also revisit if playtests show music befriending is too easy.

@@ -30,17 +30,19 @@ Only one WP is IN PROGRESS at a time.
 | WP-033 | CI | 3 | S | TODO |
 | WP-034 | Technical spikes | 3 | M | TODO |
 | WP-040 | Dimension skeleton and Tide core | 4 | L | TODO |
-| WP-041 | Art pipeline and block set I art | 4 | L | TODO |
+| WP-041 | Palette, block set I design and art | 4 | L | TODO |
 | WP-042 | Block set I and the Singer's Meadow terrain | 4 | L | TODO |
-| WP-043 | Audio pipeline and the entry and Tide sounds | 4 | M | TODO |
-| WP-044 | Entry I: frames, offering, waking, music | 4 | L | TODO |
-| WP-045 | Entry II: membrane, crossing, Sift-side gate, return | 4 | L | TODO |
-| WP-046 | Blub design doc | 4 | L | TODO |
-| WP-047 | Blub art: texture, model, animations | 4 | L | TODO |
-| WP-048 | Blub audio | 4 | M | TODO |
-| WP-049 | Blub entity: AI and tests | 4 | L | TODO |
-| WP-050 | Entry advancements and lang pass | 4 | S | TODO |
-| WP-051 | M1 integration and Gate C (self-review) | 4 | M | TODO |
+| WP-043 | Audio pipeline and the entry, Tide and Meadow sounds | 4 | M | TODO |
+| WP-044 | Ichor (core form) | 4 | L | TODO |
+| WP-045 | Tide basins (one kind, in the Meadow) | 4 | L | TODO |
+| WP-046 | Entry I: frames, offering, waking, music | 4 | L | TODO |
+| WP-047 | Entry II: membrane, crossing, Sift-side gate, return | 4 | L | TODO |
+| WP-048 | Blub design doc | 4 | L | TODO |
+| WP-049 | Blub art: texture, model, animations, spawn egg | 4 | L | TODO |
+| WP-050 | Blub audio | 4 | M | TODO |
+| WP-051 | Blub entity: AI and tests | 4 | L | TODO |
+| WP-052 | Entry advancements and lang pass | 4 | S | TODO |
+| WP-053 | M1 integration and Gate C (self-review) | 4 | M | TODO |
 
 Phase 0 and Phase 1 WP details (with evidence logs) are in `docs/archive/PLAN_phase0-1.md`.
 
@@ -126,7 +128,7 @@ Tier key (mission §6 Phase 2): **Core** (in 1.0) · **Should** · **Could** · 
   - [x] A dependency graph covering every Core entry (01_CONTENT_BIBLE.md §2; checked against the §1 tier table).
   - [x] Milestones M1 → M5 → 1.0, each ending shippable (01_CONTENT_BIBLE.md §3).
   - [x] M1 meets the mission's minimum: entry and return (WP-044/045), Singer's Meadow terrain (WP-042), block set I with final art (WP-041/042), the Blub finished (WP-046..049), the Tide core (WP-040), entry advancements (WP-050).
-  - [x] Phase 3 (WP-030..034) and M1 (WP-040..051) WPs written with the §5.3 template.
+  - [x] Phase 3 (WP-030..034) and M1 (WP-040..051, renumbered to WP-040..053 by D-016) WPs written with the §5.3 template.
 - Iteration budget: self-critique ≤ 2 passes.
 - Exit ramp: if M1 is too big for the mission's "thin" slice, move items to M2.
 - Log:
@@ -140,7 +142,7 @@ Tier key (mission §6 Phase 2): **Core** (in 1.0) · **Should** · **Could** · 
 ### WP-024 Content bible critique, freeze, Gate B
 - Phase / Milestone: 2 / —
 - Tier: L
-- Status: TODO
+- Status: IN PROGRESS
 - Depends on: WP-023
 - Goal: A fresh adversarial review of the bible and roadmap; fix; freeze; Gate B as a self-review (D-014).
 - Inputs (read ONLY these): 01_CONTENT_BIBLE.md and parts, 00_VISION.md, the §7.1 rubric.
@@ -151,6 +153,11 @@ Tier key (mission §6 Phase 2): **Core** (in 1.0) · **Should** · **Could** · 
 - Iteration budget: critique rounds ≤ 3.
 - Exit ramp: §5.5 critique cap.
 - Log:
+  - 2026-09-30 round 1 (fresh reviewer): **FAIL**. 3 must-fix, 11 should-fix, 8 notes. Scores: F4 V4 R3 M3 D3 C4 Fe3.
+    - Every finding was fixed or dispositioned (01_CONTENT_BIBLE.md §4; D-016).
+    - The literal tide moved into M1, and the M1 WPs were renumbered to WP-040..053.
+    - Six milestones.
+    - `tools/docs/check_bible.py` checks 141 tiered rows with 0 errors. A negative test on mutated copies fails as expected.
 
 ## Phase 3 — Architecture (WPs specified at Phase 2 exit)
 
@@ -204,7 +211,7 @@ Tier key (mission §6 Phase 2): **Core** (in 1.0) · **Should** · **Could** · 
 - Tier: S
 - Status: TODO
 - Depends on: WP-032
-- Goal: A GitHub Actions workflow that runs the build, the datagen no-diff check and the GameTests.
+- Goal: A GitHub Actions workflow that runs the build, the datagen no-diff check, the GameTests and `tools/docs/check_bible.py`.
 - Inputs (read ONLY these): build.gradle; tools/dev/datagen-check.sh.
 - Deliverables: `.github/workflows/build.yml`.
 - Definition of Done:
@@ -231,45 +238,66 @@ Tier key (mission §6 Phase 2): **Core** (in 1.0) · **Should** · **Could** · 
 - Exit ramp: fall back as recorded (weather → `has_ceiling`; ichor → a vanilla-like fluid; basins → static pools; stacking → dropped to M4).
 - Log:
 
-## Phase 4 — M1 vertical slice (WPs specified at Phase 2 exit)
-Minimum per mission: entry and return, one area with its own terrain, a small block set with final art, one mob finished, the Tide cycle in core form, entry advancements. Every WP follows the §5.4 ladder for its type.
+## Phase 4 — M1 vertical slice (WPs specified at Phase 2 exit; revised in WP-024 round 1, D-016)
+Minimum per mission: entry and return, one area with its own terrain, a small block set with final art, one mob finished, the Tide cycle in core form, entry advancements. M1 also carries the literal tide: ichor and one kind of basin (D-016). Every WP follows the §5.4 ladder for its type. Design work (§8.2 and §8.3 docs) comes before the implementation it specifies.
 
 ### WP-040 Dimension skeleton and Tide core
 - Phase / Milestone: 4 / M1
 - Tier: L
 - Status: TODO
 - Depends on: WP-033, WP-034
-- Goal: The `thesift:the_sift` dimension exists and behaves per rules.md: the Tide clock and timeline, the scope and rate attributes, no weather, beds, sun and moon parked.
-- Inputs (read ONLY these): docs/DESIGN/vision/rules.md; docs/DESIGN/vision/systems.md §1; docs/VANILLA_ANALOGS.md W1/W4; D-008, D-011, D-013.
+- Goal: The `thesift:the_sift` dimension exists and behaves per rules.md: the Tide clock and timeline, the scope and rate attributes, no weather, beds and the Endure rest, and the sun and moon parked.
+- Inputs (read ONLY these): docs/DESIGN/vision/rules.md; docs/DESIGN/vision/systems.md §1; docs/VANILLA_ANALOGS.md W1/W4; D-008, D-011, D-013, D-016.
 - Deliverables:
+  - `docs/DESIGN/system_tides.md` (the §8.3 template, M tier: player rules, how they're learned, exact numbers, per-state content, the data plan, the performance plan, edge cases, and a critique log with 2 rounds);
   - dimension type, a placeholder noise, a single-biome source;
-  - `world_clock` + `timeline` (Thrive/Flow/Endure markers; light, sky, fog, stars, particles);
+  - `world_clock` + `timeline` (Thrive/Flow/Endure markers; light, sky, fog, stars, Trills particles);
   - registered attributes `sift_life`, `soul_flow`, `tide`;
   - the weather mixin;
   - bed rules and the Endure rest;
   - the clock paused until the first crossing (a flag in SavedData);
   - GameTests.
 - Definition of Done:
-  - [ ] GameTests: `canHaveWeather` is false in the Sift and the Overworld's weather timers advance once per tick; `sift_life` is true in the Sift and false in the Overworld; beds refuse sleep; the clock is paused before the first crossing.
+  - [ ] system_tides.md frozen after its critique.
+  - [ ] GameTests, one per rule:
+    - `canHaveWeather` is false in the Sift, and the Overworld's weather timers advance once per tick;
+    - `sift_life` is true in the Sift and false in the Overworld;
+    - beds refuse sleep, and straw beds follow their rule;
+    - the Endure rest resets `time_since_rest`, and is refused with `NOT_SAFE` when monsters are near;
+    - the clock is paused before the first crossing.
   - [ ] Server boots; `/execute in thesift:the_sift` works; zero `thesift` warnings.
-  - [ ] A headless screenshot of the Sift sky in Thrive and in Endure, looked at, in docs/previews/.
-- Iteration budget: fix hypotheses ≤ 5; self-review of the diff 1 round.
+  - [ ] A Tide transition causes no tick spike: the MSPT of the tick with the change is within 10% of the ticks around it (log excerpt).
+  - [ ] Headless screenshots of the Sift sky in Thrive, Flow and Endure, looked at, in docs/previews/.
+- Iteration budget: critique ≤ 2 rounds; fix hypotheses ≤ 5; self-review of the diff 1 round.
 - Exit ramp: if the mixin conflicts, fall back to `has_ceiling` only after a new decision record.
 - Log:
 
-### WP-041 Art pipeline and block set I art
+### WP-041 Palette, block set I design and art
 - Phase / Milestone: 4 / M1
 - Tier: L
 - Status: TODO
 - Depends on: WP-040
-- Goal: Original 16×16 textures, in vanilla style, for block set I: hymnstone, hymnstone bricks, healthy sculk (top and side), healthy-sculk grass (short and tall), songwood log (side and top), planks, leaves, gatestone, membrane.
-- Inputs (read ONLY these): docs/DESIGN/bible/world.md §3; mission §7.4; the vanilla textures of neighbouring blocks (for palette comparison only, never copied).
-- Deliverables: `tools/art/` generator scripts (ARR per D-003); the textures; `docs/previews/` sheets (tiled 3×3, beside vanilla neighbours, the palette).
+- Goal: The Sift palette, a §8.2 design doc for block set I, and original 16×16 textures in vanilla style for:
+  - hymnstone, and hymnstone bricks (with stairs, slab and wall);
+  - healthy sculk (top and side), and healthy-sculk grass (short and tall);
+  - songwood log (side with flute holes, and top), planks and leaves;
+  - tide sand and the tide vent;
+  - gatestone and the membrane;
+  - ichor (still and flowing), and the ichor bucket.
+- Inputs (read ONLY these): docs/DESIGN/bible/world.md §3, §3.1 and §4; mission §7.4; the vanilla textures of neighbouring blocks (for palette comparison only, never copied).
+- Deliverables:
+  - `docs/DESIGN/palette.md` (hex ramps per material; limited colours per texture);
+  - `docs/DESIGN/blocks_set1.md` (§8.2 per family, M tier: ≥5 concepts per family, rubric, a critique of 2 rounds);
+  - `tools/art/` generator scripts (ARR per D-003);
+  - the textures;
+  - `docs/previews/` sheets: tiled 3×3 at 1× and 8×, beside vanilla neighbours, under Thrive, Flow and Endure lighting.
 - Definition of Done:
+  - [ ] palette.md written, and every texture uses only its colours (a script check).
+  - [ ] blocks_set1.md frozen after its critique.
   - [ ] Every texture was generated from our own scripts or drawn pixel by pixel. Nothing is traced or copied (hard rule 9.1).
   - [ ] Previews rendered **and looked at**; each is critiqued against §7.4, with the notes in the log.
   - [ ] ≤3 revision rounds; the final previews are saved.
-- Iteration budget: revision rounds ≤ 3 per texture.
+- Iteration budget: critique ≤ 2 rounds (design); revision rounds ≤ 3 per texture.
 - Exit ramp: a simpler, cleaner texture that still reads correctly beside vanilla.
 - Log:
 
@@ -278,153 +306,243 @@ Minimum per mission: entry and return, one area with its own terrain, a small bl
 - Tier: L
 - Status: TODO
 - Depends on: WP-041
-- Goal: Register block set I (stairs, slabs and walls where the family calls for them), and generate Singer's Meadow terrain with these blocks: noise, material rules, songwood trees, grass.
-- Inputs (read ONLY these): docs/DESIGN/bible/world.md §1–3; docs/VANILLA_ANALOGS.md W2/W3/W7; the WP-031 datagen code.
-- Deliverables: block registrations; datagen for models, blockstates, loot, tags, recipes, lang; noise settings + material rules + biome + tree and grass features; GameTests for block behaviour; terrain screenshots.
+- Goal: Register block set I, and generate Singer's Meadow terrain with these blocks: noise, material rules, songwood trees, grass, ichor pools (using the WP-044 fluid once it lands; placeholder-free until then).
+- Inputs (read ONLY these): docs/DESIGN/bible/world.md §1–3; docs/DESIGN/blocks_set1.md; docs/VANILLA_ANALOGS.md W2/W3/W7; the WP-031 datagen code.
+- Deliverables:
+  - `docs/DESIGN/biome_singers_meadow.md` (identity at far, mid and near range; features; spawns; ambience; M tier with a critique of 2 rounds);
+  - block registrations;
+  - datagen for models, blockstates, loot, tags, recipes, lang;
+  - noise settings, material rules, the biome, and the tree and grass features;
+  - GameTests for block behaviour;
+  - terrain screenshots.
 - Definition of Done:
-  - [ ] Each block has its model, loot, tags, lang, sound type and recipe (where craftable). A test covers each block with behaviour.
-  - [ ] Terrain generates on a dedicated server without warnings; a headless screenshot of the Meadow, looked at.
+  - [ ] The biome doc is frozen after its critique.
+  - [ ] Each block has its model, loot, tags, lang, sound type, map colour and recipe (where craftable). A test covers each block with behaviour.
+  - [ ] Terrain generates on a dedicated server without warnings.
+  - [ ] Headless screenshots at far, mid and near range, looked at. No floating artifacts, and no seams at chunk borders (checked on a 16-chunk overview).
+  - [ ] Chunk generation cost is ≤1.5× the Overworld's, measured the same way on the same machine (numbers in the log).
   - [ ] Datagen no-diff; build green.
-- Iteration budget: fix hypotheses ≤ 5; terrain tuning passes ≤ 3.
+- Iteration budget: critique ≤ 2 rounds; fix hypotheses ≤ 5; terrain tuning passes ≤ 3.
 - Exit ramp: simpler noise (the overworld router with biome-level blocks) if custom density functions misbehave.
 - Log:
 
-### WP-043 Audio pipeline and the entry and Tide sounds
+### WP-043 Audio pipeline and the entry, Tide and Meadow sounds
 - Phase / Milestone: 4 / M1
 - Tier: M
 - Status: TODO
 - Depends on: WP-040
-- Goal: Original synthesized sounds (ogg), with subtitles, for the frame, the offering stream, the membrane, Tide transitions, and the Meadow's ambient loop and mood sounds.
-- Inputs (read ONLY these): mission §7.5; docs/DESIGN/vision/entry_path.md; docs/DESIGN/bible/items.md §5.
+- Goal: Original synthesized sounds (ogg), with subtitles, for:
+  - the frame, the offering stream and the membrane;
+  - Tide transitions and basin bubbling;
+  - the ichor wade;
+  - the Meadow's ambient loop and mood sounds.
+- Inputs (read ONLY these): mission §7.5; docs/DESIGN/vision/entry_path.md; docs/DESIGN/bible/items.md §6.
 - Deliverables: `tools/audio/` synthesis scripts (ARR); `.ogg` files; `sounds.json` via datagen; subtitles; loudness notes against vanilla.
 - Definition of Done:
   - [ ] Every sound is synthesized by our scripts. No samples from Mojang or any game.
+  - [ ] Every positional sound is mono (an `ffprobe` channel check over all files, output in the log).
+  - [ ] Frequent sounds (steps, wading, bubbling) have 2–4 variants.
   - [ ] Peak and RMS loudness measured next to comparable vanilla sounds (numbers in the log).
   - [ ] Every sound event has a subtitle.
 - Iteration budget: revision rounds ≤ 3 per sound.
 - Exit ramp: simpler tones; a HUMAN_ASSET_BRIEFS entry for anything a human could do meaningfully better.
 - Log:
 
-### WP-044 Entry I: frames, offering, waking, music
+### WP-044 Ichor (core form)
+- Phase / Milestone: 4 / M1
+- Tier: L
+- Status: TODO
+- Depends on: WP-040, WP-041, WP-034
+- Goal: Ichor as a wade-through liquid (D-013). It slows, burns (vanilla fire with soul-flame particles), and drains XP from anything that isn't a Sift native. Fire Resistance stops only the burning. A bucket of it evaporates outside the Sift.
+- Inputs (read ONLY these): D-013, D-016; the WP-034 ichor spike result; docs/DESIGN/system_tides.md; docs/VANILLA_ANALOGS.md (fluids).
+- Deliverables: the fluid (source and flowing), its liquid block, the bucket, tags (`#thesift:ichor`, `#thesift:sift_natives`), a fog colour inside ichor, sounds hooked (WP-043), GameTests.
+- Definition of Done:
+  - [ ] GameTests:
+    - an entity in ichor is slowed and set on fire;
+    - with Fire Resistance it isn't burned, but its XP is still drained;
+    - a Sift native takes no burn and no drain;
+    - there is no swimming and no current;
+    - an emptied bucket evaporates in the Overworld (with a particle and a sound);
+    - the flow range is correct.
+  - [ ] The per-tick cost of 20 entities standing in ichor is measured against 20 in lava (log).
+- Iteration budget: fix hypotheses ≤ 5.
+- Exit ramp: the recorded WP-034 fallback (a vanilla-like fluid with the effects kept in `entityInside`).
+- Log:
+
+### WP-045 Tide basins (one kind, in the Meadow)
+- Phase / Milestone: 4 / M1
+- Tier: L
+- Status: TODO
+- Depends on: WP-042, WP-044
+- Goal: Generated tide basins whose vent floods them with ichor in Endure and drains them in Thrive, moving through Flow. The work is bounded per tick, and the basins catch up after a chunk loads.
+- Inputs (read ONLY these): docs/DESIGN/system_tides.md; D-013, D-016; the WP-034 basin spike result.
+- Deliverables: the basin feature (≤14×14, ~4 deep, at most one per chunk, in the lows), the tide vent block entity, persistence, GameTests, a timelapse of screenshots.
+- Definition of Done:
+  - [ ] GameTests:
+    - a basin fills during Endure and drains during Thrive;
+    - block updates per tick stay under the budget set in system_tides.md;
+    - the vent catches up to the current Tide after a reload;
+    - a basin never crosses its chunk.
+  - [ ] Worldgen places basins only in the Meadow's lows (overview screenshot, looked at).
+  - [ ] A Tide transition with 50 loaded basins stays within the WP-040 spike bound (MSPT log).
+- Iteration budget: fix hypotheses ≤ 5.
+- Exit ramp: static ichor pools with a visible level marker (the D-013 fallback), with the decision recorded, and the basins moved to M2.
+- Log:
+
+### WP-046 Entry I: frames, offering, waking, music
 - Phase / Milestone: 4 / M1
 - Tier: L
 - Status: TODO
 - Depends on: WP-042, WP-043
-- Goal: Ancient City frames are found (from structure starts, no scans), breathe souls, notice players, accept deliberate offerings, wake in steps, and listen for music.
+- Goal: Ancient City frames are found from structure starts (no scans). They breathe souls (the rumor), notice players, accept deliberate offerings, wake in steps, and listen for music.
 - Inputs (read ONLY these): docs/DESIGN/vision/entry_path.md; D-010; docs/VANILLA_ANALOGS.md W5/W6/E4/P2.
-- Deliverables: frame locator + SavedData (charge per frame); the use-hook offering; awake stages (visual + sound); the vibration listener and jukebox listener; GameTests.
+- Deliverables:
+  - `docs/DESIGN/system_entry.md` (§8.3, S tier: exact numbers and cues from entry_path.md; a critique of 1 round);
+  - the frame locator + SavedData (charge per frame);
+  - the rumor wisps and notice cues;
+  - the use-hook offering;
+  - awake stages (visual + sound);
+  - the vibration listener and jukebox listener;
+  - GameTests.
 - Definition of Done:
-  - [ ] GameTests: a frame template is recognised; holding *use* transfers XP at the set rate and stops on release; standing or crouching takes nothing; the charge persists across a reload; a note block and a jukebox each open an awake frame.
-  - [ ] No per-tick scanning (code review note in the log).
-- Iteration budget: fix hypotheses ≤ 5.
+  - [ ] GameTests:
+    - a frame template is recognised;
+    - holding *use* transfers XP at the set rate and stops on release;
+    - standing or crouching takes nothing;
+    - the charge persists across a reload;
+    - a note block and a jukebox each open an awake frame.
+  - [ ] The rumor and notice cues show within their stated ranges: headless screenshots of the wisps and of the notice cue, looked at. These are the risk D-010 accepted.
+  - [ ] No per-tick scanning (a code review note in the log).
+- Iteration budget: critique 1 round; fix hypotheses ≤ 5.
 - Exit ramp: frame detection from placed blocks near structure centres, if structure-start access fails.
 - Log:
 
-### WP-045 Entry II: membrane, crossing, Sift-side gate, return
+### WP-047 Entry II: membrane, crossing, Sift-side gate, return
 - Phase / Milestone: 4 / M1
 - Tier: L
 - Status: TODO
-- Depends on: WP-044
-- Goal: The membrane portal (with the entity filter) takes players to a generated Sift-side gate (bounded search, fallback, explicit link, sanctuary) and back. The first crossing starts the Tide clock.
-- Inputs (read ONLY these): docs/DESIGN/vision/entry_path.md; docs/VANILLA_ANALOGS.md W5; D-010, D-013.
-- Deliverables: portal block, gatestone, gate feature, link SavedData, sanctuary spawn rule, return path, GameTests.
+- Depends on: WP-046
+- Goal: The membrane portal, with its entity filter, takes players to a generated Sift-side gate and back. The gate uses a bounded search with a fallback, an explicit link and a sanctuary. The first crossing starts the Tide clock.
+- Inputs (read ONLY these): docs/DESIGN/vision/entry_path.md; docs/DESIGN/system_entry.md; docs/VANILLA_ANALOGS.md W5; D-010, D-013.
+- Deliverables: the portal block, gatestone, the gate feature, link SavedData, the sanctuary spawn rule, the membrane's far-side Tide tint, the return path, GameTests.
 - Definition of Done:
-  - [ ] GameTests: crossing both ways; the link survives a reload; wardens are refused; gates ≥64 blocks apart; the clock starts at the first crossing.
+  - [ ] GameTests:
+    - crossing works both ways;
+    - the link survives a reload;
+    - wardens are refused;
+    - gates are ≥64 blocks apart;
+    - the clock starts at the first crossing;
+    - no monster spawns inside the sanctuary radius.
+  - [ ] The membrane shows the far side's Tide (screenshots in Thrive and Endure, looked at).
   - [ ] Manual headless run: enter and return, screenshots looked at.
 - Iteration budget: fix hypotheses ≤ 5.
 - Exit ramp: a fixed-offset arrival (no biome search) if the search is too slow.
 - Log:
 
-### WP-046 Blub design doc
+### WP-048 Blub design doc
 - Phase / Milestone: 4 / M1
 - Tier: L (design)
 - Status: TODO
-- Depends on: WP-021
+- Depends on: WP-021, WP-034
 - Goal: docs/DESIGN/mob_blub.md with the full §8.1 template, via the design ladder (≥8 concepts, rubric, critique ≤3).
-- Inputs (read ONLY these): docs/DESIGN/bible/creatures.md; docs/RESEARCH_BESTIARY.md (Blub row); docs/VANILLA_ANALOGS.md E1/E2/E5.
+- Inputs (read ONLY these): docs/DESIGN/bible/creatures.md; docs/RESEARCH_BESTIARY.md (Blub row); docs/VANILLA_ANALOGS.md E1/E2/E5; D-016; the WP-034 stacking result.
 - Deliverables: mob_blub.md (frozen); BALANCE.md rows.
-- Constraint: the M1 Blub is complete with M1 content alone (befriending and treats use only what M1 ships). Its ichor bathing and tidewrack treats are listed as M2 additions.
+- Constraints (D-016):
+  - The M1 Blub is complete with M1 content.
+  - It is befriended by music a player plays by hand, and it is a pet that needs no fuel.
+  - Flow: it follows the basin waterline. It bathes in ichor, immune to it.
+  - Tidewrack treats (breeding, healing) are an M2 addition.
 - Definition of Done:
   - [ ] All template sections filled, with stats beside vanilla analogs.
   - [ ] Critique passed (fresh reviewer) or the cap applied; frozen.
 - Iteration budget: critique ≤ 3 rounds.
-- Exit ramp: cut stacking to M4 if the spike fails, and record it.
+- Exit ramp: cut stacking to M2 if the spike failed, and record it.
 - Log:
 
-### WP-047 Blub art: texture, model, animations
+### WP-049 Blub art: texture, model, animations, spawn egg
 - Phase / Milestone: 4 / M1
 - Tier: L
 - Status: TODO
-- Depends on: WP-046, WP-041
-- Goal: The Blub's model (Java code model), texture and keyframe animations (walk, idle, squeak, dance, stack), matching the vanilla first look (V).
-- Inputs (read ONLY these): mob_blub.md; docs/VANILLA_ANALOGS.md E5; mission §7.4.
-- Deliverables: model and animation classes; texture; turntable and animation previews (headless screenshots).
+- Depends on: WP-048, WP-041
+- Goal: The Blub's model (Java code model), its texture, and keyframe animations (idle, hop, squeak, dance, stack, curl), matching the vanilla first look (V). Also the spawn-egg texture.
+- Inputs (read ONLY these): mob_blub.md; docs/DESIGN/palette.md; docs/VANILLA_ANALOGS.md E5; mission §7.4.
+- Deliverables: model and animation classes; texture; spawn-egg texture; turntable and animation previews (headless screenshots).
 - Definition of Done:
-  - [ ] Previews looked at and critiqued; ≤3 rounds; final previews saved.
+  - [ ] Every animation named in mob_blub.md exists, and each has anticipation and follow-through where it moves. There's an idle, and no sliding feet (frame-by-frame previews looked at).
+  - [ ] The silhouette reads at 10 blocks (a screenshot from 10 blocks, looked at).
+  - [ ] The texture uses only palette.md colours (script check).
+  - [ ] Previews critiqued; ≤3 rounds; final previews saved.
 - Iteration budget: revision rounds ≤ 3.
-- Exit ramp: fewer animation states (walk and idle) with the others as simple poses.
+- Exit ramp: fewer animation states (hop and idle), with the others as simple poses.
 - Log:
 
-### WP-048 Blub audio
+### WP-050 Blub audio
 - Phase / Milestone: 4 / M1
 - Tier: M
 - Status: TODO
-- Depends on: WP-043, WP-046
-- Goal: Original synthesized squeak, hop or step, happy and hurt sounds for the Blub, with subtitles.
+- Depends on: WP-043, WP-048
+- Goal: Original synthesized squeak, hop, happy and hurt sounds for the Blub, and a death sound, all with subtitles.
 - Inputs (read ONLY these): mob_blub.md; tools/audio/; mission §7.5.
 - Deliverables: sounds, sound events, subtitles, loudness notes.
 - Definition of Done:
-  - [ ] Synthesized, measured next to the rabbit's and allay's sounds; subtitles present.
+  - [ ] Synthesized by our scripts; all mono (ffprobe check).
+  - [ ] Frequent sounds (squeak, hop) have 3–4 variants.
+  - [ ] Loudness measured next to the rabbit's and the allay's sounds.
+  - [ ] Subtitles present.
 - Iteration budget: revision rounds ≤ 3.
-- Exit ramp: fewer variants per sound.
+- Exit ramp: fewer variants for rare sounds (never below 2 for frequent ones).
 - Log:
 
-### WP-049 Blub entity: AI and tests
+### WP-051 Blub entity: AI and tests
 - Phase / Milestone: 4 / M1
 - Tier: L
 - Status: TODO
-- Depends on: WP-047, WP-048
-- Goal: The Blub spawns in the Meadow, roams, squeaks, gathers to music, stacks (per the design and the WP-034 result), shelters in Endure, and is befriendable per mob_blub.md.
-- Inputs (read ONLY these): mob_blub.md; docs/VANILLA_ANALOGS.md E1/E2/E4; the WP-044 listener code.
-- Deliverables: entity type, attributes, brain or goals, spawning, renderer hookup, GameTests.
+- Depends on: WP-049, WP-050, WP-042, WP-045, WP-046
+- Goal: The Blub spawns in the Meadow, roams, squeaks and gathers to music. It stacks (per the design and the WP-034 result), follows the waterline in Flow, bathes in ichor, shelters in Endure, and is befriended per mob_blub.md.
+- Inputs (read ONLY these): mob_blub.md; docs/VANILLA_ANALOGS.md E1/E2/E4; the WP-046 listener code; the WP-045 basin API.
+- Deliverables: entity type, attributes, brain or goals, spawning (biome spawn entry), loot table, spawn egg item, renderer hookup, GameTests.
 - Definition of Done:
-  - [ ] GameTests for each behaviour in mob_blub.md; the server boots with blubs spawning; no warnings.
-  - [ ] Headless screenshots of blubs in the Meadow, looked at.
+  - [ ] GameTests, one for each behaviour in mob_blub.md.
+  - [ ] The server boots with blubs spawning; no warnings.
+  - [ ] Loot table and spawn egg present (datagen output).
+  - [ ] The per-tick cost of 50 blubs is within 1.5× that of 50 rabbits (measured; numbers in the log).
+  - [ ] Headless screenshots of blubs in the Meadow in each Tide, looked at.
 - Iteration budget: fix hypotheses ≤ 5.
 - Exit ramp: goal-selector AI instead of Brain if Brain costs too much.
 - Log:
 
-### WP-050 Entry advancements and lang pass
+### WP-052 Entry advancements and lang pass
 - Phase / Milestone: 4 / M1
 - Tier: S
 - Status: TODO
-- Depends on: WP-045
-- Goal: The Sift advancement tab (root, An Offering, The Tide Turns) and a lang pass over everything in M1.
-- Inputs (read ONLY these): docs/DESIGN/bible/items.md §4; mission §7.6.
+- Depends on: WP-047, WP-051
+- Goal: The Sift advancement tab (root, An Offering, The Tide Turns), and a lang pass over everything in M1.
+- Inputs (read ONLY these): docs/DESIGN/bible/items.md §5; mission §7.6.
 - Deliverables: advancements via datagen; triggers; en_us lang reviewed.
 - Definition of Done:
   - [ ] GameTests or scripted triggers grant each advancement.
-  - [ ] Lang proofread (vanilla's voice; no typos; subtitles present).
+  - [ ] Lang proofread: vanilla's voice, no typos, and a subtitle for every sound (a script check that every sound event has a subtitle key).
 - Iteration budget: 1 round.
 - Exit ramp: vanilla trigger types only.
 - Log:
 
-### WP-051 M1 integration and Gate C (self-review)
+### WP-053 M1 integration and Gate C (self-review)
 - Phase / Milestone: 4 / M1
 - Tier: M
 - Status: TODO
-- Depends on: WP-040..050
-- Goal: Everything works together: an integration pass, balance, performance, PLAYTEST.md, the jar, tag `v0.1.0-alpha`, and the Gate C self-review.
-- Inputs (read ONLY these): STATUS.md; PLAN.md M1 section; PLAYTEST.md.
-- Deliverables: PLAYTEST.md (Gate C); the built jar; the tag; the Gate C summary in STATUS.md.
+- Depends on: WP-040..052
+- Goal: Everything works together: an integration pass, a balance review, a performance check, PLAYTEST.md, the jar, tag `v0.1.0-alpha`, and the Gate C self-review.
+- Inputs (read ONLY these): STATUS.md; PLAN.md M1 section; PLAYTEST.md; BALANCE.md.
+- Deliverables: PLAYTEST.md (Gate C, noting that M1's Endure is dark but not dangerous); the built jar; the tag; the Gate C summary in STATUS.md.
 - Definition of Done:
-  - [ ] Build, datagen no-diff, and all GameTests green; the dedicated server boots with zero `thesift` warnings.
-  - [ ] A headless walkthrough (enter, look around, return), screenshots looked at.
+  - [ ] Build, datagen no-diff, `tools/docs/check_bible.py`, and all GameTests are green. The dedicated server boots with zero `thesift` warnings.
+  - [ ] Performance: chunk generation, a Tide transition with basins, and MSPT with 50 blubs are all within the bounds set in WP-042/045/051 (log).
+  - [ ] A headless walkthrough (enter, watch a basin turn, befriend a blub, return), with screenshots looked at.
   - [ ] Tag pushed; Gate C self-review written.
 - Iteration budget: fix rounds ≤ 3.
 - Exit ramp: ship M1 with known issues logged in BLOCKERS if they don't break the slice.
 - Log:
 
 ## Later (coarse; detailed when each milestone starts)
-- M2 — the tide and the hunt · M3 — the occupation · M4 — the Meadow's life · M5 — the heart of the blight (see 01_CONTENT_BIBLE.md §3).
+- M2 the hunt · M3 souls · M4 the occupation · M5 the Meadow's life · M6 the heart of the blight · the Could pool (see 01_CONTENT_BIBLE.md §3).
 - Phases 6–8: polish, hardening, release (mission §6).
