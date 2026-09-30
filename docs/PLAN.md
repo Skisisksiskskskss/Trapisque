@@ -68,36 +68,43 @@ Only one WP is IN PROGRESS at a time.
 ### WP-003 Sift research I: canon, areas, Tides, access, lore, palette evidence
 - Phase / Milestone: 0 / —
 - Tier: L
-- Status: TODO
+- Status: REVIEW (round 2 of ≤3 pending)
 - Depends on: —
 - Goal: Verify/correct/expand §3 with cited sources: release facts, the dimension, Tides, souls, areas, access, lore, characters, blocks/items, and resolve the colour contradiction.
 - Inputs (read ONLY these): docs/00_MISSION.md §3; minecraft.wiki Dungeons II pages; Xbox Wire; minecraft.net articles; reputable press; official trailer/gameplay descriptions.
 - Deliverables: docs/RESEARCH.md sections: Sources index, Canon table (fact · source · confidence), Areas, Tides, Souls, Sculk, Access, Lore & characters, Blocks/items/materials, Visual/palette evidence, Contradictions, Unknowns.
 - Definition of Done:
-  - [ ] Every §3.1 row verified, corrected, or marked unverifiable, each with a source.
-  - [ ] Every §3.2 observation tested against evidence and marked supported / unsupported / open.
-  - [ ] Colour contradiction addressed with evidence (or explicitly listed as unresolved with what would resolve it).
-  - [ ] Contradictions and Unknowns lists present.
-  - [ ] No claim without a source; uncertain facts labelled.
+  - [x] Every §3.1 row verified, corrected, or marked unverifiable, each with a source. (RESEARCH §1a seed-row map)
+  - [x] Every §3.2 observation tested against evidence and marked supported / unsupported / open. (RESEARCH §6)
+  - [x] Colour contradiction addressed with evidence (or explicitly listed as unresolved with what would resolve it). (RESEARCH §5)
+  - [x] Contradictions and Unknowns lists present. (RESEARCH §7: 14 items; §10)
+  - [x] No claim without a source; uncertain facts labelled. (one H/M/L scale; 189 quotes machine-checked, see log)
 - Iteration budget: critique rounds ≤ 3 (L), fix hypotheses n/a
 - Exit ramp: facts that can't be verified in reachable sources are marked "unverified — reason" and moved to Unknowns.
 - Log:
+  - 2026-09-30 pass 1 (wiki): 572 minecraft.wiki pages fetched (all 536 Dungeons II pages + 36 others); metadata in research/wiki_pages_2026-09-30.tsv. Pass 2 (official + press): 90 sources, bibliography in research/press_sources_2026-09-30.md; 558 quotes in the working notes machine-checked, 0 mismatches.
+  - Review round 1 (fresh reviewer; artifact + rubric only): **FAIL**, 3 must-fix (bestiary gaps; §6 observation 2 overstated; confidence labels above the doc's own rubric), 6 should-fix, 2 notes. Accepted all but one: the reviewer read the Tides tutorial as using "," where the screenshot shows ";" (checked at 6× zoom; kept, and the cursor-hidden "[erf]" is now marked).
+  - Fixes: one confidence scale for both docs; observation 2 now "supported for Dungeons II; open for Java"; seed-row → verdict map (§1a); §5 now cites the official "soft orange" audio description, the wiki's "Orange … dark salmon" block names, the press origin of "neon blue and pink" (Game Rant 20:03 UTC, gHacks 21:08 UTC) and TechJuice's misattribution (P-TJ added); §7 grew from 7 to 14 items; design opinion removed or marked *Inference*; unknowns updated (the Singer short and the note-sequence video exist but were unreachable).
+  - New evidence found while fixing: two official images of the Dungeons II portal (S-I6 launcher asset, S-I7 Steam asset: a dark frame, eight rainbow-topped note blocks in front); "The illagers take control of Souls" is a review (R-GT), not official text; Deeper and Darker and Sculk Depths have no 26.x release (research/prior_art_2026-09-30.md, PA-1…3); the Steam rates are a snapshot one day after launch (caveat added).
+  - Quote check: a second script checked every quote in RESEARCH.md and RESEARCH_BESTIARY.md against the saved source text: 189 verified, 0 mismatched, 1 skipped (the tutorial screenshot, checked by eye). Source page text stays in the session scratchpad (third-party copyright); only metadata is committed.
 
 ### WP-004 Sift research II: bestiary
 - Phase / Milestone: 0 / —
 - Tier: L
-- Status: TODO
+- Status: REVIEW (round 2 of ≤3 pending)
 - Depends on: WP-003 (sources index)
 - Goal: A short cited entry for every Sift mob, boss and named character: appearance, Dungeons II behaviour, faction, area.
 - Inputs (read ONLY these): docs/RESEARCH.md sources index; minecraft.wiki mob/boss pages.
 - Deliverables: docs/RESEARCH.md "Bestiary" section (or docs/RESEARCH_BESTIARY.md if RESEARCH.md would sprawl).
 - Definition of Done:
-  - [ ] Entry for every species in §3.1 plus any discovered since, each with source + confidence.
-  - [ ] Bosses and characters covered.
-  - [ ] Faction (Sift native / sculk / Illager / other) and area recorded where known; "unknown" stated otherwise.
+  - [x] Entry for every species in §3.1 plus any discovered since, each with source + confidence. (all 22 seed names mapped, incl. renames; plus Soul Blocker alias, unnamed "bird-like creatures" and "goat things", the Sniffer claim, the Monstrous Opus)
+  - [x] Bosses and characters covered. (Characters table: Singer, Bubbles, the four novel Visitors, Lucky, High Council)
+  - [x] Faction (Sift native / sculk / Illager / other) and area recorded where known; "unknown" stated otherwise. (boss table has a Faction column; blanks replaced by "unknown")
 - Iteration budget: critique rounds ≤ 3
 - Exit ramp: species with no reachable information get a stub entry marked "name only — no data", listed in Unknowns.
 - Log:
+  - 2026-09-30: bestiary written from the wiki pass, plus press observations and our own look at official images ([OBS]).
+  - Review round 1 (shared with WP-003): FAIL on DoD 6 (missing Visitors and creatures; no boss faction column; blanks instead of "unknown"; descriptors cited to the wrong wiki pages; H defined more loosely than in RESEARCH.md). All fixed: descriptors now cite [W:Sifter]/[W:Sculker]; novel-only lore marked L inline; IGN's "dancing automatons" left unidentified in RESEARCH, while the wiki's own gallery captions ("Echo golems dancing in front of the Deep Dark portal") support dancing echo golems.
 
 ### WP-005 Vanilla study I: world
 - Phase / Milestone: 0 / —
