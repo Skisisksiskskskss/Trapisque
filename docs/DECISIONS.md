@@ -61,3 +61,16 @@ Format: `## D-### <title> (<date>) [supersedes D-### if any]` then Context · Op
 **Consequences.** Phase 3 decides sub-packages (registries, worldgen, entity, …) under `thesift`.
 
 **Revisit if.** The owner wants a different package/copyright holder, or wants the generator scripts under MIT (flagged at Gate A).
+
+---
+
+## D-004 00_MISSION.md uses the owner's markdown source (2026-09-30)
+**Context.** §10 says copy the prompt verbatim into `docs/00_MISSION.md`. The first copy was taken from the chat message, whose markdown had been flattened (tables → tab-separated text, headings/bold/code fences lost). The owner's original markdown is `sift-mod-prompt/SIFT_MOD_PROMPT.md` on branch `claude/minecraft-sift-mod-c88i2r` (open draft PR Skisisksiskskskss/Trapisque#1), whose README says to paste "everything below the first horizontal rule".
+
+**Decision.** `docs/00_MISSION.md` = that file's text below the first `---`, byte-for-byte. Replaced once, in session 1, before anything depended on it.
+
+**Why.** It is the same prompt (word-for-word identical after stripping markdown syntax: 33,884 normalized characters, zero differences) and it renders correctly, which matters for a file every session re-reads.
+
+**Consequences.** None to content. From now on the "never edit" rule applies without exception.
+
+**Revisit if.** Never (unless the owner supplies a new mission text).
