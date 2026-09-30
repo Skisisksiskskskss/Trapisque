@@ -13,7 +13,7 @@ Only one WP is IN PROGRESS at a time.
 | WP-006 | Vanilla study II: entities (Brain, goals, vibrations/sculk, models/anims, boss bars) | 0 | L | DONE |
 | WP-007 | Vanilla study III: plumbing (datagen, SavedData/attachments, payloads, GameTest) | 0 | M | DONE |
 | WP-010 | Vision I: fantasy, tone, pillars, journey, progression | 1 | XL | DONE |
-| WP-011 | Vision II: entry and return path (≥12 ideas) | 1 | L | TODO |
+| WP-011 | Vision II: entry and return path (≥12 ideas) | 1 | L | DONE |
 | WP-012 | Vision III: the dimension's rules (+ env-attribute mapping) | 1 | M | TODO |
 | WP-013 | Vision IV: core systems (Tides, souls, sculk, sound, Illagers) | 1 | L | TODO |
 | WP-014 | Vision critique, freeze, Gate A | 1 | XL | TODO |
@@ -176,17 +176,18 @@ Deliverable: `docs/DESIGN/00_VISION.md` (the frozen vision) + focused appendices
 ### WP-011 Vision II: entry and return path
 - Phase / Milestone: 1 / —
 - Tier: L
-- Status: TODO
+- Status: DONE
 - Depends on: WP-010 (pillars)
 - Goal: Pick the survival entry path and the way home from ≥12 ideas, including the Ancient City frame and a note-block/sound activation, weighing canon, distinctness from existing fan mods (RESEARCH §8) and modpack compatibility.
 - Inputs (read ONLY these): 00_VISION.md pillars, RESEARCH.md canon #2–5 and §8, VANILLA_ANALOGS W5/W6.
 - Deliverables: docs/DESIGN/vision/entry_path.md (ideas + rubric table + chosen design at concept level); D-006.
 - Definition of Done:
-  - [ ] ≥12 ideas incl. the frame and a sound activation; ≥2 unusual.
-  - [ ] Scored table; choice + return path + failure modes (portal griefing, multiplayer, frame shared with other mods).
+  - [x] ≥12 ideas incl. the frame and a sound activation; ≥2 unusual. — 15 ideas (#1 melody, #3 souls+song, #8 disc, #9 horn, #10 chord…), 3 unusual (entry_path.md).
+  - [x] Scored table; choice + return path + failure modes (portal griefing, multiplayer, frame shared with other mods). — entry_path.md rubric, chosen design, failure-mode table, perf notes; D-006.
 - Iteration budget: self-check 1 pass; critique in WP-014.
 - Exit ramp: fall back to the canonical frame with a distinct activation.
 - Log:
+  - 2026-09-30: key constraint found: Deep Dark/Ancient Cities have no natural spawns, so souls must also come from sculk-mining XP. Press pass showed rifts are the everyday DII entry; the sandbox reversal is justified in entry_path.md. Self-check (weaknesses first): (1) the XP pull might surprise players who aren't looking for the Sift (mitigated: small radius, visible trail, stops once awake; playtest item); (2) the 'any music' opener may feel too easy (the gate is the journey plus the soul cost; revisit if playtests say so); (3) arrival biome search can be slow on huge worlds (bounded radius, async-friendly; Phase 3 perf check).
 
 ### WP-012 Vision III: the dimension's rules
 - Phase / Milestone: 1 / —

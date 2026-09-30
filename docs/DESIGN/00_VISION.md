@@ -47,7 +47,14 @@ Tie-breakers: canon over invention; vanilla grammar over new UI; fewer, deeper f
 - **Never gives:** flight (the elytra stays the End's), bulk portable storage (shulkers), armour or tools above netherite, faster travel than the Nether (coordinate scale 1:1), renewable diamonds or netherite, or free experience (every soul↔XP conversion loses value).
 - **Why vanilla stays intact:** the Sift's rewards change *how* you play (sound, souls, Tides, friends) without skipping a vanilla milestone. Deep Dark help (calming sculk with song) is temporary and costs souls, so the Ancient City stays dangerous.
 
-## 7. Entry and return path — *WP-011 (pending)*
+## 7. Entry and return path (details and scoring: `vision/entry_path.md`, D-006)
+**"Souls wake it, song opens it."** 15 ideas were scored; this one won (32/35).
+1. **Rumor.** Every Ancient City frame starts dormant. While its opening is empty, experience orbs within ~8 blocks drift into it along a visible soul trail. Players mining the city's sculk will see their XP pulled into the frame.
+2. **Wake.** Enough souls (target ≈10 levels' worth of orbs, tuned in BALANCE) make the frame glow in visible steps until it is awake: a steady light, a low hum, drifting note particles. You feed it in warden country, so the risk is real.
+3. **Open.** Any music played before an awake frame (note block, jukebox, goat horn, later the Singer's song) fills the 20×6 opening with a cyan membrane. There is no melody puzzle and no new key item.
+4. **Cross.** Nether-style portal timing. You arrive at a **Sift-side gate** on a red-sculk hill in the nearest Singer's Meadow-type biome at the matching x/z (1:1). The gate area is a sanctuary: no hostile spawns nearby, and echo golems gather there. That makes a mid-Endure arrival survivable.
+5. **Return.** Walk back through the gate to its linked frame (POI pairing). A broken Sift-side gate reopens with music. Rifts remain the Illagers' tool (Phase 2 content), not the player's front door.
+Why: it uses both canon ingredients (souls and music), teaches itself through feedback, needs no new key item, and differs from the three fan mods that already use this frame. Known interaction: if another mod's portal already fills the frame, we stand aside.
 
 ## 8. The dimension's rules — *WP-012 (pending)*
 

@@ -89,3 +89,18 @@ Format: `## D-### <title> (<date>) [supersedes D-### if any]` then Context · Op
 **Consequences.** Every later feature must pass at least one pillar test (00_VISION.md §3) and link to ≥2 Sift systems. Unusual concepts are parked (single ideas may return via IDEAS.md).
 
 **Revisit if.** The owner rejects the direction at Gate A, or Mojang reveals Java Sift mechanics that contradict it.
+
+---
+
+## D-006 Entry and return path: "souls wake it, song opens it" (2026-09-30)
+**Context.** WP-011: a survival entry and return path. Canon: the Ancient City centre frame is the Sift portal, opened by the Note Block Machine / a Singer's song; rifts are the Illagers' temporary portals. Three fan mods already use the frame (RESEARCH.md §8).
+
+**Options considered.** 15 ideas scored in `docs/DESIGN/vision/entry_path.md`: melody puzzle (23), three resonant note blocks (26), **souls wake it + song opens it (32)**, warden trophy (22), echo tuning fork (26), rift first (28), Illager rift incursions (26), Sift disc (25), goat horn (22), calibrated chord (23), allay escort (22), soul journey* (21), build-your-own gate* (26), Soul Sand Valley rifts* (22), bottled echo (26). (* unusual)
+
+**Decision.** Every Ancient City frame starts dormant. It absorbs nearby experience orbs as visible souls until it is awake, and any music played before an awake frame opens it. Arrival is at a generated Sift-side gate in the nearest Singer's Meadow-type biome at 1:1 coordinates, with a no-hostile-spawn sanctuary radius. Return is through the linked gate; a broken gate reopens with music.
+
+**Why.** It is the only option using both canon ingredients (souls and music) with self-teaching feedback and no new key item. It suits a sandbox better than Dungeons II's rift-first order (a landmark beats a random event; P4; minimal vanilla footprint), and it is distinct from existing mods' activations (melody puzzle, warden trophy, pedestal item).
+
+**Consequences.** We need: frame location from Ancient City structure pieces (no block scans); an XP-orb attraction zone around known dormant frames; a vibration/music listener at awake frames; a portal block, a POI type, a Sift-side gate feature and a biome search for arrival. Soul cost is tuned in BALANCE.md. If another mod's portal occupies the frame, we don't act.
+
+**Revisit if.** The owner prefers the canonical melody, rift-first, or a build-your-own gate at Gate A; Mojang reveals the vanilla access method; playtests show the XP pull is confusing or annoying.

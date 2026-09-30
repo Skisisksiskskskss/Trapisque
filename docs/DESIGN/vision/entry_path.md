@@ -55,6 +55,13 @@ Decisive calls: #1 is canon but is exactly an existing mod's signature (distinct
 
 **Return.** Walking back through the Sift-side gate returns you to the frame it is linked to (POI pairing, as with Nether portals). A broken Sift-side gate can be re-opened with music, the same verb as entry. Dying in the Sift sends you to your Overworld respawn unless you set one in the Sift (rules: §8). Illager **rifts** (idea #6/#7) are *not* a player entry. They are how the occupation moves, and they become content in Phase 2.
 
+## Why not rifts first? (evidence check after the press pass)
+In Dungeons II, rifts are the everyday way in and the Deep Dark portal is late story: 77.7% of Steam players have "Brave the Unknown" (enter the Sift) but only 2.9% have "Note Block Virtuoso" (activate the machine) [RESEARCH.md §9]. A sandbox reverses that order on purpose:
+1. **A landmark you can return to** beats a random event. Survival players plan trips, build bases and come back. The Nether portal and End portal are both places, not events.
+2. **The frame is the Java mystery.** Players have wondered about the Ancient City frame since 1.19, and canon confirms it is the Sift's original portal.
+3. **Random one-way portals fight P4** (they strand, and players can't choose when to go) and add Overworld-wide changes, which rule 9.4 (minimal vanilla footprint) discourages.
+4. **Rifts stay canon on the Illager side.** In Phase 2 they are how the occupation moves (Illager rift camps inside the Sift; rift incursions tied to occupation events). They are content, not the front door. Recorded as an alternative at Gate A.
+
 ## Failure modes and edge cases (concept level)
 | Case | Handling |
 |---|---|
