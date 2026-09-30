@@ -10,7 +10,7 @@ Only one WP is IN PROGRESS at a time.
 | WP-003 | Sift research I: canon, areas, Tides, access, lore, palette evidence | 0 | L | TODO |
 | WP-004 | Sift research II: bestiary (every mob, boss, character) | 0 | L | TODO |
 | WP-005 | Vanilla study I: world (dimension, noise, biomes, env attributes, portals, jigsaw) | 0 | L | DONE |
-| WP-006 | Vanilla study II: entities (Brain, goals, vibrations/sculk, models/anims, boss bars) | 0 | L | TODO |
+| WP-006 | Vanilla study II: entities (Brain, goals, vibrations/sculk, models/anims, boss bars) | 0 | L | DONE |
 | WP-007 | Vanilla study III: plumbing (datagen, SavedData/attachments, payloads, GameTest) | 0 | M | TODO |
 | WP-010 | Vision (Phase 1, XL) | 1 | XL | TODO (coarse) |
 
@@ -116,17 +116,19 @@ Only one WP is IN PROGRESS at a time.
 ### WP-006 Vanilla study II: entities
 - Phase / Milestone: 0 / —
 - Tier: L
-- Status: TODO
+- Status: DONE
 - Depends on: WP-002
 - Goal: Document Brain AI (Warden, Allay, Sniffer), goal-selector AI, vibrations & sculk (spreader, catalyst, listeners), code models + keyframe animations, and boss bars in 26.3.
 - Inputs (read ONLY these): 26.3 sources.
 - Deliverables: docs/VANILLA_ANALOGS.md sections E1–E5.
 - Definition of Done:
-  - [ ] Each section names real 26.3 classes (verified), key patterns, gotchas.
-  - [ ] Entity registration + attributes + renderer/model/layer registration path noted.
+  - [x] Each section names real 26.3 classes (verified), key patterns, gotchas. — E1–E5 from sources; every API detail written from reading patterns was re-checked (`looping()/build()`, `LINEAR/CATMULLROM`, `POSITION/ROTATION/SCALE`, `broadcastEntityEvent`, frequency range 1–15, and the Fabric `FabricDefaultAttributeRegistry` / `EntityRendererRegistry` / `ModelLayerRegistry` signatures via `javap`).
+  - [x] Entity registration + attributes + renderer/model/layer registration path noted. — E1 (constants moved to `EntityTypes`/`EntityTypeIds`; `ValueOutput`/`ValueInput` save API).
 - Iteration budget: critique rounds ≤ 2
 - Exit ramp: as WP-005.
 - Log:
+  - 2026-09-30: key findings — 26.3 Brain API is `Brain.provider(memories, sensors, activitiesFn)` + `ActivityData.create(...)` + `setActiveActivityToFirstValid`; Creaking gating by env attribute keyed from a timeline = template for Tide-gated mobs; catalyst turns death XP into sculk charge + `sculk_soul` bloom (vanilla "soul" hook); `LivingEntityEmissiveLayer` = glowing-body tool.
+  - Self-critique round 1 (weaknesses first): (1) Breeze/Happy Ghast only skimmed (jump attack / riding) — partial, read `BreezeAi` + `HappyGhast#travel` when a flying/riding mob is designed; (2) no read of `NaturalSpawner` spawn-cost logic — partial, read when spawn balancing starts; (3) animation *authoring* ergonomics (how to preview keyframes) untested — covered later by the headless client + client GameTests (WP-007/Phase 3). No must-fix for Phase 1.
 
 ### WP-007 Vanilla study III: plumbing
 - Phase / Milestone: 0 / —
