@@ -7,12 +7,16 @@ Only one WP is IN PROGRESS at a time.
 |----|-------|-------|------|--------|
 | WP-001 | Version ground truth & official-Sift check | 0 | S | DONE |
 | WP-002 | Toolchain + mod scaffold (build, runServer, genSources) | 0 | M | DONE |
-| WP-003 | Sift research I: canon, areas, Tides, access, lore, palette evidence | 0 | L | TODO |
-| WP-004 | Sift research II: bestiary (every mob, boss, character) | 0 | L | TODO |
+| WP-003 | Sift research I: canon, areas, Tides, access, lore, palette evidence | 0 | L | REVIEW |
+| WP-004 | Sift research II: bestiary (every mob, boss, character) | 0 | L | REVIEW |
 | WP-005 | Vanilla study I: world (dimension, noise, biomes, env attributes, portals, jigsaw) | 0 | L | DONE |
 | WP-006 | Vanilla study II: entities (Brain, goals, vibrations/sculk, models/anims, boss bars) | 0 | L | DONE |
 | WP-007 | Vanilla study III: plumbing (datagen, SavedData/attachments, payloads, GameTest) | 0 | M | DONE |
-| WP-010 | Vision (Phase 1, XL) | 1 | XL | TODO (coarse) |
+| WP-010 | Vision I: fantasy, tone, pillars, journey, progression | 1 | XL | IN PROGRESS |
+| WP-011 | Vision II: entry and return path (≥12 ideas) | 1 | L | TODO |
+| WP-012 | Vision III: the dimension's rules (+ env-attribute mapping) | 1 | M | TODO |
+| WP-013 | Vision IV: core systems (Tides, souls, sculk, sound, Illagers) | 1 | L | TODO |
+| WP-014 | Vision critique, freeze, Gate A | 1 | XL | TODO |
 
 ---
 
@@ -147,10 +151,86 @@ Only one WP is IN PROGRESS at a time.
   - 2026-09-30: findings — `@GameTest(dimension=…)` can run tests inside our dimension; Fabric's `SavedDataStorageMixin` makes a null `DataFixTypes` safe; `FabricCodecDataProvider` can generate timeline/clock JSON; Loom `configureTests { eula = true }` exists.
   - Self-critique round 1 (weaknesses first): (1) nothing here is exercised yet — Phase 3's exit (datagen no-diff, one GameTest, CI) is the real test; (2) client GameTests under Xvfb need the Vulkan argument wired into Loom's run config — unverified, flagged in P4; (3) no networking example compiled — acceptable, P3 recommends avoiding custom packets. No must-fix.
 
-## Phase 1 — Vision (coarse; detailed when Phase 0 exits)
+## Phase 1 — Vision (Tier XL design; detailed at Phase 0 exit)
 
-### WP-010 Vision (XL)
-- Produce docs/DESIGN/00_VISION.md per §6 Phase 1: fantasy, tone, pillars; player journey; progression placement; entry path (≥12 ideas incl. Ancient City frame + sound activation); dimension rules (+ which env attributes express them); core systems at concept level (Tides, souls, healthy vs corrupted sculk, sound, Illager occupation). Independent critique ≤3 rounds → Gate A.
+Deliverable: `docs/DESIGN/00_VISION.md` (the frozen vision) + focused appendices in `docs/DESIGN/vision/` holding the diverge/converge tables, so the vision itself stays short. Every choice is scored on the §7.1 rubric and recorded in DECISIONS.md.
+
+### WP-010 Vision I: fantasy, tone, pillars, player journey, progression placement
+- Phase / Milestone: 1 / —
+- Tier: XL
+- Status: TODO
+- Depends on: WP-003, WP-004, WP-005..007
+- Goal: Choose the Sift's fantasy (one sentence), tone and 3–5 pillars from ≥12 distinct vision concepts; write the player journey (rumor → … → why you come back) and where the Sift sits in vanilla progression.
+- Inputs (read ONLY these): RESEARCH.md §0–8, RESEARCH_BESTIARY.md (patterns section), VANILLA_ANALOGS W4/E4, D-002.
+- Deliverables: docs/DESIGN/vision/concepts.md (≥12 concepts, ≥2 deliberately unusual, rubric table); 00_VISION.md sections Fantasy/Tone/Pillars/Journey/Progression; D-005.
+- Definition of Done:
+  - [ ] ≥12 concepts written before any scoring; ≥2 marked unusual.
+  - [ ] Rubric table (7 criteria × concepts) and a pick/merge with reasons in D-005.
+  - [ ] Pillars are testable ("a feature passes this pillar if …").
+  - [ ] Progression placement names requirements and rewards and explains why no vanilla step becomes pointless.
+- Iteration budget: critique happens in WP-014; self-check 1 pass here.
+- Exit ramp: if no concept scores ≥4 everywhere, merge the two best and log the weak criterion.
+- Log:
+
+### WP-011 Vision II: entry and return path
+- Phase / Milestone: 1 / —
+- Tier: L
+- Status: TODO
+- Depends on: WP-010 (pillars)
+- Goal: Pick the survival entry path and the way home from ≥12 ideas, including the Ancient City frame and a note-block/sound activation, weighing canon, distinctness from existing fan mods (RESEARCH §8) and modpack compatibility.
+- Inputs (read ONLY these): 00_VISION.md pillars, RESEARCH.md canon #2–5 and §8, VANILLA_ANALOGS W5/W6.
+- Deliverables: docs/DESIGN/vision/entry_path.md (ideas + rubric table + chosen design at concept level); D-006.
+- Definition of Done:
+  - [ ] ≥12 ideas incl. the frame and a sound activation; ≥2 unusual.
+  - [ ] Scored table; choice + return path + failure modes (portal griefing, multiplayer, frame shared with other mods).
+- Iteration budget: self-check 1 pass; critique in WP-014.
+- Exit ramp: fall back to the canonical frame with a distinct activation.
+- Log:
+
+### WP-012 Vision III: the dimension's rules
+- Phase / Milestone: 1 / —
+- Tier: M
+- Status: TODO
+- Depends on: WP-010
+- Goal: Decide light, sky, fog, day/night, weather, beds/respawn, compasses/clocks/maps, natural spawning, fall/fluids, and what vanilla items do differently — marking which are environment attributes, timelines, or code.
+- Inputs (read ONLY these): 00_VISION.md pillars, VANILLA_ANALOGS W1/W4/W5, RESEARCH.md §3.
+- Deliverables: 00_VISION.md "Rules" table; docs/DESIGN/vision/rules.md if the table needs rationale.
+- Definition of Done:
+  - [ ] Every rule listed in §6 Phase 1 has a decision and an implementation route (attribute id / timeline / code).
+  - [ ] ≥5 rule-set identities compared before choosing.
+- Iteration budget: self-check 1 pass.
+- Exit ramp: default to Nether/End precedent for any rule without a Sift-specific reason.
+- Log:
+
+### WP-013 Vision IV: core systems at concept level
+- Phase / Milestone: 1 / —
+- Tier: L
+- Status: TODO
+- Depends on: WP-010, WP-012
+- Goal: Concept designs for the Tides (cycle, triggers, per-Tide changes, how players read/use them), the soul economy, healthy vs corrupted sculk, sound as a mechanic (if it survives the pillars), and the Illager occupation — each connected to ≥2 others.
+- Inputs (read ONLY these): 00_VISION.md, RESEARCH.md §3–4, RESEARCH_BESTIARY.md, VANILLA_ANALOGS W4/E2/E4.
+- Deliverables: docs/DESIGN/vision/systems.md (per system: ≥5 concepts (Tides/souls ≥8), rubric, pick); 00_VISION.md "Core systems" section; D-007….
+- Definition of Done:
+  - [ ] Each system: diverge → rubric → pick, with the link map (which systems feed which).
+  - [ ] Tides mapped onto a clock/timeline feasibility sketch (no code).
+- Iteration budget: self-check 1 pass.
+- Exit ramp: cut a system to "concept only / later" with a reason if it fails the pillars.
+- Log:
+
+### WP-014 Vision critique, freeze and Gate A
+- Phase / Milestone: 1 / —
+- Tier: XL
+- Status: TODO
+- Depends on: WP-010..013
+- Goal: Independent adversarial review of 00_VISION.md (fresh reviewer, rubric only), fix, freeze, and present Gate A.
+- Inputs (read ONLY these): 00_VISION.md, docs/DESIGN/vision/*, §7.1 rubric.
+- Deliverables: critique log in 00_VISION.md; frozen vision; STATUS.md gate summary; Gate A message.
+- Definition of Done:
+  - [ ] ≤3 critique rounds by a fresh subagent; no must-fix left; every rubric score ≥4 (or accepted/cut/parked per §5.5 with reasons).
+  - [ ] Vision marked FROZEN; Gate A presented (recommendation first, alternatives, default on "go").
+- Iteration budget: critique rounds ≤ 3.
+- Exit ramp: §5.5 critique cap.
+- Log:
 
 ## Phase 2+ (very coarse)
 - Phase 2: content bible + roadmap → Gate B.
