@@ -327,6 +327,12 @@ The listed alternatives remain recorded in D-006/D-009/D-011 if the owner ever w
 
 It also found that M1's Tide changed nothing in play (SF4), since the mission asks for "the thinnest slice through **everything**".
 
+**Options considered.**
+- **Literal tide:** (a) keep it in M2 and accept an M1 Tide that is only the look; (b) move ichor and one basin into M1 *(chosen)*; (c) move all basin content, tide marks and tidewrack included, into M1 (too thick for a slice).
+- **Milestones:** (a) keep five, with an overloaded M2; (b) split into six *(chosen)*.
+- **Blub fuel:** (a) blubs need soul blocks as the vision says, which pushes the finished Blub past M3; (b) pets need no fuel and only work needs it *(chosen)*.
+- **Quest:** (a) an NPC dialogue quest (not vanilla); (b) a place that shows its own progress, like an end portal frame *(chosen)*; (c) requiring a freed golem at the grove (it chains two AI systems).
+
 **Decision.**
 1. **The literal tide moves into M1.** M1 ships ichor in core form (wade, slow, burn, drain, bucket that evaporates outside the Sift) and **one kind of tide basin** (the vent controller, filling in Endure and draining in Thrive). Both are spiked in Phase 3 (WP-034) first. Tide marks, tidewrack and Endure blooms stay in M2.
 2. **Six milestones.** M1 slice · M2 the hunt · M3 souls · M4 the occupation · M5 the Meadow's life · M6 the heart of the blight, plus a Could pool. Every Core and Should row names its milestone, and `tools/docs/check_bible.py` enforces it.
@@ -351,3 +357,51 @@ It also found that M1's Tide changed nothing in play (SF4), since the mission as
 - The M2+ content moves down a milestone as listed in the bible.
 
 **Revisit if.** The WP-034 spikes fail, in which case M1 falls back to static ichor pools and the basins move to M2. Also revisit if playtests show music befriending is too easy.
+
+---
+
+## D-017 Content-bible round-2 fixes: sources, music reactions, horn rules, fallbacks (2026-09-30)
+**Context.** Round 2 of the fresh bible review (WP-024) failed on:
+- one must-fix: the bloom heart had no source before M4;
+- Feasible 3;
+- 11 should-fix items, among them unplanned music reactions, horns that could be stacked, Singer edge cases, milestone-order slips, and fallbacks that disagreed.
+
+**Options considered.**
+- **Bloom heart source:** (a) a crafting recipe from M2 reagents, which would make a catalyst-like block craftable, something vanilla never does; (b) a rare worldgen **bloom patch**, taken with Silk Touch like a sculk catalyst *(chosen)*.
+- **Music reactions:**
+  - (a) server-side block entities or scans (too costly, §7.8);
+  - (b) a mixin into game-event dispatch;
+  - (c) a client `SoundEventListener`, the vanilla subtitle hook, feeding `animateTick` *(chosen: no mixin, no server cost)*.
+- **Horn charges:** (a) stored on the item, which lets several horns bypass "none in Endure"; (b) stored on the player *(chosen)*.
+- **Singer death:** (a) it can die (the grove softlocks); (b) it's invulnerable (vanilla has almost none); (c) it fades at zero health and returns at the next Thrive *(chosen)*.
+
+**Decision.**
+1. **Bloom patches** (M3): rare, in the Meadow and the Hollows. A heart drops itself with Silk Touch; otherwise it drops nothing, and never XP.
+2. **Music reactions are client-side and cosmetic** (world.md §3.2). They run in every dimension, so the vision's Could "home-decoration reactions" ships as Core in M1 at no extra cost. Healthy sculk has **no block light**: its music "glow" is glowing petal particles. This replaces the "soft, steady glow" wording.
+3. **The Singer's horn** (items.md §1.2):
+   - Charges are a persistent per-player attachment, shared by every horn the player holds.
+   - "Calm" means a 10-second **lull** on hunters targeting the singer. The song is still a vibration that calls hunters from farther out.
+   - A song opens a musical gate whatever its key.
+4. **The Singer can't die.** At zero health it fades into its grove's bloom heart and returns at the next Thrive.
+   - A held soul block makes it point to an empty chorus stone.
+   - Horns go only to players present when the song completes.
+5. **Songwood** gets a sapling in M1. It grows only where `sift_life` is true. The full songwood set, with lullvine, moves to M3, before Hymnstone Rise's lullvine curtains need it. The Hollows' blight seams are an M4 addition.
+6. **Recorded changes from the frozen vision:**
+   - Blight keeps the vision's colour ("the colour of the Deep Dark"). It is told apart from vanilla sculk by shape, not by a new palette. Round 1's §3.1 draft had changed the colour, and that change is undone.
+   - The Sift-side gate's "hill of red healthy sculk" (entry_path.md) is built from red hymnstone capped with coral healthy sculk, because the bible defines no red sculk block.
+   - "Blub towers as platforms" stays Could, and now has its own row.
+7. **One fallback per spike** (WP-034):
+   - **Stacking fails:** stacking moves to M2.
+   - **Basins fail:** M1 ships static ichor pools with a level marker. The M1 Blub follows the pool edges in Flow instead of a moving waterline. One more basin attempt opens M2; if that also fails, the vision's D-013 fallback (no basins) applies.
+8. **The advancement tab's root** is "The Sift" (be noticed by a frame), the easy first step, as vanilla roots are.
+
+**Why.**
+- The fixes remove a survival dead end (M3) and an exploit (stacked horns), and close a softlock (a dead Singer).
+- They turn two paper features (the songwood and healthy-sculk reactions) into a mechanism that costs the server nothing.
+
+**Consequences.**
+- The M1 WPs gain dependencies and DoD checks (PLAN.md).
+- `check_bible.py` is hardened.
+- WP-030 records its architecture decisions as D-018 onward.
+
+**Revisit if.** Client-side reactions feel detached from gameplay music in multiplayer. A player far away hears less, so they see less. That matches vanilla subtitles.

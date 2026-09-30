@@ -1,6 +1,6 @@
 # Content bible II: creatures (WP-021)
 
-Part of `../01_CONTENT_BIBLE.md`. Source: `../../RESEARCH_BESTIARY.md`; the frozen vision `../00_VISION.md`. Decisions: D-016.
+Part of `../01_CONTENT_BIBLE.md`. Source: `../../RESEARCH_BESTIARY.md`; the frozen vision `../00_VISION.md`. Decisions: D-016, D-017.
 
 **Legend.**
 - **Verdict:** **Adapt** (redesigned for first-person sandbox, keeping identity and name) · **Merge** (folded into another design) · **Defer** (a later version, named; its tier is Won't for 1.0) · **Cut** (never, with a reason).
@@ -52,11 +52,11 @@ Part of `../01_CONTENT_BIBLE.md`. Source: `../../RESEARCH_BESTIARY.md`; the froz
 ## 2. The 1.0 roster (Core and Should)
 | Creature | Role (niche) | Tide behaviour | Links | Vanilla analog | Tier / MS |
 |---|---|---|---|---|---|
-| **Blub** | Ambient critter and **pet**. It hops (a vanilla-style clip), squeaks, bathes in ichor (immune to its burn and drain) and gathers to music. Blubs **stack into teetering towers** that topple (our reading of Kotaku's "blue bunnies"). A player befriends one by **playing music for it** (a hand-played note block or a goat horn, whose game event names the player). A befriended blub follows and comes home. It needs no fuel (D-016). **M2 addition:** tidewrack treats for breeding and healing | Thrive: roams, stacks to music. Flow: follows the basin waterline as it moves. Endure: shelters under songwood leaves, curled up | T N S Cr W | rabbit (ambient), allay (music), axolotl (liquid-adapted) | **Core**, **M1** (the fully finished mob) |
+| **Blub** | Ambient critter and **pet**. It hops (a vanilla-style clip), squeaks, bathes in ichor (immune to its burn and drain) and gathers to music. Blubs **stack into teetering towers** that topple (our reading of Kotaku's "blue bunnies"). A player befriends one by **playing music for it** by hand (a note block or a goat horn, whose game event names the player). Each note befriends at most one blub: the nearest one watching the player. It shows hearts and a happy squeak. Like the allay, it costs nothing. A befriended blub follows, crosses the membrane with its player, and comes home. It needs no fuel (D-016). **M2 addition:** tidewrack treats for breeding and healing | Thrive: roams, stacks to music. Flow: follows the basin waterline as it moves. Endure: shelters under songwood leaves, curled up | T N S Cr W | rabbit (ambient), allay (music), axolotl (liquid-adapted) | **Core**, **M1** (the fully finished mob) |
 | **Nester** | The **listening hunter**: surfaces in Endure, hears vibrations out to 16 blocks, gallops and lunges, circles on cooldown, and burrows away at falling Flow. It avoids lumen light | Endure only (hearing rule); burrows at dawn | T N Cr I (it attacks illagers too) | warden (hearing), wolf or spider (gallop and lunge) | **Core**, M2 |
 | **Bloombud** | A melee sifter that mimics a closed flower bud in the dark, in groups of 3–5. Its petals open (the telegraph) before it lunges | Spawns in darkness (Endure, caves); burrows at falling Flow on the surface | T W Cr | vindicator (canon look) plus a creeping ambush | **Core**, M2 |
 | **Echo Golem** | Caged in Illager camps; freed ones become working companions. It dances to music, carries a soul block (fuel) and, while it has one, **slowly heals blight** and tends bloom hearts | Thrive: works (heals); Endure: gathers at gates and camps it has freed | I K S N | iron golem (protector), allay (carrier) | **Core**, M4 |
-| **Singer** | A rare, tall, passive native, one per Singer's grove. It speaks only in song and grants the **gift of song** (items.md §1.1). It can be hurt; hurt, it flees and falls silent for a full Tide cycle | Sings in Thrive and Flow; silent in Endure | N S I | wandering trader (a rare visitor with a purpose), allay | **Core**, M4 |
+| **Singer** | A rare, tall, passive native, one per Singer's grove. It speaks only in song and grants the **gift of song** (items.md §1.1). It can be hurt; hurt, it flees and falls silent for a full Tide cycle. It **can't die**: at zero health it fades into its grove's bloom heart (with soul particles and the subtitle "Singer fades") and returns at the next Thrive. It drops nothing, so no grove is ever softlocked and nothing can be farmed | Sings in Thrive and Flow; silent in Endure | N S I | wandering trader (a rare visitor with a purpose), allay | **Core**, M4 |
 | **Pillager / Vindicator** (vanilla) | Camp garrison and respawns (pillagers only); they patrol camp grounds in Thrive and Flow and run the rigs that drain souls | Patrol in Thrive and Flow; hide in camp in Endure, where Nesters hunt them | I K S Cr | pillager outpost | **Core** (vanilla types), M4 |
 | **Pollinator** | A ranged sifter that keeps its distance and lobs goo globs that burst after 3 s. The goo **slows** (readable yellow puddles with a drip particle) | Endure and caves | T W Cr | witch (ranged), stray (slowing) | **Should**, M5 |
 | **Sprout** | A support sifter that beams a buff to an ally (it prefers Pollinators). It can't move while beaming, and a hit cancels the beam | Endure and caves | T Cr | evoker (support), end crystal (beam) | **Should**, M5 |
@@ -64,6 +64,11 @@ Part of `../01_CONTENT_BIBLE.md`. Source: `../../RESEARCH_BESTIARY.md`; the froz
 | **Sculk Cube** | The Monstrosity's summon: a rolling blight cube that bursts into blight veins | Boss fight only | K Cr W | slime (rolling cube) | **Core**, M6 |
 | **Sculk Monstrosity** | The **boss**, heart of the blight (our design), behind a musical gate. It fights with heavy swings, a soul-flame charge, summoned Sculk Cubes, and **catalysis**: blight hearts erupt and web the arena. Beating it cures the land around its arena | Arena only; stronger in Endure | K S N I | warden (weight), wither (boss bar, arena) | **Core**, M6 |
 | **Harmonizer** | The **miniboss**: a massive sprout with a screech shockwave (telegraphed), summoned Seedlings, buff beams to allies (cut by killing the ally) and a tentacle grab | Arena only | N T Cr | elder guardian (miniboss), evoker | **Should**, M6 |
+
+### 2.1 Could (only if the budget allows)
+| Entry | What | Tier | MS |
+|---|---|---|---|
+| **Blub towers as platforms** | Players can stand on a blub stack to reach high blooms (vision N2′'s platform idea) | Could | — |
 
 **Enduring variants** (merged from canon soul corruption) apply to Nester, Bloombud, Pollinator and Sprout in Endure: more health and damage, readable by a **larger crest or spikes and trailing soul particles** as well as a glow (not colour alone). They are tuned in BALANCE.md.
 
@@ -87,3 +92,9 @@ Part of `../01_CONTENT_BIBLE.md`. Source: `../../RESEARCH_BESTIARY.md`; the froz
 - Boss re-fights are cut.
 - The Singer's silence lasts a Tide cycle; the Sift has no days.
 - Links were fixed: every Core row has ≥2.
+
+**WP-024, round-2 fixes (D-017).**
+- Befriending has a limit (one blub per note, the nearest watching one) and a tell. The allay is the precedent for no cost.
+- A befriended blub crosses the membrane with its player.
+- The Singer can't die.
+- "Blub towers as platforms" has its Could row.

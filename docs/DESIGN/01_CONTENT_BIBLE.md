@@ -9,7 +9,7 @@ Parts:
 
 Every Core and Should row carries a milestone (MS). `tools/docs/check_bible.py` checks this.
 
-Frozen vision: `00_VISION.md`. Decisions made here: D-016. *Unofficial fan project, not affiliated with or endorsed by Mojang Studios or Microsoft.*
+Frozen vision: `00_VISION.md`. Decisions made here: D-016 (round 1) and D-017 (round 2). *Unofficial fan project, not affiliated with or endorsed by Mojang Studios or Microsoft.*
 
 ## 1. Tier summary (1.0 = Singer's Meadow, D-009)
 | Area | Core (in 1.0) | Should | Could | Won't / later |
@@ -18,11 +18,11 @@ Frozen vision: `00_VISION.md`. Decisions made here: D-016. *Unofficial fan proje
 | **Block families** | hymnstone, healthy sculk, songwood, blight (with blight hearts), bloom heart, soul block, tide flats, gate + membrane, lumen, camp machines (rig, tank, cage), chorus stone | musical gate | — | new ores; songwood boats |
 | **Flora and hazards** | ichor, tidewrack, Endure bloom | glowcap, chime bell flower, meadow flowers | burst pod | — |
 | **Structures** | Sift-side gate, frame logic, Illager camp, Singer's grove, Monstrosity hollow | choir circle | Sift ruins | Illager Keep (post-1.0) |
-| **Creatures** | Blub, Nester, Bloombud, Echo Golem, Singer, pillager/vindicator (vanilla), Sculk Cube, Sculk Monstrosity (boss), enduring variants, Trills (particles) | Pollinator, Sprout, Slabber, Harmonizer (miniboss) + Seedlings | Ravager in camps, "Bubbles" | Tuner, Wobble, Sift Sheep, Shroomer (1.x); Sentinel, Dartback, sculkers, Monarch (1.1); High Council (post-1.0); cut entries in creatures.md §1 |
+| **Creatures** | Blub, Nester, Bloombud, Echo Golem, Singer, pillager/vindicator (vanilla), Sculk Cube, Sculk Monstrosity (boss), enduring variants, Trills (particles) | Pollinator, Sprout, Slabber, Harmonizer (miniboss) + Seedlings | Ravager in camps, "Bubbles", blub towers as platforms | Tuner, Wobble, Sift Sheep, Shroomer (1.x); Sentinel, Dartback, sculkers, Monarch (1.1); High Council (post-1.0); cut entries in creatures.md §1 |
 | **Items and materials** | ichor bucket, tidewrack frond, Endure petal, lumen lantern, soul block, Singer's horn, spawn eggs | Tide shell, trait templates, lullberries | music disc, raw tidewrack as food | — |
 | **Tools, armour, companions** | the Singer's horn (the one new tool); companions Blub (pet) and Echo Golem (worker) | — | — | new tiers (vision §6); Sift Sickles and Warding Chimes (1.1, humbler husk) |
-| **Advancements** | 10 | 3 | — | — |
-| **Mechanics** | Tides and scope gate, ichor, basins, entry, gate, weather mixin, beds, hearing and retreat, enduring variants, lumen repel, bloom hearts, blight, camps, gift of song (quest) | gear traits, musical gates | — | Tide lever (post-1.0) |
+| **Advancements** | 11 | 3 | — | — |
+| **Mechanics** | Tides and scope gate, ichor, basins, entry, gate, weather mixin, beds, music reactions (client-side, also at home), hearing and retreat, enduring variants, lumen repel, bloom hearts, blight, camps, gift of song (quest) | gear traits, musical gates | — | Tide lever (post-1.0) |
 
 ## 2. Dependency graph (systems before the content that needs them)
 ```
@@ -38,10 +38,11 @@ Architecture (Phase 3: registration, datagen, tests, CI; spikes: weather mixin, 
   Hearing rule + retreat ──► Nester, Bloombud, enduring variants; Sift Hollows; spawn tables
   Basins ──► tide marks, tidewrack (Thrive), Endure bloom (Endure) ──► lumen (repels hunters)
   ── M2 ──
-  Bloom hearts ──► soul blocks, growth, healthy-sculk variants; Hymnstone Rise; hymnstone full family
+  Bloom patches (worldgen) ──► bloom hearts ──► soul blocks, growth, healthy-sculk variants
+  Hymnstone Rise (lullvine curtains) ◄── songwood full set + lullvine; hymnstone full family
   ── M3 ──
   Blight family ──► rigs, tanks, cages ──► Illager camps (stolen soul blocks) ──► Echo Golem (freed, fuelled by soul blocks)
-  Soul blocks + camps ──► Singer's grove, chorus stones ──► Singer ──► gift of song; songwood full set
+  Soul blocks + camps ──► Singer's grove, chorus stones ──► Singer ──► gift of song (per-player charges); blight seams in the Hollows
   ── M4 ──
   Camps' templates + tidewrack/petals/soul blocks ──► gear traits; Pollinator, Sprout, Slabber; Lullaby Hills + choir circles (need golems); Tide shell; lullberries; Tide music
   ── M5 ──
@@ -57,10 +58,10 @@ Work packages: Phase 3 = WP-030..034, M1 = WP-040..053 (PLAN.md). Later mileston
 
 | Milestone | Theme | Contents | Tag |
 |---|---|---|---|
-| **M1 — vertical slice** (Phase 4) | Get in, watch the tide, get out | Dimension + Singer's Meadow terrain; block set I with final art; **ichor and one kind of tide basin** (the literal tide, D-016); the Tide core (clock, light, sky, stars, Trills, beds, weather mixin); Meadow ambience; entry and return (frame, offering, music, membrane, gate); **the Blub finished** (design → art → animation → audio → AI → tests); advancements Where Souls Drift / An Offering / The Tide Turns | `v0.1.0-alpha` |
+| **M1 — vertical slice** (Phase 4) | Get in, watch the tide, get out | Dimension + Singer's Meadow terrain; block set I with final art (with the songwood sapling); music reactions; **ichor and one kind of tide basin** (the literal tide, D-016); the Tide core (clock, light, sky, stars, Trills, beds, weather mixin); Meadow ambience; entry and return (frame, offering, music, membrane, gate); **the Blub finished** (design → art → animation → audio → AI → tests); advancements Where Souls Drift / An Offering / The Tide Turns | `v0.1.0-alpha` |
 | **M2 — the hunt** | Endure means danger | Hearing rule and retreat; Nester, Bloombud, enduring variants; Sift Hollows with glowcap pools; spawn tables; tide marks, tidewrack, Endure bloom; lumen; chime bell flower; the Blub's tidewrack treats; advancements Stacked, Low Tide, Heard You, Quiet Waters | `v0.2.0-alpha` |
-| **M3 — souls** | Grow the land | Bloom hearts, soul blocks, growth; healthy-sculk variants; Hymnstone Rise with spires; the full hymnstone family; advancement Condensed | `v0.3.0-alpha` |
-| **M4 — the occupation** | Something to fight for | Blight family; rigs, tanks, cages, camps; Echo Golem; the Singer, its grove, the chorus stones and the gift of song; the full songwood set; advancements Broken Chains, Rig Wrecker, The Singer's Gift | `v0.4.0-alpha` |
+| **M3 — souls** | Grow the land | Bloom patches and bloom hearts, soul blocks, growth; healthy-sculk variants; Hymnstone Rise with spires; the full hymnstone and songwood families (with lullvine); advancement Condensed | `v0.3.0-alpha` |
+| **M4 — the occupation** | Something to fight for | Blight family (with the Hollows' seams); rigs, tanks, cages, camps; Echo Golem; the Singer, its grove, the chorus stones and the gift of song; advancements Broken Chains, Rig Wrecker, The Singer's Gift | `v0.4.0-alpha` |
 | **M5 — the Meadow's life** | Should content | Pollinator, Sprout, Slabber; Lullaby Hills and choir circles; gear traits; Tide shell; lullberries; meadow flowers; Tide music; advancement Mended Ground | `v0.5.0-beta` |
 | **M6 — the heart of the blight** | The endgame | Musical gates; Monstrosity hollow with blight hearts; Sculk Monstrosity and Sculk Cubes; Harmonizer and Seedlings; advancement Heart of the Blight | `v0.6.0-beta` |
 | **Could pool** | Only if the budget allows | Radiant Ravines, burst pod, Sift ruins, Ravager, music disc, "Bubbles", raw tidewrack. Anything left over goes to post-1.0 (IDEAS.md) | — |
@@ -92,3 +93,24 @@ Work packages: Phase 3 = WP-030..034, M1 = WP-040..053 (PLAN.md). Later mileston
   - **N6:** the horn's recharge ratio (D-016).
   - **N7:** M2 was split, giving M1–M6.
   - **N8:** the Tide shell's client property was noted.
+
+**Round 2 (a new fresh reviewer): FAIL.** 1 must-fix, 11 should-fix, 4 notes.
+- **Scores:** F4 V4 R4 M4 D4 C4 **Fe3**.
+- **Must-fix, fixed (D-017):** the bloom heart now has a source in M3, the bloom-patch feature (world.md §3).
+- **Should-fix:**
+  - **Milestone ordering:** the songwood set moved to M3, and the blight seams are marked as an M4 addition.
+  - **M1 WP dependencies and inputs:** fixed in PLAN.md, and the ichor pools moved into WP-045.
+  - **Basin and Tide performance DoDs:** they now use Flow-boundary levels and p95/max MSPT, with the budgets in system_tides.md.
+  - **Music reactions:** they now have a mechanism, a client listener (world.md §3.2).
+  - **The horn:** its rules are in items.md §1.2: per-player charges, calm defined as a lull, and gate keys.
+  - **Singer edge cases:** it can't die, it reacts to a held soul block, and late arrivals get no horn.
+  - **Songwood sapling:** added.
+  - **Vision changes:** recorded in D-017 (the blight colour is back to the vision's; the gate mound; home reactions).
+  - **Fallbacks:** one per spike.
+  - **check_bible.py:** hardened.
+  - **M1 quality bars:** added (BALANCE, Blub previews, a Flow membrane shot, ichor numbers).
+- **Notes:**
+  - M4 is lighter now.
+  - Befriending is limited and has a tell (the allay precedent).
+  - The advancement root is now "The Sift".
+  - The PLAN and decision housekeeping is done.
