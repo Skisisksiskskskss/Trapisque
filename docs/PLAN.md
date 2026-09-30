@@ -12,7 +12,7 @@ Only one WP is IN PROGRESS at a time.
 | WP-005 | Vanilla study I: world (dimension, noise, biomes, env attributes, portals, jigsaw) | 0 | L | DONE |
 | WP-006 | Vanilla study II: entities (Brain, goals, vibrations/sculk, models/anims, boss bars) | 0 | L | DONE |
 | WP-007 | Vanilla study III: plumbing (datagen, SavedData/attachments, payloads, GameTest) | 0 | M | DONE |
-| WP-010 | Vision I: fantasy, tone, pillars, journey, progression | 1 | XL | IN PROGRESS |
+| WP-010 | Vision I: fantasy, tone, pillars, journey, progression | 1 | XL | DONE |
 | WP-011 | Vision II: entry and return path (≥12 ideas) | 1 | L | TODO |
 | WP-012 | Vision III: the dimension's rules (+ env-attribute mapping) | 1 | M | TODO |
 | WP-013 | Vision IV: core systems (Tides, souls, sculk, sound, Illagers) | 1 | L | TODO |
@@ -158,19 +158,20 @@ Deliverable: `docs/DESIGN/00_VISION.md` (the frozen vision) + focused appendices
 ### WP-010 Vision I: fantasy, tone, pillars, player journey, progression placement
 - Phase / Milestone: 1 / —
 - Tier: XL
-- Status: TODO
+- Status: DONE
 - Depends on: WP-003, WP-004, WP-005..007
 - Goal: Choose the Sift's fantasy (one sentence), tone and 3–5 pillars from ≥12 distinct vision concepts; write the player journey (rumor → … → why you come back) and where the Sift sits in vanilla progression.
 - Inputs (read ONLY these): RESEARCH.md §0–8, RESEARCH_BESTIARY.md (patterns section), VANILLA_ANALOGS W4/E4, D-002.
 - Deliverables: docs/DESIGN/vision/concepts.md (≥12 concepts, ≥2 deliberately unusual, rubric table); 00_VISION.md sections Fantasy/Tone/Pillars/Journey/Progression; D-005.
 - Definition of Done:
-  - [ ] ≥12 concepts written before any scoring; ≥2 marked unusual.
-  - [ ] Rubric table (7 criteria × concepts) and a pick/merge with reasons in D-005.
-  - [ ] Pillars are testable ("a feature passes this pillar if …").
-  - [ ] Progression placement names requirements and rewards and explains why no vanilla step becomes pointless.
+  - [x] ≥12 concepts written before any scoring; ≥2 marked unusual. — 14 concepts, 3 unusual (vision/concepts.md §2).
+  - [x] Rubric table (7 criteria × concepts) and a pick/merge with reasons in D-005. — concepts.md §3–4; D-005.
+  - [x] Pillars are testable. — 00_VISION.md §3 table ("A feature passes if…").
+  - [x] Progression placement names requirements and rewards and explains why no vanilla step becomes pointless. — 00_VISION.md §6 (requires / gives / never gives / why intact).
 - Iteration budget: critique happens in WP-014; self-check 1 pass here.
 - Exit ramp: if no concept scores ≥4 everywhere, merge the two best and log the weak criterion.
 - Log:
+  - 2026-09-30: research → 14 concepts → rubric → merge (D-005); 00_VISION.md §1–6 written; 4 parked ideas → IDEAS.md. Self-check (weaknesses first): (1) rubric scores are one author's judgement — WP-014's fresh reviewer re-scores; (2) "what comes home" lists capabilities whose balance is unproven — Phase 2/BALANCE; (3) journey's Rumor stage depends on the WP-011 entry design — kept generic until then.
 
 ### WP-011 Vision II: entry and return path
 - Phase / Milestone: 1 / —

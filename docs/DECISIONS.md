@@ -74,3 +74,18 @@ Format: `## D-### <title> (<date>) [supersedes D-### if any]` then Context · Op
 **Consequences.** None to content. From now on the "never edit" rule applies without exception.
 
 **Revisit if.** Never (unless the owner supplies a new mission text).
+
+---
+
+## D-005 Vision direction: "the Deep Dark inverted, breathing with the Tides" (2026-09-30)
+**Context.** Phase 1 needs one fantasy, a tone and 3–5 pillars (WP-010). Mojang's bar for a dimension: a functional "reason to exist" that distinguishes it (RESEARCH.md S-W1). Three fan mods already use the Ancient City frame, so distinctness must come from what the Sift is *for*.
+
+**Options considered.** 14 concepts in `docs/DESIGN/vision/concepts.md` (Song Dimension, Soul Ecology, Tide World, Healing the Sculk, Resistance, Menagerie, Frontier, Mirror of the Deep Dark, Great Instrument*, Living Giant*, Echo Navigation*, Soul Storm Runs, Pastoral Haven, Singer's Choir; * = deliberately unusual), scored on the §7.1 rubric.
+
+**Decision.** Merge **Mirror of the Deep Dark (33) + Tide World (33)**, made tangible by **song (30)** and **souls (29)**, with the Illager occupation and companions as content. Fantasy: *"The Sift is the living heart the Deep Dark lost: a luminous world of healthy sculk that answers sound instead of punishing it, where light, creatures and souls rise and fall with the Tides."* Pillars P1 Sound brings life · P2 The Tide sets the rules · P3 Souls are the lifeblood · P4 Wonder first, danger earned.
+
+**Why.** It is the only combination whose reason to exist is a pair of verbs no dimension offers (*read the Tide, answer with sound*), taken straight from canon (the Tides are a "time cycle"; song opens the portal; healthy sculk thrives there), expressed in vanilla grammar (vibrations, note blocks, timelines), and it gives the Overworld something back.
+
+**Consequences.** Every later feature must pass at least one pillar test (00_VISION.md §3) and link to ≥2 Sift systems. Unusual concepts are parked (single ideas may return via IDEAS.md).
+
+**Revisit if.** The owner rejects the direction at Gate A, or Mojang reveals Java Sift mechanics that contradict it.
