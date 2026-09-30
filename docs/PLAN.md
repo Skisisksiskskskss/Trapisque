@@ -9,7 +9,7 @@ Only one WP is IN PROGRESS at a time.
 | WP-002 | Toolchain + mod scaffold (build, runServer, genSources) | 0 | M | DONE |
 | WP-003 | Sift research I: canon, areas, Tides, access, lore, palette evidence | 0 | L | TODO |
 | WP-004 | Sift research II: bestiary (every mob, boss, character) | 0 | L | TODO |
-| WP-005 | Vanilla study I: world (dimension, noise, biomes, env attributes, portals, jigsaw) | 0 | L | TODO |
+| WP-005 | Vanilla study I: world (dimension, noise, biomes, env attributes, portals, jigsaw) | 0 | L | DONE |
 | WP-006 | Vanilla study II: entities (Brain, goals, vibrations/sculk, models/anims, boss bars) | 0 | L | TODO |
 | WP-007 | Vanilla study III: plumbing (datagen, SavedData/attachments, payloads, GameTest) | 0 | M | TODO |
 | WP-010 | Vision (Phase 1, XL) | 1 | XL | TODO (coarse) |
@@ -98,18 +98,20 @@ Only one WP is IN PROGRESS at a time.
 ### WP-005 Vanilla study I: world
 - Phase / Milestone: 0 / —
 - Tier: L
-- Status: TODO
+- Status: DONE
 - Depends on: WP-002 (sources available)
 - Goal: Document how 26.3 implements dimensions, dimension types, noise settings, biomes, environment attributes, portals/teleport transitions and jigsaw structures — with file/class locations, patterns and gotchas.
 - Inputs (read ONLY these): 26.3 sources + vanilla data in the jar; Fabric docs for worldgen/dynamic registries.
 - Deliverables: docs/VANILLA_ANALOGS.md sections W1–W7.
 - Definition of Done:
-  - [ ] Each section names real 26.3 classes/paths (verified by grep in sources/jar), key patterns, and gotchas.
-  - [ ] Environment attributes: full list of attributes + what can be per-dimension/per-biome and whether they can be time/state-driven (answers "how far they go").
-  - [ ] Portal/teleport path traced end-to-end for Nether + End (classes named).
+  - [x] Each section names real 26.3 classes/paths (verified by grep in sources/jar), key patterns, and gotchas. — W1–W7 written from the decompiled sources + jar data; two from-memory claims (Nether delay, cardinal_light values) re-verified and corrected.
+  - [x] Environment attributes: full list + what can be per-dimension/per-biome and whether they can be time/state-driven. — W4: all 51 ids, flags, types/modifiers, layer order (dimension → biome → timelines → weather), clock API + `/time` support; registries are mod-extensible.
+  - [x] Portal/teleport path traced end-to-end for Nether + End. — W5: `entityInside` → `setAsInsidePortal` → `PortalProcessor` → `getPortalDestination` → `TeleportTransition`; Nether traced to `PortalForcer.findClosestPortalPosition/createPortal` (POI-based), End to `EndPlatformFeature.createEndPlatform` + respawn return.
 - Iteration budget: critique rounds ≤ 2, fix hypotheses n/a
 - Exit ramp: any system not fully traced is marked "partial — traced up to X" with the next file to read.
 - Log:
+  - 2026-09-30: key discovery — 26.3 world clocks + timelines + environment attributes are a complete, synced, persisted, command-controllable, data-driven "time-varying rules" system → prime Tide implementation candidate (to be weighed in Phase 1). Ancient City frame measured from NBT (22×8, 20×6 opening, anchor jigsaw on top).
+  - Self-critique round 1 (weaknesses first): (1) W2 has no worked density-function recipe — partial, next read `density_function/overworld/final_density.json` + `nether/base_3d_noise.json` when the first terrain WP starts; (2) W3 lacks the multi-noise parameter-list schema — partial, next read `multi_noise_biome_source_parameter_list/nether.json` + `MultiNoiseBiomeSourceParameterList.java`; (3) W6 covers the Ancient City only — Trial Chambers (`worldgen/structure/trial_chambers.json`, pool aliases) deferred to the first structure WP. No must-fix for Phase 1 needs; strengths: W4/W5/W6 facts are measured, not remembered.
 
 ### WP-006 Vanilla study II: entities
 - Phase / Milestone: 0 / —
