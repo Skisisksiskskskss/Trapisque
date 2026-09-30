@@ -1,24 +1,18 @@
 # STATUS (session 1, 2026-09-30)
-- **Phase / Milestone:** Phase 1 complete → **Gate A (waiting for the owner)**. Phase 0 is complete (WP-001 to WP-007 DONE).
-- **Current WP:** none in progress. WP-014 is DONE; the vision is FROZEN for Gate A.
-- **Last session:**
-  - **Phase 0:**
-    - toolchain pinned (D-001); no official Java Sift content (D-002);
-    - the scaffold builds, the dedicated server boots, and the headless client works;
-    - 26.3 sources studied (VANILLA_ANALOGS).
-    - Research passed review round 3: 273 quotes machine-verified against the saved sources, 0 mismatches.
-  - **Phase 1:** the vision went through 3 adversarial critique rounds (5 → 3 → 2 must-fix, all fixed), then the §5.5 cap (D-005 to D-013).
-- **Next 3 actions (after the owner replies):**
-  1. Apply any Gate A changes the owner asks for.
-  2. Phase 2: write the Phase 2 WPs into PLAN.md (content bible, roadmap, M1 slice).
-  3. Start the content bible (01_CONTENT_BIBLE.md) from the frozen vision's Must/Should/Could tiers.
+- **Phase / Milestone:** Phase 2, content bible and roadmap. Phases 0 and 1 are complete; Gate A was self-reviewed.
+- **Autonomy:** **full-auto** from Gate A on (D-014, the owner's instruction). Gates are self-reviews; nothing waits for the owner.
+- **Current WP:** WP-020 Content bible I: world (IN PROGRESS).
+- **Next 3 actions:**
+  1. WP-020: write docs/DESIGN/bible/world.md (tiered world inventory).
+  2. WP-021: creature verdicts and roster (bible/creatures.md).
+  3. WP-022: items, gear, food, advancements, audio, mechanics (bible/items.md).
 - **Build:** ✅ scaffold (`./gradlew build` green, `-Xlint:all` clean)
 - **Tests:** 0/0 (none yet; Phase 3)
 - **Server boot:** ✅ (runServer "Done", no `thesift` warnings)
-- **Blockers:** none. The Netlify site `magnificent-gelato-563c55` fails on every PR because of how it is configured (owner-side; see the PR comment).
-- **Awaiting owner:** Gate A (below).
+- **Blockers:** none. The Netlify site `magnificent-gelato-563c55` fails on every PR because of its own configuration (owner-side; see the PR comment).
+- **Awaiting owner:** nothing (full-auto).
 
-## Gate A: the vision (Phase 1)
+## Gate A: the vision (Phase 1) — self-reviewed (D-014)
 **Situation.**
 - Phase 0 and Phase 1 are done. The empty mod builds and both the server and a headless client boot on 26.3. Mojang has shipped no Sift content for Java.
 - The canon research passed review.
@@ -48,7 +42,7 @@
 - **Mixins:** one planned (weather, D-008). Phase 3 will spike the wade-through ichor and the tide basins first (D-013), with a fallback to static pools.
 - **Netlify:** the site `magnificent-gelato-563c55` fails on every PR because of its own configuration.
 
-**If you reply "go":** the vision stays frozen as recommended, and Phase 2 starts: the content bible and roadmap, ending at Gate B.
+**Outcome:** the owner asked for full autonomy (D-014), so the recommendation was taken: the vision stays frozen as written, and Phase 2 started.
 
 ## Environment notes for a fresh session
 - Gradle downloads JDK 25 itself (`gradle-daemon-jvm.properties`).

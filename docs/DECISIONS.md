@@ -296,3 +296,23 @@ Hearing was also defined two ways.
 
 **Revisit if.** The spike shows a wading liquid feels wrong. The alternative is a small Entity mixin extending fluid physics to `#thesift:ichor`, with its own decision record.
 
+---
+
+## D-014 AUTONOMY is full-auto from Gate A on (2026-09-30) [overrides §0 AUTONOMY = checkpoints]
+**Context.** `00_MISSION.md` §0 set `AUTONOMY: checkpoints` (stop at Gates A/B/C). At Gate A the owner wrote: "If u want my input, DONT … I want everything to be done without me being there." The mission file is never edited, so the change is recorded here.
+
+**Decision.** From 2026-09-30 the project runs as **full-auto** (§0: "never stop. Decide, log the decision in DECISIONS.md, keep going").
+- Gates A, B and C become **self-reviews**: the gate summary goes into STATUS.md, the recommended option is taken, and work continues (§5.7).
+- The remaining reasons to stop are the mission's own exceptions: §3.3 (official Sift content found), a legal or licensing question, or a problem that makes a Core feature impossible. Even then, I write the issue down, take the safest reversible option, and keep going wherever I can.
+
+**Gate A self-review.** The recommendation in STATUS.md's Gate A section is taken as the owner's default:
+- the vision stays frozen as written;
+- the entry is the soul offering plus music;
+- the Tides are the literal ichor tide;
+- 1.0 is Singer's Meadow only;
+- the boss is the Sculk Monstrosity.
+
+The listed alternatives remain recorded in D-006/D-009/D-011 if the owner ever wants them.
+
+**Revisit if.** The owner says otherwise.
+
