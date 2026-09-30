@@ -18,6 +18,9 @@
 		],
 		"client": [
 			"thesift.client.TheSiftClient"
+		],
+		"fabric-datagen": [
+			"thesift.datagen.TheSiftDataGenerator"
 		]
 	},
 	"depends": {

@@ -25,6 +25,20 @@ loom {
 	}
 }
 
+fabricApi {
+	// Datagen runs inside the client (models are client-side in 26.3), so it needs a display:
+	// use tools/dev/datagen.sh, which wraps it in xvfb (D-019).
+	configureDataGeneration {
+		client = true
+	}
+	// Server GameTests live in their own source set so they never ship in the jar (D-019).
+	configureTests {
+		createSourceSet = true
+		modId = "thesift-gametest"
+		enableClientGameTests = false
+	}
+}
+
 dependencies {
 	// Versions live in gradle.properties (pinned by docs/DECISIONS.md D-001).
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"

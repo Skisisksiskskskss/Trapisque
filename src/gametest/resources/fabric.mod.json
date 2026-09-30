@@ -1,0 +1,17 @@
+{
+	"schemaVersion": 1,
+	"id": "thesift-gametest",
+	"version": "1.0.0",
+	"name": "The Sift GameTests",
+	"description": "Server GameTests for The Sift. Development only; never shipped.",
+	"license": "MIT",
+	"environment": "*",
+	"entrypoints": {
+		"fabric-gametest": [
+			"thesift.test.SmokeTest"
+		]
+	},
+	"depends": {
+		"thesift": "*"
+	}
+}

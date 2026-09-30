@@ -405,3 +405,75 @@ It also found that M1's Tide changed nothing in play (SF4), since the mission as
 - WP-030 records its architecture decisions as D-018 onward.
 
 **Revisit if.** Client-side reactions feel detached from gameplay music in multiplayer. A player far away hears less, so they see less. That matches vanilla subtitles.
+
+---
+
+## D-018 Schedule: a playable build by the end of the week (2026-09-30)
+**Context.** The owner wants to try the mod by the end of this week (2026-10-04). They said: "im not saying go back to working carelessly … every second counts, and try saving some times."
+
+**Options considered.**
+- (a) Keep the full sequence and ship M1 when it's done; that probably misses the week.
+- (b) Cut quality bars to hit the date; the owner ruled this out.
+- (c) Keep every quality bar, pipeline the work, and ship an early **preview build** as soon as the core loop runs *(chosen)*.
+
+**Decision.**
+- **Pipelining.** Phase 3 code starts while the last bible review runs, and WPs that don't touch the same files overlap. Commits stay per WP.
+- **Preview build first.** It needs the dimension, Meadow terrain with block set I, entry and return, the Tide core, and ichor with basins. It is tagged `v0.1.0-alpha.preview` when it builds, boots, passes its tests and runs in a headless walkthrough. The Blub, the final art passes, audio and advancements follow in the M1 build (`v0.1.0-alpha`).
+- **Right-sized ceremony.**
+  - Small design docs (system_entry.md, the biome doc) get one critique round.
+  - system_tides.md and blocks_set1.md get one round plus a self-review.
+  - The Blub, the one finished mob, keeps the full three rounds.
+  - Tests, datagen no-diff, a clean server boot and previews that are actually looked at stay mandatory.
+
+**Why.** The owner's date is a real constraint. Pipelining and a preview build move the first playable moment forward without lowering any bar.
+
+**Consequences.** PLAN.md gets a "Preview build" line in Phase 4. STATUS.md tracks the date.
+
+**Revisit if.** The preview slips past 2026-10-03. In that case ship whatever runs, with its known issues written into PLAYTEST.md.
+
+---
+
+## D-019 Architecture: packages, registration, split, payloads, state, config, tests, CI (2026-09-30) [WP-030]
+**Context.** Mission Phase 3 requires a recorded decision for each architecture topic before content lands. Facts checked in the 26.3 sources and Fabric API 0.161.0:
+- Vanilla registers blocks and items with `Properties.setId(key)`. `Blocks.register(ResourceKey, …)` is access-widened to public by Fabric.
+- World clocks sync to clients in `ClientboundSetTimePacket`.
+- `DimensionEvents.MODIFY_ATTRIBUTES` sets attribute values per dimension.
+- `SavedDataType` is a record of id, constructor, codec and data-fixer type.
+- Fabric client datagen runs inside `Minecraft.<init>` after the render backend starts, so it needs a display.
+- Loom 1.18 offers `fabricApi.configureDataGeneration` and `configureTests`.
+
+**Options considered.**
+- **Registration:** DeferredRegister-style suppliers (not Fabric's idiom) vs static holder classes that mirror vanilla *(chosen)*.
+- **Datagen:** hand-written JSON (error-prone) vs Fabric datagen *(chosen)*, with client datagen under xvfb.
+- **Tide sync:** a custom payload vs vanilla's clock sync *(chosen: no payload)*.
+- **Tests:** tests in the main jar vs a separate `gametest` source set that doesn't ship *(chosen)*.
+
+**Decision.**
+1. **Packages.**
+   - Common: `thesift` (entry, `id()`) and `thesift.registry` (`ModBlocks`, `ModItems`, `ModFluids`, `ModEntities`, `ModBlockEntities`, `ModSounds`, `ModAttributes`, `ModParticles`, `ModTags`, `ModCreativeTab`).
+   - Feature packages: `thesift.world` (dimension keys, Tide logic, saved data), `thesift.block`, `thesift.fluid`, `thesift.entity.<mob>`, `thesift.entry` (frames, membrane, gate).
+   - Mixins: `thesift.mixin` (the weather mixin only, D-008).
+   - Client: `thesift.client` (renderers, models, animations, fluid rendering, music reactions, item properties).
+   - Datagen: `thesift.datagen` in the client source set (`fabric-datagen` entrypoint).
+   - Tests: `thesift.test` in the `gametest` source set.
+2. **Registration.** Static final fields in holder classes. The helpers mirror vanilla: `register(name, factory, properties)` calls `properties.setId(key)`, then `Registry.register`. `TheSift.onInitialize` calls each holder's `init()` in a fixed order. **Dynamic registries** are authored in datagen: bootstrap methods on a `RegistrySetBuilder` for the dimension type, noise settings, biomes, configured and placed features, the world clock and the timeline, written by a `FabricDynamicRegistryProvider`. The keys live in `thesift.world.ModWorldgen`.
+3. **Client/server split.** Loom's split source sets. Common code never references client classes. The server is authoritative, and client code only renders.
+4. **Networking.** No custom payloads in M1: the Tide state reaches clients through vanilla clock sync and environment attributes. A later payload is a record with a `StreamCodec`, registered through `PayloadTypeRegistry`, one per message.
+5. **Persistent state.**
+   - World-global state (first-crossing flag, frame charges, gate links) is `SavedData` with a `SavedDataType` codec, stored in the Overworld's data storage.
+   - Per-location state (tide vents, chorus stones) lives in block entities.
+   - Per-player state (song charges, M4) is a persistent Fabric data attachment.
+6. **Config.** None. Server-admin switches, if any, are gamerules (vanilla's idiom).
+7. **Tests.** Server GameTests live in the `gametest` source set, mod id `thesift-gametest`, and run with `./gradlew runGameTest`, which is wired into `check`. Client GameTests with screenshots are a later option, under xvfb.
+8. **CI.** GitHub Actions on Ubuntu with JDK 25:
+   - `./gradlew build` (runs the GameTests through `check`);
+   - `tools/docs/check_bible.py`;
+   - `xvfb-run ./gradlew runDatagen` followed by `git diff --exit-code` for the no-diff check.
+
+**Why.** It matches vanilla and Fabric idioms, keeps test code out of the jar, needs no custom networking for M1, and makes every generated file reproducible.
+
+**Consequences.**
+- Datagen needs a display, so developers and CI run it under xvfb (`tools/dev/datagen.sh`).
+- Generated files are committed under `src/main/generated`.
+
+**Revisit if.** Client datagen proves flaky in CI. The fallback is to run the no-diff check locally before each push and log it in BLOCKERS.md.
