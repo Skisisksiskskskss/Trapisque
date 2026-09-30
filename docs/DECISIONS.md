@@ -112,7 +112,7 @@ Format: `## D-### <title> (<date>) [supersedes D-### if any]` then Context · Op
 
 **Options considered.** `docs/DESIGN/vision/systems.md`: Tides T1–T10, souls S1–S10, sculk H1–H6, sound N1–N7, Illagers I1–I6 (unusual ones in italics), all rubric-scored.
 
-**Decision.** Tides = **T1** day-like 24 000-tick cycle (Thrive 10k · Flow 2k · Endure 10k · Flow 2k) on a `thesift:tides` clock + timeline, with Sift gameplay values as **our own registered environment attributes** keyed on that timeline; T3 (Tide-shifting lever) as Should. Souls = **S1+S3+S4+S8**: souls *are* XP; healthy sculk banks and blooms with it; lossy soul blocks; Illager soul tanks. No HUD meter. Sculk = **H1+H2** (inversion + blight). Sound = **N1+N2+N3** (+N4/N5 content). Illagers = **I1+I5+I6** core, **I2** endgame, I3 deferred.
+**Decision.** (Feasibility of the Tide architecture verified by spike — VANILLA_ANALOGS W4.) Tides = **T1** day-like 24 000-tick cycle (Thrive 10k · Flow 2k · Endure 10k · Flow 2k) on a `thesift:tides` clock + timeline, with Sift gameplay values as **our own registered environment attributes** keyed on that timeline; T3 (Tide-shifting lever) as Should. Souls = **S1+S3+S4+S8**: souls *are* XP; healthy sculk banks and blooms with it; lossy soul blocks; Illager soul tanks. No HUD meter. Sculk = **H1+H2** (inversion + blight). Sound = **N1+N2+N3** (+N4/N5 content). Illagers = **I1+I5+I6** core, **I2** endgame, I3 deferred.
 
 **Why.** Highest rubric totals; each keeps canon while using vanilla grammar (XP/catalyst, allay-style music liking, day-night-style timelines, outposts). Together they form one loop where every system feeds at least three others (systems.md §6).
 
