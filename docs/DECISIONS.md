@@ -93,6 +93,8 @@ Format: `## D-### <title> (<date>) [supersedes D-### if any]` then Context · Op
 ---
 
 ## D-006 Entry and return path: "souls wake it, song opens it" (2026-09-30)
+**Status: superseded in part.** The payment and clock-start details below were revised twice. The current entry design is **D-010** and `DESIGN/vision/entry_path.md`.
+
 **Context.** WP-011: a survival entry and return path. Canon: the Ancient City centre frame is the Sift portal, opened by the Note Block Machine / a Singer's song; rifts are the Illagers' temporary portals. Three fan mods already use the frame (RESEARCH.md §8).
 
 **Options considered.** 15 ideas scored in `docs/DESIGN/vision/entry_path.md`: melody puzzle (23), three resonant note blocks (26), **souls wake it + song opens it (32)**, warden trophy (22), echo tuning fork (26), rift first (28), Illager rift incursions (26), Sift disc (25), goat horn (22), calibrated chord (23), allay escort (22), soul journey* (21), build-your-own gate* (26), Soul Sand Valley rifts* (22), bottled echo (26). (* unusual)
@@ -122,6 +124,8 @@ Format: `## D-### <title> (<date>) [supersedes D-### if any]` then Context · Op
 ---
 
 ## D-007 Core systems at concept level (2026-09-30)
+**Status: superseded in part.** See the revision below, then **D-011** (the Tides) and **D-012** (blight). `DESIGN/vision/systems.md` is authoritative.
+
 **Context.** WP-013: concept designs for the Tides, soul economy, healthy vs corrupted sculk, sound, and the Illager occupation, each linked to ≥2 others.
 
 **Options considered.** `docs/DESIGN/vision/systems.md`: Tides T1–T10, souls S1–S10, sculk H1–H6, sound N1–N7, Illagers I1–I6 (unusual ones in italics), all rubric-scored.
@@ -181,6 +185,8 @@ These were verified in the 26.3 sources during WP-014.
 ---
 
 ## D-009 Scope of 1.0: one boss, one miniboss (2026-09-30)
+**Status: revised after critique round 2** (see the revision at the end of this record).
+
 **Context.** Critique round 1 (SF10) found the draft over-scoped against "fewer, deeper". It promised four bosses (Monstrosity, Monarch, Harmonizer, a Keep lieutenant), plus a new fluid, an aurora, companions, gear, camps, tanks and gates. Vanilla dimensions have at most one boss each.
 
 **Options.**
@@ -197,4 +203,75 @@ These were verified in the 26.3 sources during WP-014.
 **Consequences.** The Phase 2 inventory lists only these two bosses as Must. The Monarch's sculker nest is designed as a post-1.0 expansion hook.
 
 **Revisit if.** The owner prefers (C) or (A) at Gate A.
+
+**Revision (2026-09-30, WP-014 critique round 2).** The reviewer found 1.0 still too large, and the Singer, who grants the gift of song, missing.
+- **1.0 is now one region done deeply: Singer's Meadow.** It includes Lullaby Hills as a sub-biome and the tide basins.
+  - **Natives:** Blub, Echo Golem, Slabber, **Singer**; Trills as particles.
+  - **Hostiles:** Bloombud, Nester (the listening hunter), Pollinator, Sprout.
+  - **Bosses:** the Sculk Monstrosity (boss) and the Harmonizer (miniboss).
+- **1.1:** the Carapace, its sculkers (Stalker, Scavenger) and the Monarch.
+- **Precedent:** the Nether and the End each shipped as one biome at first.
+- **Alternative for Gate A:** keep the Carapace in 1.0 and move the Monstrosity to 1.1.
+
+---
+
+## D-010 Entry payment by deliberate action; the Tide clock starts at the first crossing (2026-09-30)
+**Context.** Critique round 2 (MF2) showed that paying by crouching in the opening inferred consent from the Deep Dark's stealth posture: `#ignore_vibrations_sneaking` makes crouching the default there. It also found jukeboxes aren't vibrations (SF3), and that starting the clock at the first *opening* doesn't guarantee a Thrive arrival (SF4).
+
+**Decision.**
+- Offering is a **deliberate hold-*use*** with an empty hand, on the frame or on a bloom heart. XP streams at about 50 points per second; releasing stops it. Detection uses Fabric `UseBlockCallback` on known frame positions, with no per-tick scan.
+- Music is detected by a vibration listener (`note_block_play`, `instrument_play`) plus a separate `jukebox_play` listener at vanilla's radius of 10, as `Allay.JukeboxListener` does.
+- The Tide clock is paused at Thrive by startup code (clocks default to unpaused) until the world's **first crossing**.
+
+**Why.** Vanilla spends XP only on a deliberate action (the enchanting table, the anvil), so this matches vanilla grammar. Brushing is the precedent for a hold-to-act verb. Each part was checked in the 26.3 source.
+
+**Consequences.** BALANCE.md pins the offer rate and the 1 395-point price. The frame needs a use hook, two listeners and a saved "first crossing" flag.
+
+**Revisit if.** Playtests show players don't think to *use* the frame. The fallback is a stronger visual hint, not a posture trigger.
+
+---
+
+## D-011 The Tides are literal ichor tides; one hearing rule (2026-09-30)
+**Context.** Critique round 2 (MF1) found three problems:
+- T1′ was still day/night plus one rule each.
+- Flow's tide-bridges could be bypassed with blocks.
+- Giving Flow bespoke rules contradicted the H-level canon "Flow: No effect".
+
+Hearing was also defined two ways.
+
+**Decision.**
+- **T1″: ichor rises and falls in generated tide basins.** Thrive is low tide (the flats are bare; flat-only reagents; growth). Flow is the tide moving (no effect on the player). Endure is high tide (flooded flats; hunters; Endure blooms at the waterline).
+- **The hearing rule:** only in Endure, each area's hunters (1.0: Nesters) hear exactly what a sculk sensor hears within 16 blocks, plus jukeboxes within 10. A vanilla vibration particle is the tell.
+- Tide-bridges are cut.
+
+**Why.**
+- It gives each Tide a visible state that blocks can't bypass: what is *exposed* changes, not who can cross.
+- It reads canon's "affect … traversing" literally, and keeps Flow effect-free for the player.
+- It reuses ichor, a canon hazard, instead of adding a new system.
+
+**Consequences.**
+- One controller block entity per basin: it moves one layer at a time during Flow, only in loaded chunks, and snaps to the current level on chunk load.
+- Basin ichor never spreads outside the basin.
+- Hunters need a `VibrationSystem` and a jukebox listener.
+
+**Revisit if.** Basin updates cost too much in profiling (fallback: smaller or fewer basins); playtests show the waterline is too subtle.
+
+---
+
+## D-012 Blight is its own XP-free block family, spreading only around active camps (2026-09-30)
+**Context.** Critique round 2 (MF3) found that making blight *vanilla* sculk (the round-1 fix) leaked experience: mined sculk drops 1–5 XP, and every vanilla catalyst would have made a blight patch a sculk farm. It also left open whether the occupation is static or dynamic (SF6).
+
+**Decision.**
+- Blight is **our own block family** copying the Deep Dark's grammar: a pulsing texture, creeping veins, tendrils that listen, shriekers.
+  - It drops no XP.
+  - Its shriekers give Darkness and alert hunters, and never touch the vanilla warden warning tracker.
+- Healthy sculk is petalled and **never pulses**, so the two differ in shape and motion, not only in colour.
+- Blight spreads only within a capped radius of an **active** Illager rig. It stops when the rig is broken. Cured land stays cured.
+- Vanilla sculk placed by players behaves exactly as vanilla.
+
+**Why.** It closes the XP side door without mixins into vanilla blocks, and keeps non-colour readability. It also makes the occupation visibly change the land, which vanilla outposts don't do.
+
+**Consequences.** Phase 2 must write the art rules (pulse vs still, vein vs petal) into the content bible. Spread is a bounded, per-camp operation.
+
+**Revisit if.** Art review shows the two families aren't distinguishable without colour.
 

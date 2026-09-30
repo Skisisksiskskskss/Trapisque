@@ -17,3 +17,5 @@ One line per idea. Reviewed only at milestone planning (§5.5 scope creep rule).
 - (WP-014) The Monarch and the sculker nest (the Endure apex hunter); the Illager Keep (I2); rift incursions (I3). Post-1.0 roadmap (D-009).
 - (WP-014) The Tide lever (T3): a soul block at a late bell hastens Thrive only, with sleep-style consent. Post-1.0.
 - (WP-014) A Tide sensor block, if inverted daylight detectors turn out to be too obscure in playtests.
+- (WP-014 r2) Tide-bridges (Flow-only passages) were cut, because blocks bypass them. Bounce blooms may return as static terrain (canon "bouncy slimes used to access higher areas").
+- (WP-014 r2) 1.1: the Carapace with its sculkers (Stalker, Scavenger) as listening hunters, and the Monarch (D-009).

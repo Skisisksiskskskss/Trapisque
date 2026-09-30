@@ -253,7 +253,7 @@ Deliverable: `docs/DESIGN/00_VISION.md` (the frozen vision) + focused appendices
 ### WP-014 Vision critique, freeze and Gate A
 - Phase / Milestone: 1 / —
 - Tier: XL
-- Status: IN PROGRESS (critique round 2 of ≤3)
+- Status: IN PROGRESS (critique round 3 of ≤3)
 - Depends on: WP-010..013
 - Goal: Independent adversarial review of 00_VISION.md (fresh reviewer, rubric only), fix, freeze, and present Gate A.
 - Inputs (read ONLY these): 00_VISION.md, docs/DESIGN/vision/*, §7.1 rubric.
@@ -278,6 +278,21 @@ Deliverable: `docs/DESIGN/00_VISION.md` (the frozen vision) + focused appendices
     - custom spawners are Overworld-only;
     - no Fabric per-dimension sky hook in 26.3.
   - Revisions: systems.md (T1′ per-Tide rules, a 30 000-tick cycle, the one-way soul ledger, N8, blight = vanilla sculk, 1.0 scope); rules.md (weather mixin, no sun or moon, clocks spin, bed rest, per-biome spawns, full attribute map); entry_path.md (crouch-to-offer, price 1 395 points, staged hints, bounded arrival search, explicit links); 00_VISION.md; D-006/D-007 revisions; new D-008 (weather mixin) and D-009 (1.0 scope).
+  - 2026-09-30 round 2 (a new fresh reviewer): **FAIL**, 3 must-fix, 9 should-fix, 7 notes; 14 of 63 scores < 4.
+    - It confirmed the round-1 engine claims in the source and found three facts the docs had missed. All were re-checked before any change:
+      - an unset `straw_bed_rule` defaults to "sleep when dark";
+      - `jukebox_play` isn't a vibration (allays use a separate listener);
+      - shriekers warn through a per-player `WardenSpawnTracker`, but only when they can summon.
+    - It also found light emission is per model element.
+    - Revisions:
+      - the Tides became literal ichor tides with one hearing rule (D-011);
+      - payment is a deliberate hold-*use* and the clock starts at the first crossing (D-010);
+      - blight is an XP-free block family, dynamic around active rigs (D-012);
+      - 1.0 is the Meadow only, with the Singer (D-009 revision);
+      - gear traits are Sift-only;
+      - rest resets the phantom timer only in Endure;
+      - status lines on D-006/D-007;
+      - VANILLA_ANALOGS W4/E4 extended.
 
 ## Phase 2+ (very coarse)
 - Phase 2: content bible + roadmap → Gate B.

@@ -50,6 +50,10 @@ Sections: **W** world (WP-005) · **E** entities (WP-006) · **P** plumbing (WP-
   - **The overworld skybox always draws the sun and moon** at `visual/sun_angle` and `visual/moon_angle` (`SkyRenderer.renderSunMoonAndStars`). To hide them, keep both angles below the horizon and set `visual/sunrise_sunset_color` transparent. 26.3 Fabric API (fabric-rendering-v1 27.0.14) has **no per-dimension sky-renderer hook**; custom skies need a client mixin.
   - **Daylight detector:** signal = effective sky brightness × cos(adjusted sun angle); inverted = 15 − sky brightness. With the sun below the horizon, a normal detector reads 0, and an inverted one tracks darkness.
   - **The `advance_time` gamerule gates every clock** (`ServerClockManager.tick`, and `packNetworkState` sends rate 0).
+  - **Clocks start unpaused.** `ServerClockManager` creates instances with `paused = false`. To start a clock paused, call `setPaused(true)` from code at server start.
+  - **Daylight detector angle band.** The detector pulls the sun angle 20% toward 0°/360°. A normal detector reads 0 only when the angle lies between 112.5° and 247.5°, so park the sun at 180°.
+  - **Beds and straw beds** have separate rules: `gameplay/bed_rule` and `gameplay/straw_bed_rule`. The straw-bed default is `{can_sleep: when_dark, can_set_spawn: never, destroy_on_leave: true}`, and `overworld.json` sets both. A dimension that forbids sleep must set **both**.
+  - `time_since_rest` (phantoms) resets only in `ServerPlayer.startSleeping` and on death.
 
 ## W5. Portals and teleport transitions
 - **Where:** `world/level/block/Portal.java` (interface), `NetherPortalBlock`, `EndPortalBlock`, `EndGatewayBlock`, `world/entity/PortalProcessor.java`, `world/level/portal/{TeleportTransition,PortalForcer}.java`, `Entity#setAsInsidePortal / handlePortal / canUsePortal / getDimensionChangingDelay`.
@@ -104,6 +108,9 @@ Sections: **W** world (WP-005) · **E** entities (WP-006) · **P** plumbing (WP-
   - **The catalyst eats any death's XP, not only player kills.** `CatalystListener.handleGameEvent` checks `!mob.wasExperienceConsumed()`, `mob.shouldDropExperience()` (not a baby) and `getExperienceReward(...) > 0`, then calls `skipDropExperience()`. It never checks `lastHurtByPlayerMemoryTime`. That is why automated kills feed vanilla sculk farms.
   - Orbs themselves drop only when the player recently hurt the mob (`LivingEntity` ~L1520).
   - **Mined sculk drops XP:** sculk 1 (`SculkBlock`); sensor, shrieker and catalyst 5 each.
+  - **Shriekers warn only when they can summon.** `SculkShriekerBlockEntity.tryShriek` calls `tryToWarn`, which updates the per-player `WardenSpawnTracker` (−1 level per 12 000 ticks), only if `canRespond`: `CAN_SUMMON` true, not peaceful, and `spawn_wardens` on. Player-placed shriekers have `CAN_SUMMON` false, so they only shriek.
+  - **Music events:** `note_block_play` and `instrument_play` (goat horn) are in `#vibrations`; **`jukebox_play` is not** (radius 10). Allays hear jukeboxes through a separate `Allay.JukeboxListener implements GameEventListener`.
+  - `#ignore_vibrations_sneaking` = step, swim, hit_ground, projectile_shoot, item_interact_start and item_interact_finish.
 
 ## E5. Models, keyframe animations, renderers, boss bars
 - **Where (client):** `client/model/monster/warden/WardenModel.java`, `client/animation/definitions/WardenAnimation.java` (also `SnifferAnimation`, …), `client/animation/{AnimationDefinition,AnimationChannel,Keyframe,KeyframeAnimations,KeyframeAnimation}`, `client/renderer/entity/WardenRenderer.java`, `renderer/entity/state/WardenRenderState.java`, `renderer/entity/layers/LivingEntityEmissiveLayer`.

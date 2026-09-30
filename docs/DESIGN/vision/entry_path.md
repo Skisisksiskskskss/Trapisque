@@ -1,4 +1,4 @@
-# Entry and return path (WP-011; revised after WP-014 critique round 1)
+# Entry and return path (WP-011; revised after WP-014 critique rounds 1 and 2)
 
 ## Constraints gathered first
 - **Canon** (RESEARCH.md canon #2–5, §6):
@@ -42,7 +42,7 @@ Round-1 rescoring is marked ↓/↑ (see the notes below).
 | 1 | Melody puzzle | 5 | 4 | 3 | 3 | 1 | 3 | 4 | 23 |
 | 2 | Three resonant note blocks | 5 | 4 | 4 | 4 | 3 | 3 | 3 | 26 |
 | 3 | Souls wake it (orbs pulled in passively), song opens it | 3↓ | 3↓ | 2↓ | 4 | 3↓ | 5 | 4 | 24 |
-| **3′** | **Offer souls to wake it, song opens it** (the revised design below) | 4 | 4 | 4 | 4 | 3 | 5 | 4 | **28** |
+| **3′** | **Offer souls to wake it, song opens it** (the revised design below; since round 2, offering is a deliberate hold-use) | 4 | 4 | 4 | 4 | 4 | 5 | 4 | **29** |
 | 4 | Warden trophy | 3 | 4 | 4 | 3 | 1 | 2 | 5 | 22 |
 | 5 | Echo tuning fork | 3 | 5 | 4 | 3 | 3 | 3 | 5 | 26 |
 | 6 | Rift first | 5 | 3 | 3 | 5 | 5 | 4 | 3 | **28** |
@@ -63,28 +63,29 @@ Round-1 rescoring is marked ↓/↑ (see the notes below).
 - It loses Distinct, because Mielon's mod also "awakens it with sound".
 
 **Decisive calls:**
-- **#3′ and #6 tie at 28.** Rift-first as the *player's* front door would scatter random portals across the Overworld. That runs against hard rule 9.4 (minimal vanilla footprint outside the Sift) and against P4, since one-way rifts strand players who can't choose when to go.
+- **#3′ (29) edges #6 (28).** Distinct is scored 4: it is the only frame entry paid in souls. Music is a trigger, not a puzzle (unlike Mielon's melody), and the membrane previews the far side. Even at a tie, rift-first as the *player's* front door would scatter random portals across the Overworld. That runs against hard rule 9.4 (minimal vanilla footprint outside the Sift) and against P4, since one-way rifts strand players who can't choose when to go.
 - #1 is canon, but it is exactly an existing 26.3 mod's signature (Distinct 1).
-- #3′ wins: it uses both canon ingredients (souls and music), each state shows what it wants next, and it needs no new key item.
+- #3′ wins: it uses both canon ingredients (souls and music), each state shows what it wants next, it needs no new key item, and it never takes anything without a deliberate action.
 - Rift-first stays the main alternative at Gate A.
 
 ## Chosen design: "Offer souls to wake it; music opens it" (#3′)
-1. **Rumor (free, cosmetic).** A dormant frame **breathes**: faint soul wisps rise from the city's sculk and drift into its opening. When any mob dies within ~16 blocks, its soul visibly streams into the frame. The XP still drops normally; this is a hint, not a cost.
-2. **Notice.** A player who steps into the opening is noticed: the wisps curl toward them and a low hum deepens. Every cue has a visual and a subtitle.
-3. **Offer (the price, taken only with consent).**
-   - While a player **crouches inside the opening**, their XP bar visibly flows into the frame as a stream of souls. Crouching is the Deep Dark's usual posture, because it hides you from sensors.
-   - Standing up or stepping out stops it at once. Nothing else is ever taken.
+1. **Rumor (free, cosmetic).** A dormant frame **breathes**: faint soul wisps rise from the city's sculk and drift into its opening. When a mob dies within ~16 blocks, its soul visibly streams into the frame. That is rare, because Ancient Cities spawn no mobs, so the breathing is the main hint. The XP is untouched, or taken by a vanilla catalyst nearby as usual: this is a hint, not a cost.
+2. **Notice.** A player who comes near is noticed: the wisps curl toward them, the frame's inner edge brightens where they look, and a low hum deepens. Every cue has a visual and a subtitle.
+3. **Offer (the price, taken only by a deliberate action).**
+   - **Hold *use*** on the frame with an empty hand. Your XP bar visibly streams into it as souls, like brushing suspicious sand, at about 50 points per second. Release and it stops.
+   - Nothing is taken by standing, crouching, walking through, or any accident. Vanilla spends XP only on a deliberate action too: the enchanting table, the anvil.
    - Charge is stored per frame, so several players and several visits can pool it.
-   - **Price:** as much experience as reaching level 30 from zero, **1 395 points** (the level-30 enchantment milestone). This is a one-time cost per frame, tuned in BALANCE.md.
-   - Feeding happens in warden country, so the risk is earned, not added.
+   - **Price:** as much experience as reaching level 30 from zero, **1 395 points** (the level-30 enchantment milestone), about half a minute of offering. It is a one-time cost per frame, tuned in BALANCE.md.
+   - Feeding happens in warden country: offering and playing music make vibrations, so the risk is earned, not added.
 4. **Wake.**
    - The charge shows in steps: faint cyan specks on the reinforced deepslate, then a pulsing inner edge, then a steady light.
    - Once awake, the frame hums and **note particles drift from it**, which is the hint that it now wants music.
 5. **Open.**
-   - Any music played within range opens it: a note block, a jukebox, a goat horn, or later the gift of song.
+   - Any music played within range opens it: a note block or a goat horn (both vibrations), a jukebox, or later the gift of song.
+   - A jukebox needs its own listener, at vanilla's radius of 10: `jukebox_play` isn't a vibration, and allays hear jukeboxes the same way.
    - The 20×6 opening fills with a cyan membrane, our portal block.
    - The membrane **shows the Tide on the far side** through colour and particle shape (systems.md §1).
-   - The **first opening in a world starts the Tide clock at Thrive**, so the first arrival is always in Thrive.
+   - The Tide clock stays paused at Thrive until the **first crossing** in the world. So the first arrival in a world is in Thrive; later arrivals see the far-side Tide before they step through.
 6. **Cross.**
    - The standard portal transition (`Portal` + `TeleportTransition`, VANILLA_ANALOGS W5), with a Nether portal's delay, a soft chime and a music swell.
    - Arrival is at a **Sift-side gate**: a hill of red healthy sculk topped by an unbreakable Sift-stone frame.
@@ -114,19 +115,19 @@ A sandbox reverses that order on purpose:
 | Case | Handling |
 |---|---|
 | Another mod's portal already fills the frame (Mielon's The Sift on 26.3; others if they port) | Our logic runs only while the opening is air, so the first mod to open it wins. Documented as a known interaction |
-| A player walks through the opening without meaning to pay | Nothing is taken unless they crouch inside the opening. Walking through only brings the "noticed" cue |
-| A player crouches in the opening by accident (sneaking past sensors) | The stream is loud and visible, and standing up stops it at once. What was given stays as charge, so nothing is wasted |
+| A player walks through or crouches in the opening | Nothing is taken. Only holding *use* on the frame with an empty hand offers XP |
+| A player holds *use* by mistake | The stream is loud and visible, and release stops it at once. What was given stays as charge, so nothing is wasted |
 | Worlds created before the mod was installed | Frames are found from the saved Ancient City structure starts, so old worlds work too |
 | No Ancient Cities (superflat, custom worlds) | No survival entry; operators can use `/execute in thesift:the_sift`. Documented |
 | Frame edited in creative (reinforced deepslate broken) | The geometry check fails, so the frame stays dormant |
 | Wardens | Intended pressure; mining sculk near shriekers is the risk. The first trip carries the danger; later trips are easier. Accepted, as in vanilla |
 | Multiplayer | Charge pools across players. The gate is shared once open. Each player's first crossing grants their own advancement |
 | Peaceful | Works: offering needs no mobs |
-| `advance_time false` | The frame still opens. The Tide clock stays frozen wherever the admin set it (systems.md §1) |
+| `advance_time false` | The frame still opens. The Tide clock stays frozen where it is: at Thrive if nobody has crossed yet, otherwise wherever the admin set it (systems.md §1) |
 | Griefing | Frames and gates are unbreakable; the membrane obeys the portal rules; music reopens a removed membrane |
 
 ## Performance notes
 - Frames are located from Ancient City structure pieces (a known template and rotation give exact frame coordinates) and cached per chunk in SavedData, never found by scanning blocks.
-- The offer check is a box test on players near known frames, run only while a player is within ~32 blocks. There is no orb scanning.
-- Music is detected by a vibration listener at each awake frame, so nothing polls every tick.
+- Offering is a use-block event (Fabric `UseBlockCallback`) checked against known frame positions. There is no per-tick scanning.
+- Music is detected at each awake frame by a vibration listener (note blocks, goat horns) and a jukebox listener, so nothing polls every tick.
 - The ambient "breathing" particles are client-side and run only near dormant frames.

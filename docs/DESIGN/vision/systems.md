@@ -1,14 +1,15 @@
-# Core systems at concept level (WP-013; revised after WP-014 critique round 1)
+# Core systems at concept level (WP-013; revised after WP-014 critique rounds 1 and 2)
 
-Rubric columns: F faithful · V vanilla-native · R readable · M meaningful · D distinct · C connected · Fe feasible (1–5). Concepts were written before scoring; *italic* = deliberately unusual. Scores changed by the critique are marked ↓/↑ with the reason in §8.
+Rubric columns: F faithful · V vanilla-native · R readable · M meaningful · D distinct · C connected · Fe feasible (1–5). Concepts were written before scoring; *italic* = deliberately unusual. Scores changed by a critique round are marked ↓/↑, with the reason in §8.
 
-**One-line model:** *souls are the fuel, music is the spark, the Tide is the season.*
+**One-line model:** *souls are the fuel, music is the spark, the Tide is the season, and ichor is the tide.*
 
 ## 1. The Tides
 | # | Concept | F | V | R | M | D | C | Fe | Σ |
 |---|---|---|---|---|---|---|---|---|---|
 | T1 | Day-like cycle on one global clock: Thrive → Flow → Endure → Flow | 5 | 5 | 5 | 3↓ | 3↓ | 5 | 5 | 31 |
-| T1′ | **T1 plus one signature rule per Tide that only the Sift has** (growth and recharge / passage / hunters and rare blooms) | 5 | 4 | 4 | 5 | 5 | 5 | 4 | **32** |
+| T1′ | T1 plus one signature rule per Tide (growth / tide-bridges for passage / hunters) | 4↓ | 4 | 4 | 3↓ | 3↓ | 5 | 4 | 27 (round 2: bridges can be bypassed with blocks, and Flow contradicted "no effect") |
+| **T1″** | **The tide is literal:** ichor rises and falls in the Sift's tide basins. Thrive is low tide, Flow is the tide moving, Endure is high tide. Each state changes what is exposed, what grows and who is hunting | 4 | 4 | 5 | 4 | 5 | 5 | 4 | **31** |
 | T2 | Three equal thirds (Thrive → Flow → Endure) | 5 | 4 | 4 | 4 | 4 | 5 | 5 | 31 |
 | T3 | Player lever: a costly act shifts the Tide for everyone, as sleeping skips the night | 4 | 5 | 4 | 4 | 4 | 4 | 5 | 30 |
 | T4 | One Tide per in-game day (long cycle) | 4 | 4 | 3 | 3 | 3 | 4 | 5 | 26 |
@@ -19,173 +20,216 @@ Rubric columns: F faithful · V vanilla-native · R readable · M meaningful · 
 | T9 | *The Tide is a song in three movements; discs and music sync to it* | 4 | 3 | 3 | 3 | 5 | 4 | 3 | 25 |
 | T10 | *Personal Tides per player* | 2 | 1 | 2 | 3 | 5 | 3 | 1 | 17 |
 
-**Pick: T1′, plus T3 as a later lever (Should, with limits).**
-- **Cycle:** one `thesift:tides` world clock with a **30 000-tick period (25 minutes)**, deliberately not the Overworld's 24 000. This way Endure never lines up with Overworld night by accident.
+**Pick: T1″ (T3 stays a post-1.0 lever).**
+- **Cycle:** one `thesift:tides` world clock with a **30 000-tick period (25 minutes)**, deliberately not the Overworld's 24 000. Canon doesn't give the order (RESEARCH §3); this order is our choice.
 
   | Tide | Ticks | Length |
   |---|---|---|
-  | Thrive | 0–12 000 | 10 min |
-  | Flow | 12 000–15 000 | 2.5 min |
-  | Endure | 15 000–27 000 | 10 min |
-  | Flow | 27 000–30 000 | 2.5 min |
-
-  Canon doesn't give the order (RESEARCH §3); this order is our choice.
-- **What each Tide changes.** These are canon effects translated to a sandbox (RESEARCH canon #7–8).
-  - **Thrive: growth and recharge.** Canon: "Faster Soul regeneration and artifact cooldowns".
-    - Healthy sculk turns stored souls into growth (§2).
-    - Soul-powered tools recharge **twice as fast**. The gift of song is the first of these.
-    - Natives roam; the light is full.
-  - **Flow: passage.** Canon: "Flow: No effect" on the hero; the Tides "affect … traversing".
-    - Flow changes the *land*, not the player: **tide-bridges** unfold across ichor and chasms, and **bounce blooms** turn springy (canon: "bouncy slimes used to access higher areas").
-    - Both fold away at the end of Flow, with a warning 20 seconds ahead: petals curl, a rising creak sounds, and a subtitle appears.
-    - So Flow is when you cross. The rest of the cycle, those routes are closed or harder.
-  - **Endure: hunters and rare blooms.** Canon: "More powerful mobs will spawn and your passive soul regeneration will stop".
-    - The sky darkens, so light-gated hostile sifters and sculkers surface, some as "enduring" variants that show a readable glow.
-    - Soul tools stop recharging, and healthy sculk stops growing.
-    - **Sound draws hunters** (§4).
-    - Rare **Endure blooms** open, and their reagents can be taken only then.
-- **First arrival is in Thrive.** The clock is created **paused at Thrive** and starts the first time any frame in the world opens. After that, the gate's membrane shows the Tide on the far side: bright cyan for Thrive, amber for Flow, violet for Endure, each with its own particle shape. Players choose when to cross. A small sanctuary around every Sift-side gate covers arrivals in Endure (entry_path.md).
+  | Thrive (low tide) | 0–12 000 | 10 min |
+  | Flow (rising) | 12 000–15 000 | 2.5 min |
+  | Endure (high tide) | 15 000–27 000 | 10 min |
+  | Flow (falling) | 27 000–30 000 | 2.5 min |
+- **The tide is ichor.** Canon: the Meadow has "many pools of ichor, fracturing the terrain"; the Tides "affect … traversing" (RESEARCH §2, canon #8).
+  - Generated **tide basins** (sunken flats up to ~32×32 blocks and ~4 deep) fill with ichor at high tide and drain at low tide.
+  - That makes the Tide visible from anywhere a basin can be seen, and it changes the land itself. Blocks can't bypass it: what matters is what is *exposed*, not whether you can cross.
+  - Ordinary ichor pools elsewhere don't move.
+- **What each Tide changes.** These translate canon's effects (RESEARCH canon #7).
+  - **Thrive: low tide, growth.** Canon: "Faster Soul regeneration and artifact cooldowns".
+    - The basins lie bare as **tide flats**. Flat-only reagents (tidewrack: working name) can be gathered only now; submerged, they stay closed and drop nothing.
+    - Healthy sculk turns stored souls into growth, and the gift of song recharges twice as fast.
+    - Natives roam; blubs gather to music (§4).
+  - **Flow: the tide moves.** Canon: "Flow: No effect". Flow has **no effect on the player** (no buff, no debuff).
+    - The ichor visibly rises or falls, one layer at a time, with currents that carry items and floating entities.
+    - Natives migrate with the waterline.
+    - It is the Tide you *watch*.
+  - **Endure: high tide, hunters.** Canon: "More powerful mobs will spawn and your passive soul regeneration will stop".
+    - The basins are flooded, and anyone who isn't native burns in ichor.
+    - The sky darkens, so light-gated hostiles surface, some as **enduring** variants with a readable glow.
+    - **The hunters listen** (the hearing rule, §4). Growth and gift-of-song recharge stop.
+    - **Endure blooms** open along the waterline, and their reagents can be taken only then.
+- **First arrival is in Thrive.**
+  - The clock is **paused at Thrive until the first player crosses** into the Sift. It starts then.
+  - World clocks default to unpaused (`ServerClockManager`), so this needs a line of startup code, not just data.
+  - After that, the membrane shows the far-side Tide: bright cyan for Thrive, amber for Flow, violet for Endure, each with its own particle shape. Every gate has a sanctuary.
 - **How players read it:**
-  - sky and fog colour, stars in Endure, soul motes (all keyframed);
+  - the waterline (the clearest cue);
+  - sky and fog colour; stars in Endure; soul motes;
   - Tide music variants (canon: OST);
-  - native behaviour: blubs shelter, echo golems gather at gates;
-  - Endure blooms opening; bridges folding.
-  - An **inverted daylight detector** senses Endure, because Endure lowers sky light. That makes it a vanilla-native redstone Tide sensor (rules.md).
-  - Clocks do **not** show the Tide. In 26.3 the clock model reads the sun only in `minecraft:overworld` and spins elsewhere (VANILLA_ANALOGS; verified in the 26.3 client jar).
-- **The lever (T3, Should):** a costly act (a soul block offered at a late-game bell) moves the clock **only toward Thrive**, never toward Endure. That mirrors sleep, which only ever skips toward safety.
-  - Multiplayer consent follows `players_sleeping_percentage`, counted among players in the Sift.
-  - Beds never skip the Tide.
-- **Admins:**
-  - `/time set thesift:thrive` (or `/time of thesift:tides …`) works in the Sift. Vanilla `/time set day` doesn't, because the Sift's markers are `thesift:*`. Documented.
-  - **`advance_time false` freezes every world clock, the Tides included** (verified: `ServerClockManager.tick`). This matches freezing the sun.
-  - Servers that disable it should pick the frozen Tide with `/time of thesift:tides set thesift:thrive`. This is documented in the server notes, and no code overrides the gamerule.
-- **Feasibility** (26.3, VANILLA_ANALOGS W4; the core was spike-verified):
-  - Data: `world_clock/tides.json`; `timeline/tides.json` with `period_ticks` 30000, Tide markers and tracks (light, sky, fog, stars, particles, music); a dimension type with `default_clock: thesift:tides`.
-  - Gameplay reads **our own registered environment attributes** keyframed on that timeline: `thesift:gameplay/soul_flow` (Thrive 1.0, Flow 0.25, Endure 0.0, **default 0.0 everywhere else**) and `thesift:gameplay/tide`.
-  - Blocks that change with the Tide read those attributes. Slow, organic changes (blooms opening) use random ticks, as eyeblossoms do. Changes that must be prompt (bridges, bounce blooms) use a block-entity check every 20 ticks, as the daylight detector does, and exist only in limited, generated numbers.
+  - native behaviour; Endure blooms opening.
+  - An **inverted daylight detector** senses Endure's darkness, which makes it a vanilla-native redstone Tide sensor (rules.md).
+  - Clocks spin, as in the Nether and End.
+- **The lever (T3):** after 1.0. It moves the clock **only toward Thrive**, with sleep-style consent. Beds never skip the Tide.
+- **Admins and gamerules:**
+  - `/time set thesift:thrive` works in the Sift; `/time set day` doesn't (the markers are `thesift:*`).
+  - `advance_time false` freezes every world clock, the Tides included, just as it freezes the sun. Endure-only reagents then need an admin's `/time`, as night-only things do in the Overworld.
+  - `random_tick_speed 0` freezes growth, as it freezes crops.
+  - All of this is documented; no code overrides the gamerules.
+- **Feasibility (26.3):**
+  - Clock, timeline, markers, sky, light, stars, particles and music are data (VANILLA_ANALOGS W4, spike-verified). Gameplay values are our own registered environment attributes: `thesift:gameplay/soul_flow` (Thrive 1.0, Flow 0.25, Endure 0.0, **0 everywhere else**) and `thesift:gameplay/tide`.
+  - **Tide basins** are a bounded world-generation feature with one controller block entity each.
+    - During Flow, the controller raises or lowers the ichor one layer at a time. It works only while its chunk is loaded, and it snaps to the current Tide's level when the chunk loads.
+    - The basin's ichor never spreads beyond the basin volume.
+    - The cost is roughly a few thousand block changes per basin, spread over 3 000 ticks.
+  - Slow organic changes (blooms, tidewrack opening) use random ticks, as eyeblossoms do.
 
 ## 2. The soul economy: a one-way ledger
 | # | Concept | F | V | R | M | D | C | Fe | Σ |
 |---|---|---|---|---|---|---|---|---|---|
 | S1 | **Souls are experience in physical form**: no new currency; Sift sinks and sources work in XP (vanilla's catalyst precedent) | 4 | 5 | 5 | 4 | 4 | 5 | 5 | **32** |
 | S2 | Soul-mote items dropped by mobs, used like blaze powder | 3 | 4 | 4 | 3 | 3 | 4 | 5 | 26 |
-| S3 | **Soul blocks** (canon artifact): condensed souls that power golems and devices | 4↓ | 4 | 4 | 4 | 5 | 5 | 4 | **30** |
-| S4 | Healthy sculk as a soul **bank** that song draws back out | 4 | 4 | 4 | 4 | 5 | 5 | 4 | ~~30~~ **rejected** (XP amplifier loop, MF1) |
-| S4′ | **Healthy sculk drinks deaths like a catalyst and turns them into growth, never back into XP** | 4 | 5 | 4 | 4 | 4 | 5 | 5 | **31** |
+| S3 | **Soul blocks**: condensed souls that power golems and devices (in the game per canon; their lore is novel-sourced) | 4 | 4 | 4 | 4 | 5 | 5 | 4 | **30** |
+| S4 | Healthy sculk as a soul **bank** that song draws back out | — | — | — | — | — | — | — | **rejected** (XP amplifier loop, round 1) |
+| S4′ | **Bloom hearts drink deaths like a catalyst and turn them into growth, never back into XP** | 4 | 5 | 4 | 4 | 4 | 5 | 5 | **31** |
 | S5 | A Dungeons-style soul meter on the HUD | 4 | 1 | 4 | 3 | 2 | 3 | 4 | 21 |
 | S6 | Soul-powered gear with active abilities (the artifact translation) | 4 | 3 | 4 | 4 | 3 | 4 | 4 | 26 |
 | S7 | Trading souls to natives for songs or items | 4 | 4 | 4 | 3 | 3 | 4 | 4 | 26 |
-| S8 | **Illager soul tanks**: loot; breaking one frees souls and heals the land | 5 | 4 | 5 | 4 | 4 | 5 | 4 | **31** |
+| S8 | **Illager soul tanks**: they hold the souls a camp drains; breaking one returns them to the land | 5 | 4 | 5 | 4 | 4 | 5 | 4 | **31** |
 | S9 | *Per-chunk soul level simulation* | 4 | 2 | 2 | 4 | 5 | 5 | 2 | 24 |
 | S10 | *Echoes of the dead fight beside you* | 2 | 2 | 3 | 3 | 5 | 3 | 3 | 21 |
 
 **Pick: S1 + S3 + S4′ + S8, as a one-way ledger.** S6 is parked for Phase 2 gear design; S5 is rejected (no new HUD meters).
-- **Two ways souls enter:**
-  1. **Deaths near a bloom heart.** A bloom heart is the healthy-sculk counterpart of the vanilla catalyst (working name). It takes a nearby death's experience **exactly as a vanilla catalyst does**: the same event, the same radius, the same "that XP never drops" rule. It stores that experience as charge.
-  2. **Offering.** A player crouches at a soul-drinking block (a bloom heart, or a dormant Ancient City frame) and their XP bar visibly flows into it. Stepping away stops it at once. Crouching is already the Deep Dark's posture, and nothing takes a player's experience unless they offer it.
-- **Where souls go.** Nothing converts back into XP.
-  - **Growth.** Charge spreads as blooms, light and Sift reagents (soul blossoms, Endure blooms) at a rate set by `soul_flow`: fast in Thrive, slow in Flow, none in Endure, **none outside the Sift**. Thrive raises the **rate**, never the **yield**. Healthy sculk and its products never drop experience. Vanilla sculk drops XP when mined, so this closes the sculk-XP-farm loop.
-  - **Soul blocks.** An offering at a bloom heart condenses the player's XP into a **soul block**, which is **fuel, not a bank**. Soul blocks are spent to power an echo golem's work, a musical gate, a Sift gear upgrade, or the Tide lever. They cannot be turned back into XP.
-  - **Waking a frame** (entry_path.md) is a one-time offering.
-- **Hazards take souls.** Ichor and soul fire drain XP from outsiders who stand in them, as a readable hazard (canon: ichor "drains their souls"). Natives are immune.
-- **Illager soul tanks (S8)** are finite containers in camps. Breaking one releases its souls into nearby healthy sculk as growth, which cures blight. The souls never go to a player as XP, and tanks don't refill.
-- **Why this holds** (the critic's probe a):
+- **Souls enter two ways:**
+  1. **Deaths near a bloom heart.** A bloom heart is the healthy counterpart of the vanilla catalyst (working name). It takes a nearby death's experience **exactly as a vanilla catalyst does** (same event, same radius, and that XP never drops), but **only where `soul_flow` > 0**. A bloom heart carried home is decorative and never takes XP there.
+  2. **Offering, a deliberate action.**
+     - **Hold *use*** on a bloom heart, or on a dormant Ancient City frame, with an empty hand. Your XP visibly streams into it, like brushing suspicious sand. Release and it stops.
+     - Rate: about 50 points per second (tuned in BALANCE).
+     - Nothing is ever taken from posture, proximity or accident.
+- **Souls leave three ways.** Nothing converts back into XP.
+  - **Growth.** A bloom heart's charge spreads as blooms, light and Sift reagents, at a rate set by `soul_flow`: fast in Thrive, slow in Flow, none in Endure, and none outside the Sift. Thrive raises the **rate**, never the **yield**. Healthy sculk and its products never drop experience.
+  - **Soul blocks.** An offering at a bloom heart condenses your XP into a **soul block**: **fuel, not a bank.** It powers an echo golem's work, a musical gate or a Sift gear trait, and it can't be turned back into XP.
+  - **A frame's price** (entry_path.md), paid once.
+- **Hazards take souls.** Ichor drains XP from outsiders standing in it, alongside the soul fire (canon: ichor "drains their souls"). The soul fire and hissing steam come first, so the danger shows before any XP is lost.
+- **Illager soul tanks (S8)** fill as a camp drains the land (§5). Breaking one returns its souls to the surrounding sculk as growth, which cures blight. It never pays a player XP. Tanks are finite; a broken tank doesn't refill.
+- **Why this holds** (the round-1 probe a):
   - No Sift path creates experience.
-  - Automatic kill chambers can feed *growth*, exactly as they feed vanilla catalysts, but growth yields materials, not XP.
-  - Mending works everywhere except near a bloom heart, which is the same rule as near a vanilla catalyst.
-  - Soul blocks can't be used to store XP and dodge the death penalty, because they never convert back.
+  - Automatic kill chambers can feed a bloom heart's *growth*, exactly as they feed vanilla catalysts, but growth yields materials, not XP.
+  - Only XP from **deaths** near a bloom heart is intercepted, as with a catalyst. XP from mining, smelting, breeding or trading is untouched, and so is Mending.
+  - Soul blocks can't store XP past death.
+  - Blight is XP-free (§3).
 
 ## 3. Healthy vs corrupted sculk
 | # | Concept | F | V | R | M | D | C | Fe | Σ |
 |---|---|---|---|---|---|---|---|---|---|
 | H1 | **Inversion**: healthy sculk is colourful and listens to *reward*; corrupted sculk listens to *punish* | 5 | 5 | 5 | 4 | 5 | 5 | 4 | **33** |
-| H2 | **Blight**: where Illagers drain souls, healthy sculk sickens into corrupted sculk; returning souls or song cures it | 5 | 4 | 5 | 5 | 4 | 5 | 4 | **32** |
+| H2 | **Blight**: where Illagers drain souls, healthy sculk sickens; returning souls or song cures it | 5 | 4 | 5 | 5 | 4 | 5 | 4 | **32** |
 | H3 | Cure the Overworld's Deep Dark with Sift sculk | 4 | 3 | 4 | 4 | 4 | 4 | 3 | 26 |
 | H4 | Sculk terrain that grows in Thrive and recedes in Endure | 3 | 3 | 4 | 3 | 4 | 4 | 2 | 23 |
 | H5 | Quarantine: corrupted sculk carried in infects healthy sculk | 4 | 3 | 3 | 3 | 4 | 4 | 3 | 24 |
 | H6 | *Healthy sculk as the Sift's nerves: breaking it alarms natives* | 3 | 3 | 3 | 3 | 5 | 4 | 3 | 24 |
 
-**Pick: H1 + H2**, with three changes from critique round 1.
-- **Blight *is* vanilla sculk.** Corrupted sculk in the Sift uses the vanilla blocks: sculk, veins, sensors, shriekers and catalysts. It is told apart from healthy sculk by **behaviour and shape**, not only colour: it pulses, its veins creep, and its sensors and shriekers react (SF7).
-  - Its shriekers give Darkness and alert nearby hostiles, but **never summon wardens**; no wardens live here (rules.md).
-  - Tone: where Illagers work, the colour drains to the Deep Dark's black-teal.
-- **The Illagers speed the disease up; they didn't start it.** Canon says the disease that corrupted sculk "originated in the Sift" from "an unknown factor", and the Deep Dark is ancient. So the Illagers' soul-draining **weakens** healthy sculk and lets the old blight take hold faster (SF8).
-  - Blight doesn't breed sculkers. Sculkers are the Carapace's native hunters, part of the "independent ecosystem" (XW2).
-- **Curing needs the Sift.** Returning souls (a broken tank, or growth from a bloom heart) or the gift of song turns blight back into healthy sculk. It works only where `soul_flow` > 0, which means **never in the Overworld's Deep Dark** (MF3). H3 stays parked.
+**Pick: H1 + H2.**
+- **Blight is its own block family, and it drops no XP.** Round 2 found that using vanilla sculk leaked XP: mined sculk drops 1–5, and every vanilla catalyst would have made a blight patch a sculk farm.
+  - Blight copies the Deep Dark's **grammar**:
+    - a pulsing animated texture;
+    - veins that creep;
+    - tendril sensors that wiggle when they hear;
+    - shriekers.
+  - Healthy sculk is petalled and grassy and **never pulses**. So the two differ in shape and motion, not only in colour.
+  - Every blight block drops itself or nothing, never XP.
+- **Blight shriekers** shriek like vanilla ones, give Darkness and alert nearby hunters. They **never touch the vanilla warden warning tracker**, so nothing follows players home.
+  - Vanilla sculk that players bring and place behaves exactly as vanilla, wherever it is. (Checked: player-placed vanilla shriekers can't summon and never raise warnings.)
+- **The Illagers speed the disease up; they didn't start it.** Canon says the disease "originated in the Sift" from "an unknown factor", and it is ancient. Illager rigs drain souls, which weakens healthy sculk and lets blight take hold.
+  - Blight doesn't breed hunters. Hunters are native: part of the "independent ecosystem" (XW2).
+- **Blight is dynamic, but bounded:**
+  - It spreads only around **active** camps: within a fixed radius of the camp's rig, up to a cap, slowly.
+  - It stops when the rig is broken.
+  - Cured land stays cured, because no new camps appear.
+- **Curing needs the Sift.** Returning souls (a broken tank, or growth from a bloom heart), the gift of song, or freed echo golems (§5) turn blight back into healthy sculk. Cures work only where `soul_flow` > 0, which means **never in the Overworld's Deep Dark**. H3 stays parked.
 
 ## 4. Sound as a mechanic
 | # | Concept | F | V | R | M | D | C | Fe | Σ |
 |---|---|---|---|---|---|---|---|---|---|
-| N1 | **Healthy sculk answers music** (note blocks, jukeboxes, horns): growth expresses faster, blooms open, light rises | 5 | 5 | 4 | 4 | 5 | 5 | 4 | **32** |
-| N2 | **Natives answer music**: blubs gather, echo golems dance (wiki gallery captions: "Echo golems dancing in front of the Deep Dark portal"), like allays and note blocks | 5 | 5 | 5 | 3 | 3↓ | 4 | 4 | 29 |
+| N1 | **Healthy sculk answers music** (note blocks, jukeboxes, goat horns): growth expresses faster, blooms open, light rises | 5 | 5 | 4 | 4 | 5 | 5 | 4 | **32** |
+| N2 | Natives answer music: echo golems dance (wiki gallery: "Echo golems dancing in front of the Deep Dark portal") | 5 | 5 | 5 | 3 | 3↓ | 4 | 4 | 29 |
+| **N2′** | N2, plus **blubs gather and stack into teetering towers** that topple over (canon: Kotaku's "blue bunnies … form teetering towers that occasionally topple over"). A stack also makes a live platform to reach high blooms | 5 | 5 | 5 | 4 | 5 | 4 | 4 | **32** |
 | N3 | **The Singer's gift of song** (canon achievement "Receive the Singer's gift of song"): an earned instrument that opens gates, sparks growth in a radius and calms Sift natives | 5 | 4 | 4 | 5 | 5 | 5 | 4 | **32** |
 | N4 | **Musical gates** (canon "Musical Gate"): structure doors keyed to an instrument and note | 5 | 4 | 3 | 4 | 4 | 4 | 4 | 28 |
 | N5 | Sonic threats: screeching bosses, stunning plants (canon Harmonizer, "hazardous blocks") | 5 | 4 | 4 | 4 | 3 | 4 | 4 | 28 |
 | N6 | *Echolocation pings reveal paths* | 3 | 3 | 2 | 3 | 5 | 3 | 3 | 22 |
 | N7 | *Composing Tide-synced melodies on terrain* | 3 | 2 | 2 | 3 | 5 | 4 | 2 | 21 |
-| N8 | **Sound has a Tide cost**: in Endure, music and loud sounds draw sculkers within range (the Deep Dark's rule returns at night) | 4 | 5 | 4 | 5 | 4 | 5 | 4 | **31** |
+| N8 | **The hearing rule**: in Endure, the hunters listen (the Deep Dark's rule returns at night) | 4 | 5 | 4 | 5 | 4 | 5 | 4 | **31** |
 
-**Pick: N1 + N2 + N3 + N8, with N4/N5 as content.**
-- **Music is a spark, not a source.** Music makes existing charge express faster as growth and light. It never creates growth from nothing, so a note-block clock can't grow the Sift without souls (SF6/SF9).
-- **The choice:** in Thrive the Sift answers sound; in Endure the hunters do. Playing in Endure is a real decision, whether to lure sculkers into an Illager camp (I6) or to stay quiet.
+**Pick: N1 + N2′ + N3 + N8, with N4/N5 as content.**
+- **Music is a spark, not a source.** It makes existing charge express faster as growth and light, and it never creates growth from nothing.
+- **The hearing rule (N8)**, one definition everywhere:
+  - **Who listens:** each area's hunter species, **only in Endure**. In 1.0 that is the **Nester** in Singer's Meadow (canon: it will "rapidly gallop towards heroes, lunging and biting"). The Carapace's sculkers come after 1.0 (§7).
+  - **What they hear:** exactly what a sculk sensor hears.
+    - The vanilla `#vibrations` game events within **16 blocks** of the hunter: steps, block changes, projectiles, note blocks (`note_block_play`), goat horns (`instrument_play`) and more. Sneaking suppresses steps as vanilla does, and wool muffles.
+    - **Jukeboxes**, heard through a separate listener at vanilla's radius of 10. `jukebox_play` isn't a vibration; this is how allays hear music (checked).
+  - **The tell:** the vanilla vibration particle flies from the sound to the hunter, as it does to a sensor. The hunter turns, and its crest flares. Then it gallops to the source. Every cue is visual, audible and subtitled.
+  - **The consequence:** a noisy base in the Meadow draws Nesters only within their hearing range. Players dampen it the vanilla way.
+  - In Thrive, hunters don't listen, and **the Sift answers music instead**. That gives the choice: sing in Thrive; stay quiet, or use sound as a lure, in Endure.
 - **Gift of song (N3):**
-  - **Earned** from the Singer after the player restores the Meadow's stolen harmony. The route follows canon quest shapes: "Lost Harmonies: Find the stolen soul blocks", "Guardian of the Golems". Exact steps are Phase 2.
-  - **Charges:** it refills twice as fast in Thrive and not at all in Endure (canon Tide effects).
-  - **Scope:** it affects **only Sift life** (healthy sculk, blight, natives, gates). It never affects wardens or Overworld sculk (MF3).
+  - **Earned** from the **Singer** after the player restores the Meadow's stolen harmony. The route follows canon quest shapes: "Lost Harmonies: Find the stolen soul blocks", "Guardian of the Golems". Exact steps are Phase 2.
+  - **Charges:** it refills twice as fast in Thrive and not at all in Endure.
+  - **Scope:** it affects only Sift life (healthy sculk, blight, natives, gates), and only where `soul_flow` > 0. It never affects wardens or Overworld sculk.
+- **Music detection** at frames, bloom hearts and gates uses the same pair of listeners: a vibration listener for note blocks and goat horns, plus the jukebox listener.
 - **Accessibility (P1):** every Sift sound has a **subtitle** and a **visual**.
-  - A musical gate shows its key as a **carved instrument glyph**: the note block's base block, for example gold for bells. It also shows the note's position on a carved staff, plays the note, and shows a subtitle.
+  - A musical gate shows its key as a **carved instrument glyph** (the note block's base block, for example gold for bells) and the note's position on a carved staff. It plays the note and shows a subtitle.
   - No step depends on colour alone, or on sound alone.
 
 ## 5. The Illager occupation
 | # | Concept | F | V | R | M | D | C | Fe | Σ |
 |---|---|---|---|---|---|---|---|---|---|
-| I1 | **Soul-harvester camps**: rigs over blight, caged echo golems, soul tanks, patrols by day-Tides | 5 | 5 | 5 | 4 | 3↓ | 5 | 4 | 31 |
+| I1 | Soul-harvester camps: rigs over blight, caged echo golems, soul tanks, patrols by day-Tides | 5 | 5 | 5 | 4 | 3↓ | 5 | 4 | 31 |
+| **I1′** | **Living occupation**: each active camp's rig drains the land. Blight visibly spreads in a capped radius while its tanks fill; breaking the rig stops it; breaking the tanks heals it | 5 | 4 | 5 | 5 | 4 | 5 | 4 | **32** |
 | I2 | **The Illager Keep** (canon track "Illager Keep"): endgame stronghold, rift hub, a High Council lieutenant | 5 | 4 | 4 | 4 | 4 | 4 | 3 | 28 |
 | I3 | Rift incursions into the Overworld | 5 | 3 | 4 | 4 | 4 | 4 | 2 | 26 |
 | I4 | Occupation meter per region | 3 | 3 | 3 | 3 | 3 | 4 | 3 | 22 |
-| I5 | **Freeing natives**: caged golems become allies when freed (canon "Guardian of the Golems", track "Caged") | 5 | 4 | 5 | 4 | 3↓ | 5 | 4 | 30 |
-| I6 | *Endure brings sculkers against the camps; players can exploit the war* | 4 | 4 | 4 | 5 | 5 | 5 | 3 | **30** |
+| I5 | Freeing natives: caged golems become allies when freed (canon "Guardian of the Golems", track "Caged") | 5 | 4 | 5 | 4 | 3↓ | 5 | 4 | 30 |
+| **I5′** | I5, plus **freed echo golems are restorers**: carrying a soul block, a golem slowly heals blight around it and tends bloom hearts | 5 | 4 | 5 | 5 | 4 | 5 | 4 | **32** |
+| I6 | *Endure's hunters against the camps; players can steer the war with sound* | 4 | 4 | 4 | 5 | 5 | 5 | 3 | **30** |
 
-**Pick: I1 + I5 + I6 for 1.0.** I2 (the Keep) and I3 (rifts) come after 1.0 (§7).
-- **Camps are finite.** They are generated structures, and their tanks don't refill. Freed golems stay free.
-- Like vanilla pillager outposts, a camp's grounds keep spawning illagers (the structure-spawn precedent). Camps stay dangerous but are no richer an XP source than outposts (SF12).
+**Pick: I1′ + I5′ + I6 for 1.0.** I2 (the Keep) and I3 (rifts) come after 1.0 (§7).
+- **Camps are finite** (generated structures); no new camps appear.
+- A camp is *active* while its rig stands. While it's active, blight spreads around it and its tanks fill. That gives the occupation urgency and a visible cost, unlike static outposts.
+- Like vanilla pillager outposts, a camp's grounds keep spawning illagers (the structure-spawn precedent), so camps stay dangerous. They are no richer an XP source than outposts.
+- Hunters attack illagers as readily as players. A player can lure Endure's Nesters into a camp with a goat horn or a jukebox (I6).
 - Illagers reuse vanilla illager types; new kinds appear only where a role is missing.
 
 ## 6. How the systems feed each other
 ```
-          ┌──────── TIDES (clock + timeline) ────────┐
-   light/spawns │   soul_flow (growth rate) │         │ camp patrols (day-Tides)
-                ▼                          ▼          ▼
-   HUNTERS (sifters, sculkers) ◄─ Endure ─ SOUND ─ Thrive ─► HEALTHY SCULK (growth, light, reagents)
-        │ attack camps (I6)                  │ spark                  ▲ charge
-        ▼                                    ▼                        │
-   ILLAGER CAMPS ──drain──► BLIGHT (vanilla sculk)     DEATHS ──► BLOOM HEARTS ◄── OFFERINGS (your XP)
-        │ break tanks ───────────── cures ◄──┘                        │
-        └──► freed ECHO GOLEMS ◄── fuel ── SOUL BLOCKS ◄── offering ───┘
+            ┌──────────── TIDES (clock + timeline) ────────────┐
+   ichor level │   soul_flow (growth rate) │   light / hunters  │ camp patrols
+               ▼                           ▼                    ▼
+   TIDE FLATS (low-tide reagents)   HEALTHY SCULK ◄─ spark ─ SOUND ─ Endure ─► HUNTERS (Nesters)
+                                        ▲  growth                   lure │  attack camps (I6)
+      DEATHS ──► BLOOM HEARTS ──────────┘                                ▼
+      OFFERINGS (your XP) ──► BLOOM HEARTS ──► SOUL BLOCKS ──► ECHO GOLEMS / GATES / TRAITS
+                                                                 │ restorers heal
+   ILLAGER CAMPS ── rigs drain ──► BLIGHT (own blocks, no XP) ◄───┘
+        └── tanks ── broken ──► souls return as growth ──► cures blight
 ```
 Every system touches at least three others. No arrow leads back to experience.
 
-## 7. Scope for 1.0 vs later (SF10: "fewer, deeper")
-- **1.0 must:**
-  - the Tides (T1′);
-  - the entry and return (entry_path.md);
-  - two canon areas (Singer's Meadow and the Carapace; Lullaby Hills as a Meadow sub-biome);
+## 7. Scope for 1.0 vs later ("fewer, deeper")
+- **1.0 is one region done deeply: Singer's Meadow.**
+  - It includes Lullaby Hills as a sub-biome and the tide basins. Vanilla precedent: the Nether and the End each shipped as one biome at first.
+- **Natives:** Blub, Echo Golem, Slabber, **the Singer** (who grants the gift of song), and Trills as particles.
+- **Hostiles:** Bloombud, Nester (the listening hunter), Pollinator, and Sprout (support).
+- **Systems:**
+  - ichor and tide basins;
   - healthy sculk, blight and bloom hearts; soul blocks;
-  - natives (Blub, Echo Golem, Slabber, Trill as particles);
-  - a small hostile set (Bloombud, Nester, Pollinator + Sprout, Stalker, Scavenger);
-  - ichor; the gift of song; Illager camps with caged golems and tanks;
-  - **one boss and one miniboss.**
-- **The boss (recommended): the Sculk Monstrosity** as the heart of the blight. Its canon "catalysis" attack is vanilla catalyst grammar turned into a weapon, and beating it cures the land around its arena. The miniboss is the Harmonizer (a sifter). The alternative is the Monarch (apex hunter of Endure); this choice is for Gate A.
-- **After 1.0 (roadmap):** the Monarch and the sculker nest; the Illager Keep; rifts (I3); the Tide lever (T3); an aurora sky (it needs a client mixin, because 26.3 Fabric API has no per-dimension sky hook); more areas from the soundtrack's names.
+  - the gift of song;
+  - Illager camps with caged golems, rigs and tanks.
+- **Endgame:** **one boss and one miniboss.**
+  - The boss is the **Sculk Monstrosity**, the heart of the blight, behind a musical gate. This is canon's questline shape ("pass through the Musical Gate") and its "catalysis" attack, built on our blight blocks. Beating it cures the land around its arena.
+  - The miniboss is the **Harmonizer**, a sifter, with the Seedlings it summons.
+- **After 1.0 (roadmap):**
+  - **1.1: the Carapace**, with its sculkers (Stalker, Scavenger) as that area's listening hunters, and the **Monarch**.
+  - The Illager Keep; rifts (I3); the Tide lever (T3).
+  - An aurora sky: it needs a client mixin, because 26.3 Fabric API has no per-dimension sky hook.
+  - More areas from the soundtrack's names.
 
-## 8. Critique round 1: score changes
+## 8. Critique rounds: score changes
 | Score | Change | Reason |
 |---|---|---|
-| T1 M/D | ↓ | Alone it is day/night with a new palette (MF2). T1′ adds the per-Tide rules. |
-| S3 F | ↓ | Soul blocks exist in canon, but the Singer forming them and golems running on them are novel or fan-sourced (RESEARCH canon #13, L). |
-| S4 | rejected | Banked souls drawn back out by song form an XP amplifier and battery (MF1). |
-| N2 D | ↓ | Allays already dance to note blocks. |
-| I1/I5 D | ↓ | Vanilla outposts and mansions already cage iron golems and allays. |
+| T1 M/D | ↓ (round 1) | Alone it is day/night with a new palette. |
+| T1′ | ↓ (round 2) | Tide-bridges could be bypassed with blocks, and Flow's bespoke rules contradicted canon "Flow: No effect". Replaced by T1″. |
+| S3 F | ↓ then restored to 4 (round 2) | Soul blocks *are* in the game (research round 2). Only their lore and the Singer claim are L. |
+| S4 | rejected (round 1) | An XP amplifier and battery. |
+| N2 D | ↓ (round 1) | Allays already dance to note blocks. N2′ adds blub towers (canon, distinct). |
+| I1/I5 D | ↓ (round 1) | Vanilla outposts cage golems. I1′/I5′ make the occupation change the land and make freed golems restorers. |
 
 ## 9. Parked (to IDEAS.md)
-T5 regional Tides · T9 Tide-synced music · S9 soul simulation · S10 echoes of the dead · H4 breathing sculk terrain · N6 echolocation · N7 composing · a clock that shows the Tide (needs an override of the vanilla clock model, a resource-pack conflict risk).
+T5 regional Tides · T9 Tide-synced music · S9 soul simulation · S10 echoes of the dead · H4 breathing sculk terrain · N6 echolocation · N7 composing · a clock that shows the Tide (needs an override of the vanilla clock model, a resource-pack conflict risk) · tide-bridges and bounce blooms as Tide rules (cut in round 2; bounce blooms may return as static terrain).
