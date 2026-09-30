@@ -1,11 +1,12 @@
 # STATUS (session 1, 2026-09-30)
 - **Phase / Milestone:** Phase 2, content bible and roadmap. Phases 0 and 1 are complete; Gate A was self-reviewed.
 - **Autonomy:** **full-auto** from Gate A on (D-014, the owner's instruction). Gates are self-reviews; nothing waits for the owner.
-- **Current WP:** WP-020 Content bible I: world (IN PROGRESS).
+- **Current WP:** WP-024 Content bible critique, freeze, Gate B (IN PROGRESS).
+- **Done this phase:** WP-020..023 (the bible in `docs/DESIGN/01_CONTENT_BIBLE.md` + `bible/`; Phase 3 and M1 WPs in PLAN.md).
 - **Next 3 actions:**
-  1. WP-020: write docs/DESIGN/bible/world.md (tiered world inventory).
-  2. WP-021: creature verdicts and roster (bible/creatures.md).
-  3. WP-022: items, gear, food, advancements, audio, mechanics (bible/items.md).
+  1. WP-024: fresh adversarial review of the bible and roadmap; fix; freeze; Gate B self-review.
+  2. WP-030: architecture decisions (D-015+) and the package skeleton.
+  3. WP-031: datagen pipeline with the no-diff check.
 - **Build:** ✅ scaffold (`./gradlew build` green, `-Xlint:all` clean)
 - **Tests:** 0/0 (none yet; Phase 3)
 - **Server boot:** ✅ (runServer "Done", no `thesift` warnings)
