@@ -6,7 +6,7 @@ Only one WP is IN PROGRESS at a time.
 | WP | Title | Phase | Tier | Status |
 |----|-------|-------|------|--------|
 | WP-001 | Version ground truth & official-Sift check | 0 | S | DONE |
-| WP-002 | Toolchain + mod scaffold (build, runServer, genSources) | 0 | M | TODO |
+| WP-002 | Toolchain + mod scaffold (build, runServer, genSources) | 0 | M | DONE |
 | WP-003 | Sift research I: canon, areas, Tides, access, lore, palette evidence | 0 | L | TODO |
 | WP-004 | Sift research II: bestiary (every mob, boss, character) | 0 | L | TODO |
 | WP-005 | Vanilla study I: world (dimension, noise, biomes, env attributes, portals, jigsaw) | 0 | L | TODO |
@@ -40,22 +40,26 @@ Only one WP is IN PROGRESS at a time.
 ### WP-002 Toolchain + mod scaffold
 - Phase / Milestone: 0 / —
 - Tier: M
-- Status: TODO
+- Status: DONE
 - Depends on: WP-001
-- Goal: A empty-but-real Fabric mod (`thesift`) that builds, boots a dedicated server on 26.3, and has generated/attached sources for study.
+- Goal: An empty-but-real Fabric mod (`thesift`) that builds, boots a dedicated server on 26.3, and has generated/attached sources for study.
 - Inputs (read ONLY these): D-001 toolchain record; the official Fabric template/example mod for 26.3; docs.fabricmc.net setup pages.
-- Deliverables: build.gradle, settings.gradle, gradle.properties, gradle wrapper, src/main (common) + src/client (client) source sets, fabric.mod.json, entrypoints, LICENSE (MIT code) + asset licence note, .gitignore, CI workflow draft (optional here, required in Phase 3).
+- Deliverables: build.gradle, settings.gradle, gradle.properties, gradle wrapper, src/main (common) + src/client (client) source sets, fabric.mod.json, entrypoints, LICENSE (MIT code) + LICENSE-ASSETS.md, .gitignore, README, gradle/gradle-daemon-jvm.properties, tools/dev/headless-client.sh.
 - Definition of Done:
-  - [ ] JDK 25 available to Gradle (toolchain or installed) — evidence: `java -version`/Gradle toolchain output.
-  - [ ] `./gradlew build` green — evidence: output excerpt.
-  - [ ] `./gradlew runServer` boots to "Done" with our mod loaded, zero errors/warnings from `thesift` — evidence: log excerpt.
-  - [ ] runClient attempted only if a display exists (record result either way).
-  - [ ] Sources generated/available (genSources or sources jar) — evidence: path to readable 26.3 sources.
-  - [ ] Split client/common source sets confirmed (client entrypoint lives in src/client).
-  - [ ] fabric.mod.json description states "Unofficial fan project".
+  - [x] JDK 25 available to Gradle — `./gradlew --version`: "Daemon JVM: Compatible with Java 25, Eclipse Temurin … (from gradle/gradle-daemon-jvm.properties)"; fresh-machine path proven: with no local JDK 25, `./gradlew help` auto-downloaded Temurin 25.0.4.1 into ~/.gradle/jdks and succeeded.
+  - [x] `./gradlew build` green — "BUILD SUCCESSFUL in 33s", `-Xlint:all` with zero warnings; jar contains thesift/TheSift.class, thesift/client/TheSiftClient.class, fabric.mod.json (version expanded), licences.
+  - [x] `./gradlew runServer` boots — "Loading Minecraft 26.3 with Fabric Loader 0.19.5", "- thesift 0.0.1-dev", "(thesift) The Sift initialized (unofficial fan project)", "Done (3.282s)!", clean `stop` → "BUILD SUCCESSFUL". Zero WARN/ERROR from `thesift`. (One vanilla ERROR on first boot: "Failed to load properties from file: server.properties" — the file doesn't exist yet; vanilla creates it.)
+  - [x] runClient attempted — display: none, but Xvfb + Mesa exist. Works headless via Vulkan on lavapipe (`tools/dev/headless-client.sh`); title screen rendered and screenshotted. Only env errors (no flite TTS library, no OpenAL device); none from `thesift`.
+  - [x] Sources generated — `./gradlew genSources` (Vineflower): `.gradle/loom-cache/minecraftMaven/net/minecraft/minecraft-{common,clientOnly}-7e9a32a5b8/26.3/*-sources.jar` (5,037 + 2,264 files).
+  - [x] Split client/common source sets — `loom.splitEnvironmentSourceSets()`; client entrypoint in src/client/java/thesift/client/.
+  - [x] fabric.mod.json description states "Unofficial fan project, not affiliated with or endorsed by Mojang Studios or Microsoft."
 - Iteration budget: critique rounds ≤ 1, fix hypotheses ≤ 5
 - Exit ramp: if the template can't be fetched, hand-write the minimal Loom build from docs.fabricmc.net and the Loom version's documented plugin id.
 - Log:
+  - 2026-09-30: template fetched via raw.githubusercontent.com (api.github.com/github.com UI are 403 through the proxy; raw works). Wrapper jar sha256 7a9ce74c… = official gradle-9.7.1-wrapper.jar.sha256; distributionSha256Sum pinned (acd53f1e…). Loom 1.18.2 needs the Gradle daemon on JVM 25 → added foojay-resolver-convention 1.0.0 + `updateDaemonJvm --jvm-version=25 --jvm-vendor=adoptium`. Root package `thesift` (D-003). No mixins (none needed yet; every future mixin needs a decision record).
+  - Server: EULA accepted in git-ignored `run/eula.txt` for local dev testing (owner's instruction to runServer). Stdin `stop` works through Gradle (FIFO).
+  - Client (3 hypotheses, within budget): H1 Xvfb `+extension GLX` + llvmpipe → still "Couldn't find matching GLX visual". Diagnosis: 26.3 GlBackend asks SDL for GL 3.3 core fwd-compat **with SDL_GL_FRAMEBUFFER_SRGB_CAPABLE=1**; Xvfb advertises GLX_ARB_framebuffer_sRGB but exposes 0 sRGB-capable fbconfigs (240 total). H3: apt-installed mesa-vulkan-drivers (lavapipe) and forced `--graphicsBackend vulkan` → "Using graphics backend Vulkan … llvmpipe Mesa 25.2.8". Scripted in tools/dev/headless-client.sh (installs packages if missing; start/screenshot/stop by PID). Lesson: never `pkill -f <pattern>` from a shell whose own command line contains the pattern (it killed the tool shell twice) — use PID files.
+  - Self-critique (1 round): (1) container-local apt packages vanish with the container → script self-installs; (2) Gradle "Class path entries reference missing files: build/resources/client" WARN from FabricLoader/Knot until we ship client resources — goes away when the first client asset lands (Phase 3/4); (3) `-Xlint:all` may be noisy once Minecraft types are subclassed (e.g. serial) → Phase 3 decides the final lint set (-Werror or not).
 
 ### WP-003 Sift research I: canon, areas, Tides, access, lore, palette evidence
 - Phase / Milestone: 0 / —
