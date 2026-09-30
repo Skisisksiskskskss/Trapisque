@@ -1,9 +1,11 @@
 # STATUS (session 1, 2026-09-30)
-- Phase / Milestone: Phase 0 — Ground truth and toolchain
-- Current WP: WP-001 Version ground truth & official-Sift check (IN PROGRESS)
-- Last session: (first session)
-  - Created docs/ skeleton, 00_MISSION.md (verbatim), PLAN.md with Phase 0 WPs.
-- Next 3 actions: 1. Finish WP-001 (Fabric toolchain versions, snapshot changelogs). 2. WP-002 scaffold + build + runServer. 3. WP-003 Sift research.
-- Build: n/a (no Gradle project yet) | Tests: n/a | Server boot: n/a
+- Phase / Milestone: Phase 1 — Vision (Phase 0 done except WP-003/004 review sign-off)
+- Current WP: WP-014 Vision critique, freeze, Gate A (IN PROGRESS — critique round 1 running)
+- Last session:
+  - Phase 0: toolchain pinned (D-001), no official Java Sift content (D-002), scaffold builds, dedicated server boots, headless client works (Vulkan/lavapipe), 26.3 sources studied (VANILLA_ANALOGS W/E/P), canon research + bestiary + press pass.
+  - Phase 1: vision drafted: fantasy/pillars (D-005), entry path "souls wake it, song opens it" (D-006), rules, core systems (D-007).
+- Next 3 actions: 1. Apply research-review findings; close WP-003/004. 2. Apply critique round 1 to 00_VISION.md; run round 2 (≤3). 3. Freeze the vision, write the Gate A summary, stop for the owner.
+- Build: ✅ @ scaffold (`./gradlew build` green, -Xlint:all clean) | Tests: 0/0 (none yet; Phase 3) | Server boot: ✅ (runServer "Done", no thesift warnings)
 - Blockers: none
-- Awaiting owner: nothing
+- Awaiting owner: nothing yet (Gate A pending critique)
+- Environment notes for a fresh session: Gradle downloads JDK 25 itself (gradle-daemon-jvm.properties). Headless client: `tools/dev/headless-client.sh start|screenshot|stop` (installs xvfb + mesa-vulkan-drivers if missing). `./gradlew genSources` then unzip `.gradle/loom-cache/minecraftMaven/net/minecraft/minecraft-{common,clientOnly}-*/26.3/*-sources.jar` to study vanilla.
