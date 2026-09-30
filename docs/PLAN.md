@@ -219,6 +219,7 @@ Deliverable: `docs/DESIGN/00_VISION.md` (the frozen vision) + focused appendices
 - Iteration budget: self-check 1 pass.
 - Exit ramp: cut a system to "concept only / later" with a reason if it fails the pillars.
 - Log:
+  - 2026-09-30: feasibility spike (scratch copy, not committed code): custom env attribute + clock + timeline + custom dimension type all load and behave as designed; `/time` drives the Tide (evidence in VANILLA_ANALOGS W4). This retires weakness (2) below.
   - 2026-09-30: self-check (weaknesses first): (1) 'souls = XP' competes with enchanting; this is intended as a trade-off but needs BALANCE numbers; (2) custom environment attributes keyed on timelines are an untested assumption (Phase 3 spike); (3) Endure 'stronger variants' may read as a stat check unless the glow and behaviour changes are designed per mob (Phase 2).
 
 ### WP-014 Vision critique, freeze and Gate A
