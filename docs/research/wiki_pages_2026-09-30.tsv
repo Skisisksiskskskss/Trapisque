@@ -1,14 +1,14 @@
 # minecraft.wiki pages fetched 2026-09-30 for WP-003/004 (metadata only; no page text).
-# columns: title, url, last_revision_utc, maintenance_flags, cited_in_research
-Blub	https://minecraft.wiki/w/Blub	2026-09-30T02:06:03Z	Planned	cited
-Category:Hostile Sifters	https://minecraft.wiki/w/Category:Hostile_Sifters	2026-09-30T01:58:06Z	-	cited
+# columns: title, url, last_revision_utc, maintenance_flags, cited_in_research ("cited" = cited in RESEARCH.md or RESEARCH_BESTIARY.md as of 2026-09-30; blank = fetched and read, not cited)
+Blub	https://minecraft.wiki/w/Blub	2026-09-30T02:06:03Z	Planned	cited (S-W2)
+Category:Hostile Sifters	https://minecraft.wiki/w/Category:Hostile_Sifters	2026-09-30T01:58:06Z	-	
 Category:Minecraft Dungeons II: The Rift chapters	https://minecraft.wiki/w/Category:Minecraft_Dungeons_II:_The_Rift_chapters	2026-08-30T20:40:41Z	-	
-Category:Sift mobs	https://minecraft.wiki/w/Category:Sift_mobs	2026-09-26T20:58:09Z	-	cited
-Category:Sifters	https://minecraft.wiki/w/Category:Sifters	2026-09-30T01:57:09Z	-	cited
-Category:The Sift	https://minecraft.wiki/w/Category:The_Sift	2026-09-26T20:14:48Z	-	cited
+Category:Sift mobs	https://minecraft.wiki/w/Category:Sift_mobs	2026-09-26T20:58:09Z	-	
+Category:Sifters	https://minecraft.wiki/w/Category:Sifters	2026-09-30T01:57:09Z	-	
+Category:The Sift	https://minecraft.wiki/w/Category:The_Sift	2026-09-26T20:14:48Z	-	
 Dungeons II:1.1.1.0	https://minecraft.wiki/w/Dungeons_II:1.1.1.0	2026-09-29T20:44:48Z	-	
 Dungeons II:21591 The Twisted Warden Battle	https://minecraft.wiki/w/Dungeons_II:21591_The_Twisted_Warden_Battle	2026-08-23T06:52:17Z	Stub,Expand section	
-Dungeons II:ARG	https://minecraft.wiki/w/Dungeons_II:ARG	2026-09-27T21:49:47Z	Citation needed,More citations needed,Sic	cited
+Dungeons II:ARG	https://minecraft.wiki/w/Dungeons_II:ARG	2026-09-27T21:49:47Z	Citation needed,More citations needed,Sic	
 Dungeons II:Achievement	https://minecraft.wiki/w/Dungeons_II:Achievement	2026-09-29T08:28:50Z	WIP,Spoiler warning,Sic	cited
 Dungeons II:Action figures	https://minecraft.wiki/w/Dungeons_II:Action_figures	2026-09-15T04:43:22Z	WIP	
 Dungeons II:Adventure Alex	https://minecraft.wiki/w/Dungeons_II:Adventure_Alex	2026-09-29T22:49:52Z	-	
@@ -18,8 +18,8 @@ Dungeons II:Alchemist Hat	https://minecraft.wiki/w/Dungeons_II:Alchemist_Hat	202
 Dungeons II:Alchemist Loafers	https://minecraft.wiki/w/Dungeons_II:Alchemist_Loafers	2026-09-11T22:02:58Z	-	
 Dungeons II:Alchemist Robe	https://minecraft.wiki/w/Dungeons_II:Alchemist_Robe	2026-09-27T10:15:59Z	Conjecture	
 Dungeons II:Ancient Alchemy	https://minecraft.wiki/w/Dungeons_II:Ancient_Alchemy	2026-09-14T22:03:08Z	-	
-Dungeons II:Ancient City	https://minecraft.wiki/w/Dungeons_II:Ancient_City	2026-09-08T23:35:23Z	-	cited
-Dungeons II:Antenna Sifter	https://minecraft.wiki/w/Dungeons_II:Antenna_Sifter	2026-09-27T21:23:51Z	Conjecture	cited
+Dungeons II:Ancient City	https://minecraft.wiki/w/Dungeons_II:Ancient_City	2026-09-08T23:35:23Z	-	
+Dungeons II:Antenna Sifter	https://minecraft.wiki/w/Dungeons_II:Antenna_Sifter	2026-09-27T21:23:51Z	Conjecture	
 Dungeons II:Apple	https://minecraft.wiki/w/Dungeons_II:Apple	2026-08-26T21:10:41Z	-	
 Dungeons II:Arch-Illager	https://minecraft.wiki/w/Dungeons_II:Arch-Illager	2026-09-19T01:05:02Z	Spoiler warning,Uncertain	
 Dungeons II:Armadillo Amulet	https://minecraft.wiki/w/Dungeons_II:Armadillo_Amulet	2026-09-30T00:50:02Z	-	
@@ -33,7 +33,7 @@ Dungeons II:Baby Zombie	https://minecraft.wiki/w/Dungeons_II:Baby_Zombie	2026-09
 Dungeons II:Banner	https://minecraft.wiki/w/Dungeons_II:Banner	2026-09-27T19:09:40Z	Conjecture	
 Dungeons II:Barrier Brew	https://minecraft.wiki/w/Dungeons_II:Barrier_Brew	2026-09-25T06:13:47Z	-	
 Dungeons II:Battle Hammer	https://minecraft.wiki/w/Dungeons_II:Battle_Hammer	2026-09-10T23:44:07Z	-	
-Dungeons II:Battle for Tokyo	https://minecraft.wiki/w/Dungeons_II:Battle_for_Tokyo	2026-09-16T10:15:38Z	WIP,Empty section	cited
+Dungeons II:Battle for Tokyo	https://minecraft.wiki/w/Dungeons_II:Battle_for_Tokyo	2026-09-16T10:15:38Z	WIP,Empty section	
 Dungeons II:Battlestaff	https://minecraft.wiki/w/Dungeons_II:Battlestaff	2026-09-10T21:29:05Z	-	
 Dungeons II:Bee	https://minecraft.wiki/w/Dungeons_II:Bee	2026-08-23T21:19:19Z	-	
 Dungeons II:Beekeeper Armor	https://minecraft.wiki/w/Dungeons_II:Beekeeper_Armor	2026-09-25T01:55:29Z	-	
@@ -46,9 +46,9 @@ Dungeons II:Blaze Bangle	https://minecraft.wiki/w/Dungeons_II:Blaze_Bangle	2026-
 Dungeons II:Blight Bangle	https://minecraft.wiki/w/Dungeons_II:Blight_Bangle	2026-09-30T01:28:36Z	-	
 Dungeons II:Bloombud	https://minecraft.wiki/w/Dungeons_II:Bloombud	2026-09-29T22:44:58Z	WIP,Expand section	cited
 Dungeons II:Blub	https://minecraft.wiki/w/Dungeons_II:Blub	2026-09-30T02:46:47Z	Splitting,Verify	cited
-Dungeons II:Blub Pet	https://minecraft.wiki/w/Dungeons_II:Blub_Pet	2026-09-29T22:04:58Z	WIP	cited
+Dungeons II:Blub Pet	https://minecraft.wiki/w/Dungeons_II:Blub_Pet	2026-09-29T22:04:58Z	WIP	
 Dungeons II:Blubber	https://minecraft.wiki/w/Dungeons_II:Blubber	2026-09-29T22:45:28Z	Conjecture	cited
-Dungeons II:Blue Creeper Battle	https://minecraft.wiki/w/Dungeons_II:Blue_Creeper_Battle	2026-09-28T14:09:25Z	-	cited
+Dungeons II:Blue Creeper Battle	https://minecraft.wiki/w/Dungeons_II:Blue_Creeper_Battle	2026-09-28T14:09:25Z	-	
 Dungeons II:Boots	https://minecraft.wiki/w/Dungeons_II:Boots	2026-09-25T02:40:19Z	-	
 Dungeons II:Boss	https://minecraft.wiki/w/Dungeons_II:Boss	2026-09-29T21:18:06Z	WIP	
 Dungeons II:Bottomless Brew	https://minecraft.wiki/w/Dungeons_II:Bottomless_Brew	2026-09-28T17:04:47Z	-	
@@ -62,7 +62,7 @@ Dungeons II:Bubbles	https://minecraft.wiki/w/Dungeons_II:Bubbles	2026-09-26T20:4
 Dungeons II:Buddy Brew	https://minecraft.wiki/w/Dungeons_II:Buddy_Brew	2026-09-27T03:48:38Z	-	
 Dungeons II:Burning	https://minecraft.wiki/w/Dungeons_II:Burning	2026-09-25T08:08:01Z	Conjecture	
 Dungeons II:Burning Blade	https://minecraft.wiki/w/Dungeons_II:Burning_Blade	2026-09-13T20:54:43Z	-	
-Dungeons II:Cacaphonous Cleaver	https://minecraft.wiki/w/Dungeons_II:Cacaphonous_Cleaver	2026-09-25T02:08:47Z	-	cited
+Dungeons II:Cacaphonous Cleaver	https://minecraft.wiki/w/Dungeons_II:Cacaphonous_Cleaver	2026-09-25T02:08:47Z	-	
 Dungeons II:Candlemaker	https://minecraft.wiki/w/Dungeons_II:Candlemaker	2026-09-17T20:13:52Z	Conjecture	
 Dungeons II:Cape	https://minecraft.wiki/w/Dungeons_II:Cape	2026-09-29T21:32:46Z	-	
 Dungeons II:Carrot	https://minecraft.wiki/w/Dungeons_II:Carrot	2026-08-26T21:11:26Z	-	
@@ -99,14 +99,14 @@ Dungeons II:Critical Quiver	https://minecraft.wiki/w/Dungeons_II:Critical_Quiver
 Dungeons II:Crossbow	https://minecraft.wiki/w/Dungeons_II:Crossbow	2026-09-29T01:44:27Z	-	
 Dungeons II:Dartback	https://minecraft.wiki/w/Dungeons_II:Dartback	2026-09-30T00:48:02Z	-	cited
 Dungeons II:Death Cap Mushroom	https://minecraft.wiki/w/Dungeons_II:Death_Cap_Mushroom	2026-09-30T01:54:50Z	-	
-Dungeons II:Deep Dark	https://minecraft.wiki/w/Dungeons_II:Deep_Dark	2026-09-28T11:59:45Z	-	cited
+Dungeons II:Deep Dark	https://minecraft.wiki/w/Dungeons_II:Deep_Dark	2026-09-28T11:59:45Z	-	
 Dungeons II:Deep Dark Portal	https://minecraft.wiki/w/Dungeons_II:Deep_Dark_Portal	2026-09-30T00:23:37Z	WIP	cited
 Dungeons II:Deluxe Edition	https://minecraft.wiki/w/Dungeons_II:Deluxe_Edition	2026-09-29T23:11:43Z	-	
 Dungeons II:Dev Diaries	https://minecraft.wiki/w/Dungeons_II:Dev_Diaries	2026-09-14T16:44:14Z	WIP,Empty section	
 Dungeons II:Diamond Pickaxe	https://minecraft.wiki/w/Dungeons_II:Diamond_Pickaxe	2026-09-29T22:47:43Z	-	
 Dungeons II:Diamond Shovel	https://minecraft.wiki/w/Dungeons_II:Diamond_Shovel	2026-09-27T11:25:58Z	-	
 Dungeons II:Difficulty	https://minecraft.wiki/w/Dungeons_II:Difficulty	2026-09-28T18:11:21Z	Stub,Empty section	
-Dungeons II:Dimension	https://minecraft.wiki/w/Dungeons_II:Dimension	2026-09-28T01:38:53Z	Stub	cited
+Dungeons II:Dimension	https://minecraft.wiki/w/Dungeons_II:Dimension	2026-09-28T01:38:53Z	Stub	
 Dungeons II:Disciple Armor	https://minecraft.wiki/w/Dungeons_II:Disciple_Armor	2026-09-25T01:00:33Z	-	
 Dungeons II:Disciple Leggings	https://minecraft.wiki/w/Dungeons_II:Disciple_Leggings	2026-09-10T08:05:00Z	-	
 Dungeons II:Disciple Mask	https://minecraft.wiki/w/Dungeons_II:Disciple_Mask	2026-09-11T00:20:37Z	-	
@@ -115,13 +115,13 @@ Dungeons II:Disciple Wraps	https://minecraft.wiki/w/Dungeons_II:Disciple_Wraps	2
 Dungeons II:Double Crossers	https://minecraft.wiki/w/Dungeons_II:Double_Crossers	2026-09-27T04:57:19Z	-	
 Dungeons II:Double Daggers	https://minecraft.wiki/w/Dungeons_II:Double_Daggers	2026-09-27T02:07:28Z	-	
 Dungeons II:Double Sickles	https://minecraft.wiki/w/Dungeons_II:Double_Sickles	2026-09-29T03:13:58Z	-	
-Dungeons II:Down Into The Deep Dark	https://minecraft.wiki/w/Dungeons_II:Down_Into_The_Deep_Dark	2026-09-13T16:51:49Z	Sic	cited
+Dungeons II:Down Into The Deep Dark	https://minecraft.wiki/w/Dungeons_II:Down_Into_The_Deep_Dark	2026-09-13T16:51:49Z	Sic	
 Dungeons II:Downloadable content	https://minecraft.wiki/w/Dungeons_II:Downloadable_content	2026-09-30T01:45:03Z	WIP,Citation needed	
 Dungeons II:Dual Crossbows	https://minecraft.wiki/w/Dungeons_II:Dual_Crossbows	2026-09-27T04:57:10Z	-	
 Dungeons II:Dynamo	https://minecraft.wiki/w/Dungeons_II:Dynamo	2026-08-31T05:33:35Z	-	
 Dungeons II:Echo Den	https://minecraft.wiki/w/Dungeons_II:Echo_Den	2026-09-26T20:30:08Z	-	cited
 Dungeons II:Echo Golem	https://minecraft.wiki/w/Dungeons_II:Echo_Golem	2026-09-30T01:00:12Z	-	cited
-Dungeons II:Echo Shard	https://minecraft.wiki/w/Dungeons_II:Echo_Shard	2026-09-25T20:00:49Z	-	cited
+Dungeons II:Echo Shard	https://minecraft.wiki/w/Dungeons_II:Echo_Shard	2026-09-25T20:00:49Z	-	
 Dungeons II:Effect	https://minecraft.wiki/w/Dungeons_II:Effect	2026-09-26T10:34:44Z	-	
 Dungeons II:Electric Bangle	https://minecraft.wiki/w/Dungeons_II:Electric_Bangle	2026-09-30T00:55:24Z	-	
 Dungeons II:Elemental Staff	https://minecraft.wiki/w/Dungeons_II:Elemental_Staff	2026-09-10T21:31:40Z	-	
@@ -143,7 +143,7 @@ Dungeons II:Fancy Flores	https://minecraft.wiki/w/Dungeons_II:Fancy_Flores	2026-
 Dungeons II:Fancy Kellen	https://minecraft.wiki/w/Dungeons_II:Fancy_Kellen	2026-09-29T23:05:04Z	Conjecture	
 Dungeons II:Fancy Ren	https://minecraft.wiki/w/Dungeons_II:Fancy_Ren	2026-09-29T23:07:43Z	-	
 Dungeons II:Fancy Valorie	https://minecraft.wiki/w/Dungeons_II:Fancy_Valorie	2026-09-29T22:58:05Z	Stub	
-Dungeons II:Fergus	https://minecraft.wiki/w/Dungeons_II:Fergus	2026-09-28T23:29:27Z	Stub,Empty section	
+Dungeons II:Fergus	https://minecraft.wiki/w/Dungeons_II:Fergus	2026-09-28T23:29:27Z	Stub,Empty section	cited
 Dungeons II:Fighter's Flute	https://minecraft.wiki/w/Dungeons_II:Fighter's_Flute	2026-09-25T04:35:16Z	-	
 Dungeons II:Fire Aspect	https://minecraft.wiki/w/Dungeons_II:Fire_Aspect	2026-08-31T07:11:30Z	-	
 Dungeons II:Firework Arrow	https://minecraft.wiki/w/Dungeons_II:Firework_Arrow	2026-09-28T23:52:33Z	-	
@@ -172,7 +172,7 @@ Dungeons II:Glaive	https://minecraft.wiki/w/Dungeons_II:Glaive	2026-09-10T23:52:
 Dungeons II:Glow Squid	https://minecraft.wiki/w/Dungeons_II:Glow_Squid	2026-08-23T21:22:47Z	-	
 Dungeons II:Glowstone Flask	https://minecraft.wiki/w/Dungeons_II:Glowstone_Flask	2026-09-29T13:23:38Z	-	
 Dungeons II:Goat	https://minecraft.wiki/w/Dungeons_II:Goat	2026-09-01T07:35:09Z	-	
-Dungeons II:Golem	https://minecraft.wiki/w/Dungeons_II:Golem	2026-09-29T10:26:03Z	-	
+Dungeons II:Golem	https://minecraft.wiki/w/Dungeons_II:Golem	2026-09-29T10:26:03Z	-	cited
 Dungeons II:Golem Kit	https://minecraft.wiki/w/Dungeons_II:Golem_Kit	2026-09-28T17:43:35Z	-	
 Dungeons II:Grand Illusioner	https://minecraft.wiki/w/Dungeons_II:Grand_Illusioner	2026-09-29T21:16:11Z	Uncertain	cited
 Dungeons II:Grand Illusioner's Staff	https://minecraft.wiki/w/Dungeons_II:Grand_Illusioner's_Staff	2026-09-27T16:09:27Z	Stub,Empty section	cited
@@ -186,7 +186,7 @@ Dungeons II:Grindstone	https://minecraft.wiki/w/Dungeons_II:Grindstone	2026-09-3
 Dungeons II:Harlow	https://minecraft.wiki/w/Dungeons_II:Harlow	2026-09-05T20:46:14Z	WIP,Empty section,Expand section	cited
 Dungeons II:Harlow's Village	https://minecraft.wiki/w/Dungeons_II:Harlow's_Village	2026-09-05T21:02:51Z	WIP,Empty section,Expand section	
 Dungeons II:Harmonizer	https://minecraft.wiki/w/Dungeons_II:Harmonizer	2026-09-30T00:11:39Z	-	cited
-Dungeons II:Harp Crossbow	https://minecraft.wiki/w/Dungeons_II:Harp_Crossbow	2026-09-27T04:59:34Z	Conjecture	cited
+Dungeons II:Harp Crossbow	https://minecraft.wiki/w/Dungeons_II:Harp_Crossbow	2026-09-27T04:59:34Z	Conjecture	
 Dungeons II:Harvest Fest	https://minecraft.wiki/w/Dungeons_II:Harvest_Fest	2026-09-18T17:40:35Z	-	
 Dungeons II:Healing Heart	https://minecraft.wiki/w/Dungeons_II:Healing_Heart	2026-09-30T01:26:59Z	-	
 Dungeons II:Healing Smite	https://minecraft.wiki/w/Dungeons_II:Healing_Smite	2026-09-14T22:01:28Z	-	
@@ -228,33 +228,33 @@ Dungeons II:Lightning Rod	https://minecraft.wiki/w/Dungeons_II:Lightning_Rod	202
 Dungeons II:Lightning Surge	https://minecraft.wiki/w/Dungeons_II:Lightning_Surge	2026-09-25T07:37:08Z	-	
 Dungeons II:Little Howl Hamlet	https://minecraft.wiki/w/Dungeons_II:Little_Howl_Hamlet	2026-09-27T17:34:42Z	-	
 Dungeons II:Location	https://minecraft.wiki/w/Dungeons_II:Location	2026-09-30T00:17:17Z	-	cited
-Dungeons II:Lonesome in Lullaby Hills	https://minecraft.wiki/w/Dungeons_II:Lonesome_in_Lullaby_Hills	2026-09-14T23:10:55Z	WIP,Partially conjecture,Stub,Empty section	cited
+Dungeons II:Lonesome in Lullaby Hills	https://minecraft.wiki/w/Dungeons_II:Lonesome_in_Lullaby_Hills	2026-09-14T23:10:55Z	WIP,Partially conjecture,Stub,Empty section	
 Dungeons II:Longbow	https://minecraft.wiki/w/Dungeons_II:Longbow	2026-09-29T19:47:31Z	-	
 Dungeons II:Looter's Charm	https://minecraft.wiki/w/Dungeons_II:Looter's_Charm	2026-09-28T16:50:11Z	-	
 Dungeons II:Lucky	https://minecraft.wiki/w/Dungeons_II:Lucky	2026-09-12T16:29:36Z	Spoiler warning	cited
 Dungeons II:Lucky Clover	https://minecraft.wiki/w/Dungeons_II:Lucky_Clover	2026-09-28T16:11:19Z	-	
 Dungeons II:Lullaby Hills	https://minecraft.wiki/w/Dungeons_II:Lullaby_Hills	2026-09-19T00:30:25Z	-	cited
 Dungeons II:Mace	https://minecraft.wiki/w/Dungeons_II:Mace	2026-09-30T00:31:32Z	-	
-Dungeons II:Mad Sifter Armor	https://minecraft.wiki/w/Dungeons_II:Mad_Sifter_Armor	2026-09-25T02:13:47Z	-	cited
-Dungeons II:Mad Sifter Hat	https://minecraft.wiki/w/Dungeons_II:Mad_Sifter_Hat	2026-09-11T00:16:01Z	-	cited
-Dungeons II:Mad Sifter Paws	https://minecraft.wiki/w/Dungeons_II:Mad_Sifter_Paws	2026-09-22T00:32:27Z	-	cited
-Dungeons II:Mad Sifter Vest	https://minecraft.wiki/w/Dungeons_II:Mad_Sifter_Vest	2026-09-25T03:52:12Z	-	cited
+Dungeons II:Mad Sifter Armor	https://minecraft.wiki/w/Dungeons_II:Mad_Sifter_Armor	2026-09-25T02:13:47Z	-	
+Dungeons II:Mad Sifter Hat	https://minecraft.wiki/w/Dungeons_II:Mad_Sifter_Hat	2026-09-11T00:16:01Z	-	
+Dungeons II:Mad Sifter Paws	https://minecraft.wiki/w/Dungeons_II:Mad_Sifter_Paws	2026-09-22T00:32:27Z	-	
+Dungeons II:Mad Sifter Vest	https://minecraft.wiki/w/Dungeons_II:Mad_Sifter_Vest	2026-09-25T03:52:12Z	-	
 Dungeons II:Mallet	https://minecraft.wiki/w/Dungeons_II:Mallet	2026-09-27T02:11:25Z	Conjecture	
 Dungeons II:Meat Cleaver	https://minecraft.wiki/w/Dungeons_II:Meat_Cleaver	2026-09-30T00:56:18Z	-	
 Dungeons II:Medallion of Momentum	https://minecraft.wiki/w/Dungeons_II:Medallion_of_Momentum	2026-09-10T03:33:42Z	-	
 Dungeons II:Melon	https://minecraft.wiki/w/Dungeons_II:Melon	2026-08-26T21:11:15Z	-	
 Dungeons II:Merchant	https://minecraft.wiki/w/Dungeons_II:Merchant	2026-09-06T22:40:16Z	-	
 Dungeons II:Minecart Station	https://minecraft.wiki/w/Dungeons_II:Minecart_Station	2026-09-10T01:27:15Z	-	
-Dungeons II:Minecraft Dungeons II – Announce Trailer	https://minecraft.wiki/w/Dungeons_II:Minecraft_Dungeons_II_%E2%80%93_Announce_Trailer	2026-09-10T01:23:07Z	Sic	
-Dungeons II:Minecraft Dungeons II – Official Gameplay Trailer	https://minecraft.wiki/w/Dungeons_II:Minecraft_Dungeons_II_%E2%80%93_Official_Gameplay_Trailer	2026-09-21T04:28:34Z	WIP,Empty section	cited
+Dungeons II:Minecraft Dungeons II – Announce Trailer	https://minecraft.wiki/w/Dungeons_II:Minecraft_Dungeons_II_%E2%80%93_Announce_Trailer	2026-09-10T01:23:07Z	Sic	cited
+Dungeons II:Minecraft Dungeons II – Official Gameplay Trailer	https://minecraft.wiki/w/Dungeons_II:Minecraft_Dungeons_II_%E2%80%93_Official_Gameplay_Trailer	2026-09-21T04:28:34Z	WIP,Empty section	
 Dungeons II:Minecraft Dungeons II – Reveal Trailer	https://minecraft.wiki/w/Dungeons_II:Minecraft_Dungeons_II_%E2%80%93_Reveal_Trailer	2026-09-25T22:55:02Z	WIP,Expand section	cited
 Dungeons II:Minor characters	https://minecraft.wiki/w/Dungeons_II:Minor_characters	2026-09-22T05:56:43Z	Empty section,Expand section	
 Dungeons II:Mob	https://minecraft.wiki/w/Dungeons_II:Mob	2026-09-29T23:14:48Z	Conjecture	cited
 Dungeons II:Mob Mallet	https://minecraft.wiki/w/Dungeons_II:Mob_Mallet	2026-09-26T22:11:39Z	-	
 Dungeons II:Mojang Studios Cape	https://minecraft.wiki/w/Dungeons_II:Mojang_Studios_Cape	2026-09-29T22:46:13Z	WIP,Conjecture	
 Dungeons II:Monarch	https://minecraft.wiki/w/Dungeons_II:Monarch	2026-09-29T21:12:26Z	-	cited
-Dungeons II:Monarch Armor	https://minecraft.wiki/w/Dungeons_II:Monarch_Armor	2026-09-26T21:05:25Z	-	cited
-Dungeons II:Monarch Talons	https://minecraft.wiki/w/Dungeons_II:Monarch_Talons	2026-09-10T06:00:04Z	-	cited
+Dungeons II:Monarch Armor	https://minecraft.wiki/w/Dungeons_II:Monarch_Armor	2026-09-26T21:05:25Z	-	
+Dungeons II:Monarch Talons	https://minecraft.wiki/w/Dungeons_II:Monarch_Talons	2026-09-10T06:00:04Z	-	
 Dungeons II:Monstrous Opus	https://minecraft.wiki/w/Dungeons_II:Monstrous_Opus	2026-09-29T14:29:21Z	Spoiler warning,Empty section	cited
 Dungeons II:Mr. Ochoa	https://minecraft.wiki/w/Dungeons_II:Mr._Ochoa	2026-09-18T06:21:04Z	WIP,Spoiler warning,Empty section	
 Dungeons II:Mr. Ochoa's House	https://minecraft.wiki/w/Dungeons_II:Mr._Ochoa's_House	2026-09-01T15:27:07Z	WIP,Empty section	
@@ -273,7 +273,7 @@ Dungeons II:Nomad Boots	https://minecraft.wiki/w/Dungeons_II:Nomad_Boots	2026-09
 Dungeons II:Nomad Chestplate	https://minecraft.wiki/w/Dungeons_II:Nomad_Chestplate	2026-09-10T05:47:23Z	Conjecture	
 Dungeons II:Nomad Hood	https://minecraft.wiki/w/Dungeons_II:Nomad_Hood	2026-09-25T01:00:04Z	-	
 Dungeons II:Nomad Leggings	https://minecraft.wiki/w/Dungeons_II:Nomad_Leggings	2026-09-25T02:16:50Z	-	
-Dungeons II:Note Block	https://minecraft.wiki/w/Dungeons_II:Note_Block	2026-09-10T00:24:43Z	WIP,Expand section	cited
+Dungeons II:Note Block	https://minecraft.wiki/w/Dungeons_II:Note_Block	2026-09-10T00:24:43Z	WIP,Expand section	
 Dungeons II:Note Block Machine	https://minecraft.wiki/w/Dungeons_II:Note_Block_Machine	2026-09-28T13:01:18Z	-	cited
 Dungeons II:Nuru	https://minecraft.wiki/w/Dungeons_II:Nuru	2026-09-27T17:18:42Z	WIP	
 Dungeons II:Ocelot's Paw	https://minecraft.wiki/w/Dungeons_II:Ocelot's_Paw	2026-09-28T16:11:59Z	-	
@@ -281,7 +281,7 @@ Dungeons II:Opening Cinematic	https://minecraft.wiki/w/Dungeons_II:Opening_Cinem
 Dungeons II:Oracle Armor	https://minecraft.wiki/w/Dungeons_II:Oracle_Armor	2026-09-25T00:59:41Z	-	
 Dungeons II:Oracle Crown	https://minecraft.wiki/w/Dungeons_II:Oracle_Crown	2026-09-25T00:59:21Z	-	
 Dungeons II:Oracle Tights	https://minecraft.wiki/w/Dungeons_II:Oracle_Tights	2026-09-27T10:38:00Z	-	
-Dungeons II:Original Game Soundtrack	https://minecraft.wiki/w/Dungeons_II:Original_Game_Soundtrack	2026-09-29T12:26:25Z	-	cited
+Dungeons II:Original Game Soundtrack	https://minecraft.wiki/w/Dungeons_II:Original_Game_Soundtrack	2026-09-29T12:26:25Z	-	
 Dungeons II:Overworld	https://minecraft.wiki/w/Dungeons_II:Overworld	2026-09-27T07:07:09Z	Conjecture	
 Dungeons II:Pet	https://minecraft.wiki/w/Dungeons_II:Pet	2026-09-29T09:10:07Z	-	
 Dungeons II:Phantom Armor	https://minecraft.wiki/w/Dungeons_II:Phantom_Armor	2026-09-22T22:12:27Z	-	
@@ -307,9 +307,9 @@ Dungeons II:Pouch of Thunder	https://minecraft.wiki/w/Dungeons_II:Pouch_of_Thund
 Dungeons II:Powerbow	https://minecraft.wiki/w/Dungeons_II:Powerbow	2026-09-29T22:58:36Z	-	
 Dungeons II:Powershaker	https://minecraft.wiki/w/Dungeons_II:Powershaker	2026-09-10T07:33:08Z	-	
 Dungeons II:Prickle	https://minecraft.wiki/w/Dungeons_II:Prickle	2026-09-29T22:27:09Z	Conjecture	cited
-Dungeons II:Prickle's Mark	https://minecraft.wiki/w/Dungeons_II:Prickle's_Mark	2026-09-28T16:12:19Z	-	cited
+Dungeons II:Prickle's Mark	https://minecraft.wiki/w/Dungeons_II:Prickle's_Mark	2026-09-28T16:12:19Z	-	
 Dungeons II:Pride of the Plains	https://minecraft.wiki/w/Dungeons_II:Pride_of_the_Plains	2026-09-01T04:23:11Z	-	
-Dungeons II:Prime Enchanter	https://minecraft.wiki/w/Dungeons_II:Prime_Enchanter	2026-09-29T20:19:37Z	-	cited
+Dungeons II:Prime Enchanter	https://minecraft.wiki/w/Dungeons_II:Prime_Enchanter	2026-09-29T20:19:37Z	-	
 Dungeons II:Prime Enchanter Gauntlets	https://minecraft.wiki/w/Dungeons_II:Prime_Enchanter_Gauntlets	2026-09-10T23:43:26Z	Conjecture	
 Dungeons II:Promotional content	https://minecraft.wiki/w/Dungeons_II:Promotional_content	2026-09-19T23:43:54Z	-	
 Dungeons II:Protector Armor	https://minecraft.wiki/w/Dungeons_II:Protector_Armor	2026-09-22T22:12:21Z	-	
@@ -330,8 +330,8 @@ Dungeons II:Ranger Leggings	https://minecraft.wiki/w/Dungeons_II:Ranger_Leggings
 Dungeons II:Rapid Crossbow	https://minecraft.wiki/w/Dungeons_II:Rapid_Crossbow	2026-09-29T02:42:45Z	-	
 Dungeons II:Rapier	https://minecraft.wiki/w/Dungeons_II:Rapier	2026-09-29T10:12:56Z	-	
 Dungeons II:Rarity	https://minecraft.wiki/w/Dungeons_II:Rarity	2026-09-26T18:15:40Z	-	
-Dungeons II:Ravager	https://minecraft.wiki/w/Dungeons_II:Ravager	2026-09-10T01:24:21Z	-	cited
-Dungeons II:Realmreacher Armor	https://minecraft.wiki/w/Dungeons_II:Realmreacher_Armor	2026-09-26T21:40:13Z	-	cited
+Dungeons II:Ravager	https://minecraft.wiki/w/Dungeons_II:Ravager	2026-09-10T01:24:21Z	-	
+Dungeons II:Realmreacher Armor	https://minecraft.wiki/w/Dungeons_II:Realmreacher_Armor	2026-09-26T21:40:13Z	-	
 Dungeons II:Realmreacher Boots	https://minecraft.wiki/w/Dungeons_II:Realmreacher_Boots	2026-09-26T21:40:03Z	-	
 Dungeons II:Realmreacher Hat	https://minecraft.wiki/w/Dungeons_II:Realmreacher_Hat	2026-09-25T00:59:52Z	-	
 Dungeons II:Realmreacher Leggings	https://minecraft.wiki/w/Dungeons_II:Realmreacher_Leggings	2026-09-10T04:07:21Z	-	
@@ -353,7 +353,7 @@ Dungeons II:Ren	https://minecraft.wiki/w/Dungeons_II:Ren	2026-09-29T23:12:21Z	WI
 Dungeons II:Resource	https://minecraft.wiki/w/Dungeons_II:Resource	2026-09-05T16:34:09Z	-	
 Dungeons II:Reveal Trailer (Original Trailer Score)	https://minecraft.wiki/w/Dungeons_II:Reveal_Trailer_(Original_Trailer_Score)	2026-09-27T23:35:40Z	-	
 Dungeons II:Rift	https://minecraft.wiki/w/Dungeons_II:Rift	2026-09-27T18:59:17Z	WIP	cited
-Dungeons II:Riftslasher	https://minecraft.wiki/w/Dungeons_II:Riftslasher	2026-09-29T01:31:35Z	-	cited
+Dungeons II:Riftslasher	https://minecraft.wiki/w/Dungeons_II:Riftslasher	2026-09-29T01:31:35Z	-	
 Dungeons II:Rover Armor	https://minecraft.wiki/w/Dungeons_II:Rover_Armor	2026-09-26T16:58:42Z	-	
 Dungeons II:Rover Helmet	https://minecraft.wiki/w/Dungeons_II:Rover_Helmet	2026-09-27T10:30:23Z	-	
 Dungeons II:Rover Leggings	https://minecraft.wiki/w/Dungeons_II:Rover_Leggings	2026-09-27T10:31:15Z	-	
@@ -367,19 +367,19 @@ Dungeons II:Scamp Jacket	https://minecraft.wiki/w/Dungeons_II:Scamp_Jacket	2026-
 Dungeons II:Scamp Leggings	https://minecraft.wiki/w/Dungeons_II:Scamp_Leggings	2026-09-10T03:53:25Z	-	
 Dungeons II:Scatter Crossbow	https://minecraft.wiki/w/Dungeons_II:Scatter_Crossbow	2026-09-27T04:57:00Z	-	
 Dungeons II:Scavenger	https://minecraft.wiki/w/Dungeons_II:Scavenger	2026-09-29T19:39:33Z	-	cited
-Dungeons II:Sculk	https://minecraft.wiki/w/Dungeons_II:Sculk	2026-09-29T01:23:52Z	Stub	cited
-Dungeons II:Sculk Badge	https://minecraft.wiki/w/Dungeons_II:Sculk_Badge	2026-09-29T13:29:24Z	-	cited
-Dungeons II:Sculk Claws	https://minecraft.wiki/w/Dungeons_II:Sculk_Claws	2026-09-24T22:42:48Z	Conjecture	cited
+Dungeons II:Sculk	https://minecraft.wiki/w/Dungeons_II:Sculk	2026-09-29T01:23:52Z	Stub	
+Dungeons II:Sculk Badge	https://minecraft.wiki/w/Dungeons_II:Sculk_Badge	2026-09-29T13:29:24Z	-	
+Dungeons II:Sculk Claws	https://minecraft.wiki/w/Dungeons_II:Sculk_Claws	2026-09-24T22:42:48Z	Conjecture	
 Dungeons II:Sculk Cube	https://minecraft.wiki/w/Dungeons_II:Sculk_Cube	2026-09-09T22:48:59Z	Conjecture	cited
 Dungeons II:Sculk Digger Armor	https://minecraft.wiki/w/Dungeons_II:Sculk_Digger_Armor	2026-09-10T23:23:12Z	-	
-Dungeons II:Sculk Digger Boots	https://minecraft.wiki/w/Dungeons_II:Sculk_Digger_Boots	2026-09-10T23:23:02Z	-	cited
+Dungeons II:Sculk Digger Boots	https://minecraft.wiki/w/Dungeons_II:Sculk_Digger_Boots	2026-09-10T23:23:02Z	-	
 Dungeons II:Sculk Digger Hood	https://minecraft.wiki/w/Dungeons_II:Sculk_Digger_Hood	2026-09-29T12:56:38Z	-	
 Dungeons II:Sculk Digger Leggings	https://minecraft.wiki/w/Dungeons_II:Sculk_Digger_Leggings	2026-09-25T01:00:16Z	-	
 Dungeons II:Sculk Digger Robe	https://minecraft.wiki/w/Dungeons_II:Sculk_Digger_Robe	2026-09-25T00:57:00Z	-	
 Dungeons II:Sculk Monstrosity	https://minecraft.wiki/w/Dungeons_II:Sculk_Monstrosity	2026-09-27T17:28:32Z	-	cited
 Dungeons II:Sculk Stunner	https://minecraft.wiki/w/Dungeons_II:Sculk_Stunner	2026-09-28T01:36:05Z	WIP,Conjecture,Delete	cited
 Dungeons II:Sculker	https://minecraft.wiki/w/Dungeons_II:Sculker	2026-09-29T19:40:22Z	Set index	cited
-Dungeons II:Sculker's Bane	https://minecraft.wiki/w/Dungeons_II:Sculker's_Bane	2026-09-25T02:10:57Z	-	cited
+Dungeons II:Sculker's Bane	https://minecraft.wiki/w/Dungeons_II:Sculker's_Bane	2026-09-25T02:10:57Z	-	
 Dungeons II:Scythe	https://minecraft.wiki/w/Dungeons_II:Scythe	2026-09-01T04:49:10Z	-	
 Dungeons II:Seedling	https://minecraft.wiki/w/Dungeons_II:Seedling	2026-09-29T23:21:27Z	Partially conjecture	cited
 Dungeons II:Sentinel	https://minecraft.wiki/w/Dungeons_II:Sentinel	2026-09-29T21:13:44Z	-	cited
@@ -394,14 +394,14 @@ Dungeons II:Shovel	https://minecraft.wiki/w/Dungeons_II:Shovel	2026-09-10T18:05:
 Dungeons II:Shroomer	https://minecraft.wiki/w/Dungeons_II:Shroomer	2026-09-30T00:39:04Z	Conjecture	cited
 Dungeons II:Sift Sheep	https://minecraft.wiki/w/Dungeons_II:Sift_Sheep	2026-09-27T02:36:36Z	Conjecture	cited
 Dungeons II:Sift Sickles	https://minecraft.wiki/w/Dungeons_II:Sift_Sickles	2026-09-26T21:58:39Z	-	cited
-Dungeons II:Sift Socks	https://minecraft.wiki/w/Dungeons_II:Sift_Socks	2026-09-26T21:49:41Z	-	cited
+Dungeons II:Sift Socks	https://minecraft.wiki/w/Dungeons_II:Sift_Socks	2026-09-26T21:49:41Z	-	
 Dungeons II:Sift Tides	https://minecraft.wiki/w/Dungeons_II:Sift_Tides	2026-09-28T20:58:27Z	-	cited
 Dungeons II:Sifter	https://minecraft.wiki/w/Dungeons_II:Sifter	2026-09-30T02:00:51Z	Set index	cited
-Dungeons II:Sifter Armor	https://minecraft.wiki/w/Dungeons_II:Sifter_Armor	2026-09-22T19:05:44Z	-	cited
-Dungeons II:Sifter Boots	https://minecraft.wiki/w/Dungeons_II:Sifter_Boots	2026-09-10T05:43:37Z	-	cited
-Dungeons II:Sifter Chestplate	https://minecraft.wiki/w/Dungeons_II:Sifter_Chestplate	2026-09-25T02:14:15Z	Conjecture	cited
-Dungeons II:Sifter Hat	https://minecraft.wiki/w/Dungeons_II:Sifter_Hat	2026-09-25T02:14:50Z	-	cited
-Dungeons II:Sifter Leggings	https://minecraft.wiki/w/Dungeons_II:Sifter_Leggings	2026-09-10T05:26:26Z	-	cited
+Dungeons II:Sifter Armor	https://minecraft.wiki/w/Dungeons_II:Sifter_Armor	2026-09-22T19:05:44Z	-	
+Dungeons II:Sifter Boots	https://minecraft.wiki/w/Dungeons_II:Sifter_Boots	2026-09-10T05:43:37Z	-	
+Dungeons II:Sifter Chestplate	https://minecraft.wiki/w/Dungeons_II:Sifter_Chestplate	2026-09-25T02:14:15Z	Conjecture	
+Dungeons II:Sifter Hat	https://minecraft.wiki/w/Dungeons_II:Sifter_Hat	2026-09-25T02:14:50Z	-	
+Dungeons II:Sifter Leggings	https://minecraft.wiki/w/Dungeons_II:Sifter_Leggings	2026-09-10T05:26:26Z	-	
 Dungeons II:Sigil of Beeswax	https://minecraft.wiki/w/Dungeons_II:Sigil_of_Beeswax	2026-09-29T12:52:12Z	-	
 Dungeons II:Singer	https://minecraft.wiki/w/Dungeons_II:Singer	2026-09-29T05:29:36Z	-	cited
 Dungeons II:Singer's Meadow	https://minecraft.wiki/w/Dungeons_II:Singer's_Meadow	2026-09-29T22:40:30Z	-	cited
@@ -416,23 +416,23 @@ Dungeons II:Soul	https://minecraft.wiki/w/Dungeons_II:Soul	2026-09-29T10:02:23Z	
 Dungeons II:Soul Blast	https://minecraft.wiki/w/Dungeons_II:Soul_Blast	2026-08-25T00:23:06Z	-	
 Dungeons II:Soul Block	https://minecraft.wiki/w/Dungeons_II:Soul_Block	2026-09-28T20:35:38Z	Uncertain,Empty section	cited
 Dungeons II:Soul Blocker	https://minecraft.wiki/w/Dungeons_II:Soul_Blocker	2026-09-29T21:52:12Z	Conjecture,Delete	cited
-Dungeons II:Soul Burning	https://minecraft.wiki/w/Dungeons_II:Soul_Burning	2026-09-25T04:56:35Z	Conjecture	cited
+Dungeons II:Soul Burning	https://minecraft.wiki/w/Dungeons_II:Soul_Burning	2026-09-25T04:56:35Z	Conjecture	
 Dungeons II:Soul Cape	https://minecraft.wiki/w/Dungeons_II:Soul_Cape	2026-09-30T00:58:24Z	-	
-Dungeons II:Soul Chip	https://minecraft.wiki/w/Dungeons_II:Soul_Chip	2026-09-29T13:47:31Z	-	cited
+Dungeons II:Soul Chip	https://minecraft.wiki/w/Dungeons_II:Soul_Chip	2026-09-29T13:47:31Z	-	
 Dungeons II:Soul Corrupted	https://minecraft.wiki/w/Dungeons_II:Soul_Corrupted	2026-09-29T19:11:40Z	Citation needed	cited
 Dungeons II:Soul Corrupted Witch	https://minecraft.wiki/w/Dungeons_II:Soul_Corrupted_Witch	2026-09-30T00:57:28Z	-	
 Dungeons II:Soul Fire Armor	https://minecraft.wiki/w/Dungeons_II:Soul_Fire_Armor	2026-09-12T19:57:53Z	Conjecture	
 Dungeons II:Soul Fire Boots	https://minecraft.wiki/w/Dungeons_II:Soul_Fire_Boots	2026-09-11T00:17:19Z	-	
 Dungeons II:Soul Fire Hat	https://minecraft.wiki/w/Dungeons_II:Soul_Fire_Hat	2026-09-11T00:17:01Z	-	
 Dungeons II:Soul Fire Robe	https://minecraft.wiki/w/Dungeons_II:Soul_Fire_Robe	2026-09-11T00:17:06Z	-	
-Dungeons II:Soul Harvester	https://minecraft.wiki/w/Dungeons_II:Soul_Harvester	2026-09-10T06:21:44Z	-	cited
+Dungeons II:Soul Harvester	https://minecraft.wiki/w/Dungeons_II:Soul_Harvester	2026-09-10T06:21:44Z	-	
 Dungeons II:Soul Pack	https://minecraft.wiki/w/Dungeons_II:Soul_Pack	2026-09-29T23:14:11Z	WIP	
-Dungeons II:Soul Reaper	https://minecraft.wiki/w/Dungeons_II:Soul_Reaper	2026-09-28T07:37:30Z	-	cited
-Dungeons II:Soul Storms	https://minecraft.wiki/w/Dungeons_II:Soul_Storms	2026-09-28T18:13:42Z	Cleanup,More citations needed	cited
+Dungeons II:Soul Reaper	https://minecraft.wiki/w/Dungeons_II:Soul_Reaper	2026-09-28T07:37:30Z	-	
+Dungeons II:Soul Storms	https://minecraft.wiki/w/Dungeons_II:Soul_Storms	2026-09-28T18:13:42Z	Cleanup,More citations needed	
 Dungeons II:Soundtracks	https://minecraft.wiki/w/Dungeons_II:Soundtracks	2026-09-28T01:48:59Z	WIP	
 Dungeons II:Spear	https://minecraft.wiki/w/Dungeons_II:Spear	2026-09-10T23:57:41Z	Conjecture	
 Dungeons II:Special Cape	https://minecraft.wiki/w/Dungeons_II:Special_Cape	2026-09-30T00:59:29Z	-	
-Dungeons II:Spectral Spear	https://minecraft.wiki/w/Dungeons_II:Spectral_Spear	2026-09-11T01:46:33Z	-	cited
+Dungeons II:Spectral Spear	https://minecraft.wiki/w/Dungeons_II:Spectral_Spear	2026-09-11T01:46:33Z	-	
 Dungeons II:Speed Down	https://minecraft.wiki/w/Dungeons_II:Speed_Down	2026-09-25T04:55:37Z	Conjecture	
 Dungeons II:Spider	https://minecraft.wiki/w/Dungeons_II:Spider	2026-09-08T01:58:38Z	-	
 Dungeons II:Spider Caves	https://minecraft.wiki/w/Dungeons_II:Spider_Caves	2026-09-02T07:43:15Z	WIP	
@@ -449,11 +449,11 @@ Dungeons II:Steel Wool Chestplate	https://minecraft.wiki/w/Dungeons_II:Steel_Woo
 Dungeons II:Steel Wool Hat	https://minecraft.wiki/w/Dungeons_II:Steel_Wool_Hat	2026-09-11T00:19:11Z	-	
 Dungeons II:Steel Wool Leggings	https://minecraft.wiki/w/Dungeons_II:Steel_Wool_Leggings	2026-09-11T00:18:55Z	-	
 Dungeons II:Sticker Activity Book	https://minecraft.wiki/w/Dungeons_II:Sticker_Activity_Book	2026-09-19T09:16:19Z	Sic	
-Dungeons II:Stop the Foul Fowl	https://minecraft.wiki/w/Dungeons_II:Stop_the_Foul_Fowl	2026-09-03T20:16:00Z	-	
+Dungeons II:Stop the Foul Fowl	https://minecraft.wiki/w/Dungeons_II:Stop_the_Foul_Fowl	2026-09-03T20:16:00Z	-	cited
 Dungeons II:Stormcaller	https://minecraft.wiki/w/Dungeons_II:Stormcaller	2026-09-10T23:57:51Z	-	
 Dungeons II:Strength	https://minecraft.wiki/w/Dungeons_II:Strength	2026-09-25T20:11:12Z	-	
-Dungeons II:Sub-area	https://minecraft.wiki/w/Dungeons_II:Sub-area	2026-09-10T01:41:33Z	Conjecture	cited
-Dungeons II:Supreme Evoker	https://minecraft.wiki/w/Dungeons_II:Supreme_Evoker	2026-09-29T14:30:14Z	WIP	cited
+Dungeons II:Sub-area	https://minecraft.wiki/w/Dungeons_II:Sub-area	2026-09-10T01:41:33Z	Conjecture	
+Dungeons II:Supreme Evoker	https://minecraft.wiki/w/Dungeons_II:Supreme_Evoker	2026-09-29T14:30:14Z	WIP	
 Dungeons II:Swirling	https://minecraft.wiki/w/Dungeons_II:Swirling	2026-09-27T03:10:07Z	-	
 Dungeons II:Sword	https://minecraft.wiki/w/Dungeons_II:Sword	2026-09-30T01:04:23Z	-	
 Dungeons II:TNT	https://minecraft.wiki/w/Dungeons_II:TNT	2026-09-09T11:08:16Z	-	
@@ -461,24 +461,24 @@ Dungeons II:Talisman	https://minecraft.wiki/w/Dungeons_II:Talisman	2026-09-30T00
 Dungeons II:Target Dummy	https://minecraft.wiki/w/Dungeons_II:Target_Dummy	2026-09-29T22:14:22Z	Stub	
 Dungeons II:Tasty Bone	https://minecraft.wiki/w/Dungeons_II:Tasty_Bone	2026-09-30T02:28:52Z	-	
 Dungeons II:Tempo Truffle	https://minecraft.wiki/w/Dungeons_II:Tempo_Truffle	2026-09-10T07:05:42Z	-	
-Dungeons II:Tendrils of the Sprout	https://minecraft.wiki/w/Dungeons_II:Tendrils_of_the_Sprout	2026-09-28T16:13:23Z	-	cited
+Dungeons II:Tendrils of the Sprout	https://minecraft.wiki/w/Dungeons_II:Tendrils_of_the_Sprout	2026-09-28T16:13:23Z	-	
 Dungeons II:The Carapace	https://minecraft.wiki/w/Dungeons_II:The_Carapace	2026-09-29T22:16:19Z	-	cited
 Dungeons II:The Cleric's Apprentice	https://minecraft.wiki/w/Dungeons_II:The_Cleric's_Apprentice	2026-09-26T17:29:19Z	WIP,Empty section	
 Dungeons II:The Copper Monstrosity Revived	https://minecraft.wiki/w/Dungeons_II:The_Copper_Monstrosity_Revived	2026-09-25T15:15:22Z	-	
 Dungeons II:The Eye of Experience	https://minecraft.wiki/w/Dungeons_II:The_Eye_of_Experience	2026-09-28T16:48:28Z	-	
-Dungeons II:The Illagers from the Rift	https://minecraft.wiki/w/Dungeons_II:The_Illagers_from_the_Rift	2026-09-29T00:21:51Z	-	cited
+Dungeons II:The Illagers from the Rift	https://minecraft.wiki/w/Dungeons_II:The_Illagers_from_the_Rift	2026-09-29T00:21:51Z	-	
 Dungeons II:The Last Stand	https://minecraft.wiki/w/Dungeons_II:The_Last_Stand	2026-09-23T15:10:16Z	WIP	
 Dungeons II:The Lost Merchant	https://minecraft.wiki/w/Dungeons_II:The_Lost_Merchant	2026-09-29T01:12:51Z	-	
 Dungeons II:The Mask is Off	https://minecraft.wiki/w/Dungeons_II:The_Mask_is_Off	2026-09-18T18:42:10Z	Empty section	
 Dungeons II:The Rift	https://minecraft.wiki/w/Dungeons_II:The_Rift	2026-09-28T14:30:45Z	Spoiler warning,Empty section	cited
-Dungeons II:The Rift/1CHP	https://minecraft.wiki/w/Dungeons_II:The_Rift/1CHP	2026-09-26T19:00:31Z	-	cited
+Dungeons II:The Rift/1CHP	https://minecraft.wiki/w/Dungeons_II:The_Rift/1CHP	2026-09-26T19:00:31Z	-	
 Dungeons II:The Shackler	https://minecraft.wiki/w/Dungeons_II:The_Shackler	2026-09-16T03:45:37Z	-	
 Dungeons II:The Sift	https://minecraft.wiki/w/Dungeons_II:The_Sift	2026-09-30T00:23:54Z	WIP,Conjecture	cited
 Dungeons II:The Supreme Evoker's Tower	https://minecraft.wiki/w/Dungeons_II:The_Supreme_Evoker's_Tower	2026-09-12T18:28:46Z	-	
-Dungeons II:The portal is now open... but at what cost?	https://minecraft.wiki/w/Dungeons_II:The_portal_is_now_open..._but_at_what_cost%3F	2026-09-25T22:26:21Z	WIP	cited
+Dungeons II:The portal is now open... but at what cost?	https://minecraft.wiki/w/Dungeons_II:The_portal_is_now_open..._but_at_what_cost%3F	2026-09-25T22:26:21Z	WIP	
 Dungeons II:Thrifty Pendant	https://minecraft.wiki/w/Dungeons_II:Thrifty_Pendant	2026-09-28T16:14:06Z	-	
 Dungeons II:Thundering	https://minecraft.wiki/w/Dungeons_II:Thundering	2026-08-31T07:22:03Z	-	
-Dungeons II:Tidal Sickle	https://minecraft.wiki/w/Dungeons_II:Tidal_Sickle	2026-09-29T02:41:03Z	-	cited
+Dungeons II:Tidal Sickle	https://minecraft.wiki/w/Dungeons_II:Tidal_Sickle	2026-09-29T02:41:03Z	-	
 Dungeons II:Tornado Blade	https://minecraft.wiki/w/Dungeons_II:Tornado_Blade	2026-09-27T03:45:03Z	-	
 Dungeons II:Totem of Casting	https://minecraft.wiki/w/Dungeons_II:Totem_of_Casting	2026-09-28T13:32:40Z	-	
 Dungeons II:Totem of Regeneration	https://minecraft.wiki/w/Dungeons_II:Totem_of_Regeneration	2026-09-10T08:14:22Z	-	
@@ -515,12 +515,12 @@ Dungeons II:Version history	https://minecraft.wiki/w/Dungeons_II:Version_history
 Dungeons II:Vex	https://minecraft.wiki/w/Dungeons_II:Vex	2026-09-29T14:51:20Z	-	
 Dungeons II:Village	https://minecraft.wiki/w/Dungeons_II:Village	2026-09-10T01:41:14Z	WIP,Empty section	
 Dungeons II:Villager	https://minecraft.wiki/w/Dungeons_II:Villager	2026-09-11T21:00:40Z	-	
-Dungeons II:Villager Life	https://minecraft.wiki/w/Dungeons_II:Villager_Life	2026-09-07T01:47:33Z	Stub	cited
+Dungeons II:Villager Life	https://minecraft.wiki/w/Dungeons_II:Villager_Life	2026-09-07T01:47:33Z	Stub	
 Dungeons II:Vindicator	https://minecraft.wiki/w/Dungeons_II:Vindicator	2026-09-12T12:39:18Z	-	
 Dungeons II:Violet	https://minecraft.wiki/w/Dungeons_II:Violet	2026-09-27T17:19:20Z	WIP	
 Dungeons II:Wading Rainy Plains	https://minecraft.wiki/w/Dungeons_II:Wading_Rainy_Plains	2026-09-29T21:59:05Z	-	
 Dungeons II:War Hammer	https://minecraft.wiki/w/Dungeons_II:War_Hammer	2026-09-13T20:55:06Z	-	
-Dungeons II:Warden	https://minecraft.wiki/w/Dungeons_II:Warden	2026-09-16T03:50:49Z	-	cited
+Dungeons II:Warden	https://minecraft.wiki/w/Dungeons_II:Warden	2026-09-16T03:50:49Z	-	
 Dungeons II:Warding Chimes	https://minecraft.wiki/w/Dungeons_II:Warding_Chimes	2026-09-25T04:21:36Z	-	cited
 Dungeons II:Warrior Drums	https://minecraft.wiki/w/Dungeons_II:Warrior_Drums	2026-09-29T13:38:28Z	-	
 Dungeons II:Weapon	https://minecraft.wiki/w/Dungeons_II:Weapon	2026-09-29T19:45:25Z	-	
@@ -544,34 +544,34 @@ Dungeons II:Wrath of the Sculkers	https://minecraft.wiki/w/Dungeons_II:Wrath_of_
 Dungeons II:Zombie	https://minecraft.wiki/w/Dungeons_II:Zombie	2026-09-28T19:45:30Z	-	
 File:Forager.png	https://minecraft.wiki/w/File:Forager.png	2026-09-28T01:14:32Z	-	
 File:MCD2 Antenna Sifter.png	https://minecraft.wiki/w/File:MCD2_Antenna_Sifter.png	2026-09-27T00:28:20Z	-	
-File:MCD2 Blubberfly screenshot.png	https://minecraft.wiki/w/File:MCD2_Blubberfly_screenshot.png	2026-09-28T20:04:16Z	-	cited
-File:MCD2 Carapace environment1.jpg	https://minecraft.wiki/w/File:MCD2_Carapace_environment1.jpg	2026-09-26T20:20:13Z	-	cited
+File:MCD2 Blubberfly screenshot.png	https://minecraft.wiki/w/File:MCD2_Blubberfly_screenshot.png	2026-09-28T20:04:16Z	-	
+File:MCD2 Carapace environment1.jpg	https://minecraft.wiki/w/File:MCD2_Carapace_environment1.jpg	2026-09-26T20:20:13Z	-	cited (S-I5; image viewed)
 File:MCD2 Dartback screenshot.png	https://minecraft.wiki/w/File:MCD2_Dartback_screenshot.png	2026-09-29T16:10:54Z	-	
-File:MCD2 Grim Blub screenshot.png	https://minecraft.wiki/w/File:MCD2_Grim_Blub_screenshot.png	2026-09-28T20:29:38Z	-	cited
-File:MCD2 Harmonizer.png	https://minecraft.wiki/w/File:MCD2_Harmonizer.png	2026-09-14T23:21:26Z	-	cited
+File:MCD2 Grim Blub screenshot.png	https://minecraft.wiki/w/File:MCD2_Grim_Blub_screenshot.png	2026-09-28T20:29:38Z	-	
+File:MCD2 Harmonizer.png	https://minecraft.wiki/w/File:MCD2_Harmonizer.png	2026-09-14T23:21:26Z	-	
 File:MCD2 Pool of ouch water.jpg	https://minecraft.wiki/w/File:MCD2_Pool_of_ouch_water.jpg	2026-08-26T20:12:13Z	-	
 File:MCD2 Sift Sheep.png	https://minecraft.wiki/w/File:MCD2_Sift_Sheep.png	2026-09-27T00:28:36Z	-	
-File:MCD2 Sift ambience 1.png	https://minecraft.wiki/w/File:MCD2_Sift_ambience_1.png	2026-09-26T20:43:19Z	-	cited
-File:MCD2 Sift ambience 2.png	https://minecraft.wiki/w/File:MCD2_Sift_ambience_2.png	2026-08-31T03:59:23Z	-	cited
-File:MCD2 Sift ambience 3.png	https://minecraft.wiki/w/File:MCD2_Sift_ambience_3.png	2026-08-31T03:59:56Z	-	cited
-File:MCD2 Sift artwork.png	https://minecraft.wiki/w/File:MCD2_Sift_artwork.png	2026-09-06T20:31:05Z	-	cited
-File:MCD2 Singer's Meadow portal.jpg	https://minecraft.wiki/w/File:MCD2_Singer's_Meadow_portal.jpg	2026-09-27T14:30:17Z	-	cited
+File:MCD2 Sift ambience 1.png	https://minecraft.wiki/w/File:MCD2_Sift_ambience_1.png	2026-09-26T20:43:19Z	-	cited (S-I3; image viewed)
+File:MCD2 Sift ambience 2.png	https://minecraft.wiki/w/File:MCD2_Sift_ambience_2.png	2026-08-31T03:59:23Z	-	cited (S-I3; image viewed)
+File:MCD2 Sift ambience 3.png	https://minecraft.wiki/w/File:MCD2_Sift_ambience_3.png	2026-08-31T03:59:56Z	-	cited (S-I3; image viewed)
+File:MCD2 Sift artwork.png	https://minecraft.wiki/w/File:MCD2_Sift_artwork.png	2026-09-06T20:31:05Z	-	
+File:MCD2 Singer's Meadow portal.jpg	https://minecraft.wiki/w/File:MCD2_Singer's_Meadow_portal.jpg	2026-09-27T14:30:17Z	-	cited (S-I4; image viewed)
 File:MCD2 Slabber.png	https://minecraft.wiki/w/File:MCD2_Slabber.png	2026-09-29T18:31:09Z	-	
 File:MCD2 Soulblock-like mob screenshot.png	https://minecraft.wiki/w/File:MCD2_Soulblock-like_mob_screenshot.png	2026-09-29T16:31:04Z	-	
-File:MCD2 The Sift thought process.png	https://minecraft.wiki/w/File:MCD2_The_Sift_thought_process.png	2026-09-28T20:50:03Z	-	cited
-File:MCD2 Tuner.png	https://minecraft.wiki/w/File:MCD2_Tuner.png	2026-09-28T20:38:55Z	-	cited
+File:MCD2 The Sift thought process.png	https://minecraft.wiki/w/File:MCD2_The_Sift_thought_process.png	2026-09-28T20:50:03Z	-	
+File:MCD2 Tuner.png	https://minecraft.wiki/w/File:MCD2_Tuner.png	2026-09-28T20:38:55Z	-	
 File:Monarchling.png	https://minecraft.wiki/w/File:Monarchling.png	2026-09-28T01:22:11Z	-	
-File:Sift tides effects.png	https://minecraft.wiki/w/File:Sift_tides_effects.png	2026-09-28T20:56:38Z	-	cited
-File:The Sift.png	https://minecraft.wiki/w/File:The_Sift.png	2026-09-26T17:56:31Z	-	cited
-Template:Cite Rift	https://minecraft.wiki/w/Template:Cite_Rift	2026-08-08T06:15:45Z	-	cited
+File:Sift tides effects.png	https://minecraft.wiki/w/File:Sift_tides_effects.png	2026-09-28T20:56:38Z	-	cited (S-I2; image viewed)
+File:The Sift.png	https://minecraft.wiki/w/File:The_Sift.png	2026-09-26T17:56:31Z	-	cited (S-I1; image viewed)
+Template:Cite Rift	https://minecraft.wiki/w/Template:Cite_Rift	2026-08-08T06:15:45Z	-	
 Template:Infobox Dungeons II location	https://minecraft.wiki/w/Template:Infobox_Dungeons_II_location	2026-09-18T19:03:52Z	-	
 Template:Load dungeons2achievements	https://minecraft.wiki/w/Template:Load_dungeons2achievements	2026-09-09T09:16:28Z	-	
 Template:Navbox Dungeons II	https://minecraft.wiki/w/Template:Navbox_Dungeons_II	2026-09-29T20:09:24Z	-	
-Template:Navbox Dungeons II entities	https://minecraft.wiki/w/Template:Navbox_Dungeons_II_entities	2026-09-29T22:55:59Z	-	cited
-Template:Navbox Dungeons II locations	https://minecraft.wiki/w/Template:Navbox_Dungeons_II_locations	2026-09-26T21:09:20Z	Conjecture	cited
-Template:Navbox Dungeons II quests	https://minecraft.wiki/w/Template:Navbox_Dungeons_II_quests	2026-09-29T18:59:22Z	-	cited
-The Sift	https://minecraft.wiki/w/The_Sift	2026-09-30T02:24:06Z	Conjecture,Planned,Verify,Info needed	cited
-User:Drour1234/Dungeons II:Blub Pet	https://minecraft.wiki/w/User:Drour1234/Dungeons_II:Blub_Pet	2026-09-28T23:51:04Z	Verify,Sic	cited
+Template:Navbox Dungeons II entities	https://minecraft.wiki/w/Template:Navbox_Dungeons_II_entities	2026-09-29T22:55:59Z	-	
+Template:Navbox Dungeons II locations	https://minecraft.wiki/w/Template:Navbox_Dungeons_II_locations	2026-09-26T21:09:20Z	Conjecture	
+Template:Navbox Dungeons II quests	https://minecraft.wiki/w/Template:Navbox_Dungeons_II_quests	2026-09-29T18:59:22Z	-	
+The Sift	https://minecraft.wiki/w/The_Sift	2026-09-30T02:24:06Z	Conjecture,Planned,Verify,Info needed	cited (S-W1)
+User:Drour1234/Dungeons II:Blub Pet	https://minecraft.wiki/w/User:Drour1234/Dungeons_II:Blub_Pet	2026-09-28T23:51:04Z	Verify,Sic	
 Planned versions	https://minecraft.wiki/w/Planned_versions	2026-09-29T08:19:25Z		cited (S-W3)
 Java Edition 26.4	https://minecraft.wiki/w/Java_Edition_26.4	2026-09-29T16:22:27Z		cited (S-W4)
 File:Dungeons 2 Screenshot 5.png	https://minecraft.wiki/w/File:Dungeons_2_Screenshot_5.png	2026-03-21T21:40:20Z		cited (S-I6; image viewed)

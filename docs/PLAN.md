@@ -68,7 +68,7 @@ Only one WP is IN PROGRESS at a time.
 ### WP-003 Sift research I: canon, areas, Tides, access, lore, palette evidence
 - Phase / Milestone: 0 / —
 - Tier: L
-- Status: REVIEW (round 2 of ≤3 pending)
+- Status: REVIEW (round 3 of ≤3 pending)
 - Depends on: —
 - Goal: Verify/correct/expand §3 with cited sources: release facts, the dimension, Tides, souls, areas, access, lore, characters, blocks/items, and resolve the colour contradiction.
 - Inputs (read ONLY these): docs/00_MISSION.md §3; minecraft.wiki Dungeons II pages; Xbox Wire; minecraft.net articles; reputable press; official trailer/gameplay descriptions.
@@ -86,12 +86,33 @@ Only one WP is IN PROGRESS at a time.
   - Review round 1 (fresh reviewer; artifact + rubric only): **FAIL**, 3 must-fix (bestiary gaps; §6 observation 2 overstated; confidence labels above the doc's own rubric), 6 should-fix, 2 notes. Accepted all but one: the reviewer read the Tides tutorial as using "," where the screenshot shows ";" (checked at 6× zoom; kept, and the cursor-hidden "[erf]" is now marked).
   - Fixes: one confidence scale for both docs; observation 2 now "supported for Dungeons II; open for Java"; seed-row → verdict map (§1a); §5 now cites the official "soft orange" audio description, the wiki's "Orange … dark salmon" block names, the press origin of "neon blue and pink" (Game Rant 20:03 UTC, gHacks 21:08 UTC) and TechJuice's misattribution (P-TJ added); §7 grew from 7 to 14 items; design opinion removed or marked *Inference*; unknowns updated (the Singer short and the note-sequence video exist but were unreachable).
   - New evidence found while fixing: two official images of the Dungeons II portal (S-I6 launcher asset, S-I7 Steam asset: a dark frame, eight rainbow-topped note blocks in front); "The illagers take control of Souls" is a review (R-GT), not official text; Deeper and Darker and Sculk Depths have no 26.x release (research/prior_art_2026-09-30.md, PA-1…3); the Steam rates are a snapshot one day after launch (caveat added).
-  - Quote check: a second script checked every quote in RESEARCH.md and RESEARCH_BESTIARY.md against the saved source text: 189 verified, 0 mismatched, 1 skipped (the tutorial screenshot, checked by eye). Source page text stays in the session scratchpad (third-party copyright); only metadata is committed.
+  - Quote check (round-1 fixes): a second script checked the quotes in RESEARCH.md and RESEARCH_BESTIARY.md against the saved source text: 189 verified, 0 mismatched, 1 skipped (the tutorial screenshot, checked by eye). Round 2 found the script silently dropped ~50 quotes with no tag after them; see below. Source page text stays in the session scratchpad (third-party copyright); only metadata is committed.
+  - Review round 2 (fresh reviewer): **FAIL**, 2 must-fix, 6 should-fix, 4 notes. All accepted after checking the saved sources:
+    - Must-fix 1: official text (MC7) puts the High Council behind the rifts (H), and the staff is M on two unflagged wiki pages, not novel-only L.
+    - Must-fix 2: no official text says souls power artifacts. That is the wiki (M) plus a review. Official text only says the Sift is "teeming with souls".
+  - Fixes:
+    - soul blocks are in the game (M), with lore L;
+    - Seedling is L;
+    - "healthy sculk" in the vanilla look is a conjecture name (L);
+    - "Defender of Dimensions" added;
+    - the Opus is "associated with the illagers";
+    - attribution slips fixed;
+    - renames reframed as placeholders and codenames;
+    - Blub gait added as contradiction #15;
+    - §5 verdict marked as a reading, with the alternative;
+    - Tides are probably global [R-GRP];
+    - unknowns extended; S-I2 provenance recorded;
+    - reproducible press counts (94 IDs: A 25 · B 20 · C 36 · D 13);
+    - exact trailer titles;
+    - the `cited` column recomputed (80 cited of 576);
+    - 80.lv byline added;
+    - Humbler Husk moved out of the boss table.
+  - Checker fixed to fall back to a preceding tag and to report untagged quotes; every quote now carries an adjacent tag. Result: **265 verified, 0 mismatched, 0 untagged, 1 skipped** (the Tides screenshot, checked by eye).
 
 ### WP-004 Sift research II: bestiary
 - Phase / Milestone: 0 / —
 - Tier: L
-- Status: REVIEW (round 2 of ≤3 pending)
+- Status: REVIEW (round 3 of ≤3 pending)
 - Depends on: WP-003 (sources index)
 - Goal: A short cited entry for every Sift mob, boss and named character: appearance, Dungeons II behaviour, faction, area.
 - Inputs (read ONLY these): docs/RESEARCH.md sources index; minecraft.wiki mob/boss pages.

@@ -29,9 +29,9 @@ Titles and revisions are in `research/wiki_pages_2026-09-30.tsv`.
 - Announcement (Minecraft LIVE, 2026-09-26): "the newest Minecraft dimension isn’t just finding its home in Dungeons II, it’ll also be coming to Minecraft Java & Bedrock Edition next year." [MC1] **H**. Also: "Mojang Studios confirmed that the Sift will come to Minecraft in 2027" [XW1] **H**
 - **Vanilla first look.** The audio description of the stream, quoted by the wiki (we could not open the video): "Under a teal blue sky, tufts of soft orange grasses sit on a hilltop. A tiny rabbitlike blub walks casually through the grasses." [S-W2] **M**
   - [OBS] of the still (S-I1): a flat turquoise sky, coral/salmon grass and ground, a small pale-blue box-bodied Blub with ear tufts, and pale grey-white trees with dark trunks on a distant rise. **H**
-- **Blocks visible in that footage.** Only "blub" is an official name; the rest are wiki names:
-  - "Green healthy sculk", "Orange healthy sculk";
-  - the "Orange sculk grass block" (a "dark salmon colour"), a lighter "baby-pink" variant, and green, short and tall variants;
+- **Blocks visible in that footage.** Only "blub" [S-W1] is an official name; the rest are wiki names:
+  - "Green healthy sculk", "Orange healthy sculk" [S-W1];
+  - the "Orange sculk grass block" (a "dark salmon colour"), a lighter "baby-pink" variant, and green, short and tall variants [S-W1];
   - a white-leaved tree.
 
   Existence **M** / names **L**. [S-W1]
@@ -42,25 +42,25 @@ Titles and revisions are in `research/wiki_pages_2026-09-30.tsv`.
 |---|---|---|---|
 | 1 | Dungeons II launched on 2026-09-29 [MC7]. The Sift comes to Java & Bedrock "next year" [MC1] / "in 2027" [XW1]; "A version number has not been made public" [S-W3] | H (version: M) | confirmed |
 | 2 | **Dungeons II's portal is in the Ancient City.**<br>• The "Deep Dark portal", "also known as the Ancient Portal", is "a large structure located with the Ancient City that grants access to the Sift", "activated by the melody of the note block machine" [W:Deep Dark Portal].<br>• A review confirms illagers "head down into the Deep Dark and come across a large portal" [R-GT].<br>• [OBS] of two official images [S-I6, S-I7]: a large dark-stone frame with a wide opening at the centre of a Deep Dark city. A stepped platform in front carries eight note blocks with rainbow-coloured tops. When lit, the rim of the opening glows cyan.<br>• Internal name "Wellspring" (the official short was first titled "Wellspring Gameplay") [W:The Sift] | M (images: H) | confirmed |
-| 3 | **Is it the vanilla Ancient City frame?**<br>• A wiki history line dated 2026-03-21: "The ancient city center frame is revealed to be a portal to a new dimension." [W:The Sift]. It is a single uncited line, and the official March recap never mentions a portal [MC4].<br>• The announce trailer "ends in front of the Deep Dark portal as it begins to show signs of activation" [W:Minecraft Dungeons II Announce Trailer].<br>• *Inference:* the Dungeons II portal resembles the vanilla city-centre frame in setting and shape [OBS S-I6, S-I7]. Its opening looks taller than vanilla's 20×6 opening, but perspective makes this uncertain.<br>• **No source says the vanilla frame is, or will be, the Sift's portal in Java** (§6, observation 2) | M (Dungeons II) / L (same structure as vanilla) | new |
+| 3 | **Is it the vanilla Ancient City frame?**<br>• A wiki history line dated 2026-03-21: "The ancient city center frame is revealed to be a portal to a new dimension." [W:The Sift]. The history line itself is uncited, and the official March recap never mentions a portal [MC4]. It is corroborated by two sources dated the same day (2026-03-21): the announce trailer page below, and two official images [S-I6, S-I7].<br>• The announce trailer "ends in front of the Deep Dark portal as it begins to show signs of activation" [W:Minecraft Dungeons II – Announce Trailer].<br>• *Inference:* the Dungeons II portal resembles the vanilla city-centre frame in setting and shape [OBS S-I6, S-I7]. Its opening looks taller than vanilla's 20×6 opening, but perspective makes this uncertain.<br>• **No source says the vanilla frame is, or will be, the Sift's portal in Java** (§6, observation 2) | M (Dungeons II) / L (same structure as vanilla) | new |
 | 4 | **The Note Block Machine.**<br>• The portal opens after the **Twisted Warden** is defeated and **three missing note blocks** from across the Overworld are returned.<br>• **Echo golems** use the machine to ignite it; eight note blocks stand before the portal [W:Note Block Machine], [W:Deep Dark Portal].<br>• "The sequence of notes used to activate the portal is shown in a promotional video" [W:Note Block Machine] (2026-05-30; not viewed) | M | expanded |
-| 5 | **Rifts** are "temporary portals leading to and from the Sift" [W:Rift].<br>• They are the everyday way in: "there are lots of rifts that appear throughout the world. If you do stumble across and then into one, it will transport you to the Sift." [MC1].<br>• That the Grand Illusioner's staff makes them is novel-sourced [W:The Sift] | H (rifts) / L (the staff) | confirmed + expanded |
+| 5 | **Rifts** are "temporary portals leading to and from the Sift" [W:Rift].<br>• They are the everyday way in: "there are lots of rifts that appear throughout the world. If you do stumble across and then into one, it will transport you to the Sift." [MC1].<br>• Official text puts the High Council behind them: "strange rifts began appearing in unexpected places across the Overworld" … "the architects behind these events have been revealed!" [MC7].<br>• The Grand Illusioner's staff is "a scepter used to open and close dimensional rifts at will" [W:Grand Illusioner's Staff]. A still from the official short *The Mask is Off* is captioned "The Grand Illusioner opening a rift" [W:Rift] | H (rifts; the Council behind them) / M (the staff) | confirmed + expanded |
 | 6 | The Sift is "comprised of red and orange stone, green vegetation, ichor, and sculk" [W:The Sift] | M | confirmed as the wiki's words; see §5 |
-| 7 | **Three Sift Tides** (in-game text, S-I2, seen): "There are three tides in the Sift time cycle; Flow, Thrive, and Endure. Flow: No effect. Thrive: Faster Soul regeneration and artifact cooldowns. Endure: More pow[erf]ul mobs will spawn and your passive soul regeneration will stop." The punctuation is as on screen; the mouse cursor hides the letters in [erf] | H | **corrected**: the Tides are a *time cycle*, and their effects are now known |
+| 7 | **Three Sift Tides** (in-game text, S-I2, seen): "There are three tides in the Sift time cycle; Flow, Thrive, and Endure. Flow: No effect. Thrive: Faster Soul regeneration and artifact cooldowns. Endure: More pow[erf]ul mobs will spawn and your passive soul regeneration will stop." [S-I2] The punctuation is as on screen; the mouse cursor hides the letters in [erf] | H | **corrected**: the Tides are a *time cycle*, and their effects are now known |
 | 8 | "Shifting tides within the Sift can affect your character and those around you" [XW1]; the Tides "affect soul gathering and traversing" (wiki wording, uncited) [W:The Sift] | H / M | confirmed |
 | 9 | **Tide visuals.**<br>• Three official stills of the same view in three lightings [OBS S-I3]: bright pastel day; dark with glowing blue foliage and stars; warm golden light with orange stone.<br>• The *labels* Thrive/Endure/Flow exist only as wiki gallery captions. The official file pages say only "Ambience in the Sift" [S-I3], and another wiki page captions the third still "The Harmonizer in the Sift" [W:Harmonizer].<br>• Independent support that the look changes by Tide: the Sift "flips, visually and mechanically, between different states as you explore" [R-PCG] | images H; which Tide is which L–M | **new** |
 | 10 | The official soundtrack gives Sift areas versions titled (Thrive), (Flow) and (Endure), where Overworld areas get (Sunrise), (Day), (Sunset) and (Night) [OST] | H (titles); *Inference* that the Tides stand in for times of day | **new** |
-| 11 | **Souls:** a resource from defeated mobs that powers artifacts [W:Soul]. Thrive speeds passive soul regeneration and Endure stops it (row 7) | M / H | expanded |
+| 11 | **Souls:** "a resource collected from dead mobs used as fuel to activate artifacts" [W:Soul]. "Sculk mobs, including the warden and Twisted Warden, give one soul each time a hero hits them." [W:Soul]. This is a game-wide mechanic; the page doesn't tie souls to the Sift. Official text says only that the Sift is "teeming with souls" [MC1]. Thrive speeds passive soul regeneration and Endure stops it (row 7) | M (mechanics) / H (Tide effects, "teeming") | expanded |
 | 12 | **Ichor:** "a multicolored, thick liquid" that "sets heroes alight with soul fire and drains their souls when they step in it. These effects do not apply to Sift-native mobs." [W:Ichor]<br>• A review: "the water in the Sift will set you on fire" [R-DS] | M | **new** (the named hazard) |
-| 13 | **Soul blocks** are "powerful artifacts found in the Sift" [W:Soul Block].<br>• The source is the novel, and so is the idea that the High Council's powers come from them.<br>• That the **Singer** forms them from souls and places them on echo golems rests on a fan tweet in a section the wiki flags as Uncertain | L | **new** |
+| 13 | **Soul blocks** are in the game:<br>• the in-game objective "Lost Harmonies: Find the stolen soul blocks" [W:Dartback];<br>• they appear in the official short *Stop the Foul Fowl* [W:Stop the Foul Fowl].<br>• What they *are* ("powerful artifacts found in the Sift" [W:Soul Block]) and the High Council's soul-block powers come from the novel.<br>• That the **Singer** forms them from souls and places them on echo golems rests on a fan tweet (the page's second, unflagged History section) | M (in the game) / L (lore; the Singer claim) | **new** |
 | 14 | **The Singer.**<br>• "Singers are passive and can only communicate through song, capable of both pacifying wardens and opening the Deep Dark portal with their song." [W:Singer] (cited to the novel; the citation is marked as reconstructed).<br>• The achievement "Friend of the Sift": "Receive the Singer's gift of song" [W:Achievement].<br>• The official short of 2026-08-20 shows its full appearance (not viewed) | L (behaviour) / M (achievement) | confirmed + expanded |
 | 15 | **Sculk:** "Corrupted sculk was caused by a disease that originated in the Sift. Despite this, healthy sculk still lives and thrives in the Sift." [W:The Sift] (uncited) | M | confirmed |
 | 16 | **Illagers.**<br>• Official: the "Illager High Council" (the Prime Enchanter, the Supreme Evoker and the Grand Illusioner) "possesses a new power" [MC7]. Laura De Llorens: "an environmental crisis, but also, that there was a clear thing you were fighting against" [XW2].<br>• A review: "The illagers take control of Souls" [R-GT].<br>• Wiki: "illagers have invaded the Sift to take advantage of its resources and souls" [W:The Sift].<br>• Achievement: "Drive off the illagers camped near the Echo Den" [W:Achievement] | H / M | confirmed + expanded |
 | 17 | **Areas:** Singer's Meadow (the first area; the portal's exit), Lullaby Hills (echo golems), and The Carapace, with its sub-area the Echo Den. Humbler Huskland is a listed location. Eight more area names appear as Tide-suffixed soundtrack titles (§2) | M | expanded |
 | 18 | The mobs are "both companions and threats, all unique" [XW1]. They form two hostile groups, **Sifters** (surface) and **Sculkers** (Carapace) [W:Sifter], [W:Sculker] | H / M | corrected: see the bestiary for renamed species |
-| 19 | **Bosses:** the Monarch (a sculker), the Sculk Monstrosity, and the Harmonizer (a miniboss, later fought soul-corrupted); miniboss **Dartback** [boss pages].<br>• The final boss, the **Monstrous Opus**, is "battled after the Supreme Evoker is defeated" [W:Monstrous Opus]. No source ties it to the Sift | M | expanded |
-| 20 | **Sift achievements:** Brave the Unknown (enter), Note Block Virtuoso (activate the machine), Friend of the Sift, Choir Conductor (wake echo golems), Carapace Explorer (enter a humbler husk), Guardian of the Golems, Wobble Watcher, Regicide (defeat a monarch) [W:Achievement] | M (Steam names) | **new** |
-| 21 | *The Rift* (cited by the wiki) is a **novel** by Caleb Zane Huett (Random House Worlds, 2026-09-01). It calls the Sift "a wondrous dimension of peace and calm" [W:The Rift] | M (that the novel exists); its lore is L | **new** (lore source; lower authority than the game) |
+| 19 | **Bosses:** the Monarch (a sculker), the Sculk Monstrosity, and the Harmonizer (a miniboss, later fought soul-corrupted); miniboss **Dartback** [W:Monarch], [W:Sculk Monstrosity], [W:Harmonizer], [W:Dartback].<br>• The final boss, the **Monstrous Opus**, is "battled after the Supreme Evoker is defeated" [W:Monstrous Opus]. The wiki lists it among mobs "associated with the illagers" [W:Illager].<br>• No source ties it to the Sift directly. *Inference (L):* the achievement "Defender of Dimensions" ("Save the Overworld and the Sift" [W:Achievement]) has the same Steam rate as the Opus's "Monstrous Crescendo" (0.9% each [ST3]). That fits the final fight ending the Sift storyline too | M | expanded |
+| 20 | **Sift achievements:** Brave the Unknown (enter), Note Block Virtuoso (activate the machine), Friend of the Sift, Choir Conductor (wake echo golems), Carapace Explorer (enter a humbler husk), Guardian of the Golems, Wobble Watcher, Regicide (defeat a monarch), and Defender of Dimensions: "Save the Overworld and the Sift" [W:Achievement] | M (Steam names) | **new** |
+| 21 | *The Rift* (cited by the wiki) is a **novel** by Caleb Zane Huett (Random House Worlds, 2026-09-01). Its publisher's blurb, quoted by the wiki, calls the Sift "a wondrous dimension of peace and calm" [BK1] | M (that the novel exists); its lore is L | **new** (lore source; lower authority than the game) |
 
 ## 1a. Seed briefing (mission §3.1) → verdicts
 | Seed row | Verdict | Where |
@@ -69,25 +69,25 @@ Titles and revisions are in `research/wiki_pages_2026-09-30.tsv`.
 | Tone & visuals | "colorful new look" [XW1] ✓<br>"breathtaking beauty": official, "an uncharted dimension of threats, mysteries, and breathtaking beauty" [MC3] ✓<br>"beautiful, vibrant, and teeming with souls" [MC1] ✓<br>"a vivid mix of neon blue and pink" is **press wording**, not Mojang's [P-GHACKS] | §5 |
 | Materials | Confirmed as the wiki's words; true of one Dungeons II palette, not of the vanilla teaser | canon #6, §5 |
 | Rules | Confirmed verbatim [XW1] | §9 |
-| Tides | Names confirmed; effects now known (in-game text); they are a **time cycle** (corrected). "Change the look": the images differ, but which Tide is which comes from captions (L–M) | canon #7–10, §3 |
+| Tides | Names confirmed; effects now known (in-game text); they are a **time cycle** (corrected). The seed says they change the look: the images do differ, but which Tide is which comes from captions (L–M) | canon #7–10, §3 |
 | Souls | Confirmed: "souls begin to fly through the world" [XW1]. In context this describes the Overworld being disrupted at the start of the story, not the Sift | canon #11, §4 |
 | Areas | Confirmed: "The Sift contains new biomes – including Meadows and Carapace – but Mojang are keeping other areas a secret" [XW1]; eight more names come from the soundtrack | canon #17, §2 |
-| Access (Dungeons II) | Confirmed and expanded: portal + machine (M), rifts (H); the staff is novel-sourced (L) | canon #2–5 |
+| Access (Dungeons II) | Confirmed and expanded: portal + machine (M); rifts and the High Council behind them (H, [MC7]); the Grand Illusioner's staff (M) | canon #2–5 |
 | Mobs | Quote confirmed [XW1]. Seven listed names are old or variant names: Licker → Slabber, Sculk Mage → Scavenger, Sculk Slasher → Stalker, Snout Sifter → Bloombud, Groobler Sentinel → Pollinator; Grim Blub and Blubberfly are Blub variant captions | bestiary |
 | Bosses | Confirmed; expanded with Dartback and the Monstrous Opus (Sift tie unknown) | canon #19, bestiary |
-| Characters | Bubbles is a character from the novel. The Singer's "gift of song" is achievement text. Expanded with the novel's visitors | bestiary |
+| Characters | Bubbles is a character from the novel. The Singer's "gift of song" is achievement text [W:Achievement]. Expanded with the novel's visitors | bestiary |
 | Lore | Both quotes confirmed as wiki text (M). The invasion is confirmed officially in other words [MC7, XW2] | canon #15–16 |
 
 ## 2. Areas (Dungeons II): look and contents
 - **Singer's Meadow** [W:Singer's Meadow] **M**:
-  - Look: "red sculk, teal grass, and blue trees"; "red sculk blocks beneath tall blue grass"; "towering tree-like growths covered in pale-blue vines".
-  - Terrain: "many pools of ichor, fracturing the terrain"; bounded by "walls of darker red sculk". The portal sits on a small hill of red sculk.
-  - Inhabitants: the Singer and echo golems; passives Blub, Echo Golem, Slabber and Trill; hostiles Bloombud, Nester, Pollinator and Seedling, plus illagers.
+  - Look: "red sculk, teal grass, and blue trees"; "red sculk blocks beneath tall blue grass"; "towering tree-like growths covered in pale-blue vines" [W:Singer's Meadow].
+  - Terrain: "many pools of ichor, fracturing the terrain"; bounded by "walls of darker red sculk" [W:Singer's Meadow]. The portal sits on a small hill of red sculk.
+  - Inhabitants listed on the page: the Singer; passives Blub, Echo Golem, Slabber and Trill; hostiles Pollinator, Nester and Seedling, plus illagers (Enchanter, Pillager, Royal Guard, Vindicator). The Bloombud "spawn in large groups throughout the Singer's Meadow" per its own page [W:Bloombud].
   - The first visit unlocks the Tides tutorial.
   - [OBS] of the portal image [S-I4]: mauve/rose canyon walls, glowing cyan grass, icy-cyan drooping trees, a bright cyan portal and a blocky teal/pink aurora sky. **H**
 - **The Carapace** [W:The Carapace], [W:Echo Den] **M**:
-  - Look: "a flat, dry biome composed of dark blue stone and vast fields of sand and dust", "red and yellow grass patches".
-  - Features: "bouncy slimes used to access higher areas"; "colossal fossils … the largest of these are the humbler husks, which can be entered".
+  - Look: "a flat, dry biome composed of dark blue stone and vast fields of sand and dust", "red and yellow grass patches" [W:The Carapace].
+  - Features: "bouncy slimes used to access higher areas"; "colossal fossils … the largest of these are the humbler husks, which can be entered" [W:The Carapace].
   - Home of the sculkers.
   - Sub-area: the **Echo Den**.
   - [OBS] of [S-I5]: blue-teal stone pillars, pale sand, magenta and yellow coral-like grass, and the same aurora sky. **H**
@@ -109,20 +109,22 @@ Titles and revisions are in `research/wiki_pages_2026-09-30.tsv`.
   - They affect traversal (**M**, wiki wording).
   - The look changes between states (**H** images, plus [R-PCG] **M**).
   - Areas have Tide music variants (**H** titles).
+  - They are probably dimension-wide: a review calls them "time-limited, global modifiers called 'Sift Tides'" [R-GRP] (**M**).
 - **Unknown:**
   - which still shows which Tide (the captions are L–M);
   - order and duration;
   - triggers other than time;
-  - whether all areas shift together;
-  - what "traversing" changes mean mechanically.
+  - what "traversing" [W:The Sift] changes mean mechanically.
 
 ## 4. Souls, sculk, sound
-- **Souls** are the Sift's key resource [W:Soul] **M**. Official text: souls power artifacts, and the illagers' new power drives the plot [MC7] **H**.
+- **Souls in official text:** the Sift is "beautiful, vibrant, and teeming with souls" [MC1]; at the story's start, "souls begin to fly through the world" [XW1] **H**.
+- **Souls as a mechanic** (game-wide, not Sift-specific): collected from defeated mobs and spent to power artifacts. Sculk mobs give a soul on every hit [W:Soul] **M**. A review agrees: "Artifacts are abilities that are activated after collecting enough Souls from defeated enemies" [R-GT] **M**. The Tides change soul regeneration (in-game text, canon #7) **H**.
+- **Souls in the story:** "The illagers take control of Souls" [R-GT] **M**. Official text says only that the High Council "possesses a new power" [MC7] **H**.
   - Ichor and soul fire drain them [W:Ichor] **M**.
-  - Sculker attacks use them as soul projectiles, soul-fire pools and soul-flame charges [W:Scavenger], [W:Sculk Monstrosity] **M**.
+  - Hostile attacks use them: the Scavenger (a sculker) throws soul projectiles that leave soul-fire pools [W:Scavenger], and the Sculk Monstrosity (faction unknown) charges and ignites soul flames [W:Sculk Monstrosity] **M**.
   - The claim that the Singer gathers souls by singing and condenses them into soul blocks is **L** (canon #13).
 - **Vanilla fact (not canon):** sculk catalysts already turn a nearby death's XP into sculk charge and bloom `sculk_soul` particles (VANILLA_ANALOGS E4, from the 26.3 source). **H**
-- **Healthy vs corrupted sculk:** corrupted sculk is a disease of the Sift's healthy sculk (canon #15). The vanilla first look shows healthy sculk as green, orange and salmon/pink ground and grass (§0). No text describes gameplay differences. **M**
+- **Healthy vs corrupted sculk:** corrupted sculk is a disease of the Sift's healthy sculk (canon #15) **M**. The vanilla first look shows green, orange/salmon and pink ground and grass [OBS S-I1] **H**. That these blocks are "healthy sculk" is the wiki's conjecture-flagged naming, which the wiki says it derived from the novel [S-W1] **L**. No text describes gameplay differences.
 - **Sound and music are structural:**
   - The portal is opened by a melody (the note block machine) (**M**) or a Singer's song (**L**).
   - A "musical gate" is on the Monarch quest route [W:Wrath of the Sculkers].
@@ -133,33 +135,35 @@ Titles and revisions are in `research/wiki_pages_2026-09-30.tsv`.
   → The owner's §3.2 observation 1 is **supported**.
 
 ## 5. Palette evidence and the colour contradiction
-- **"Neon blue and pink" is press wording.** No official text we read contains it.
+- **"Neon blue and pink" [P-GHACKS] is press wording.** No official text we read contains it.
   - Earliest found: Game Rant, 2026-09-26 20:03 UTC: "The Sift is a vibrant mix of neon blue and pink that Mojang describes as beautiful, vibrant, and teeming with souls." [P-GRANT]
   - The seed's exact words match gHacks, 21:08 UTC: "The dimension uses a vivid mix of neon blue and pink" [P-GHACKS]
   - TechJuice attributes the phrase to Mojang: "Mojang describes the vanilla version of the Sift as a vibrant mix of neon blue and pink." [P-TJ] We found no official source for that.
   - The official recap says only "beautiful, vibrant, and teeming with souls" [MC1].
 - **Press describes the vanilla teaser as pink and turquoise:** "tufts of pink grass beneath a turquoise sky" [P-PCGAMER]; "candy-colored pink and turquoise tones" [P-80LV].
-- **The official audio description calls the same grass orange:** "tufts of soft orange grasses" [S-W2]. The wiki names the blocks "Orange healthy sculk" and "Orange sculk grass block", with a "dark salmon colour" [S-W1]. Our look at the still shows coral/salmon [OBS S-I1]. So "pink" versus "orange" is partly two names for one salmon colour.
+- **The official audio description calls the same grass orange:** "tufts of soft orange grasses" [S-W2]. The wiki names the blocks "Orange healthy sculk" and "Orange sculk grass block", with a "dark salmon colour" [S-W1]. Our look at the still shows coral/salmon [OBS S-I1]. So *pink* versus *orange* is partly two names for one salmon colour.
 - **"Red and orange stone, green vegetation, ichor, and sculk" is the wiki's line about the Dungeons II Sift** [W:The Sift], repeated by guides [P-SK1], which may be derived from the wiki.
 - **Dungeons II shows at least two palettes in official images:**
   1. Rose/crimson stone, icy-turquoise foliage and an aurora sky. Official alt text: "Glowing blue portal surrounded by icy turquoise vegetation in a colorful canyon landscape." [MC1]
   2. Orange/terracotta stone, green vegetation, and purple and rainbow liquids (Xbox Wire screenshot `Wellspring_01` [XW3]).
 
   The three ambience stills add a pastel, an orange and a dark purple lighting of one view [OBS S-I3]. Images **H**; area attribution **M**; Tide attribution **L–M**.
-- **Verdict on the contradiction:** the two seed descriptions mostly describe different things. One is press shorthand for the vanilla teaser (pink/turquoise, officially "soft orange"); the other is the wiki's summary of the Dungeons II Sift (red/orange stone). The palette also varies by area and by lighting state. **M**
+- **Verdict on the contradiction:** most likely, the two seed descriptions describe different things. "Neon blue and pink" [P-GHACKS] is press wording that fits the vanilla teaser (pink/turquoise; officially "soft orange" [S-W2]). "Red and orange stone" [W:The Sift] is the wiki's summary of the Dungeons II Sift. **M**
+  - *Alternative reading:* the press phrase could describe Dungeons II's cyan/rose palette instead (the MC1 portal image), and Game Rant illustrates its article with Dungeons II images. Which footage the phrase describes is **unresolved**.
+  - Either way, it is press wording, not Mojang's, and the palette varies by area and by lighting state. So the §3.1 contradiction dissolves under both readings.
 - **Official adjectives:**
   - "colorful new look" [XW1]; "beautiful, vibrant, and teeming with souls" [MC1]; "unique hues and pastel-infused design" [XW3].
   - Reviewers: "blue-pink world" [R-KOT]; "almost looks like the Nether in the negative" [R-GT]; "coral-hued environments peppered with inviting yet corrosive pools" [R-GA].
-- On the wiki, "neon" appears only for soul-corrupted Overworld mobs in the reveal trailer, never for Sift terrain [W:Minecraft Dungeons II Reveal Trailer].
+- On the wiki, "neon" appears only for soul-corrupted Overworld mobs in the reveal trailer, never for Sift terrain [W:Minecraft Dungeons II – Reveal Trailer].
 
 ## 6. The owner's §3.2 observations: verdicts
 | # | Observation | Verdict | Evidence |
 |---|---|---|---|
 | 1 | Sound and music run through everything | **Supported** | §4 |
 | 2 | The Deep Dark is the doorway; consider the Ancient City frame | **Supported for Dungeons II; open for Java.**<br>• In Dungeons II the story portal sits at the centre of the Ancient City and resembles the vanilla frame (M, canon #2–4).<br>• Rifts are Dungeons II's everyday way in (H, canon #5, §9).<br>• For Java, "Mojang isn’t talking too much about how to access the Sift" [XW1]. Nothing official ties the vanilla frame to the vanilla Sift (canon #3 is one uncited wiki line).<br>• Using the frame is therefore a design choice grounded in Dungeons II, not a Java fact.<br>• One fan mod on 26.3 already uses it (§8) | canon #2–5, §8, §9 |
-| 3 | Souls already exist in vanilla (catalyst `sculk_soul`, soul sand and fire, XP) | **Supported:** souls are the Sift's resource, and the vanilla catalyst turns death XP into sculk charge | §4 |
+| 3 | Souls already exist in vanilla (catalyst `sculk_soul`, soul sand and fire, XP) | **Supported:**<br>• the Sift is "teeming with souls" [MC1] (official);<br>• in Dungeons II souls are a resource from defeated mobs, and sculk mobs give one on every hit (M);<br>• the vanilla catalyst already turns death XP into sculk charge (H, source code) | §4 |
 | 4 | Illagers are the invaders | **Supported:** the High Council and the invasion (official), camps (achievement text) | canon #16 |
-| 5 | Genre translation is needed | **Consistent with the evidence:** the documented behaviours (homing barrages, summon waves, ally-buff beams, afterimages) are isometric-action patterns with no direct vanilla analogue. *How* to translate is a design call (Phase 2) | bestiary |
+| 5 | Genre translation is needed | **Supported** as a fact about the source material; **open** as to how. The documented behaviours (homing barrages, summon waves, ally-buff beams, afterimages) are isometric-action patterns with no direct vanilla analogue. *How* to translate is a design call (Phase 2) | bestiary |
 | 6 | Colours vary by area or Tide | **Supported for area** (images H, attribution M). **Partly supported for Tide:** three official stills show one view in three lightings, but which Tide each shows comes from captions (L–M). A review says the Sift "flips, visually and mechanically" [R-PCG] | §5, canon #9 |
 
 ## 7. Contradictions and ambiguities
@@ -168,21 +172,26 @@ Titles and revisions are in `research/wiki_pages_2026-09-30.tsv`.
 3. **Boss list:** the Sift page calls the Harmonizer a boss but files it under minibosses. [W:The Sift]
 4. **Illager origin:** one echo golem killed [W:Soul Block] vs three [W:Illager].
 5. **Monarch location, three answers:**
-   - a sculker nest in the Carapace [W:Monarch];
+   - "battled in the sculker nest in the Sift" [W:Monarch]. Its page doesn't name an area; the Carapace "is the home of sculkers" [W:The Carapace];
    - a quest filed under Singer's Meadow [W:Wrath of the Sculkers];
    - "in the Sift dimension, in the Ravines region" [P-SK4].
 6. **Hunter vs Monarch summons:** the Hunter page says it "can be summoned by the Monarch" [W:Hunter], but the Monarch page lists only "two stalkers and two scavengers" [W:Monarch].
 7. **Tone:**
-   - Serene: "a bit peaceful - serene, almost" [I-PCG1]; "a wondrous dimension of peace and calm" (novel) [W:The Rift].
+   - Serene: "a bit peaceful - serene, almost" [I-PCG1]; "a wondrous dimension of peace and calm" (the novel's publisher blurb) [BK1].
    - Threatening: "an uncharted dimension of threats, mysteries, and breathtaking beauty" [MC3].
    - De Llorens reconciles the two: "didn’t feel necessarily threatening or necessarily very benevolent" [XW2].
-8. **Species names changed at launch:** Licker → Slabber, Sculk Mage → Scavenger, Sculk Slasher → Stalker, Snout Sifter → Bloombud, Groobler Sentinel → Pollinator. The §3.1 seed list uses the old names. [W:* redirects]
+8. **Species names changed around launch** (Licker → Slabber, Sculk Mage → Scavenger, Sculk Slasher → Stalker, Snout Sifter → Bloombud, Groobler Sentinel → Pollinator). These were mostly *not* renames by Mojang. Earlier names were wiki placeholders or developer codenames, replaced once official names surfaced:
+   - "Groobler Sentinel" is a codename, from a developer's tweet cited on [W:Pollinator].
+   - "The slabber's name is datamined from the source code." [W:Slabber] (2026-09-29).
+
+   The §3.1 seed list uses the older names; current names and aliases are in the bestiary.
 9. **The Grand Illusioner's stronghold:** "While visiting the Sift, the Grand Illusioner's stronghold was raided" [W:Grand Illusioner]. The novel's setting list places the stronghold in the Overworld, under Mountain [W:The Rift]. This is probably a dangling modifier (the Illusioner was away in the Sift) rather than a real conflict.
 10. **Procedural vs fixed areas:** "the Sift, a procedurally generated and suitably enigmatic new dimension" [R-PU]. Official copy names fixed areas [XW1] and speaks of "caves and forgotten ruins whose layouts can vary between visits" [MC3]. This may be true of rift runs only.
 11. **Humbler Huskland:** it has its own location entry and tracks, and is reached through the Musical Gate on the Meadow questline (§2), yet humbler husks are Carapace fossils [W:The Carapace]. Whether it is part of the Carapace is unknown.
 12. **Tide difficulty order:** "the difficulty rises with each" of "Flow, Thrive, and Endure" [P-BB4], against four sources saying Thrive is the easy Tide [R-PU, P-BB3, R-PCG, R-GRP] and the in-game text (canon #7).
 13. **Singer colour:** "pale green bodies" (novel previews) [P-BB1] vs "gray" (low-reliability source) [D-JOY].
 14. **A Sniffer in the Sift?** "the Sniffer, one of Minecraft’s newer mobs, is also in the Sift" [P-AG] (tier C, single source). No other source mentions it. It may be a misidentified Slabber (then called the Licker), which a low-reliability blog calls "a sniffer cousin" [D-JOY]. Unresolved.
+15. **How the Blub moves:** in the vanilla clip, "bunny-like creatures that walk rather than hop" [P-PCGAMER], and the official audio description says it "walks casually" [S-W2]. In Dungeons II it hops, per the novel [W:Blub] and an official Launcher animation captioned "a blub hopping" [W:Blub]. Most likely the two games differ.
 
 ## 8. Prior art: existing fan mods (competitive context, not canon)
 Metadata and quotes come from Modrinth, 2026-09-30: `research/prior_art_2026-09-30.md` (IDs PA-1…3).
@@ -197,20 +206,20 @@ Metadata and quotes come from Modrinth, 2026-09-30: `research/prior_art_2026-09-
 
 ## 9. Official and press sources (WP-003 part 2)
 **Coverage.**
-- 90 sources read: 22 official, 20 reviews or interviews, 36 news items or guides, and 12 low-reliability sources, which we cite only as leads.
+- The press index lists **94 source IDs in 91 rows**: 25 official (tier A; 4 of them are video-only posts or title lists with no body text), 20 first-hand reviews and interviews (B), 36 news items and guides (C), and 13 low-reliability sources (D), which we cite only as leads. These counts are taken from `research/press_sources_2026-09-30.md`.
 - In the working notes, 558 quoted passages were machine-checked against the saved page text, with 0 mismatches.
-- The quotes in this file and the bestiary were checked the same way (see PLAN WP-003 log).
+- Every quote in this file and the bestiary was then checked by a second script (see the PLAN WP-003 log for its counts). Quotes it can't match automatically, such as images or quotes whose source tag is on another line, were checked by hand.
 - Page text is not committed (third-party copyright); only metadata is.
 
 **Key additions:**
 - **Design intent (the strongest guidance we have).**
   - Måns Olson, reported by PCGamesN [I-PCG1] **M**:
-    - The Nether and End "are very hostile and imposing".
-    - For the Sift, Mojang "really wanted to make something that felt a bit peaceful - serene, almost - and that gave a very different color palette for players to enjoy."
-    - "so it’s still a dangerous place for the player to be," … "but it’s not evil."
+    - The Nether and End "are very hostile and imposing" [I-PCG1].
+    - For the Sift, Mojang "really wanted to make something that felt a bit peaceful - serene, almost - and that gave a very different color palette for players to enjoy." [I-PCG1]
+    - "so it’s still a dangerous place for the player to be," … "but it’s not evil." [I-PCG1]
   - Laura De Llorens, Design Director, speaking officially [XW2] **H**:
-    - "The world has its own independent ecosystem. There’s mobs that thrive through things that hurt the player, for instance, but the mobs live there. They’re adapted to that."
-    - "didn’t feel necessarily threatening or necessarily very benevolent. It’s just its own independent thing"
+    - "The world has its own independent ecosystem. There’s mobs that thrive through things that hurt the player, for instance, but the mobs live there. They’re adapted to that." [XW2]
+    - "didn’t feel necessarily threatening or necessarily very benevolent. It’s just its own independent thing" [XW2]
 - **Rules.**
   - Official: "once you enter, new rules to learn. Shifting tides within the Sift can affect your character and those around you; hazardous new blocks will alter how you approach exploration" [XW1] **H**.
   - Reviewers **M**:
@@ -249,7 +258,9 @@ Metadata and quotes come from Modrinth, 2026-09-30: `research/prior_art_2026-09-
 - **The note sequence that opens the portal:** shown in a promotional video (YouTube `PIRZC4Zlp2M`, 2026-05-30) that we could not open.
 - **The Singer's appearance:** revealed in an official short (YouTube `ypJN_cWKFo0`, public on 2026-08-20) that we could not open. Only novel-preview text is available [P-BB1].
 - **Healthy vs corrupted sculk visuals and mechanics:** more footage; vanilla news in 2027.
-- **Names and behaviour** of the Nuzzle, Fusefly, Hurler and Roamroot; official names of the Antenna Sifter and Sift Sheep; the "bird-like creatures", the "goat things" and the Sniffer claim (bestiary): wiki updates.
+- **Conjecture names** (Blubber, Shroomer, Forager, Sculk Cube, Prickle, Antenna Sifter, Sift Sheep) and the **Seedling's final name** ("the final name is not currently public" [W:Seedling]): wiki updates.
+- **Whether the Monstrous Opus belongs to the Sift storyline** (canon #19): a playthrough or guide.
+- **Names and behaviour** of the Nuzzle, Fusefly, Hurler and Roamroot; official names of the Antenna Sifter and Sift Sheep; the "bird-like creatures" [P-SK5], the "goat things" [R-IGN] and the Sniffer claim (bestiary): wiki updates.
 - **The look of Lullaby Hills; other secret areas; whether Humbler Huskland is part of the Carapace:** wiki updates.
 - **Anything about the vanilla Sift beyond the first look** (how to reach it, Tides in Java): Mojang's 2027 announcements. Re-check §3.3 at every milestone.
 - **Bedrock previews and betas** were not checked for Sift content (Java target). Low priority.
@@ -263,7 +274,7 @@ Metadata and quotes come from Modrinth, 2026-09-30: `research/prior_art_2026-09-
 | S-W3 | minecraft.wiki "Planned versions" (rev. 2026-09-29T08:19Z) | 2026-09-30 |
 | S-W4 | minecraft.wiki "Java Edition 26.4" (rev. 2026-09-29T16:22Z) | 2026-09-30 |
 | S-I1 | File:The_Sift.png (LIVE still, vanilla), viewed | 2026-09-30 |
-| S-I2 | File:Sift_tides_effects.png (Dungeons II tutorial), viewed | 2026-09-30 |
+| S-I2 | File:Sift_tides_effects.png (Dungeons II tutorial), viewed. Provenance: the wiki calls it a tutorial frame "in a gameplay video" dated 2026-09-25 [W:Sift Tides]. Its file page cites XW1, but the saved XW1 text contains no such image, so the exact origin is unconfirmed | 2026-09-30 |
 | S-I3 | File:MCD2_Sift_ambience_1/2/3.png (official promo stills, 2026-08-28; the file pages say "Ambience in the Sift"), viewed | 2026-09-30 |
 | S-I4 | File:MCD2_Singer's_Meadow_portal.jpg, viewed | 2026-09-30 |
 | S-I5 | File:MCD2_Carapace_environment1.jpg, viewed | 2026-09-30 |
@@ -281,4 +292,4 @@ Metadata and quotes come from Modrinth, 2026-09-30: `research/prior_art_2026-09-
 | I-PCG1 | PCGamesN interview with Måns Olson & Laura De Llorens (K. Allsop, 2026-09-26) https://www.pcgamesn.com/minecraft/the-sift-live-september-2026 | 2026-09-30 |
 | R-* / P-* / D-* | Reviews, news, guides and low-reliability leads. The full table with URLs, dates, authors and tiers is in `research/press_sources_2026-09-30.md` (includes P-GHACKS, P-TJ, P-GRANT) | 2026-09-30 |
 | PA-1…3 | Modrinth project metadata for three fan mods: `research/prior_art_2026-09-30.md` | 2026-09-30 |
-| W:* | minecraft.wiki `Dungeons II:<Page>`: 572 pages fetched 2026-09-30 (all 536 Dungeons II pages plus 36 others). Titles, URLs, revision timestamps and flags are in `research/wiki_pages_2026-09-30.tsv` | 2026-09-30 |
+| W:* | minecraft.wiki `Dungeons II:<Page>`. `research/wiki_pages_2026-09-30.tsv` lists 576 pages with titles, URLs, revision timestamps and flags. It holds the 572 pages fetched in the wiki pass (all 536 Dungeons II pages plus 36 others), plus S-W3, S-W4 and two file pages added during review. 80 of them are cited in these docs, and the `cited` column marks which | 2026-09-30 |
