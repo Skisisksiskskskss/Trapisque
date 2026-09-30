@@ -46,3 +46,18 @@ Format: `## D-### <title> (<date>) [supersedes D-### if any]` then Context · Op
 **Consequences.** Our Blub and first biome must be visibly compatible with the LIVE footage (teal sky, soft orange grass on hills, small glowing rabbit-like Blub).
 
 **Revisit if.** Any Java snapshot/experimental toggle/feature announcement mentions the Sift → stop and tell the owner (§3.3). Re-check at every milestone start.
+
+---
+
+## D-003 Root package, entrypoints and licence scope (2026-09-30)
+**Context.** The scaffold needs a Java root package now; Phase 3 decides the internal layout. The owner set MIT for code and All Rights Reserved for original assets.
+
+**Options (package).** (A) reverse-DNS on the GitHub account (`io.github.skisisksiskskskss.thesift`) — conventional but long and tied to a username that may change; (B) `com.thesift` — implies a domain we don't own; (C) single-segment `thesift` — equals MOD_ID; established precedent among large mods (`twilightforest`, `mekanism`, `appeng`).
+
+**Decision.** (C): common code in `thesift`, client-only code in `thesift.client` (split source sets: `src/main` / `src/client`). Entry points `thesift.TheSift` / `thesift.client.TheSiftClient`. Copyright holder "The Sift contributors". Licence scope (LICENSE-ASSETS.md): textures, sounds/music, previews **and the art/audio generator scripts under `tools/art/` and `tools/audio/`** are All Rights Reserved; everything else MIT.
+
+**Why.** Short, collision-free in practice (namespaced by mod id), no borrowed domain. Generator scripts encode the artwork itself — leaving them MIT would make the "ARR assets" licence regenerable by anyone.
+
+**Consequences.** Phase 3 decides sub-packages (registries, worldgen, entity, …) under `thesift`.
+
+**Revisit if.** The owner wants a different package/copyright holder, or wants the generator scripts under MIT (flagged at Gate A).
