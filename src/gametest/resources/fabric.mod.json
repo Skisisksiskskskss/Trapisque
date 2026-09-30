@@ -8,10 +8,14 @@
 	"environment": "*",
 	"entrypoints": {
 		"fabric-gametest": [
-			"thesift.test.SmokeTest"
+			"thesift.test.SmokeTest",
+			"thesift.test.SiftDimensionTest"
 		]
 	},
 	"depends": {
 		"thesift": "*"
-	}
+	},
+	"mixins": [
+		"thesift-gametest.mixins.json"
+	]
 }

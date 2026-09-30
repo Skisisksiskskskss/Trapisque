@@ -15,5 +15,7 @@ final class ModLanguageProvider extends FabricLanguageProvider {
 	@Override
 	public void generateTranslations(HolderLookup.Provider registries, TranslationBuilder builder) {
 		builder.add("thesift.disclaimer", "Unofficial fan project, not affiliated with or endorsed by Mojang Studios or Microsoft.");
+		builder.add("thesift.bed.no_sleep", "You can't sleep here: the Sift never goes quiet");
+		builder.add("thesift.bed.rested", "You rest a while. The Tide keeps turning.");
 	}
 }

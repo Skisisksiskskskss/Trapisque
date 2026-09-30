@@ -5,6 +5,10 @@ import net.minecraft.resources.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import thesift.registry.ModAttributes;
+import thesift.world.EndureRest;
+import thesift.world.TideClock;
+
 /**
  * Common (client + dedicated server) entrypoint for The Sift.
  *
@@ -16,6 +20,9 @@ public final class TheSift implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
+		ModAttributes.init();
+		TideClock.init();
+		EndureRest.init();
 		LOGGER.info("The Sift initialized (unofficial fan project)");
 	}
 

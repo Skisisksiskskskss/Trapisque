@@ -59,7 +59,8 @@ tasks.withType(JavaCompile).configureEach {
 	it.options.release = 25
 	it.options.encoding = "UTF-8"
 	// Surface every warning from our own code (mission §7.2: no new warnings).
-	it.options.compilerArgs += ["-Xlint:all"]
+	it.options.compilerArgs += ["-Xlint:all", "-Xlint:-classfile"]
+	// -classfile: silences notes about annotation attributes inside library jars (JOML), not our code.
 }
 
 java {
