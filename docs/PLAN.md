@@ -7,8 +7,8 @@ Only one WP is IN PROGRESS at a time.
 |----|-------|-------|------|--------|
 | WP-001 | Version ground truth & official-Sift check | 0 | S | DONE |
 | WP-002 | Toolchain + mod scaffold (build, runServer, genSources) | 0 | M | DONE |
-| WP-003 | Sift research I: canon, areas, Tides, access, lore, palette evidence | 0 | L | REVIEW |
-| WP-004 | Sift research II: bestiary (every mob, boss, character) | 0 | L | REVIEW |
+| WP-003 | Sift research I: canon, areas, Tides, access, lore, palette evidence | 0 | L | DONE |
+| WP-004 | Sift research II: bestiary (every mob, boss, character) | 0 | L | DONE |
 | WP-005 | Vanilla study I: world (dimension, noise, biomes, env attributes, portals, jigsaw) | 0 | L | DONE |
 | WP-006 | Vanilla study II: entities (Brain, goals, vibrations/sculk, models/anims, boss bars) | 0 | L | DONE |
 | WP-007 | Vanilla study III: plumbing (datagen, SavedData/attachments, payloads, GameTest) | 0 | M | DONE |
@@ -68,7 +68,7 @@ Only one WP is IN PROGRESS at a time.
 ### WP-003 Sift research I: canon, areas, Tides, access, lore, palette evidence
 - Phase / Milestone: 0 / —
 - Tier: L
-- Status: REVIEW (round 3 of ≤3 pending)
+- Status: DONE (review round 3 PASS)
 - Depends on: —
 - Goal: Verify/correct/expand §3 with cited sources: release facts, the dimension, Tides, souls, areas, access, lore, characters, blocks/items, and resolve the colour contradiction.
 - Inputs (read ONLY these): docs/00_MISSION.md §3; minecraft.wiki Dungeons II pages; Xbox Wire; minecraft.net articles; reputable press; official trailer/gameplay descriptions.
@@ -108,11 +108,22 @@ Only one WP is IN PROGRESS at a time.
     - 80.lv byline added;
     - Humbler Husk moved out of the boss table.
   - Checker fixed to fall back to a preceding tag and to report untagged quotes; every quote now carries an adjacent tag. Result: **265 verified, 0 mismatched, 0 untagged, 1 skipped** (the Tides screenshot, checked by eye).
+  - Review round 3 (fresh reviewer; the first attempt was cut off by a usage limit and rerun): **PASS**, no must-fix, every score ≥4 (seed rows 5, observations 4, colour 5, contradictions and unknowns 4, sources and labels 4, bestiary 4, facts vs design 4, traceability 4).
+    - All 7 should-fix items were applied:
+      - the bestiary's staff label (M);
+      - the Singer's look from an official ad still (S-I8, H), which resolves §7 #13;
+      - the Launcher note sequence from [W:ARG] (M), added to canon #4;
+      - the "Groobler Sentinel" attribution (a fan tweet plus a developer's Reddit reply);
+      - the renames framing in the bestiary;
+      - the observation-5 claim reworded as a labelled inference with vanilla analogues;
+      - source tags on canon #17.
+    - Notes applied: the ambience still's colour; the official MC7 invasion line; two flagged sections marked L; "three sources"; "passive"; S-I4/S-I5 provenance; [OBS] on palette 2; Steam names H; the unused [V:Page] legend removed; MC3 context; the Monstrosity's area.
+    - Final quote check: **273 verified, 0 mismatched, 0 untagged, 3 skipped** (all text in the Tides screenshot, checked by eye). The checker now also matches quotes that sit inside a wiki page's `<ref>` citations.
 
 ### WP-004 Sift research II: bestiary
 - Phase / Milestone: 0 / —
 - Tier: L
-- Status: REVIEW (round 3 of ≤3 pending)
+- Status: DONE (review round 3 PASS)
 - Depends on: WP-003 (sources index)
 - Goal: A short cited entry for every Sift mob, boss and named character: appearance, Dungeons II behaviour, faction, area.
 - Inputs (read ONLY these): docs/RESEARCH.md sources index; minecraft.wiki mob/boss pages.

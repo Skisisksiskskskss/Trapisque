@@ -15,7 +15,7 @@ Split out of RESEARCH.md (WP-004). Facts only; design verdicts belong to Phase 2
 
 A row's label covers its *existence and main facts*. Parts with lower confidence are marked inline.
 
-**Naming.** Many species were renamed at launch. The current page title comes first; old names and codenames follow "aka".
+**Naming.** Many species were known by other names before launch: wiki placeholders or developer codenames, not renames by Mojang (RESEARCH §7 #8). The current page title comes first; earlier names follow "aka".
 
 ## Passive, ambient and companion creatures
 
@@ -40,7 +40,7 @@ A row's label covers its *existence and main facts*. Parts with lower confidence
 
 | Character | Who | Tie to the Sift | Source | Conf. |
 |---|---|---|---|---|
-| **Singer** (a species; one is met in the game) | "Singers are passive and can only communicate through song, capable of both pacifying wardens and opening the Deep Dark portal with their song." [W:Singer]. Creates echo golems.<br>**Look:** novel previews: "pale green bodies, shaggy fur, tiny faces on their elongated necks, pale antlers, short legs, and long arms" [P-BB1]; a low-reliability source says "gray" [D-JOY]; an official short shows its full appearance (not viewed; RESEARCH §10) | Sift native. Achievement "Friend of the Sift": "Receive the Singer's gift of song" [W:Achievement] | [W:Singer], [W:Achievement] | L (behaviour, novel) / M (achievement) |
+| **Singer** (a species; one is met in the game) | "Singers are passive and can only communicate through song, capable of both pacifying wardens and opening the Deep Dark portal with their song." [W:Singer]. Creates echo golems.<br>**Look:** novel previews: "pale green bodies, shaggy fur, tiny faces on their elongated necks, pale antlers, short legs, and long arms" [P-BB1]; a low-reliability source says "gray" [D-JOY]. [OBS] of an official ad still [S-I8]: a pale mint-green shaggy body, pale antlers, long arms, a small face (**H**) | Sift native. Achievement "Friend of the Sift": "Receive the Singer's gift of song" [W:Achievement] | [W:Singer], [W:Achievement] | L (behaviour, novel) / M (achievement) |
 | **Bubbles** | a "bright blue, plump rabbit" that glows, is "squishy and weightless", and springs back when flattened [W:Bubbles] | The named blub of the novel *The Rift*; the species' namesake | [W:Bubbles] | L (novel) |
 | **Harlow** | "the main protagonist" of the novel *The Rift* [W:Harlow] | Listed on the Sift page under **Visitors** [W:The Sift]. With Iliana, he raided the Grand Illusioner's stronghold and stole its rift staff [W:Grand Illusioner] | [W:Harlow] | L (novel) |
 | **Iliana** | Harlow's childhood friend, taken in a raid [W:Harlow] | A **Visitor** [W:The Sift]; took part in the staff theft (above). No wiki page | [W:Harlow], [W:Lucky] | L (novel) |
@@ -80,7 +80,7 @@ A row's label covers its *existence and main facts*. Parts with lower confidence
 |---|---|---|---|---|---|
 | **Harmonizer** (aka Sprout Boss) | Hostile Sifter (wiki category; "a massive sprout") | "a massive sprout mini boss" [W:Harmonizer]; [OBS]: a purple/lavender floater with a cube head, one glowing eye, a petal ruff and long tentacles | • A screech or roar that sends a **circular shockwave**<br>• Summons ~7 mobs (Nesters and Sentinels are common)<br>• **Buff beams** to allies, cut by killing the ally<br>• A tentacle grab<br>• Later fought **soul-corrupted** | The Sift (the mission's location conflicts: RESEARCH §7 #2) | M |
 | **Monarch** (aka Shade, Sculk Dancer) | Sculker | "a huge, long-clawed sculker boss" [W:Sculker]; strides slowly | • A twirl<br>• A dash that leaves **feather projectiles**, which fire after 5 s<br>• A spin (8 feathers); a multi-spin<br>• Summons "two stalkers and two scavengers" [W:Monarch], not while they live<br>• At ¾ health it spawns a **monarch echo** clone | A sculker nest; location conflicts (RESEARCH §7 #5) | M |
-| **Sculk Monstrosity** | unknown (golem-like; in the "Sift mobs" category only) | "a large golem-like boss" [W:Sculk Monstrosity] | • Heavy alternating swings; a sweep<br>• A shoulder **charge that ignites soul flames**<br>• A roar that summons **sculk cubes**<br>• "Catalysis" [W:Sculk Monstrosity]: sculk catalysts erupt and spread veins in a web | The Sift; its questline runs through the Meadow and the Musical Gate [P-SK3] | M |
+| **Sculk Monstrosity** | unknown (golem-like; in the "Sift mobs" category only) | "a large golem-like boss" [W:Sculk Monstrosity] | • Heavy alternating swings; a sweep<br>• A shoulder **charge that ignites soul flames**<br>• A roar that summons **sculk cubes**<br>• "Catalysis" [W:Sculk Monstrosity]: sculk catalysts erupt and spread veins in a web | Singer's Meadow (a boss "battled here" [W:Singer's Meadow]); its questline runs through the Meadow and the Musical Gate [P-SK3] | M |
 | **Dartback** (aka Wellspring Miniboss) | Hostile Sifter (wiki category) | not described | A miniboss in an **ichor-filled** arena; summons 2 Stalkers + 2 Scavengers; during the quest "Lost Harmonies" [W:Dartback] | The Sift | M |
 | **Soul Corrupted Dartback / Harmonizer** | as the base form | unknown | Boss re-fights of the above (their sections are missing) [W:The Sift] | The Sift | L |
 | **Monstrous Opus** (codename Soul Construct) | "associated with the illagers" [W:Illager]; golem-like: listed among "golem or golem-like mobs" [W:Golem] | unknown | The final boss, "battled after the Supreme Evoker is defeated" [W:Monstrous Opus]; its behaviour section is empty | **Sift tie unknown** (checked; RESEARCH canon #19) | M |
@@ -102,7 +102,7 @@ A row's label covers its *existence and main facts*. Parts with lower confidence
 - **Illagers in the Sift** **M**:
   - The Enchanter, Pillager, Royal Guard and Vindicator are hostiles in Singer's Meadow, and the Ravager spawns in the Sift.
   - Camps: "Drive off the illagers camped near the Echo Den" [W:Achievement].
-  - Leaders: the **High Council**. The Grand Illusioner has the rift staff (novel), and the Supreme Evoker soul-corrupts mobs. That they are empowered by **soul blocks** taken from echo golems is **L** (novel). [W:Singer's Meadow], [W:Royal Guard], [W:Illager], [W:High Council]
+  - Leaders: the **High Council**. The Grand Illusioner opens rifts with its staff (M: [W:Grand Illusioner's Staff], [W:Rift]), and the Supreme Evoker soul-corrupts mobs. That they are empowered by **soul blocks** taken from echo golems is **L** (novel). [W:Singer's Meadow], [W:Royal Guard], [W:Illager], [W:High Council]
 - **Soul corrupted** is a status, not a species [W:Soul Corrupted] **M**:
   - Corrupted mobs "glow, emit soul particles, and are far more resilient" [W:Soul Corrupted].
   - Corruption is a rare replacement with random properties (Bubble Shield, Burning, Freezing, Swiftness, Toxic and others) plus a soul-wave attack.
