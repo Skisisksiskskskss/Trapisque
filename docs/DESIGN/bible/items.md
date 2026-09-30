@@ -31,12 +31,12 @@ Vanilla has no quest log, so the quest is **a place that shows its own progress*
    - **Pay:** condense your own XP at a bloom heart.
 
    This is the decision: risk a camp, or pay in levels.
-3. **Visible progress.** Each filled stone lights and chimes, and the Singer's phrase grows by one more bar (a subtitle for each: "Singer hums", "Singer sings"). The grove's healthy sculk sways further out.
-4. **The song.** With all three stones filled, the next music a player plays near the Singer, in Thrive or Flow (it is silent in Endure), makes it sing the full song. Notes rise from the stones, and healthy sculk blooms outward from the grove, curing any blight inside it. The Singer then **grants a horn to each player within 16 blocks at that moment** who hasn't received one from this grove. Players who arrive later get nothing from this grove; the song happens once.
+3. **Visible progress.** Each filled stone lights and chimes, and the Singer's phrase grows by one more bar (a subtitle for each: "Singer hums", "Singer sings"). The grove's healthy sculk sheds petals farther out.
+4. **The song.** With all three stones filled, the next music a player plays **by hand** near the Singer (a note block or an instrument, whose game event names the player), in Thrive or Flow (it is silent in Endure), makes it sing the full song. Notes rise from the stones, and healthy sculk blooms outward from the grove, curing any blight inside it. The Singer then **grants a horn to each player within 16 blocks at that moment** who hasn't received one from this grove. Players who arrive later get nothing from this grove; the song happens once.
 
 **Scope.**
 - **Per grove, shared by the world:** the chorus stones stay filled, and the grove stays restored.
-- **Per player:** one horn per grove. The grove's block entity keeps the set of rewarded players, the precedent of the trial chamber's vault (`rewarded_players`).
+- **Per player:** one horn per grove. The **grove heart**'s block entity (world.md §3) keeps the set of rewarded players, the precedent of the trial chamber's vault (`rewarded_players`).
 - A lost horn can be earned again at another grove.
 - **The Singer can't die** (creatures.md §2), so no grove is ever left without its Singer.
 
@@ -45,14 +45,14 @@ Vanilla has no quest log, so the quest is **a place that shows its own progress*
 **Advancement:** "The Singer's Gift" (§5).
 
 ### 1.2 The Singer's horn: rules
-- **Charges belong to the player, not the horn.** Each player has 3 song charges, stored as a persistent player data attachment. Every horn a player holds draws on the same charges, the same idea as the goat horn's shared cooldown. Extra horns never add charges.
+- **Charges belong to the player, not the horn.** Each player has 3 song charges, stored as a persistent player data attachment that is kept on death (`copyOnDeath`), so dying never refills them. Every horn a player holds draws on the same charges, the same idea as the goat horn's shared cooldown. Extra horns never add charges.
 - **Recharge:** Thrive recharges at twice Flow's rate; Endure recharges nothing (D-016). One charge takes about half a Thrive (BALANCE.md).
 - **What a song does** where `sift_life` is true (every Tide in the Sift), within 12 blocks:
   - healthy sculk grows (sparks existing charge, as music does);
   - blight is cured in a small radius;
   - a **musical gate** in range opens, whatever its key;
-  - Sift hunters are **lulled**. A Nester or Bloombud targeting the player drops its target, folds its crest or petals, shows note particles, and can't re-target that player for 10 s. The subtitle is "Nester lulled". The song is still a vibration, so hunters farther out still hear it and come. In Endure a song is a trade: it buys 10 s of calm here, costs a charge that won't come back until Flow, and calls more hunters from farther away.
-- **Outside the Sift** a song does none of that. The horn plays as an instrument, like a goat horn: an `instrument_play` vibration, which can open an awake frame (entry_path.md). Sift blocks and companions react to it as decoration (world.md §3.2).
+  - Sift hunters within 12 blocks are **lulled**, and they ignore this song's vibration. A lulled Nester or Bloombud drops any target, folds its crest or petals, shows note particles, and can't re-target that player for 10 s. The subtitle is "Nester lulled". The song is still a vibration, so hunters farther out still hear it and come. In Endure a song is a trade: it buys 10 s of calm here, costs a charge that won't come back until Flow, and calls more hunters from farther away.
+- **Outside the Sift** a song does none of that, spends no charge, and has a goat-horn-style cooldown. Charges recharge only in the Sift. The horn plays as an instrument, like a goat horn: an `instrument_play` vibration, which can open an awake frame (entry_path.md). Sift blocks and companions react to it as decoration (world.md §3.2).
 
 ## 2. Gear traits (Should, M5)
 Traits add **Sift-only utility**. They work only where `sift_life` is true, and never add damage, protection, mining speed or durability (00_VISION §6).

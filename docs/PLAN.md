@@ -23,7 +23,7 @@ Only one WP is IN PROGRESS at a time.
 | WP-021 | Content bible II: creatures (canon-mob verdicts, natives, hostiles, companions, bosses) | 2 | L | DONE |
 | WP-022 | Content bible III: items, gear, food, advancements, audio hooks, mechanics | 2 | M | DONE |
 | WP-023 | Dependency graph, milestones, Phase 3 WPs and fully specified M1 WPs | 2 | L | DONE |
-| WP-024 | Content bible critique, freeze, Gate B (self-review) | 2 | L | IN PROGRESS |
+| WP-024 | Content bible critique, freeze, Gate B (self-review) | 2 | L | DONE |
 | WP-030 | Architecture decisions | 3 | M | TODO |
 | WP-031 | Datagen setup | 3 | M | TODO |
 | WP-032 | Test harness | 3 | M | TODO |
@@ -142,14 +142,14 @@ Tier key (mission §6 Phase 2): **Core** (in 1.0) · **Should** · **Could** · 
 ### WP-024 Content bible critique, freeze, Gate B
 - Phase / Milestone: 2 / —
 - Tier: L
-- Status: IN PROGRESS
+- Status: DONE
 - Depends on: WP-023
 - Goal: A fresh adversarial review of the bible and roadmap; fix; freeze; Gate B as a self-review (D-014).
 - Inputs (read ONLY these): 01_CONTENT_BIBLE.md and parts, 00_VISION.md, the §7.1 rubric.
 - Deliverables: critique log in 01_CONTENT_BIBLE.md; frozen bible; Gate B summary in STATUS.md.
 - Definition of Done:
-  - [ ] ≤3 critique rounds by fresh subagents; no must-fix left, or the §5.5 cap applied with reasons.
-  - [ ] Bible marked FROZEN; Gate B self-review written.
+  - [x] ≤3 critique rounds by fresh subagents; no must-fix left, or the §5.5 cap applied with reasons. Evidence: round 3 PASS (01_CONTENT_BIBLE.md §4).
+  - [x] Bible marked FROZEN; Gate B self-review written (STATUS.md).
 - Iteration budget: critique rounds ≤ 3.
 - Exit ramp: §5.5 critique cap.
 - Log:
@@ -162,6 +162,10 @@ Tier key (mission §6 Phase 2): **Core** (in 1.0) · **Should** · **Could** · 
     - All findings were fixed (D-017; 01_CONTENT_BIBLE.md §4).
     - The M1 WPs gained the missing dependencies, DoD checks and fallbacks.
     - `check_bible.py` was hardened.
+  - 2026-09-30 round 3 (a new fresh reviewer, the last): **PASS**. Scores all 4, no must-fix.
+    - The quick fixes F1–F15 were applied under the cap (01_CONTENT_BIBLE.md §4).
+    - `check_bible.py`: 144 rows, 0 errors. Its new checks were negative-tested.
+    - Bible FROZEN; Gate B self-reviewed.
 
 ## Phase 3 — Architecture (WPs specified at Phase 2 exit)
 
@@ -297,7 +301,7 @@ Minimum per mission: entry and return, one area with its own terrain, a small bl
   - songwood sapling;
   - tide sand and the tide vent;
   - gatestone and the membrane;
-  - the glowing-petal particle (music reactions, world.md §3.2);
+  - the glowing-petal particle (music reactions, world.md §3.2) and the Trill particles (the Thrive ambience);
   - ichor (still and flowing), and the ichor bucket.
 - Inputs (read ONLY these): docs/DESIGN/bible/world.md §3, §3.1 and §4; mission §7.4; the vanilla textures of neighbouring blocks (for palette comparison only, never copied).
 - Deliverables:
@@ -333,7 +337,7 @@ Minimum per mission: entry and return, one area with its own terrain, a small bl
 - Definition of Done:
   - [ ] The biome doc is frozen after its critique.
   - [ ] Each block has its model, loot, tags, lang, sound type, map colour and recipe (where craftable). A test covers each block with behaviour, the sapling included: it grows in the Sift, and it doesn't grow in the Overworld.
-  - [ ] Music reactions: a unit test covers the ring buffer (range, expiry, capacity). A headless screenshot shows petals and flute-hole notes next to a playing note block, looked at.
+  - [ ] Music reactions: a unit test covers the ring buffer (range, expiry, capacity, and a jukebox entry staying live while its record plays). Headless screenshots, looked at, show petals and flute-hole notes next to a playing note block and 30 s into a jukebox record. The headless client runs with OpenAL Soft's null backend (`ALSOFT_DRIVERS=null`) and its log shows the sound engine starting; if that can't work, a client test feeds the buffer directly and BLOCKERS.md says so.
   - [ ] Terrain generates on a dedicated server without warnings.
   - [ ] Headless screenshots at far, mid and near range, looked at. No floating artifacts, and no seams at chunk borders (checked on a 16-chunk overview).
   - [ ] Chunk generation cost is ≤1.5× the Overworld's, measured the same way on the same machine (numbers in the log).
@@ -358,7 +362,7 @@ Minimum per mission: entry and return, one area with its own terrain, a small bl
   - [ ] Every sound is synthesized by our scripts. No samples from Mojang or any game.
   - [ ] Every positional sound is mono (an `ffprobe` channel check over all files, output in the log).
   - [ ] Frequent sounds (steps, wading, bubbling) have 2–4 variants.
-  - [ ] Peak and RMS loudness measured next to comparable vanilla sounds (numbers in the log).
+  - [ ] Peak and RMS loudness within ±3 dB of comparable vanilla sounds (numbers in the log).
   - [ ] Every sound event has a subtitle.
 - Iteration budget: revision rounds ≤ 3 per sound.
 - Exit ramp: simpler tones; a HUMAN_ASSET_BRIEFS entry for anything a human could do meaningfully better.
@@ -380,7 +384,8 @@ Minimum per mission: entry and return, one area with its own terrain, a small bl
     - there is no swimming and no current;
     - an emptied bucket evaporates in the Overworld (with a particle and a sound);
     - the flow range is correct.
-  - [ ] The per-tick cost of 20 entities standing in ichor is measured against 20 in lava (log).
+  - [ ] The per-tick cost of 20 entities standing in ichor is ≤1.5× that of 20 in lava (measured; log).
+  - [ ] The fog inside ichor uses an access widener to add a fog environment (no second mixin; the route is recorded in the WP log).
   - [ ] BALANCE.md rows for ichor (burn, drain, slowdown; Easy, Normal and Hard) next to lava and powder snow.
 - Iteration budget: fix hypotheses ≤ 5.
 - Exit ramp: the recorded WP-034 fallback (a vanilla-like fluid with the effects kept in `entityInside`).
@@ -443,7 +448,7 @@ Minimum per mission: entry and return, one area with its own terrain, a small bl
 - Status: TODO
 - Depends on: WP-046
 - Goal: The membrane portal, with its entity filter, takes players to a generated Sift-side gate and back. The gate uses a bounded search with a fallback, an explicit link and a sanctuary. The first crossing starts the Tide clock.
-- Inputs (read ONLY these): docs/DESIGN/vision/entry_path.md; docs/DESIGN/system_entry.md; docs/VANILLA_ANALOGS.md W5; D-010, D-013.
+- Inputs (read ONLY these): docs/DESIGN/vision/entry_path.md; docs/DESIGN/system_entry.md; docs/DESIGN/bible/world.md §5; docs/VANILLA_ANALOGS.md W5; D-010, D-013, D-017 (the gate mound).
 - Deliverables: the portal block, gatestone, the gate feature, link SavedData, the sanctuary spawn rule, the membrane's far-side Tide tint, the return path, GameTests.
 - Definition of Done:
   - [ ] GameTests:
@@ -520,7 +525,7 @@ Minimum per mission: entry and return, one area with its own terrain, a small bl
 - Status: TODO
 - Depends on: WP-049, WP-050, WP-042, WP-045, WP-046, WP-047
 - Goal: The Blub spawns in the Meadow, roams, squeaks and gathers to music. It stacks (per the design and the WP-034 result), follows the waterline in Flow, bathes in ichor, shelters in Endure, and is befriended per mob_blub.md.
-- Inputs (read ONLY these): mob_blub.md; docs/VANILLA_ANALOGS.md E1/E2/E4; the WP-046 listener code; the WP-045 basin API.
+- Inputs (read ONLY these): mob_blub.md; docs/VANILLA_ANALOGS.md E1/E2/E4; D-016, D-017; the WP-046 listener code; the WP-045 basin API; the WP-047 portal code.
 - Deliverables: entity type, attributes, brain or goals, spawning (biome spawn entry), loot table, spawn egg item, renderer hookup, GameTests.
 - Definition of Done:
   - [ ] GameTests, one for each behaviour in mob_blub.md, including a befriended blub crossing the membrane with its player.

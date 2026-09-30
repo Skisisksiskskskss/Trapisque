@@ -6,6 +6,8 @@ Rules:
   milestone column ("MS", or a combined "Tier / MS" column).
 - Rows tiered Could or Won't claim no milestone.
 - A table with a tier column must also have a milestone column.
+- A Core or Should cell in a table with no recognised tier column is an error.
+- Indented tables are checked too.
 - Every bible file must contain at least one tiered row, and the bible
   directory must exist and contain the three bible files.
 Headers are compared case-insensitively with Markdown emphasis removed.
@@ -20,6 +22,7 @@ import sys
 MILESTONE = re.compile(r"\bM[1-6]\b")
 ANY_MILESTONE = re.compile(r"\bM\d+\b")
 TIER_WORD = re.compile(r"\b(Core|Should|Could|Won't)\b")
+STARTS_WITH_TIER = re.compile(r"^\**(Core|Should)\b")
 EXPECTED_FILES = {"world.md", "creatures.md", "items.md"}
 
 
@@ -40,7 +43,7 @@ def check_file(path):
     header = None
     tier_col = ms_col = None
     for n, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
-        if not line.startswith("|"):
+        if not line.lstrip().startswith("|"):
             header = None
             continue
         row = cells(line)
@@ -60,7 +63,11 @@ def check_file(path):
             elif tierish:
                 errors.append(f"{path}:{n}: unrecognised tier header {tierish!r}")
             continue
-        if is_separator(row) or tier_col is None:
+        if is_separator(row):
+            continue
+        if tier_col is None:
+            if any(STARTS_WITH_TIER.match(c) for c in row):
+                errors.append(f"{path}:{n}: tier word in a table without a recognised tier column")
             continue
         if len(row) != len(header):
             errors.append(f"{path}:{n}: row has {len(row)} cells, header has {len(header)}")

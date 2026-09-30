@@ -1,6 +1,6 @@
 # The Sift — Content bible and roadmap
 
-**Status:** DRAFT (WP-020..023) → critique (WP-024) → FROZEN at Gate B (a self-review, D-014).
+**Status: FROZEN** (2026-09-30, Gate B self-review, D-014). It passed the round-3 fresh review. Later changes need a decision record.
 
 Parts:
 - `bible/world.md`: areas, biomes, spawn tables, terrain, blocks, art rules, flora, hazards, structures.
@@ -58,13 +58,13 @@ Work packages: Phase 3 = WP-030..034, M1 = WP-040..053 (PLAN.md). Later mileston
 
 | Milestone | Theme | Contents | Tag |
 |---|---|---|---|
-| **M1 — vertical slice** (Phase 4) | Get in, watch the tide, get out | Dimension + Singer's Meadow terrain; block set I with final art (with the songwood sapling); music reactions; **ichor and one kind of tide basin** (the literal tide, D-016); the Tide core (clock, light, sky, stars, Trills, beds, weather mixin); Meadow ambience; entry and return (frame, offering, music, membrane, gate); **the Blub finished** (design → art → animation → audio → AI → tests); advancements Where Souls Drift / An Offering / The Tide Turns | `v0.1.0-alpha` |
+| **M1 — vertical slice** (Phase 4) | Get in, watch the tide, get out | Dimension + Singer's Meadow terrain; block set I with final art (with the songwood sapling); music reactions; **ichor and one kind of tide basin** (the literal tide, D-016); the Tide core (clock, light, sky, stars, Trills, beds, weather mixin); Meadow ambience; entry and return (frame, offering, music, membrane, gate); **the Blub finished** (design → art → animation → audio → AI → tests); advancements The Sift (root) / An Offering / Where Souls Drift / The Tide Turns | `v0.1.0-alpha` |
 | **M2 — the hunt** | Endure means danger | Hearing rule and retreat; Nester, Bloombud, enduring variants; Sift Hollows with glowcap pools; spawn tables; tide marks, tidewrack, Endure bloom; lumen; chime bell flower; the Blub's tidewrack treats; advancements Stacked, Low Tide, Heard You, Quiet Waters | `v0.2.0-alpha` |
 | **M3 — souls** | Grow the land | Bloom patches and bloom hearts, soul blocks, growth; healthy-sculk variants; Hymnstone Rise with spires; the full hymnstone and songwood families (with lullvine); advancement Condensed | `v0.3.0-alpha` |
 | **M4 — the occupation** | Something to fight for | Blight family (with the Hollows' seams); rigs, tanks, cages, camps; Echo Golem; the Singer, its grove, the chorus stones and the gift of song; advancements Broken Chains, Rig Wrecker, The Singer's Gift | `v0.4.0-alpha` |
 | **M5 — the Meadow's life** | Should content | Pollinator, Sprout, Slabber; Lullaby Hills and choir circles; gear traits; Tide shell; lullberries; meadow flowers; Tide music; advancement Mended Ground | `v0.5.0-beta` |
 | **M6 — the heart of the blight** | The endgame | Musical gates; Monstrosity hollow with blight hearts; Sculk Monstrosity and Sculk Cubes; Harmonizer and Seedlings; advancement Heart of the Blight | `v0.6.0-beta` |
-| **Could pool** | Only if the budget allows | Radiant Ravines, burst pod, Sift ruins, Ravager, music disc, "Bubbles", raw tidewrack. Anything left over goes to post-1.0 (IDEAS.md) | — |
+| **Could pool** | Only if the budget allows | Radiant Ravines, burst pod, Sift ruins, Ravager, music disc, "Bubbles", raw tidewrack, blub towers as platforms. Anything left over goes to post-1.0 (IDEAS.md) | — |
 | **1.0** (Phases 6–8) | Polish, harden, release | Walkthrough, advancement-tree review, lang proofreading, sound mix, particle pass, lineup sheet; profiling, multiplayer, edge-case matrix; README, changelog, page copy | `v1.0.0` |
 
 ## 4. Critique log (WP-024)
@@ -114,3 +114,23 @@ Work packages: Phase 3 = WP-030..034, M1 = WP-040..053 (PLAN.md). Later mileston
   - Befriending is limited and has a tell (the allay precedent).
   - The advancement root is now "The Sift".
   - The PLAN and decision housekeeping is done.
+
+**Round 3 (a new fresh reviewer, the last allowed): PASS.** No must-fix.
+- **Scores:** F4 V4 R4 M4 D4 C4 Fe4.
+- **Fixed after the round, under the critique cap:**
+  - **F1:** jukebox reactions stay live while the record plays.
+  - **F2:** the headless client needs a null audio backend, or a client test feeds the buffer directly.
+  - **F3:** the grove heart is an unbreakable anchor, so the Singer's return point can't be taken.
+  - **F4:** the Harmonizer guards the hollow's antechamber and drops a trait template.
+  - **F5:** the M1 row names the root advancement, and the Could pool lists blub towers.
+  - **F6:** no more "sway" wording; music shows as petal particles.
+  - **F7:** WP-047 and WP-051 gained the missing inputs.
+  - **F8:** the lull covers every hunter within 12 blocks.
+  - **F9:** charges are kept on death, and a song outside the Sift spends no charge.
+  - **F10:** the ichor fog goes through an access widener.
+  - **F11:** Trill particle art was added to WP-041.
+  - **F12:** the checker now reads indented tables and flags stray tier words.
+  - **F13:** the Sift-only growth rule covers all flora.
+  - **F14:** the measuring DoDs have pass thresholds.
+  - **F15:** the song must be played by hand.
+- **Not re-reviewed:** the post-round changes are small and local, which the §5.5 cap allows.

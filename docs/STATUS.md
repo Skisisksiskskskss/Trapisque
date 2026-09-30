@@ -1,17 +1,36 @@
 # STATUS (session 1, 2026-09-30)
-- **Phase / Milestone:** Phase 2, content bible and roadmap. Phases 0 and 1 are complete; Gate A was self-reviewed.
-- **Autonomy:** **full-auto** from Gate A on (D-014, the owner's instruction). Gates are self-reviews; nothing waits for the owner.
-- **Current WP:** WP-024 Content bible critique, freeze, Gate B (IN PROGRESS).
-- **Done this phase:** WP-020..023 (the bible in `docs/DESIGN/01_CONTENT_BIBLE.md` + `bible/`; Phase 3 and M1 WPs in PLAN.md).
+- **Phase / Milestone:** Phase 3 (architecture) done, apart from the WP-034 spikes. Phase 4 (M1) has started. Phases 0–2 are complete; Gates A and B were self-reviewed.
+- **Autonomy:** **full-auto** (D-014). **Deadline (D-018):** the owner wants to try the mod by the end of this week (2026-10-04). A **preview build** comes first: dimension, Meadow terrain, block set I, entry and return, the Tide core, ichor and basins. Then the M1 build.
+- **Current WP:** WP-040 Dimension skeleton and Tide core (IN PROGRESS). WP-034 spikes run inside WP-040/044/045/049 as their first step.
+- **Done this session:** WP-020..024 (content bible, frozen); WP-030..033 (D-019 architecture, datagen under Xvfb with a no-diff check, a GameTest source set, CI).
 - **Next 3 actions:**
-  1. WP-024: fresh adversarial review of the bible and roadmap; fix; freeze; Gate B self-review.
-  2. WP-030: architecture decisions (D-015+) and the package skeleton.
-  3. WP-031: datagen pipeline with the no-diff check.
-- **Build:** ✅ scaffold (`./gradlew build` green, `-Xlint:all` clean)
-- **Tests:** 0/0 (none yet; Phase 3)
-- **Server boot:** ✅ (runServer "Done", no `thesift` warnings)
+  1. WP-040: the Sift dimension (clock, timeline, attributes, weather mixin, beds, first-crossing clock start) with GameTests.
+  2. WP-041/042: the palette, block set I art and blocks, Meadow terrain.
+  3. WP-046/047: entry and return (frame, offering, membrane, gate), then the preview build.
+- **Build:** ✅ `./gradlew build` (with GameTests) · datagen no-diff ✅ (`tools/dev/datagen.sh --check`) · `tools/docs/check_bible.py` ✅
+- **Tests:** 1/1 of ours (smoke) passing in `runGameTest`.
+- **Server boot:** ✅ (Phase 0; re-checked through the GameTest server).
 - **Blockers:** none. The Netlify site `magnificent-gelato-563c55` fails on every PR because of its own configuration (owner-side; see the PR comment).
 - **Awaiting owner:** nothing (full-auto).
+
+## Gate B: the content bible and roadmap (Phase 2) — self-reviewed (D-014)
+**Situation.**
+- The content bible (`docs/DESIGN/01_CONTENT_BIBLE.md` + `bible/`) went through three fresh reviews: FAIL (3 must-fix), FAIL (1 must-fix), then **PASS** (all scores 4). It is frozen.
+- D-016 and D-017 record the design changes the reviews forced.
+
+**What 1.0 contains (Singer's Meadow):**
+- Biomes: the Meadow, the Hollows and Hymnstone Rise.
+- The literal ichor tide.
+- Entry through Ancient City frames.
+- Creatures: Blub, Nester, Bloombud, Echo Golem, the Singer (with its gift-of-song quest), Illager camps, and the Sculk Monstrosity as boss.
+- Roughly 60 blocks across hymnstone, healthy sculk, songwood and blight.
+- 11 Core advancements.
+
+**Roadmap:** M1 slice → M2 the hunt → M3 souls → M4 the occupation → M5 the Meadow's life → M6 the heart of the blight → 1.0.
+
+**Recommendation: approve the frozen bible.**
+- **Alternatives:** keep five milestones (M2 would be overloaded); keep the literal tide out of M1 (the slice wouldn't show why the dimension exists); give blubs soul-block fuel (the finished Blub would slip to M3).
+- **Outcome:** full-auto, so the recommendation is taken and Phase 3 has started.
 
 ## Gate A: the vision (Phase 1) — self-reviewed (D-014)
 **Situation.**
