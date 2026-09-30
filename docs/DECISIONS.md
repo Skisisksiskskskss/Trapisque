@@ -104,3 +104,18 @@ Format: `## D-### <title> (<date>) [supersedes D-### if any]` then Context · Op
 **Consequences.** We need: frame location from Ancient City structure pieces (no block scans); an XP-orb attraction zone around known dormant frames; a vibration/music listener at awake frames; a portal block, a POI type, a Sift-side gate feature and a biome search for arrival. Soul cost is tuned in BALANCE.md. If another mod's portal occupies the frame, we don't act.
 
 **Revisit if.** The owner prefers the canonical melody, rift-first, or a build-your-own gate at Gate A; Mojang reveals the vanilla access method; playtests show the XP pull is confusing or annoying.
+
+---
+
+## D-007 Core systems at concept level (2026-09-30)
+**Context.** WP-013: concept designs for the Tides, soul economy, healthy vs corrupted sculk, sound, and the Illager occupation, each linked to ≥2 others.
+
+**Options considered.** `docs/DESIGN/vision/systems.md`: Tides T1–T10, souls S1–S10, sculk H1–H6, sound N1–N7, Illagers I1–I6 (unusual ones in italics), all rubric-scored.
+
+**Decision.** Tides = **T1** day-like 24 000-tick cycle (Thrive 10k · Flow 2k · Endure 10k · Flow 2k) on a `thesift:tides` clock + timeline, with Sift gameplay values as **our own registered environment attributes** keyed on that timeline; T3 (Tide-shifting lever) as Should. Souls = **S1+S3+S4+S8**: souls *are* XP; healthy sculk banks and blooms with it; lossy soul blocks; Illager soul tanks. No HUD meter. Sculk = **H1+H2** (inversion + blight). Sound = **N1+N2+N3** (+N4/N5 content). Illagers = **I1+I5+I6** core, **I2** endgame, I3 deferred.
+
+**Why.** Highest rubric totals; each keeps canon while using vanilla grammar (XP/catalyst, allay-style music liking, day-night-style timelines, outposts). Together they form one loop where every system feeds at least three others (systems.md §6).
+
+**Consequences.** Phase 2 inventory derives from this loop. BALANCE.md must pin the soul↔XP loss rates and the Endure spawn buffs. Phase 3 must confirm custom environment-attribute registration and client sync.
+
+**Revisit if.** The critique (WP-014) or the owner at Gate A rejects a system; implementation shows custom attributes can't be keyframed or synced as expected.

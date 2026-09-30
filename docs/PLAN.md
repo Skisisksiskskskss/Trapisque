@@ -15,7 +15,7 @@ Only one WP is IN PROGRESS at a time.
 | WP-010 | Vision I: fantasy, tone, pillars, journey, progression | 1 | XL | DONE |
 | WP-011 | Vision II: entry and return path (≥12 ideas) | 1 | L | DONE |
 | WP-012 | Vision III: the dimension's rules (+ env-attribute mapping) | 1 | M | DONE |
-| WP-013 | Vision IV: core systems (Tides, souls, sculk, sound, Illagers) | 1 | L | TODO |
+| WP-013 | Vision IV: core systems (Tides, souls, sculk, sound, Illagers) | 1 | L | DONE |
 | WP-014 | Vision critique, freeze, Gate A | 1 | XL | TODO |
 
 ---
@@ -208,17 +208,18 @@ Deliverable: `docs/DESIGN/00_VISION.md` (the frozen vision) + focused appendices
 ### WP-013 Vision IV: core systems at concept level
 - Phase / Milestone: 1 / —
 - Tier: L
-- Status: TODO
+- Status: DONE
 - Depends on: WP-010, WP-012
 - Goal: Concept designs for the Tides (cycle, triggers, per-Tide changes, how players read/use them), the soul economy, healthy vs corrupted sculk, sound as a mechanic (if it survives the pillars), and the Illager occupation — each connected to ≥2 others.
 - Inputs (read ONLY these): 00_VISION.md, RESEARCH.md §3–4, RESEARCH_BESTIARY.md, VANILLA_ANALOGS W4/E2/E4.
 - Deliverables: docs/DESIGN/vision/systems.md (per system: ≥5 concepts (Tides/souls ≥8), rubric, pick); 00_VISION.md "Core systems" section; D-007….
 - Definition of Done:
-  - [ ] Each system: diverge → rubric → pick, with the link map (which systems feed which).
-  - [ ] Tides mapped onto a clock/timeline feasibility sketch (no code).
+  - [x] Each system: diverge → rubric → pick, with the link map. — systems.md §1–6 (Tides 10 concepts, souls 10, sculk 6, sound 7, Illagers 6; link diagram); D-007.
+  - [x] Tides mapped onto a clock/timeline feasibility sketch (no code). — systems.md §1 Feasibility (files, markers, tracks, custom attributes).
 - Iteration budget: self-check 1 pass.
 - Exit ramp: cut a system to "concept only / later" with a reason if it fails the pillars.
 - Log:
+  - 2026-09-30: self-check (weaknesses first): (1) 'souls = XP' competes with enchanting; this is intended as a trade-off but needs BALANCE numbers; (2) custom environment attributes keyed on timelines are an untested assumption (Phase 3 spike); (3) Endure 'stronger variants' may read as a stat check unless the glow and behaviour changes are designed per mob (Phase 2).
 
 ### WP-014 Vision critique, freeze and Gate A
 - Phase / Milestone: 1 / —
