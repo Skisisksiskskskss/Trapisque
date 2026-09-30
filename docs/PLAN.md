@@ -16,7 +16,7 @@ Only one WP is IN PROGRESS at a time.
 | WP-011 | Vision II: entry and return path (≥12 ideas) | 1 | L | DONE |
 | WP-012 | Vision III: the dimension's rules (+ env-attribute mapping) | 1 | M | DONE |
 | WP-013 | Vision IV: core systems (Tides, souls, sculk, sound, Illagers) | 1 | L | DONE |
-| WP-014 | Vision critique, freeze, Gate A | 1 | XL | TODO |
+| WP-014 | Vision critique, freeze, Gate A | 1 | XL | DONE (awaiting owner at Gate A) |
 
 ---
 
@@ -264,7 +264,7 @@ Deliverable: `docs/DESIGN/00_VISION.md` (the frozen vision) + focused appendices
 ### WP-014 Vision critique, freeze and Gate A
 - Phase / Milestone: 1 / —
 - Tier: XL
-- Status: IN PROGRESS (critique round 3 of ≤3)
+- Status: DONE: vision FROZEN (§5.5 cap applied after round 3); Gate A presented, awaiting the owner
 - Depends on: WP-010..013
 - Goal: Independent adversarial review of 00_VISION.md (fresh reviewer, rubric only), fix, freeze, and present Gate A.
 - Inputs (read ONLY these): 00_VISION.md, docs/DESIGN/vision/*, §7.1 rubric.
@@ -304,6 +304,19 @@ Deliverable: `docs/DESIGN/00_VISION.md` (the frozen vision) + focused appendices
       - rest resets the phantom timer only in Endure;
       - status lines on D-006/D-007;
       - VANILLA_ANALOGS W4/E4 extended.
+  - 2026-09-30 round 3, the last (a new fresh reviewer; the first attempt was cut off by a usage limit and rerun at 08:07Z): **FAIL**, 2 must-fix, 8 should-fix, 5 notes; 10 of 63 scores < 4.
+    - Its new engine facts were checked in the source before any change: fluid currents only for water and lava; sensor range 8 vs warden 16; beds' `NOT_SAFE`; catalysts take player-death XP; the warden has no portal override.
+    - Fixes:
+      - a scope gate `sift_life` separate from the `soul_flow` rate;
+      - a telegraphed hunter retreat at falling Flow;
+      - wade-through ichor without an Entity mixin (D-013); single-chunk basins; a logical tide state;
+      - a Fire Resistance ruling; the warden portal filter;
+      - non-colour Flow cues, wheeling stars, click-count gate glyphs;
+      - Must/Should/Could scope tiers;
+      - bloom hearts ignore player deaths; growth yields only common materials; camps respawn pillagers only;
+      - the entry's teaching chain (wisps from the player).
+    - **§5.5 critique cap applied:** every remaining sub-4 score is fixed-and-accepted, accepted with a reason, or parked for a Phase 3 spike (00_VISION §10). The post-round-3 changes were not re-reviewed; this is stated at Gate A.
+  - DoD: [x] ≤3 critique rounds by fresh subagents, with residual sub-4 scores handled per §5.5 and reasons written; [x] vision marked FROZEN; Gate A presented (STATUS.md, PR description, session reply).
 
 ## Phase 2+ (very coarse)
 - Phase 2: content bible + roadmap → Gate B.

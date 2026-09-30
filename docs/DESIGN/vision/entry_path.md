@@ -1,4 +1,4 @@
-# Entry and return path (WP-011; revised after WP-014 critique rounds 1 and 2)
+# Entry and return path (WP-011; revised after WP-014 critique rounds 1–3)
 
 ## Constraints gathered first
 - **Canon** (RESEARCH.md canon #2–5, §6):
@@ -69,8 +69,12 @@ Round-1 rescoring is marked ↓/↑ (see the notes below).
 - Rift-first stays the main alternative at Gate A.
 
 ## Chosen design: "Offer souls to wake it; music opens it" (#3′)
-1. **Rumor (free, cosmetic).** A dormant frame **breathes**: faint soul wisps rise from the city's sculk and drift into its opening. When a mob dies within ~16 blocks, its soul visibly streams into the frame. That is rare, because Ancient Cities spawn no mobs, so the breathing is the main hint. The XP is untouched, or taken by a vanilla catalyst nearby as usual: this is a hint, not a cost.
-2. **Notice.** A player who comes near is noticed: the wisps curl toward them, the frame's inner edge brightens where they look, and a low hum deepens. Every cue has a visual and a subtitle.
+1. **Rumor (free, cosmetic).** A dormant frame **breathes**: faint soul wisps rise from the city's sculk and drift into its opening. A mob dying nearby sends its soul streaming in too, but that is rare, because Ancient Cities spawn no mobs. The XP is untouched, or taken by a vanilla catalyst as usual. It is a hint, not a cost.
+2. **Notice: the frame asks for *your* souls.** Within ~8 blocks of a player who has experience:
+   - Wisps **rise from the player** toward the frame, and the XP bar flickers (nothing is taken). The subtitle reads "Your soul stirs toward the frame".
+   - The pull strengthens while the player's hand is **empty**, which teaches the verb: *use* with an empty hand.
+   - The frame's inner edge brightens where the player looks, and a low hum deepens.
+   - Every cue has a visual and a subtitle. If playtests still show players don't think to *use* the frame, D-010's revisit trigger applies (a stronger hint, never a posture trigger).
 3. **Offer (the price, taken only by a deliberate action).**
    - **Hold *use*** on the frame with an empty hand. Your XP bar visibly streams into it as souls, like brushing suspicious sand, at about 50 points per second. Release and it stops.
    - Nothing is taken by standing, crouching, walking through, or any accident. Vanilla spends XP only on a deliberate action too: the enchanting table, the anvil.
@@ -93,6 +97,7 @@ Round-1 rescoring is marked ↓/↑ (see the notes below).
    - Gates keep at least **64 blocks** from each other, so two cities never share one.
    - The frame ↔ gate link is stored explicitly in SavedData, not rediscovered through a POI search.
 7. **Sanctuary.**
+   - **Wardens and bosses can't cross the membrane.** Our portal block lets through only entities outside `#thesift:cannot_cross`, so nothing chases a player into the gate's sanctuary.
    - No hostile spawns within ~16 blocks of a gate, and echo golems gather there. So arriving mid-Endure is survivable.
    - A base built at a gate gets the protection any lit base gets; that is accepted.
 8. **Return.**
@@ -120,7 +125,7 @@ A sandbox reverses that order on purpose:
 | Worlds created before the mod was installed | Frames are found from the saved Ancient City structure starts, so old worlds work too |
 | No Ancient Cities (superflat, custom worlds) | No survival entry; operators can use `/execute in thesift:the_sift`. Documented |
 | Frame edited in creative (reinforced deepslate broken) | The geometry check fails, so the frame stays dormant |
-| Wardens | Intended pressure; mining sculk near shriekers is the risk. The first trip carries the danger; later trips are easier. Accepted, as in vanilla |
+| Wardens | Intended pressure; mining sculk near shriekers is the risk. The first trip carries the danger; later trips are easier, as in vanilla. A warden chasing a player **can't follow through the membrane** (portal filter) |
 | Multiplayer | Charge pools across players. The gate is shared once open. Each player's first crossing grants their own advancement |
 | Peaceful | Works: offering needs no mobs |
 | `advance_time false` | The frame still opens. The Tide clock stays frozen where it is: at Thrive if nobody has crossed yet, otherwise wherever the admin set it (systems.md §1) |

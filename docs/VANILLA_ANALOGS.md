@@ -54,6 +54,10 @@ Sections: **W** world (WP-005) · **E** entities (WP-006) · **P** plumbing (WP-
   - **Daylight detector angle band.** The detector pulls the sun angle 20% toward 0°/360°. A normal detector reads 0 only when the angle lies between 112.5° and 247.5°, so park the sun at 180°.
   - **Beds and straw beds** have separate rules: `gameplay/bed_rule` and `gameplay/straw_bed_rule`. The straw-bed default is `{can_sleep: when_dark, can_set_spawn: never, destroy_on_leave: true}`, and `overworld.json` sets both. A dimension that forbids sleep must set **both**.
   - `time_since_rest` (phantoms) resets only in `ServerPlayer.startSleeping` and on death.
+  - **Beds refuse sleep near monsters.** `ServerPlayer.startSleepInBed` returns `NOT_SAFE` if any `Monster` nearby `isPreventingPlayerRest`. The `can_sleep` refusal comes first.
+  - **Fluid physics are vanilla-only.** `Entity.FLUIDS_WITH_CURRENT = {WATER, LAVA}`, and `isInLiquid()` means water or lava. A mod fluid gets no swimming, currents or buoyancy unless it joins those tags (with their side effects) or a mixin extends them. Slowing and damage can live in the liquid block's `entityInside`.
+  - **Portals and mobs.** Portal blocks call `setAsInsidePortal` only if `entity.canUsePortal(false)`. The Wither and the Ender Dragon override it; the Warden doesn't. A custom portal block can filter entity types itself.
+  - **No daylight despawn.** `gameplay/monsters_burn` only drives `Mob.isSunBurnTick`, and `Mob.checkDespawn` removes mobs only when they are far from players. A dimension that wants monsters gone by day needs its own rule.
 
 ## W5. Portals and teleport transitions
 - **Where:** `world/level/block/Portal.java` (interface), `NetherPortalBlock`, `EndPortalBlock`, `EndGatewayBlock`, `world/entity/PortalProcessor.java`, `world/level/portal/{TeleportTransition,PortalForcer}.java`, `Entity#setAsInsidePortal / handlePortal / canUsePortal / getDimensionChangingDelay`.
@@ -111,6 +115,8 @@ Sections: **W** world (WP-005) · **E** entities (WP-006) · **P** plumbing (WP-
   - **Shriekers warn only when they can summon.** `SculkShriekerBlockEntity.tryShriek` calls `tryToWarn`, which updates the per-player `WardenSpawnTracker` (−1 level per 12 000 ticks), only if `canRespond`: `CAN_SUMMON` true, not peaceful, and `spawn_wardens` on. Player-placed shriekers have `CAN_SUMMON` false, so they only shriek.
   - **Music events:** `note_block_play` and `instrument_play` (goat horn) are in `#vibrations`; **`jukebox_play` is not** (radius 10). Allays hear jukeboxes through a separate `Allay.JukeboxListener implements GameEventListener`.
   - `#ignore_vibrations_sneaking` = step, swim, hit_ground, projectile_shoot, item_interact_start and item_interact_finish.
+  - **Listener ranges:** a sculk sensor hears 8 blocks (`SculkSensorBlockEntity` `getListenerRadius`); a warden hears 16 (`Warden.GAME_EVENT_LISTENER_RANGE`).
+  - A catalyst also takes the XP of dying **players**: `getExperienceReward` is level-based for players, and the listener checks `LivingEntity`, not only mobs.
 
 ## E5. Models, keyframe animations, renderers, boss bars
 - **Where (client):** `client/model/monster/warden/WardenModel.java`, `client/animation/definitions/WardenAnimation.java` (also `SnifferAnimation`, …), `client/animation/{AnimationDefinition,AnimationChannel,Keyframe,KeyframeAnimations,KeyframeAnimation}`, `client/renderer/entity/WardenRenderer.java`, `renderer/entity/state/WardenRenderState.java`, `renderer/entity/layers/LivingEntityEmissiveLayer`.

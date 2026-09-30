@@ -241,7 +241,7 @@ Hearing was also defined two ways.
 
 **Decision.**
 - **T1″: ichor rises and falls in generated tide basins.** Thrive is low tide (the flats are bare; flat-only reagents; growth). Flow is the tide moving (no effect on the player). Endure is high tide (flooded flats; hunters; Endure blooms at the waterline).
-- **The hearing rule:** only in Endure, each area's hunters (1.0: Nesters) hear exactly what a sculk sensor hears within 16 blocks, plus jukeboxes within 10. A vanilla vibration particle is the tell.
+- **The hearing rule:** only in Endure, each area's hunters (1.0: Nesters) hear the vibrations a sculk sensor hears, out to a warden's 16 blocks (a sensor hears 8; corrected in D-013's round), plus jukeboxes within 10. A vanilla vibration particle is the tell.
 - Tide-bridges are cut.
 
 **Why.**
@@ -274,4 +274,25 @@ Hearing was also defined two ways.
 **Consequences.** Phase 2 must write the art rules (pulse vs still, vein vs petal) into the content bible. Spread is a bounded, per-camp operation.
 
 **Revisit if.** Art review shows the two families aren't distinguishable without colour.
+
+---
+
+## D-013 Round-3 system fixes: a scope gate, a hunter retreat, wade-through ichor (2026-09-30)
+**Context.** Critique round 3 (the last) found four problems:
+- `soul_flow` served as both a **scope** gate and a **rate**. At 0 in Endure, it switched off bloom hearts, the gift of song and gear traits exactly when they matter (MF1).
+- Thrive never cleared Endure's hunters: `monsters_burn` is off, and mobs despawn only far from players (MF2).
+- Ichor as described needed undisclosed engine work, because vanilla gives currents and swimming only to water and lava (`Entity.FLUIDS_WITH_CURRENT`) (SF2).
+- Wardens could follow players through the membrane (SF4).
+
+**Decision.**
+- **Scope vs rate.** A boolean attribute `thesift:gameplay/sift_life` (true in the Sift in every Tide, false elsewhere) gates scope. `soul_flow` is a rate only.
+- **Hunter retreat.** At falling Flow, surface hostiles burrow away with a telegraphed dig animation, particles, a sound and a subtitle, and are gone by Thrive. Cave dwellers stay.
+- **Ichor.** It is a thick liquid you **wade** through: no swimming, no currents. Slowing, burning (vanilla fire plus soul-flame particles) and the XP drain happen in our liquid block's `entityInside`, so no Entity mixin is needed. Fire Resistance stops the burning but not the drain. Tide basins sit inside one chunk each, and their flats follow the Tide logically.
+- **Portal filter.** Our portal block passes only entities outside `#thesift:cannot_cross` (wardens and bosses).
+
+**Why.** Every part avoids a second mixin, keeps vanilla grammar (the warden's dig, powder-snow-style wading, vanilla fire and Fire Resistance), and closes a hole the reviewer demonstrated in the source.
+
+**Consequences.** Phase 3 must spike the wade-through ichor and a basin controller before either counts as feasible. The fallback is static ichor pools and no basins (the Tides would then rely on sky, hearing, retreat and growth).
+
+**Revisit if.** The spike shows a wading liquid feels wrong. The alternative is a small Entity mixin extending fluid physics to `#thesift:ichor`, with its own decision record.
 
