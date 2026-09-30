@@ -1,37 +1,51 @@
-# Entry and return path (WP-011)
+# Entry and return path (WP-011; revised after WP-014 critique round 1)
 
 ## Constraints gathered first
-- **Canon:** the Ancient City centre frame *is* the Sift portal (revealed 2026-03-21). Dungeons II opens it with the **Note Block Machine** (eight note blocks, three missing from across the Overworld) and **echo golems** ignite it; the Twisted Warden guards it; Singers can open it "with their song"; **rifts** are temporary portals to and from the Sift (RESEARCH.md canon #2–5).
-- **Vanilla facts:** the frame is 22×8 reinforced deepslate with a 20×6 opening, one per Ancient City, unbreakable and unobtainable in survival (VANILLA_ANALOGS W6). **Deep Dark and Ancient Cities have no natural mob spawns** (spawn tables empty), so "kill mobs near the frame" cannot be the only soul source. Sculk, sensors, shriekers and catalysts all drop XP when mined; echo shards are city loot.
-- **Prior art:** Mielon's The Sift (8-note melody on special note blocks), Deeper and Darker (warden trophy item), Sculk Depths (item on pedestals) all claim this frame (RESEARCH.md §8).
-- **Pillars:** P1 sound, P3 souls, P4 readable wonder; plus §6 progression (mid-to-late, no Nether/End prerequisite).
+- **Canon** (RESEARCH.md canon #2–5, §6):
+  - In Dungeons II the story portal is a large structure at the centre of the Ancient City. Official images show a dark frame with a wide opening, and eight rainbow-topped note blocks in front. It resembles the vanilla city-centre frame (M).
+  - It is opened by the **Note Block Machine** (three missing note blocks returned, after the **Twisted Warden** falls), and **echo golems** ignite it.
+  - That a Singer can open it "with their song" is novel-only (L).
+  - **Rifts** are Dungeons II's everyday way in (official).
+  - **No source says how Java will reach the Sift:** "Mojang isn’t talking too much about how to access the Sift" [XW1]. Using the vanilla frame is our design choice, grounded in Dungeons II; it is not a Java fact.
+- **Vanilla facts** (VANILLA_ANALOGS W6, 26.3 source):
+  - The frame is 22×8 reinforced deepslate with a 20×6 opening, one per Ancient City, unbreakable and unobtainable in survival.
+  - Deep Dark and Ancient Cities have **no natural mob spawns**.
+  - Mined sculk drops 1 XP; sensors, shriekers and catalysts drop 5; so the city's blocks are a thin XP source.
+  - In vanilla, experience orbs never move away from a player.
+- **Prior art on 26.3** (RESEARCH §8, `research/prior_art_2026-09-30.md`):
+  - Mielon's The Sift (PA-1): an 8-note melody on custom note blocks on "Sonorous Deepslate"; "awaken it with sound".
+  - Deeper and Darker (PA-2) and Sculk Depths (PA-3) have no 26.x release.
+- **Pillars:** P1 sound, P3 souls, P4 readable wonder; plus §6 progression (mid-to-late, no Nether or End prerequisite).
 
-## Diverge — 15 ideas (before scoring)
+## Diverge: 15 ideas (written before scoring)
 1. **Melody on note blocks** in front of the frame (the canonical machine as a puzzle).
-2. **Three resonant note blocks** hidden in Overworld structures, set before the frame, then played (the canon "three missing note blocks" as an eyes-of-ender-style quest).
-3. **Souls wake it, song opens it** — the dormant frame drinks souls (experience) released near it until it glows awake; then any music played before it opens the gate.
-4. **Warden trophy** — a warden (Twisted Warden stand-in) drop activates the frame.
-5. **Echo-shard tuning fork** — crafted from echo shards (recipe unlocks on pickup, like the recovery compass); strike the frame to open it.
-6. **Rift first** — rare temporary rifts in the Deep Dark lead one-way into the Sift; the Singer then opens the frame from the inside (canon: the story's first entry is a rift).
-7. **Illager rift incursions** — Illager bands come through rifts in the Overworld; beat them and step through before the rift closes.
+2. **Three resonant note blocks** hidden in Overworld structures, set before the frame, then played. This is the canon "three missing note blocks" as a quest like the eyes of ender.
+3. **Souls wake it, song opens it.** The dormant frame drinks souls (experience) until it glows awake; then any music played before it opens the gate.
+4. **Warden trophy**: a warden drop (standing in for the Twisted Warden) activates the frame.
+5. **Echo-shard tuning fork**: crafted from echo shards (the recipe unlocks on pickup, like the recovery compass); strike the frame to open it.
+6. **Rift first**: rare temporary rifts in the Deep Dark lead one way into the Sift; the Singer then opens the frame from the inside (canon: the story's first entry is a rift).
+7. **Illager rift incursions**: Illager bands come through rifts in the Overworld; beat them and step through before the rift closes.
 8. **Sift music disc** found in the city, played in a jukebox before the frame.
 9. **Goat horn "Sing"** (or a new horn) blown at the frame.
-10. **Calibrated-sensor chord** — tune calibrated sculk sensors around the frame to a frequency set.
-11. **Allay escort** — an allay handed a Sift relic flies to the frame and "dances it open" to music.
-12. *(unusual)* **Soul journey** — die near the frame carrying an echo shard; your soul crosses and you wake in the Sift.
-13. *(unusual)* **Build-your-own gate** — craft resonant frame blocks from echo shards and build a Sift gate anywhere, Nether-style.
-14. *(unusual)* **Soul Sand Valley rifts** — rifts form in the Nether's soul valleys and lead to the Sift.
-15. **Bottled echo** — Ancient City chests hold a sealed Singer's song that opens the frame for a short time; the Singer later teaches a permanent song.
+10. **Calibrated-sensor chord**: tune calibrated sculk sensors around the frame to a set of frequencies.
+11. **Allay escort**: an allay handed a Sift relic flies to the frame and "dances it open" to music.
+12. *(unusual)* **Soul journey**: die near the frame carrying an echo shard; your soul crosses and you wake in the Sift.
+13. *(unusual)* **Build-your-own gate**: craft resonant frame blocks from echo shards and build a Sift gate anywhere, Nether-style.
+14. *(unusual)* **Soul Sand Valley rifts**: rifts form in the Nether's soul valleys and lead to the Sift.
+15. **Bottled echo**: Ancient City chests hold a sealed Singer's song that opens the frame for a short time; the Singer later teaches a permanent song.
 
-## Converge — rubric (1–5)
+## Converge: rubric (1–5)
+Round-1 rescoring is marked ↓/↑ (see the notes below).
+
 | # | Idea | Faithful | Vanilla-native | Readable | Meaningful | Distinct | Connected | Feasible | Total |
 |---|---|---|---|---|---|---|---|---|---|
 | 1 | Melody puzzle | 5 | 4 | 3 | 3 | 1 | 3 | 4 | 23 |
 | 2 | Three resonant note blocks | 5 | 4 | 4 | 4 | 3 | 3 | 3 | 26 |
-| **3** | **Souls wake it, song opens it** | 5 | 5 | 5 | 4 | 4 | 5 | 4 | **32** |
+| 3 | Souls wake it (orbs pulled in passively), song opens it | 3↓ | 3↓ | 2↓ | 4 | 3↓ | 5 | 4 | 24 |
+| **3′** | **Offer souls to wake it, song opens it** (the revised design below) | 4 | 4 | 4 | 4 | 3 | 5 | 4 | **28** |
 | 4 | Warden trophy | 3 | 4 | 4 | 3 | 1 | 2 | 5 | 22 |
 | 5 | Echo tuning fork | 3 | 5 | 4 | 3 | 3 | 3 | 5 | 26 |
-| 6 | Rift first | 5 | 3 | 3 | 5 | 5 | 4 | 3 | 28 |
+| 6 | Rift first | 5 | 3 | 3 | 5 | 5 | 4 | 3 | **28** |
 | 7 | Illager rift incursions | 5 | 3 | 4 | 4 | 4 | 4 | 2 | 26 |
 | 8 | Sift music disc | 3 | 5 | 4 | 2 | 3 | 3 | 5 | 25 |
 | 9 | Goat horn | 2 | 4 | 3 | 2 | 4 | 2 | 5 | 22 |
@@ -42,38 +56,77 @@
 | 14 | Soul Sand Valley rifts | 2 | 3 | 3 | 3 | 5 | 3 | 3 | 22 |
 | 15 | Bottled echo | 4 | 4 | 4 | 3 | 4 | 3 | 4 | 26 |
 
-Decisive calls: #1 is canon but is exactly an existing mod's signature (distinct 1). #6 is the most dramatic but random rifts and one-way stranding fight P4 and vanilla's "you choose when to go" norm. #3 is the only idea that uses **both** canon ingredients (souls and music), teaches itself with visible feedback, and needs no new item.
+**Rescoring notes (critique round 1):**
+- #3 as first written loses Faithful: souls waking the frame is our invention, and only music opening it echoes canon.
+- It loses Vanilla-native, because orbs never fly away from players in vanilla.
+- It loses Readable, because its price can't be paid on purpose (MF5).
+- It loses Distinct, because Mielon's mod also "awakens it with sound".
 
-## Chosen design — "Souls wake it, song opens it" (#3, with #6 kept for the Illager side)
-**Dormant.** Every Ancient City frame starts dormant. While its opening is empty, **experience orbs within ~8 blocks drift into the frame** along a visible soul trail (vanilla `sculk_soul` particles) instead of to players. Mining the city's sculk, sensors and catalysts, killing mobs the player brings, throwing bottles o' enchanting, or dying nearby all feed it. That drift is the **rumor**: players who have mined sculk here since 1.19 will notice their XP being pulled into the frame.
+**Decisive calls:**
+- **#3′ and #6 tie at 28.** Rift-first as the *player's* front door would scatter random portals across the Overworld. That runs against hard rule 9.4 (minimal vanilla footprint outside the Sift) and against P4, since one-way rifts strand players who can't choose when to go.
+- #1 is canon, but it is exactly an existing 26.3 mod's signature (Distinct 1).
+- #3′ wins: it uses both canon ingredients (souls and music), each state shows what it wants next, and it needs no new key item.
+- Rift-first stays the main alternative at Gate A.
 
-**Waking.** The frame's charge shows in steps: faint cyan specks on the reinforced deepslate, then a pulsing glow along the inner edge, then a steady light with a low hum and drifting note particles. Full charge costs roughly the experience of an enchanting-table session (tuned in BALANCE.md; target ≈10 levels' worth of orbs). Feeding happens in warden country, and mining sculk trips sensors, so danger is earned rather than added.
+## Chosen design: "Offer souls to wake it; music opens it" (#3′)
+1. **Rumor (free, cosmetic).** A dormant frame **breathes**: faint soul wisps rise from the city's sculk and drift into its opening. When any mob dies within ~16 blocks, its soul visibly streams into the frame. The XP still drops normally; this is a hint, not a cost.
+2. **Notice.** A player who steps into the opening is noticed: the wisps curl toward them and a low hum deepens. Every cue has a visual and a subtitle.
+3. **Offer (the price, taken only with consent).**
+   - While a player **crouches inside the opening**, their XP bar visibly flows into the frame as a stream of souls. Crouching is the Deep Dark's usual posture, because it hides you from sensors.
+   - Standing up or stepping out stops it at once. Nothing else is ever taken.
+   - Charge is stored per frame, so several players and several visits can pool it.
+   - **Price:** as much experience as reaching level 30 from zero, **1 395 points** (the level-30 enchantment milestone). This is a one-time cost per frame, tuned in BALANCE.md.
+   - Feeding happens in warden country, so the risk is earned, not added.
+4. **Wake.**
+   - The charge shows in steps: faint cyan specks on the reinforced deepslate, then a pulsing inner edge, then a steady light.
+   - Once awake, the frame hums and **note particles drift from it**, which is the hint that it now wants music.
+5. **Open.**
+   - Any music played within range opens it: a note block, a jukebox, a goat horn, or later the gift of song.
+   - The 20×6 opening fills with a cyan membrane, our portal block.
+   - The membrane **shows the Tide on the far side** through colour and particle shape (systems.md §1).
+   - The **first opening in a world starts the Tide clock at Thrive**, so the first arrival is always in Thrive.
+6. **Cross.**
+   - The standard portal transition (`Portal` + `TeleportTransition`, VANILLA_ANALOGS W5), with a Nether portal's delay, a soft chime and a music swell.
+   - Arrival is at a **Sift-side gate**: a hill of red healthy sculk topped by an unbreakable Sift-stone frame.
+   - The gate is placed in the nearest Singer's Meadow biome within **256 blocks** of the matching x/z (1:1). If there is none, it goes at the matching x/z on the highest safe surface.
+   - Gates keep at least **64 blocks** from each other, so two cities never share one.
+   - The frame ↔ gate link is stored explicitly in SavedData, not rediscovered through a POI search.
+7. **Sanctuary.**
+   - No hostile spawns within ~16 blocks of a gate, and echo golems gather there. So arriving mid-Endure is survivable.
+   - A base built at a gate gets the protection any lit base gets; that is accepted.
+8. **Return.**
+   - Walking back through the gate returns you to its linked frame.
+   - Gate frames can't be broken in survival and drop nothing, so this is never a build-your-own-gate (#13).
+   - If a membrane is removed (by commands, creative mode or another mod), music reopens it: the same verb as entry.
+   - Dying in the Sift sends you to your Overworld respawn unless you set one in the Sift (rules.md).
+   - Illager **rifts** are *not* a player entry. They are how the occupation moves, and they come after 1.0 (systems.md §7).
 
-**Opening.** When the frame is awake, **any music played within range opens it**: a note block, a jukebox, a goat horn, or later the Singer's song. There is no sequence to learn; the awake frame's drifting notes suggest what to do. The 20×6 opening fills with a bright cyan membrane (our portal block) with the canon look (RESEARCH.md S-I4). Advancement: *Note Block Virtuoso* style, in vanilla's voice.
+## Why not rifts first? (evidence check)
+In Dungeons II, rifts are the everyday way in, and the Deep Dark portal belongs to the later story (MC1). Steam rates one day after launch fit that order: 77.7% have "Brave the Unknown" and 2.9% have "Note Block Virtuoso". Being one day old, the numbers show the order players meet things, not their preferences [RESEARCH.md §9].
 
-**Crossing.** A standard portal transition (`Portal` + `TeleportTransition`, VANILLA_ANALOGS W5), about a Nether portal's delay with a soft chime and a music swell. Arrival is at the **Sift-side gate**: a natural hill of red healthy sculk with a Sift-stone frame, placed in the nearest **Singer's Meadow**-type biome within search range of the matching x/z (1:1 scale), generated on first use the way the Nether portal forcer does. The area around the gate is a **sanctuary**: no hostile spawns within a small radius, and echo golems gather there. Arriving mid-Endure is therefore still survivable (P4).
-
-**Return.** Walking back through the Sift-side gate returns you to the frame it is linked to (POI pairing, as with Nether portals). A broken Sift-side gate can be re-opened with music, the same verb as entry. Dying in the Sift sends you to your Overworld respawn unless you set one in the Sift (rules: §8). Illager **rifts** (idea #6/#7) are *not* a player entry. They are how the occupation moves, and they become content in Phase 2.
-
-## Why not rifts first? (evidence check after the press pass)
-In Dungeons II, rifts are the everyday way in and the Deep Dark portal is late story: 77.7% of Steam players have "Brave the Unknown" (enter the Sift) but only 2.9% have "Note Block Virtuoso" (activate the machine) [RESEARCH.md §9]. A sandbox reverses that order on purpose:
-1. **A landmark you can return to** beats a random event. Survival players plan trips, build bases and come back. The Nether portal and End portal are both places, not events.
-2. **The frame is the Java mystery.** Players have wondered about the Ancient City frame since 1.19, and canon confirms it is the Sift's original portal.
-3. **Random one-way portals fight P4** (they strand, and players can't choose when to go) and add Overworld-wide changes, which rule 9.4 (minimal vanilla footprint) discourages.
-4. **Rifts stay canon on the Illager side.** In Phase 2 they are how the occupation moves (Illager rift camps inside the Sift; rift incursions tied to occupation events). They are content, not the front door. Recorded as an alternative at Gate A.
+A sandbox reverses that order on purpose:
+1. **A landmark you can return to beats a random event.** Survival players plan trips, build bases and come back. The Nether portal and the End portal are both places, not events.
+2. **The frame is the Java mystery.** Players have wondered about the Ancient City frame since 1.19, and Dungeons II puts its story portal at the centre of the Ancient City. That grounds the choice in canon, though it doesn't make it Java canon.
+3. **Random one-way portals fight P4 and hard rule 9.4.** They strand players, they take away the choice of when to go, and they add Overworld-wide changes.
+4. **Rifts stay canon on the Illager side.** After 1.0 they are how the occupation moves. This is recorded as the main alternative at Gate A.
 
 ## Failure modes and edge cases (concept level)
 | Case | Handling |
 |---|---|
-| Another mod's portal already fills the frame (Deeper and Darker etc.) | Our logic only runs while the opening is air, so the first mod to open it wins. Documented as a known interaction |
+| Another mod's portal already fills the frame (Mielon's The Sift on 26.3; others if they port) | Our logic runs only while the opening is air, so the first mod to open it wins. Documented as a known interaction |
+| A player walks through the opening without meaning to pay | Nothing is taken unless they crouch inside the opening. Walking through only brings the "noticed" cue |
+| A player crouches in the opening by accident (sneaking past sensors) | The stream is loud and visible, and standing up stops it at once. What was given stays as charge, so nothing is wasted |
 | Worlds created before the mod was installed | Frames are found from the saved Ancient City structure starts, so old worlds work too |
 | No Ancient Cities (superflat, custom worlds) | No survival entry; operators can use `/execute in thesift:the_sift`. Documented |
-| Frame edited in creative (broken reinforced deepslate) | Geometry check fails, so the frame stays dormant |
-| XP pulled from players who didn't want it | Only within ~8 blocks of a *dormant* frame, and it stops once the frame is awake. The trail is visible, so the player understands and can step away |
-| Wardens | Intended pressure; sculk mining near shriekers is the risk |
-| Multiplayer | The gate is shared once open; each player's first crossing grants their own advancement |
-| Peaceful | Works: sculk XP needs no mobs |
-| Griefing | Frame unbreakable; the membrane obeys the portal rules; the Sift-side gate can be reopened with music |
+| Frame edited in creative (reinforced deepslate broken) | The geometry check fails, so the frame stays dormant |
+| Wardens | Intended pressure; mining sculk near shriekers is the risk. The first trip carries the danger; later trips are easier. Accepted, as in vanilla |
+| Multiplayer | Charge pools across players. The gate is shared once open. Each player's first crossing grants their own advancement |
+| Peaceful | Works: offering needs no mobs |
+| `advance_time false` | The frame still opens. The Tide clock stays frozen wherever the admin set it (systems.md §1) |
+| Griefing | Frames and gates are unbreakable; the membrane obeys the portal rules; music reopens a removed membrane |
 
 ## Performance notes
-Frames are located from Ancient City structure pieces (known template and rotation → exact frame coordinates), cached per chunk in SavedData, and never found by scanning blocks. XP attraction queries a small box around each known dormant frame only while a player is within ~32 blocks. Music is detected by a vibration listener placed at the frame, so there is no per-tick polling.
+- Frames are located from Ancient City structure pieces (a known template and rotation give exact frame coordinates) and cached per chunk in SavedData, never found by scanning blocks.
+- The offer check is a box test on players near known frames, run only while a player is within ~32 blocks. There is no orb scanning.
+- Music is detected by a vibration listener at each awake frame, so nothing polls every tick.
+- The ambient "breathing" particles are client-side and run only near dormant frames.

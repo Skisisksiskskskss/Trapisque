@@ -105,6 +105,20 @@ Format: `## D-### <title> (<date>) [supersedes D-### if any]` then Context · Op
 
 **Revisit if.** The owner prefers the canonical melody, rift-first, or a build-your-own gate at Gate A; Mojang reveals the vanilla access method; playtests show the XP pull is confusing or annoying.
 
+**Revision (2026-09-30, WP-014 critique round 1).**
+- **What changed.** The passive orb pull is replaced by a **crouch-to-offer** payment from the player's XP bar.
+  - Price: 1 395 points (level 0 → 30), once per frame, which can be pooled.
+  - Nothing is taken without consent.
+  - Hints come in stages: souls "breathe" into the frame, it notices you, it wakes in steps, then note particles drift from it.
+- **Why.** The critic showed the original price couldn't be paid on purpose: Ancient Cities have no mob spawns, and sculk drops 1–5 XP. Its target was also ambiguous, and it took XP without consent (MF5).
+- **Also changed:**
+  - The first opening starts the Tide clock at Thrive.
+  - The membrane shows the far-side Tide.
+  - Arrival search is bounded (256 blocks) with a fallback; gates stay ≥64 blocks apart; frame ↔ gate links are stored explicitly.
+  - Gates are unbreakable.
+- **Rescoring.** #3′ scores 28, tying rift-first. The tie is broken by hard rule 9.4 and P4.
+- **Canon wording corrected.** The frame is Dungeons II's story portal location, not Java canon (RESEARCH §6).
+
 ---
 
 ## D-007 Core systems at concept level (2026-09-30)
@@ -119,3 +133,68 @@ Format: `## D-### <title> (<date>) [supersedes D-### if any]` then Context · Op
 **Consequences.** Phase 2 inventory derives from this loop. BALANCE.md must pin the soul↔XP loss rates and the Endure spawn buffs. Phase 3 must confirm custom environment-attribute registration and client sync.
 
 **Revisit if.** The critique (WP-014) or the owner at Gate A rejects a system; implementation shows custom attributes can't be keyframed or synced as expected.
+
+**Revision (2026-09-30, WP-014 critique round 1)** (systems.md is authoritative):
+- **Tides = T1′.**
+  - A 30 000-tick cycle (Thrive 12k · Flow 3k · Endure 12k · Flow 3k), one signature rule per Tide (growth and recharge / passage / hunters and rare blooms).
+  - The clock starts paused at Thrive until the first opening.
+  - The T3 lever moves only toward Thrive.
+- **Souls = S1 + S3 + S4′ + S8, as a one-way ledger.**
+  - S4, a sculk bank drawn out by song, is rejected: it was an XP amplifier (MF1).
+  - Bloom hearts drink deaths like vanilla catalysts. Players offer XP by crouching.
+  - Souls leave only as growth, fuel (soul blocks) or a frame's price. Nothing converts back to XP.
+  - `soul_flow` defaults to 0 outside the Sift.
+- **Sculk.** Blight is vanilla sculk. Illagers speed up an old disease rather than causing it. Cures work only in the Sift.
+- **Sound.** Adds N8: in Endure, sound draws hunters. The gift of song affects only Sift life and never wardens.
+- **Illagers.** Finite camps for 1.0; the Keep (I2) moves after 1.0.
+- **Consequence for BALANCE.md.** No soul↔XP loss rates are needed any more, because no conversion back exists. It must instead pin the frame price, growth rates and soul-block cost.
+
+---
+
+## D-008 A weatherless Sift through one targeted mixin (2026-09-30)
+**Context.** The rules say the Sift has no weather. In 26.3, weather state is **server-global** (`MinecraftServer.getWeatherData()`). Every level whose `Level.canHaveWeather()` is true, meaning it has sky light, no ceiling and isn't the End, counts down the shared timers each tick in `ServerLevel.advanceWeatherCycle`, and takes rain and thunder into its environment attributes (`WeatherAttributes`). An open-sky Sift would therefore:
+- roughly **double the Overworld's weather speed**, which breaks hard rule 9.4;
+- receive the Overworld's storms: a grey sky, no stars, and thunder-darkness that lets monsters spawn in Thrive.
+
+These were verified in the 26.3 sources during WP-014.
+
+**Options.**
+- (A) `has_ceiling: true` in the dimension type (data only). It disables weather, but it also halves map radius and paints maps as ceiling noise (`MapItem`), changes world-generation spawn placement (`NaturalSpawner.getTopNonCollidingPos`), and changes respawn-height logic (`PlayerSpawnFinder`).
+- (B) `has_skylight: false`. This kills Thrive's daylight.
+- (C) A mixin making `Level.canHaveWeather()` return false when `dimension() == thesift:the_sift`.
+- (D) Accept shared weather.
+
+**Decision.** (C). One `@Inject(at = HEAD, cancellable = true)` into `Level.canHaveWeather()`, active only for our dimension key. It lives in common code, because `ClientLevel` inherits the method.
+
+**Why.**
+- It is the smallest change that keeps maps and spawns vanilla and leaves the Overworld's weather exactly as it is.
+- Every other weather path (`isRaining`, `isThundering`, the attribute layer, weather packets) already keys off this method.
+- It is the project's first mixin; D-003 requires a record for each.
+
+**Consequences.**
+- The mixin config is added in Phase 3 with this single target.
+- A GameTest must check two things: the Sift never rains while the Overworld does, and the Overworld's weather timers advance one step per tick with the Sift loaded.
+- Commands like `/weather` in the Sift affect the Overworld (shared state) but never show in the Sift.
+
+**Revisit if.** Fabric API or vanilla adds a data-driven weather switch for dimensions; the mixin conflicts with another mod targeting the same method (then use a lower-priority injector or an API).
+
+---
+
+## D-009 Scope of 1.0: one boss, one miniboss (2026-09-30)
+**Context.** Critique round 1 (SF10) found the draft over-scoped against "fewer, deeper". It promised four bosses (Monstrosity, Monarch, Harmonizer, a Keep lieutenant), plus a new fluid, an aurora, companions, gear, camps, tanks and gates. Vanilla dimensions have at most one boss each.
+
+**Options.**
+- (A) Keep all canon bosses.
+- (B) One boss, the **Sculk Monstrosity** (the blight's heart, fought in the Meadow's questline), plus the Harmonizer as miniboss.
+- (C) One boss, the **Monarch** (apex hunter of Endure, in the Carapace), plus the Harmonizer.
+
+**Decision (proposed, confirmed at Gate A).** (B).
+- The Monstrosity's canon "catalysis" attack is vanilla catalyst grammar turned into a weapon, and beating it cures the land around its arena. That closes the blight storyline (P3).
+- The Monarch, the Illager Keep, rifts, the Tide lever and an aurora sky go to the post-1.0 roadmap. The aurora needs a client mixin, because 26.3 Fabric API has no per-dimension sky hook.
+
+**Why.** It is the smallest endgame that still exercises every pillar, and it matches vanilla's one-boss-per-dimension rhythm.
+
+**Consequences.** The Phase 2 inventory lists only these two bosses as Must. The Monarch's sculker nest is designed as a post-1.0 expansion hook.
+
+**Revisit if.** The owner prefers (C) or (A) at Gate A.
+

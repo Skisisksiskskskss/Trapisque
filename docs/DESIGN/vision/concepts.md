@@ -12,9 +12,9 @@
 
 **Lessons:** (1) the reason to exist must be a *verb the player can only do there*; (2) entry should be a self-teaching quest with a visible landmark; (3) rules should differ in ways the player can see and exploit; (4) rewards must be sidegrades or new capabilities, never skipping a vanilla tier; (5) plan the return visit (resources that renew, states that change).
 
-**Prior art (RESEARCH.md §8):** three fan mods already use the Ancient City frame as a portal; one of them (Mielon's The Sift) opens it with a note-block melody. Distinctness has to come from *what the Sift is for*, not only from how it is entered.
+**Prior art (RESEARCH.md §8):** three fan mods use the Ancient City for their portal. Only one runs on 26.3: Mielon's The Sift opens the frame with a note-block melody ("awaken it with sound"). Distinctness has to come from *what the Sift is for*, not only from how it is entered.
 
-**What canon hands us (RESEARCH.md §1–5):** a dimension that is beautiful and teeming with souls; healthy sculk as its living ground; song as its language (Singer, note block machine, musical gate, Harmonizer); a three-Tide **time cycle** that changes soul flow and danger; natives who are companions and threats; Illagers stealing its souls; the Ancient City frame as the gate.
+**What canon hands us (RESEARCH.md §1–5):** a dimension that is beautiful and teeming with souls; healthy sculk as its living ground; song as its language (Singer, note block machine, musical gate, Harmonizer); a three-Tide **time cycle** that changes soul flow and danger; natives who are companions and threats; Illagers stealing its souls; and in Dungeons II, a story portal at the Ancient City's centre. That last one is canon for Dungeons II only: Mojang hasn't said how Java will reach the Sift (RESEARCH.md §6).
 
 ## 2. Diverge — 14 vision concepts (written before scoring)
 Each: a one-line fantasy · the verb only the Sift offers · what you bring home.
@@ -58,3 +58,5 @@ Scoring notes (the calls that decided it): **Tide World** and **Mirror of the De
 **Core = 8 (Mirror of the Deep Dark) + 3 (Tide World)**, carried by **1 (song) and 2 (souls)** as the mechanics that make them tangible; **5 (Illagers)** and **6 (companions)** supply conflict and friends as content. Borrow from 14 only the idea that songs are *learned from natives*; from 9 only the idea that some Sift blocks respond to notes. Cut 10–13 as directions (single ideas may survive in IDEAS.md).
 
 Why this merge: it is the only combination where the Sift's reason to exist is a *pair of verbs* — **listen to the Tide, answer with sound** — that (a) no vanilla dimension offers, (b) comes straight from canon (time cycle; song opens gates; healthy sculk), (c) reuses vanilla grammar (sculk vibrations, note blocks, allays' love of music, day/night-like timelines), and (d) gives the Overworld something back (the Deep Dark read in a new way). Recorded as D-005.
+
+**Changed after critique round 1 (WP-014).** Concept 8's reward, "knowledge that makes the Deep Dark safer", was cut. Sift tools and souls affect only Sift life, so the Ancient City stays exactly as dangerous (00_VISION §6, MF3). What the Overworld gets back is a new way to *read* the Deep Dark, not a way to disarm it. In Endure, the Sift's own hunters listen as wardens do.

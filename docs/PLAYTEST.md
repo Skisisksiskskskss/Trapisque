@@ -15,4 +15,4 @@ Nothing Sift-specific is playable yet: Gate A approves the *design*. The only te
 ### A2. Optional: see the entry-path landmark in vanilla
 1. In a creative test world, run `/locate structure minecraft:ancient_city` and teleport there.
 2. Find the large reinforced-deepslate frame at the city centre (22×8 with a 20×6 opening). This is the frame the vision (00_VISION.md §7) proposes to wake with souls and open with music.
-3. Mine some sculk near it and watch your XP orbs. In the proposed design they would drift *into* the frame. Ask yourself: would you notice, and would you guess to play a note block next?
+3. Stand in the opening, then crouch, as you would to sneak past sensors. In the proposed design, faint souls would already be drifting from the city's sculk into the frame. Standing in the opening would make them curl toward you, and crouching there would let your experience flow in until the frame wakes (≈ level 0 → 30, once per frame). Then note particles would drift from it, and any music would open it. Ask yourself: would you guess to crouch there, and would you guess to play a note block next?

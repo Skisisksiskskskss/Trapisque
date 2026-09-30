@@ -1,46 +1,72 @@
-# The dimension's rules (WP-012)
+# The dimension's rules (WP-012; revised after WP-014 critique round 1)
 
-## Diverge — six rule-set identities
+## Diverge: six rule-set identities
 | # | Identity | Idea | Verdict |
 |---|---|---|---|
-| A | **Overworld with another clock** | Everything behaves as at home except that the Tides replace day/night | Comfortable, matches "serene" [RESEARCH §9], but says little |
-| B | **Nether-style hostility** | Water boils, beds explode, no sleep, fast fluids | Contradicts "not evil" and "serene"; that is the Nether's identity, not the Sift's |
+| A | **Overworld with another clock** | Everything behaves as at home, except that the Tides replace day and night | Comfortable, matches "serene" [RESEARCH §9], but says little |
+| B | **Nether-style hostility** | Water boils, beds explode, no sleep, fast fluids | Contradicts "not evil" and "serene"; that identity belongs to the Nether, not the Sift |
 | C | **End-style stasis** | Fixed time, no weather, beds explode | Contradicts canon: the Tides are a time cycle |
 | D | **Sound world** | Vibrations carry farther; noise draws natives, friendly and hostile | Strong for P1, but global sound changes would be invisible to the player |
-| E | **Soul world** | XP behaves as souls: it drifts to healthy sculk; ichor drains it; natives are immune to ichor | Strong for P3; must not steal XP the player earned |
-| F | **The Tide sets the rules** | Light, sky, fog, music, particles and spawns all keyframed by the Tide; vanilla "night" behaviours follow Endure | Canon ("new rules to learn", "time cycle") and cheap to read |
+| E | **Soul world** | XP behaves as souls; ichor drains it; natives are immune to ichor | Strong for P3. Only blocks that visibly drink souls take XP, never the floor (systems.md §2) |
+| F | **The Tide sets the rules** | Light, sky, fog, music, particles and growth follow the Tide; each Tide has one signature rule | Canon ("new rules to learn", "time cycle") and cheap to read |
 
-**Choice: F as the frame, A as the default, and a few targeted rules from D and E.** Anything without a Sift-specific reason behaves like the Overworld, not the Nether or End ("serene", not hostile). This replaces the WP-012 exit-ramp default of "Nether/End precedent", which the press pass showed is the wrong precedent for a serene dimension.
+**Choice:** F as the frame, A as the default, plus a few targeted rules from D and E. Anything without a Sift-specific reason behaves like the Overworld, not the Nether or End ("serene", not hostile). Where vanilla treats every non-Overworld dimension alike (clocks, phantoms, patrols), the Sift follows the Nether and End.
 
-## Rules table (implementation routes verified in VANILLA_ANALOGS W1/W4/W5)
-Route key: **DT** = dimension-type field · **ATTR** = dimension/biome environment attribute · **TL** = keyframed on the `thesift:tides` timeline (clock `thesift:tides`) · **CODE** = our code · **VAN** = vanilla already does it.
+## Rules table
+Routes are verified against the 26.3 source (VANILLA_ANALOGS W1/W4/W5 and the critique-round checks noted below).
+
+Route key:
+- **DT**: dimension-type field.
+- **ATTR**: dimension or biome environment attribute.
+- **TL**: keyframed on the `thesift:tides` timeline.
+- **CODE**: our code.
+- **VAN**: vanilla already does it.
 
 | Topic | Rule | Tide-dependent? | Route |
 |---|---|---|---|
-| Day/night | None. The Tide cycle replaces it. `/time` in the Sift acts on the Tide clock (`/time set thesift:endure` jumps to Endure) | — | DT `default_clock`, `timelines: #thesift:in_sift`; TL time markers |
-| Sky light | Thrive 15, Flow ramps, Endure ≈4 (night-like) | yes | TL `gameplay/sky_light_level` |
-| Hostile spawning | Follows light (standard 0–7): monsters appear on the surface only when Endure darkens it, which is the canon "stronger mobs" moment | yes (via light) | DT `monster_spawn_light_level`; VAN |
-| Spawn tables | Thrive: native passives abundant. Flow: mixed. Endure: hostile sifters, sculkers, stronger variants | yes | TL `gameplay/natural_mob_spawns` (overlay); CODE for "stronger" buffs |
-| Sky & fog colour | Thrive: teal sky, pale fog. Flow: peach-gold. Endure: deep indigo with stars | yes | TL `visual/sky_color`, `visual/fog_color`, `visual/star_brightness`, `visual/cloud_color` |
-| Aurora | Blocky teal/pink aurora bands (canon look) | brighter in Endure | CODE (client sky rendering) — **Should**; feasibility in Phase 3 |
+| Day/night | None; the Tide cycle (30 000 ticks) replaces it. `/time set thesift:endure` jumps to Endure; `/time set day` doesn't apply in the Sift | — | DT `default_clock: thesift:tides`, `timelines`; TL markers |
+| Sun & moon | **None visible.** `sun_angle` and `moon_angle` are fixed below the horizon; the sunrise/sunset colour is transparent | — | ATTR `visual/sun_angle`, `visual/moon_angle`, `visual/sunrise_sunset_color` (checked: SkyRenderer draws both bodies at these angles) |
+| Sky light | Thrive 15; ramps through Flow; Endure ≈4 (dark) | yes | TL `gameplay/sky_light_level` |
+| Stars | Only in Endure | yes | TL `visual/star_brightness` |
+| Flora light | Sift flora *looks* luminous through emissive model faces. Only a few blocks emit real block light, so the darkness that lets monsters spawn in Endure isn't undone | — | block models (per-face light emission); block light only where it's meant to create safe pockets |
+| Hostile spawning | Follows light (the Overworld's 0–7 rule): surface monsters appear only when Endure darkens the land | yes (via light) | DT `monster_spawn_light_level`; VAN |
+| Spawn tables | **Per biome**: the Meadow and the Carapace keep different hostiles. The Tide doesn't swap tables; light gates monsters, and CODE picks "enduring" variants in Endure | via light | biome ATTR `gameplay/natural_mob_spawns`; CODE for variants. The timeline doesn't override spawns, because an overlay would flatten biome differences (SF4) |
+| Sky & fog colour | Thrive: teal sky, pale fog. Flow: peach-gold. Endure: deep indigo | yes | TL `visual/sky_color`, `visual/fog_color`, `visual/cloud_color` |
 | Ambient particles | Thrive: drifting pollen-like motes (trills). Endure: glowing soul motes | yes | TL `visual/ambient_particles` |
-| Music | Each area has a Thrive / Flow / Endure version (canon OST pattern) | yes | TL/biome ATTR `audio/background_music` |
-| Weather | None: no rain or snow. The Tide is the weather | — | biome `has_precipitation: false` |
-| Beds | Can set spawn; **can't sleep** ("You can't sleep here: the Sift never goes quiet"); no explosion | — | ATTR `gameplay/bed_rule {can_set_spawn: always, can_sleep: never}`; straw bed mirrors, no spawn |
-| Respawn anchors | Don't work | — | ATTR `gameplay/respawn_anchor_works: false` (VAN default) |
-| Clocks | **Show the Tide**: the needle follows the Tide cycle (day face = Thrive, night face = Endure) | yes | TL `visual/sun_angle` (the clock reads it); VAN |
+| Music | Each area has Thrive, Flow and Endure versions (canon OST pattern) | yes | TL or biome ATTR `audio/background_music` |
+| **Weather** | **None, and the Overworld's weather timers are untouched.** In 26.3 weather state is server-global, and every level whose `canHaveWeather()` is true counts it down each tick. An open-sky dimension would therefore double the Overworld's weather speed and receive its storms (MF4, verified: `Level.canHaveWeather`, `ServerLevel.advanceWeatherCycle`, `WeatherAttributes`). One targeted mixin makes `canHaveWeather()` false for `thesift:the_sift` | — | CODE (mixin, D-008). The data-only route `has_ceiling: true` was rejected: it halves map radius and paints maps as ceiling noise (`MapItem`), and it changes where world-generation spawns are placed (`NaturalSpawner`) |
+| Beds | Set spawn; **you can't sleep** ("You can't sleep here: the Sift never goes quiet"); no explosion. **Resting** in a Sift bed resets the phantom timer, so long stays don't bring phantoms home | — | ATTR `gameplay/bed_rule {can_sleep: never, can_set_spawn: always}`; CODE (reset `time_since_rest` on bed use in the Sift) |
+| Respawn anchors | Don't set spawn; a charged anchor **explodes when used**, as in the Overworld | — | ATTR `gameplay/respawn_anchor_works: false` (VAN; checked `RespawnAnchorBlock`) |
+| Clocks | **Spin**, as in the Nether and End. The vanilla clock model reads the sun only in `minecraft:overworld` | — | VAN (checked in the 26.3 jar: `items/clock.json` selects on `context_dimension`) |
+| Daylight detectors | Read no sun (0), as in the Nether and End. **Inverted, they sense Endure's darkness**, which makes them a vanilla-native Tide sensor for redstone | yes | VAN (`DaylightDetectorBlock` uses sky brightness × cos(sun angle)) |
 | Compasses | Spin, as in any non-spawn dimension; lodestone and recovery compasses work | — | VAN |
 | Maps | Work normally (no ceiling) | — | VAN |
-| Nether portals | Cannot be lit (vanilla only lights them in the Overworld/Nether) | — | VAN (`BaseFireBlock.inPortalDimension`) |
+| Nether portals | Can't be lit (vanilla lights them only in the Overworld and Nether) | — | VAN (`BaseFireBlock.inPortalDimension`) |
 | Coordinates | 1:1 with the Overworld (no travel shortcut) | — | DT `coordinate_scale: 1` |
-| Fall damage, water | Normal | — | VAN |
-| **Ichor** | A new liquid: sets non-natives alight with soul fire and drains their XP ("souls"). Sift natives are immune and some thrive in it (blubs bathe). Canon hazard | behaviour may vary by Tide (systems) | CODE (fluid) + tag `#thesift:ichor_adapted` |
-| Raids & patrols | No raids or pillager patrols; the Illager presence is the occupation | — | ATTR `gameplay/can_start_raid: false`, `gameplay/can_pillager_patrol_spawn: false` |
-| Sculk shriekers | Placed in the Sift, they never summon wardens (no wardens live here; Singers soothe them) | — | CODE (targeted) |
-| Night-bound vanilla behaviour | Follows Endure: bees stay in hives, eyeblossoms open | yes | TL `gameplay/bees_stay_in_hive`, `gameplay/eyeblossom_open` |
+| Fall damage, water, lava | Normal (lava as in the Overworld) | — | VAN (`gameplay/fast_lava` false, `water_evaporates` false) |
+| **Ichor** | A new liquid (canon hazard): sets outsiders alight with soul fire and drains their XP while they stand in it. Sift natives are immune, and some thrive in it (blubs bathe). **It evaporates outside the Sift**: a bucket can't place it at home, like water in the Nether | may vary by Tide (Phase 2) | CODE (fluid) + tag `#thesift:ichor_adapted`; evaporation checks our own attribute, following the `water_evaporates` precedent |
+| Raids | Never start in the Sift | — | ATTR `gameplay/can_start_raid: false` |
+| Patrols, phantoms, wandering traders, cats | Never spawn in the Sift: vanilla attaches these spawners only to the Overworld | — | VAN (checked `MinecraftServer`: other levels get no custom spawners) |
+| Sculk shriekers | In the Sift they never summon wardens (none live here). They give Darkness and alert nearby hostiles | — | CODE (targeted) |
+| Night-bound vanilla behaviour | Follows Endure: bees stay in hives, eyeblossoms open, turtle eggs hatch faster, villagers brought here rest | yes | TL `gameplay/bees_stay_in_hive`, `gameplay/eyeblossom_open`, `gameplay/turtle_egg_hatch_chance`, `gameplay/villager_activity`, `gameplay/baby_villager_activity` |
+| Other vanilla attributes | Creakings never activate (no pale gardens); cat morning gifts don't apply (no sleep); no surface slimes; snow golems don't melt; piglins zombify as in the Overworld | — | ATTR `gameplay/creaking_active: false`, `gameplay/cat_waking_up_gift_chance: 0`, `gameplay/surface_slime_spawn_chance: 0`, defaults otherwise |
 | Monsters burning | Never (no sun burns in the Sift) | — | ATTR `gameplay/monsters_burn: false` |
-| Ambient light | Slightly raised (≈0.05) so Endure is dark but readable; glowing flora supplies most light | — | DT `ambient_light` |
+| Ambient light | Slightly raised (≈0.05), so Endure is dark but readable | — | DT `ambient_light` |
+| What comes home | Nothing from the Sift grows or spreads in the Overworld. Healthy sculk and bloom hearts are decorative there (`soul_flow` is 0), ichor evaporates, and companions keep working but need soul blocks as fuel | — | our attribute's default 0 outside the Sift (SF6) |
 
-## Accessibility checks (P1/§7.6)
-- Every Tide change is shown by sky, light, particles **and** music, never by sound alone.
+**Code, all small and targeted:**
+- the weather mixin (D-008);
+- bed rest;
+- ichor;
+- the shrieker rule;
+- enduring variants;
+- growth reading `soul_flow`;
+- the frame and gate (entry_path.md).
+
+Everything else is dimension-type, attribute and timeline data. An earlier draft said "80% data"; that figure has been dropped as unmeasured.
+
+## Accessibility checks (P1, §7.6)
+- Every Tide change shows in the sky, the light, particles **and** music, never through sound alone.
+- Every Sift sound has a subtitle.
 - Ichor is readable without colour: it steams soul-fire particles and has a distinct surface animation.
+- Blight is vanilla sculk, which pulses and creeps, so it is told apart from healthy sculk without colour.

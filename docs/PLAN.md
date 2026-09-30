@@ -232,7 +232,7 @@ Deliverable: `docs/DESIGN/00_VISION.md` (the frozen vision) + focused appendices
 ### WP-014 Vision critique, freeze and Gate A
 - Phase / Milestone: 1 / —
 - Tier: XL
-- Status: TODO
+- Status: IN PROGRESS (critique round 2 of ≤3)
 - Depends on: WP-010..013
 - Goal: Independent adversarial review of 00_VISION.md (fresh reviewer, rubric only), fix, freeze, and present Gate A.
 - Inputs (read ONLY these): 00_VISION.md, docs/DESIGN/vision/*, §7.1 rubric.
@@ -243,6 +243,20 @@ Deliverable: `docs/DESIGN/00_VISION.md` (the frozen vision) + focused appendices
 - Iteration budget: critique rounds ≤ 3.
 - Exit ramp: §5.5 critique cap.
 - Log:
+  - 2026-09-30 round 1 (fresh adversarial reviewer; vision docs + RESEARCH + 26.3 source, read-only): **FAIL**, 5 must-fix, 12 should-fix, 5 notes; 27 of 63 scores < 4. Full dispositions are in 00_VISION.md §10.
+  - Before changing any design, every engine claim was re-checked in the 26.3 source, and all held:
+    - weather is server-global (`Level.canHaveWeather`, `ServerLevel.advanceWeatherCycle`, `WeatherAttributes`);
+    - `advance_time` gates all clocks;
+    - a charged anchor explodes when `respawn_anchor_works` is false;
+    - SkyRenderer draws the sun and moon at the attribute angles;
+    - sculk XP is 1/5.
+  - The same checks found one more error of that kind: the vanilla clock model reads the sun only in `minecraft:overworld` (26.3 jar `items/clock.json`), so "clocks show the Tide" was false.
+  - Also recorded in VANILLA_ANALOGS W1/W4/E4:
+    - the vanilla catalyst eats XP from any death;
+    - `has_ceiling` side effects;
+    - custom spawners are Overworld-only;
+    - no Fabric per-dimension sky hook in 26.3.
+  - Revisions: systems.md (T1′ per-Tide rules, a 30 000-tick cycle, the one-way soul ledger, N8, blight = vanilla sculk, 1.0 scope); rules.md (weather mixin, no sun or moon, clocks spin, bed rest, per-biome spawns, full attribute map); entry_path.md (crouch-to-offer, price 1 395 points, staged hints, bounded arrival search, explicit links); 00_VISION.md; D-006/D-007 revisions; new D-008 (weather mixin) and D-009 (1.0 scope).
 
 ## Phase 2+ (very coarse)
 - Phase 2: content bible + roadmap → Gate B.
