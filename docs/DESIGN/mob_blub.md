@@ -1,4 +1,4 @@
-# Blub (WP-048)
+# Blub (WP-048) — FROZEN 2026-10-01
 
 The M1 mob, finished end to end. Fixed by the frozen bible (creatures.md row "Blub", D-016, D-017):
 it is an ambient critter and a **pet**; it hops, squeaks, **bathes in ichor** (immune), **gathers to
@@ -90,7 +90,8 @@ Notes on the calls:
   it is the only pale-blue mob in the Sift (the meadow is coral, the sky teal, the trees white).
 - **Palette:** new ramp `blub` in palette.md (pale blue, dark → light): `#2c4f8f` `#3f6fb8` `#5f93d8`
   `#8ab6ee` `#b9d8fa` `#e6f3ff`; belly glow uses `membrane` 4–5; eyes `songwood_bark` 0 with a
-  `particle` 3 catch-light. Texture 32 × 32.
+  `particle` 3 catch-light. Texture 32 × 32; the belly glow is a second, emissive texture
+  (`blub_glow.png`, `membrane` 4–5 only; its own palette.md row).
 - **Model parts** (pixels): `body` 7 × 6 × 7 (the box), `belly` (front face, emissive layer),
   `ear_left` / `ear_right` 2 × 4 × 1 (tufts, pivot at the base), `foot` × 4 2 × 1 × 2, `tail` 2 × 2 × 1.
   No separate head: the eyes are on the body's front, as the vanilla first look shows.
@@ -125,16 +126,18 @@ SHELTER (Endure; or night outside the Sift): untamed blubs walk to a roof within
 WATERLINE (Flow, a basin within 16): walk to the basin's current waterline and potter along it as
         it moves, dipping into the edge now and then: the top ichor layer is one block deep over each
         ring (system_tides.md), so the waterline is where blubs bathe every cycle
-LISTEN + DANCE (music heard in the last 10 s: note blocks and goat horns within 16, jukeboxes within
-        10): face the source and play `listen`; untamed blubs drift toward it and hop to the beat
-STACK (starts only while listening, in Thrive or outside the Sift): listening blubs within 3 blocks
-        of each other climb onto one another, up to 3 tall, and sway. The goal claims MOVE for the
+STACK (starts only while listening, in Thrive or outside the Sift; ranked above LISTEN so a drifting
+        listener can still climb): listening blubs within 3 blocks of each other climb onto one
+        another, up to 5 tall (the bible's "Stacked" advancement needs five), and sway. The goal claims MOVE for the
         bottom blub, which stands and sways instead of drifting. Once built, the tower doesn't need the
         music: it topples 15–40 s after the music stops, or at once if the bottom blub moves more than
         0.5 block, is hurt, the Tide changes, or a befriended rider's owner walks away
+LISTEN + DANCE (music heard in the last 10 s: note blocks and goat horns within 16, jukeboxes within
+        10): face the source and play `listen`; untamed blubs drift toward it and hop to the beat
 BATHE (Thrive, ichor within 8, now and then): walk into a cell where the ichor is one block deep over
         a solid floor and sit in it for 10–30 s, shown "up to the belly" by a model offset (ichor has
-        no buoyancy, so a blub never wades deeper than one block on purpose)
+        no buoyancy, so a blub never wades deeper than one block on purpose). The search is bounded
+        like vanilla's `MoveToBlockGoal`: tried at most once every 2–5 s, 24 random cells within 8
 STROLL / LOOK AROUND
 ```
 - **AI choice: goal selector**, as the rabbit, cat and wolf use (VANILLA_ANALOGS E3: goals for simple
@@ -164,7 +167,9 @@ STROLL / LOOK AROUND
 5. **Sit and release.** *Use* with an empty hand toggles sitting, as with a cat. *Sneak-use* with an
    empty hand on a sitting blub releases it: it hops away untamed. Vanilla pets have no release; we
    add one so a player who befriends a crowd isn't stuck with it.
-6. **Its voice.** At befriending, a blub takes a fixed interval for its echo: +0, +4 or +7 semitones
+6. **Advancements.** Befriending is taming (`TamableAnimal.tame`), so it also counts for vanilla's
+   "Best Friends Forever" (`TAME_ANIMAL`). Intended: a blub is an honest pet.
+7. **Its voice.** At befriending, a blub takes a fixed interval for its echo: +0, +4 or +7 semitones
    (root, third, fifth), cycling through a per-player counter (a Fabric attachment), so any three a
    player befriends in a row make a chord.
 
@@ -186,14 +191,16 @@ STROLL / LOOK AROUND
   simply switch behaviour when the Tide changes.
 - **Souls / vibrations:** none in M1 (no XP interaction; it isn't a vibration listener).
 - **Light:** none; its belly glows in Endure and at night (render only).
-- **Ichor:** immune (in `#thesift:ichor_adapted`): no slow, no burn, no drain; it floats in it.
+- **Ichor:** immune (in `#thesift:ichor_adapted`): no slow, no burn, no drain. It walks and sits in
+  it; in deep ichor it walks along the bottom (ichor has no buoyancy), and it can't drown (ichor isn't
+  water).
 - **Other Sift mobs:** none in M1. **Illagers** (M4): flee from them like a rabbit from a wolf.
 
 ## Stats (with vanilla analogs)
 | Stat | Blub | Rabbit | Allay | Axolotl | Why |
 |---|---|---|---|---|---|
 | Max health | 8 | 3 | 20 | 14 | Sturdier than a rabbit so a pet survives a stray hit; far below a fighter |
-| Armor / damage | 0 / none | 0 / none | 0 / none | 0 / 2 | A pet, never a fighter |
+| Armor / attacks | 0 / never | 0 / never | 0 / never | 0 / 2 damage | A pet, never a fighter |
 | Speed | 0.25 (walk), ×1.6 when following or panicking | 0.3 | 0.1 fly | 1.0 swim | A waddle; keeps up with a walking player while following |
 | Follow range | 16 | 16 | 16 | 16 | Vanilla default |
 | Knockback resistance | 0 | 0 | 0 | 0 | |
@@ -220,10 +227,11 @@ STROLL / LOOK AROUND
 - Drops nothing but 1–3 XP (the axolotl precedent). No dead-end drops; a pet isn't harvested.
 
 ## Spawning
-- Singer's Meadow, **creature** category, weight 10, groups 2–4; on healthy sculk or tide sand, with
+- Singer's Meadow, **creature** category, weight 10, groups 2–5 (world.md §1.1); on healthy sculk or tide sand, with
   raw brightness above 8 (the vanilla animal rule, `Animal.isBrightEnoughToSpawn`).
-- **At world generation:** the biome's `creature_spawn_probability` is 0.03, so about one group per
-  30 chunks, independent of the Tide (a chunk generated in Endure still gets its blubs).
+- **At world generation:** the biome's environment attribute
+  `minecraft:gameplay/creature_world_gen_spawn_probability` is 0.03 (vanilla default 0.1; 26.3 moved
+  it out of the spawn settings), so about one group per 30 chunks, independent of the Tide (a chunk generated in Endure still gets its blubs).
 - **Natural spawning** (the vanilla creature spawner, capped by the creature mob cap): **not in
   Endure.** The light rule alone would not stop it: `isBrightEnoughToSpawn` reads stored sky light,
   which stays 15 under open sky, and Endure's darker sky only changes `skyDarken`. So the spawn
@@ -244,6 +252,7 @@ STROLL / LOOK AROUND
 | `entity.thesift.blub.topple` | bouncy thud (a stack falls) | Blubs topple | 2 |
 | `entity.thesift.blub.hurt` | squeak | Blub hurts | 2 |
 | `entity.thesift.blub.death` | deflating squeak | Blub dies | 1 |
+| `entity.thesift.blub.hop` | springy boing (happy hops, dancing, the herald) | Blub hops | 3 |
 | `entity.thesift.blub.step` | soft pat | (none, like vanilla steps) | 4 |
 
 ## Edge cases
@@ -253,8 +262,8 @@ STROLL / LOOK AROUND
 | Lava, fire | Normal damage; ichor immunity doesn't cover them |
 | Leashed | Yes, like any animal |
 | Name-tagged | Keeps the name; "Bubbles" squeaks differently (Could) |
-| Boats / minecarts | Can ride, like small animals |
-| The membrane | No blub walks through a membrane on its own: the blub type is in `#thesift:cannot_cross`, so untamed blubs never wander into an Ancient City. When its owner crosses, a befriended blub that isn't sitting and is within 16 blocks of where the owner entered is brought along to the arrival (D-016); sitting blubs stay |
+| Boats / minecarts | Can ride, like small animals. A boat carrying a blub can't cross the membrane: `canCross` checks every passenger and the blub is in `#thesift:cannot_cross` (passengers never use portals themselves). Its owner crosses on foot and the blub comes along |
+| The membrane | No blub walks through a membrane on its own: the blub type is in `#thesift:cannot_cross`, so untamed blubs never wander into an Ancient City. When its owner crosses, a befriended blub that isn't sitting and is within 16 blocks of where the owner entered is brought along to the arrival (D-016); sitting blubs stay. A tower is toppled first (riders and the blub it carries are ejected), so no untamed rider is carried through |
 | Leashed at the membrane | A leash its owner holds comes along: 26.3 copies leash data when an entity changes dimension and re-attaches it by UUID. A blub leashed to anything else (a fence knot, another player) stays behind like a sitting one, so no phantom knot appears in the other world |
 | Arriving in an Ancient City | Accepted risk, as with wolves: a blub's steps and hops are vibrations a warden can hear. A sitting blub makes none |
 | Nether portals | Vanilla rules (it can be pushed through; it doesn't follow on its own) |
@@ -295,7 +304,7 @@ STROLL / LOOK AROUND
   random 0–5 s first. Roof search is bounded to 12 blocks and reads heightmap columns (a roof is a
   column whose MOTION_BLOCKING height is above the blub), not a block scan. Basins are found from
   the tide vents' block entities in the blub's own and neighbouring chunks, never by scanning.
-- **Expected counts:** about one group per 30 chunks from generation (~40 blubs in a 10-chunk view
+- **Expected counts:** about one group per 30 chunks from generation (~50 blubs in a 10-chunk view
   of all-Meadow), plus what the creature spawner adds up to the vanilla creature cap. Blubs don't
   despawn, so this is the steady state.
 - **Risks:** stacking via riding (WP-034 spike: if riding stacks feel bad, stacking moves to M2 per
@@ -337,3 +346,14 @@ The stats table above is the BALANCE.md entry (copied there on freeze).
   arrivals. Notes taken: the echo emits no game events; high chords drop an octave; intervals cycle
   through a per-player counter; restless wakes a curled blub; FOLLOW's addition named as ours;
   `SAFE_FALL_DISTANCE` 4.
+- **Round 3 (fresh reviewer, the last allowed): FAIL** on three one-line items, none a crash, dupe or
+  infeasible mechanism. Scores: template 5, canon 5, vanilla-feel 4, player value 4, readability 4,
+  feasibility 4, bible 3. Round 2's three fixes verified against the 26.3 sources. Must-fix, all fixed
+  at freeze: towers up to 5 (the bible's "Stacked" advancement); groups 2–5 (world.md §1.1); a stale
+  "floats in ichor" line. Should-fix, taken: the world-generation spawn probability is a 26.3
+  environment attribute, not a spawn-settings field; STACK ranks above LISTEN (a running higher goal
+  would keep MOVE); towers topple before an owner's blub crosses; boats can't carry a blub through;
+  the glow texture's palette row; a hop sound; a bounded bathe search; stats wording; the vanilla
+  taming advancement, stated.
+- **Disposition (circuit breaker, 3 rounds):** with every must-fix applied and no open structural
+  issue, the design is **frozen** as of 2026-10-01. Further changes go through DECISIONS.md.

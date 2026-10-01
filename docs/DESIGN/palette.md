@@ -69,4 +69,5 @@ below allows.
 | `particle/glow_petal.png` | healthy_sculk, particle |
 | `particle/trill.png` | particle |
 | `entity/blub/blub.png` | blub, songwood_bark, particle |
+| `entity/blub/blub_glow.png` | membrane (emissive belly; transparent elsewhere) |
 | `item/blub_spawn_egg.png` | blub, songwood_bark |
