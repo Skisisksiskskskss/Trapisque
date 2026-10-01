@@ -1,5 +1,8 @@
 package thesift.datagen;
 
+import thesift.registry.ModSounds;
+import net.minecraft.world.attribute.AmbientAdditionsSettings;
+import net.minecraft.world.attribute.AmbientSounds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.tags.BlockTags;
@@ -263,6 +266,12 @@ final class SiftWorldgen {
 				.temperature(0.7F)
 				.downfall(0.5F)
 				.specialEffects(new BiomeSpecialEffects.Builder().waterColor(0x3FB8C8).build())
+				// Wind through the songwood's flute holes, and now and then a far-off flute (items.md §6).
+				// The flute is an "addition" (random, anywhere), not a "mood" (which needs darkness).
+				.setAttribute(EnvironmentAttributes.AMBIENT_SOUNDS, new AmbientSounds(
+						Optional.of(ModSounds.MEADOW_LOOP),
+						Optional.empty(),
+						List.of(new AmbientAdditionsSettings(ModSounds.MEADOW_MOOD, 0.0006))))
 				.mobSpawnSettings(MobSpawnSettings.EMPTY)
 				.generationSettings(generation.build())
 				.build());

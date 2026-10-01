@@ -1,5 +1,12 @@
 {
   "attributes": {
+    "minecraft:audio/ambient_sounds": {
+      "additions": {
+        "sound": "thesift:ambient.singers_meadow.mood",
+        "tick_chance": 6.0E-4
+      },
+      "loop": "thesift:ambient.singers_meadow.loop"
+    },
     "minecraft:gameplay/natural_mob_spawns": {
       "argument": {
         "spawn_costs": {},

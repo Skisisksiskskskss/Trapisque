@@ -1,0 +1,128 @@
+{
+  "ambient.singers_meadow.loop": {
+    "sounds": [
+      "thesift:ambient/meadow_loop"
+    ],
+    "subtitle": "subtitles.thesift.meadow.loop"
+  },
+  "ambient.singers_meadow.mood": {
+    "sounds": [
+      "thesift:ambient/meadow_mood1",
+      "thesift:ambient/meadow_mood2",
+      "thesift:ambient/meadow_mood3",
+      "thesift:ambient/meadow_mood4"
+    ],
+    "subtitle": "subtitles.thesift.meadow.mood"
+  },
+  "ambient.tide.endure": {
+    "sounds": [
+      "thesift:tide/endure"
+    ],
+    "subtitle": "subtitles.thesift.tide.endure"
+  },
+  "ambient.tide.flow": {
+    "sounds": [
+      "thesift:tide/flow"
+    ],
+    "subtitle": "subtitles.thesift.tide.flow"
+  },
+  "ambient.tide.thrive": {
+    "sounds": [
+      "thesift:tide/thrive"
+    ],
+    "subtitle": "subtitles.thesift.tide.thrive"
+  },
+  "block.ichor.ambient": {
+    "sounds": [
+      "thesift:ichor/ambient1",
+      "thesift:ichor/ambient2",
+      "thesift:ichor/ambient3"
+    ],
+    "subtitle": "subtitles.thesift.ichor.ambient"
+  },
+  "block.ichor.evaporate": {
+    "sounds": [
+      "thesift:ichor/evaporate"
+    ],
+    "subtitle": "subtitles.thesift.ichor.evaporate"
+  },
+  "block.ichor.wade": {
+    "sounds": [
+      "thesift:ichor/wade1",
+      "thesift:ichor/wade2",
+      "thesift:ichor/wade3",
+      "thesift:ichor/wade4"
+    ],
+    "subtitle": "subtitles.thesift.ichor.wade"
+  },
+  "block.sift_frame.hum": {
+    "sounds": [
+      "thesift:entry/hum1",
+      "thesift:entry/hum2"
+    ],
+    "subtitle": "subtitles.thesift.frame.hum"
+  },
+  "block.sift_frame.offer": {
+    "sounds": [
+      "thesift:entry/offer1",
+      "thesift:entry/offer2",
+      "thesift:entry/offer3"
+    ],
+    "subtitle": "subtitles.thesift.frame.offer"
+  },
+  "block.sift_frame.open": {
+    "sounds": [
+      "thesift:entry/open"
+    ],
+    "subtitle": "subtitles.thesift.frame.open"
+  },
+  "block.sift_frame.wake": {
+    "sounds": [
+      "thesift:entry/wake"
+    ],
+    "subtitle": "subtitles.thesift.frame.wake"
+  },
+  "block.sift_membrane.ambient": {
+    "sounds": [
+      "thesift:entry/membrane1",
+      "thesift:entry/membrane2",
+      "thesift:entry/membrane3"
+    ],
+    "subtitle": "subtitles.thesift.membrane.ambient"
+  },
+  "block.sift_membrane.travel": {
+    "sounds": [
+      "thesift:entry/travel"
+    ],
+    "subtitle": "subtitles.thesift.membrane.travel"
+  },
+  "block.tide_vent.drain": {
+    "sounds": [
+      "thesift:tide/basin_drain1",
+      "thesift:tide/basin_drain2"
+    ],
+    "subtitle": "subtitles.thesift.basin.drain"
+  },
+  "block.tide_vent.fill": {
+    "sounds": [
+      "thesift:tide/basin_fill1",
+      "thesift:tide/basin_fill2",
+      "thesift:tide/basin_fill3"
+    ],
+    "subtitle": "subtitles.thesift.basin.fill"
+  },
+  "item.bucket.empty_ichor": {
+    "sounds": [
+      "thesift:ichor/bucket_empty1",
+      "thesift:ichor/bucket_empty2"
+    ],
+    "subtitle": "subtitles.thesift.bucket.empty_ichor"
+  },
+  "item.bucket.fill_ichor": {
+    "sounds": [
+      "thesift:ichor/bucket_fill1",
+      "thesift:ichor/bucket_fill2"
+    ],
+    "subtitle": "subtitles.thesift.bucket.fill_ichor"
+  }
+}
