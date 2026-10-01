@@ -7,6 +7,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.Heightmap;
 
+import thesift.TheSift;
 import thesift.block.TideVentBlock;
 import thesift.block.entity.TideVentBlockEntity;
 import thesift.registry.ModBlocks;
@@ -198,29 +199,36 @@ public final class SiftBasinTest {
 		int cx0 = (origin.getX() >> 4) + 96;
 		int cz0 = (origin.getZ() >> 4) + 96;
 		int vents = 0;
-		int ichor = 0;
+		int surfaceIchor = 0;
+		int deepIchor = 0;
 		for (int dx = -5; dx <= 5; dx++) {
 			for (int dz = -5; dz <= 5; dz++) {
 				var chunk = level.getChunk(cx0 + dx, cz0 + dz);
 				for (int x = 0; x < 16; x++) {
 					for (int z = 0; z < 16; z++) {
 						int top = chunk.getHeight(Heightmap.Types.WORLD_SURFACE, x, z);
-						for (int y = top; y > top - 16; y--) {
+						// Whole columns: surface pools sit near the top, underground ones anywhere from y 8 to 90.
+						for (int y = top; y >= level.getMinY(); y--) {
 							var state = chunk.getBlockState(new BlockPos(x, y, z));
 							if (state.is(ModBlocks.TIDE_VENT)) {
 								vents++;
 								helper.assertTrue(x == 8 && z == 8, "a vent sits in the middle of its chunk");
 								helper.assertTrue(state.getValue(TideVentBlock.BASIN) > 0, "generated vents are live");
 							} else if (state.is(ModBlocks.ICHOR)) {
-								ichor++;
+								if (y > top - 16) {
+									surfaceIchor++;
+								} else {
+									deepIchor++;
+								}
 							}
 						}
 					}
 				}
 			}
 		}
+		TheSift.LOGGER.info("Worldgen sample, 121 Meadow chunks: {} vents, {} surface ichor, {} deep ichor", vents, surfaceIchor, deepIchor);
 		helper.assertTrue(vents > 0, "tide basins in 121 Meadow chunks: " + vents);
-		helper.assertTrue(ichor > 0, "ichor in 121 Meadow chunks: " + ichor);
+		helper.assertTrue(surfaceIchor + deepIchor > 0, "ichor in 121 Meadow chunks: " + surfaceIchor + " near the surface, " + deepIchor + " deeper");
 		helper.succeed();
 	}
 }
