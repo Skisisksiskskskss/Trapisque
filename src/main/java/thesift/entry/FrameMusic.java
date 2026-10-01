@@ -5,7 +5,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -14,6 +13,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.Vec3;
 
+import thesift.registry.ModSounds;
 import thesift.block.SiftMembraneBlock;
 import thesift.registry.ModBlocks;
 import thesift.world.SiftKeys;
@@ -96,8 +96,7 @@ public final class FrameMusic {
 		}
 		if (changed) {
 			Vec3 c = frame.center();
-			level.playSound(null, BlockPos.containing(c), SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.BLOCKS, 2.0F, 0.6F);
-			level.playSound(null, BlockPos.containing(c), SoundEvents.PORTAL_TRIGGER, SoundSource.BLOCKS, 0.4F, 1.6F);
+			level.playSound(null, BlockPos.containing(c), ModSounds.FRAME_OPEN, SoundSource.BLOCKS, 2.0F, 1.0F);
 			level.sendParticles(ParticleTypes.GLOW, c.x, c.y, c.z, 40, frame.width() / 4.0, frame.height() / 4.0, frame.width() / 4.0, 0.0);
 		}
 		return changed;
@@ -115,6 +114,9 @@ public final class FrameMusic {
 			if (link.awake() && level.getNearestPlayer(c.x, c.y, c.z, 32, false) != null
 					&& level.isLoaded(frame.at(1, 1)) && !isOpen(level, frame)) {
 				level.sendParticles(ParticleTypes.NOTE, c.x, c.y, c.z, 3, frame.width() / 4.0, frame.height() / 4.0, frame.width() / 4.0, 0.0);
+				if (level.getRandom().nextInt(4) == 0) {
+					level.playSound(null, BlockPos.containing(c), ModSounds.FRAME_HUM, SoundSource.BLOCKS, 1.5F, 1.0F);
+				}
 			}
 		}
 	}

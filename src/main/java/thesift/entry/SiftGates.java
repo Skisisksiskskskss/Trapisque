@@ -17,6 +17,11 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.phys.Vec3;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.protocol.game.ClientboundSoundPacket;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundSource;
+import thesift.registry.ModSounds;
 import thesift.registry.ModBlocks;
 import thesift.world.TideBasin;
 import thesift.world.SiftKeys;
@@ -65,6 +70,16 @@ public final class SiftGates {
 		return null;
 	}
 
+	private static final TeleportTransition.PostTeleportTransition CROSSING_SOUND = SiftGates::playCrossingSound;
+
+	/** The crossing chime, heard by the traveller only (as vanilla's portal travel sound is). */
+	private static void playCrossingSound(Entity entity) {
+		if (entity instanceof ServerPlayer player && player.connection != null) {
+			player.connection.send(new ClientboundSoundPacket(BuiltInRegistries.SOUND_EVENT.wrapAsHolder(ModSounds.MEMBRANE_TRAVEL),
+					SoundSource.BLOCKS, player.getX(), player.getY(), player.getZ(), 0.8F, 1.0F, player.getRandom().nextLong()));
+		}
+	}
+
 	/** Never send anyone into stone: the arrival's two cells must have no collision. */
 	private static boolean arrivalClear(ServerLevel level, SiftFrame frame) {
 		BlockPos feet = BlockPos.containing(frame.arrival());
@@ -74,7 +89,7 @@ public final class SiftGates {
 
 	private static TeleportTransition arriveAt(ServerLevel level, SiftFrame frame, Entity entity) {
 		return new TeleportTransition(level, frame.arrival(), Vec3.ZERO, entity.getYRot(), entity.getXRot(),
-				TeleportTransition.PLAY_PORTAL_SOUND.then(TeleportTransition.PLACE_PORTAL_TICKET));
+				CROSSING_SOUND.then(TeleportTransition.PLACE_PORTAL_TICKET));
 	}
 
 	/** Builds a gate for {@code cityFrame} in the Sift: a healthy-sculk mound topped by a gatestone frame. */

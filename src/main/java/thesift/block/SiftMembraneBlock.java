@@ -9,7 +9,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
@@ -34,6 +33,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
+import thesift.registry.ModSounds;
 import thesift.entry.SiftGates;
 import thesift.registry.ModTags;
 import thesift.world.SiftKeys;
@@ -93,8 +93,8 @@ public class SiftMembraneBlock extends Block implements Portal {
 	@Override
 	public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource random) {
 		if (random.nextInt(120) == 0) {
-			level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, SoundEvents.AMETHYST_BLOCK_CHIME,
-					SoundSource.BLOCKS, 0.6F, 0.5F + random.nextFloat() * 0.3F, false);
+			level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, ModSounds.MEMBRANE_AMBIENT,
+					SoundSource.BLOCKS, 0.6F, 0.9F + random.nextFloat() * 0.2F, false);
 		}
 		if (random.nextInt(3) != 0) {
 			return;

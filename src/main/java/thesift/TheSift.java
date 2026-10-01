@@ -19,6 +19,7 @@ import thesift.registry.ModSounds;
 import thesift.registry.ModItems;
 import thesift.world.EndureRest;
 import thesift.world.TideClock;
+import thesift.world.TideCues;
 
 /**
  * Common (client + dedicated server) entrypoint for The Sift.
@@ -45,6 +46,7 @@ public final class TheSift implements ModInitializer {
 		EndureRest.init();
 		Offering.init();
 		FrameMusic.init();
+		TideCues.init();
 		LOGGER.info("The Sift initialized (unofficial fan project)");
 	}
 

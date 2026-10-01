@@ -2,7 +2,6 @@ package thesift.block.entity;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -10,6 +9,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
+import thesift.registry.ModSounds;
 import thesift.block.TideVentBlock;
 import thesift.registry.ModBlockEntities;
 import thesift.registry.ModBlocks;
@@ -62,11 +62,11 @@ public class TideVentBlockEntity extends BlockEntity {
 		} else if (this.layers < target) {
 			changed = fill(level, basin, this.layers);
 			this.layers++;
-			level.playSound(null, this.worldPosition, SoundEvents.LAVA_POP, SoundSource.BLOCKS, 0.6F, 0.5F);
+			level.playSound(null, this.worldPosition.above(this.layers), ModSounds.BASIN_FILL, SoundSource.BLOCKS, 1.0F, 1.0F);
 		} else if (this.layers > target) {
 			this.layers--;
 			changed = drain(level, basin, this.layers);
-			level.playSound(null, this.worldPosition, SoundEvents.BUCKET_FILL_LAVA, SoundSource.BLOCKS, 0.4F, 0.6F);
+			level.playSound(null, this.worldPosition.above(this.layers + 1), ModSounds.BASIN_DRAIN, SoundSource.BLOCKS, 1.0F, 1.0F);
 		}
 		return changed;
 	}

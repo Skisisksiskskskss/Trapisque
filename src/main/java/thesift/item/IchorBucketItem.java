@@ -5,7 +5,6 @@ import org.jspecify.annotations.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.BucketItem;
@@ -14,6 +13,7 @@ import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.phys.BlockHitResult;
 
+import thesift.registry.ModSounds;
 import thesift.registry.ModAttributes;
 
 /**
@@ -37,7 +37,7 @@ public class IchorBucketItem extends BucketItem {
 		if (!level.getBlockState(pos).isAir() && !level.getBlockState(pos).canBeReplaced()) {
 			return hitResult != null && this.emptyContents(user, level, hitResult.getBlockPos().relative(hitResult.getDirection()), null);
 		}
-		level.playSound(user, pos, SoundEvents.FIRE_EXTINGUISH, SoundSource.BLOCKS, 0.5F, 1.6F + level.getRandom().nextFloat() * 0.4F);
+		level.playSound(user, pos, ModSounds.ICHOR_EVAPORATE, SoundSource.BLOCKS, 1.0F, 0.9F + level.getRandom().nextFloat() * 0.2F);
 		if (level instanceof ServerLevel serverLevel) {
 			serverLevel.sendParticles(ParticleTypes.SOUL, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 8, 0.4, 0.4, 0.4, 0.02);
 			serverLevel.sendParticles(ParticleTypes.LARGE_SMOKE, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 6, 0.4, 0.4, 0.4, 0.0);
@@ -47,6 +47,6 @@ public class IchorBucketItem extends BucketItem {
 
 	@Override
 	protected void playEmptySound(@Nullable LivingEntity user, LevelAccessor level, BlockPos pos) {
-		level.playSound(user, pos, SoundEvents.BUCKET_EMPTY_LAVA, SoundSource.BLOCKS, 1.0F, 0.8F);
+		level.playSound(user, pos, ModSounds.BUCKET_EMPTY_ICHOR, SoundSource.BLOCKS, 1.0F, 1.0F);
 	}
 }

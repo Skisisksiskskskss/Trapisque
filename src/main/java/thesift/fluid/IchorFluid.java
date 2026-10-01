@@ -34,6 +34,7 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.Vec3;
 
+import thesift.registry.ModSounds;
 import thesift.registry.ModBlocks;
 import thesift.registry.ModFluids;
 import thesift.registry.ModItems;
@@ -94,6 +95,10 @@ public abstract class IchorFluid extends FlowingFluid {
 		}
 		if (level instanceof ServerLevel serverLevel) {
 			applySoulEffects(serverLevel, entity, serverLevel.getGameTime());
+			// A slosh every half second while moving through it.
+			if (entity.getDeltaMovement().horizontalDistanceSqr() > 1.0E-4 && (serverLevel.getGameTime() + entity.getId()) % 10 == 0 && !entity.isSilent()) {
+				serverLevel.playSound(null, entity.getX(), entity.getY(), entity.getZ(), ModSounds.ICHOR_WADE, entity.getSoundSource(), 0.6F, 0.9F + serverLevel.getRandom().nextFloat() * 0.2F);
+			}
 		}
 	}
 
@@ -162,8 +167,8 @@ public abstract class IchorFluid extends FlowingFluid {
 					pos.getZ() + random.nextDouble(), 0.0, 0.02, 0.0);
 		}
 		if (fluidState.isSource() && random.nextInt(300) == 0) {
-			level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, SoundEvents.LAVA_AMBIENT, SoundSource.AMBIENT,
-					0.15F, 0.5F + random.nextFloat() * 0.2F, false);
+			level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, ModSounds.ICHOR_AMBIENT, SoundSource.BLOCKS,
+					0.4F, 0.9F + random.nextFloat() * 0.2F, false);
 		}
 	}
 
@@ -219,7 +224,7 @@ public abstract class IchorFluid extends FlowingFluid {
 
 	@Override
 	public Optional<SoundEvent> getPickupSound() {
-		return Optional.of(SoundEvents.BUCKET_FILL_LAVA);
+		return Optional.of(ModSounds.BUCKET_FILL_ICHOR);
 	}
 
 	public static class Flowing extends IchorFluid {

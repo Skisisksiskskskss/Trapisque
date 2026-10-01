@@ -4,7 +4,8 @@ Step-by-step checklists the owner can run in-game. Produced at every gate.
 
 ## Preview `v0.1.0-alpha.preview` (2026-10-01): get in, watch the tide, get out
 The first playable build (D-018). **In it:** the Sift dimension and Singer's Meadow (block set I), the Tides (sky, light, stars, beds, Trills by day and glow petals by night), music reactions, the way in through an Ancient City and the way back, ichor, tide basins and ichor pools.
-**Not in it yet** (the rest of M1): creatures (the Blub), the Sift's own sounds and subtitles (vanilla stand-ins play), advancements, and the "breathing" hints on a frame nobody has touched.
+It has its own synthesized sounds, with subtitles: the offering, waking and opening, the membrane, the Tide turning (bells, a swell, a gong), basins filling and draining, ichor, and the Meadow's wind and far-off flute.
+**Not in it yet** (the rest of M1): the Blub's behaviour (a spawn egg exists, but its AI is only a basic pet's for now), advancements, and the "breathing" hints on a frame nobody has touched.
 
 ### Install (≈5 minutes)
 1. Minecraft Java **26.3**, **Fabric Loader 0.19.5** or newer, and **Fabric API 0.161.0+26.3** in `mods/`.
@@ -28,8 +29,8 @@ The first playable build (D-018). **In it:** the Sift dimension and Singer's Mea
 3. Weather never happens in the Sift.
 
 ### P3. Ichor, basins and pools (≈15 minutes)
-1. Find a **tide basin**: a rounded pit with a pale tide-sand floor, a terrace ring and a vent in the middle. **Expect:** empty in Thrive; in rising Flow it fills one layer at a time (3 layers); full through Endure; it drains through falling Flow.
-2. Find an **ichor pool** (violet liquid in the hills and caves). Wade in. **Expect:** you are slowed (but can climb out), set on fire for a few seconds, and lose XP; with your head under, a thick violet haze (1/2/4 points a second on Easy/Normal/Hard); soul flames rise. With Fire Resistance you don't burn, but the drain goes on. Creative players are left alone.
+1. Find a **tide basin**: a rounded pit that steps down in one-block rings to a pale tide-sand floor with a vent in the middle. **Expect:** empty in Thrive; in rising Flow it fills one layer at a time (3 layers); full through Endure; it drains through falling Flow.
+2. Find an **ichor pool** (violet liquid in the hills and caves). Wade in. **Expect:** you are slowed (but a jump still clears the bank), set on fire for a few seconds, and lose XP; with your head under, a thick violet haze (1/2/4 points a second on Easy/Normal/Hard); soul flames rise. With Fire Resistance you don't burn, but the drain goes on. Creative players are left alone.
 3. Fill a bucket with ichor. **Expect:** it pours in the Sift; emptied in the Overworld it evaporates in soul smoke.
 4. **Tell me:** does the drain feel like pressure or punishment? Is wading too slow or too quick?
 
@@ -41,7 +42,7 @@ The first playable build (D-018). **In it:** the Sift dimension and Singer's Mea
 5. **Tell me:** what reads well, and what looks off (colours, textures, the membrane's pattern, the ichor surface)?
 
 ### Known issues in this preview
-- Sounds are vanilla stand-ins; so are the particles of the frame, the membrane and ichor (the sky's motes and the music petals are the Sift's own).
+- The frame's, membrane's and ichor's particles are vanilla stand-ins (the sky's motes and the music petals are the Sift's own). The XP drain uses vanilla's soul sound.
 - The membrane and ichor show the same animation frame on every block (as vanilla water does); a faint per-block rhythm can show on wide sheets.
 - Leaving through a gate always returns you to the frame you entered by. Dying in the Sift sends you to your Overworld spawn.
 - Unofficial fan project, not affiliated with or endorsed by Mojang Studios or Microsoft.

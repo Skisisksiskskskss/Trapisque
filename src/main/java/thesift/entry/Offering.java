@@ -6,7 +6,6 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -17,6 +16,7 @@ import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
+import thesift.registry.ModSounds;
 import thesift.world.SoulPoints;
 
 /**
@@ -103,13 +103,13 @@ public final class Offering {
 			level.sendParticles(ParticleTypes.GLOW, p.getX() + 0.5, p.getY() + 0.5, p.getZ() + 0.5, 1, 0.4, 0.4, 0.4, 0.0);
 		}
 		if (level.getGameTime() % 8 == 0) {
-			level.playSound(null, touched, SoundEvents.SCULK_CATALYST_BLOOM, SoundSource.BLOCKS, 0.6F, 0.8F + link.charge() * 0.6F / PRICE);
+			level.playSound(null, touched, ModSounds.FRAME_OFFER, SoundSource.BLOCKS, 0.8F, 0.85F + link.charge() * 0.5F / PRICE);
 		}
 	}
 
 	private static void wake(ServerLevel level, SiftFrame frame) {
 		Vec3 c = frame.center();
-		level.playSound(null, BlockPos.containing(c), SoundEvents.BEACON_ACTIVATE, SoundSource.BLOCKS, 1.5F, 0.7F);
+		level.playSound(null, BlockPos.containing(c), ModSounds.FRAME_WAKE, SoundSource.BLOCKS, 2.0F, 1.0F);
 		for (BlockPos p : frame.border()) {
 			level.sendParticles(ParticleTypes.GLOW, p.getX() + 0.5, p.getY() + 0.5, p.getZ() + 0.5, 2, 0.3, 0.3, 0.3, 0.0);
 		}
