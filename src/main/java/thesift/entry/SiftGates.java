@@ -18,6 +18,7 @@ import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.phys.Vec3;
 
 import thesift.registry.ModBlocks;
+import thesift.world.TideBasin;
 import thesift.world.SiftKeys;
 
 /**
@@ -124,6 +125,17 @@ public final class SiftGates {
 		return pos.getY();
 	}
 
+	/**
+	 * Sets a block, first touching any block entity there so a freshly generated one (still pending
+	 * in its chunk) is removed with the block instead of being promoted onto the new block later.
+	 */
+	private static void replace(ServerLevel level, BlockPos pos, BlockState state) {
+		if (level.getBlockState(pos).hasBlockEntity()) {
+			level.getBlockEntity(pos);
+		}
+		level.setBlock(pos, state, Block.UPDATE_ALL);
+	}
+
 	private static boolean isLoose(BlockState state) {
 		return state.isAir() || state.canBeReplaced() || state.is(BlockTags.LOGS) || state.is(BlockTags.LEAVES);
 	}
@@ -140,16 +152,23 @@ public final class SiftGates {
 				}
 				int columnTop = top - 1 - (int) Math.max(0, (d - PLATEAU_RADIUS) * 0.6);
 				pos.set(cx + dx, columnTop, cz + dz);
-				level.setBlock(pos, ModBlocks.HEALTHY_SCULK.defaultBlockState(), Block.UPDATE_ALL);
+				replace(level, pos, ModBlocks.HEALTHY_SCULK.defaultBlockState());
 				pos.move(Direction.DOWN);
 				while (pos.getY() > level.getMinY() && isLoose(level.getBlockState(pos))) {
-					level.setBlock(pos, ModBlocks.HYMNSTONE.defaultBlockState(), Block.UPDATE_ALL);
+					replace(level, pos, ModBlocks.HYMNSTONE.defaultBlockState());
 					pos.move(Direction.DOWN);
+				}
+				// A tide basin under the hill is retired: its vent would refill whatever pocket is left.
+				for (int y = pos.getY(); y > pos.getY() - TideBasin.DEPTH - 2 && y > level.getMinY(); y--) {
+					BlockPos below = new BlockPos(cx + dx, y, cz + dz);
+					if (level.getBlockState(below).is(ModBlocks.TIDE_VENT)) {
+						replace(level, below, ModBlocks.HYMNSTONE.defaultBlockState());
+					}
 				}
 				for (int y = columnTop + 1; y <= clearTo; y++) {
 					pos.set(cx + dx, y, cz + dz);
 					if (!level.getBlockState(pos).isAir()) {
-						level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+						replace(level, pos, Blocks.AIR.defaultBlockState());
 					}
 				}
 			}
