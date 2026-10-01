@@ -113,22 +113,28 @@ Notes on the calls:
 FLOAT (in water) ──────────────────────────────────────────── always first
 PANIC (hurt) ─► flee 2 s ─► back to normal
 SIT (befriended, ordered) ── use toggles, like a cat
-FOLLOW OWNER (befriended; owner > 6 blocks away and moving): hop-walk after them; teleport at > 12
-        blocks (vanilla TamableAnimal: TELEPORT_WHEN_DISTANCE_IS_SQ = 144)
+FOLLOW OWNER (befriended; owner > 6 blocks away): vanilla FollowOwnerGoal (hop-walk after them;
+        teleport at > 12 blocks, TamableAnimal.TELEPORT_WHEN_DISTANCE_IS_SQ = 144). Our one addition:
+        while the owner stands still in Endure, SHELTER below takes over (the "is the owner moving"
+        check is ours, not vanilla's)
 SHELTER (Endure; or night outside the Sift): untamed blubs walk to a roof within 12 blocks
         (songwood leaves first, then any leaves, then any solid block overhead) and CURL until the
         Tide changes; with no roof in reach they curl where they stand. A befriended blub curls only
         when its owner has stood still for 5 s, under a roof within 6 blocks or at the owner's feet,
         and uncurls to follow as soon as the owner moves away
-WATERLINE (Flow, a basin within 16): walk to the basin's current waterline (the first dry terrace or
-        rim cell next to the top ichor layer) and potter along it as it moves
+WATERLINE (Flow, a basin within 16): walk to the basin's current waterline and potter along it as
+        it moves, dipping into the edge now and then: the top ichor layer is one block deep over each
+        ring (system_tides.md), so the waterline is where blubs bathe every cycle
 LISTEN + DANCE (music heard in the last 10 s: note blocks and goat horns within 16, jukeboxes within
         10): face the source and play `listen`; untamed blubs drift toward it and hop to the beat
-STACK (only while listening, in Thrive or outside the Sift): listening blubs within 3 blocks of each
-        other climb onto one another, up to 3 tall, and sway; the tower topples 15–40 s after the
-        music stops, or at once if the bottom blub moves or is hurt, the Tide changes, or a
-        befriended rider's owner walks away
-BATHE (Thrive, ichor within 8, now and then): walk into ichor and float for 10–30 s
+STACK (starts only while listening, in Thrive or outside the Sift): listening blubs within 3 blocks
+        of each other climb onto one another, up to 3 tall, and sway. The goal claims MOVE for the
+        bottom blub, which stands and sways instead of drifting. Once built, the tower doesn't need the
+        music: it topples 15–40 s after the music stops, or at once if the bottom blub moves more than
+        0.5 block, is hurt, the Tide changes, or a befriended rider's owner walks away
+BATHE (Thrive, ichor within 8, now and then): walk into a cell where the ichor is one block deep over
+        a solid floor and sit in it for 10–30 s, shown "up to the belly" by a model offset (ichor has
+        no buoyancy, so a blub never wades deeper than one block on purpose)
 STROLL / LOOK AROUND
 ```
 - **AI choice: goal selector**, as the rabbit, cat and wolf use (VANILLA_ANALOGS E3: goals for simple
@@ -146,7 +152,9 @@ STROLL / LOOK AROUND
    befriended yet.
 2. **Befriend.** A note **played by a player's own hand** (a note block they click or punch, or a goat
    horn they blow: both game events name the player; a redstone-played note names no one) befriends
-   **the nearest untamed listening blub within 4 blocks of that player** that can see them. One note,
+   **the nearest untamed blub within 4 blocks of that player that was already listening** and can see
+   them. The befriend check runs before the note marks blubs as listening, so the first note of a
+   tune only gets attention; the next one befriends. One note,
    one blub. Hearts, a happy squeak and a `hop`. The 4-block rule copies the allay (you hand it the
    item) and shows which blub is "the one watching"; it also keeps a long tune near a herd from
    befriending the whole herd by accident.
@@ -157,20 +165,25 @@ STROLL / LOOK AROUND
    empty hand on a sitting blub releases it: it hops away untamed. Vanilla pets have no release; we
    add one so a player who befriends a crowd isn't stuck with it.
 6. **Its voice.** At befriending, a blub takes a fixed interval for its echo: +0, +4 or +7 semitones
-   (root, third, fifth), the least used among its owner's blubs so the first three make a chord.
+   (root, third, fifth), cycling through a per-player counter (a Fabric attachment), so any three a
+   player befriends in a row make a chord.
 
 ### Reactions
 - **Players:** untamed blubs ignore players unless hurt (then panic). Befriended: follow the owner.
 - **Music:** listen and dance (all); the **echo** (befriended only): when its owner plays a note
   within 16, the blub answers 0.3 s later with its squeak at the owner's note plus its own interval
-  (clamped to note-block notes 0–24; pitch as vanilla's `NoteBlock.getPitchFromNote`). A goat horn,
+  (pitch as vanilla's `NoteBlock.getPitchFromNote`; past note 24 it drops an octave rather than
+  clamping, so high chords stay chords). The echo is a plain sound and particle: it emits no
+  `note_block_play` or `instrument_play` game event, so echoes never open frames or set off other
+  blubs. A goat horn,
   or a note block with a mob head on it, has no note: the echo then uses note 12 (pitch 1.0). Each
   answer also shows vanilla's note particle above the blub, coloured by note / 24 as
   `NoteBlock.triggerEvent` does, so the echo reads without sound (mission §7.6). Several befriended
   blubs answer together: a chord. At most one answer per blub per 0.5 s.
 - **Tide herald** (befriended only, in the Sift): ~30 s before each Flow begins (the end of Thrive and
   the end of Endure) it gets restless: short hops and a rising chirp every few seconds, with a small
-  note particle. Untamed blubs simply switch behaviour when the Tide changes.
+  note particle. Restless wakes a curled blub (the end of Endure is when it matters). Untamed blubs
+  simply switch behaviour when the Tide changes.
 - **Souls / vibrations:** none in M1 (no XP interaction; it isn't a vibration listener).
 - **Light:** none; its belly glows in Endure and at night (render only).
 - **Ichor:** immune (in `#thesift:ichor_adapted`): no slow, no burn, no drain; it floats in it.
@@ -207,11 +220,14 @@ STROLL / LOOK AROUND
 - Drops nothing but 1–3 XP (the axolotl precedent). No dead-end drops; a pet isn't harvested.
 
 ## Spawning
-- Singer's Meadow, **creature** category, weight 10, groups 2–4, at world generation and by the
-  vanilla creature spawner; on healthy sculk or tide sand, with raw brightness above 8 (the vanilla
-  animal rule, `Animal.isBrightEnoughToSpawn`).
-- **Not in Endure, for free:** Endure's sky light is 4 (system_tides.md), so the light rule alone
-  keeps blubs from spawning then; blubs already out shelter.
+- Singer's Meadow, **creature** category, weight 10, groups 2–4; on healthy sculk or tide sand, with
+  raw brightness above 8 (the vanilla animal rule, `Animal.isBrightEnoughToSpawn`).
+- **At world generation:** the biome's `creature_spawn_probability` is 0.03, so about one group per
+  30 chunks, independent of the Tide (a chunk generated in Endure still gets its blubs).
+- **Natural spawning** (the vanilla creature spawner, capped by the creature mob cap): **not in
+  Endure.** The light rule alone would not stop it: `isBrightEnoughToSpawn` reads stored sky light,
+  which stays 15 under open sky, and Endure's darker sky only changes `skyDarken`. So the spawn
+  predicate adds `Tide.current(level) != ENDURE` for NATURAL spawns. Blubs already out shelter.
 - **Despawn:** never (an animal), so the meadow keeps its blubs.
 - **Not at home:** blubs don't spawn outside the Sift; a befriended one can live there.
 
@@ -239,7 +255,8 @@ STROLL / LOOK AROUND
 | Name-tagged | Keeps the name; "Bubbles" squeaks differently (Could) |
 | Boats / minecarts | Can ride, like small animals |
 | The membrane | No blub walks through a membrane on its own: the blub type is in `#thesift:cannot_cross`, so untamed blubs never wander into an Ancient City. When its owner crosses, a befriended blub that isn't sitting and is within 16 blocks of where the owner entered is brought along to the arrival (D-016); sitting blubs stay |
-| Leashed at the membrane | The leash drops (as vanilla leashes do across dimensions); the blub still comes along if it qualifies |
+| Leashed at the membrane | A leash its owner holds comes along: 26.3 copies leash data when an entity changes dimension and re-attaches it by UUID. A blub leashed to anything else (a fence knot, another player) stays behind like a sitting one, so no phantom knot appears in the other world |
+| Arriving in an Ancient City | Accepted risk, as with wolves: a blub's steps and hops are vibrations a warden can hear. A sitting blub makes none |
 | Nether portals | Vanilla rules (it can be pushed through; it doesn't follow on its own) |
 | Owner offline / dead | Vanilla behaviour: with no owner to find (`getOwner()` is null) the follow goal never starts, so it wanders nearby until the owner returns |
 | Peaceful | Exists (passive) |
@@ -248,30 +265,42 @@ STROLL / LOOK AROUND
 | Spectators | Ignored for listening, befriending and following |
 | Stack in a 2-high space | Doesn't stack if there is no room above |
 | Sitting or following blubs | Never stack: sitting blubs sit; a blub following its owner leaves a tower first (vanilla pets can't reach their owner while riding) |
-| Stack toppling off a cliff | Toppled blubs get no fall damage under 4 blocks (a soft critter) |
+| Falls | A soft critter: `SAFE_FALL_DISTANCE` 4 for all falls (topples included) |
 
 ## Tech notes
 - **Class:** `Blub extends TamableAnimal` (owner, sit, teleport-to-owner from vanilla). Breeding is
   disabled until M2 (`isFood` false, no offspring).
-- **Synced data:** `LISTENING_TICKS` (int), `CURLED` (bool), `RESTLESS` (bool), `VARIANT` (int, Meadow
-  only in M1). Saved only: `ECHO_INTERVAL` (0, 4 or 7). Animation states (E5) start client-side from synced data and entity events.
+- **Synced data:** `LISTENING` (bool: set when listening starts and ends, never ticked, so a crowd at
+  a jukebox sends no packet storm), `CURLED` (bool), `RESTLESS` (bool), `VARIANT` (int, Meadow only in
+  M1). Saved only: `ECHO_INTERVAL` (0, 4 or 7) and the listening end tick. Animation states (E5) start client-side from synced data and entity events.
 - **Music hearing:** a `GameEventListener` per blub would cost a listener each; instead the existing
   game-event hook (D-020, `ServerLevelGameEventMixin`) gains a second consumer that looks up blubs in
   a 16-block box only for music events (rare). The mixin must pass the event's `GameEvent.Context` on:
-  the hand that played comes from its source entity, and the note from its block state.
+  the hand that played comes from its source entity. The note comes from the world, not the context
+  (a note block's context carries no block state): `level.getBlockState(BlockPos.containing(pos))`,
+  read only if it is a note block. Recorded in D-020 when implemented.
 - **Crossing with the owner:** `SiftGates.destination` runs for every entity that crosses (and from
   tests), so it isn't a "player crossed" signal. Instead it records, for players only, where they
-  entered; Fabric's `ServerEntityLevelChangeEvents.AFTER_PLAYER_CHANGE_LEVEL` then teleports the
-  owner's eligible blubs from around that spot to the player's arrival. Blubs never use the portal
-  themselves (`#thesift:cannot_cross`).
+  entered, keyed by player and stamped with the game tick. Fabric's
+  `ServerEntityLevelChangeEvents.AFTER_PLAYER_CHANGE_LEVEL` (which also fires for Nether and End
+  portals, `/tp` and respawns) consumes the record once, and acts only on an Overworld↔Sift change
+  recorded within the last few ticks: it then teleports the owner's eligible blubs from around that
+  spot to the player's arrival. Blubs never use the portal themselves (`#thesift:cannot_cross`).
 - **Stacking without steering:** a mob riding a mob steers it by default (`Mob.getControllingPassenger`)
   and the bottom mob's move and look goals switch off (`Mob.updateControlFlags`). `Blub` overrides
   `getControllingPassenger` to return null, so riders never steer and the bottom blub keeps its goals.
 - **Pathfinding:** ichor isn't water or lava to the path finder; blubs walk through it. Bathing picks
-  an ichor cell with a solid floor ≤ 2 deep.
-- **Expected counts:** ~1 group per 4–6 chunks; under 30 loaded around a player.
+  an ichor cell one block deep over a solid floor.
+- **Search costs:** every blub reacting to the same Tide change would search at once, so each waits a
+  random 0–5 s first. Roof search is bounded to 12 blocks and reads heightmap columns (a roof is a
+  column whose MOTION_BLOCKING height is above the blub), not a block scan. Basins are found from
+  the tide vents' block entities in the blub's own and neighbouring chunks, never by scanning.
+- **Expected counts:** about one group per 30 chunks from generation (~40 blubs in a 10-chunk view
+  of all-Meadow), plus what the creature spawner adds up to the vanilla creature cap. Blubs don't
+  despawn, so this is the steady state.
 - **Risks:** stacking via riding (WP-034 spike: if riding stacks feel bad, stacking moves to M2 per
-  PLAN.md's exit ramp); the echo's pitch mapping (vanilla `NoteBlock.getPitchFromNote`).
+  PLAN.md's exit ramp); the echo's pitch mapping (vanilla `NoteBlock.getPitchFromNote`); if basins
+  ever fail (D-017 #7's fallback), Flow's waterline behaviour follows static pool edges instead.
 
 ## BALANCE
 The stats table above is the BALANCE.md entry (copied there on freeze).
@@ -294,3 +323,17 @@ The stats table above is the BALANCE.md entry (copied there on freeze).
   particle; the spawn light rule; behaviour outside the Sift; shelter without a roof; stacking without
   steering; an honest "decision" paragraph; walking vs hopping; regeneration only at rest; the
   herald's warnings moved to the two unannounced Tide changes; leashes at the membrane.
+- **Round 2 (fresh reviewer): FAIL.** Scores: template 5, canon 4, vanilla-feel 4, player value 4,
+  readability 4, feasibility 3, bible 4. Round 1's fixes held. Must-fix, all fixed:
+  1. "Not in Endure, for free" was false (spawn light reads stored sky light, 15 under open sky) →
+     an explicit Tide check for natural spawns; generation spawns stay Tide-free.
+  2. Leashes do cross dimensions in 26.3 (data copied, re-attached by UUID); fence-tied blubs would
+     make phantom knots → owner-held leashes come along, others stay.
+  3. A note block's event context has no block state → the note is read from the world.
+  Should-fix, taken: a synced boolean instead of a ticking counter; bathing one block deep (no
+  buoyancy) and at every Flow's waterline; the first note never befriends; the stack's base holds
+  still and towers outlive the music; one-shot, tick-stamped crossing records; honest spawn numbers
+  (`creature_spawn_probability` 0.03); staggered, bounded searches; the D-017 fallback; Ancient City
+  arrivals. Notes taken: the echo emits no game events; high chords drop an octave; intervals cycle
+  through a per-player counter; restless wakes a curled blub; FOLLOW's addition named as ours;
+  `SAFE_FALL_DISTANCE` 4.
