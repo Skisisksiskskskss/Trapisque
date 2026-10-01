@@ -80,7 +80,7 @@
           "value": [
             {
               "particle": {
-                "type": "minecraft:spore_blossom_air"
+                "type": "thesift:trill"
               },
               "probability": 0.002
             }
@@ -95,9 +95,9 @@
           "value": [
             {
               "particle": {
-                "type": "minecraft:soul"
+                "type": "thesift:glow_petal"
               },
-              "probability": 8.0E-4
+              "probability": 0.0012
             }
           ]
         },

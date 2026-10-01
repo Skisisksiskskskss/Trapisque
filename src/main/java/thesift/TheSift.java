@@ -13,6 +13,7 @@ import thesift.registry.ModBlocks;
 import thesift.registry.ModFeatureTypes;
 import thesift.registry.ModCreativeTab;
 import thesift.registry.ModFluids;
+import thesift.registry.ModParticles;
 import thesift.registry.ModItems;
 import thesift.world.EndureRest;
 import thesift.world.TideClock;
@@ -29,6 +30,7 @@ public final class TheSift implements ModInitializer {
 	@Override
 	public void onInitialize() {
 		ModAttributes.init();
+		ModParticles.init();
 		ModFluids.init();
 		ModBlocks.init();
 		ModBlockEntities.init();

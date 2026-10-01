@@ -25,7 +25,6 @@ import thesift.registry.ModBlockEntities;
 public class TideVentBlock extends BaseEntityBlock {
 	public static final IntegerProperty BASIN = IntegerProperty.create("basin", 0, 5);
 
-	@SuppressWarnings("this-escape") // vanilla blocks register their default state the same way
 	public static int basinValue(int inner) {
 		return inner + 1;
 	}
@@ -34,6 +33,7 @@ public class TideVentBlock extends BaseEntityBlock {
 		return state.getValue(BASIN) - 1;
 	}
 
+	@SuppressWarnings("this-escape") // vanilla blocks register their default state the same way
 	public TideVentBlock(BlockBehaviour.Properties properties) {
 		super(properties);
 		this.registerDefaultState(this.stateDefinition.any().setValue(BASIN, 0));

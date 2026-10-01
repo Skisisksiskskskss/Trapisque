@@ -78,6 +78,7 @@ import net.minecraft.world.timeline.Timeline;
 
 import thesift.registry.ModAttributes;
 import thesift.registry.ModBlocks;
+import thesift.registry.ModParticles;
 import thesift.world.SiftFeatures;
 import thesift.world.SiftKeys;
 import thesift.world.Tide;
@@ -148,12 +149,11 @@ final class SiftWorldgen {
 						.addKeyframe(FALLING, 0.5F).addKeyframe(MID_FALLING, 0.0F))
 				.addTrack(EnvironmentAttributes.STAR_ANGLE, t -> t
 						.addKeyframe(THRIVE, 0.0F).addKeyframe(ENDURE, 0.0F).addKeyframe(FALLING, 180.0F).addKeyframe(MID_FALLING, 180.0F))
-				// Ambient motes: Thrive drifting motes, Endure soul motes (vanilla particles until the
-				// WP-041 Trill art lands).
+				// Ambient motes (rules.md): Trills drift up through Thrive, glow petals fall through Endure.
 				.addTrack(EnvironmentAttributes.AMBIENT_PARTICLES, t -> t.setEasing(EasingType.CONSTANT)
-						.addKeyframe(THRIVE, AmbientParticle.of(ParticleTypes.SPORE_BLOSSOM_AIR, 0.002F))
+						.addKeyframe(THRIVE, AmbientParticle.of(ModParticles.TRILL, 0.002F))
 						.addKeyframe(RISING, List.of())
-						.addKeyframe(ENDURE, AmbientParticle.of(ParticleTypes.SOUL, 0.0008F))
+						.addKeyframe(ENDURE, AmbientParticle.of(ModParticles.GLOW_PETAL, 0.0012F))
 						.addKeyframe(FALLING, List.of()))
 				// Night-bound vanilla behaviour follows Endure (rules.md).
 				.addTrack(EnvironmentAttributes.BEES_STAY_IN_HIVE, t -> t
