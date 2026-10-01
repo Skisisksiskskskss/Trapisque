@@ -30,6 +30,7 @@ below allows.
 | `ichor_teal` | `#0d2b3b` `#155466` `#1e8088` `#3cc0bd` `#a8f6ec` | Ichor's teal body and cyan sheen |
 | `membrane` | `#0b3f55` `#13687e` `#2598a8` `#55c8cc` `#a3eee8` `#e0fffa` | The Sift membrane's cyan shimmer (translucent) |
 | `pail` | `#2b2b33` `#4b4b56` `#6d6d7a` `#9696a2` `#c2c2cb` `#e6e6ec` | Bucket metal |
+| `blub` | `#2c4f8f` `#3f6fb8` `#5f93d8` `#8ab6ee` `#b9d8fa` `#e6f3ff` | The Blub's soft pale blue: the only pale-blue mob in the Sift (mob_blub.md) |
 | `particle` | `#f0cf8c` `#f9e6b0` `#fff4d6` `#fffdf5` `#ffd9d2` | Glow cores, trill motes |
 
 ## Texture → allowed ramps

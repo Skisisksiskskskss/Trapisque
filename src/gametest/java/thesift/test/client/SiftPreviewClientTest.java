@@ -18,6 +18,7 @@ import net.minecraft.world.level.levelgen.Heightmap;
 
 import thesift.TheSift;
 import thesift.block.MusicNearby;
+import thesift.client.fog.IchorFogEnvironment;
 import thesift.block.entity.TideVentBlockEntity;
 import thesift.registry.ModBlocks;
 import thesift.world.SiftKeys;
@@ -50,6 +51,7 @@ public final class SiftPreviewClientTest implements FabricClientGameTest {
 			shoot(context, world, "thesift:thrive", "sift_thrive_close");
 			basinShots(context, world);
 			musicShot(context, world);
+			ichorFogShot(context, world);
 		}
 		// The consistent test world is flat without structures; the entry needs a real Ancient City.
 		try (TestSingleplayerContext world = context.worldBuilder().setUseConsistentSettings(false).adjustSettings(s -> {
@@ -60,6 +62,29 @@ public final class SiftPreviewClientTest implements FabricClientGameTest {
 			world.getServer().runCommand("gamemode spectator @a");
 			entryShots(context, world);
 		}
+	}
+
+	/** WP-044: the view from inside ichor (creative: spectators see through liquids, as with lava). */
+	private static void ichorFogShot(ClientGameTestContext context, TestSingleplayerContext world) {
+		world.getServer().runCommand("execute in thesift:the_sift run time of thesift:tides set thesift:thrive");
+		BlockPos ground = world.getServer().computeOnServer(server -> {
+			ServerLevel sift = server.getLevel(SiftKeys.LEVEL);
+			int y = sift.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, 60, 60);
+			return new BlockPos(60, y, 60);
+		});
+		world.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute in thesift:the_sift run fill %d %d %d %d %d %d thesift:ichor",
+				ground.getX() - 3, ground.getY(), ground.getZ() - 3, ground.getX() + 3, ground.getY() + 3, ground.getZ() + 3));
+		world.getServer().runCommand("gamemode creative @a");
+		world.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute in thesift:the_sift run tp @a %d %d %d 30 0",
+				ground.getX(), ground.getY() + 1, ground.getZ()));
+		world.getConnection().waitForChunksRender();
+		context.waitTicks(20);
+		boolean inIchor = context.computeOnClient(client -> IchorFogEnvironment.eyesInIchor(client.player));
+		if (!inIchor) {
+			throw new AssertionError("the camera should be inside ichor");
+		}
+		context.takeScreenshot("wp044_inside_ichor");
+		world.getServer().runCommand("gamemode spectator @a");
 	}
 
 	/** WP-042 §3.2: a note block's sound makes the healthy sculk around it shed glowing petals. */

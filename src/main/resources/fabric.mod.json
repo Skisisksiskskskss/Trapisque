@@ -31,5 +31,6 @@
 	},
 	"mixins": [
 		"thesift.mixins.json"
-	]
+	],
+	"accessWidener": "thesift.classtweaker"
 }

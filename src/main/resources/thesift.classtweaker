@@ -1,0 +1,3 @@
+classTweaker	v1	official
+# WP-044: the fog inside ichor joins vanilla's fog environments (no mixin; D-013, PLAN WP-044).
+accessible field net/minecraft/client/renderer/fog/FogRenderer FOG_ENVIRONMENTS Ljava/util/List;
