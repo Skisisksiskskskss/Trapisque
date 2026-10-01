@@ -1,7 +1,15 @@
 {
   "variants": {
-    "": {
-      "model": "thesift:block/tide_sand"
-    }
+    "": [
+      {
+        "model": "thesift:block/tide_sand"
+      },
+      {
+        "model": "thesift:block/tide_sand_2"
+      },
+      {
+        "model": "thesift:block/tide_sand_3"
+      }
+    ]
   }
 }

@@ -1,16 +1,34 @@
 {
   "variants": {
-    "axis=x": {
-      "model": "thesift:block/songwood_log",
-      "x": 90,
-      "y": 90
-    },
-    "axis=y": {
-      "model": "thesift:block/songwood_log"
-    },
-    "axis=z": {
-      "model": "thesift:block/songwood_log",
-      "x": 90
-    }
+    "axis=x": [
+      {
+        "model": "thesift:block/songwood_log",
+        "x": 90,
+        "y": 90
+      },
+      {
+        "model": "thesift:block/songwood_log_2",
+        "x": 90,
+        "y": 90
+      }
+    ],
+    "axis=y": [
+      {
+        "model": "thesift:block/songwood_log"
+      },
+      {
+        "model": "thesift:block/songwood_log_2"
+      }
+    ],
+    "axis=z": [
+      {
+        "model": "thesift:block/songwood_log",
+        "x": 90
+      },
+      {
+        "model": "thesift:block/songwood_log_2",
+        "x": 90
+      }
+    ]
   }
 }

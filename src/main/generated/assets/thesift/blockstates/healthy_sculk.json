@@ -1,7 +1,51 @@
 {
   "variants": {
-    "": {
-      "model": "thesift:block/healthy_sculk"
-    }
+    "": [
+      {
+        "model": "thesift:block/healthy_sculk"
+      },
+      {
+        "model": "thesift:block/healthy_sculk",
+        "y": 90
+      },
+      {
+        "model": "thesift:block/healthy_sculk",
+        "y": 180
+      },
+      {
+        "model": "thesift:block/healthy_sculk",
+        "y": 270
+      },
+      {
+        "model": "thesift:block/healthy_sculk_2"
+      },
+      {
+        "model": "thesift:block/healthy_sculk_2",
+        "y": 90
+      },
+      {
+        "model": "thesift:block/healthy_sculk_2",
+        "y": 180
+      },
+      {
+        "model": "thesift:block/healthy_sculk_2",
+        "y": 270
+      },
+      {
+        "model": "thesift:block/healthy_sculk_3"
+      },
+      {
+        "model": "thesift:block/healthy_sculk_3",
+        "y": 90
+      },
+      {
+        "model": "thesift:block/healthy_sculk_3",
+        "y": 180
+      },
+      {
+        "model": "thesift:block/healthy_sculk_3",
+        "y": 270
+      }
+    ]
   }
 }

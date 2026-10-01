@@ -1,7 +1,12 @@
 {
   "variants": {
-    "": {
-      "model": "thesift:block/songwood_leaves"
-    }
+    "": [
+      {
+        "model": "thesift:block/songwood_leaves"
+      },
+      {
+        "model": "thesift:block/songwood_leaves_2"
+      }
+    ]
   }
 }

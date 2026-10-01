@@ -11,6 +11,7 @@ below allows.
 - Alpha is free for fully transparent pixels (cutout plants, leaves, particles) and for the two translucent strips
   (membrane 176–224); every visible pixel's RGB must still come from a ramp.
 - Hue shifts along a ramp on purpose: shadows lean cooler, highlights warmer, as vanilla ramps do.
+- **Tiling:** every block texture tiles seamlessly and avoids features the eye can follow from block to block (no lines or tufts on a grid). Ground blocks ship variants (`_2`, `_3`), and healthy sculk's top also takes random rotations, as vanilla grass does.
 
 ## Ramps
 
@@ -36,18 +37,26 @@ below allows.
 | Texture (under `assets/thesift/textures/`) | Ramps |
 |---|---|
 | `block/hymnstone.png` | hymnstone |
+| `block/hymnstone_2.png` | hymnstone |
+| `block/hymnstone_3.png` | hymnstone |
 | `block/hymnstone_bricks.png` | hymnstone |
 | `block/healthy_sculk_top.png` | healthy_sculk |
+| `block/healthy_sculk_top_2.png` | healthy_sculk |
+| `block/healthy_sculk_top_3.png` | healthy_sculk |
 | `block/healthy_sculk_side.png` | healthy_sculk, hymnstone |
 | `block/healthy_sculk_grass.png` | healthy_sculk |
 | `block/tall_healthy_sculk_grass_bottom.png` | healthy_sculk |
 | `block/tall_healthy_sculk_grass_top.png` | healthy_sculk |
 | `block/songwood_log.png` | songwood_bark, flute |
+| `block/songwood_log_2.png` | songwood_bark, flute |
 | `block/songwood_log_top.png` | songwood_bark, songwood_planks, flute |
 | `block/songwood_planks.png` | songwood_planks |
 | `block/songwood_leaves.png` | songwood_leaves |
+| `block/songwood_leaves_2.png` | songwood_leaves |
 | `block/songwood_sapling.png` | songwood_bark, songwood_leaves, flute |
 | `block/tide_sand.png` | tide_sand |
+| `block/tide_sand_2.png` | tide_sand |
+| `block/tide_sand_3.png` | tide_sand |
 | `block/tide_vent_top.png` | hymnstone, ichor_violet, ichor_teal |
 | `block/tide_vent_side.png` | hymnstone, ichor_violet, ichor_teal |
 | `block/gatestone.png` | gatestone, hymnstone, glyph |

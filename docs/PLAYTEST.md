@@ -3,8 +3,8 @@
 Step-by-step checklists the owner can run in-game. Produced at every gate.
 
 ## Preview `v0.1.0-alpha.preview` (2026-10-01): get in, watch the tide, get out
-The first playable build (D-018). **In it:** the Sift dimension and Singer's Meadow (block set I), the Tides (sky, light, stars, beds), the way in through an Ancient City and the way back, ichor, tide basins and ichor pools.
-**Not in it yet** (the rest of M1): creatures (the Blub), music reactions, the Sift's own sounds and subtitles (vanilla stand-ins play), advancements, the Sift's own particles (vanilla stand-ins), the fog inside ichor, and the "breathing" hints on a frame nobody has touched.
+The first playable build (D-018). **In it:** the Sift dimension and Singer's Meadow (block set I), the Tides (sky, light, stars, beds, Trills by day and glow petals by night), music reactions, the way in through an Ancient City and the way back, ichor, tide basins and ichor pools.
+**Not in it yet** (the rest of M1): creatures (the Blub), the Sift's own sounds and subtitles (vanilla stand-ins play), advancements, the fog inside ichor, and the "breathing" hints on a frame nobody has touched.
 
 ### Install (≈5 minutes)
 1. Minecraft Java **26.3**, **Fabric Loader 0.19.5** or newer, and **Fabric API 0.161.0+26.3** in `mods/`.
@@ -37,10 +37,11 @@ The first playable build (D-018). **In it:** the Sift dimension and Singer's Mea
 1. Look around: rolling coral hills of healthy sculk, white-crowned songwood groves, pink grass.
 2. The creative tab **The Sift** lists every block. Craft songwood planks and hymnstone bricks (stairs, slabs, walls; the stonecutter works too).
 3. Saplings grow and bone meal works **only in the Sift**; healthy sculk covered by a block dies back to hymnstone.
-4. **Tell me:** what reads well, and what looks off (colours, textures, the membrane's pattern, the ichor surface)?
+4. **Music reactions:** play a note block, goat horn or jukebox near healthy sculk or songwood. **Expect:** glowing petals lift off the sculk and grass, and the songwood's flute holes puff notes (within 12 blocks). It works at home too, and with the sound muted.
+5. **Tell me:** what reads well, and what looks off (colours, textures, the membrane's pattern, the ichor surface)?
 
 ### Known issues in this preview
-- Stand-in sounds and particles are vanilla's.
+- Sounds are vanilla stand-ins; so are the particles of the frame, the membrane and ichor (the sky's motes and the music petals are the Sift's own).
 - The membrane's and the ichor's surface patterns tile visibly; both are on the art-polish list.
 - Leaving through a gate always returns you to the frame you entered by. Dying in the Sift sends you to your Overworld spawn.
 - Unofficial fan project, not affiliated with or endorsed by Mojang Studios or Microsoft.
