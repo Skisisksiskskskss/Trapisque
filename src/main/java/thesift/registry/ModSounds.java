@@ -28,6 +28,17 @@ public final class ModSounds {
 	public static final SoundEvent ICHOR_EVAPORATE = register("block.ichor.evaporate");
 	public static final SoundEvent BUCKET_FILL_ICHOR = register("item.bucket.fill_ichor");
 	public static final SoundEvent BUCKET_EMPTY_ICHOR = register("item.bucket.empty_ichor");
+	public static final SoundEvent BLUB_AMBIENT = register("entity.blub.ambient");
+	public static final SoundEvent BLUB_LISTEN = register("entity.blub.listen");
+	public static final SoundEvent BLUB_HAPPY = register("entity.blub.happy");
+	public static final SoundEvent BLUB_SING = register("entity.blub.sing");
+	public static final SoundEvent BLUB_RESTLESS = register("entity.blub.restless");
+	public static final SoundEvent BLUB_CURL = register("entity.blub.curl");
+	public static final SoundEvent BLUB_SPLASH = register("entity.blub.splash");
+	public static final SoundEvent BLUB_TOPPLE = register("entity.blub.topple");
+	public static final SoundEvent BLUB_HURT = register("entity.blub.hurt");
+	public static final SoundEvent BLUB_DEATH = register("entity.blub.death");
+	public static final SoundEvent BLUB_STEP = register("entity.blub.step");
 	public static final Holder<SoundEvent> MEADOW_LOOP = registerHolder("ambient.singers_meadow.loop");
 	public static final Holder<SoundEvent> MEADOW_MOOD = registerHolder("ambient.singers_meadow.mood");
 

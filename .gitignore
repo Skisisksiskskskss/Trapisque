@@ -41,3 +41,4 @@ replay_*.log
 
 # datagen cache (deterministic, but not shipped and not needed in git)
 src/main/generated/.cache/
+__pycache__/

@@ -2,6 +2,8 @@ package thesift.datagen;
 
 import java.util.concurrent.CompletableFuture;
 
+import org.jspecify.annotations.Nullable;
+
 import net.fabricmc.fabric.api.client.datagen.v1.builder.SoundTypeBuilder;
 import net.fabricmc.fabric.api.client.datagen.v1.provider.FabricSoundsProvider;
 import net.fabricmc.fabric.api.datagen.v1.FabricPackOutput;
@@ -22,7 +24,8 @@ final class ModSoundsProvider extends FabricSoundsProvider {
 		return "The Sift sounds";
 	}
 
-	private static void add(SoundExporter exporter, SoundEvent event, String file, int variants, String subtitle) {
+	private static void add(SoundExporter exporter, SoundEvent event, String file, int variants, @Nullable String subtitle) {
+		// of(event) pre-fills a subtitle key; a null subtitle clears it (steps have none, as in vanilla).
 		SoundTypeBuilder builder = SoundTypeBuilder.of(event).subtitle(subtitle);
 		for (int i = 1; i <= variants; i++) {
 			String path = variants == 1 ? file : file + i;
@@ -49,6 +52,17 @@ final class ModSoundsProvider extends FabricSoundsProvider {
 		add(exporter, ModSounds.ICHOR_EVAPORATE, "ichor/evaporate", 1, "subtitles.thesift.ichor.evaporate");
 		add(exporter, ModSounds.BUCKET_FILL_ICHOR, "ichor/bucket_fill", 2, "subtitles.thesift.bucket.fill_ichor");
 		add(exporter, ModSounds.BUCKET_EMPTY_ICHOR, "ichor/bucket_empty", 2, "subtitles.thesift.bucket.empty_ichor");
+		add(exporter, ModSounds.BLUB_AMBIENT, "blub/ambient", 4, "subtitles.thesift.blub.ambient");
+		add(exporter, ModSounds.BLUB_LISTEN, "blub/listen", 2, "subtitles.thesift.blub.listen");
+		add(exporter, ModSounds.BLUB_HAPPY, "blub/happy", 2, "subtitles.thesift.blub.happy");
+		add(exporter, ModSounds.BLUB_SING, "blub/sing", 1, "subtitles.thesift.blub.sing");
+		add(exporter, ModSounds.BLUB_RESTLESS, "blub/restless", 2, "subtitles.thesift.blub.restless");
+		add(exporter, ModSounds.BLUB_CURL, "blub/curl", 2, "subtitles.thesift.blub.curl");
+		add(exporter, ModSounds.BLUB_SPLASH, "blub/splash", 2, "subtitles.thesift.blub.splash");
+		add(exporter, ModSounds.BLUB_TOPPLE, "blub/topple", 2, "subtitles.thesift.blub.topple");
+		add(exporter, ModSounds.BLUB_HURT, "blub/hurt", 2, "subtitles.thesift.blub.hurt");
+		add(exporter, ModSounds.BLUB_DEATH, "blub/death", 1, "subtitles.thesift.blub.death");
+		add(exporter, ModSounds.BLUB_STEP, "blub/step", 4, null); // steps have no subtitle, as in vanilla
 		add(exporter, ModSounds.MEADOW_LOOP.value(), "ambient/meadow_loop", 1, "subtitles.thesift.meadow.loop");
 		add(exporter, ModSounds.MEADOW_MOOD.value(), "ambient/meadow_mood", 4, "subtitles.thesift.meadow.mood");
 	}

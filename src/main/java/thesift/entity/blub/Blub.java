@@ -2,7 +2,10 @@ package thesift.entity.blub;
 
 import org.jspecify.annotations.Nullable;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -19,6 +22,9 @@ import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
+
+import thesift.registry.ModSounds;
 
 /**
  * The Blub (mob_blub.md): the Sift's soft blue critter and pet. This is the WP-049 skeleton (body,
@@ -56,6 +62,26 @@ public class Blub extends TamableAnimal {
 	@Override
 	public @Nullable AgeableMob getBreedOffspring(ServerLevel level, AgeableMob partner) {
 		return null;
+	}
+
+	@Override
+	protected @Nullable SoundEvent getAmbientSound() {
+		return ModSounds.BLUB_AMBIENT;
+	}
+
+	@Override
+	protected SoundEvent getHurtSound(DamageSource source) {
+		return ModSounds.BLUB_HURT;
+	}
+
+	@Override
+	protected @Nullable SoundEvent getDeathSound() {
+		return ModSounds.BLUB_DEATH;
+	}
+
+	@Override
+	protected void playStepSound(BlockPos pos, BlockState blockState) {
+		this.playSound(ModSounds.BLUB_STEP, 0.15F, 1.0F);
 	}
 
 	/** Blubs stack by riding each other, but a rider never steers the blub below (mob_blub.md, tech notes). */

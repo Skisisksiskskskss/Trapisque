@@ -287,12 +287,86 @@ def meadow(rng: np.random.Generator) -> None:
         write(f"ambient/meadow_mood{i}", reverb(phrase, 3.0, 0.65, rng), ["ambient/cave/cave1.ogg", "ambient/cave/cave2.ogg"])
 
 
+def squeak(contour: list[float], seconds: float, brightness: float = 0.35, vibrato: float = 0.0) -> np.ndarray:
+    """A small voice: a gliding pitch through the contour's points, two soft overtones, a quick attack."""
+    n = int(seconds * SR)
+    f = np.interp(np.linspace(0, len(contour) - 1, n), np.arange(len(contour)), contour)
+    if vibrato:
+        f = f * (1 + vibrato * np.sin(np.linspace(0, 2 * np.pi * 6 * seconds, n)) * np.linspace(0, 1, n))
+    x = tone(f, seconds) + brightness * tone(2 * f, seconds) + brightness ** 2 * tone(3 * f, seconds)
+    return x * env(n, 0.008, seconds * 0.45)
+
+
+def blub(rng: np.random.Generator) -> None:
+    """The Blub (WP-050): a small, round voice. The echo's note is F#5, so note-block pitches land in tune."""
+    # Soft but audible: a chicken's cluck and an armadillo's mutter (an axolotl out of water is near silent).
+    chirpy = ["mob/chicken/say1.ogg", "mob/chicken/say2.ogg", "mob/armadillo/ambient1.ogg", "mob/armadillo/ambient2.ogg"]
+    for i in range(1, 5):  # ambient: one soft squeak, each with its own little contour
+        base = rng.uniform(950, 1250)
+        d = rng.uniform(0.14, 0.22)
+        x = squeak([base * 0.9, base * 1.15, base * rng.uniform(0.85, 1.05)], d)
+        write(f"blub/ambient{i}", x + 0.02 * bandpass(noise(len(x), rng), 2000, 6000) * env(len(x), 0.005, d * 0.3), chirpy)
+    for i in range(1, 3):  # listen: a curious rising chirp
+        d = 0.26
+        write(f"blub/listen{i}", squeak([720 + 40 * i, 900, 1500 + 80 * i], d, 0.3), chirpy)
+    for i in range(1, 3):  # happy: two bright squeaks, the second higher
+        a = squeak([1000, 1350, 1250], 0.12, 0.4)
+        b = squeak([1200, 1650 + 60 * i, 1500], 0.15, 0.4)
+        n = int(0.34 * SR)
+        write(f"blub/happy{i}", mix(n, (a, 0.0), (b, 0.15)), chirpy)
+    # sing: the echo. A clean F#5 with a little scoop and a late vibrato; pitch is set per note in code.
+    f0 = 739.99
+    write("blub/sing", squeak([f0 * 0.944, f0, f0, f0, f0, f0, f0, f0], 0.5, 0.22, vibrato=0.006), ["note/harp.ogg"])
+    for i in range(1, 3):  # restless: quick chirps, back and forth
+        n = int(0.5 * SR)
+        parts = []
+        for k in range(4):
+            hi = 1300 + 120 * ((k + i) % 2)
+            parts.append((squeak([hi, hi * 1.1, hi * 0.95], 0.065, 0.35), 0.11 * k + 0.01 * i))
+        write(f"blub/restless{i}", mix(n, *parts), chirpy)
+    for i in range(1, 3):  # curl: a sleepy hum, low and breathy
+        d = 1.1
+        n = int(d * SR)
+        f = 330 + 25 * i
+        hum = squeak([f, f * 1.02, f * 0.97, f * 0.94], d, 0.18, vibrato=0.01)
+        breath = bandpass(noise(n, rng), 300, 1200) * np.sin(np.linspace(0, np.pi, n)) ** 2 * 0.08
+        write(f"blub/curl{i}", hum * np.sin(np.linspace(0, np.pi, n)) + breath, ["mob/cat/purr2.ogg", "mob/armadillo/ambient1.ogg"])
+    for i in range(1, 3):  # splash: a soft bloop and a little water
+        d = 0.35
+        n = int(d * SR)
+        bloop = tone(np.linspace(520 + 40 * i, 240, int(0.09 * SR)), 0.09) * env(int(0.09 * SR), 0.004, 0.06)
+        water = bandpass(noise(n, rng), 500, 3500) * env(n, 0.01, 0.25) * 0.25
+        write(f"blub/splash{i}", mix(n, (bloop, 0.0), (water, 0.02)) + 0.3 * bubbles(d, 2, 300, 600, rng), ["mob/slime/small1.ogg", "mob/slime/small2.ogg"])
+    for i in range(1, 3):  # topple: a bouncy thud, a boing, a surprised squeak
+        d = 0.6
+        n = int(d * SR)
+        m = int(0.18 * SR)
+        thud = tone(np.linspace(140, 60, m), 0.18) * decay(m, 0.06)
+        k = int(0.25 * SR)
+        boing = tone(260 * (1 + 0.12 * np.sin(np.linspace(0, 2 * np.pi * 7, k)) * np.linspace(1, 0, k)), 0.25) * decay(k, 0.1)
+        yelp = squeak([1100, 1500 + 100 * i, 1300], 0.12, 0.35)
+        write(f"blub/topple{i}", mix(n, (thud, 0.0), (boing, 0.04), (yelp * 0.6, 0.3)), ["mob/slime/small1.ogg", "mob/slime/small3.ogg"])
+    for i in range(1, 3):  # hurt: a sharp, bright squeak
+        write(f"blub/hurt{i}", squeak([1350 + 50 * i, 1850, 1150], 0.16, 0.5), ["mob/axolotl/hurt1.ogg", "mob/axolotl/hurt2.ogg"])
+    d = 0.75  # death: a squeak that deflates, more breath than voice by the end
+    n = int(d * SR)
+    voice = squeak([1250, 1350, 900, 520, 320], d, 0.3) * np.linspace(1, 0.4, n)
+    air = bandpass(noise(n, rng), 800, 4000) * np.linspace(0, 1, n) ** 2 * env(n, 0.01, 0.2) * 0.25
+    write("blub/death", voice + air, ["mob/axolotl/death1.ogg", "mob/axolotl/death2.ogg"])
+    for i in range(1, 5):  # step: a soft pat
+        d = 0.09
+        n = int(d * SR)
+        pat = bandpass(noise(n, rng), 150, 900 + 100 * i) * decay(n, 0.018) + 0.6 * tone(150 + 10 * i, d) * decay(n, 0.02)
+        write(f"blub/step{i}", pat, ["mob/frog/step1.ogg", "mob/frog/step2.ogg"])
+
+
 def main() -> None:
     rng = np.random.default_rng(20261001)
     entry(rng)
     tides(rng)
     ichor(rng)
     meadow(rng)
+    blub(rng)
     log = REPO / "docs" / "DESIGN" / "audio_levels.md"
     log.write_text("# Audio levels (WP-043)\n\nGenerated by `tools/audio/synth.py`: each sound's peak / RMS (dBFS, audible part) after matching the RMS to the listed vanilla sounds' mean; the vanilla levels are measured from the game's own files, which are never copied. Mono 44.1 kHz Ogg Vorbis.\n\n| Sound | Length | Peak / RMS | Vanilla reference | Reference peak, RMS |\n|---|---|---|---|---|\n" + "\n".join(LOG) + "\n")
     print(f"{len(LOG)} sounds written")
