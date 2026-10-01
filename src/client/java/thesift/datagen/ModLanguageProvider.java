@@ -7,6 +7,7 @@ import net.fabricmc.fabric.api.datagen.v1.provider.FabricLanguageProvider;
 import net.minecraft.core.HolderLookup;
 
 import thesift.registry.ModBlocks;
+import thesift.registry.ModEntities;
 import thesift.registry.ModItems;
 
 /** English (en_us) strings. Every player-facing string in the mod is added here. */
@@ -58,6 +59,8 @@ final class ModLanguageProvider extends FabricLanguageProvider {
 		builder.add("subtitles.thesift.meadow.mood", "A far-off flute");
 		builder.add(ModBlocks.ICHOR, "Ichor");
 		builder.add(ModItems.ICHOR_BUCKET, "Ichor Bucket");
+		builder.add(ModEntities.BLUB, "Blub");
+		builder.add(ModItems.BLUB_SPAWN_EGG, "Blub Spawn Egg");
 		builder.add("tag.fluid.thesift.ichor", "Ichor");
 		builder.add("tag.item.thesift.songwood_logs", "Songwood Logs");
 		builder.add("thesift.frame.offering", "Your soul flows into the frame (%s%%)");

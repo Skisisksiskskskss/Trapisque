@@ -68,3 +68,5 @@ below allows.
 | `item/ichor_bucket.png` | pail, ichor_violet, ichor_teal |
 | `particle/glow_petal.png` | healthy_sculk, particle |
 | `particle/trill.png` | particle |
+| `entity/blub/blub.png` | blub, songwood_bark, particle |
+| `item/blub_spawn_egg.png` | blub, songwood_bark |

@@ -509,6 +509,79 @@ def ichor_bucket() -> Image.Image:
     return im
 
 
+# ---------------------------------------------------------------- blub
+def blub_texture() -> Image.Image:
+    """32 x 32 entity texture laid out for BlubModel: body box (7x6x7) at (0,0), ears at (0,13) and
+    (6,13), feet at (12,13), tail at (20,13). Light from the top-left; a pale belly; two dark eyes
+    with a catch-light, set high on the front face (the face is the body's front)."""
+    im = Image.new("RGBA", (32, 32), (0, 0, 0, 0))
+    px = im.load()
+    fur = [rgba("blub", i) for i in range(6)]
+    n = tile_noise(32, 32, 8, 8, 131, ((1.0, 1), (0.5, 2)))
+
+    def fill(x0, y0, w, h, base, light_top=True):
+        for y in range(y0, y0 + h):
+            for x in range(x0, x0 + w):
+                i = base + (1 if n[y][x] > 0.72 else 0) - (1 if n[y][x] < 0.18 else 0)
+                if light_top and y == y0:
+                    i += 1
+                px[x, y] = fur[max(0, min(5, i))]
+
+    # Body box: top (7..14, 0..7), bottom (14..21, 0..7); sides row y 7..13: right, front, left, back.
+    fill(7, 0, 7, 7, 4, light_top=False)     # top: lit
+    fill(14, 0, 7, 7, 1, light_top=False)    # bottom: shaded
+    fill(0, 7, 7, 6, 3)                      # right side (+x faces away from light)
+    fill(7, 7, 7, 6, 3)                      # front: the face
+    fill(14, 7, 7, 6, 2)                     # left side
+    fill(21, 7, 7, 6, 2)                     # back
+    # Face: eyes (1 x 2) at columns 1 and 5, a catch-light on top; a pale belly patch below.
+    for ex in (8, 12):
+        px[ex, 8] = rgba("particle", 3)
+        px[ex, 9] = rgba("songwood_bark", 0)
+    for x in range(9, 12):
+        for y in range(10, 13):
+            px[x, y] = fur[5] if y < 12 else fur[4]
+    px[10, 9] = fur[2]  # a tiny mouth between the eyes
+    # Ears (2 x 4 x 1): front faces lighter with a pale inner stripe.
+    for ox in (0, 6):
+        fill(ox, 13, 6, 5, 3)
+        for y in range(14, 18):
+            px[ox + 1, y] = fur[5]
+    # Feet and tail: a shade darker.
+    fill(12, 13, 8, 3, 2)
+    fill(20, 13, 6, 3, 4)
+    return im
+
+
+def blub_spawn_egg() -> Image.Image:
+    rows = [
+        "................",
+        "......3443......",
+        ".....344543.....",
+        "....33445543....",
+        "....33344443....",
+        "...2333344443...",
+        "...23e3333e43...",
+        "...2333333333...",
+        "...22335553332..",
+        "...22335553332..",
+        "....223335332...",
+        "....22233332....",
+        ".....222222.....",
+        "......1111......",
+        "................",
+        "................",
+    ]
+    c = {str(i): rgba("blub", i) for i in range(6)}
+    c["e"] = rgba("songwood_bark", 0)
+    im = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    for y, row in enumerate(rows):
+        for x, ch in enumerate(row):
+            if ch != ".":
+                put(im, [(x, y)], c[ch])
+    return im
+
+
 # ---------------------------------------------------------------- particles
 def glow_petal() -> Image.Image:
     rows = ["........", "...pp...", "..pPPp..", "..pPgp..", "...Pp...", "....p...", "........", "........"]
@@ -566,6 +639,8 @@ def main() -> None:
     save_mcmeta("block/ichor_flow.png", '{\n  "animation": {\n    "frametime": 2\n  }\n}\n')
     save(ichor_bucket(), "item/ichor_bucket.png")
     save(glow_petal(), "particle/glow_petal.png")
+    save(blub_texture(), "entity/blub/blub.png")
+    save(blub_spawn_egg(), "item/blub_spawn_egg.png")
     save(trill(), "particle/trill.png")
     print("textures written")
 

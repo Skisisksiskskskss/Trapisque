@@ -52,6 +52,7 @@ public final class SiftPreviewClientTest implements FabricClientGameTest {
 			basinShots(context, world);
 			musicShot(context, world);
 			ichorFogShot(context, world);
+			blubShot(context, world);
 		}
 		// The consistent test world is flat without structures; the entry needs a real Ancient City.
 		try (TestSingleplayerContext world = context.worldBuilder().setUseConsistentSettings(false).adjustSettings(s -> {
@@ -62,6 +63,26 @@ public final class SiftPreviewClientTest implements FabricClientGameTest {
 			world.getServer().runCommand("gamemode spectator @a");
 			entryShots(context, world);
 		}
+	}
+
+	/** WP-049: a few blubs on the Meadow, in daylight. */
+	private static void blubShot(ClientGameTestContext context, TestSingleplayerContext world) {
+		world.getServer().runCommand("execute in thesift:the_sift run time of thesift:tides set thesift:thrive");
+		BlockPos ground = world.getServer().computeOnServer(server -> {
+			ServerLevel sift = server.getLevel(SiftKeys.LEVEL);
+			int y = sift.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, 90, 90);
+			return new BlockPos(90, y, 90);
+		});
+		for (int[] o : new int[][] {{0, 0}, {1, 1}, {-1, 2}}) {
+			world.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute in thesift:the_sift run summon thesift:blub %d %d %d {NoAI:1b,Rotation:[%df,0f]}",
+					ground.getX() + o[0], ground.getY(), ground.getZ() + o[1], 160 + o[0] * 20));
+		}
+		world.getServer().runCommand("gamemode spectator @a");
+		world.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute in thesift:the_sift run tp @a %.1f %d %.1f 0 30",
+				ground.getX() + 0.5, ground.getY() + 2, ground.getZ() - 3.0));
+		world.getConnection().waitForChunksRender();
+		context.waitTicks(20);
+		context.takeScreenshot("wp049_blubs");
 	}
 
 	/** WP-044: the view from inside ichor (creative: spectators see through liquids, as with lava). */

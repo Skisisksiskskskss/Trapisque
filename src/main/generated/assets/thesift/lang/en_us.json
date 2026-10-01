@@ -17,6 +17,8 @@
   "block.thesift.tall_healthy_sculk_grass": "Tall Healthy Sculk Grass",
   "block.thesift.tide_sand": "Tide Sand",
   "block.thesift.tide_vent": "Tide Vent",
+  "entity.thesift.blub": "Blub",
+  "item.thesift.blub_spawn_egg": "Blub Spawn Egg",
   "item.thesift.ichor_bucket": "Ichor Bucket",
   "itemGroup.thesift": "The Sift",
   "subtitles.thesift.basin.drain": "Ichor drains away",

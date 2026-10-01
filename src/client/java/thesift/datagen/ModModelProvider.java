@@ -99,5 +99,6 @@ final class ModModelProvider extends FabricModelProvider {
 	@Override
 	public void generateItemModels(ItemModelGenerators g) {
 		g.generateFlatItem(ModItems.ICHOR_BUCKET, ModelTemplates.FLAT_ITEM);
+		g.generateFlatItem(ModItems.BLUB_SPAWN_EGG, ModelTemplates.FLAT_ITEM);
 	}
 }
