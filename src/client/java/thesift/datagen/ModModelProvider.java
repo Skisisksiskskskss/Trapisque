@@ -4,6 +4,11 @@ import net.fabricmc.fabric.api.client.datagen.v1.provider.FabricModelProvider;
 import net.fabricmc.fabric.api.datagen.v1.FabricPackOutput;
 import net.minecraft.client.data.models.BlockModelGenerators;
 import net.minecraft.client.data.models.ItemModelGenerators;
+import net.minecraft.client.data.models.blockstates.MultiVariantGenerator;
+import net.minecraft.client.data.models.blockstates.PropertyDispatch;
+import net.minecraft.client.data.models.model.ModelLocationUtils;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.client.data.models.model.ModelTemplates;
 import net.minecraft.client.data.models.model.TextureMapping;
 import net.minecraft.client.data.models.model.TextureSlot;
@@ -44,6 +49,11 @@ final class ModModelProvider extends FabricModelProvider {
 		g.createTrivialBlock(ModBlocks.GATESTONE, TexturedModel.COLUMN.updateTexture(m -> m
 				.put(TextureSlot.SIDE, TextureMapping.getBlockTexture(ModBlocks.GATESTONE))
 				.put(TextureSlot.END, TextureMapping.getBlockTexture(ModBlocks.GATESTONE, "_top"))));
+		// Like the Nether portal: hand-written thin models (assets/thesift/models/block/sift_membrane_{ns,ew}.json).
+		g.blockStateOutput.accept(MultiVariantGenerator.dispatch(ModBlocks.SIFT_MEMBRANE).with(
+				PropertyDispatch.initial(BlockStateProperties.HORIZONTAL_AXIS)
+						.select(Direction.Axis.X, BlockModelGenerators.plainVariant(ModelLocationUtils.getModelLocation(ModBlocks.SIFT_MEMBRANE, "_ns")))
+						.select(Direction.Axis.Z, BlockModelGenerators.plainVariant(ModelLocationUtils.getModelLocation(ModBlocks.SIFT_MEMBRANE, "_ew")))));
 	}
 
 	private static void cubeBottomTop(BlockModelGenerators g, Block block, TextureMapping mapping) {

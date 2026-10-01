@@ -26,6 +26,7 @@ import net.minecraft.world.level.material.PushReaction;
 import thesift.TheSift;
 import thesift.block.HealthySculkBlock;
 import thesift.block.HealthySculkGrassBlock;
+import thesift.block.SiftMembraneBlock;
 import thesift.block.SongwoodSaplingBlock;
 import thesift.block.TallHealthySculkGrassBlock;
 import thesift.world.SiftFeatures;
@@ -74,6 +75,11 @@ public final class ModBlocks {
 	public static final Block GATESTONE = register("gatestone", Block::new, BlockBehaviour.Properties.of()
 			.mapColor(MapColor.COLOR_BLACK).instrument(NoteBlockInstrument.BASEDRUM)
 			.strength(-1.0F, 3_600_000.0F).noLootTable().sound(SoundType.CALCITE).isValidSpawn((s, l, p, e) -> false));
+
+	/** Fills an open frame or gate; unbreakable in survival like a Nether portal, and it drops nothing. */
+	public static final Block SIFT_MEMBRANE = registerNoItem("sift_membrane", SiftMembraneBlock::new, BlockBehaviour.Properties.of()
+			.mapColor(MapColor.COLOR_CYAN).noCollision().strength(-1.0F).sound(SoundType.GLASS).lightLevel(s -> 11)
+			.pushReaction(PushReaction.IMMOVEABLE).noLootTable());
 
 	private ModBlocks() {
 	}

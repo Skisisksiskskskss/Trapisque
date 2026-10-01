@@ -10,7 +10,8 @@
 		"fabric-gametest": [
 			"thesift.test.SmokeTest",
 			"thesift.test.SiftDimensionTest",
-			"thesift.test.SiftBlocksTest"
+			"thesift.test.SiftBlocksTest",
+			"thesift.test.SiftEntryTest"
 		],
 		"fabric-client-gametest": [
 			"thesift.test.client.SiftPreviewClientTest"

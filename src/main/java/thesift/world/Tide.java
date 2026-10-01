@@ -2,6 +2,7 @@ package thesift.world;
 
 import org.jspecify.annotations.Nullable;
 
+import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.Level;
 
 import thesift.registry.ModAttributes;
@@ -51,5 +52,15 @@ public enum Tide {
 		int value = level.environmentAttributes().getDimensionValue(ModAttributes.TIDE);
 		Tide[] values = values();
 		return value >= 0 && value < values.length ? values[value] : null;
+	}
+
+	/**
+	 * The Tide read straight from the {@code thesift:tides} clock. Clocks are server-wide and synced
+	 * to every client, so this works from the Overworld too (the membrane shows the far side).
+	 */
+	public static @Nullable Tide fromClock(Level level) {
+		return level.registryAccess().lookupOrThrow(Registries.WORLD_CLOCK).get(SiftKeys.TIDES_CLOCK)
+				.map(clock -> atCycleTick(level.clockManager().getInstance(clock).totalTicks()))
+				.orElse(null);
 	}
 }

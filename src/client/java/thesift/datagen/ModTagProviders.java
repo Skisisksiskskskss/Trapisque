@@ -11,6 +11,7 @@ import net.minecraft.tags.BlockItemTags;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 
@@ -66,8 +67,9 @@ final class ModTagProviders {
 			// 26.3 decides "blocks motion" (heightmaps, spawning, worldgen placement) by tag, not by shape.
 			tag(BlockTags.BLOCKS_MOTION_NO_LEAVES, ModBlocks.HYMNSTONE, ModBlocks.HYMNSTONE_BRICKS, ModBlocks.HEALTHY_SCULK,
 					ModBlocks.TIDE_SAND, ModBlocks.TIDE_VENT, ModBlocks.GATESTONE);
-			tag(BlockTags.WITHER_IMMUNE, ModBlocks.GATESTONE);
-			tag(BlockTags.DRAGON_IMMUNE, ModBlocks.GATESTONE);
+			tag(BlockTags.WITHER_IMMUNE, ModBlocks.GATESTONE, ModBlocks.SIFT_MEMBRANE);
+			tag(BlockTags.DRAGON_IMMUNE, ModBlocks.GATESTONE, ModBlocks.SIFT_MEMBRANE);
+			tag(BlockTags.PORTALS, ModBlocks.SIFT_MEMBRANE);
 		}
 	}
 
@@ -93,6 +95,22 @@ final class ModTagProviders {
 			tag(ItemTags.PLANKS, ModBlocks.SONGWOOD_PLANKS);
 			tag(ModTags.SONGWOOD_LOGS_ITEM, ModBlocks.SONGWOOD_LOG);
 			builder(ItemTags.LOGS_THAT_BURN).addTag(ModTags.SONGWOOD_LOGS_ITEM);
+		}
+	}
+
+	static final class EntityTypes extends FabricTagsProvider.EntityTypeTagsProvider {
+		EntityTypes(FabricPackOutput output, CompletableFuture<HolderLookup.Provider> registries) {
+			super(output, registries);
+		}
+
+		@Override
+		protected void addTags(HolderLookup.Provider registries) {
+			// Wardens and bosses never follow a player through the membrane (entry_path.md §7).
+			var cannotCross = builder(ModTags.CANNOT_CROSS);
+			for (EntityType<?> type : new EntityType<?>[] {net.minecraft.world.entity.EntityTypes.WARDEN, net.minecraft.world.entity.EntityTypes.WITHER,
+					net.minecraft.world.entity.EntityTypes.ENDER_DRAGON, net.minecraft.world.entity.EntityTypes.ELDER_GUARDIAN}) {
+				cannotCross.add(BuiltInRegistries.ENTITY_TYPE.getResourceKey(type).orElseThrow());
+			}
 		}
 	}
 }

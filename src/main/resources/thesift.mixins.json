@@ -3,7 +3,8 @@
 	"package": "thesift.mixin",
 	"compatibilityLevel": "JAVA_25",
 	"mixins": [
-		"LevelWeatherMixin"
+		"LevelWeatherMixin",
+		"ServerLevelGameEventMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

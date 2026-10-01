@@ -5,6 +5,8 @@ import net.minecraft.resources.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import thesift.entry.FrameMusic;
+import thesift.entry.Offering;
 import thesift.registry.ModAttributes;
 import thesift.registry.ModBlocks;
 import thesift.registry.ModCreativeTab;
@@ -29,6 +31,8 @@ public final class TheSift implements ModInitializer {
 		ModCreativeTab.init();
 		TideClock.init();
 		EndureRest.init();
+		Offering.init();
+		FrameMusic.init();
 		LOGGER.info("The Sift initialized (unofficial fan project)");
 	}
 

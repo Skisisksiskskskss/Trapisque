@@ -8,6 +8,7 @@
   "block.thesift.hymnstone_brick_wall": "Hymnstone Brick Wall",
   "block.thesift.hymnstone_bricks": "Hymnstone Bricks",
   "block.thesift.potted_songwood_sapling": "Potted Songwood Sapling",
+  "block.thesift.sift_membrane": "Sift Membrane",
   "block.thesift.songwood_leaves": "Songwood Leaves",
   "block.thesift.songwood_log": "Songwood Log",
   "block.thesift.songwood_planks": "Songwood Planks",
@@ -16,7 +17,12 @@
   "block.thesift.tide_sand": "Tide Sand",
   "block.thesift.tide_vent": "Tide Vent",
   "itemGroup.thesift": "The Sift",
+  "tag.item.thesift.songwood_logs": "Songwood Logs",
   "thesift.bed.no_sleep": "You can't sleep here: the Sift never goes quiet",
   "thesift.bed.rested": "You rest a while. The Tide keeps turning.",
-  "thesift.disclaimer": "Unofficial fan project, not affiliated with or endorsed by Mojang Studios or Microsoft."
+  "thesift.disclaimer": "Unofficial fan project, not affiliated with or endorsed by Mojang Studios or Microsoft.",
+  "thesift.frame.awake": "The frame is awake. Play it some music",
+  "thesift.frame.no_soul": "You have no experience left to offer",
+  "thesift.frame.offering": "Your soul flows into the frame (%s%%)",
+  "thesift.frame.woke": "The frame wakes. It is listening for music"
 }

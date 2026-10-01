@@ -477,3 +477,27 @@ It also found that M1's Tide changed nothing in play (SF4), since the mission as
 - Generated files are committed under `src/main/generated`.
 
 **Revisit if.** Client datagen proves flaky in CI. The fallback is to run the no-diff check locally before each push and log it in BLOCKERS.md.
+
+## D-020 Entry implementation: frames by geometry on use, a game-event mixin, gates built on first crossing (2026-10-01) [WP-046/047]
+**Context.** entry_path.md says frames are "located from Ancient City structure pieces … cached per chunk", music is heard by "a vibration listener … and a jukebox listener", and the gate stands on a hill at the matching x/z. Building it for the preview turned up three facts:
+- A generated frame spans y −35…−28 (one below the anchor's `start_height`); the template reading in W6 was off by one.
+- Natural frames grow **sculk veins** into the opening. A vein is not `canBeReplaced()` without context, so a "replaceable only" rule would never open a real city. The client GameTest on a natural city caught this.
+- `/place structure` skips terrain carving, so only naturally generated cities show what players will find.
+
+**Options considered.**
+1. Locate frames from structure starts on chunk load and cache them. Needs a bounded scan per city anyway (templates don't give the frame's offset directly), and only matters for the ambient cues.
+2. **Find the frame when a player uses a block of it** (chosen). Try every 22 × 8 rectangle in both vertical planes whose border passes through the touched block, and accept one whose whole border is reinforced deepslate.
+3. A listener block entity per frame for music. That means adding blocks to the Ancient City.
+
+**Decision.**
+- **Frames** are found by geometry on a deliberate use (`FrameShapes`) and stored in `SiftLinks` (SavedData: frame, charge, gate). There is no structure check. Reinforced deepslate is unobtainable in survival, so every survival frame is a natural one, and operators can build test frames.
+- **Music** is heard through one injection at the head of `ServerLevel.gameEvent`. It returns at once unless the event is `note_block_play`, `instrument_play` (16 blocks) or `jukebox_play` (10 blocks), and then checks only known awake frames.
+- **The membrane** replaces air, replaceable blocks and multiface growths (sculk veins, glow lichen) and nothing else. Another mod's portal already in the frame wins.
+- **Gates** are built on the first crossing: a hill of radius 7 with a flat top of radius 3, and a 6 × 7 gatestone frame facing like the city's. Each gate keeps 64 blocks from every other gate. Crossing either way re-opens a removed membrane, so nobody is stranded. Arrival is inside the opening, as with a Nether portal; the portal cooldown stops a bounce.
+- **Deferred to the rest of M1, not the preview:** the dormant frame's "breathing" and the 8-block "notice" cues (they need frames known before anyone touches them, i.e. option 1), the sanctuary spawn rule (the Sift has no spawns yet), subtitles and the first-crossing advancement (WP-043/052).
+
+**Why.** Option 2 costs nothing per tick, needs no new blocks in vanilla structures, and was proven on a real city. The mixin is the smallest hook Fabric allows for hearing music.
+
+**Consequences.** A player who never touches the frame gets no hint in the preview. PLAYTEST.md says what to do.
+
+**Revisit if.** Playtests show players don't find the frame without the ambient cues (bring option 1 forward), or the game-event injection shows up in a profiler.

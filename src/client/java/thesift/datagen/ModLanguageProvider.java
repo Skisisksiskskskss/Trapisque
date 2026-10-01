@@ -36,5 +36,11 @@ final class ModLanguageProvider extends FabricLanguageProvider {
 		builder.add(ModBlocks.TIDE_SAND, "Tide Sand");
 		builder.add(ModBlocks.TIDE_VENT, "Tide Vent");
 		builder.add(ModBlocks.GATESTONE, "Gatestone");
+		builder.add(ModBlocks.SIFT_MEMBRANE, "Sift Membrane");
+		builder.add("tag.item.thesift.songwood_logs", "Songwood Logs");
+		builder.add("thesift.frame.offering", "Your soul flows into the frame (%s%%)");
+		builder.add("thesift.frame.woke", "The frame wakes. It is listening for music");
+		builder.add("thesift.frame.awake", "The frame is awake. Play it some music");
+		builder.add("thesift.frame.no_soul", "You have no experience left to offer");
 	}
 }
