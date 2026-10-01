@@ -11,7 +11,6 @@ import net.minecraft.util.random.WeightedList;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.FlowerPotBlock;
 import net.minecraft.world.level.block.LiquidBlock;
-import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.StairBlock;
@@ -28,6 +27,7 @@ import thesift.TheSift;
 import thesift.block.HealthySculkBlock;
 import thesift.block.HealthySculkGrassBlock;
 import thesift.block.SiftMembraneBlock;
+import thesift.block.SongwoodLogBlock;
 import thesift.block.SongwoodSaplingBlock;
 import thesift.block.TideVentBlock;
 import thesift.block.TallHealthySculkGrassBlock;
@@ -51,7 +51,7 @@ public final class ModBlocks {
 	public static final Block HEALTHY_SCULK_GRASS = register("healthy_sculk_grass", HealthySculkGrassBlock::new, plant());
 	public static final Block TALL_HEALTHY_SCULK_GRASS = register("tall_healthy_sculk_grass", TallHealthySculkGrassBlock::new, plant());
 
-	public static final Block SONGWOOD_LOG = register("songwood_log", RotatedPillarBlock::new, BlockBehaviour.Properties.of()
+	public static final Block SONGWOOD_LOG = register("songwood_log", SongwoodLogBlock::new, BlockBehaviour.Properties.of()
 			.mapColor(MapColor.COLOR_PURPLE).instrument(NoteBlockInstrument.BASS).strength(2.0F).sound(SoundType.CHERRY_WOOD).ignitedByLava());
 	public static final Block SONGWOOD_PLANKS = register("songwood_planks", Block::new, BlockBehaviour.Properties.of()
 			.mapColor(MapColor.COLOR_LIGHT_BLUE).instrument(NoteBlockInstrument.BASS).strength(2.0F, 3.0F).sound(SoundType.CHERRY_WOOD).ignitedByLava());

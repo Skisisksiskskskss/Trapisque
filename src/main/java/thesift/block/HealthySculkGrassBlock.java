@@ -49,4 +49,9 @@ public class HealthySculkGrassBlock extends VegetationBlock implements Bonemeala
 	public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state, BonemealSource source) {
 		DoublePlantBlock.placeAt(level, ModBlocks.TALL_HEALTHY_SCULK_GRASS.defaultBlockState(), pos, 2);
 	}
+
+	@Override
+	public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource random) {
+		MusicNearby.shedPetals(level, pos, random, 0.5);
+	}
 }

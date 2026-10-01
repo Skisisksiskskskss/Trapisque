@@ -1,5 +1,6 @@
 package thesift.block;
 
+import net.minecraft.world.level.Level;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -30,6 +31,13 @@ public class HealthySculkBlock extends Block {
 	protected void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
 		if (!canStayAlive(state, level, pos)) {
 			level.setBlockAndUpdate(pos, ModBlocks.HYMNSTONE.defaultBlockState());
+		}
+	}
+
+	@Override
+	public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource random) {
+		if (level.getBlockState(pos.above()).canBeReplaced()) {
+			MusicNearby.shedPetals(level, pos, random, 1.05);
 		}
 	}
 }

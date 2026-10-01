@@ -1,6 +1,7 @@
 package thesift.client;
 
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.particle.v1.ParticleProviderRegistry;
 import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderingRegistry;
 import net.minecraft.client.renderer.block.FluidModel;
@@ -23,5 +24,7 @@ public final class TheSiftClient implements ClientModInitializer {
 				new Material(TheSift.id("block/ichor_still")), new Material(TheSift.id("block/ichor_flow")), null, null));
 		ParticleProviderRegistry.getInstance().register(ModParticles.TRILL, SiftMoteParticle.TrillProvider::new);
 		ParticleProviderRegistry.getInstance().register(ModParticles.GLOW_PETAL, SiftMoteParticle.GlowPetalProvider::new);
+		// The sound manager exists once the client has started.
+		ClientLifecycleEvents.CLIENT_STARTED.register(client -> MusicListener.install());
 	}
 }

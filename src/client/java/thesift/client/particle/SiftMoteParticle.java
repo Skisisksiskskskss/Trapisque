@@ -66,7 +66,8 @@ public class SiftMoteParticle extends SingleQuadParticle {
 		@Override
 		public Particle createParticle(SimpleParticleType options, ClientLevel level, double x, double y, double z,
 				double xAux, double yAux, double zAux, RandomSource random) {
-			return new SiftMoteParticle(level, x, y, z, this.sprites.get(random), -0.008, 0.07F, 220);
+			// A petal shed by music lifts off (yAux > 0); an ambient one sinks.
+			return new SiftMoteParticle(level, x, y, z, this.sprites.get(random), yAux != 0.0 ? yAux : -0.008, 0.07F, yAux != 0.0 ? 60 : 220);
 		}
 	}
 }

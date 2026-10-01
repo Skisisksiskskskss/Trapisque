@@ -17,6 +17,7 @@ import java.util.List;
 import net.minecraft.world.level.levelgen.Heightmap;
 
 import thesift.TheSift;
+import thesift.block.MusicNearby;
 import thesift.block.entity.TideVentBlockEntity;
 import thesift.registry.ModBlocks;
 import thesift.world.SiftKeys;
@@ -48,6 +49,7 @@ public final class SiftPreviewClientTest implements FabricClientGameTest {
 			world.getConnection().waitForChunksRender();
 			shoot(context, world, "thesift:thrive", "sift_thrive_close");
 			basinShots(context, world);
+			musicShot(context, world);
 		}
 		// The consistent test world is flat without structures; the entry needs a real Ancient City.
 		try (TestSingleplayerContext world = context.worldBuilder().setUseConsistentSettings(false).adjustSettings(s -> {
@@ -58,6 +60,30 @@ public final class SiftPreviewClientTest implements FabricClientGameTest {
 			world.getServer().runCommand("gamemode spectator @a");
 			entryShots(context, world);
 		}
+	}
+
+	/** WP-042 §3.2: a note block's sound makes the healthy sculk around it shed glowing petals. */
+	private static void musicShot(ClientGameTestContext context, TestSingleplayerContext world) {
+		world.getServer().runCommand("execute in thesift:the_sift run time of thesift:tides set thesift:endure");
+		BlockPos ground = world.getServer().computeOnServer(server -> {
+			ServerLevel sift = server.getLevel(SiftKeys.LEVEL);
+			int y = sift.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, 40, 40) - 1;
+			return new BlockPos(40, y, 40);
+		});
+		world.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute in thesift:the_sift run tp @a %d %d %d 0 40",
+				ground.getX(), ground.getY() + 4, ground.getZ() - 5));
+		world.getConnection().waitForChunksRender();
+		String play = String.format(java.util.Locale.ROOT, "execute in thesift:the_sift run playsound minecraft:block.note_block.harp record @a %d %d %d",
+				ground.getX(), ground.getY() + 1, ground.getZ());
+		for (int i = 0; i < 6; i++) {
+			world.getServer().runCommand(play);
+			context.waitTicks(10);
+		}
+		boolean heard = context.computeOnClient(client -> MusicNearby.near(ground));
+		if (!heard) {
+			throw new AssertionError("the client did not register the note block's music near " + ground);
+		}
+		context.takeScreenshot("wp042_music_reaction");
 	}
 
 	/** WP-045: a generated tide basin at low tide and at high tide. */
