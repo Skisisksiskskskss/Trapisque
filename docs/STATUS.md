@@ -1,17 +1,42 @@
 # STATUS (session 1, 2026-10-01)
-- **Phase / Milestone:** Phase 4 (M1). Phases 0–3 are done; Gates A and B were self-reviewed.
-- **Autonomy:** **full-auto** (D-014). **Deadline (D-018):** the owner tries the mod by 2026-10-04. **`v0.1.0-alpha.preview` is published** as a GitHub pre-release: dimension, Meadow, Tides, entry and return, ichor, basins, all sounds. Its playtest guide is `docs/PLAYTEST.md`.
-- **Current WP:** WP-052 (entry advancements, lang pass), then WP-053 (M1 integration, Gate C) and `v0.1.0-alpha`.
-- **Done this session:** WP-020..024; WP-030..033; WP-043; the Blub, WP-048..051 (design frozen, art, audio, AI, 12 GameTests). The cores of WP-040, 041, 042, 044, 045, 046 and 047 are done; PLAN.md logs list what is left in each.
+- **Phase / Milestone:** M1 done (Gate C self-reviewed). Next: M2 "the hunt" planning (Phase 4 continues).
+- **Autonomy:** **full-auto** (D-014). **Deadline (D-018):** the owner tries the mod by 2026-10-04. **`v0.1.0-alpha` (M1) is the build to try**: a GitHub pre-release, with steps in `docs/PLAYTEST.md` (Gate C section).
+- **Current WP:** M2 detailed planning (PLAN.md "Later": Nester, the Hollows, Endure's danger, tidewrack and blub treats).
+- **Done this session:** Phases 0–3; M1 WP-040..053 in full. That includes the Blub (design frozen after three critique rounds, art, 27 sounds, AI, 15 GameTests), the advancement tab, the frame cues, and cost measurements.
 - **Next 3 actions:**
-  1. A fresh adversarial review of the Blub code; fix what it finds.
-  2. WP-052: the Sift advancement tab and a lang pass.
-  3. WP-053: the M1 leftovers (dormant-frame cues, cost measurements), Gate C, and release `v0.1.0-alpha`.
-- **Build:** ✅ `./gradlew build` (with GameTests) · datagen no-diff ✅ · `check_bible.py` ✅ (144 rows) · `check_palette.py` ✅ (34 textures)
-- **Tests:** 65/65 server GameTests. The client GameTest finds a natural Ancient City, opens it and crosses. It screenshots the Tides, a basin, the gate and the blubs (`docs/previews/`).
-- **Server boot:** ✅ (through the GameTest server on every build).
+  1. Watch CI and the release; answer the owner's playtest notes the moment they arrive.
+  2. M2 planning: detail WP-060+ from the bible (M2 rows), with the Nester design ladder first.
+  3. Polish from the known issues: basin bubbles, the Sift's own particles for the frame, membrane and ichor.
+- **Build:** ✅ `./gradlew build` (with GameTests) · datagen no-diff ✅ · `check_bible.py` ✅ (144 rows) · `check_palette.py` ✅ (34 textures) · `check_lang.py` ✅
+- **Tests:** 71/71 server GameTests. The client GameTest walks through frame notice, opening, crossing, the Tides, a basin, befriending a blub, the gate and the advancements, with screenshots in `docs/previews/`.
+- **Server boot:** ✅ (the GameTest dedicated server on every build; no `thesift` warnings).
 - **Blockers:** none. The Netlify site `magnificent-gelato-563c55` fails on every PR because of its own configuration (owner-side; see the PR comment).
-- **Awaiting owner:** nothing (full-auto). The preview's playtest questions are in `docs/PLAYTEST.md`.
+- **Awaiting owner:** nothing (full-auto). The playtest questions are in `docs/PLAYTEST.md`.
+
+## Gate C: the M1 vertical slice — self-reviewed (D-014), 2026-10-01
+**Situation.** M1 is complete. Every WP-040..053 DoD item is met or has a logged deviation:
+- the rising-bubble basin visual is left for polish;
+- the gate sanctuary rule waits for M2's hostile spawns;
+- blub animations are procedural (D-021).
+
+Two fresh adversarial reviews ran after the preview. The first found and reproduced a server crash (a blub riding itself); it is fixed and covered by an AI-on test. The second covered the frame cues, the advancements and the vents.
+
+**What M1 contains:**
+- The Sift (Singer's Meadow) behind an Ancient City frame: breathe, notice, offer 30 levels, play music, cross.
+- The Tide cycle with literal ichor basins.
+- Ichor and its pools.
+- The Blub, befriended by music: it sings back, heralds the Tide, shelters in Endure, bathes, stacks into towers and crosses with you.
+- Four advancements and every sound with subtitles.
+
+**Measured:**
+- chunk generation 0.29× the Overworld;
+- 50 basins p95 0.005 ms per tick;
+- 50 busy blubs 0.87–1.22× rabbits;
+- ichor 0.89–0.98× lava.
+
+**Recommendation: ship `v0.1.0-alpha` as a pre-release and start M2.**
+- **Alternatives:** hold for keyframed blub animations (cost: days, for little gain at this size); hold for basin bubbles (cosmetic).
+- **Outcome:** full-auto, so it is released.
 
 ## Gate B: the content bible and roadmap (Phase 2) — self-reviewed (D-014)
 **Situation.**

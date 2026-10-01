@@ -2,19 +2,27 @@
 
 Step-by-step checklists the owner can run in-game. Produced at every gate.
 
-## Preview `v0.1.0-alpha.preview` (2026-10-01): get in, watch the tide, get out
-The first playable build (D-018). **In it:** the Sift dimension and Singer's Meadow (block set I), the Tides (sky, light, stars, beds, Trills by day and glow petals by night), music reactions, the way in through an Ancient City and the way back, ichor, tide basins and ichor pools.
-It has its own synthesized sounds, with subtitles: the offering, waking and opening, the membrane, the Tide turning (bells, a swell, a gong), basins filling and draining, ichor, and the Meadow's wind and far-off flute.
-**Not in it yet** (the rest of M1): the Blub's behaviour (a spawn egg exists, but its AI is only a basic pet's for now), advancements, and the "breathing" hints on a frame nobody has touched.
+## Gate C: M1 `v0.1.0-alpha` (2026-10-01): get in, watch the tide, befriend a blub, get out
+The M1 vertical slice (it supersedes the `v0.1.0-alpha.preview` build). **In it:**
+- the Sift dimension and Singer's Meadow (block set I);
+- the Tides: sky, light, stars, beds, Trills by day and glow petals by night;
+- music reactions;
+- the way in through an Ancient City (the dormant frame breathes and notices you) and the way back;
+- ichor, tide basins and ichor pools;
+- **the Blub**, befriended by music;
+- the **advancement tab "The Sift"**.
+
+Every sound is our own, synthesized, with subtitles.
+**Not in M1, by design:** Endure is dark but **not dangerous**, because its hunters arrive in M2. Tidewrack, treats and blub breeding are M2. The other biomes are M2–M3.
 
 ### Install (≈5 minutes)
 1. Minecraft Java **26.3**, **Fabric Loader 0.19.5** or newer, and **Fabric API 0.161.0+26.3** in `mods/`.
-2. Put `thesift-0.1.0-alpha.preview.jar` in `mods/` (from the GitHub pre-release `v0.1.0-alpha.preview`, or the `thesift-jar` artifact of the latest CI run, or `./gradlew build` → `build/libs/`).
+2. Put `thesift-0.1.0-alpha.jar` in `mods/`. Get it from the GitHub pre-release `v0.1.0-alpha`, from the `thesift-jar` artifact of the latest CI run, or by running `./gradlew build` → `build/libs/`. Remove any older `thesift-*.jar` first.
 3. Launch. **Expect** the title screen, and `(thesift) The Sift initialized (unofficial fan project)` in `logs/latest.log`.
 
 ### P1. The way in and back (survival, ≈30–60 minutes)
 1. In a new world, gather **30 levels** of experience, then find an **Ancient City** (with cheats: `/locate structure minecraft:ancient_city`). Mind the warden: offering and music both make vibrations.
-2. At the city's centre stands the big reinforced-deepslate frame (22 × 8). **Expect (next build):** as you get near it, soul wisps drift into its opening; within 8 blocks, wisps rise from *you* toward it (more with an empty hand), and the subtitle reads "Your soul stirs toward the frame". With an **empty main hand, hold *use* (right-click) on the frame**.
+2. At the city's centre stands the big reinforced-deepslate frame (22 × 8). **Expect:** the tab "The Sift" opens. As you get near the frame, soul wisps drift into its opening; within 8 blocks, wisps rise from *you* toward it (more with an empty hand), and the subtitle reads "Your soul stirs toward the frame". With an **empty main hand, hold *use* (right-click) on the frame**.
    **Expect:** your XP bar drains in a steady stream, souls flow from you into the frame, faint cyan specks appear on it, and the action bar shows "Your soul flows into the frame (n%)". Releasing stops it at once, and what you gave stays. The full price is level 0 → 30 (1 395 points, ≈ 28 s). In creative it is free.
 3. At 100%: "The frame wakes; it is listening for music", a glow burst, and note particles drift from the frame.
 4. **Play music** near it: a note block (hit it, or power it) or a goat horn within 16 blocks, or a jukebox with a disc within 10. **Expect:** a cyan membrane fills the 20 × 6 opening.
@@ -41,7 +49,7 @@ It has its own synthesized sounds, with subtitles: the offering, waking and open
 4. **Music reactions:** play a note block, goat horn or jukebox near healthy sculk or songwood. **Expect:** glowing petals lift off the sculk and grass, and the songwood's flute holes puff notes (within 12 blocks). It works at home too, and with the sound muted.
 5. **Tell me:** what reads well, and what looks off (colours, textures, the membrane's pattern, the ichor surface)?
 
-### P5. Blubs and advancements (next build, `v0.1.0-alpha`; ≈15 minutes)
+### P5. Blubs and advancements (≈15 minutes)
 1. Find blubs on the Meadow: small pale-blue bunny-things, in groups of 2–5 (with cheats, a **Blub Spawn Egg** from the creative tab).
 2. Place a **note block** next to them and play it once. **Expect:** they stop, ears up, chirp, and drift toward the music. Nobody is befriended yet.
 3. Stand within 4 blocks of one and play again. **Expect:** hearts, a happy squeak and a hop. That blub is yours. Each note befriends one more, the nearest one watching. Redstone-played notes and jukeboxes only make them listen.
@@ -52,8 +60,10 @@ It has its own synthesized sounds, with subtitles: the offering, waking and open
 8. **Advancements:** a tab **The Sift** opens when you walk an Ancient City, then "An Offering" (wake a frame), "Where Souls Drift" (enter the Sift) and "The Tide Turns" (be there when it changes). Befriending a blub also counts for vanilla's "Best Friends Forever".
 9. **Tell me:** does befriending feel deliberate or fiddly? Is the echo charming or noisy? Do the towers topple too soon or too late?
 
-### Known issues in this preview
+### Known issues in M1
 - The frame's, membrane's and ichor's particles are vanilla stand-ins (the sky's motes and the music petals are the Sift's own). The XP drain uses vanilla's soul sound.
+- Basins have no rising-bubble visual yet (the bubbling is heard). Blub animations are simple procedural poses, not keyframed clips.
+- Towers of blubs need a few listening blubs close together; a jukebox works best.
 - The membrane and ichor show the same animation frame on every block (as vanilla water does); a faint per-block rhythm can show on wide sheets.
 - Leaving through a gate always returns you to the frame you entered by. Dying in the Sift sends you to your Overworld spawn.
 - Unofficial fan project, not affiliated with or endorsed by Mojang Studios or Microsoft.

@@ -5,7 +5,7 @@ from *Minecraft Dungeons II*, as a full fourth dimension.
 
 > **Unofficial fan project, not affiliated with or endorsed by Mojang Studios or Microsoft.**
 
-**Status:** playable preview `v0.1.0-alpha.preview`: the Sift dimension, Singer's Meadow, the Tides, the way in through an Ancient City and back, ichor and tide basins. The Blub, befriended by music, is on the development branch for `v0.1.0-alpha`. How to try it: `docs/PLAYTEST.md`. Progress: `docs/STATUS.md`.
+**Status:** M1 `v0.1.0-alpha` (pre-release): the Sift dimension, Singer's Meadow, the Tides, the way in through an Ancient City and back, ichor and tide basins, the Blub (befriended by music), and the advancement tab "The Sift". How to try it: `docs/PLAYTEST.md`. Progress: `docs/STATUS.md`.
 
 ## Building
 - JDK 25 is required (Gradle itself runs on it; `gradle/gradle-daemon-jvm.properties` lets Gradle find or download one).

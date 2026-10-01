@@ -146,6 +146,28 @@ public final class SiftPreviewClientTest implements FabricClientGameTest {
 		context.waitTicks(20);
 		clearChat(context);
 		context.takeScreenshot("wp049_blubs");
+		// The walkthrough's befriending: two notes played by the player's own hand next to the lone blub.
+		world.getServer().runCommand("gamemode creative @a");
+		run(world, "setblock %d %d %d minecraft:note_block", x - 3, y, z - 1);
+		world.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute in thesift:the_sift run tp @a %.1f %d %.1f facing %.1f %d %.1f",
+				x - 1.5, y, z - 1.5, x - 1.5, y, z + 1.5));
+		context.waitTicks(5);
+		boolean befriended = world.getServer().computeOnServer(server -> {
+			ServerLevel sift = server.getLevel(SiftKeys.LEVEL);
+			var player = server.getPlayerList().getPlayers().getFirst();
+			BlockPos note = new BlockPos(x - 3, y, z - 1);
+			sift.gameEvent(player, net.minecraft.world.level.gameevent.GameEvent.NOTE_BLOCK_PLAY, note);
+			sift.gameEvent(player, net.minecraft.world.level.gameevent.GameEvent.NOTE_BLOCK_PLAY, note);
+			return sift.getEntitiesOfClass(Blub.class, new net.minecraft.world.phys.AABB(new BlockPos(x - 2, y, z + 1)).inflate(1),
+					b -> b.isOwnedBy(player)).size() == 1;
+		});
+		if (!befriended) {
+			throw new AssertionError("two hand-played notes should befriend the lone blub");
+		}
+		context.waitTicks(4);
+		clearChat(context);
+		context.takeScreenshot("wp051_befriended");
+		world.getServer().runCommand("gamemode spectator @a");
 		// Beside vanilla neighbours under Flow's light, close up and from 10 blocks.
 		world.getServer().runCommand("execute in thesift:the_sift run time of thesift:tides set thesift:flow_rising");
 		String still = "{NoAI:1b,Rotation:[180f,0f]}";
