@@ -43,6 +43,20 @@ Only one WP is IN PROGRESS at a time.
 | WP-051 | Blub entity: AI and tests | 4 | L | DONE |
 | WP-052 | Entry advancements and lang pass | 4 | S | DONE |
 | WP-053 | M1 integration and Gate C (self-review) | 4 | M | DONE |
+| WP-060 | M2 system design: the hearing rule, retreat, enduring variants, lumen | 4 | L | TODO |
+| WP-061 | Nester design doc | 4 | L | TODO |
+| WP-062 | Bloombud design doc | 4 | L | TODO |
+| WP-063 | Sift Hollows: the cave layer and glowcap pools | 4 | L | TODO |
+| WP-064 | Flora II: tidewrack, Endure bloom, glowcap, chime bell flower, lumen bloom | 4 | L | TODO |
+| WP-065 | Materials and items: tidewrack frond, Endure petal, lumen lantern, blub treats | 4 | M | TODO |
+| WP-066 | The hearing rule and hunter retreat; lumen repelling hunters | 4 | L | TODO |
+| WP-067 | Nester: art, audio, AI, tests | 4 | L | TODO |
+| WP-068 | Bloombud: art, audio, AI, tests | 4 | L | TODO |
+| WP-069 | Enduring variants (the rule, with non-colour markers) | 4 | M | TODO |
+| WP-070 | Spawn tables and the gate sanctuary rule | 4 | M | TODO |
+| WP-071 | Tide marks; basin bubbles and the Sift's own entry particles (polish carried from M1) | 4 | M | TODO |
+| WP-072 | M2 advancements (Stacked, Low Tide, Heard You, Quiet Waters) and lang | 4 | S | TODO |
+| WP-073 | M2 integration and Gate D, `v0.2.0-alpha` | 4 | M | TODO |
 
 Phase 0 and Phase 1 WP details (with evidence logs) are in `docs/archive/PLAN_phase0-1.md`.
 
@@ -601,6 +615,50 @@ Minimum per mission: entry and return, one area with its own terrain, a small bl
 - Log:
 
   - 2026-10-01: Gate C. Build, datagen no-diff, bible, palette and lang checks are green; 71/71 GameTests; the GameTest dedicated server logs no `thesift` warnings (only Loom's dev-classpath note). Performance: chunk generation 0.29× the Overworld, 50 basins through a Flow p95 0.005 ms, 50 busy blubs 0.87–1.22× rabbits, ichor 0.89–0.98× lava. The headless walkthrough (client GameTest) covers frame notice, opening, crossing, the Tides, a basin filling, befriending a blub (hearts), the gate, and the advancements; screenshots looked at. Two adversarial reviews since the preview: the Blub (a crash fixed), then frame cues, advancements and vents. Released as the `v0.1.0-alpha` pre-release.
+## M2 — the hunt (`v0.2.0-alpha`): Endure means danger
+Source: 01_CONTENT_BIBLE.md §M2 row; bible/creatures.md, items.md, world.md (M2 rows); systems.md §4; D-011, D-013, D-016. Every WP follows the M1 template; designs go through the ladder and ≤ 3 critique rounds, code through fresh adversarial review before Gate D.
+
+### WP-060 M2 system design: the hearing rule, retreat, enduring variants, lumen
+- Phase / Milestone: 4 / M2 · Tier: L (design) · Status: TODO · Depends on: Gate C
+- Goal: `docs/DESIGN/system_hunt.md`: what Nesters hear in Endure (the vibrations a sculk sensor hears, D-011), how they retreat at dawn (D-013), the enduring-variant rule (resilient, soul particles, non-colour markers), lumen's repel radius (as soul fire for piglins), Quiet Waters' "never heard" rule, numbers next to vanilla analogs (warden, sculk sensor, piglin).
+- Definition of Done: frozen after critique (≤ 3 rounds); BALANCE.md rows; the M1 blub's Endure shelter checked against the new danger.
+
+### WP-061 Nester design doc
+- Tier: L (design) · Depends on: WP-060 · Goal: `mob_nester.md` via the design ladder (≥ 8 concepts), the full §8.1 template, critique ≤ 3, frozen; BALANCE rows.
+
+### WP-062 Bloombud design doc
+- Tier: L (design) · Depends on: WP-060 · Goal: `mob_bloombud.md` (groups across the Meadow, canon), same bar as WP-061.
+
+### WP-063 Sift Hollows: the cave layer and glowcap pools
+- Tier: L · Depends on: WP-060 · Goal: the underground biome (multi-noise depth), hymnstone caverns, glowcap pools (Should); screenshots looked at; chunk-generation cost ≤ 1.5× the Overworld (measured as in M1).
+
+### WP-064 Flora II
+- Tier: L · Depends on: WP-063 · Goal: tidewrack (opens in Thrive), Endure bloom (opens in Endure, at the waterline), glowcap (light 10), chime bell flower (rings when walked through: a vibration), lumen bloom; textures by script (palette check), models, loot, tags, sounds, GameTests per behaviour.
+
+### WP-065 Materials and items
+- Tier: M · Depends on: WP-064 · Goal: tidewrack frond (dye, blub treats), Endure petal, lumen lantern; recipes; blub treats heal and breed blubs (the M1 doc's M2 hook; a baby blub model and texture); GameTests.
+
+### WP-066 The hearing rule and hunter retreat; lumen
+- Tier: L · Depends on: WP-060, WP-064 · Goal: the system in code (a listener per hunter, no polling), retreat (burrowing) as Endure ends, lumen repelling hunters; GameTests for each rule; cost measured.
+
+### WP-067 Nester · WP-068 Bloombud
+- Tier: L each · Depends on: WP-061/062, WP-066 · Goal: art (code models, script textures, previews looked at), synthesized audio with subtitles, AI, spawns, GameTests per behaviour, cost ≤ 1.5× the nearest vanilla analog.
+
+### WP-069 Enduring variants
+- Tier: M · Depends on: WP-067, WP-068 · Goal: the rule from WP-060 applied to the common hostiles; markers readable without colour (§7.6).
+
+### WP-070 Spawn tables and the gate sanctuary rule
+- Tier: M · Depends on: WP-067, WP-068 · Goal: Meadow and Hollows spawn tables by Tide; no hostile spawns near a gate (the rule deferred from WP-047); GameTests.
+
+### WP-071 Tide marks and M1 polish
+- Tier: M · Goal: tide marks along basin rims; the basins' rising bubbles; the Sift's own particles for the frame, membrane and ichor (M1 known issues).
+
+### WP-072 M2 advancements and lang
+- Tier: S · Goal: Stacked (a tower of five blubs), Low Tide, Heard You, Quiet Waters; `check_lang.py` clean.
+
+### WP-073 M2 integration and Gate D
+- Tier: M · Goal: as WP-053: checks green, performance logged, a headless walkthrough of an Endure night (heard, hunted, safe under lumen), PLAYTEST.md, release `v0.2.0-alpha`.
+
 ## Later (coarse; detailed when each milestone starts)
-- M2 the hunt · M3 souls · M4 the occupation · M5 the Meadow's life · M6 the heart of the blight · the Could pool (see 01_CONTENT_BIBLE.md §3).
+- M3 souls · M4 the occupation · M5 the Meadow's life · M6 the heart of the blight · the Could pool (see 01_CONTENT_BIBLE.md §3).
 - Phases 6–8: polish, hardening, release (mission §6).
