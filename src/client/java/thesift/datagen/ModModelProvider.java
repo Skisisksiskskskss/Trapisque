@@ -7,6 +7,7 @@ import net.minecraft.client.data.models.ItemModelGenerators;
 import net.minecraft.client.data.models.blockstates.MultiVariantGenerator;
 import net.minecraft.client.data.models.blockstates.PropertyDispatch;
 import net.minecraft.client.data.models.model.ModelLocationUtils;
+import net.minecraft.client.resources.model.sprite.Material;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.client.data.models.model.ModelTemplates;
@@ -15,7 +16,9 @@ import net.minecraft.client.data.models.model.TextureSlot;
 import net.minecraft.client.data.models.model.TexturedModel;
 import net.minecraft.world.level.block.Block;
 
+import thesift.TheSift;
 import thesift.registry.ModBlocks;
+import thesift.registry.ModItems;
 
 /** Blockstates, block models and item models for block set I (textures: WP-041). */
 final class ModModelProvider extends FabricModelProvider {
@@ -49,6 +52,7 @@ final class ModModelProvider extends FabricModelProvider {
 		g.createTrivialBlock(ModBlocks.GATESTONE, TexturedModel.COLUMN.updateTexture(m -> m
 				.put(TextureSlot.SIDE, TextureMapping.getBlockTexture(ModBlocks.GATESTONE))
 				.put(TextureSlot.END, TextureMapping.getBlockTexture(ModBlocks.GATESTONE, "_top"))));
+		g.createAirLikeBlock(ModBlocks.ICHOR, new Material(TheSift.id("block/ichor_still")));
 		// Like the Nether portal: hand-written thin models (assets/thesift/models/block/sift_membrane_{ns,ew}.json).
 		g.blockStateOutput.accept(MultiVariantGenerator.dispatch(ModBlocks.SIFT_MEMBRANE).with(
 				PropertyDispatch.initial(BlockStateProperties.HORIZONTAL_AXIS)
@@ -63,5 +67,6 @@ final class ModModelProvider extends FabricModelProvider {
 
 	@Override
 	public void generateItemModels(ItemModelGenerators g) {
+		g.generateFlatItem(ModItems.ICHOR_BUCKET, ModelTemplates.FLAT_ITEM);
 	}
 }

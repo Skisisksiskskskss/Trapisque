@@ -12,14 +12,20 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.DoubleHighBlockItem;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.DoublePlantBlock;
 
 import thesift.TheSift;
+import thesift.item.IchorBucketItem;
 
 /** Items (D-019). Block items are registered together with their blocks, in creative-tab order. */
 public final class ModItems {
 	private static final List<Item> CREATIVE_ORDER = new ArrayList<>();
+	private static final List<Item> OTHER_ITEMS = new ArrayList<>();
+
+	public static final Item ICHOR_BUCKET = other(register(key("ichor_bucket"), p -> new IchorBucketItem(ModFluids.ICHOR, p),
+			new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1)));
 
 	private ModItems() {
 	}
@@ -41,13 +47,20 @@ public final class ModItems {
 		return Registry.register(BuiltInRegistries.ITEM, key, item);
 	}
 
+	private static Item other(Item item) {
+		OTHER_ITEMS.add(item);
+		return item;
+	}
+
 	static ResourceKey<Item> key(String name) {
 		return ResourceKey.create(Registries.ITEM, TheSift.id(name));
 	}
 
 	/** Every mod item in the order the creative tab shows them. */
 	public static List<Item> creativeOrder() {
-		return Collections.unmodifiableList(CREATIVE_ORDER);
+		List<Item> all = new ArrayList<>(CREATIVE_ORDER);
+		all.addAll(OTHER_ITEMS);
+		return Collections.unmodifiableList(all);
 	}
 
 	public static void init() {

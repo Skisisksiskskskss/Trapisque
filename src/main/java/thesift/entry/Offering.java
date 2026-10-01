@@ -17,6 +17,8 @@ import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
+import thesift.world.SoulPoints;
+
 /**
  * Step 3 of the entry (entry_path.md): holding <i>use</i> on an Ancient City frame with an empty
  * hand streams the player's experience into it. Nothing is taken without that deliberate action.
@@ -67,12 +69,11 @@ public final class Offering {
 
 		int take = Math.min(POINTS_PER_USE, PRICE - link.charge());
 		if (!player.getAbilities().instabuild) {
-			take = Math.min(take, totalPoints(player));
+			take = SoulPoints.take(player, take);
 			if (take <= 0) {
 				tell(player, Component.translatable("thesift.frame.no_soul"));
 				return true;
 			}
-			removePoints(player, take);
 		}
 		SiftLinks.FrameLink updated = links.addCharge(link.frame(), take);
 		streamSouls(player, level, touched, updated);
@@ -119,39 +120,5 @@ public final class Offering {
 		if (player.connection != null) { // GameTest mock players have none
 			player.sendOverlayMessage(message);
 		}
-	}
-
-	/** XP needed to go from {@code level} to the next one (vanilla's {@code Player#getXpNeededForNextLevel}). */
-	static int xpNeeded(int level) {
-		return level >= 30 ? 112 + (level - 30) * 9 : level >= 15 ? 37 + (level - 15) * 5 : 7 + level * 2;
-	}
-
-	/** Total XP from zero to {@code level} (the closed forms of summing {@link #xpNeeded}). */
-	static long pointsForLevel(int level) {
-		long l = level;
-		if (l <= 16) {
-			return l * l + 6 * l;
-		}
-		if (l <= 31) {
-			return (5 * l * l - 81 * l + 720) / 2;
-		}
-		return (9 * l * l - 325 * l + 4440) / 2;
-	}
-
-	public static int totalPoints(Player player) {
-		long points = pointsForLevel(player.experienceLevel) + Math.round(player.experienceProgress * xpNeeded(player.experienceLevel));
-		return (int) Math.min(Integer.MAX_VALUE, points);
-	}
-
-	/** Removes {@code points} by recomputing level and progress, so it works across level boundaries. */
-	static void removePoints(ServerPlayer player, int points) {
-		long remaining = Math.max(0, (long) totalPoints(player) - points);
-		int level = player.experienceLevel;
-		while (level > 0 && pointsForLevel(level) > remaining) {
-			level--;
-		}
-		player.setExperienceLevels(level);
-		player.setExperiencePoints((int) (remaining - pointsForLevel(level)));
-		player.totalExperience = Math.max(0, player.totalExperience - points);
 	}
 }

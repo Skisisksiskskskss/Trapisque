@@ -16,6 +16,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 
 import thesift.registry.ModBlocks;
+import thesift.registry.ModFluids;
 import thesift.registry.ModTags;
 
 /** Block and item tags for block set I. */
@@ -111,6 +112,21 @@ final class ModTagProviders {
 					net.minecraft.world.entity.EntityTypes.ENDER_DRAGON, net.minecraft.world.entity.EntityTypes.ELDER_GUARDIAN}) {
 				cannotCross.add(BuiltInRegistries.ENTITY_TYPE.getResourceKey(type).orElseThrow());
 			}
+			// Filled by the Sift's natives as they land (the blub in WP-051).
+			builder(ModTags.ICHOR_ADAPTED);
+		}
+	}
+
+	static final class Fluids extends FabricTagsProvider.FluidTagsProvider {
+		Fluids(FabricPackOutput output, CompletableFuture<HolderLookup.Provider> registries) {
+			super(output, registries);
+		}
+
+		@Override
+		protected void addTags(HolderLookup.Provider registries) {
+			builder(ModTags.ICHOR)
+					.add(BuiltInRegistries.FLUID.getResourceKey(ModFluids.ICHOR).orElseThrow())
+					.add(BuiltInRegistries.FLUID.getResourceKey(ModFluids.FLOWING_ICHOR).orElseThrow());
 		}
 	}
 }

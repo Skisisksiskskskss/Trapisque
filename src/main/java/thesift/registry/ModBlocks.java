@@ -10,6 +10,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.random.WeightedList;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.FlowerPotBlock;
+import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.SoundType;
@@ -80,6 +81,10 @@ public final class ModBlocks {
 	public static final Block SIFT_MEMBRANE = registerNoItem("sift_membrane", SiftMembraneBlock::new, BlockBehaviour.Properties.of()
 			.mapColor(MapColor.COLOR_CYAN).noCollision().strength(-1.0F).sound(SoundType.GLASS).lightLevel(s -> 11)
 			.pushReaction(PushReaction.IMMOVEABLE).noLootTable());
+
+	public static final Block ICHOR = registerNoItem("ichor", p -> new LiquidBlock(ModFluids.ICHOR, p), BlockBehaviour.Properties.of()
+			.mapColor(MapColor.COLOR_PURPLE).replaceable().noCollision().strength(100.0F).lightLevel(s -> 4)
+			.pushReaction(PushReaction.POPPED).noLootTable().liquid().sound(SoundType.EMPTY));
 
 	private ModBlocks() {
 	}

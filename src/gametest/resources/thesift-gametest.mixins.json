@@ -3,7 +3,8 @@
 	"package": "thesift.test.mixin",
 	"compatibilityLevel": "JAVA_25",
 	"mixins": [
-		"GameTestServerMixin"
+		"GameTestServerMixin",
+		"EntityStuckAccessor"
 	],
 	"injectors": {
 		"defaultRequire": 1

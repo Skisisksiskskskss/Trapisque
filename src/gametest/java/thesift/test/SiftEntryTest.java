@@ -25,6 +25,7 @@ import thesift.entry.SiftGates;
 import thesift.entry.SiftLinks;
 import thesift.registry.ModBlocks;
 import thesift.world.SiftKeys;
+import thesift.world.SoulPoints;
 
 /** WP-046/047: the way in and the way back (entry_path.md). */
 public final class SiftEntryTest {
@@ -74,18 +75,18 @@ public final class SiftEntryTest {
 		ServerLevel level = helper.getLevel();
 		SiftFrame frame = buildCityFrame(level, site(helper, 2), Direction.Axis.X);
 		ServerPlayer player = playerAt(helper, frame, 30);
-		helper.assertValueEqual(Offering.totalPoints(player), Offering.PRICE, "level 30 is the whole price");
+		helper.assertValueEqual(SoulPoints.total(player), Offering.PRICE, "level 30 is the whole price");
 
 		helper.assertTrue(Offering.offer(player, level, frame.at(3, 0)), "the frame takes an offering");
-		helper.assertValueEqual(Offering.totalPoints(player), Offering.PRICE - Offering.POINTS_PER_USE, "one use takes 10 points");
+		helper.assertValueEqual(SoulPoints.total(player), Offering.PRICE - Offering.POINTS_PER_USE, "one use takes 10 points");
 		helper.assertValueEqual(player.experienceLevel, 29, "crossing a level boundary");
 
-		for (int i = 0; i < 200 && Offering.totalPoints(player) > 0; i++) {
+		for (int i = 0; i < 200 && SoulPoints.total(player) > 0; i++) {
 			Offering.offer(player, level, frame.at(3, 0));
 		}
 		SiftLinks.FrameLink link = SiftLinks.get(level.getServer()).frameWithBorder(frame.at(3, 0)).orElseThrow();
 		helper.assertTrue(link.awake(), "the full price wakes the frame: " + link.charge());
-		helper.assertValueEqual(Offering.totalPoints(player), 0, "every point went in");
+		helper.assertValueEqual(SoulPoints.total(player), 0, "every point went in");
 		helper.assertFalse(FrameMusic.isOpen(level, frame), "waking does not open it: that takes music");
 		helper.succeed();
 	}
@@ -96,9 +97,9 @@ public final class SiftEntryTest {
 		BlockPos lone = site(helper, 3);
 		level.setBlockAndUpdate(lone, Blocks.REINFORCED_DEEPSLATE.defaultBlockState());
 		ServerPlayer player = playerAt(helper, new SiftFrame(lone, Direction.Axis.X, 22, 8), 10);
-		int before = Offering.totalPoints(player);
+		int before = SoulPoints.total(player);
 		helper.assertFalse(Offering.offer(player, level, lone), "a lone block is no frame");
-		helper.assertValueEqual(Offering.totalPoints(player), before, "nothing is taken");
+		helper.assertValueEqual(SoulPoints.total(player), before, "nothing is taken");
 		helper.succeed();
 	}
 
