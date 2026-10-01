@@ -11,6 +11,9 @@
 			"thesift.test.SmokeTest",
 			"thesift.test.SiftDimensionTest",
 			"thesift.test.SiftBlocksTest"
+		],
+		"fabric-client-gametest": [
+			"thesift.test.client.SiftPreviewClientTest"
 		]
 	},
 	"depends": {

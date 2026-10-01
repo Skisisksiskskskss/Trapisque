@@ -35,7 +35,8 @@ fabricApi {
 	configureTests {
 		createSourceSet = true
 		modId = "thesift-gametest"
-		enableClientGameTests = false
+		// Client GameTests take preview screenshots; run them with tools/dev/client-previews.sh (needs Xvfb).
+		enableClientGameTests = true
 	}
 }
 

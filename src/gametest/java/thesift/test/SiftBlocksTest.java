@@ -94,11 +94,58 @@ public final class SiftBlocksTest {
 		helper.succeed();
 	}
 
+	/** Worldgen: a 5×5-chunk patch of the Meadow has songwood trees and healthy-sculk grass on its surface. */
+	@GameTest(dimension = SIFT, maxTicks = 400)
+	public void meadowWorldgenHasTreesAndGrass(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		BlockPos origin = helper.absolutePos(BlockPos.ZERO);
+		int cx = (origin.getX() >> 4) + 64, cz = (origin.getZ() >> 4) + 64; // away from GameTest structures
+		int logs = 0, grass = 0;
+		for (int dx = -2; dx <= 2; dx++) {
+			for (int dz = -2; dz <= 2; dz++) {
+				var chunk = level.getChunk(cx + dx, cz + dz);
+				for (int x = 0; x < 16; x++) {
+					for (int z = 0; z < 16; z++) {
+						int top = chunk.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE, x, z);
+						for (int y = top; y > top - 12; y--) {
+							var state = chunk.getBlockState(new BlockPos(x, y, z));
+							if (state.is(ModBlocks.SONGWOOD_LOG)) {
+								logs++;
+							} else if (state.is(ModBlocks.HEALTHY_SCULK_GRASS) || state.is(ModBlocks.TALL_HEALTHY_SCULK_GRASS)) {
+								grass++;
+							}
+						}
+					}
+				}
+			}
+		}
+		helper.assertTrue(logs > 0, "songwood logs in 25 Meadow chunks: " + logs);
+		helper.assertTrue(grass > 50, "grass in 25 Meadow chunks: " + grass);
+		helper.succeed();
+	}
+
+	/** Worldgen: the Meadow's tree placement puts songwood on open healthy sculk. */
+	@GameTest(dimension = SIFT, skyAccess = true)
+	public void meadowTreeFeaturePlacesSongwood(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		BlockPos centre = new BlockPos(4, 2, 4);
+		clearSky(helper, centre);
+		helper.setBlock(centre.below(), ModBlocks.HEALTHY_SCULK);
+		helper.setBlock(centre, ModBlocks.HEALTHY_SCULK_GRASS);
+		var feature = level.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.FEATURE)
+				.getOrThrow(thesift.world.SiftFeatures.SONGWOOD_TREE).value();
+		boolean placed = feature.place(level, level.getChunkSource().getGenerator(), level.getRandom(), helper.absolutePos(centre));
+		helper.assertTrue(placed, "songwood placed over healthy-sculk grass");
+		helper.assertBlockPresent(ModBlocks.SONGWOOD_LOG, centre);
+		helper.succeed();
+	}
+
 	@GameTest(dimension = SIFT, skyAccess = true)
 	public void songwoodSaplingGrowsATreeInTheSift(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		// The trunk needs a clear 5×5 column (TwoLayersFeatureSize), so plant it in the middle of the test area.
 		BlockPos centre = new BlockPos(4, 2, 4);
+		clearSky(helper, centre);
 		helper.setBlock(centre.below(), ModBlocks.HEALTHY_SCULK);
 		helper.setBlock(centre, ModBlocks.SONGWOOD_SAPLING);
 		BlockPos pos = helper.absolutePos(centre);
@@ -108,5 +155,16 @@ public final class SiftBlocksTest {
 		}
 		helper.assertBlockPresent(ModBlocks.SONGWOOD_LOG, centre);
 		helper.succeed();
+	}
+
+	/** Sift GameTests sit deep in hymnstone; clear room above for a tree to grow. */
+	private static void clearSky(GameTestHelper helper, BlockPos centre) {
+		for (int x = -3; x <= 3; x++) {
+			for (int z = -3; z <= 3; z++) {
+				for (int y = 0; y <= 16; y++) {
+					helper.setBlock(centre.offset(x, y, z), Blocks.AIR);
+				}
+			}
+		}
 	}
 }

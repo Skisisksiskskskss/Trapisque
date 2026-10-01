@@ -58,6 +58,14 @@ final class ModTagProviders {
 			tag(BlockTags.PLANKS, ModBlocks.SONGWOOD_PLANKS);
 			tag(ModTags.SONGWOOD_LOGS, ModBlocks.SONGWOOD_LOG);
 			builder(BlockItemTags.LOGS_THAT_BURN.block()).addTag(ModTags.SONGWOOD_LOGS);
+			// Like vanilla grass: trees, mushrooms and flowing liquids replace it.
+			tag(BlockTags.REPLACEABLE, ModBlocks.HEALTHY_SCULK_GRASS, ModBlocks.TALL_HEALTHY_SCULK_GRASS);
+			tag(BlockTags.REPLACEABLE_BY_TREES, ModBlocks.HEALTHY_SCULK_GRASS, ModBlocks.TALL_HEALTHY_SCULK_GRASS);
+			tag(BlockTags.REPLACEABLE_BY_MUSHROOMS, ModBlocks.HEALTHY_SCULK_GRASS, ModBlocks.TALL_HEALTHY_SCULK_GRASS);
+			tag(BlockTags.WASHED_AWAY_BY_FLUIDS, ModBlocks.HEALTHY_SCULK_GRASS, ModBlocks.TALL_HEALTHY_SCULK_GRASS);
+			// 26.3 decides "blocks motion" (heightmaps, spawning, worldgen placement) by tag, not by shape.
+			tag(BlockTags.BLOCKS_MOTION_NO_LEAVES, ModBlocks.HYMNSTONE, ModBlocks.HYMNSTONE_BRICKS, ModBlocks.HEALTHY_SCULK,
+					ModBlocks.TIDE_SAND, ModBlocks.TIDE_VENT, ModBlocks.GATESTONE);
 			tag(BlockTags.WITHER_IMMUNE, ModBlocks.GATESTONE);
 			tag(BlockTags.DRAGON_IMMUNE, ModBlocks.GATESTONE);
 		}

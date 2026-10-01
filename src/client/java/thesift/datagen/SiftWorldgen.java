@@ -7,7 +7,6 @@ import net.minecraft.core.HolderGetter;
 import net.minecraft.core.Holder;
 import net.minecraft.data.worldgen.BlockStateProviders;
 import net.minecraft.data.worldgen.placement.PlacementUtils;
-import net.minecraft.data.worldgen.placement.VegetationPlacements;
 import net.minecraft.util.random.WeightedList;
 import net.minecraft.util.valueproviders.ConstantInt;
 import net.minecraft.world.level.block.state.BlockState;
@@ -212,12 +211,16 @@ final class SiftWorldgen {
 		HolderGetter<NormalNoise> noises = context.lookup(Registries.NOISE);
 		// Rolling hills: a height gradient around y 64–100 plus a broad 2D hill noise and a little 3D
 		// variation. No sea and no aquifers (world.md §2).
-		DensityFunction gradient = DensityFunctions.yClampedGradient(48, 128, 1.0F, -1.0F);
-		DensityFunction hills = DensityFunctions.mul(DensityFunctions.constant(0.45F),
-				DensityFunctions.noise(noises.getOrThrow(Noises.SURFACE), 0.6, 0.0));
-		DensityFunction detail = DensityFunctions.mul(DensityFunctions.constant(0.12F),
-				DensityFunctions.noise(noises.getOrThrow(Noises.SURFACE_SECONDARY), 2.0, 1.0));
-		DensityFunction finalDensity = DensityFunctions.interpolated(DensityFunctions.add(gradient, DensityFunctions.add(hills, detail)), 4, 8);
+		DensityFunction gradient = DensityFunctions.yClampedGradient(40, 136, 1.0F, -1.0F);
+		// Rolling hills: a broad 2D swell, a closer 2D ripple, and a little 3D variation for overhangs.
+		DensityFunction swell = DensityFunctions.mul(DensityFunctions.constant(0.40F),
+				DensityFunctions.noise(noises.getOrThrow(Noises.SURFACE), 2.0, 0.0));
+		DensityFunction ripple = DensityFunctions.mul(DensityFunctions.constant(0.10F),
+				DensityFunctions.noise(noises.getOrThrow(Noises.SURFACE_SECONDARY), 3.5, 0.0));
+		DensityFunction detail = DensityFunctions.mul(DensityFunctions.constant(0.03F),
+				DensityFunctions.noise(noises.getOrThrow(Noises.SURFACE_SECONDARY), 8.0, 2.0));
+		DensityFunction finalDensity = DensityFunctions.interpolated(
+				DensityFunctions.add(gradient, DensityFunctions.add(swell, DensityFunctions.add(ripple, detail))), 4, 8);
 		NoiseRouter router = new NoiseRouter(
 				DensityFunctions.zero(), DensityFunctions.zero(), DensityFunctions.zero(), DensityFunctions.zero(),
 				DensityFunctions.zero(), DensityFunctions.zero(), DensityFunctions.zero(), finalDensity);
@@ -274,8 +277,13 @@ final class SiftWorldgen {
 		Holder<Feature> tree = features.getOrThrow(SiftFeatures.SONGWOOD_TREE);
 		PlacementUtils.register(context, SiftFeatures.SONGWOOD_CHECKED, tree, PlacementUtils.filteredByBlockSurvival(ModBlocks.SONGWOOD_SAPLING));
 		// Groves, not forest: about one tree per chunk on average, clumped by chance.
+		// Vanilla's treePlacement minus its water-depth filter: the Sift has no water.
 		PlacementUtils.register(context, SiftFeatures.TREES_MEADOW, tree,
-				VegetationPlacements.treePlacement(PlacementUtils.countExtra(0, 0.5F, 2), ModBlocks.SONGWOOD_SAPLING));
+				PlacementUtils.countExtra(0, 0.5F, 2),
+				InSquarePlacement.spread(),
+				PlacementUtils.HEIGHTMAP_OCEAN_FLOOR,
+				BiomeFilter.biome(),
+				BlockPredicateFilter.forPredicate(BlockPredicate.wouldSurvive(ModBlocks.SONGWOOD_SAPLING)));
 		PlacementUtils.register(context, SiftFeatures.GRASS_MEADOW, features.getOrThrow(SiftFeatures.HEALTHY_SCULK_GRASS_PATCH),
 				NoiseThresholdCountPlacement.of(-0.8, 5, 10),
 				InSquarePlacement.spread(),

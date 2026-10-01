@@ -22,31 +22,44 @@
         "left": {
           "type": "minecraft:gradient",
           "axis": "y",
-          "from_coordinate": 48,
+          "from_coordinate": 40,
           "from_value": 1.0,
-          "to_coordinate": 128,
+          "to_coordinate": 136,
           "to_value": -1.0
         },
         "right": {
           "type": "minecraft:add",
           "left": {
             "type": "minecraft:mul",
-            "left": 0.45,
+            "left": 0.4,
             "right": {
               "type": "minecraft:noise",
               "noise": "minecraft:surface",
-              "xz_scale": 0.6,
+              "xz_scale": 2.0,
               "y_scale": 0.0
             }
           },
           "right": {
-            "type": "minecraft:mul",
-            "left": 0.12,
+            "type": "minecraft:add",
+            "left": {
+              "type": "minecraft:mul",
+              "left": 0.1,
+              "right": {
+                "type": "minecraft:noise",
+                "noise": "minecraft:surface_secondary",
+                "xz_scale": 3.5,
+                "y_scale": 0.0
+              }
+            },
             "right": {
-              "type": "minecraft:noise",
-              "noise": "minecraft:surface_secondary",
-              "xz_scale": 2.0,
-              "y_scale": 1.0
+              "type": "minecraft:mul",
+              "left": 0.03,
+              "right": {
+                "type": "minecraft:noise",
+                "noise": "minecraft:surface_secondary",
+                "xz_scale": 8.0,
+                "y_scale": 2.0
+              }
             }
           }
         }
