@@ -330,9 +330,11 @@ public final class SiftEntryTest {
 	public void aRealAncientCityFrameIsFound(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		BlockPos at = site(helper, 12).atY(0);
-		// /place needs every chunk the city can reach loaded (max_distance_from_center 116).
+		// /place needs every chunk the city can reach loaded (max_distance_from_center 116). Forced,
+		// because getChunk's own ticket can expire before /place runs when other tests load chunks too.
 		for (int cx = (at.getX() >> 4) - 8; cx <= (at.getX() >> 4) + 8; cx++) {
 			for (int cz = (at.getZ() >> 4) - 8; cz <= (at.getZ() >> 4) + 8; cz++) {
+				level.setChunkForced(cx, cz, true);
 				level.getChunk(cx, cz);
 			}
 		}
@@ -354,6 +356,12 @@ public final class SiftEntryTest {
 				}
 			}
 		}
+		for (int cx = (at.getX() >> 4) - 8; cx <= (at.getX() >> 4) + 8; cx++) {
+			for (int cz = (at.getZ() >> 4) - 8; cz <= (at.getZ() >> 4) + 8; cz++) {
+				level.setChunkForced(cx, cz, false);
+			}
+		}
+		helper.assertTrue(found != null, "the placed city has a frame");
 		helper.assertValueEqual(found.origin().getY() + SiftFrame.CITY_HEIGHT - 1, y, "frame top at the anchor");
 		helper.succeed();
 	}

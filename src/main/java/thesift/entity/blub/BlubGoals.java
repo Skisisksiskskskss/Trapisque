@@ -87,7 +87,7 @@ final class BlubGoals {
 			}
 			// Every blub reacts to the same Tide change: each waits a random 0–5 s before searching.
 			if (this.delay == 0) {
-				this.delay = 1 + this.blub.getRandom().nextInt(100);
+				this.delay = reducedTickDelay(1 + this.blub.getRandom().nextInt(100)); // canUse runs every other tick
 			}
 			return --this.delay <= 0;
 		}
@@ -121,7 +121,7 @@ final class BlubGoals {
 			}
 			this.walkTicks++;
 			boolean there = this.target == null || this.blub.blockPosition().distManhattan(this.target) <= 1;
-			if (there || this.blub.getNavigation().isDone() || this.walkTicks > 400) {
+			if (there || this.blub.getNavigation().isDone() || this.walkTicks > reducedTickDelay(400)) {
 				this.blub.getNavigation().stop();
 				this.blub.setCurled(true); // under the roof, at the owner's feet, or as close as it got
 			}
@@ -214,7 +214,7 @@ final class BlubGoals {
 			if (--this.nextMove > 0) {
 				return;
 			}
-			this.nextMove = 60 + this.blub.getRandom().nextInt(60);
+			this.nextMove = reducedTickDelay(60 + this.blub.getRandom().nextInt(60));
 			BlockPos cell = waterlineCell(this.vent, this.blub.getRandom().nextInt(4) == 0);
 			if (cell != null) {
 				walkTo(this.blub, cell, 1.0);
@@ -333,7 +333,9 @@ final class BlubGoals {
 				this.blub.getNavigation().stop(); // stand and sway
 				return;
 			}
-			if (this.tower == null) {
+			// tick() also runs on the off-ticks without canContinueToUse(): a blub that just climbed
+			// must not look for the top again (it is the top now, and would mount itself).
+			if (this.tower == null || this.blub.isPassenger()) {
 				return;
 			}
 			this.climbTicks++;
@@ -342,7 +344,7 @@ final class BlubGoals {
 			double dz = top.getZ() - this.blub.getZ();
 			if (dx * dx + dz * dz < 1.2 * 1.2 && this.blub.onGround()) {
 				this.blub.getNavigation().stop();
-				if (this.blub.startRiding(top)) {
+				if (top != this.blub && canClimb(this.blub, this.tower) && this.blub.startRiding(top)) {
 					this.blub.playSound(ModSounds.BLUB_HOP, 0.6F, this.blub.getVoicePitch());
 				}
 			} else if (this.climbTicks % 10 == 1) {
@@ -554,7 +556,7 @@ final class BlubGoals {
 			if (!this.thrive() || --this.cooldown > 0) {
 				return false;
 			}
-			this.cooldown = 40 + this.blub.getRandom().nextInt(61);
+			this.cooldown = reducedTickDelay(40 + this.blub.getRandom().nextInt(61));
 			if (this.blub.getRandom().nextInt(6) != 0) {
 				return false;
 			}
@@ -564,12 +566,12 @@ final class BlubGoals {
 
 		@Override
 		public boolean canContinueToUse() {
-			return this.thrive() && this.spot != null && this.soakTicks > 0 && this.walkTicks < 300 && isBath(this.blub.level(), this.spot);
+			return this.thrive() && this.spot != null && this.soakTicks > 0 && this.walkTicks < reducedTickDelay(300) && isBath(this.blub.level(), this.spot);
 		}
 
 		@Override
 		public void start() {
-			this.soakTicks = 200 + this.blub.getRandom().nextInt(401);
+			this.soakTicks = reducedTickDelay(200 + this.blub.getRandom().nextInt(401)); // tick() runs every other tick
 			this.walkTicks = 0;
 			this.arrived = false;
 			walkTo(this.blub, this.spot, 1.0);
@@ -587,7 +589,7 @@ final class BlubGoals {
 				if (this.blub.getRandom().nextInt(120) == 0) {
 					this.blub.playSound(ModSounds.BLUB_SPLASH, 0.5F, this.blub.getVoicePitch());
 				}
-			} else if (++this.walkTicks % 40 == 0 || this.blub.getNavigation().isDone()) {
+			} else if (++this.walkTicks % 20 == 0 || this.blub.getNavigation().isDone()) {
 				walkTo(this.blub, this.spot, 1.0);
 			}
 		}

@@ -254,6 +254,13 @@ public final class SiftBlubTest {
 			blubs.add(helper.spawn(ModEntities.BLUB, new Vec3(x, 1, z)));
 			rabbits.add(helper.spawn(net.minecraft.world.entity.EntityTypes.RABBIT, new Vec3(x + 1, 1, z + 1)));
 		}
+		// Busy blubs, not idle ones: half befriended (owner tracking, herald), all listening to music.
+		ServerPlayer owner = (ServerPlayer) helper.makeMockServerPlayer(GameType.SURVIVAL);
+		owner.setPos(helper.absoluteVec(new Vec3(8.5, 1, 8.5)));
+		for (int i = 0; i < blubs.size(); i += 2) {
+			blubs.get(i).tame(owner);
+		}
+		helper.getLevel().gameEvent(null, GameEvent.JUKEBOX_PLAY, helper.absolutePos(new BlockPos(8, 1, 8)));
 		long[] cost = new long[2];
 		for (int round = 0; round < 400; round++) {
 			boolean blubsFirst = round % 2 == 0;
@@ -261,6 +268,7 @@ public final class SiftBlubTest {
 				boolean doBlubs = (pass == 0) == blubsFirst;
 				long t0 = System.nanoTime();
 				for (Entity e : doBlubs ? blubs : rabbits) {
+					e.tickCount++; // as ServerLevel.tickNonPassenger does
 					e.tick();
 				}
 				if (round >= 100) { // the first 100 rounds warm the JIT up
@@ -274,6 +282,101 @@ public final class SiftBlubTest {
 		helper.assertTrue(ratio < 3.0, "50 blubs cost " + ratio + "x 50 rabbits");
 		blubs.forEach(Entity::discard);
 		rabbits.forEach(Entity::discard);
+		helper.succeed();
+	}
+
+	/**
+	 * AI on (the review's probe): eight listening blubs in Thrive build towers on their own. No blub
+	 * ever rides itself, no tower passes five, and the server keeps ticking.
+	 */
+	@GameTest(dimension = "thesift:the_sift", structure = SiftBasinTest.BIG, maxTicks = 500)
+	public void listeningBlubsStackOnTheirOwn(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		for (int x = 0; x < 17; x++) {
+			for (int z = 0; z < 17; z++) {
+				helper.setBlock(new BlockPos(x, 0, z), ModBlocks.HEALTHY_SCULK);
+			}
+		}
+		helper.assertValueEqual(Tide.current(level), Tide.THRIVE, "the test server's Tide clock waits at Thrive");
+		List<Blub> blubs = new java.util.ArrayList<>();
+		for (int i = 0; i < 8; i++) {
+			blubs.add(helper.spawn(ModEntities.BLUB, new Vec3(6.5 + (i % 3), 1, 6.5 + (i / 3))));
+		}
+		BlockPos music = helper.absolutePos(new BlockPos(8, 1, 8));
+		int[] tallest = {1};
+		helper.onEachTick(() -> {
+			if (level.getGameTime() % 40 == 0) {
+				level.gameEvent(null, GameEvent.JUKEBOX_PLAY, music);
+			}
+			for (Blub b : blubs) {
+				helper.assertFalse(b.getVehicle() == b, "a blub never rides itself");
+				if (!b.isPassenger()) {
+					int h = 1;
+					for (Entity e = b; !e.getPassengers().isEmpty() && h < 10; h++) { // capped: a loop must fail, not hang
+						e = e.getPassengers().get(0);
+					}
+					helper.assertTrue(h <= 5, "towers stop at five: " + h);
+					tallest[0] = Math.max(tallest[0], h);
+				}
+			}
+		});
+		helper.runAfterDelay(400, () -> {
+			helper.assertTrue(tallest[0] >= 2, "listening blubs climbed onto each other (tallest " + tallest[0] + ")");
+			helper.succeed();
+		});
+	}
+
+	/**
+	 * The real crossing path: SiftGates records the entry, the level-change event consumes it. A
+	 * record older than 5 ticks moves nobody; an owner-held leash comes along.
+	 */
+	@GameTest(maxTicks = 100)
+	public void blubsFollowOnlyAFreshCrossing(GameTestHelper helper) {
+		ServerPlayer player = stage(helper, 0);
+		Blub leashed = blub(helper, 3.5, 1.5);
+		play(helper, player);
+		play(helper, player);
+		helper.assertTrue(leashed.isTame(), "befriended");
+		leashed.setLeashedTo(player, true);
+		ServerLevel overworld = helper.getLevel();
+		ServerLevel sift = overworld.getServer().getLevel(SiftKeys.LEVEL);
+		BlubCrossing.recordEntry(player, overworld);
+		helper.runAfterDelay(10, () -> {
+			net.fabricmc.fabric.api.entity.event.v1.ServerEntityLevelChangeEvents.AFTER_PLAYER_CHANGE_LEVEL.invoker().afterChangeLevel(player, overworld, sift);
+			helper.assertTrue(leashed.isAlive() && leashed.level() == overworld, "a stale record (10 ticks) brings no one");
+			BlubCrossing.recordEntry(player, overworld);
+			player.setPos(helper.absoluteVec(new Vec3(2.5, 1, 1.5)).add(0, 200, 0));
+			net.fabricmc.fabric.api.entity.event.v1.ServerEntityLevelChangeEvents.AFTER_PLAYER_CHANGE_LEVEL.invoker().afterChangeLevel(player, overworld, sift);
+			helper.assertFalse(leashed.isAlive(), "a fresh crossing brings the owner's blub, leash and all");
+			List<Blub> arrived = sift.getEntitiesOfClass(Blub.class, new net.minecraft.world.phys.AABB(player.blockPosition()).inflate(2));
+			arrived.forEach(Entity::discard);
+			helper.succeed();
+		});
+	}
+
+	/** Natural spawns stop in Endure; generation spawns don't (a lit spot in the Sift). */
+	@GameTest(dimension = "thesift:the_sift", structure = SiftBasinTest.BIG)
+	public void naturalSpawnsWaitOutEndure(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		helper.setBlock(new BlockPos(4, 0, 4), ModBlocks.TIDE_SAND);
+		helper.setBlock(new BlockPos(5, 1, 4), Blocks.GLOWSTONE);
+		BlockPos at = helper.absolutePos(new BlockPos(4, 1, 4));
+		var server = level.getServer();
+		helper.runAfterDelay(10, () -> checkSpawnsAcrossTides(helper, level, at, server)); // let the glowstone's light spread
+	}
+
+	private static void checkSpawnsAcrossTides(GameTestHelper helper, ServerLevel level, BlockPos at, net.minecraft.server.MinecraftServer server) {
+		helper.assertTrue(level.getRawBrightness(at, 0) > 8, "the spot is lit");
+		try {
+			server.clockManager().setTotalTicks(thesift.world.TideClock.clock(server), Tide.ENDURE.startTick() + 10);
+			helper.assertValueEqual(Tide.current(level), Tide.ENDURE, "Endure");
+			helper.assertFalse(Blub.checkBlubSpawnRules(ModEntities.BLUB, level, EntitySpawnReason.NATURAL, at, level.getRandom()), "no natural spawns in Endure");
+			helper.assertTrue(Blub.checkBlubSpawnRules(ModEntities.BLUB, level, EntitySpawnReason.CHUNK_GENERATION, at, level.getRandom()), "generation still places blubs");
+			server.clockManager().setTotalTicks(thesift.world.TideClock.clock(server), Tide.THRIVE.startTick());
+			helper.assertTrue(Blub.checkBlubSpawnRules(ModEntities.BLUB, level, EntitySpawnReason.NATURAL, at, level.getRandom()), "natural spawns in Thrive");
+		} finally {
+			server.clockManager().setTotalTicks(thesift.world.TideClock.clock(server), Tide.THRIVE.startTick());
+		}
 		helper.succeed();
 	}
 }

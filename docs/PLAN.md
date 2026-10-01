@@ -557,6 +557,7 @@ Minimum per mission: entry and return, one area with its own terrain, a small bl
 - Log:
   - 2026-10-01: goals, music hearing (second game-event consumer), echo, herald, shelter, waterline, bathe, stacking up to 5 with toppling, sit and release, crossing with the owner, spawns (2–5, weight 10, world-gen 0.03, none naturally in Endure), empty loot table. 12 GameTests in `SiftBlubTest` (65/65 overall). Cost: 50 blubs = 0.95× 50 rabbits. Worldgen sample: 5 blubs in 121 chunks. One real bug found by the chord test (echo cooldown overflow), fixed.
 
+  - 2026-10-01 (review): a fresh adversarial review reproduced a crash (a climbing blub mounting itself on an off-tick: stack overflow). Fixed, with the tower cap re-checked. Goal timings had been doubled (every-other-tick goals); fixed with `reducedTickDelay`. New tests: AI-on stacking, the real crossing path with its 5-tick window and an owner-held leash, and the Endure spawn branch in a lit Sift spot. The cost test now uses busy blubs: 0.87–1.22×. 71/71, twice. Doc corrections in D-021.
 ### WP-052 Entry advancements and lang pass
 - Phase / Milestone: 4 / M1
 - Tier: S

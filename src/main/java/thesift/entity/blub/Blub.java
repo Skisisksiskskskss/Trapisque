@@ -50,7 +50,7 @@ import thesift.world.Tide;
  * gets restless before each Flow (the Tide herald) and curls up with a glowing belly in Endure.
  */
 public class Blub extends TamableAnimal {
-	/** Entity events (client animations); vanilla's own ids stay below 70. */
+	/** Entity events (client animations); vanilla's own ids stay below 100 (EntityEvent ends at 72). */
 	public static final byte EVENT_SING = 100;
 	public static final byte EVENT_TEETER = 101;
 	public static final byte EVENT_TOPPLE = 102;
@@ -271,6 +271,9 @@ public class Blub extends TamableAnimal {
 
 	private void serverTick(ServerLevel level) {
 		long now = level.getGameTime();
+		if (!this.isListening() && now < this.listenUntil) {
+			this.entityData.set(DATA_LISTENING, true); // loaded mid-tune: still listening, toward no source
+		}
 		if (this.isListening() && now >= this.listenUntil) {
 			this.entityData.set(DATA_LISTENING, false);
 			this.musicSource = null;

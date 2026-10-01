@@ -513,7 +513,14 @@ It also found that M1's Tide changed nothing in play (SF4), since the mission as
 - **Crossing:** `SiftGates.destination` records a player's entry. `AFTER_PLAYER_CHANGE_LEVEL` consumes it within 5 ticks and brings eligible blubs along.
 - **The chord counter** is a Fabric attachment on the player, saved and copied on death.
 
-**Measured.** 50 blubs tick at 0.95× the cost of 50 rabbits (GameTest `fiftyBlubsCostAboutAsMuchAsFiftyRabbits`). A 121-chunk worldgen sample held 5 blubs.
+**Measured.** 50 busy blubs (half befriended, all listening) tick at 0.87–1.22× the cost of 50 rabbits across runs (GameTest `fiftyBlubsCostAboutAsMuchAsFiftyRabbits`), inside the 1.5× budget. Idle blubs measured 0.82–0.95×. A 121-chunk worldgen sample held 5 blubs.
+
+**Corrections to the frozen mob_blub.md** (found by the post-implementation adversarial review; the code follows these):
+- *Owner offline, dead or in the other dimension:* vanilla's `SitWhenOrderedToGoal` holds a pet in its sitting pose while `getOwner()` is null or in another level. The blub does the same; it doesn't wander as the edge-case table said.
+- *A mounted owner* (boat, horse) crosses as the vehicle's passenger. The membrane records only players who cross on foot, so mounted owners' blubs stay behind, consistent with "crosses on foot".
+- *Listening after a reload:* the saved end tick restores the listening state (toward no particular source) until it runs out. A queued echo is not saved.
+
+**Review fixes.** A climbing blub could mount itself, because `tick()` runs on the off-ticks without `canContinueToUse()`, and that crashed the server with a stack overflow. Towers could also pass five. Both are guarded, and an AI-on GameTest (`listeningBlubsStackOnTheirOwn`) covers them. Goal counters now use `reducedTickDelay`, since `canUse` and most `tick()`s run every other tick and the timings had been doubled.
 
 **Revisit if** players want smoother motion than the procedural clips give (move to keyframes), or towers misbehave in multiplayer.
 
