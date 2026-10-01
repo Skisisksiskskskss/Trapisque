@@ -4,6 +4,13 @@ name: build
 on:
   push:
   pull_request:
+  # Manual runs can publish a build as a pre-release; the tag is created by GitHub on the built commit.
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Publish this build as a pre-release with this tag (e.g. v0.1.0-alpha.preview); empty = no release"
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -38,9 +45,10 @@ jobs:
           path: build/libs/*.jar
           if-no-files-found: ignore
 
-  # A pushed v* tag publishes its jar as a GitHub pre-release (the playable previews, D-018).
+  # A pushed v* tag, or a manual run with release_tag, publishes the jar as a GitHub pre-release
+  # (the playable previews, D-018).
   release:
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.release_tag != '')
     needs: build
     runs-on: ubuntu-24.04
     permissions:
@@ -53,6 +61,9 @@ jobs:
 
       - uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ inputs.release_tag || github.ref_name }}
+          target_commitish: ${{ github.sha }}
+          name: The Sift ${{ inputs.release_tag || github.ref_name }}
           prerelease: true
           files: dist/*.jar
           body: |
