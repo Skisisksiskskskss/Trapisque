@@ -22,6 +22,7 @@ import net.minecraft.network.protocol.game.ClientboundSoundPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import thesift.registry.ModSounds;
+import thesift.entity.blub.BlubCrossing;
 import thesift.registry.ModBlocks;
 import thesift.world.TideBasin;
 import thesift.world.SiftKeys;
@@ -56,7 +57,7 @@ public final class SiftGates {
 				gate = links.setGate(link.frame(), build(sift, links, link.frame())).gate().orElseThrow();
 			}
 			FrameMusic.open(sift, gate); // a removed membrane never strands anyone
-			return arrivalClear(sift, gate) ? arriveAt(sift, gate, entity) : null;
+			return crossing(from, entity, arrivalClear(sift, gate) ? arriveAt(sift, gate, entity) : null);
 		}
 		if (SiftKeys.isSift(from)) {
 			SiftLinks.FrameLink link = links.frameWithGateOpening(pos).orElse(null);
@@ -65,9 +66,17 @@ public final class SiftGates {
 			}
 			ServerLevel overworld = server.overworld();
 			FrameMusic.open(overworld, link.frame());
-			return arrivalClear(overworld, link.frame()) ? arriveAt(overworld, link.frame(), entity) : null;
+			return crossing(from, entity, arrivalClear(overworld, link.frame()) ? arriveAt(overworld, link.frame(), entity) : null);
 		}
 		return null;
+	}
+
+	/** A player about to cross: note where, so their blubs can follow (BlubCrossing). */
+	private static @Nullable TeleportTransition crossing(ServerLevel from, Entity entity, @Nullable TeleportTransition transition) {
+		if (transition != null && entity instanceof ServerPlayer player) {
+			BlubCrossing.recordEntry(player, from);
+		}
+		return transition;
 	}
 
 	private static final TeleportTransition.PostTeleportTransition CROSSING_SOUND = SiftGates::playCrossingSound;

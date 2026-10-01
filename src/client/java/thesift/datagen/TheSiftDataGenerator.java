@@ -17,6 +17,7 @@ public final class TheSiftDataGenerator implements DataGeneratorEntrypoint {
 		pack.addProvider(ModWorldgenProvider::new);
 		pack.addProvider(ModModelProvider::new);
 		pack.addProvider(ModLootProvider::new);
+		pack.addProvider(ModEntityLootProvider::new);
 		pack.addProvider(ModTagProviders.Blocks::new);
 		pack.addProvider(ModTagProviders.Items::new);
 		pack.addProvider(ModTagProviders.EntityTypes::new);

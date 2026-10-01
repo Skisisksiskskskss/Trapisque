@@ -16,6 +16,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 
 import thesift.registry.ModBlocks;
+import thesift.registry.ModEntities;
 import thesift.registry.ModFluids;
 import thesift.registry.ModTags;
 
@@ -59,6 +60,7 @@ final class ModTagProviders {
 			tag(BlockTags.FLOWER_POTS, ModBlocks.POTTED_SONGWOOD_SAPLING);
 			tag(BlockTags.PLANKS, ModBlocks.SONGWOOD_PLANKS);
 			tag(ModTags.SONGWOOD_LOGS, ModBlocks.SONGWOOD_LOG);
+			tag(ModTags.BLUBS_SPAWNABLE_ON, ModBlocks.HEALTHY_SCULK, ModBlocks.TIDE_SAND);
 			builder(BlockItemTags.LOGS_THAT_BURN.block()).addTag(ModTags.SONGWOOD_LOGS);
 			// Like vanilla grass: trees, mushrooms and flowing liquids replace it.
 			tag(BlockTags.REPLACEABLE, ModBlocks.HEALTHY_SCULK_GRASS, ModBlocks.TALL_HEALTHY_SCULK_GRASS);
@@ -112,8 +114,10 @@ final class ModTagProviders {
 					net.minecraft.world.entity.EntityTypes.ENDER_DRAGON, net.minecraft.world.entity.EntityTypes.ELDER_GUARDIAN}) {
 				cannotCross.add(BuiltInRegistries.ENTITY_TYPE.getResourceKey(type).orElseThrow());
 			}
-			// Filled by the Sift's natives as they land (the blub in WP-051).
-			builder(ModTags.ICHOR_ADAPTED);
+			// Blubs never use the membrane themselves; owners' blubs come along (BlubCrossing).
+			cannotCross.add(ModEntities.BLUB_KEY);
+			// The Sift's natives: blubs bathe in ichor (mob_blub.md).
+			builder(ModTags.ICHOR_ADAPTED).add(ModEntities.BLUB_KEY);
 		}
 	}
 

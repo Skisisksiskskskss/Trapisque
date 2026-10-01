@@ -226,7 +226,11 @@ public final class SiftBasinTest {
 				}
 			}
 		}
-		TheSift.LOGGER.info("Worldgen sample, 121 Meadow chunks: {} vents, {} surface ichor, {} deep ichor", vents, surfaceIchor, deepIchor);
+		// Blubs from chunk generation (about one group per 30 chunks): logged, not asserted, as a sample
+		// of 121 chunks can hold none.
+		var area = new net.minecraft.world.phys.AABB((cx0 - 5) << 4, level.getMinY(), (cz0 - 5) << 4, (cx0 + 6) << 4, level.getMaxY(), (cz0 + 6) << 4);
+		int blubs = level.getEntitiesOfClass(thesift.entity.blub.Blub.class, area).size();
+		TheSift.LOGGER.info("Worldgen sample, 121 Meadow chunks: {} vents, {} surface ichor, {} deep ichor, {} blubs", vents, surfaceIchor, deepIchor, blubs);
 		helper.assertTrue(vents > 0, "tide basins in 121 Meadow chunks: " + vents);
 		helper.assertTrue(surfaceIchor + deepIchor > 0, "ichor in 121 Meadow chunks: " + surfaceIchor + " near the surface, " + deepIchor + " deeper");
 		helper.succeed();

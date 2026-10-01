@@ -18,8 +18,8 @@ vision/systems.md §1 and rules.md; this page is what the code implements (WP-04
 ## Tide basins
 | Number | Value | Why |
 |---|---|---|
-| Size | Inner pool half-width 3–4 plus a 2-wide terrace: 11–13 blocks across, always inside one chunk (centred, ≤ 6 from the middle) | world.md "≤ 14 × 14"; a chunk-local basin never waits on a neighbour |
-| Depth | Pool 4 below the ground, terrace 2 | Deep enough to read as a basin; the terrace means a 1-block climb at most |
+| Size | Inner pool half-width 2–3 plus three 1-wide rings: 11–13 blocks across with rounded corners, always inside one chunk (centred, ≤ 6 from the middle) | world.md "≤ 14 × 14"; a chunk-local basin never waits on a neighbour |
+| Depth | Pool 4 below the ground, climbing out in three 1-block steps (every step checked by a GameTest) | Deep enough to read as a basin; a 1-block climb at most, full or empty (the pre-release review's fix) |
 | Ichor layers | 3; the top one a block below the rim | A full basin never spills; the rim is its lowest surrounding ground |
 | Rarity | 1 in 3 chunks tried; kept only in lows (rim ≥ ground; the land 20 blocks out higher on average; the middle ≤ 3 above the rim) | "Tide basins sit in the lows" |
 | Flow schedule | Rising: 1 layer at the start, 2 after a third, 3 after two thirds. Falling: the reverse, empty by the end | "One layer at a time during Flow" |

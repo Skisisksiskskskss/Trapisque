@@ -62,6 +62,7 @@ final class ModSoundsProvider extends FabricSoundsProvider {
 		add(exporter, ModSounds.BLUB_TOPPLE, "blub/topple", 2, "subtitles.thesift.blub.topple");
 		add(exporter, ModSounds.BLUB_HURT, "blub/hurt", 2, "subtitles.thesift.blub.hurt");
 		add(exporter, ModSounds.BLUB_DEATH, "blub/death", 1, "subtitles.thesift.blub.death");
+		add(exporter, ModSounds.BLUB_HOP, "blub/hop", 3, "subtitles.thesift.blub.hop");
 		add(exporter, ModSounds.BLUB_STEP, "blub/step", 4, null); // steps have no subtitle, as in vanilla
 		add(exporter, ModSounds.MEADOW_LOOP.value(), "ambient/meadow_loop", 1, "subtitles.thesift.meadow.loop");
 		add(exporter, ModSounds.MEADOW_MOOD.value(), "ambient/meadow_mood", 4, "subtitles.thesift.meadow.mood");

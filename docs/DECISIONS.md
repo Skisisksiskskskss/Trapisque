@@ -501,3 +501,19 @@ It also found that M1's Tide changed nothing in play (SF4), since the mission as
 **Consequences.** A player who never touches the frame gets no hint in the preview. PLAYTEST.md says what to do.
 
 **Revisit if.** Playtests show players don't find the frame without the ambient cues (bring option 1 forward), or the game-event injection shows up in a profiler.
+
+## D-021 Blub implementation: goals, a second game-event consumer, procedural clips (2026-10-01) [WP-049..051]
+**Context.** mob_blub.md (frozen after three critique rounds) fixes the behaviour. Building it settled how.
+
+**Decision.**
+- **Hearing music.** `ServerLevelGameEventMixin` now passes the event's `GameEvent.Context` on, and `BlubMusic` is a second consumer next to `FrameMusic` (D-020). It looks blubs up in a box only for music events. The hand that played comes from the context's source entity; the note is read from the world.
+- **AI** is a goal selector: vanilla's Float, Panic, Sit and Follow Owner, plus our Shelter, Waterline, Stack, Listen and Bathe, in that order. Stack ranks above Listen, because a running higher-priority goal keeps MOVE. Towers are toppled by the bottom blub's own tick.
+- **Animations are procedural clips** (idle, walk, hop, listen, sing, bathe, curl, stack wobble). They are driven by synced booleans and three entity events, not by vanilla's keyframe `AnimationDefinition`s (E5). The clips have the doc's timings, and the code stays small. The belly glow is vanilla's `LivingEntityEmissiveLayer` (the warden's) with our alpha.
+- **Spawning** uses 26.3's `creature_world_gen_spawn_probability` environment attribute (0.03), not a spawn-settings field. The predicate adds the Endure rule.
+- **Crossing:** `SiftGates.destination` records a player's entry. `AFTER_PLAYER_CHANGE_LEVEL` consumes it within 5 ticks and brings eligible blubs along.
+- **The chord counter** is a Fabric attachment on the player, saved and copied on death.
+
+**Measured.** 50 blubs tick at 0.95× the cost of 50 rabbits (GameTest `fiftyBlubsCostAboutAsMuchAsFiftyRabbits`). A 121-chunk worldgen sample held 5 blubs.
+
+**Revisit if** players want smoother motion than the procedural clips give (move to keyframes), or towers misbehave in multiplayer.
+

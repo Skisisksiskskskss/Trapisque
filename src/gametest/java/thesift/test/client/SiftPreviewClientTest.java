@@ -21,6 +21,7 @@ import thesift.block.MusicNearby;
 import thesift.client.fog.IchorFogEnvironment;
 import thesift.block.entity.TideVentBlockEntity;
 import thesift.registry.ModBlocks;
+import thesift.entity.blub.Blub;
 import thesift.world.SiftKeys;
 import thesift.world.Tide;
 import thesift.entry.FrameMusic;
@@ -65,24 +66,83 @@ public final class SiftPreviewClientTest implements FabricClientGameTest {
 		}
 	}
 
-	/** WP-049: a few blubs on the Meadow, in daylight. */
+	/**
+	 * WP-049: blubs on the Meadow in Thrive (one walking, a tower of three, one bathing in a one-deep
+	 * ichor pool), then the same blubs in Endure, one curled with its belly glowing.
+	 */
 	private static void blubShot(ClientGameTestContext context, TestSingleplayerContext world) {
 		world.getServer().runCommand("execute in thesift:the_sift run time of thesift:tides set thesift:thrive");
+		// A small flat stage of healthy sculk at the area's highest point, so nothing hides the blubs.
 		BlockPos ground = world.getServer().computeOnServer(server -> {
 			ServerLevel sift = server.getLevel(SiftKeys.LEVEL);
-			int y = sift.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, 90, 90);
-			return new BlockPos(90, y, 90);
+			int top = 0;
+			for (int dx = -5; dx <= 5; dx++) {
+				for (int dz = -6; dz <= 5; dz++) {
+					top = Math.max(top, sift.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, 90 + dx, 90 + dz));
+				}
+			}
+			return new BlockPos(90, top, 90);
 		});
-		for (int[] o : new int[][] {{0, 0}, {1, 1}, {-1, 2}}) {
-			world.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute in thesift:the_sift run summon thesift:blub %d %d %d {NoAI:1b,Rotation:[%df,0f]}",
-					ground.getX() + o[0], ground.getY(), ground.getZ() + o[1], 160 + o[0] * 20));
-		}
+		int x = ground.getX();
+		int y = ground.getY();
+		int z = ground.getZ();
+		run(world, "fill %d %d %d %d %d %d thesift:healthy_sculk", x - 5, y - 2, z - 6, x + 5, y - 1, z + 5);
+		run(world, "fill %d %d %d %d %d %d air", x - 5, y, z - 6, x + 5, y + 6, z + 5);
+		run(world, "setblock %d %d %d thesift:ichor", x + 2, y - 1, z + 1); // a one-deep bath
+		String facing = "{NoAI:1b,Rotation:[%df,0f]}";
+		summon(world, new BlockPos(x - 2, y, z + 1), String.format(java.util.Locale.ROOT, facing, 200));
+		summon(world, new BlockPos(x, y, z + 2), "{NoAI:1b,Rotation:[180f,0f],Passengers:[{id:\"thesift:blub\",NoAI:1b,Rotation:[170f,0f],"
+				+ "Passengers:[{id:\"thesift:blub\",NoAI:1b,Rotation:[190f,0f]}]}]}");
+		summon(world, new BlockPos(x + 2, y - 1, z + 1), String.format(java.util.Locale.ROOT, facing, 150));
 		world.getServer().runCommand("gamemode spectator @a");
-		world.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute in thesift:the_sift run tp @a %.1f %d %.1f 0 30",
-				ground.getX() + 0.5, ground.getY() + 2, ground.getZ() - 3.0));
+		world.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute in thesift:the_sift run tp @a %.1f %.1f %.1f 0 22",
+				x + 0.5, y + 1.6, z - 3.5));
 		world.getConnection().waitForChunksRender();
 		context.waitTicks(20);
+		clearChat(context);
 		context.takeScreenshot("wp049_blubs");
+		// Beside vanilla neighbours under Flow's light, close up and from 10 blocks.
+		world.getServer().runCommand("execute in thesift:the_sift run time of thesift:tides set thesift:flow_rising");
+		String still = "{NoAI:1b,Rotation:[180f,0f]}";
+		run(world, "summon minecraft:rabbit %.1f %d %.1f %s", x + 3.5, y, z + 4.5, still);
+		run(world, "summon minecraft:allay %.1f %d %.1f %s", x + 1.5, y, z + 4.5, still);
+		run(world, "summon minecraft:axolotl %.1f %d %.1f %s", x - 0.5, y, z + 4.5, still);
+		summon(world, new BlockPos(x - 3, y, z + 4), still);
+		world.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute in thesift:the_sift run tp @a %.1f %.1f %.1f 0 17",
+				x + 0.5, y + 0.2, z - 0.5));
+		context.waitTicks(20);
+		clearChat(context);
+		context.takeScreenshot("wp049_lineup_flow");
+		world.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute in thesift:the_sift run tp @a %.1f %.1f %.1f 0 8",
+				x + 0.5, y + 2.5, z - 6.0));
+		context.waitTicks(10);
+		clearChat(context);
+		context.takeScreenshot("wp049_10_blocks");
+		world.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute in thesift:the_sift run tp @a %.1f %.1f %.1f 0 22",
+				x + 0.5, y + 1.6, z - 3.5));
+		world.getServer().runCommand("execute in thesift:the_sift run time of thesift:tides set thesift:endure");
+		world.getServer().runOnServer(server -> {
+			ServerLevel sift = server.getLevel(SiftKeys.LEVEL);
+			sift.getEntitiesOfClass(Blub.class, new net.minecraft.world.phys.AABB(ground).inflate(4), b -> !b.isVehicle() && !b.isPassenger()
+					&& !sift.getFluidState(b.blockPosition()).is(thesift.registry.ModTags.ICHOR)).forEach(b -> b.setCurled(true));
+		});
+		context.waitTicks(30); // the glow fades in over a second
+		clearChat(context);
+		context.takeScreenshot("wp049_blubs_endure");
+	}
+
+	/** The "game mode updated" lines would cover the bottom of the shot. */
+	private static void clearChat(ClientGameTestContext context) {
+		context.runOnClient(client -> client.gui.hud.getChat().clearMessages(false));
+	}
+
+	private static void run(TestSingleplayerContext world, String command, Object... args) {
+		world.getServer().runCommand("execute in thesift:the_sift run " + String.format(java.util.Locale.ROOT, command, args));
+	}
+
+	private static void summon(TestSingleplayerContext world, BlockPos at, String nbt) {
+		world.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute in thesift:the_sift run summon thesift:blub %.1f %d %.1f %s",
+				at.getX() + 0.5, at.getY(), at.getZ() + 0.5, nbt));
 	}
 
 	/** WP-044: the view from inside ichor (creative: spectators see through liquids, as with lava). */

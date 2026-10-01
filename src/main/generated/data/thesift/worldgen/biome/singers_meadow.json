@@ -7,10 +7,23 @@
       },
       "loop": "thesift:ambient.singers_meadow.loop"
     },
+    "minecraft:gameplay/creature_world_gen_spawn_probability": 0.03,
     "minecraft:gameplay/natural_mob_spawns": {
       "argument": {
         "spawn_costs": {},
-        "spawns_by_category": {}
+        "spawns_by_category": {
+          "creature": [
+            {
+              "type": "thesift:blub",
+              "count": {
+                "type": "minecraft:uniform",
+                "max_inclusive": 5,
+                "min_inclusive": 2
+              },
+              "weight": 10
+            }
+          ]
+        }
       },
       "modifier": "overlay"
     }

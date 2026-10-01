@@ -12,8 +12,8 @@ import net.minecraft.util.Mth;
 /**
  * The Blub: a rounded 7 x 6 x 7 box with two upright ear tufts, four little feet and a tail tuft
  * (mob_blub.md). No separate head: its face is the body's front, as the Dungeons II first look shows.
- * Idle breathing, a waddle when walking and a settle when sitting are procedural; the hop, sing
- * and topple clips arrive with the AI (WP-051).
+ * The clips (mob_blub.md, animations) are procedural, driven by synced state and entity events:
+ * idle, walk, hop, listen, sing, bathe, curl and the stack wobble; hurt and death are vanilla's.
  */
 public class BlubModel extends EntityModel<BlubRenderState> {
 	private final ModelPart body;
@@ -61,12 +61,12 @@ public class BlubModel extends EntityModel<BlubRenderState> {
 		float t = state.ageInTicks;
 		float walk = Math.min(1.0F, state.walkAnimationSpeed * 2.0F);
 		float pos = state.walkAnimationPos;
-		// Breathing: a slow squash, softer while walking.
+		// Idle: a slow breathing squash, softer while walking.
 		float breath = Mth.sin(t * 0.08F) * 0.03F * (1.0F - walk);
 		this.body.yScale = 1.0F - breath;
 		this.body.xScale = 1.0F + breath * 0.5F;
 		this.body.zScale = 1.0F + breath * 0.5F;
-		// The waddle: a side-to-side roll and a little bounce in step.
+		// Walk: a side-to-side roll and a little bounce in step.
 		this.body.zRot = Mth.sin(pos * 0.9F) * 0.12F * walk;
 		this.body.y = 23.0F - Math.abs(Mth.sin(pos * 0.9F)) * 0.8F * walk;
 		this.frontLeftFoot.xRot = Mth.cos(pos * 0.9F) * 0.9F * walk;
@@ -79,11 +79,67 @@ public class BlubModel extends EntityModel<BlubRenderState> {
 		this.rightEar.zRot = -0.12F - Mth.sin(t * 0.05F + 1.0F) * 0.05F;
 		this.leftEar.xRot = -0.1F * walk;
 		this.rightEar.xRot = -0.1F * walk;
+
+		if (state.airborne) {
+			// Hop: stretched in the air.
+			this.body.yScale = 1.12F;
+			this.body.xScale = 0.94F;
+			this.body.zScale = 0.94F;
+			this.leftEar.xRot = 0.35F;
+			this.rightEar.xRot = 0.35F;
+		}
+		if (state.listening) {
+			// Listen: ears straight up, the body swaying to the beat.
+			this.leftEar.zRot = 0.02F;
+			this.rightEar.zRot = -0.02F;
+			this.leftEar.xRot = -0.15F;
+			this.rightEar.xRot = -0.15F;
+			this.body.zRot += Mth.sin(t * 0.52F) * 0.08F;
+		}
+		if (state.restless) {
+			// The herald: quick ear flicks.
+			this.leftEar.zRot += Mth.sin(t * 1.6F) * 0.25F;
+			this.rightEar.zRot -= Mth.sin(t * 1.6F + 0.8F) * 0.25F;
+		}
+		if (state.sing > 0.0F) {
+			// Sing: ears flick back and the body squashes, like a mouth opening.
+			float s = Mth.sin(state.sing * Mth.PI);
+			this.leftEar.xRot += 0.7F * s;
+			this.rightEar.xRot += 0.7F * s;
+			this.body.yScale *= 1.0F - 0.14F * s;
+			this.body.xScale *= 1.0F + 0.07F * s;
+			this.body.zScale *= 1.0F + 0.07F * s;
+		}
+		if (state.stacked) {
+			// Stack wobble: a sway of up to 8 degrees, growing as the tower nears its fall.
+			float amp = 0.07F + 0.07F * state.teeter;
+			this.body.zRot += Mth.sin(t * 0.15F + state.towerLevel * 0.9F) * amp;
+			this.body.xRot = Mth.sin(t * 0.11F + state.towerLevel * 1.3F) * amp * 0.5F;
+		}
 		if (state.sitting) {
 			this.body.y = 23.6F;
 			this.body.yScale = 0.9F;
 			this.leftEar.zRot = 0.4F;
 			this.rightEar.zRot = -0.4F;
+		}
+		if (state.curled) {
+			// Curl: flattened, ears laid flat; the belly glows (the emissive layer).
+			this.body.y = 23.8F;
+			this.body.yScale = 0.7F + breath;
+			this.body.xScale = 1.1F;
+			this.body.zScale = 1.1F;
+			this.leftEar.zRot = 1.35F;
+			this.rightEar.zRot = -1.35F;
+			this.leftEar.xRot = 0.2F;
+			this.rightEar.xRot = 0.2F;
+		}
+		if (state.bathe > 0.0F) {
+			// Bathe: lifted so it sits in the ichor up to the belly, bobbing gently; feet tucked.
+			this.root().y = -(state.bathe + Mth.sin(t * 0.12F) * 0.02F) * 16.0F;
+			this.frontLeftFoot.xRot = 0.0F;
+			this.frontRightFoot.xRot = 0.0F;
+			this.backLeftFoot.xRot = 0.0F;
+			this.backRightFoot.xRot = 0.0F;
 		}
 	}
 }

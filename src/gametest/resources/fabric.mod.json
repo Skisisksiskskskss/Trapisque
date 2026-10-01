@@ -13,7 +13,8 @@
 			"thesift.test.SiftBlocksTest",
 			"thesift.test.SiftEntryTest",
 			"thesift.test.SiftIchorTest",
-			"thesift.test.SiftBasinTest"
+			"thesift.test.SiftBasinTest",
+			"thesift.test.SiftBlubTest"
 		],
 		"fabric-client-gametest": [
 			"thesift.test.client.SiftPreviewClientTest"

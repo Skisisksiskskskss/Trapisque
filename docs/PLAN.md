@@ -32,15 +32,15 @@ Only one WP is IN PROGRESS at a time.
 | WP-040 | Dimension skeleton and Tide core | 4 | L | IN PROGRESS |
 | WP-041 | Palette, block set I design and art | 4 | L | IN PROGRESS |
 | WP-042 | Block set I and the Singer's Meadow terrain | 4 | L | IN PROGRESS |
-| WP-043 | Audio pipeline and the entry, Tide and Meadow sounds | 4 | M | TODO |
+| WP-043 | Audio pipeline and the entry, Tide and Meadow sounds | 4 | M | DONE |
 | WP-044 | Ichor (core form) | 4 | L | IN PROGRESS |
 | WP-045 | Tide basins (one kind, in the Meadow) | 4 | L | IN PROGRESS |
 | WP-046 | Entry I: frames, offering, waking, music | 4 | L | IN PROGRESS |
 | WP-047 | Entry II: membrane, crossing, Sift-side gate, return | 4 | L | IN PROGRESS |
-| WP-048 | Blub design doc | 4 | L | TODO |
-| WP-049 | Blub art: texture, model, animations, spawn egg | 4 | L | TODO |
-| WP-050 | Blub audio | 4 | M | TODO |
-| WP-051 | Blub entity: AI and tests | 4 | L | TODO |
+| WP-048 | Blub design doc | 4 | L | DONE |
+| WP-049 | Blub art: texture, model, animations, spawn egg | 4 | L | DONE |
+| WP-050 | Blub audio | 4 | M | DONE |
+| WP-051 | Blub entity: AI and tests | 4 | L | DONE |
 | WP-052 | Entry advancements and lang pass | 4 | S | TODO |
 | WP-053 | M1 integration and Gate C (self-review) | 4 | M | TODO |
 
@@ -357,7 +357,7 @@ Minimum per mission: entry and return, one area with its own terrain, a small bl
 ### WP-043 Audio pipeline and the entry, Tide and Meadow sounds
 - Phase / Milestone: 4 / M1
 - Tier: M
-- Status: TODO
+- Status: DONE
 - Depends on: WP-040
 - Goal: Original synthesized sounds (ogg), with subtitles, for:
   - the frame, the offering stream and the membrane;
@@ -375,6 +375,7 @@ Minimum per mission: entry and return, one area with its own terrain, a small bl
 - Iteration budget: revision rounds ≤ 3 per sound.
 - Exit ramp: simpler tones; a HUMAN_ASSET_BRIEFS entry for anything a human could do meaningfully better.
 - Log:
+  - 2026-10-01: done. 36 Sift sounds (entry, Tide, basins, ichor, Meadow loop and flute) plus the Blub's (WP-050), all wired, with subtitles.
 
 ### WP-044 Ichor (core form)
 - Phase / Milestone: 4 / M1
@@ -479,7 +480,7 @@ Minimum per mission: entry and return, one area with its own terrain, a small bl
 ### WP-048 Blub design doc
 - Phase / Milestone: 4 / M1
 - Tier: L (design)
-- Status: TODO
+- Status: DONE
 - Depends on: WP-021, WP-034, WP-041
 - Goal: docs/DESIGN/mob_blub.md with the full §8.1 template, via the design ladder (≥8 concepts, rubric, critique ≤3).
 - Inputs (read ONLY these): docs/DESIGN/bible/creatures.md; docs/RESEARCH_BESTIARY.md (Blub row); docs/VANILLA_ANALOGS.md E1/E2/E5; docs/DESIGN/palette.md; D-016, D-017; the WP-034 stacking and basin results.
@@ -495,11 +496,12 @@ Minimum per mission: entry and return, one area with its own terrain, a small bl
 - Iteration budget: critique ≤ 3 rounds.
 - Exit ramp: D-017 §7. If the stacking spike failed, stacking moves to M2. If the basin spike failed, the Blub follows pool edges in Flow.
 - Log:
+  - 2026-10-01: three fresh critique rounds (FAIL, FAIL, FAIL on three one-line items); cap reached, all must-fixes applied, frozen. Stats in BALANCE.md.
 
 ### WP-049 Blub art: texture, model, animations, spawn egg
 - Phase / Milestone: 4 / M1
 - Tier: L
-- Status: TODO
+- Status: DONE
 - Depends on: WP-048, WP-041
 - Goal: The Blub's model (Java code model), its texture, and keyframe animations (idle, hop, squeak, dance, stack, curl), matching the vanilla first look (V). Also the spawn-egg texture.
 - Inputs (read ONLY these): mob_blub.md; docs/DESIGN/palette.md; docs/VANILLA_ANALOGS.md E5; mission §7.4.
@@ -513,11 +515,12 @@ Minimum per mission: entry and return, one area with its own terrain, a small bl
 - Iteration budget: revision rounds ≤ 3.
 - Exit ramp: fewer animation states (hop and idle), with the others as simple poses.
 - Log:
+  - 2026-10-01: 32×32 texture, emissive belly layer (`blub_glow.png`), spawn egg; palette check 34/0. Procedural clips for every animation in the doc (D-021). Previews looked at: Thrive with a tower and a bath, beside rabbit/allay/axolotl in Flow light, from 10 blocks, Endure curled and glowing (`docs/previews/wp049_*.png`). Feet tuck when bathing or riding; no sliding seen.
 
 ### WP-050 Blub audio
 - Phase / Milestone: 4 / M1
 - Tier: M
-- Status: TODO
+- Status: DONE
 - Depends on: WP-043, WP-048
 - Goal: Original synthesized squeak, hop, happy and hurt sounds for the Blub, and a death sound, all with subtitles.
 - Inputs (read ONLY these): mob_blub.md; tools/audio/; mission §7.5.
@@ -530,11 +533,12 @@ Minimum per mission: entry and return, one area with its own terrain, a small bl
 - Iteration budget: revision rounds ≤ 3.
 - Exit ramp: fewer variants for rare sounds (never below 2 for frequent ones).
 - Log:
+  - 2026-10-01: 27 synthesized sounds in 12 events (ambient ×4, hop ×3, step ×4, the rest ×2, death and sing ×1), all mono. Each sound is RMS-matched to vanilla references: the voice to chicken/armadillo (−28 dB) between the rabbit (−49) and the allay (−20); hurt and death to the axolotl. The sing note is measured at 740.0 Hz (F#5). Levels: audio_levels.md. Subtitles for all but steps (vanilla's rule).
 
 ### WP-051 Blub entity: AI and tests
 - Phase / Milestone: 4 / M1
 - Tier: L
-- Status: TODO
+- Status: DONE
 - Depends on: WP-049, WP-050, WP-042, WP-045, WP-046, WP-047
 - Goal: The Blub spawns in the Meadow, roams, squeaks and gathers to music. It stacks (per the design and the WP-034 result), follows the waterline in Flow, bathes in ichor, shelters in Endure, and is befriended per mob_blub.md.
 - Inputs (read ONLY these): mob_blub.md; docs/VANILLA_ANALOGS.md E1/E2/E4; D-016, D-017; the WP-046 listener code; the WP-045 basin API; the WP-047 portal code.
@@ -548,6 +552,7 @@ Minimum per mission: entry and return, one area with its own terrain, a small bl
 - Iteration budget: fix hypotheses ≤ 5.
 - Exit ramp: goal-selector AI instead of Brain if Brain costs too much.
 - Log:
+  - 2026-10-01: goals, music hearing (second game-event consumer), echo, herald, shelter, waterline, bathe, stacking up to 5 with toppling, sit and release, crossing with the owner, spawns (2–5, weight 10, world-gen 0.03, none naturally in Endure), empty loot table. 12 GameTests in `SiftBlubTest` (65/65 overall). Cost: 50 blubs = 0.95× 50 rabbits. Worldgen sample: 5 blubs in 121 chunks. One real bug found by the chord test (echo cooldown overflow), fixed.
 
 ### WP-052 Entry advancements and lang pass
 - Phase / Milestone: 4 / M1

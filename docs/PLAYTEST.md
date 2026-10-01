@@ -41,6 +41,16 @@ It has its own synthesized sounds, with subtitles: the offering, waking and open
 4. **Music reactions:** play a note block, goat horn or jukebox near healthy sculk or songwood. **Expect:** glowing petals lift off the sculk and grass, and the songwood's flute holes puff notes (within 12 blocks). It works at home too, and with the sound muted.
 5. **Tell me:** what reads well, and what looks off (colours, textures, the membrane's pattern, the ichor surface)?
 
+### P5. Blubs (next build, `v0.1.0-alpha`; ≈15 minutes)
+1. Find blubs on the Meadow: small pale-blue bunny-things, in groups of 2–5 (with cheats, a **Blub Spawn Egg** from the creative tab).
+2. Place a **note block** next to them and play it once. **Expect:** they stop, ears up, chirp, and drift toward the music. Nobody is befriended yet.
+3. Stand within 4 blocks of one and play again. **Expect:** hearts, a happy squeak and a hop. That blub is yours. Each note befriends one more, the nearest one watching. Redstone-played notes and jukeboxes only make them listen.
+4. Play notes near your blubs. **Expect:** each answers 0.3 s later with a squeak at your note plus its own interval. Three befriended in a row make a chord (root, third, fifth), with a note particle each.
+5. *Use* with an empty hand sits a blub, as with a cat. *Sneak-use* on a sitting one releases it. It heals slowly while sitting.
+6. Walk through the membrane. **Expect:** your free-roaming blubs within 16 blocks come along; sitting ones stay.
+7. Watch a Tide cycle with blubs around. Near the end of Thrive and of Endure, yours get **restless** (hops, chirps, note particles): Flow is 30 s away. In **Flow** they potter along the basin waterline. In **Endure** they curl up under leaves with their bellies glowing. In **Thrive**, music makes nearby blubs stack into wobbly towers of up to 5, which topple later. Now and then a blub sits in shallow ichor up to its belly, unharmed.
+8. **Tell me:** does befriending feel deliberate or fiddly? Is the echo charming or noisy? Do the towers topple too soon or too late?
+
 ### Known issues in this preview
 - The frame's, membrane's and ichor's particles are vanilla stand-ins (the sky's motes and the music petals are the Sift's own). The XP drain uses vanilla's soul sound.
 - The membrane and ichor show the same animation frame on every block (as vanilla water does); a faint per-block rhythm can show on wide sheets.

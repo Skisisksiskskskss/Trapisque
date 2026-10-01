@@ -5,8 +5,10 @@ import net.minecraft.resources.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import thesift.entity.blub.BlubCrossing;
 import thesift.entry.FrameMusic;
 import thesift.entry.Offering;
+import thesift.registry.ModAttachments;
 import thesift.registry.ModAttributes;
 import thesift.registry.ModBlockEntities;
 import thesift.registry.ModBlocks;
@@ -33,6 +35,7 @@ public final class TheSift implements ModInitializer {
 	@Override
 	public void onInitialize() {
 		ModAttributes.init();
+		ModAttachments.init();
 		ModSounds.init();
 		ModParticles.init();
 		ModFluids.init();
@@ -47,6 +50,7 @@ public final class TheSift implements ModInitializer {
 		Offering.init();
 		FrameMusic.init();
 		TideCues.init();
+		BlubCrossing.init();
 		LOGGER.info("The Sift initialized (unofficial fan project)");
 	}
 

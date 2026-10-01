@@ -38,6 +38,7 @@ public final class ModSounds {
 	public static final SoundEvent BLUB_TOPPLE = register("entity.blub.topple");
 	public static final SoundEvent BLUB_HURT = register("entity.blub.hurt");
 	public static final SoundEvent BLUB_DEATH = register("entity.blub.death");
+	public static final SoundEvent BLUB_HOP = register("entity.blub.hop");
 	public static final SoundEvent BLUB_STEP = register("entity.blub.step");
 	public static final Holder<SoundEvent> MEADOW_LOOP = registerHolder("ambient.singers_meadow.loop");
 	public static final Holder<SoundEvent> MEADOW_MOOD = registerHolder("ambient.singers_meadow.mood");

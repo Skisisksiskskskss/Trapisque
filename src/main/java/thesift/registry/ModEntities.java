@@ -7,6 +7,9 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
+import net.minecraft.world.entity.SpawnPlacementTypes;
+import net.minecraft.world.entity.SpawnPlacements;
+import net.minecraft.world.level.levelgen.Heightmap;
 
 import thesift.TheSift;
 import thesift.entity.blub.Blub;
@@ -24,5 +27,6 @@ public final class ModEntities {
 
 	public static void init() {
 		FabricDefaultAttributeRegistry.register(BLUB, Blub.createAttributes());
+		SpawnPlacements.register(BLUB, SpawnPlacementTypes.ON_GROUND, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Blub::checkBlubSpawnRules);
 	}
 }

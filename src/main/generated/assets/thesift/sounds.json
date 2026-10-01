@@ -140,6 +140,14 @@
     ],
     "subtitle": "subtitles.thesift.blub.happy"
   },
+  "entity.blub.hop": {
+    "sounds": [
+      "thesift:blub/hop1",
+      "thesift:blub/hop2",
+      "thesift:blub/hop3"
+    ],
+    "subtitle": "subtitles.thesift.blub.hop"
+  },
   "entity.blub.hurt": {
     "sounds": [
       "thesift:blub/hurt1",

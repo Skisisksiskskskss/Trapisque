@@ -553,6 +553,20 @@ def blub_texture() -> Image.Image:
     return im
 
 
+def blub_glow_texture() -> Image.Image:
+    """The emissive belly layer (mob_blub.md, Endure lantern): the same layout as blub.png, transparent
+    except the belly patch on the front face (x 9..11, y 10..12) and a faint rim beside it."""
+    im = Image.new("RGBA", (32, 32), (0, 0, 0, 0))
+    px = im.load()
+    for x in range(9, 12):
+        for y in range(10, 13):
+            px[x, y] = rgba("membrane", 5 if (x == 10 and y == 11) else 4)
+    for y in range(10, 13):  # a soft rim on each side of the belly
+        px[8, y] = rgba("membrane", 4, 90)
+        px[12, y] = rgba("membrane", 4, 90)
+    return im
+
+
 def blub_spawn_egg() -> Image.Image:
     rows = [
         "................",
@@ -640,6 +654,7 @@ def main() -> None:
     save(ichor_bucket(), "item/ichor_bucket.png")
     save(glow_petal(), "particle/glow_petal.png")
     save(blub_texture(), "entity/blub/blub.png")
+    save(blub_glow_texture(), "entity/blub/blub_glow.png")
     save(blub_spawn_egg(), "item/blub_spawn_egg.png")
     save(trill(), "particle/trill.png")
     print("textures written")

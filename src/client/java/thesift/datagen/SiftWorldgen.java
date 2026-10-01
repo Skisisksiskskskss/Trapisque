@@ -1,5 +1,6 @@
 package thesift.datagen;
 
+import thesift.registry.ModEntities;
 import thesift.registry.ModSounds;
 import net.minecraft.world.attribute.AmbientAdditionsSettings;
 import net.minecraft.world.attribute.AmbientSounds;
@@ -272,7 +273,9 @@ final class SiftWorldgen {
 						Optional.of(ModSounds.MEADOW_LOOP),
 						Optional.empty(),
 						List.of(new AmbientAdditionsSettings(ModSounds.MEADOW_MOOD, 0.0006))))
-				.mobSpawnSettings(MobSpawnSettings.EMPTY)
+				// Blubs: about one group per 30 chunks at generation (vanilla's default is 0.1), mob_blub.md.
+				.setAttribute(EnvironmentAttributes.CREATURE_WORLD_GEN_SPAWN_PROBABILITY, 0.03F)
+				.mobSpawnSettings(new MobSpawnSettings.Builder().addSpawn(ModEntities.BLUB, 10, 2, 5).build())
 				.generationSettings(generation.build())
 				.build());
 	}

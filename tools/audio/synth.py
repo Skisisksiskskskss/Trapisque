@@ -353,6 +353,14 @@ def blub(rng: np.random.Generator) -> None:
     voice = squeak([1250, 1350, 900, 520, 320], d, 0.3) * np.linspace(1, 0.4, n)
     air = bandpass(noise(n, rng), 800, 4000) * np.linspace(0, 1, n) ** 2 * env(n, 0.01, 0.2) * 0.25
     write("blub/death", voice + air, ["mob/axolotl/death1.ogg", "mob/axolotl/death2.ogg"])
+    for i in range(1, 4):  # hop: a springy little boing with a pat on landing
+        d = 0.3
+        n = int(d * SR)
+        k = int(0.16 * SR)
+        boing = tone(np.linspace(380 + 30 * i, 620 + 40 * i, k), 0.16) * env(k, 0.005, 0.1)
+        m = int(0.06 * SR)
+        pat = bandpass(noise(m, rng), 150, 900) * decay(m, 0.015)
+        write(f"blub/hop{i}", mix(n, (boing, 0.0), (pat * 0.6, 0.2)), ["mob/rabbit/hop1.ogg", "mob/rabbit/hop2.ogg", "mob/slime/small1.ogg"])
     for i in range(1, 5):  # step: a soft pat
         d = 0.09
         n = int(d * SR)
