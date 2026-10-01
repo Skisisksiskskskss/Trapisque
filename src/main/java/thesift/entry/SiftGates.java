@@ -30,6 +30,7 @@ public final class SiftGates {
 	public static final int SPACING = 64;
 	private static final int MOUND_RADIUS = 7;
 	private static final int PLATEAU_RADIUS = 3;
+	private static final int HILL_RISE = 2;
 
 	private SiftGates() {
 	}
@@ -44,9 +45,13 @@ public final class SiftGates {
 			if (link == null || sift == null) {
 				return null;
 			}
-			SiftFrame gate = link.gate().orElseGet(() -> links.setGate(link.frame(), build(sift, links, link.frame())).gate().orElseThrow());
+			SiftFrame gate = link.gate().orElse(null);
+			// Built on the first crossing; rebuilt if it is gone (e.g. the Sift's region files were reset).
+			if (gate == null || !sift.getBlockState(gate.origin()).is(ModBlocks.GATESTONE)) {
+				gate = links.setGate(link.frame(), build(sift, links, link.frame())).gate().orElseThrow();
+			}
 			FrameMusic.open(sift, gate); // a removed membrane never strands anyone
-			return arriveAt(sift, gate, entity);
+			return arrivalClear(sift, gate) ? arriveAt(sift, gate, entity) : null;
 		}
 		if (SiftKeys.isSift(from)) {
 			SiftLinks.FrameLink link = links.frameWithGateOpening(pos).orElse(null);
@@ -55,9 +60,16 @@ public final class SiftGates {
 			}
 			ServerLevel overworld = server.overworld();
 			FrameMusic.open(overworld, link.frame());
-			return arriveAt(overworld, link.frame(), entity);
+			return arrivalClear(overworld, link.frame()) ? arriveAt(overworld, link.frame(), entity) : null;
 		}
 		return null;
+	}
+
+	/** Never send anyone into stone: the arrival's two cells must have no collision. */
+	private static boolean arrivalClear(ServerLevel level, SiftFrame frame) {
+		BlockPos feet = BlockPos.containing(frame.arrival());
+		return level.getBlockState(feet).getCollisionShape(level, feet).isEmpty()
+				&& level.getBlockState(feet.above()).getCollisionShape(level, feet.above()).isEmpty();
 	}
 
 	private static TeleportTransition arriveAt(ServerLevel level, SiftFrame frame, Entity entity) {
@@ -75,7 +87,7 @@ public final class SiftGates {
 			SiftFrame near = null;
 			double best = SPACING;
 			for (SiftLinks.FrameLink link : links.frames()) {
-				if (link.gate().isPresent()) {
+				if (link.gate().isPresent() && !link.frame().equals(cityFrame)) {
 					Vec3 g = link.gate().get().center();
 					double d = Math.hypot(g.x - x, g.z - z);
 					if (d < best) {
@@ -103,7 +115,8 @@ public final class SiftGates {
 		int cx = clamped.getX();
 		int cz = clamped.getZ();
 		sift.getChunk(cx >> 4, cz >> 4); // generates the terrain if nobody has been here
-		int top = Mth.clamp(ground(sift, cx, cz), sift.getMinY() + 8, sift.getMaxY() - SiftFrame.GATE_HEIGHT - 4);
+		// The plateau stands HILL_RISE above the ground, so the slope ends at the natural surface.
+		int top = Mth.clamp(ground(sift, cx, cz) + HILL_RISE, sift.getMinY() + 8, sift.getMaxY() - SiftFrame.GATE_HEIGHT - 4);
 
 		buildMound(sift, cx, top, cz);
 		Direction.Axis axis = cityFrame.axis();
@@ -116,10 +129,14 @@ public final class SiftGates {
 		return gate;
 	}
 
-	/** The y of the first free block above the ground at x/z, looking through trees and plants. */
+	/** The y of the first free block above the ground at x/z, looking through trees and plants but not liquids. */
 	private static int ground(ServerLevel level, int x, int z) {
 		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(x, level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z), z);
-		while (pos.getY() > level.getMinY() + 1 && isLoose(level.getBlockState(pos.below()))) {
+		while (pos.getY() > level.getMinY() + 1) {
+			BlockState below = level.getBlockState(pos.below());
+			if (!isLoose(below) || !below.getFluidState().isEmpty()) {
+				break;
+			}
 			pos.move(Direction.DOWN);
 		}
 		return pos.getY();
@@ -140,7 +157,12 @@ public final class SiftGates {
 		return state.isAir() || state.canBeReplaced() || state.is(BlockTags.LOGS) || state.is(BlockTags.LEAVES);
 	}
 
-	/** A round hill: a flat top of radius 3 at {@code top}, sloping down to radius 7, cleared above. */
+	/**
+	 * A round hill: a flat top of radius 3 whose surface block is at {@code top - 1}, sloping 0.6 a
+	 * block down to the natural ground by radius 7. The gate's own
+	 * space (radius 4.5) is cleared; beyond it natural ground higher than the slope is left alone,
+	 * so the hill never digs a ditch. Liquids under the hill are filled.
+	 */
 	private static void buildMound(ServerLevel level, int cx, int top, int cz) {
 		int clearTo = top + SiftFrame.GATE_HEIGHT + 3;
 		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
@@ -150,8 +172,13 @@ public final class SiftGates {
 				if (d > MOUND_RADIUS + 0.5) {
 					continue;
 				}
-				int columnTop = top - 1 - (int) Math.max(0, (d - PLATEAU_RADIUS) * 0.6);
-				pos.set(cx + dx, columnTop, cz + dz);
+				int hill = top - 1 - (int) Math.max(0, (d - PLATEAU_RADIUS) * 0.6);
+				boolean gateSpace = d <= PLATEAU_RADIUS + 1.5;
+				int natural = ground(level, cx + dx, cz + dz) - 1;
+				if (!gateSpace && natural >= hill) {
+					continue; // the land already stands as high as the hill here
+				}
+				pos.set(cx + dx, hill, cz + dz);
 				replace(level, pos, ModBlocks.HEALTHY_SCULK.defaultBlockState());
 				pos.move(Direction.DOWN);
 				while (pos.getY() > level.getMinY() && isLoose(level.getBlockState(pos))) {
@@ -165,7 +192,7 @@ public final class SiftGates {
 						replace(level, below, ModBlocks.HYMNSTONE.defaultBlockState());
 					}
 				}
-				for (int y = columnTop + 1; y <= clearTo; y++) {
+				for (int y = hill + 1; y <= clearTo; y++) {
 					pos.set(cx + dx, y, cz + dz);
 					if (!level.getBlockState(pos).isAir()) {
 						replace(level, pos, Blocks.AIR.defaultBlockState());

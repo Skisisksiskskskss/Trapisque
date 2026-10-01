@@ -111,8 +111,9 @@ public final class FrameMusic {
 		for (SiftLinks.FrameLink link : SiftLinks.get(level.getServer()).frames()) {
 			SiftFrame frame = link.frame();
 			Vec3 c = frame.center();
-			if (link.awake() && level.isLoaded(BlockPos.containing(c)) && !isOpen(level, frame)
-					&& level.getNearestPlayer(c.x, c.y, c.z, 32, false) != null) {
+			// Cheapest checks first, and never read a block in a chunk that isn't loaded.
+			if (link.awake() && level.getNearestPlayer(c.x, c.y, c.z, 32, false) != null
+					&& level.isLoaded(frame.at(1, 1)) && !isOpen(level, frame)) {
 				level.sendParticles(ParticleTypes.NOTE, c.x, c.y, c.z, 3, frame.width() / 4.0, frame.height() / 4.0, frame.width() / 4.0, 0.0);
 			}
 		}

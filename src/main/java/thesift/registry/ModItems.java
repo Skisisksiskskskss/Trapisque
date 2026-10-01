@@ -13,6 +13,7 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.DoubleHighBlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.DoublePlantBlock;
 
@@ -24,6 +25,8 @@ public final class ModItems {
 	private static final List<Item> CREATIVE_ORDER = new ArrayList<>();
 	private static final List<Item> OTHER_ITEMS = new ArrayList<>();
 
+	public static final Item BLUB_SPAWN_EGG = other(register(key("blub_spawn_egg"), SpawnEggItem::new,
+			new Item.Properties().spawnEgg(ModEntities.BLUB)));
 	public static final Item ICHOR_BUCKET = other(register(key("ichor_bucket"), p -> new IchorBucketItem(ModFluids.ICHOR, p),
 			new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1)));
 

@@ -31,7 +31,7 @@ public record TideBasinFeature() implements Feature {
 	public boolean place(WorldGenLevel level, ChunkGenerator chunkGenerator, RandomSource random, BlockPos origin) {
 		int cx = (origin.getX() & ~15) + 8;
 		int cz = (origin.getZ() & ~15) + 8;
-		int inner = 3 + random.nextInt(2);
+		int inner = 2 + random.nextInt(2);
 		TideBasin shape = new TideBasin(BlockPos.ZERO, inner);
 		// The basin's ground is the lowest cell around it (the outer ring and the cut corners), so
 		// its walls hold the top layer by construction.

@@ -16,17 +16,18 @@ import thesift.world.TideBasin;
 /** WP-045: tide basins follow the Tide (systems.md §1). */
 public final class SiftBasinTest {
 	private static final String SIFT = "thesift:the_sift";
-	/** Inner half-width 0: a 5 x 5 basin and its walls fit the 8 x 8 x 8 test area. */
-	private static final int INNER = 0;
-	private static final BlockPos VENT = new BlockPos(3, 1, 3);
+	/** Worldgen's smallest basin (inner 2: 11 x 11) with its walls, in a 17 x 16 x 17 test area. */
+	static final String BIG = "thesift-gametest:big_empty";
+	private static final int INNER = 2;
+	private static final BlockPos VENT = new BlockPos(8, 1, 8);
 	private static final long MID_THRIVE = 6_000;
 	private static final long MID_ENDURE = Tide.ENDURE.startTick() + 6_000;
 
 	/** A solid block of hymnstone with a basin carved into it; returns its vent. */
 	private static TideVentBlockEntity basin(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		for (int x = 0; x <= 7; x++) {
-			for (int z = 0; z <= 7; z++) {
+		for (int x = 1; x <= 15; x++) {
+			for (int z = 1; z <= 15; z++) {
 				for (int y = 0; y <= 5; y++) {
 					helper.setBlock(new BlockPos(x, y, z), ModBlocks.HYMNSTONE);
 				}
@@ -70,7 +71,7 @@ public final class SiftBasinTest {
 		helper.succeed();
 	}
 
-	@GameTest(dimension = SIFT)
+	@GameTest(dimension = SIFT, structure = BIG)
 	public void aBasinFloodsInEndureAndDrainsInThrive(GameTestHelper helper) {
 		TideVentBlockEntity vent = basin(helper);
 		ServerLevel level = helper.getLevel();
@@ -85,7 +86,7 @@ public final class SiftBasinTest {
 		helper.succeed();
 	}
 
-	@GameTest(dimension = SIFT)
+	@GameTest(dimension = SIFT, structure = BIG)
 	public void flowMovesOneLayerPerStep(GameTestHelper helper) {
 		TideVentBlockEntity vent = basin(helper);
 		ServerLevel level = helper.getLevel();
@@ -99,7 +100,7 @@ public final class SiftBasinTest {
 		helper.succeed();
 	}
 
-	@GameTest(dimension = SIFT)
+	@GameTest(dimension = SIFT, structure = BIG)
 	public void aReloadedVentCatchesUpAtOnce(GameTestHelper helper) {
 		TideVentBlockEntity vent = basin(helper);
 		ServerLevel level = helper.getLevel();
@@ -116,7 +117,7 @@ public final class SiftBasinTest {
 		helper.succeed();
 	}
 
-	@GameTest(dimension = SIFT)
+	@GameTest(dimension = SIFT, structure = BIG)
 	public void aBasinNeverSpillsAndKeepsPlayerBlocks(GameTestHelper helper) {
 		TideVentBlockEntity vent = basin(helper);
 		ServerLevel level = helper.getLevel();
@@ -141,7 +142,7 @@ public final class SiftBasinTest {
 	}
 
 	/** The vent's own ticker runs: a basin flooded by hand moves toward the clock's Tide. */
-	@GameTest(dimension = SIFT, maxTicks = 100)
+	@GameTest(dimension = SIFT, structure = BIG, maxTicks = 100)
 	public void theVentTicksOnItsOwn(GameTestHelper helper) {
 		TideVentBlockEntity vent = basin(helper);
 		ServerLevel level = helper.getLevel();
@@ -154,7 +155,32 @@ public final class SiftBasinTest {
 		});
 	}
 
+	/** Every step in a basin is at most one block, so it can be walked or jumped out of, full or empty. */
 	@GameTest(dimension = SIFT)
+	public void everyBasinStepIsOneBlock(GameTestHelper helper) {
+		for (int inner = 2; inner <= 3; inner++) {
+			TideBasin basin = new TideBasin(BlockPos.ZERO, inner);
+			int h = basin.half();
+			for (int dx = -h; dx <= h; dx++) {
+				for (int dz = -h; dz <= h; dz++) {
+					if (!basin.inFootprint(dx, dz)) {
+						continue;
+					}
+					for (int[] n : new int[][] {{1, 0}, {-1, 0}, {0, 1}, {0, -1}}) {
+						int nx = dx + n[0];
+						int nz = dz + n[1];
+						// Outside the footprint is the rim: the ground, DEPTH above the pool floor.
+						int there = basin.inFootprint(nx, nz) ? basin.floorY(nx, nz) : TideBasin.DEPTH;
+						helper.assertTrue(Math.abs(there - basin.floorY(dx, dz)) <= 1,
+								"step from (" + dx + "," + dz + ") to (" + nx + "," + nz + ") in inner " + inner);
+					}
+				}
+			}
+		}
+		helper.succeed();
+	}
+
+	@GameTest(dimension = SIFT, structure = BIG)
 	public void aPlacedVentIsInert(GameTestHelper helper) {
 		helper.setBlock(VENT.below(), ModBlocks.HYMNSTONE);
 		helper.setBlock(VENT, ModBlocks.TIDE_VENT);

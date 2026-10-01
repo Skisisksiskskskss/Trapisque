@@ -4,13 +4,18 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.particle.v1.ParticleProviderRegistry;
 import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderingRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.ModelLayerRegistry;
 import net.minecraft.client.renderer.block.FluidModel;
+import net.minecraft.client.renderer.entity.EntityRenderers;
 import net.minecraft.client.renderer.fog.FogRenderer;
 import net.minecraft.client.resources.model.sprite.Material;
 
 import thesift.TheSift;
+import thesift.client.entity.BlubModel;
+import thesift.client.entity.BlubRenderer;
 import thesift.client.fog.IchorFogEnvironment;
 import thesift.client.particle.SiftMoteParticle;
+import thesift.registry.ModEntities;
 import thesift.registry.ModFluids;
 import thesift.registry.ModParticles;
 
@@ -26,6 +31,8 @@ public final class TheSiftClient implements ClientModInitializer {
 				new Material(TheSift.id("block/ichor_still")), new Material(TheSift.id("block/ichor_flow")), null, null));
 		ParticleProviderRegistry.getInstance().register(ModParticles.TRILL, SiftMoteParticle.TrillProvider::new);
 		ParticleProviderRegistry.getInstance().register(ModParticles.GLOW_PETAL, SiftMoteParticle.GlowPetalProvider::new);
+		ModelLayerRegistry.registerModelLayer(BlubRenderer.LAYER, BlubModel::createBodyLayer);
+		EntityRenderers.register(ModEntities.BLUB, BlubRenderer::new);
 		// The fog inside ichor goes first, as lava's does, so it wins over the atmosphere.
 		FogRenderer.FOG_ENVIRONMENTS.add(0, new IchorFogEnvironment());
 		// The sound manager exists once the client has started.

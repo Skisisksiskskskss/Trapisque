@@ -28,25 +28,37 @@ public final class SoulPoints {
 		return (9 * l * l - 325 * l + 4440) / 2;
 	}
 
+	/** The player's XP in points, exactly, at any level. */
+	public static long totalLong(Player player) {
+		return pointsForLevel(player.experienceLevel) + Math.round(player.experienceProgress * xpNeeded(player.experienceLevel));
+	}
+
+	/** {@link #totalLong}, clamped for display and tests. */
 	public static int total(Player player) {
-		long points = pointsForLevel(player.experienceLevel) + Math.round(player.experienceProgress * xpNeeded(player.experienceLevel));
-		return (int) Math.min(Integer.MAX_VALUE, points);
+		return (int) Math.min(Integer.MAX_VALUE, totalLong(player));
 	}
 
 	/** Takes up to {@code points}, recomputing level and progress so it works across level boundaries. Returns what was taken. */
 	public static int take(ServerPlayer player, int points) {
-		int before = total(player);
-		int taken = Math.min(points, before);
+		long before = totalLong(player);
+		int taken = (int) Math.min(points, before);
 		if (taken <= 0) {
 			return 0;
 		}
 		long remaining = before - taken;
-		int level = player.experienceLevel;
-		while (level > 0 && pointsForLevel(level) > remaining) {
-			level--;
+		// The highest level whose total fits in what remains (binary search: levels can be huge with commands).
+		int lo = 0;
+		int hi = player.experienceLevel;
+		while (lo < hi) {
+			int mid = (int) (((long) lo + hi + 1) / 2);
+			if (pointsForLevel(mid) <= remaining) {
+				lo = mid;
+			} else {
+				hi = mid - 1;
+			}
 		}
-		player.setExperienceLevels(level);
-		player.setExperiencePoints((int) (remaining - pointsForLevel(level)));
+		player.setExperienceLevels(lo);
+		player.setExperiencePoints((int) Math.min(Integer.MAX_VALUE, remaining - pointsForLevel(lo)));
 		player.totalExperience = Math.max(0, player.totalExperience - taken);
 		return taken;
 	}

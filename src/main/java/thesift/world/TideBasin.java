@@ -14,18 +14,20 @@ import thesift.registry.ModBlocks;
 
 /**
  * A tide basin (world.md, rules.md "the tide is literal"): a sunken flat with a tide vent in the
- * middle of its floor. The inner pool is 4 deep with a 2-wide terrace around it, so a player can
- * always climb out. It holds up to {@link #MAX_LAYERS} layers of ichor, the top one a block below
- * the rim, so a full basin never spills. Numbers: system_tides.md.
+ * middle of its floor. The inner pool is 4 below the ground and climbs out in three one-block steps
+ * (rings), so a player can always walk or jump out, full or empty. It holds up to
+ * {@link #MAX_LAYERS} layers of ichor, the top one a block below the rim, so a full basin never
+ * spills. Numbers: system_tides.md.
  */
 public record TideBasin(BlockPos vent, int inner) {
-	public static final int TERRACE = 2;
+	/** One-block steps from the pool floor up toward the rim. */
+	public static final int RINGS = 3;
 	public static final int DEPTH = 4;
 	public static final int MAX_LAYERS = 3;
 
 	/** Half the basin's width: at most 6, so a basin centred in its chunk never leaves it. */
 	public int half() {
-		return this.inner + TERRACE;
+		return this.inner + RINGS;
 	}
 
 	public boolean isInner(int dx, int dz) {
@@ -34,24 +36,32 @@ public record TideBasin(BlockPos vent, int inner) {
 		return Math.max(ax, az) <= this.inner && !(ax == this.inner && az == this.inner && this.inner > 0);
 	}
 
-	/** Inner half-widths worldgen uses (a test may use 0: a 5 x 5 basin). */
+	/** Inner half-widths worldgen uses (2–3); a test may use 0. */
 	public static boolean validInner(int inner) {
-		return inner >= 0 && inner <= 4;
-	}
-
-	public boolean isTerrace(int dx, int dz) {
-		int ax = Math.abs(dx);
-		int az = Math.abs(dz);
-		return !this.isInner(dx, dz) && Math.max(ax, az) <= this.half() && ax + az <= 2 * this.half() - 2;
+		return inner >= 0 && inner <= 3;
 	}
 
 	public boolean inFootprint(int dx, int dz) {
-		return this.isInner(dx, dz) || this.isTerrace(dx, dz);
+		int ax = Math.abs(dx);
+		int az = Math.abs(dz);
+		return Math.max(ax, az) <= this.half() && ax + az <= 2 * this.half() - 2;
 	}
 
-	/** The floor's y under (dx, dz): the vent's level in the pool, two higher on the terrace. */
+	/** Which step (0 = the pool, 1..RINGS = the rings outward) the cell (dx, dz) belongs to. */
+	public int ring(int dx, int dz) {
+		if (this.isInner(dx, dz)) {
+			return 0;
+		}
+		// Distance that follows the rounded corners, so the rings step up evenly there too.
+		int ax = Math.abs(dx);
+		int az = Math.abs(dz);
+		int dist = Math.max(Math.max(ax, az), ax + az - (this.half() - 2));
+		return Math.max(1, Math.min(RINGS, dist - this.inner));
+	}
+
+	/** The floor's y under (dx, dz): the vent's level in the pool, one higher per ring outward. */
 	public int floorY(int dx, int dz) {
-		return this.isInner(dx, dz) ? this.vent.getY() : this.vent.getY() + TERRACE;
+		return this.vent.getY() + this.ring(dx, dz);
 	}
 
 	/** The cells of fill layer {@code k} (0 = just above the pool floor). */

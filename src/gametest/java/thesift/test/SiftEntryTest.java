@@ -204,6 +204,92 @@ public final class SiftEntryTest {
 		helper.succeed();
 	}
 
+	@GameTest
+	public void aWardenRidingAMinecartCannotCross(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		var cart = EntityTypes.MINECART.create(level, EntitySpawnReason.COMMAND);
+		Entity warden = EntityTypes.WARDEN.create(level, EntitySpawnReason.COMMAND);
+		cart.setPos(Vec3.atCenterOf(helper.absolutePos(new BlockPos(2, 1, 2))));
+		warden.setPos(cart.position());
+		level.addFreshEntity(cart);
+		level.addFreshEntity(warden);
+		helper.assertTrue(warden.startRiding(cart, true, false), "the warden boards the cart");
+		helper.assertTrue(SiftMembraneBlock.canCross(EntityTypes.MINECART.create(level, EntitySpawnReason.COMMAND)), "an empty cart may cross");
+		helper.assertFalse(SiftMembraneBlock.canCross(cart), "a cart carrying a warden may not");
+		warden.discard();
+		cart.discard();
+		helper.succeed();
+	}
+
+	@GameTest(maxTicks = 200)
+	public void aMissingGateIsRebuiltAndABlockedArrivalRefused(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		ServerLevel sift = level.getServer().getLevel(SiftKeys.LEVEL);
+		SiftLinks links = SiftLinks.get(level.getServer());
+		SiftFrame frame = buildCityFrame(level, site(helper, 13), Direction.Axis.X);
+		links.addCharge(frame, Offering.PRICE);
+		FrameMusic.open(level, frame);
+		ServerPlayer player = playerAt(helper, frame, 0);
+		SiftGates.destination(level, player, frame.at(10, 1));
+		SiftFrame gate = links.frameWithBorder(frame.at(0, 0)).orElseThrow().gate().orElseThrow();
+		// As if the Sift's region files were reset: the gate is gone.
+		gate.border().forEach(p -> sift.setBlockAndUpdate(p, ModBlocks.HYMNSTONE.defaultBlockState()));
+		gate.opening().forEach(p -> sift.setBlockAndUpdate(p, ModBlocks.HYMNSTONE.defaultBlockState()));
+		TeleportTransition there = SiftGates.destination(level, player, frame.at(10, 1));
+		helper.assertTrue(there != null, "crossing still works");
+		SiftFrame rebuilt = links.frameWithBorder(frame.at(0, 0)).orElseThrow().gate().orElseThrow();
+		helper.assertTrue(sift.getBlockState(rebuilt.origin()).is(ModBlocks.GATESTONE), "the gate was rebuilt");
+		BlockPos arrival = BlockPos.containing(there.position());
+		helper.assertTrue(sift.getBlockState(arrival).getCollisionShape(sift, arrival).isEmpty(), "arrival is in the open");
+		// A blocked arrival in the Overworld refuses the crossing instead of burying the traveller.
+		level.setBlockAndUpdate(BlockPos.containing(frame.arrival()), Blocks.STONE.defaultBlockState());
+		helper.assertTrue(SiftGates.destination(sift, player, rebuilt.at(2, 2)) == null, "no crossing into stone");
+		helper.succeed();
+	}
+
+	/**
+	 * A gate's hill on flat ground can be walked down on every side: no step over one block. The
+	 * geometry doesn't depend on the dimension, so this runs in the Overworld test world, whose test
+	 * areas have open sky (the Sift's sit under its hills).
+	 */
+	@GameTest(structure = SiftBasinTest.BIG)
+	public void aGateHillOnFlatGroundIsWalkable(GameTestHelper helper) {
+		ServerLevel sift = helper.getLevel();
+		SiftLinks links = new SiftLinks(); // its own: the server's links hold other tests' gates, which spacing would avoid
+		// Test areas sit inside the terrain: open the sky above this one, then lay a flat floor.
+		for (int x = 0; x <= 16; x++) {
+			for (int z = 0; z <= 16; z++) {
+				BlockPos column = helper.absolutePos(new BlockPos(x, 0, z));
+				int top = sift.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE, column.getX(), column.getZ());
+				for (int y = column.getY() + 4; y <= top; y++) {
+					sift.setBlock(column.atY(y), Blocks.AIR.defaultBlockState(), net.minecraft.world.level.block.Block.UPDATE_CLIENTS);
+				}
+				for (int y = 0; y <= 3; y++) {
+					helper.setBlock(new BlockPos(x, y, z), ModBlocks.HYMNSTONE);
+				}
+			}
+		}
+		BlockPos centre = helper.absolutePos(new BlockPos(8, 4, 8));
+		SiftFrame fakeCity = new SiftFrame(new BlockPos(centre.getX() - 11, 0, centre.getZ()), Direction.Axis.X, 22, 8);
+		SiftFrame gate = SiftGates.build(sift, links, fakeCity);
+		helper.assertTrue(Math.abs(gate.center().x - centre.getX()) < 2 && Math.abs(gate.center().z - centre.getZ()) < 2,
+				"the gate stands at the test centre: " + gate.center());
+		for (int[] dir : new int[][] {{1, 0}, {-1, 0}, {0, 1}, {0, -1}}) {
+			int last = Integer.MIN_VALUE;
+			for (int r = 4; r <= 8; r++) {
+				int x = centre.getX() + dir[0] * r;
+				int z = centre.getZ() + dir[1] * r;
+				int y = sift.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
+				if (last != Integer.MIN_VALUE) {
+					helper.assertTrue(Math.abs(y - last) <= 1, "step of " + (y - last) + " at radius " + r + " toward " + dir[0] + "," + dir[1]);
+				}
+				last = y;
+			}
+			helper.assertValueEqual(last, centre.getY(), "the hill ends at the natural ground");
+		}
+		helper.succeed();
+	}
+
 	/**
 	 * End to end through the real portal path (entityInside, the portal processor, our
 	 * destination): a pig standing in a gate inside the test area walks home to its frame. Mobs

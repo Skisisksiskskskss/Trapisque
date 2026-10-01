@@ -10,6 +10,7 @@ import thesift.entry.Offering;
 import thesift.registry.ModAttributes;
 import thesift.registry.ModBlockEntities;
 import thesift.registry.ModBlocks;
+import thesift.registry.ModEntities;
 import thesift.registry.ModFeatureTypes;
 import thesift.registry.ModCreativeTab;
 import thesift.registry.ModFluids;
@@ -36,6 +37,7 @@ public final class TheSift implements ModInitializer {
 		ModFluids.init();
 		ModBlocks.init();
 		ModBlockEntities.init();
+		ModEntities.init();
 		ModFeatureTypes.init();
 		ModItems.init();
 		ModCreativeTab.init();

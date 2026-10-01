@@ -12,6 +12,9 @@ import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.InsideBlockEffectApplier;
 import net.minecraft.world.entity.animal.pig.Pig;
 import net.minecraft.world.entity.decoration.ArmorStand;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
@@ -74,10 +77,34 @@ public final class SiftIchorTest {
 	public void wadingSlowsHorizontallyOnly(GameTestHelper helper) {
 		pool(helper, 2);
 		ServerPlayer player = playerInIchor(helper, 0);
+		player.setDeltaMovement(0.3, 0.42, -0.2);
 		standIn(helper, player);
-		helper.assertValueEqual(((EntityStuckAccessor) player).thesift$stuckSpeedMultiplier(), IchorFluid.WADE, "wading multiplier");
-		helper.assertValueEqual(IchorFluid.WADE.y, 1.0, "climbing out stays possible");
+		Vec3 after = player.getDeltaMovement();
+		helper.assertTrue(Math.abs(after.x - 0.15) < 1.0e-6 && Math.abs(after.z + 0.1) < 1.0e-6, "horizontal speed halves: " + after);
+		helper.assertTrue(Math.abs(after.y - 0.42) < 1.0e-6, "a jump keeps its lift: " + after);
+		helper.assertTrue(((EntityStuckAccessor) player).thesift$stuckSpeedMultiplier().lengthSqr() < 1.0e-9,
+				"not the cobweb rule, which zeroes motion every tick");
+		standIn(helper, player);
+		helper.assertTrue(Math.abs(player.getDeltaMovement().x - 0.15) < 1.0e-6, "once per tick, however many ichor blocks it touches");
 		helper.succeed();
+	}
+
+	/** Through real physics: something thrown upward in ichor still rises over a bank's height. */
+	@GameTest(dimension = SIFT, maxTicks = 40)
+	public void aJumpInIchorClearsABank(GameTestHelper helper) {
+		pool(helper, 2);
+		ItemEntity item = new ItemEntity(helper.getLevel(), 0, 0, 0, new ItemStack(Items.STONE));
+		Vec3 start = Vec3.atBottomCenterOf(helper.absolutePos(new BlockPos(3, 2, 3)));
+		item.setPos(start.x, start.y, start.z);
+		item.setDeltaMovement(0, 0.5, 0);
+		helper.getLevel().addFreshEntity(item);
+		double[] best = {0};
+		helper.onEachTick(() -> best[0] = Math.max(best[0], item.getY() - start.y));
+		helper.runAfterDelay(20, () -> {
+			helper.assertTrue(best[0] > 1.0, "rose " + best[0] + " blocks");
+			helper.assertFalse(item.isOnFire(), "items (a death's drops) don't burn in ichor");
+			helper.succeed();
+		});
 	}
 
 	@GameTest(dimension = SIFT)

@@ -28,6 +28,7 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.gamerules.GameRules;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -53,8 +54,9 @@ public class SiftMembraneBlock extends Block implements Portal {
 		this.registerDefaultState(this.stateDefinition.any().setValue(AXIS, Direction.Axis.X));
 	}
 
+	/** Checks riders too: a warden in a minecart doesn't get through either. */
 	public static boolean canCross(Entity entity) {
-		return !entity.is(ModTags.CANNOT_CROSS);
+		return entity.getSelfAndPassengers().noneMatch(e -> e.is(ModTags.CANNOT_CROSS));
 	}
 
 	@Override
@@ -116,6 +118,12 @@ public class SiftMembraneBlock extends Block implements Portal {
 			return ParticleTypes.SPORE_BLOSSOM_AIR;
 		}
 		return tide == Tide.ENDURE ? ParticleTypes.SOUL : ParticleTypes.WAX_ON;
+	}
+
+	/** No fluid washes it out (a bucket aimed at the sill would otherwise replace it), as with the end portal. */
+	@Override
+	protected boolean canBeReplaced(BlockState state, Fluid fluid) {
+		return false;
 	}
 
 	@Override

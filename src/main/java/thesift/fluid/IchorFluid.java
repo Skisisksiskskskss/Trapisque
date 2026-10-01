@@ -48,7 +48,7 @@ import thesift.world.SoulPoints;
  * {@code #thesift:ichor_adapted} are left alone. Numbers: BALANCE.md.
  */
 public abstract class IchorFluid extends FlowingFluid {
-	/** Horizontal speed while wading; vertical is untouched so you can still climb out. */
+	/** Per-tick multiplier on horizontal speed while wading; vertical is untouched so you can climb out. */
 	public static final Vec3 WADE = new Vec3(0.5, 1.0, 0.5);
 	public static final float BURN_SECONDS = 4.0F;
 	/** Ticks between drained XP points: Peaceful/Easy, Normal, Hard. */
@@ -56,8 +56,10 @@ public abstract class IchorFluid extends FlowingFluid {
 	public static final int DRAIN_INTERVAL_NORMAL = 10;
 	public static final int DRAIN_INTERVAL_HARD = 5;
 
-	/** entityInside runs once per touched ichor block; burning and draining run once per tick. */
+	/** entityInside runs once per touched ichor block; wading, burning and draining run once per tick. */
 	private static final Map<Entity, Long> LAST_SOUL_TICK = new WeakHashMap<>();
+	private static final Map<Entity, Long> SERVER_WADE_TICK = new WeakHashMap<>();
+	private static final Map<Entity, Long> CLIENT_WADE_TICK = new WeakHashMap<>();
 
 	@Override
 	public Fluid getFlowing() {
@@ -83,10 +85,27 @@ public abstract class IchorFluid extends FlowingFluid {
 		if (isAdapted(entity)) {
 			return;
 		}
-		entity.makeStuckInBlock(level.getBlockState(pos), WADE);
+		// Once per tick (entityInside runs once per touched ichor block), on both sides so a player's
+		// own movement prediction agrees with the server.
+		Map<Entity, Long> wadeTicks = level.isClientSide() ? CLIENT_WADE_TICK : SERVER_WADE_TICK;
+		Long lastWade = wadeTicks.put(entity, level.getGameTime());
+		if (lastWade == null || lastWade != level.getGameTime()) {
+			wade(entity);
+		}
 		if (level instanceof ServerLevel serverLevel) {
 			applySoulEffects(serverLevel, entity, serverLevel.getGameTime());
 		}
+	}
+
+	/**
+	 * Thick going: horizontal speed is damped each tick, vertical speed is left alone so a jump still
+	 * clears a one-block bank. (Not {@code makeStuckInBlock}: that zeroes all motion every tick, the
+	 * cobweb rule, and caps a jump at under half a block.) Falls end softly, as in water.
+	 */
+	public static void wade(Entity entity) {
+		Vec3 motion = entity.getDeltaMovement();
+		entity.setDeltaMovement(motion.x * WADE.x, motion.y, motion.z * WADE.z);
+		entity.resetFallDistance();
 	}
 
 	/** Burning and draining for an entity standing in ichor at {@code gameTime}: at most once per tick. */
@@ -105,9 +124,9 @@ public abstract class IchorFluid extends FlowingFluid {
 	}
 
 	private static void burn(ServerLevel level, Entity entity) {
-		boolean resists = entity instanceof LivingEntity living && living.hasEffect(MobEffects.FIRE_RESISTANCE);
-		if (!entity.fireImmune() && !resists) {
-			entity.igniteForSeconds(BURN_SECONDS);
+		// Only the living burn: items (a death's drops) and other objects float through unharmed.
+		if (entity instanceof LivingEntity living && !living.fireImmune() && !living.hasEffect(MobEffects.FIRE_RESISTANCE)) {
+			living.igniteForSeconds(BURN_SECONDS);
 		}
 		if (level.getRandom().nextInt(4) == 0) {
 			level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, entity.getX(), entity.getY() + 0.3, entity.getZ(), 1, entity.getBbWidth() / 2, 0.2, entity.getBbWidth() / 2, 0.01);
