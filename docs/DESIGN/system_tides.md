@@ -27,6 +27,7 @@ vision/systems.md §1 and rules.md; this page is what the code implements (WP-04
 | Work per update | One layer: ≤ 169 block changes (13 × 13), flag 2 (no neighbour updates) | Under a chunk-section rebuild's cost |
 | Catch-up after load | One update sets all 3 layers: ≤ 507 changes, under the 800 budget (GameTest `aReloadedVentCatchesUpAtOnce`) | rules.md: "snaps to the current level on load (under ~800 blocks)" |
 | Player blocks | Never replaced; a player-placed vent is inert | No griefing tool, no base flooding |
+| Measured cost | 50 basins through a whole Flow: vent work p95 0.005 ms per tick, max 5.6–10.4 ms on layer-change ticks (`SiftPerfTest`) | Six layer changes per cycle; vents spread over the second by a mixed position hash |
 
 ## Static ichor pools
 Vanilla's lava lake with ichor in hymnstone: on the surface 1 in 8 chunks, underground 1 in 5 (y 8–90). They don't follow the Tide.

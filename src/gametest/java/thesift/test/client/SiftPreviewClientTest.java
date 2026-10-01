@@ -69,7 +69,38 @@ public final class SiftPreviewClientTest implements FabricClientGameTest {
 			// WP-052: the camera stood in a natural Ancient City, then went into the Sift.
 			assertAdvancement(world, SiftAdvancements.ROOT, "The Sift");
 			assertAdvancement(world, SiftAdvancements.ENTER, "Where Souls Drift");
+			chunkGenerationCost(world);
 		}
+	}
+
+	/**
+	 * WP-042's budget: generating fresh Sift chunks against fresh Overworld chunks (default world
+	 * settings, the same machine and run). 49 chunks each, far from anything loaded, Sift first and
+	 * then the Overworld, then the other way round; logged.
+	 */
+	private static void chunkGenerationCost(TestSingleplayerContext world) {
+		long[] nanos = world.getServer().computeOnServer(server -> {
+			long[] t = new long[2];
+			int[][] origins = {{3000, 3000}, {-3000, 3000}};
+			for (int run = 0; run < 2; run++) {
+				for (int side = 0; side < 2; side++) {
+					boolean sift = (side == 0) == (run == 0);
+					ServerLevel level = sift ? server.getLevel(SiftKeys.LEVEL) : server.overworld();
+					int ox = origins[run][0] + (sift ? 0 : 500);
+					int oz = origins[run][1];
+					long t0 = System.nanoTime();
+					for (int dx = 0; dx < 7; dx++) {
+						for (int dz = 0; dz < 7; dz++) {
+							level.getChunk(ox + dx, oz + dz);
+						}
+					}
+					t[sift ? 0 : 1] += System.nanoTime() - t0;
+				}
+			}
+			return t;
+		});
+		TheSift.LOGGER.info("Chunk generation, 98 fresh chunks each: the Sift {} ms, the Overworld {} ms, ratio {}",
+				nanos[0] / 1_000_000, nanos[1] / 1_000_000, String.format(java.util.Locale.ROOT, "%.2f", (double) nanos[0] / Math.max(1, nanos[1])));
 	}
 
 	private static void assertAdvancement(TestSingleplayerContext world, net.minecraft.resources.Identifier id, String name) {

@@ -2,6 +2,7 @@ package thesift.block.entity;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -31,9 +32,17 @@ public class TideVentBlockEntity extends BlockEntity {
 		super(ModBlockEntities.TIDE_VENT, pos, state);
 	}
 
+	/**
+	 * A vent's slot within the second. Mixed, not {@code pos.hashCode()}: worldgen vents sit at chunk
+	 * centres, and their plain hashes fall into only 5 of the 20 slots (found by the 50-basin cost test).
+	 */
+	public static int phase(BlockPos pos) {
+		return Math.floorMod(Mth.murmurHash3Mixer(pos.hashCode()), UPDATE_INTERVAL);
+	}
+
 	public static void serverTick(Level level, BlockPos pos, BlockState state, TideVentBlockEntity vent) {
 		// Spread vents over the second by position, so many basins don't all update on one tick.
-		if (Math.floorMod(level.getGameTime() + pos.hashCode(), UPDATE_INTERVAL) == 0 && level instanceof ServerLevel serverLevel) {
+		if (Math.floorMod(level.getGameTime() + phase(pos), UPDATE_INTERVAL) == 0 && level instanceof ServerLevel serverLevel) {
 			vent.update(serverLevel, Tide.clockTicks(level));
 		}
 	}

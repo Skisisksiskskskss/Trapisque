@@ -354,6 +354,7 @@ Minimum per mission: entry and return, one area with its own terrain, a small bl
 - Log:
   - 2026-10-01: block set I, Meadow noise/material rules, songwood trees, grass, Sift-only growth; heightmap tag fix (P5). Left: client music reactions (world.md §3.2).
 
+  - 2026-10-01 (measured, client GameTest `chunkGenerationCost`, default world settings): 98 fresh chunks each, the Sift 1245 ms vs the Overworld 4223 ms: 0.29×, inside the 1.5× budget.
 ### WP-043 Audio pipeline and the entry, Tide and Meadow sounds
 - Phase / Milestone: 4 / M1
 - Tier: M
@@ -401,6 +402,7 @@ Minimum per mission: entry and return, one area with its own terrain, a small bl
 - Log:
   - 2026-10-01: core done (fluid, block, bucket evaporation, wading/burn/drain in entityInside, 10 GameTests, BALANCE rows). Left: fog via access widener, the 20-entity cost measurement, sounds (WP-043).
 
+  - 2026-10-01 (measured, `SiftPerfTest`): 20 zombified piglins in ichor vs 20 in lava, ticked by hand: 0.89–0.98× across runs, inside 1.5×. The fog (access widener) and sounds landed earlier.
 ### WP-045 Tide basins (one kind, in the Meadow)
 - Phase / Milestone: 4 / M1
 - Tier: L
@@ -425,6 +427,7 @@ Minimum per mission: entry and return, one area with its own terrain, a small bl
 - Log:
   - 2026-10-01: core done (feature in lows, vent BE one layer/s, catch-up ≤ 507 blocks, static pools, 8 GameTests, Thrive/Endure previews). Left: MSPT p95 measurement, rising-bubble and tide-mark visuals.
 
+  - 2026-10-01 (measured, `SiftPerfTest`): 50 basins through a whole rising and falling Flow: vent work per tick p95 0.005 ms, max 5.6–10.4 ms (about 30 layer-change ticks per cycle, ~8 µs per cell with light and fluid scheduling). The test found vents at chunk centres sharing only 5 of the 20 update slots (plain `hashCode`); vents now use a mixed hash (17–19 slots).
 ### WP-046 Entry I: frames, offering, waking, music
 - Phase / Milestone: 4 / M1
 - Tier: L
