@@ -44,6 +44,7 @@ public final class TideCues {
 			case ENDURE -> ModSounds.TIDE_ENDURE;
 		};
 		for (ServerPlayer player : level.players()) {
+			SiftAdvancements.award(player, SiftAdvancements.TIDE_TURNS);
 			if (player.connection == null) {
 				continue;
 			}

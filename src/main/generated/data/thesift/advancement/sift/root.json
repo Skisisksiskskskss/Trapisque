@@ -1,0 +1,38 @@
+{
+  "criteria": {
+    "in_ancient_city": {
+      "conditions": {
+        "player": {
+          "type": "minecraft:entity_properties",
+          "entity": "this",
+          "predicate": {
+            "minecraft:location": {
+              "structures": "minecraft:ancient_city"
+            }
+          }
+        }
+      },
+      "trigger": "minecraft:location"
+    }
+  },
+  "display": {
+    "announce_to_chat": false,
+    "background": "thesift:block/hymnstone_bricks",
+    "description": {
+      "translate": "advancements.thesift.root.description"
+    },
+    "icon": {
+      "id": "minecraft:reinforced_deepslate"
+    },
+    "show_toast": false,
+    "title": {
+      "translate": "advancements.thesift.root.title"
+    }
+  },
+  "requirements": [
+    [
+      "in_ancient_city"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

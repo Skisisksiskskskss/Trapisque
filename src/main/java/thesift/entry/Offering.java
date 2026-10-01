@@ -17,6 +17,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
 import thesift.registry.ModSounds;
+import thesift.world.SiftAdvancements;
 import thesift.world.SoulPoints;
 
 /**
@@ -81,6 +82,7 @@ public final class Offering {
 		if (updated.awake()) {
 			wake(level, updated.frame());
 			tell(player, Component.translatable("thesift.frame.woke"));
+			SiftAdvancements.award(player, SiftAdvancements.OFFERING);
 		} else {
 			tell(player, Component.translatable("thesift.frame.offering", updated.charge() * 100 / PRICE));
 		}

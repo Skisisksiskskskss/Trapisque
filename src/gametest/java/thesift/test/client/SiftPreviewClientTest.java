@@ -22,6 +22,7 @@ import thesift.client.fog.IchorFogEnvironment;
 import thesift.block.entity.TideVentBlockEntity;
 import thesift.registry.ModBlocks;
 import thesift.entity.blub.Blub;
+import thesift.world.SiftAdvancements;
 import thesift.world.SiftKeys;
 import thesift.world.Tide;
 import thesift.entry.FrameMusic;
@@ -54,6 +55,8 @@ public final class SiftPreviewClientTest implements FabricClientGameTest {
 			musicShot(context, world);
 			ichorFogShot(context, world);
 			blubShot(context, world);
+			// WP-052: the Tide changed under the player (by command, as above) at least once.
+			assertAdvancement(world, SiftAdvancements.TIDE_TURNS, "The Tide Turns");
 		}
 		// The consistent test world is flat without structures; the entry needs a real Ancient City.
 		try (TestSingleplayerContext world = context.worldBuilder().setUseConsistentSettings(false).adjustSettings(s -> {
@@ -63,6 +66,16 @@ public final class SiftPreviewClientTest implements FabricClientGameTest {
 			world.getServer().runCommand("gamerule advance_time false");
 			world.getServer().runCommand("gamemode spectator @a");
 			entryShots(context, world);
+			// WP-052: the camera stood in a natural Ancient City, then went into the Sift.
+			assertAdvancement(world, SiftAdvancements.ROOT, "The Sift");
+			assertAdvancement(world, SiftAdvancements.ENTER, "Where Souls Drift");
+		}
+	}
+
+	private static void assertAdvancement(TestSingleplayerContext world, net.minecraft.resources.Identifier id, String name) {
+		boolean has = world.getServer().computeOnServer(server -> SiftAdvancements.has(server.getPlayerList().getPlayers().get(0), id));
+		if (!has) {
+			throw new AssertionError("the player should have earned \"" + name + "\"");
 		}
 	}
 

@@ -16,7 +16,7 @@ It has its own synthesized sounds, with subtitles: the offering, waking and open
 1. In a new world, gather **30 levels** of experience, then find an **Ancient City** (with cheats: `/locate structure minecraft:ancient_city`). Mind the warden: offering and music both make vibrations.
 2. At the city's centre stands the big reinforced-deepslate frame (22 × 8). With an **empty main hand, hold *use* (right-click) on the frame**.
    **Expect:** your XP bar drains in a steady stream, souls flow from you into the frame, faint cyan specks appear on it, and the action bar shows "Your soul flows into the frame (n%)". Releasing stops it at once, and what you gave stays. The full price is level 0 → 30 (1 395 points, ≈ 28 s). In creative it is free.
-3. At 100%: "The frame wakes. It is listening for music", a glow burst, and note particles drift from the frame.
+3. At 100%: "The frame wakes; it is listening for music", a glow burst, and note particles drift from the frame.
 4. **Play music** near it: a note block (hit it, or power it) or a goat horn within 16 blocks, or a jukebox with a disc within 10. **Expect:** a cyan membrane fills the 20 × 6 opening.
 5. Walk into the membrane and wait about 4 s, as with a Nether portal. **Expect:** you arrive in the Sift inside a gatestone gate on top of a coral-pink hill, in **Thrive** (teal sky). The first arrival in a world starts the Tide clock.
 6. To go home, walk back into the gate's membrane. **Expect:** you come out inside the city frame.
@@ -41,7 +41,7 @@ It has its own synthesized sounds, with subtitles: the offering, waking and open
 4. **Music reactions:** play a note block, goat horn or jukebox near healthy sculk or songwood. **Expect:** glowing petals lift off the sculk and grass, and the songwood's flute holes puff notes (within 12 blocks). It works at home too, and with the sound muted.
 5. **Tell me:** what reads well, and what looks off (colours, textures, the membrane's pattern, the ichor surface)?
 
-### P5. Blubs (next build, `v0.1.0-alpha`; ≈15 minutes)
+### P5. Blubs and advancements (next build, `v0.1.0-alpha`; ≈15 minutes)
 1. Find blubs on the Meadow: small pale-blue bunny-things, in groups of 2–5 (with cheats, a **Blub Spawn Egg** from the creative tab).
 2. Place a **note block** next to them and play it once. **Expect:** they stop, ears up, chirp, and drift toward the music. Nobody is befriended yet.
 3. Stand within 4 blocks of one and play again. **Expect:** hearts, a happy squeak and a hop. That blub is yours. Each note befriends one more, the nearest one watching. Redstone-played notes and jukeboxes only make them listen.
@@ -49,7 +49,8 @@ It has its own synthesized sounds, with subtitles: the offering, waking and open
 5. *Use* with an empty hand sits a blub, as with a cat. *Sneak-use* on a sitting one releases it. It heals slowly while sitting.
 6. Walk through the membrane. **Expect:** your free-roaming blubs within 16 blocks come along; sitting ones stay.
 7. Watch a Tide cycle with blubs around. Near the end of Thrive and of Endure, yours get **restless** (hops, chirps, note particles): Flow is 30 s away. In **Flow** they potter along the basin waterline. In **Endure** they curl up under leaves with their bellies glowing. In **Thrive**, music makes nearby blubs stack into wobbly towers of up to 5, which topple later. Now and then a blub sits in shallow ichor up to its belly, unharmed.
-8. **Tell me:** does befriending feel deliberate or fiddly? Is the echo charming or noisy? Do the towers topple too soon or too late?
+8. **Advancements:** a tab **The Sift** opens when you walk an Ancient City, then "An Offering" (wake a frame), "Where Souls Drift" (enter the Sift) and "The Tide Turns" (be there when it changes). Befriending a blub also counts for vanilla's "Best Friends Forever".
+9. **Tell me:** does befriending feel deliberate or fiddly? Is the echo charming or noisy? Do the towers topple too soon or too late?
 
 ### Known issues in this preview
 - The frame's, membrane's and ichor's particles are vanilla stand-ins (the sky's motes and the music petals are the Sift's own). The XP drain uses vanilla's soul sound.

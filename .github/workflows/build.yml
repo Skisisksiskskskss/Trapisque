@@ -35,6 +35,9 @@ jobs:
       - name: Content bible check
         run: python3 tools/docs/check_bible.py
 
+      - name: Lang check (names, subtitles, keys)
+        run: python3 tools/docs/check_lang.py
+
       - name: Datagen no-diff check
         run: tools/dev/datagen.sh --check
 

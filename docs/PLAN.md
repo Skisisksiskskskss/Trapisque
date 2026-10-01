@@ -41,7 +41,7 @@ Only one WP is IN PROGRESS at a time.
 | WP-049 | Blub art: texture, model, animations, spawn egg | 4 | L | DONE |
 | WP-050 | Blub audio | 4 | M | DONE |
 | WP-051 | Blub entity: AI and tests | 4 | L | DONE |
-| WP-052 | Entry advancements and lang pass | 4 | S | TODO |
+| WP-052 | Entry advancements and lang pass | 4 | S | DONE |
 | WP-053 | M1 integration and Gate C (self-review) | 4 | M | TODO |
 
 Phase 0 and Phase 1 WP details (with evidence logs) are in `docs/archive/PLAN_phase0-1.md`.
@@ -557,7 +557,7 @@ Minimum per mission: entry and return, one area with its own terrain, a small bl
 ### WP-052 Entry advancements and lang pass
 - Phase / Milestone: 4 / M1
 - Tier: S
-- Status: TODO
+- Status: DONE
 - Depends on: WP-047, WP-051
 - Goal: The Sift advancement tab: the root "The Sift" (be noticed by a frame), "An Offering", "Where Souls Drift" and "The Tide Turns". Also a lang pass over everything in M1.
 - Inputs (read ONLY these): docs/DESIGN/bible/items.md §5; mission §7.6.
@@ -568,6 +568,7 @@ Minimum per mission: entry and return, one area with its own terrain, a small bl
 - Iteration budget: 1 round.
 - Exit ramp: vanilla trigger types only.
 - Log:
+  - 2026-10-01: the tab via datagen. Root "The Sift" (location: in an Ancient City; the frame's "notice" cue is deferred, D-020), "An Offering" and "The Tide Turns" (vanilla `impossible` criteria awarded by Offering and TideCues), "Where Souls Drift" (changed dimension). Granted in tests: two server GameTests plus the client GameTest on a natural city (root, enter, Tide). Lang proofread (Tide capitalised, vanilla's semicolon style); `tools/docs/check_lang.py` (in CI) checks every sound's subtitle (steps excepted), every code key and every block and item name.
 
 ### WP-053 M1 integration and Gate C (self-review)
 - Phase / Milestone: 4 / M1

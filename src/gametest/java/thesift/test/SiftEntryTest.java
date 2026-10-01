@@ -25,6 +25,7 @@ import thesift.entry.SiftGates;
 import thesift.entry.SiftLinks;
 import thesift.registry.ModBlocks;
 import thesift.world.SiftKeys;
+import thesift.world.SiftAdvancements;
 import thesift.world.SoulPoints;
 
 /** WP-046/047: the way in and the way back (entry_path.md). */
@@ -88,6 +89,16 @@ public final class SiftEntryTest {
 		helper.assertTrue(link.awake(), "the full price wakes the frame: " + link.charge());
 		helper.assertValueEqual(SoulPoints.total(player), 0, "every point went in");
 		helper.assertFalse(FrameMusic.isOpen(level, frame), "waking does not open it: that takes music");
+		helper.assertTrue(SiftAdvancements.has(player, SiftAdvancements.OFFERING), "waking the frame grants An Offering");
+		helper.succeed();
+	}
+
+	@GameTest
+	public void enteringTheSiftGrantsWhereSoulsDrift(GameTestHelper helper) {
+		ServerPlayer player = (ServerPlayer) helper.makeMockServerPlayer(GameType.SURVIVAL);
+		helper.assertFalse(SiftAdvancements.has(player, SiftAdvancements.ENTER), "not before");
+		net.minecraft.advancements.triggers.CriteriaTriggers.CHANGED_DIMENSION.trigger(player, net.minecraft.world.level.Level.OVERWORLD, SiftKeys.LEVEL);
+		helper.assertTrue(SiftAdvancements.has(player, SiftAdvancements.ENTER), "arriving in the Sift grants Where Souls Drift");
 		helper.succeed();
 	}
 

@@ -20,7 +20,7 @@ final class ModLanguageProvider extends FabricLanguageProvider {
 	public void generateTranslations(HolderLookup.Provider registries, TranslationBuilder builder) {
 		builder.add("thesift.disclaimer", "Unofficial fan project, not affiliated with or endorsed by Mojang Studios or Microsoft.");
 		builder.add("thesift.bed.no_sleep", "You can't sleep here: the Sift never goes quiet");
-		builder.add("thesift.bed.rested", "You rest a while. The Tide keeps turning.");
+		builder.add("thesift.bed.rested", "You rest a while; the Tide keeps turning");
 		builder.add("itemGroup.thesift", "The Sift");
 		builder.add(ModBlocks.HYMNSTONE, "Hymnstone");
 		builder.add(ModBlocks.HYMNSTONE_BRICKS, "Hymnstone Bricks");
@@ -45,9 +45,9 @@ final class ModLanguageProvider extends FabricLanguageProvider {
 		builder.add("subtitles.thesift.frame.hum", "The frame hums");
 		builder.add("subtitles.thesift.membrane.ambient", "Membrane chimes");
 		builder.add("subtitles.thesift.membrane.travel", "Crossing the membrane");
-		builder.add("subtitles.thesift.tide.thrive", "The tide ebbs: Thrive");
-		builder.add("subtitles.thesift.tide.flow", "The tide turns: Flow");
-		builder.add("subtitles.thesift.tide.endure", "The tide rises: Endure");
+		builder.add("subtitles.thesift.tide.thrive", "The Tide ebbs: Thrive");
+		builder.add("subtitles.thesift.tide.flow", "The Tide turns: Flow");
+		builder.add("subtitles.thesift.tide.endure", "The Tide rises: Endure");
 		builder.add("subtitles.thesift.basin.fill", "Ichor bubbles up");
 		builder.add("subtitles.thesift.basin.drain", "Ichor drains away");
 		builder.add("subtitles.thesift.ichor.wade", "Wading through ichor");
@@ -72,11 +72,19 @@ final class ModLanguageProvider extends FabricLanguageProvider {
 		builder.add(ModItems.ICHOR_BUCKET, "Ichor Bucket");
 		builder.add(ModEntities.BLUB, "Blub");
 		builder.add(ModItems.BLUB_SPAWN_EGG, "Blub Spawn Egg");
+		builder.add("advancements.thesift.root.title", "The Sift");
+		builder.add("advancements.thesift.root.description", "Walk an Ancient City, where something old is listening");
+		builder.add("advancements.thesift.an_offering.title", "An Offering");
+		builder.add("advancements.thesift.an_offering.description", "Wake an Ancient City's frame with your experience");
+		builder.add("advancements.thesift.where_souls_drift.title", "Where Souls Drift");
+		builder.add("advancements.thesift.where_souls_drift.description", "Play music to an awake frame and cross into the Sift");
+		builder.add("advancements.thesift.the_tide_turns.title", "The Tide Turns");
+		builder.add("advancements.thesift.the_tide_turns.description", "Be in the Sift when the Tide changes");
 		builder.add("tag.fluid.thesift.ichor", "Ichor");
 		builder.add("tag.item.thesift.songwood_logs", "Songwood Logs");
 		builder.add("thesift.frame.offering", "Your soul flows into the frame (%s%%)");
-		builder.add("thesift.frame.woke", "The frame wakes. It is listening for music");
-		builder.add("thesift.frame.awake", "The frame is awake. Play it some music");
+		builder.add("thesift.frame.woke", "The frame wakes; it is listening for music");
+		builder.add("thesift.frame.awake", "The frame is awake; play it some music");
 		builder.add("thesift.frame.no_soul", "You have no experience left to offer");
 	}
 }
