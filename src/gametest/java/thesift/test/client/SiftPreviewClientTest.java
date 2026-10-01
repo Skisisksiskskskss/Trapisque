@@ -25,6 +25,7 @@ import thesift.entity.blub.Blub;
 import thesift.world.SiftAdvancements;
 import thesift.world.SiftKeys;
 import thesift.world.Tide;
+import thesift.entry.FrameCues;
 import thesift.entry.FrameMusic;
 import thesift.entry.FrameShapes;
 import thesift.entry.Offering;
@@ -175,6 +176,21 @@ public final class SiftPreviewClientTest implements FabricClientGameTest {
 		context.takeScreenshot("wp049_blubs_endure");
 	}
 
+	/** In front of the frame, not off its ends: mostly across its plane, within its width. */
+	private static boolean inFront(SiftFrame frame, Vec3 p) {
+		Vec3 d = p.subtract(frame.center());
+		double across = frame.axis() == Direction.Axis.X ? Math.abs(d.z) : Math.abs(d.x);
+		double along = frame.axis() == Direction.Axis.X ? Math.abs(d.x) : Math.abs(d.z);
+		return across >= 3.5 && along <= 8;
+	}
+
+	/** True if nothing but the frame itself stands between {@code eye} and the frame's centre. */
+	private static boolean seesFrame(ServerLevel level, Vec3 eye, SiftFrame frame) {
+		var hit = level.clip(new net.minecraft.world.level.ClipContext(eye, frame.center(), net.minecraft.world.level.ClipContext.Block.COLLIDER,
+				net.minecraft.world.level.ClipContext.Fluid.NONE, net.minecraft.world.phys.shapes.CollisionContext.empty()));
+		return hit.getType() == net.minecraft.world.phys.HitResult.Type.MISS || frame.box().inflate(0.5).contains(hit.getLocation());
+	}
+
 	/** The "game mode updated" lines would cover the bottom of the shot. */
 	private static void clearChat(ClientGameTestContext context) {
 		context.runOnClient(client -> client.gui.hud.getChat().clearMessages(false));
@@ -298,9 +314,17 @@ public final class SiftPreviewClientTest implements FabricClientGameTest {
 							List<String> blocking = f.opening().stream().filter(o -> !FrameMusic.isClearable(level.getBlockState(o)))
 									.map(o -> level.getBlockState(o).getBlock() + "@" + o).toList();
 							TheSift.LOGGER.info("[WP-046] natural city frame {} {}; blocking cells: {}", f.origin(), f.axis(), blocking);
-							SiftLinks.get(server).addCharge(f, Offering.PRICE);
-							if (!FrameMusic.open(level, f)) {
-								throw new AssertionError("music could not open a natural frame: " + blocking);
+							// FrameCues finds the same frame from the city's structure data (its chunks loaded).
+							for (int cx = (start.getX() >> 4) - 6; cx <= (start.getX() >> 4) + 6; cx++) {
+								for (int cz = (start.getZ() >> 4) - 6; cz <= (start.getZ() >> 4) + 6; cz++) {
+									level.getChunk(cx, cz);
+								}
+							}
+							long t0 = System.nanoTime();
+							SiftFrame discovered = FrameCues.discover(level, BlockPos.containing(f.center()));
+							TheSift.LOGGER.info("[WP-046] FrameCues found {} from the structure in {} ms", discovered, (System.nanoTime() - t0) / 1_000_000);
+							if (!f.equals(discovered)) {
+								throw new AssertionError("FrameCues should find the city's frame " + f + ", found " + discovered);
 							}
 							return f;
 						}
@@ -312,6 +336,52 @@ public final class SiftPreviewClientTest implements FabricClientGameTest {
 		world.getServer().runCommand("effect give @a minecraft:night_vision infinite 0 true");
 		Vec3 c = frame.center();
 		boolean alongX = frame.axis() == Direction.Axis.X;
+		// Stage 2, notice: a survival player with experience 6 blocks from the dormant frame, empty-handed.
+		world.getServer().runCommand("gamemode survival @a");
+		world.getServer().runCommand("xp add @a 5 levels");
+		// A real standing spot (floor, two open cells) in front of the frame and within 7.5 blocks of it,
+		// as far as possible for the view; the camera faces the frame's centre.
+		BlockPos stand = world.getServer().computeOnServer(server -> {
+			ServerLevel level = server.overworld();
+			BlockPos best = null;
+			double bestDist = 0;
+			BlockPos centre = BlockPos.containing(c);
+			for (BlockPos p : BlockPos.betweenClosed(centre.offset(-12, -12, -12), centre.offset(12, 2, 12))) {
+				double d = frame.distanceTo(Vec3.atBottomCenterOf(p)); // as FrameCues measures the notice range
+				if (d <= 7.5 && d > bestDist && level.getBlockState(p).isAir() && level.getBlockState(p.above()).isAir()
+						&& level.getBlockState(p.below()).isSolidRender() && !frame.box().contains(Vec3.atCenterOf(p))
+						&& inFront(frame, Vec3.atCenterOf(p)) && seesFrame(level, Vec3.atBottomCenterOf(p).add(0, 1.62, 0), frame)) {
+					bestDist = d;
+					best = p.immutable();
+				}
+			}
+			return best;
+		});
+		if (stand == null) {
+			throw new AssertionError("no standing spot near the frame");
+		}
+		world.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute in minecraft:overworld run tp @a %.1f %d %.1f facing %.1f %.1f %.1f",
+				stand.getX() + 0.5, stand.getY(), stand.getZ() + 0.5, c.x, c.y, c.z));
+		world.getConnection().waitForChunksRender();
+		context.waitTicks(60);
+		clearChat(context);
+		context.takeScreenshot("wp046_frame_notice");
+		boolean noticed = world.getServer().computeOnServer(server -> {
+			var player = server.getPlayerList().getPlayers().getFirst();
+			return server.getAdvancements().get(SiftAdvancements.ROOT) != null
+					&& player.getAdvancements().getOrStartProgress(server.getAdvancements().get(SiftAdvancements.ROOT)).getCriterion(SiftAdvancements.AWARDED) != null
+					&& player.getAdvancements().getOrStartProgress(server.getAdvancements().get(SiftAdvancements.ROOT)).getCriterion(SiftAdvancements.AWARDED).isDone();
+		});
+		if (!noticed) {
+			throw new AssertionError("the frame should have noticed the player (root advancement's 'awarded' criterion)");
+		}
+		world.getServer().runCommand("gamemode spectator @a");
+		world.getServer().runOnServer(server -> {
+			SiftLinks.get(server).addCharge(frame, Offering.PRICE);
+			if (!FrameMusic.open(server.overworld(), frame)) {
+				throw new AssertionError("music could not open a natural frame");
+			}
+		});
 		world.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute in minecraft:overworld run tp @a %.1f %.1f %.1f %d 5",
 				alongX ? c.x : c.x + 14, c.y - 1, alongX ? c.z + 14 : c.z, alongX ? 180 : 90));
 		world.getConnection().waitForChunksRender();

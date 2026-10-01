@@ -1,5 +1,8 @@
 {
   "criteria": {
+    "awarded": {
+      "trigger": "minecraft:impossible"
+    },
     "in_ancient_city": {
       "conditions": {
         "player": {
@@ -31,6 +34,7 @@
   },
   "requirements": [
     [
+      "awarded",
       "in_ancient_city"
     ]
   ],

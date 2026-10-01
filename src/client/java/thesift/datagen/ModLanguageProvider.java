@@ -67,6 +67,7 @@ final class ModLanguageProvider extends FabricLanguageProvider {
 		builder.add("subtitles.thesift.blub.hurt", "Blub hurts");
 		builder.add("subtitles.thesift.blub.death", "Blub dies");
 		builder.add("subtitles.thesift.blub.hop", "Blub hops");
+		builder.add("subtitles.thesift.frame.notice", "Your soul stirs toward the frame");
 		builder.add("subtitles.thesift.meadow.mood", "A far-off flute");
 		builder.add(ModBlocks.ICHOR, "Ichor");
 		builder.add(ModItems.ICHOR_BUCKET, "Ichor Bucket");

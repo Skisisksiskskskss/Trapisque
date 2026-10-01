@@ -62,6 +62,13 @@
     ],
     "subtitle": "subtitles.thesift.frame.hum"
   },
+  "block.sift_frame.notice": {
+    "sounds": [
+      "thesift:entry/notice1",
+      "thesift:entry/notice2"
+    ],
+    "subtitle": "subtitles.thesift.frame.notice"
+  },
   "block.sift_frame.offer": {
     "sounds": [
       "thesift:entry/offer1",

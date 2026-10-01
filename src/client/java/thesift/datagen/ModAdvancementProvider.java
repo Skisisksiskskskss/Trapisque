@@ -7,6 +7,7 @@ import net.fabricmc.fabric.api.datagen.v1.FabricPackOutput;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricAdvancementProvider;
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.AdvancementHolder;
+import net.minecraft.advancements.AdvancementRequirements;
 import net.minecraft.advancements.AdvancementType;
 import net.minecraft.advancements.triggers.CriteriaTriggers;
 import net.minecraft.advancements.triggers.ChangeDimensionTrigger;
@@ -33,15 +34,17 @@ final class ModAdvancementProvider extends FabricAdvancementProvider {
 
 	@Override
 	public void generateAdvancement(HolderLookup.Provider registries, Consumer<AdvancementHolder> out) {
-		// The root: "be noticed by a frame". Until frames notice players (the deferred 8-block cue,
-		// D-020), standing in an Ancient City is the moment.
+		// The root: "be noticed by a frame" (FrameCues awards it), or simply walking an Ancient City, so
+		// a city whose frame can't be found still opens the tab.
 		AdvancementHolder root = Advancement.Builder.advancement()
 				.rootDisplay(Items.REINFORCED_DEEPSLATE,
 						Component.translatable("advancements.thesift.root.title"),
 						Component.translatable("advancements.thesift.root.description"),
 						TheSift.id("block/hymnstone_bricks"), AdvancementType.TASK, false, false, false)
+				.addCriterion(SiftAdvancements.AWARDED, CriteriaTriggers.IMPOSSIBLE.createCriterion(new ImpossibleTrigger.TriggerInstance()))
 				.addCriterion("in_ancient_city", PlayerTrigger.TriggerInstance.located(
 						LocationPredicate.Builder.inStructure(registries.lookupOrThrow(Registries.STRUCTURE).getOrThrow(BuiltinStructures.ANCIENT_CITY))))
+				.requirements(AdvancementRequirements.Strategy.OR)
 				.build(SiftAdvancements.ROOT);
 		out.accept(root);
 		AdvancementHolder offering = Advancement.Builder.advancement()

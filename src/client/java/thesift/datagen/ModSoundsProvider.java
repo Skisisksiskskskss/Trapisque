@@ -40,6 +40,7 @@ final class ModSoundsProvider extends FabricSoundsProvider {
 		add(exporter, ModSounds.FRAME_WAKE, "entry/wake", 1, "subtitles.thesift.frame.wake");
 		add(exporter, ModSounds.FRAME_OPEN, "entry/open", 1, "subtitles.thesift.frame.open");
 		add(exporter, ModSounds.FRAME_HUM, "entry/hum", 2, "subtitles.thesift.frame.hum");
+		add(exporter, ModSounds.FRAME_NOTICE, "entry/notice", 2, "subtitles.thesift.frame.notice");
 		add(exporter, ModSounds.MEMBRANE_AMBIENT, "entry/membrane", 3, "subtitles.thesift.membrane.ambient");
 		add(exporter, ModSounds.MEMBRANE_TRAVEL, "entry/travel", 1, "subtitles.thesift.membrane.travel");
 		add(exporter, ModSounds.TIDE_THRIVE, "tide/thrive", 1, "subtitles.thesift.tide.thrive");

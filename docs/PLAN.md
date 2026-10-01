@@ -457,6 +457,7 @@ Minimum per mission: entry and return, one area with its own terrain, a small bl
 - Log:
   - 2026-10-01: frames found by geometry on use (D-020), hold-use offering, waking, music via one gameEvent hook; real and natural Ancient City checks. Left: dormant "breathing" and 8-block notice cues, subtitles.
 
+  - 2026-10-01: rumor and notice cues (D-022). Frames are discovered from the city's structure data (1 ms on a natural city, asserted equal to the scanned frame in the client GameTest); wisps, a notice sound with subtitle, and the root advancement on notice (asserted). The notice capture showed a wisp rising from the player toward the frame; the city's geometry makes a clean framing hard, so no preview is saved. No per-tick scanning: one structure-reference lookup per player every 2 s, the frame search once per city.
 ### WP-047 Entry II: membrane, crossing, Sift-side gate, return
 - Phase / Milestone: 4 / M1
 - Tier: L

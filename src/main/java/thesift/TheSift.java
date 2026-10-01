@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import thesift.entity.blub.BlubCrossing;
+import thesift.entry.FrameCues;
 import thesift.entry.FrameMusic;
 import thesift.entry.Offering;
 import thesift.registry.ModAttachments;
@@ -49,6 +50,7 @@ public final class TheSift implements ModInitializer {
 		EndureRest.init();
 		Offering.init();
 		FrameMusic.init();
+		FrameCues.init();
 		TideCues.init();
 		BlubCrossing.init();
 		LOGGER.info("The Sift initialized (unofficial fan project)");

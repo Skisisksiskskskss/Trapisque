@@ -14,7 +14,7 @@ It has its own synthesized sounds, with subtitles: the offering, waking and open
 
 ### P1. The way in and back (survival, ≈30–60 minutes)
 1. In a new world, gather **30 levels** of experience, then find an **Ancient City** (with cheats: `/locate structure minecraft:ancient_city`). Mind the warden: offering and music both make vibrations.
-2. At the city's centre stands the big reinforced-deepslate frame (22 × 8). With an **empty main hand, hold *use* (right-click) on the frame**.
+2. At the city's centre stands the big reinforced-deepslate frame (22 × 8). **Expect (next build):** as you get near it, soul wisps drift into its opening; within 8 blocks, wisps rise from *you* toward it (more with an empty hand), and the subtitle reads "Your soul stirs toward the frame". With an **empty main hand, hold *use* (right-click) on the frame**.
    **Expect:** your XP bar drains in a steady stream, souls flow from you into the frame, faint cyan specks appear on it, and the action bar shows "Your soul flows into the frame (n%)". Releasing stops it at once, and what you gave stays. The full price is level 0 → 30 (1 395 points, ≈ 28 s). In creative it is free.
 3. At 100%: "The frame wakes; it is listening for music", a glow burst, and note particles drift from the frame.
 4. **Play music** near it: a note block (hit it, or power it) or a goat horn within 16 blocks, or a jukebox with a disc within 10. **Expect:** a cyan membrane fills the 20 × 6 opening.

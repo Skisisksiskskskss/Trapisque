@@ -16,6 +16,7 @@ public final class ModSounds {
 	public static final SoundEvent FRAME_WAKE = register("block.sift_frame.wake");
 	public static final SoundEvent FRAME_OPEN = register("block.sift_frame.open");
 	public static final SoundEvent FRAME_HUM = register("block.sift_frame.hum");
+	public static final SoundEvent FRAME_NOTICE = register("block.sift_frame.notice");
 	public static final SoundEvent MEMBRANE_AMBIENT = register("block.sift_membrane.ambient");
 	public static final SoundEvent MEMBRANE_TRAVEL = register("block.sift_membrane.travel");
 	public static final SoundEvent TIDE_THRIVE = register("ambient.tide.thrive");

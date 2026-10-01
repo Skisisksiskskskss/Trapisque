@@ -524,3 +524,14 @@ It also found that M1's Tide changed nothing in play (SF4), since the mission as
 
 **Revisit if** players want smoother motion than the procedural clips give (move to keyframes), or towers misbehave in multiplayer.
 
+## D-022 Frame cues: frames found from the city's structure data (2026-10-01) [WP-046]
+**Context.** D-020 deferred the dormant frame's "breathing" and 8-block "notice" cues, because frames were only known once someone touched them. The preview's main playtest question is whether players would think to try the frame at all.
+
+**Decision.** `FrameCues` takes D-020's option 1, cheaply. Every 2 s, for each Overworld player, `StructureManager.getStructureAt` (the chunk's own structure references) tells whether they stand in an Ancient City. The first time, the city's `city_center` piece is searched once for the reinforced-deepslate frame. That happens only when all its chunks are loaded (it never loads one) and took 1 ms on a natural city; the result is cached per city for the run. Then:
+- **Rumor:** within 32 blocks of a dormant frame, soul wisps drift into its opening.
+- **Notice:** within 8 blocks of the frame, a player with experience sends wisps toward it, twice as many with an empty hand. A breathy cue plays to that player only, with the subtitle "Your soul stirs toward the frame". Nothing is taken. Being noticed grants the tab's root (an OR with "in an Ancient City", so a city whose frame can't be found still opens the tab).
+
+**Not done:** the XP bar's flicker and the inner edge brightening where the player looks. Both are client rendering, and the cue reads without them.
+
+**Revisit if** playtests show the cue is missed (make it stronger, never a posture trigger; D-010).
+
