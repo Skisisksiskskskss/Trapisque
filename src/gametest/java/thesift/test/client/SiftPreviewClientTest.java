@@ -14,7 +14,13 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
 
+import net.minecraft.world.level.levelgen.Heightmap;
+
 import thesift.TheSift;
+import thesift.block.entity.TideVentBlockEntity;
+import thesift.registry.ModBlocks;
+import thesift.world.SiftKeys;
+import thesift.world.Tide;
 import thesift.entry.FrameMusic;
 import thesift.entry.FrameShapes;
 import thesift.entry.Offering;
@@ -41,6 +47,7 @@ public final class SiftPreviewClientTest implements FabricClientGameTest {
 			world.getServer().runCommand("execute in thesift:the_sift run tp @a 8 90 8 -35 30");
 			world.getConnection().waitForChunksRender();
 			shoot(context, world, "thesift:thrive", "sift_thrive_close");
+			basinShots(context, world);
 		}
 		// The consistent test world is flat without structures; the entry needs a real Ancient City.
 		try (TestSingleplayerContext world = context.worldBuilder().setUseConsistentSettings(false).adjustSettings(s -> {
@@ -50,6 +57,46 @@ public final class SiftPreviewClientTest implements FabricClientGameTest {
 			world.getServer().runCommand("gamerule advance_time false");
 			world.getServer().runCommand("gamemode spectator @a");
 			entryShots(context, world);
+		}
+	}
+
+	/** WP-045: a generated tide basin at low tide and at high tide. */
+	private static void basinShots(ClientGameTestContext context, TestSingleplayerContext world) {
+		BlockPos vent = world.getServer().computeOnServer(server -> {
+			ServerLevel sift = server.getLevel(SiftKeys.LEVEL);
+			for (int r = 0; r <= 12; r++) {
+				for (int cx = -r; cx <= r; cx++) {
+					for (int cz = -r; cz <= r; cz++) {
+						if (Math.max(Math.abs(cx), Math.abs(cz)) != r) {
+							continue;
+						}
+						var chunk = sift.getChunk(cx, cz);
+						int top = chunk.getHeight(Heightmap.Types.WORLD_SURFACE, 8, 8);
+						for (int y = top; y > top - 12; y--) {
+							BlockPos p = new BlockPos(cx * 16 + 8, y, cz * 16 + 8);
+							if (sift.getBlockState(p).is(ModBlocks.TIDE_VENT)) {
+								return p;
+							}
+						}
+					}
+				}
+			}
+			throw new AssertionError("no tide basin within 12 chunks of the Sift's origin");
+		});
+		world.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute in thesift:the_sift run tp @a %d %d %d 0 75",
+				vent.getX(), vent.getY() + 22, vent.getZ() - 6));
+		world.getConnection().waitForChunksRender();
+		for (String[] shot : new String[][] {{"thesift:thrive", "wp045_basin_thrive"}, {"thesift:endure", "wp045_basin_endure"}}) {
+			world.getServer().runCommand("execute in thesift:the_sift run time of thesift:tides set " + shot[0]);
+			world.getServer().runOnServer(server -> {
+				ServerLevel sift = server.getLevel(SiftKeys.LEVEL);
+				TideVentBlockEntity be = (TideVentBlockEntity) sift.getBlockEntity(vent);
+				for (int i = 0; i < 4; i++) {
+					be.update(sift, Tide.clockTicks(sift));
+				}
+			});
+			context.waitTicks(30);
+			context.takeScreenshot(shot[1]);
 		}
 	}
 

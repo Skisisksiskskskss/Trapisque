@@ -29,6 +29,7 @@ import thesift.block.HealthySculkBlock;
 import thesift.block.HealthySculkGrassBlock;
 import thesift.block.SiftMembraneBlock;
 import thesift.block.SongwoodSaplingBlock;
+import thesift.block.TideVentBlock;
 import thesift.block.TallHealthySculkGrassBlock;
 import thesift.world.SiftFeatures;
 
@@ -69,7 +70,7 @@ public final class ModBlocks {
 
 	public static final Block TIDE_SAND = register("tide_sand", Block::new, BlockBehaviour.Properties.of()
 			.mapColor(MapColor.COLOR_LIGHT_GRAY).instrument(NoteBlockInstrument.SNARE).strength(0.5F).sound(SoundType.MUD));
-	public static final Block TIDE_VENT = register("tide_vent", Block::new, BlockBehaviour.Properties.of()
+	public static final Block TIDE_VENT = register("tide_vent", TideVentBlock::new, BlockBehaviour.Properties.of()
 			.mapColor(MapColor.TERRACOTTA_RED).instrument(NoteBlockInstrument.BASEDRUM)
 			.requiresCorrectToolForDrops().strength(1.5F, 6.0F).sound(SoundType.CALCITE));
 	/** The Sift-side gate's frame: unbreakable in survival, like the end portal frame. */

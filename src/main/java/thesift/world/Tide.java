@@ -63,4 +63,11 @@ public enum Tide {
 				.map(clock -> atCycleTick(level.clockManager().getInstance(clock).totalTicks()))
 				.orElse(null);
 	}
+
+	/** Total ticks on the {@code thesift:tides} clock, or 0 if it is missing. */
+	public static long clockTicks(Level level) {
+		return level.registryAccess().lookupOrThrow(Registries.WORLD_CLOCK).get(SiftKeys.TIDES_CLOCK)
+				.map(clock -> level.clockManager().getInstance(clock).totalTicks())
+				.orElse(0L);
+	}
 }

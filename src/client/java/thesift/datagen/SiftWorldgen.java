@@ -1,5 +1,17 @@
 package thesift.datagen;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.levelgen.VerticalAnchor;
+import net.minecraft.world.level.levelgen.feature.LakeFeature;
+import net.minecraft.world.level.levelgen.heightproviders.UniformHeight;
+import net.minecraft.world.level.levelgen.placement.EnvironmentScanPlacement;
+import net.minecraft.world.level.levelgen.placement.HeightRangePlacement;
+import net.minecraft.world.level.levelgen.placement.RarityFilter;
+import net.minecraft.world.level.levelgen.placement.SurfaceRelativeThresholdFilter;
+import thesift.world.feature.TideBasinFeature;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,7 +46,6 @@ import net.minecraft.data.worldgen.BootstrapContext;
 import net.minecraft.data.worldgen.material.VanillaMaterialConditions;
 import net.minecraft.data.worldgen.material.VanillaMaterialRules;
 import net.minecraft.network.chat.Component;
-import net.minecraft.tags.BlockTags;
 import net.minecraft.util.ARGB;
 import net.minecraft.util.EasingType;
 import net.minecraft.util.TriState;
@@ -241,6 +252,10 @@ final class SiftWorldgen {
 	static void biomes(BootstrapContext<Biome> context) {
 		HolderGetter<PlacedFeature> placed = context.lookup(Registries.PLACED_FEATURE);
 		BiomeGenerationSettings.Builder generation = new BiomeGenerationSettings.Builder(placed, context.lookup(Registries.CARVER));
+		// Basins first, so pools and trees grow around them rather than being cut in half.
+		generation.addFeature(GenerationStep.Decoration.LAKES, SiftFeatures.TIDE_BASINS_MEADOW);
+		generation.addFeature(GenerationStep.Decoration.LAKES, SiftFeatures.ICHOR_POOLS_SURFACE);
+		generation.addFeature(GenerationStep.Decoration.LAKES, SiftFeatures.ICHOR_POOLS_UNDERGROUND);
 		generation.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.TREES_MEADOW);
 		generation.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.GRASS_MEADOW);
 		context.register(SiftKeys.SINGERS_MEADOW, new Biome.BiomeBuilder()
@@ -253,6 +268,7 @@ final class SiftWorldgen {
 				.build());
 	}
 
+	@SuppressWarnings("deprecation") // LakeFeature: deprecated, yet still what vanilla's lava lakes use in 26.3
 	static void features(BootstrapContext<Feature> context) {
 		HolderGetter<BlockStateProvider> providers = context.lookup(Registries.BLOCK_STATE_PROVIDER);
 		// Songwood: a forked trunk with puffy white crowns, so it reads apart from cherry and pale oak.
@@ -270,6 +286,14 @@ final class SiftWorldgen {
 						.add(ModBlocks.HEALTHY_SCULK_GRASS.defaultBlockState(), 6)
 						.add(ModBlocks.TALL_HEALTHY_SCULK_GRASS.defaultBlockState(), 1)
 						.build())));
+		context.register(SiftFeatures.TIDE_BASIN, TideBasinFeature.INSTANCE);
+		// Static pools that don't follow the tide: vanilla's lava lake with ichor in hymnstone.
+		context.register(SiftFeatures.ICHOR_POOL, new LakeFeature(
+				BlockStateProvider.holderOf(ModBlocks.ICHOR),
+				BlockStateProvider.holderOf(ModBlocks.HYMNSTONE),
+				BlockPredicate.alwaysTrue(),
+				BlockPredicate.not(BlockPredicate.matchesTag(BlockTags.FEATURES_CANNOT_REPLACE)),
+				BlockPredicate.not(BlockPredicate.matchesTag(BlockTags.LAVA_POOL_STONE_CANNOT_REPLACE))));
 	}
 
 	static void placedFeatures(BootstrapContext<PlacedFeature> context) {
@@ -292,6 +316,30 @@ final class SiftWorldgen {
 				CountPlacement.of(32),
 				OffsetPlacement.ofTriangle(7, 3),
 				BlockPredicateFilter.forPredicate(BlockPredicate.ONLY_IN_AIR_PREDICATE));
+		placedBasinsAndPools(context);
+	}
+
+	static void placedBasinsAndPools(BootstrapContext<PlacedFeature> context) {
+		HolderGetter<Feature> features = context.lookup(Registries.FEATURE);
+		// One chance in three per chunk; the feature itself keeps only the lows.
+		PlacementUtils.register(context, SiftFeatures.TIDE_BASINS_MEADOW, features.getOrThrow(SiftFeatures.TIDE_BASIN),
+				RarityFilter.onAverageOnceEvery(3),
+				BiomeFilter.biome());
+		Holder<Feature> pool = features.getOrThrow(SiftFeatures.ICHOR_POOL);
+		// "Many pools of ichor, fracturing the terrain": far commoner than vanilla's surface lava lakes (1 in 200).
+		PlacementUtils.register(context, SiftFeatures.ICHOR_POOLS_SURFACE, pool,
+				RarityFilter.onAverageOnceEvery(8),
+				InSquarePlacement.spread(),
+				PlacementUtils.HEIGHTMAP_WORLD_SURFACE,
+				BiomeFilter.biome());
+		PlacementUtils.register(context, SiftFeatures.ICHOR_POOLS_UNDERGROUND, pool,
+				RarityFilter.onAverageOnceEvery(5),
+				InSquarePlacement.spread(),
+				HeightRangePlacement.of(UniformHeight.of(VerticalAnchor.absolute(8), VerticalAnchor.absolute(90))),
+				EnvironmentScanPlacement.scanningFor(Direction.DOWN,
+						BlockPredicate.allOf(BlockPredicate.not(BlockPredicate.ONLY_IN_AIR_PREDICATE), BlockPredicate.insideWorld(new BlockPos(0, -5, 0))), 32),
+				SurfaceRelativeThresholdFilter.of(Heightmap.Types.OCEAN_FLOOR_WG, Integer.MIN_VALUE, -5),
+				BiomeFilter.biome());
 	}
 
 	static void levelStems(BootstrapContext<LevelStem> context) {

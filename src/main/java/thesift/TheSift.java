@@ -8,7 +8,9 @@ import org.slf4j.LoggerFactory;
 import thesift.entry.FrameMusic;
 import thesift.entry.Offering;
 import thesift.registry.ModAttributes;
+import thesift.registry.ModBlockEntities;
 import thesift.registry.ModBlocks;
+import thesift.registry.ModFeatureTypes;
 import thesift.registry.ModCreativeTab;
 import thesift.registry.ModFluids;
 import thesift.registry.ModItems;
@@ -29,6 +31,8 @@ public final class TheSift implements ModInitializer {
 		ModAttributes.init();
 		ModFluids.init();
 		ModBlocks.init();
+		ModBlockEntities.init();
+		ModFeatureTypes.init();
 		ModItems.init();
 		ModCreativeTab.init();
 		TideClock.init();
