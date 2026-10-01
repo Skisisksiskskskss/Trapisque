@@ -15,6 +15,11 @@ public final class TheSiftDataGenerator implements DataGeneratorEntrypoint {
 		FabricDataGenerator.Pack pack = generator.createPack();
 		pack.addProvider(ModLanguageProvider::new);
 		pack.addProvider(ModWorldgenProvider::new);
+		pack.addProvider(ModModelProvider::new);
+		pack.addProvider(ModLootProvider::new);
+		pack.addProvider(ModTagProviders.Blocks::new);
+		pack.addProvider(ModTagProviders.Items::new);
+		pack.addProvider(ModRecipeProvider::new);
 	}
 
 	@Override
@@ -24,6 +29,8 @@ public final class TheSiftDataGenerator implements DataGeneratorEntrypoint {
 		builder.add(Registries.DIMENSION_TYPE, SiftWorldgen::dimensionTypes);
 		builder.add(Registries.MATERIAL_RULE, SiftWorldgen::materialRules);
 		builder.add(Registries.NOISE_SETTINGS, SiftWorldgen::noiseSettings);
+		builder.add(Registries.FEATURE, SiftWorldgen::features);
+		builder.add(Registries.PLACED_FEATURE, SiftWorldgen::placedFeatures);
 		builder.add(Registries.BIOME, SiftWorldgen::biomes);
 		builder.add(Registries.LEVEL_STEM, SiftWorldgen::levelStems);
 	}

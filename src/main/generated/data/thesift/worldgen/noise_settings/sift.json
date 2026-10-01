@@ -1,5 +1,5 @@
 {
-  "default_block": "minecraft:stone",
+  "default_block": "thesift:hymnstone",
   "default_fluid": "minecraft:air",
   "disable_mob_generation": false,
   "legacy_random_source": false,

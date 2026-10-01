@@ -6,6 +6,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import thesift.registry.ModAttributes;
+import thesift.registry.ModBlocks;
+import thesift.registry.ModCreativeTab;
+import thesift.registry.ModItems;
 import thesift.world.EndureRest;
 import thesift.world.TideClock;
 
@@ -21,6 +24,9 @@ public final class TheSift implements ModInitializer {
 	@Override
 	public void onInitialize() {
 		ModAttributes.init();
+		ModBlocks.init();
+		ModItems.init();
+		ModCreativeTab.init();
 		TideClock.init();
 		EndureRest.init();
 		LOGGER.info("The Sift initialized (unofficial fan project)");

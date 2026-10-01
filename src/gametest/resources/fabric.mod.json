@@ -9,7 +9,8 @@
 	"entrypoints": {
 		"fabric-gametest": [
 			"thesift.test.SmokeTest",
-			"thesift.test.SiftDimensionTest"
+			"thesift.test.SiftDimensionTest",
+			"thesift.test.SiftBlocksTest"
 		]
 	},
 	"depends": {

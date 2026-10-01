@@ -20,6 +20,8 @@ final class ModWorldgenProvider extends FabricDynamicRegistryProvider {
 		entries.addAll(registries.lookupOrThrow(Registries.DIMENSION_TYPE));
 		entries.addAll(registries.lookupOrThrow(Registries.MATERIAL_RULE));
 		entries.addAll(registries.lookupOrThrow(Registries.NOISE_SETTINGS));
+		entries.addAll(registries.lookupOrThrow(Registries.FEATURE));
+		entries.addAll(registries.lookupOrThrow(Registries.PLACED_FEATURE));
 		entries.addAll(registries.lookupOrThrow(Registries.BIOME));
 		entries.addAll(registries.lookupOrThrow(Registries.LEVEL_STEM));
 	}

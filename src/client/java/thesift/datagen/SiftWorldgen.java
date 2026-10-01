@@ -4,6 +4,30 @@ import java.util.List;
 import java.util.Optional;
 
 import net.minecraft.core.HolderGetter;
+import net.minecraft.core.Holder;
+import net.minecraft.data.worldgen.BlockStateProviders;
+import net.minecraft.data.worldgen.placement.PlacementUtils;
+import net.minecraft.data.worldgen.placement.VegetationPlacements;
+import net.minecraft.util.random.WeightedList;
+import net.minecraft.util.valueproviders.ConstantInt;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.GenerationStep;
+import net.minecraft.world.level.levelgen.blockpredicates.BlockPredicate;
+import net.minecraft.world.level.levelgen.feature.Feature;
+import net.minecraft.world.level.levelgen.feature.SimpleBlockFeature;
+import net.minecraft.world.level.levelgen.feature.TreeFeature;
+import net.minecraft.world.level.levelgen.feature.featuresize.TwoLayersFeatureSize;
+import net.minecraft.world.level.levelgen.feature.foliageplacers.BlobFoliagePlacer;
+import net.minecraft.world.level.levelgen.feature.stateproviders.BlockStateProvider;
+import net.minecraft.world.level.levelgen.feature.stateproviders.WeightedStateProvider;
+import net.minecraft.world.level.levelgen.feature.trunkplacers.ForkingTrunkPlacer;
+import net.minecraft.world.level.levelgen.placement.BiomeFilter;
+import net.minecraft.world.level.levelgen.placement.BlockPredicateFilter;
+import net.minecraft.world.level.levelgen.placement.CountPlacement;
+import net.minecraft.world.level.levelgen.placement.InSquarePlacement;
+import net.minecraft.world.level.levelgen.placement.NoiseThresholdCountPlacement;
+import net.minecraft.world.level.levelgen.placement.OffsetPlacement;
+import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
@@ -43,6 +67,8 @@ import net.minecraft.world.level.levelgen.synth.NormalNoise;
 import net.minecraft.world.timeline.Timeline;
 
 import thesift.registry.ModAttributes;
+import thesift.registry.ModBlocks;
+import thesift.world.SiftFeatures;
 import thesift.world.SiftKeys;
 import thesift.world.Tide;
 
@@ -175,13 +201,11 @@ final class SiftWorldgen {
 		HolderGetter<MaterialRule> rules = context.lookup(Registries.MATERIAL_RULE);
 		HolderGetter<MaterialCondition> conditions = context.lookup(Registries.MATERIAL_CONDITION);
 		MaterialCondition onFloor = MaterialRules.getCondition(conditions, VanillaMaterialConditions.ON_FLOOR);
-		MaterialCondition underFloor = MaterialRules.getCondition(conditions, VanillaMaterialConditions.UNDER_FLOOR);
-		// Placeholder blocks until block set I (WP-042).
+		// Healthy sculk over hymnstone, like nylium over netherrack (world.md §2–3).
 		context.register(SiftKeys.MATERIAL_RULE, MaterialRules.sequence(
 				MaterialRules.getRule(rules, VanillaMaterialRules.BEDROCK_FLOOR),
-				MaterialRules.ifTrue(onFloor, MaterialRules.state(Blocks.MOSS_BLOCK.defaultBlockState())),
-				MaterialRules.ifTrue(underFloor, MaterialRules.state(Blocks.DIRT.defaultBlockState())),
-				MaterialRules.state(Blocks.STONE.defaultBlockState())));
+				MaterialRules.ifTrue(onFloor, MaterialRules.state(ModBlocks.HEALTHY_SCULK.defaultBlockState())),
+				MaterialRules.state(ModBlocks.HYMNSTONE.defaultBlockState())));
 	}
 
 	static void noiseSettings(BootstrapContext<NoiseGeneratorSettings> context) {
@@ -199,7 +223,7 @@ final class SiftWorldgen {
 				DensityFunctions.zero(), DensityFunctions.zero(), DensityFunctions.zero(), finalDensity);
 		context.register(SiftKeys.NOISE, new NoiseGeneratorSettings(
 				NoiseSettings.create(0, 256),
-				Blocks.STONE.defaultBlockState(),
+				ModBlocks.HYMNSTONE.defaultBlockState(),
 				Blocks.AIR.defaultBlockState(),
 				router,
 				context.lookup(Registries.MATERIAL_RULE).getOrThrow(SiftKeys.MATERIAL_RULE),
@@ -212,8 +236,10 @@ final class SiftWorldgen {
 	}
 
 	static void biomes(BootstrapContext<Biome> context) {
-		BiomeGenerationSettings.Builder generation = new BiomeGenerationSettings.Builder(
-				context.lookup(Registries.PLACED_FEATURE), context.lookup(Registries.CARVER));
+		HolderGetter<PlacedFeature> placed = context.lookup(Registries.PLACED_FEATURE);
+		BiomeGenerationSettings.Builder generation = new BiomeGenerationSettings.Builder(placed, context.lookup(Registries.CARVER));
+		generation.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.TREES_MEADOW);
+		generation.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.GRASS_MEADOW);
 		context.register(SiftKeys.SINGERS_MEADOW, new Biome.BiomeBuilder()
 				.hasPrecipitation(false)
 				.temperature(0.7F)
@@ -222,6 +248,42 @@ final class SiftWorldgen {
 				.mobSpawnSettings(MobSpawnSettings.EMPTY)
 				.generationSettings(generation.build())
 				.build());
+	}
+
+	static void features(BootstrapContext<Feature> context) {
+		HolderGetter<BlockStateProvider> providers = context.lookup(Registries.BLOCK_STATE_PROVIDER);
+		// Songwood: a forked trunk with puffy white crowns, so it reads apart from cherry and pale oak.
+		context.register(SiftFeatures.SONGWOOD_TREE, new TreeFeature.Builder(
+				BlockStateProvider.of(ModBlocks.SONGWOOD_LOG),
+				new ForkingTrunkPlacer(5, 2, 2),
+				BlockStateProvider.of(ModBlocks.SONGWOOD_LEAVES),
+				new BlobFoliagePlacer(ConstantInt.of(2), ConstantInt.of(0), 3),
+				new TwoLayersFeatureSize(1, 0, 2),
+				providers.getOrThrow(BlockStateProviders.SOIL_BENEATH_TREE))
+				.ignoreVines()
+				.build());
+		context.register(SiftFeatures.HEALTHY_SCULK_GRASS_PATCH, new SimpleBlockFeature(new WeightedStateProvider(
+				WeightedList.<BlockState>builder()
+						.add(ModBlocks.HEALTHY_SCULK_GRASS.defaultBlockState(), 6)
+						.add(ModBlocks.TALL_HEALTHY_SCULK_GRASS.defaultBlockState(), 1)
+						.build())));
+	}
+
+	static void placedFeatures(BootstrapContext<PlacedFeature> context) {
+		HolderGetter<Feature> features = context.lookup(Registries.FEATURE);
+		Holder<Feature> tree = features.getOrThrow(SiftFeatures.SONGWOOD_TREE);
+		PlacementUtils.register(context, SiftFeatures.SONGWOOD_CHECKED, tree, PlacementUtils.filteredByBlockSurvival(ModBlocks.SONGWOOD_SAPLING));
+		// Groves, not forest: about one tree per chunk on average, clumped by chance.
+		PlacementUtils.register(context, SiftFeatures.TREES_MEADOW, tree,
+				VegetationPlacements.treePlacement(PlacementUtils.countExtra(0, 0.5F, 2), ModBlocks.SONGWOOD_SAPLING));
+		PlacementUtils.register(context, SiftFeatures.GRASS_MEADOW, features.getOrThrow(SiftFeatures.HEALTHY_SCULK_GRASS_PATCH),
+				NoiseThresholdCountPlacement.of(-0.8, 5, 10),
+				InSquarePlacement.spread(),
+				PlacementUtils.HEIGHTMAP_WORLD_SURFACE,
+				BiomeFilter.biome(),
+				CountPlacement.of(32),
+				OffsetPlacement.ofTriangle(7, 3),
+				BlockPredicateFilter.forPredicate(BlockPredicate.ONLY_IN_AIR_PREDICATE));
 	}
 
 	static void levelStems(BootstrapContext<LevelStem> context) {
