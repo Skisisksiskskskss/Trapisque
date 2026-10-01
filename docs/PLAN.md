@@ -24,19 +24,19 @@ Only one WP is IN PROGRESS at a time.
 | WP-022 | Content bible III: items, gear, food, advancements, audio hooks, mechanics | 2 | M | DONE |
 | WP-023 | Dependency graph, milestones, Phase 3 WPs and fully specified M1 WPs | 2 | L | DONE |
 | WP-024 | Content bible critique, freeze, Gate B (self-review) | 2 | L | DONE |
-| WP-030 | Architecture decisions | 3 | M | TODO |
-| WP-031 | Datagen setup | 3 | M | TODO |
-| WP-032 | Test harness | 3 | M | TODO |
-| WP-033 | CI | 3 | S | TODO |
-| WP-034 | Technical spikes | 3 | M | TODO |
-| WP-040 | Dimension skeleton and Tide core | 4 | L | TODO |
-| WP-041 | Palette, block set I design and art | 4 | L | TODO |
-| WP-042 | Block set I and the Singer's Meadow terrain | 4 | L | TODO |
+| WP-030 | Architecture decisions | 3 | M | DONE |
+| WP-031 | Datagen setup | 3 | M | DONE |
+| WP-032 | Test harness | 3 | M | DONE |
+| WP-033 | CI | 3 | S | DONE |
+| WP-034 | Technical spikes | 3 | M | IN PROGRESS |
+| WP-040 | Dimension skeleton and Tide core | 4 | L | IN PROGRESS |
+| WP-041 | Palette, block set I design and art | 4 | L | IN PROGRESS |
+| WP-042 | Block set I and the Singer's Meadow terrain | 4 | L | IN PROGRESS |
 | WP-043 | Audio pipeline and the entry, Tide and Meadow sounds | 4 | M | TODO |
-| WP-044 | Ichor (core form) | 4 | L | TODO |
-| WP-045 | Tide basins (one kind, in the Meadow) | 4 | L | TODO |
-| WP-046 | Entry I: frames, offering, waking, music | 4 | L | TODO |
-| WP-047 | Entry II: membrane, crossing, Sift-side gate, return | 4 | L | TODO |
+| WP-044 | Ichor (core form) | 4 | L | IN PROGRESS |
+| WP-045 | Tide basins (one kind, in the Meadow) | 4 | L | IN PROGRESS |
+| WP-046 | Entry I: frames, offering, waking, music | 4 | L | IN PROGRESS |
+| WP-047 | Entry II: membrane, crossing, Sift-side gate, return | 4 | L | IN PROGRESS |
 | WP-048 | Blub design doc | 4 | L | TODO |
 | WP-049 | Blub art: texture, model, animations, spawn egg | 4 | L | TODO |
 | WP-050 | Blub audio | 4 | M | TODO |
@@ -172,7 +172,7 @@ Tier key (mission §6 Phase 2): **Core** (in 1.0) · **Should** · **Could** · 
 ### WP-030 Architecture decisions
 - Phase / Milestone: 3 / —
 - Tier: M
-- Status: TODO
+- Status: DONE
 - Depends on: WP-024
 - Goal: Decide and record the code architecture before any content lands.
 - Inputs (read ONLY these): docs/VANILLA_ANALOGS.md P1–P4 and E1; docs/DECISIONS.md D-003, D-008, D-010..D-013, D-016, D-017; src/.
@@ -183,11 +183,12 @@ Tier key (mission §6 Phase 2): **Core** (in 1.0) · **Should** · **Could** · 
 - Iteration budget: self-critique 1 round.
 - Exit ramp: copy the Fabric example mod's patterns where undecided.
 - Log:
+  - 2026-09-30: D-019 recorded.
 
 ### WP-031 Datagen setup
 - Phase / Milestone: 3 / —
 - Tier: M
-- Status: TODO
+- Status: DONE
 - Depends on: WP-030
 - Goal: One datagen pipeline for models, blockstates, loot, recipes, tags, lang, advancements and the dynamic registries (dimension, dimension type, noise, biomes, timeline, world clock).
 - Inputs (read ONLY these): docs/VANILLA_ANALOGS.md P1; build.gradle; src/.
@@ -198,11 +199,12 @@ Tier key (mission §6 Phase 2): **Core** (in 1.0) · **Should** · **Could** · 
 - Iteration budget: fix hypotheses ≤ 5.
 - Exit ramp: hand-written JSON for any provider Fabric doesn't cover, listed in the log.
 - Log:
+  - 2026-09-30: client datagen under Xvfb + lavapipe; `tools/dev/datagen.sh --check` no-diff gate.
 
 ### WP-032 Test harness
 - Phase / Milestone: 3 / —
 - Tier: M
-- Status: TODO
+- Status: DONE
 - Depends on: WP-031
 - Goal: Server GameTests, plus client GameTests with screenshots if the API works headless.
 - Inputs (read ONLY these): docs/VANILLA_ANALOGS.md P4; tools/dev/headless-client.sh; build.gradle.
@@ -213,11 +215,12 @@ Tier key (mission §6 Phase 2): **Core** (in 1.0) · **Should** · **Could** · 
 - Iteration budget: fix hypotheses ≤ 5.
 - Exit ramp: server GameTests only.
 - Log:
+  - 2026-09-30: `gametest` source set, `runGameTest` in `check`; client GameTests with screenshots (`tools/dev/client-previews.sh`).
 
 ### WP-033 CI
 - Phase / Milestone: 3 / —
 - Tier: S
-- Status: TODO
+- Status: DONE
 - Depends on: WP-032
 - Goal: A GitHub Actions workflow that runs the build, the datagen no-diff check, the GameTests and `tools/docs/check_bible.py`.
 - Inputs (read ONLY these): build.gradle; tools/dev/datagen-check.sh.
@@ -227,11 +230,12 @@ Tier key (mission §6 Phase 2): **Core** (in 1.0) · **Should** · **Could** · 
 - Iteration budget: fix hypotheses ≤ 5.
 - Exit ramp: if the push of workflow files is refused by permissions, log it in BLOCKERS with the file ready, and keep local checks as the gate.
 - Log:
+  - 2026-09-30: GitHub Actions build + GameTests + bible check + datagen no-diff; green on 3abc222 and 8e457bf.
 
 ### WP-034 Technical spikes
 - Phase / Milestone: 3 / —
 - Tier: M
-- Status: TODO
+- Status: IN PROGRESS
 - Depends on: WP-032
 - Goal: Prove, or disprove, the four risky mechanics before content depends on them (D-008, D-013, creatures.md §3).
 - Inputs (read ONLY these): D-008; D-013; docs/VANILLA_ANALOGS.md W1/W4/E1; docs/DESIGN/bible/creatures.md §3.
@@ -249,6 +253,7 @@ Tier key (mission §6 Phase 2): **Core** (in 1.0) · **Should** · **Could** · 
   - basins → static ichor pools with a level marker; the M1 Blub follows pool edges in Flow; one more basin attempt opens M2, then the D-013 fallback (no basins);
   - stacking → moved to M2.
 - Log:
+  - 2026-10-01: 3 of 4 spikes settled in the WPs that needed them: weather mixin (negative-tested, WP-040), wade-through ichor needs no Entity mixin (WP-044), basin controller bounded and catch-up on load (WP-045). Blub stacking moves with WP-049/051.
 
 ## Phase 4 — M1 vertical slice (WPs specified at Phase 2 exit; revised in WP-024 round 1, D-016)
 Minimum per mission: entry and return, one area with its own terrain, a small block set with final art, one mob finished, the Tide cycle in core form, entry advancements. M1 also carries the literal tide: ichor and one kind of basin (D-016). Every WP follows the §5.4 ladder for its type. Design work (§8.2 and §8.3 docs) comes before the implementation it specifies.
@@ -256,7 +261,7 @@ Minimum per mission: entry and return, one area with its own terrain, a small bl
 ### WP-040 Dimension skeleton and Tide core
 - Phase / Milestone: 4 / M1
 - Tier: L
-- Status: TODO
+- Status: IN PROGRESS
 - Depends on: WP-033, WP-034
 - Goal: The `thesift:the_sift` dimension exists and behaves per rules.md: the Tide clock and timeline, the scope and rate attributes, no weather, beds and the Endure rest, and the sun and moon parked.
 - Inputs (read ONLY these): docs/DESIGN/vision/rules.md; docs/DESIGN/vision/systems.md §1; docs/VANILLA_ANALOGS.md W1/W4; D-008, D-011, D-013, D-016.
@@ -288,11 +293,12 @@ Minimum per mission: entry and return, one area with its own terrain, a small bl
 - Iteration budget: critique ≤ 2 rounds; fix hypotheses ≤ 5; self-review of the diff 1 round.
 - Exit ramp: if the mixin conflicts, fall back to `has_ceiling` only after a new decision record.
 - Log:
+  - 2026-10-01: dimension, clock, timeline (sky, light, stars), attributes, weather mixin, beds and Endure rest, first-crossing clock start; GameTests and Tide screenshots; system_tides.md written. Left: Trill/glow-petal particle types (placeholders are vanilla).
 
 ### WP-041 Palette, block set I design and art
 - Phase / Milestone: 4 / M1
 - Tier: L
-- Status: TODO
+- Status: IN PROGRESS
 - Depends on: WP-040
 - Goal: The Sift palette, a §8.2 design doc for block set I, and original 16×16 textures in vanilla style for:
   - hymnstone, and hymnstone bricks (with stairs, slab and wall);
@@ -319,11 +325,12 @@ Minimum per mission: entry and return, one area with its own terrain, a small bl
 - Iteration budget: critique ≤ 2 rounds (design); revision rounds ≤ 3 per texture.
 - Exit ramp: a simpler, cleaner texture that still reads correctly beside vanilla.
 - Log:
+  - 2026-10-01: palette.md, 23 original textures (palette check 0 errors), previews. Left: particle registration, membrane/ichor surface polish.
 
 ### WP-042 Block set I and the Singer's Meadow terrain
 - Phase / Milestone: 4 / M1
 - Tier: L
-- Status: TODO
+- Status: IN PROGRESS
 - Depends on: WP-041
 - Goal: Register block set I (the songwood sapling and its tree growth included), generate Singer's Meadow terrain with these blocks (noise, material rules, songwood trees, grass), and build the client music reactions (world.md §3.2). Ichor pools belong to WP-045.
 - Inputs (read ONLY these): docs/DESIGN/bible/world.md §1–3 (§3.2 for music reactions); docs/DESIGN/blocks_set1.md; docs/VANILLA_ANALOGS.md W2/W3/W7; the WP-031 datagen code.
@@ -345,6 +352,7 @@ Minimum per mission: entry and return, one area with its own terrain, a small bl
 - Iteration budget: critique ≤ 2 rounds; fix hypotheses ≤ 5; terrain tuning passes ≤ 3.
 - Exit ramp: simpler noise (the overworld router with biome-level blocks) if custom density functions misbehave.
 - Log:
+  - 2026-10-01: block set I, Meadow noise/material rules, songwood trees, grass, Sift-only growth; heightmap tag fix (P5). Left: client music reactions (world.md §3.2).
 
 ### WP-043 Audio pipeline and the entry, Tide and Meadow sounds
 - Phase / Milestone: 4 / M1
@@ -371,7 +379,7 @@ Minimum per mission: entry and return, one area with its own terrain, a small bl
 ### WP-044 Ichor (core form)
 - Phase / Milestone: 4 / M1
 - Tier: L
-- Status: TODO
+- Status: IN PROGRESS
 - Depends on: WP-040, WP-041, WP-043, WP-034
 - Goal: Ichor as a wade-through liquid (D-013). It slows, burns (vanilla fire with soul-flame particles), and drains XP from anything that isn't a Sift native. Fire Resistance stops only the burning. A bucket of it evaporates outside the Sift.
 - Inputs (read ONLY these): D-013, D-016; the WP-034 ichor spike result; docs/DESIGN/system_tides.md (ichor's numbers); the vanilla 26.3 sources of `FlowingFluid`, `LavaFluid` and `LiquidBlock`.
@@ -390,11 +398,12 @@ Minimum per mission: entry and return, one area with its own terrain, a small bl
 - Iteration budget: fix hypotheses ≤ 5.
 - Exit ramp: the recorded WP-034 fallback (a vanilla-like fluid with the effects kept in `entityInside`).
 - Log:
+  - 2026-10-01: core done (fluid, block, bucket evaporation, wading/burn/drain in entityInside, 10 GameTests, BALANCE rows). Left: fog via access widener, the 20-entity cost measurement, sounds (WP-043).
 
 ### WP-045 Tide basins (one kind, in the Meadow)
 - Phase / Milestone: 4 / M1
 - Tier: L
-- Status: TODO
+- Status: IN PROGRESS
 - Depends on: WP-042, WP-044
 - Goal: Generated tide basins whose vent floods them with ichor in Endure and drains them in Thrive, moving through Flow. The work is bounded per tick, and the basins catch up after a chunk loads.
 - Inputs (read ONLY these): docs/DESIGN/system_tides.md; D-013, D-016; the WP-034 basin spike result.
@@ -413,11 +422,12 @@ Minimum per mission: entry and return, one area with its own terrain, a small bl
 - Iteration budget: fix hypotheses ≤ 5.
 - Exit ramp: D-017 §7. M1 ships static ichor pools with a level marker, and the Blub follows pool edges in Flow. One more basin attempt opens M2.
 - Log:
+  - 2026-10-01: core done (feature in lows, vent BE one layer/s, catch-up ≤ 507 blocks, static pools, 8 GameTests, Thrive/Endure previews). Left: MSPT p95 measurement, rising-bubble and tide-mark visuals.
 
 ### WP-046 Entry I: frames, offering, waking, music
 - Phase / Milestone: 4 / M1
 - Tier: L
-- Status: TODO
+- Status: IN PROGRESS
 - Depends on: WP-042, WP-043
 - Goal: Ancient City frames are found from structure starts (no scans). They breathe souls (the rumor), notice players, accept deliberate offerings, wake in steps, and listen for music.
 - Inputs (read ONLY these): docs/DESIGN/vision/entry_path.md; D-010; docs/VANILLA_ANALOGS.md W5/W6/E4/P2.
@@ -441,11 +451,12 @@ Minimum per mission: entry and return, one area with its own terrain, a small bl
 - Iteration budget: critique 1 round; fix hypotheses ≤ 5.
 - Exit ramp: frame detection from placed blocks near structure centres, if structure-start access fails.
 - Log:
+  - 2026-10-01: frames found by geometry on use (D-020), hold-use offering, waking, music via one gameEvent hook; real and natural Ancient City checks. Left: dormant "breathing" and 8-block notice cues, subtitles.
 
 ### WP-047 Entry II: membrane, crossing, Sift-side gate, return
 - Phase / Milestone: 4 / M1
 - Tier: L
-- Status: TODO
+- Status: IN PROGRESS
 - Depends on: WP-046
 - Goal: The membrane portal, with its entity filter, takes players to a generated Sift-side gate and back. The gate uses a bounded search with a fallback, an explicit link and a sanctuary. The first crossing starts the Tide clock.
 - Inputs (read ONLY these): docs/DESIGN/vision/entry_path.md; docs/DESIGN/system_entry.md; docs/DESIGN/bible/world.md §5; docs/VANILLA_ANALOGS.md W5; D-010, D-013, D-017 (the gate mound).
@@ -463,6 +474,7 @@ Minimum per mission: entry and return, one area with its own terrain, a small bl
 - Iteration budget: fix hypotheses ≤ 5.
 - Exit ramp: a fixed-offset arrival (no biome search) if the search is too slow.
 - Log:
+  - 2026-10-01: membrane portal with #thesift:cannot_cross, gate built on first crossing (hill, 64-block spacing), return, re-opening a removed membrane; end-to-end pig test. Left: the sanctuary spawn rule (no Sift spawns exist yet).
 
 ### WP-048 Blub design doc
 - Phase / Milestone: 4 / M1

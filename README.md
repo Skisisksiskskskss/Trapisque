@@ -5,7 +5,7 @@ from *Minecraft Dungeons II*, as a full fourth dimension.
 
 > **Unofficial fan project, not affiliated with or endorsed by Mojang Studios or Microsoft.**
 
-**Status:** pre-alpha — Phase 0 (ground truth and toolchain). Nothing playable yet. See `docs/STATUS.md`.
+**Status:** playable preview `v0.1.0-alpha.preview`: the Sift dimension, Singer's Meadow, the Tides, the way in through an Ancient City and back, ichor and tide basins. How to try it: `docs/PLAYTEST.md`. Progress: `docs/STATUS.md`.
 
 ## Building
 - JDK 25 is required (Gradle itself runs on it; `gradle/gradle-daemon-jvm.properties` lets Gradle find or download one).

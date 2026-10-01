@@ -1,17 +1,17 @@
-# STATUS (session 1, 2026-09-30)
-- **Phase / Milestone:** Phase 3 (architecture) done, apart from the WP-034 spikes. Phase 4 (M1) has started. Phases 0–2 are complete; Gates A and B were self-reviewed.
-- **Autonomy:** **full-auto** (D-014). **Deadline (D-018):** the owner wants to try the mod by the end of this week (2026-10-04). A **preview build** comes first: dimension, Meadow terrain, block set I, entry and return, the Tide core, ichor and basins. Then the M1 build.
-- **Current WP:** WP-040 Dimension skeleton and Tide core (IN PROGRESS). WP-034 spikes run inside WP-040/044/045/049 as their first step.
-- **Done this session:** WP-020..024 (content bible, frozen); WP-030..033 (D-019 architecture, datagen under Xvfb with a no-diff check, a GameTest source set, CI).
+# STATUS (session 1, 2026-10-01)
+- **Phase / Milestone:** Phase 4 (M1). Phases 0–3 are done; Gates A and B were self-reviewed.
+- **Autonomy:** **full-auto** (D-014). **Deadline (D-018):** the owner tries the mod by 2026-10-04. The **preview build `v0.1.0-alpha.preview`** is assembled: dimension, Meadow terrain, block set I, the Tide core, entry and return, ichor, tide basins and pools. Its playtest guide is in `docs/PLAYTEST.md`.
+- **Current WP:** preview release, then the rest of M1 (WP-040..047 leftovers, WP-043 audio, Blub WP-048..051, advancements WP-052, Gate C WP-053).
+- **Done this session:** WP-020..024; WP-030..033; the cores of WP-040, 041, 042, 044, 045, 046 and 047 (PLAN.md logs list what is left in each).
 - **Next 3 actions:**
-  1. WP-040: the Sift dimension (clock, timeline, attributes, weather mixin, beds, first-crossing clock start) with GameTests.
-  2. WP-041/042: the palette, block set I art and blocks, Meadow terrain.
-  3. WP-046/047: entry and return (frame, offering, membrane, gate), then the preview build.
-- **Build:** ✅ `./gradlew build` (with GameTests) · datagen no-diff ✅ (`tools/dev/datagen.sh --check`) · `tools/docs/check_bible.py` ✅
-- **Tests:** 1/1 of ours (smoke) passing in `runGameTest`.
-- **Server boot:** ✅ (Phase 0; re-checked through the GameTest server).
+  1. Fix what the pre-release adversarial review finds, then tag `v0.1.0-alpha.preview` (CI publishes the jar as a pre-release).
+  2. Music reactions (client), Trill and glow-petal particles, the dormant-frame cues.
+  3. The Blub: design doc (WP-048, 3 critique rounds), then art, audio and AI.
+- **Build:** ✅ `./gradlew build` (with GameTests) · datagen no-diff ✅ · `check_bible.py` ✅ (144 rows) · `check_palette.py` ✅ (23 textures)
+- **Tests:** 48/48 server GameTests; the client GameTest finds a natural Ancient City, opens it, crosses, and screenshots the Tides, a basin and the gate (`docs/previews/`).
+- **Server boot:** ✅ (through the GameTest server on every build).
 - **Blockers:** none. The Netlify site `magnificent-gelato-563c55` fails on every PR because of its own configuration (owner-side; see the PR comment).
-- **Awaiting owner:** nothing (full-auto).
+- **Awaiting owner:** nothing (full-auto). The preview's playtest questions are in `docs/PLAYTEST.md`.
 
 ## Gate B: the content bible and roadmap (Phase 2) — self-reviewed (D-014)
 **Situation.**
