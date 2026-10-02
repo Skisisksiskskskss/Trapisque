@@ -19,7 +19,7 @@
 - the gate sanctuary rule waits for M2's hostile spawns;
 - blub animations are procedural (D-021).
 
-Two fresh adversarial reviews ran after the preview. The first found and reproduced a server crash (a blub riding itself); it is fixed and covered by an AI-on test. The second covered the frame cues, the advancements and the vents.
+Two fresh adversarial reviews ran after the preview. The first found and reproduced a server crash (a blub riding itself); it is fixed and covered by an AI-on test. The second covered the frame cues, the advancements and the vents: it found six defects and no crash, all fixed in 76119d6 before the release.
 
 **What M1 contains:**
 - The Sift (Singer's Meadow) behind an Ancient City frame: breathe, notice, offer 30 levels, play music, cross.

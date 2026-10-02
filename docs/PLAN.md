@@ -618,6 +618,7 @@ Minimum per mission: entry and return, one area with its own terrain, a small bl
 ## M2 — the hunt (`v0.2.0-alpha`): Endure means danger
 Source: 01_CONTENT_BIBLE.md §M2 row; bible/creatures.md, items.md, world.md (M2 rows); systems.md §4; D-011, D-013, D-016. Every WP follows the M1 template; designs go through the ladder and ≤ 3 critique rounds, code through fresh adversarial review before Gate D.
 
+  - 2026-10-02: the second post-preview review (frame cues, advancements, vents, the lang check) found six defects and no crash, all fixed in 76119d6: no chunk loads in frame discovery, a /tick freeze guard, wisps that reach the opening, a stale-cache rule, "An Offering" shared with players at the frame, and a lang check read from the registry sources. Released from that commit.
 ### WP-060 M2 system design: the hearing rule, retreat, enduring variants, lumen
 - Phase / Milestone: 4 / M2 · Tier: L (design) · Status: TODO · Depends on: Gate C
 - Goal: `docs/DESIGN/system_hunt.md`: what Nesters hear in Endure (the vibrations a sculk sensor hears, D-011), how they retreat at dawn (D-013), the enduring-variant rule (resilient, soul particles, non-colour markers), lumen's repel radius (as soul fire for piglins), Quiet Waters' "never heard" rule, numbers next to vanilla analogs (warden, sculk sensor, piglin).
