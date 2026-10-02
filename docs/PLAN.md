@@ -46,7 +46,7 @@ Only one WP is IN PROGRESS at a time.
 | WP-054 | The owner's playtest rework: water, terrain, textures, trees, Blub (`v0.1.1-alpha`) | 4 | L | DONE |
 | WP-060 | M2 system design: the hearing rule, retreat, enduring variants, lumen | 4 | L | DONE |
 | WP-061 | Nester design doc | 4 | L | DRAFT |
-| WP-062 | Bloombud design doc | 4 | L | TODO |
+| WP-062 | Bloombud design doc | 4 | L | DRAFT |
 | WP-063 | Sift Hollows: the cave layer and glowcap pools | 4 | L | IN PROGRESS (caves done in WP-054; glowcap pools wait for WP-064) |
 | WP-064 | Flora II: tidewrack, Endure bloom, glowcap, chime bell flower, lumen bloom | 4 | L | TODO |
 | WP-065 | Materials and items: tidewrack frond, Endure petal, lumen lantern, blub treats | 4 | M | TODO |
