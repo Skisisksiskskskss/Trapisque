@@ -19,3 +19,4 @@ One line per idea. Reviewed only at milestone planning (§5.5 scope creep rule).
 - (WP-014) A Tide sensor block, if inverted daylight detectors turn out to be too obscure in playtests.
 - (WP-014 r2) Tide-bridges (Flow-only passages) were cut, because blocks bypass them. Bounce blooms may return as static terrain (canon "bouncy slimes used to access higher areas").
 - (WP-014 r2) 1.1: the Carapace with its sculkers (Stalker, Scavenger) as listening hunters, and the Monarch (D-009).
+- (WP-061) Nester nests: quiet soil mounds in Thrive that Nesters surface from in Endure, so players can scout where the danger will be. Cut: a new worldgen feature for a mob the bible says surfaces anywhere. Post-1.0, or with the Carapace's sculker nest.
