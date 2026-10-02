@@ -605,3 +605,37 @@ It also found that M1's Tide changed nothing in play (SF4), since the mission as
 - The look is checked by client screenshots (`SIFT_LOOK_ONLY=1 tools/dev/client-previews.sh`).
 
 **Revisit if** the owner's next playtest says it still doesn't read as the teasers (next steps: teal grass patches as in the Dungeons II stills, an aurora sky).
+
+## D-026 Ponds and flats, not seas; a bubble's sheen; trees and textures, second pass (2026-10-02) [owner playtest 2] [supersedes D-024 on ichor's look and flow speed, D-025 on sea level, songwood's shape and the texture style]
+**Context.** The owner's playtest of `v0.1.1-alpha`: "this is great, but":
+- the ichor "looks too much like water and acts too much like water"; it should be "slightly less transparent" and "multi colored, like the surface of a thin bubble"; its pattern is "hard on the eyes" and not seamless;
+- it generates "like oceans"; "the max it should be is like a pond", with two kinds: ponds, and "the flats, where its more spread out but its blotty and kinda like a mangrove";
+- the trees have "only like one canopy", their textures aren't seamless, and the forests look "very synthetic";
+- the textures are "too close to the minecraft trailer artstyle" ("cell shaded, flat, simplistic"); "minecraft doesn't look like that".
+
+**Decision.**
+- **Ichor's look.** Its textures are a faint, pale shimmer, as vanilla's water textures are grey, at alpha 214 (water's is 180). The colour is laid on as the fluid is drawn (`thesift.client.IchorSheen`), blended from corner to corner so no block edge shows: a smooth, swirled field over x and z walks a soap film's colour cycle (turquoise, mint, gold, rose, lilac, periwinkle), lingering in turquoise. A pond therefore shows broad bands of colour that differ from pond to pond, and no pattern repeats from block to block.
+- **Ichor's feel.** It is still water for swimming, breath and fire, but thicker:
+  - it lifts whatever floats in it (0.025 a tick, up to 0.18), so you bob up unless you sneak;
+  - it spreads a step every 8 ticks (water: 5).
+- **No seas.** Sea level drops below the world, as the bible first said (world.md, "No sea and no aquifers"). Ichor now comes in three kinds:
+  - **Ponds** in Singer's Meadow (a lake feature, one chunk in six, with a tide-sand rim).
+  - **The Ichor Flats** (`thesift:ichor_flats`), a new biome on the wetter, flatter fifth of the surface. A world-seeded noise lays ichor one or two blocks deep in blots among the grass and trees, filling only where every side is solid, so nothing runs downhill.
+  - **Pools in the Hollows**, as before.
+  Basins stay in the Meadow's lows, now one chunk in five, nudged off the chunk grid.
+- **Trees.** Songwood comes in two shapes:
+  - a forking songwood (vanilla's cherry trunk: one to three branches, each with its own canopy);
+  - a tall songwood (vanilla's fancy-oak shape: a tall trunk with several canopy lobes at different heights).
+  Both carry drapes. Groves are placed by vanilla's biome noise (zero to five trees a chunk), so woods thin out into open meadow instead of falling on a grid. The Flats carry a looser wood.
+- **Textures.** Redrawn in vanilla's style, not the trailers': per-pixel grain in six to twelve close shades with small clumps, not flat bands of three or four tones. The ramps widen to eight or nine shades. The leaves are overlapping lit clumps with gaps. The bark has furrows. Grass sides hang over the soil. Nothing lines up from block to block.
+
+**Consequences.**
+- Old worlds' Sift chunks don't match new ones: the sea is gone and the biomes moved. Playtests use a new world.
+- Tests:
+  - the worldgen tests look for dry land rather than land above sea level, and accept the Flats as a surface biome;
+  - the basin test allows the vent's ±1 nudge;
+  - a buoyancy test covers the lift.
+- The dump test also draws a biome map.
+- BALANCE's ichor row records the lift, the 8-tick step and the alpha.
+
+**Revisit if** the owner's next playtest finds the ichor too unlike water to swim comfortably (lower the lift), the sheen too busy (widen the bands), or the Flats too common or too rare (move `FLATS_HUMIDITY`).

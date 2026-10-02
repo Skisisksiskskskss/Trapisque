@@ -2,16 +2,17 @@
 
 Stat tables for every Sift mob and item next to 2–3 vanilla analogs, with reasoning (§7.7). Difficulty scaling (Easy/Normal/Hard) defined per entry.
 
-## Ichor (WP-044; D-024, owner playtest)
-The Sift's water: it behaves as vanilla water does, and is clear turquoise.
+## Ichor (WP-044; D-024, D-026, owner playtests)
+The Sift's water: it swims as vanilla water does, but is a little thicker and carries a soap bubble's sheen.
 
 | Property | Ichor | Water | Reasoning |
 |---|---|---|---|
 | Movement | Swimming, currents, buoyancy, breath (it is in `#minecraft:water`) | The same | The owner's playtest: it played like lava. Now it plays like water |
+| Lift | +0.025 a tick upward, up to 0.18 a tick; none while sneaking | None (you sink slowly unless you swim) | Playtest 2: it acted "too much like water". You bob up in it; sneak to dive |
 | Harm | None; it puts out fire | None; puts out fire | Endure's danger is the hunters (M2), not the flood |
-| Flow | 7 blocks (drop-off 1, slope search 4), a step per 5 ticks; two sources make a third | The same | Water's rules, so lakes, rivers and buckets behave as players expect |
+| Flow | 7 blocks (drop-off 1, slope search 4), a step per 8 ticks; two sources make a third | 7 blocks, a step per 5 ticks | Water's rules, so buckets behave as players expect, but slower: it reads as thicker (playtest 2) |
 | Light | 4 | 0 | A faint glow, as the teasers' pools; readable in Endure's dark |
-| Look | Translucent turquoise, turquoise haze underneath (fog to 64 blocks) | Tinted by biome, fog to 96 | The teasers' blue pools |
+| Look | Alpha 214; a pale shimmer tinted by position along a soap film's colours (mostly turquoise); turquoise haze underneath (fog to 64 blocks) | Alpha 180; grey, tinted by biome; fog to 96 | The teasers' blue pools, "slightly less transparent" and "like the surface of a thin bubble" (playtest 2) |
 | Outside the Sift | A bucket evaporates (soul smoke) | Places | rules.md: nothing from the Sift spreads at home |
 | Cost (20 mobs swimming) | 1.08× water | 1× | Measured, `SiftPerfTest` |
 

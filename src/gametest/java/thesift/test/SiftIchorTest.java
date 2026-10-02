@@ -15,7 +15,7 @@ import thesift.registry.ModBlocks;
 import thesift.registry.ModFluids;
 import thesift.registry.ModItems;
 
-/** Ichor, the Sift's water (D-024): clear, swimmable, and it flows as water does. */
+/** Ichor, the Sift's water (D-024, D-026): swimmable, buoyant, and it flows as water does, if more slowly. */
 public final class SiftIchorTest {
 	private static final String SIFT = "thesift:the_sift";
 
@@ -58,6 +58,23 @@ public final class SiftIchorTest {
 			helper.assertFalse(pig.isOnFire(), "a burning pig that walks into ichor is put out");
 			helper.succeed();
 		});
+	}
+
+	@GameTest(dimension = SIFT, maxTicks = 120)
+	public void ichorIsBuoyant(GameTestHelper helper) {
+		// A pool four deep; an armour stand (no AI to swim) set on its floor drifts up (D-026).
+		for (int x = 1; x <= 3; x++) {
+			for (int z = 1; z <= 3; z++) {
+				helper.setBlock(new BlockPos(x, 1, z), ModBlocks.HYMNSTONE);
+				for (int y = 2; y <= 5; y++) {
+					helper.setBlock(new BlockPos(x, y, z), ModBlocks.ICHOR);
+				}
+			}
+		}
+		ArmorStand stand = helper.spawn(EntityTypes.ARMOR_STAND, new Vec3(2.5, 2, 2.5));
+		double start = stand.getY();
+		helper.succeedWhen(() -> helper.assertTrue(stand.getY() > start + 1.5,
+				"ichor lifts what's in it: risen " + (stand.getY() - start)));
 	}
 
 	@GameTest(dimension = SIFT, maxTicks = 100)

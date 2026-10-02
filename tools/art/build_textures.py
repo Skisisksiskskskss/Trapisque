@@ -86,6 +86,46 @@ def put(im: Image.Image, pts, colour) -> None:
         px[x % w, y % h] = colour
 
 
+
+# ---------------------------------------------------------------- vanilla-style grain (owner playtest 2)
+def grain(seed: int, w: int = W, h: int = H, clumps: float = 0.55, cells: int = 4, fine: int = 8,
+          jitter: float = 0.35) -> list[list[float]]:
+    """Vanilla's texture grain (owner playtest 2, D-026): small clumps (a coarse tileable noise) under
+    per-pixel jitter, so neighbouring pixels differ but shades still gather into 2-4 px blotches, as on
+    vanilla stone, dirt and grass. Seamless: every term wraps at the texture's edge."""
+    coarse = tile_noise(w, h, cells, cells, seed, ((1.0, 1),))
+    mid = tile_noise(w, h, fine, fine, seed + 1, ((1.0, 1),))
+    rnd = random.Random(seed * 31 + 7)
+    rest = 1.0 - clumps - jitter
+    return [[clumps * coarse[y][x] + rest * mid[y][x] + jitter * rnd.random() for x in range(w)] for y in range(h)]
+
+
+def by_rank(values: list[list[float]], shares: list[float]) -> list[list[int]]:
+    """Assigns each pixel a band 0..len(shares)-1 by its rank, so each band covers its share of the
+    texture whatever the noise's spread (a bell of shares keeps most pixels mid-tone)."""
+    flat = sorted(v for row in values for v in row)
+    total = sum(shares)
+    cuts, acc = [], 0.0
+    for sh in shares[:-1]:
+        acc += sh / total
+        cuts.append(flat[min(len(flat) - 1, int(acc * len(flat)))])
+    return [[sum(v >= c for c in cuts) for v in row] for row in values]
+
+
+def paint(ramp: str, bands: list[list[int]], offset: int, w: int = W, h: int = H) -> Image.Image:
+    im = Image.new("RGBA", (w, h))
+    px = im.load()
+    for y in range(h):
+        for x in range(w):
+            px[x, y] = rgba(ramp, bands[y][x] + offset)
+    return im
+
+
+def lit(values: list[list[float]], x: int, y: int) -> float:
+    """How much a pixel faces the light (top-left): its value against its lower-right neighbour's."""
+    h, w = len(values), len(values[0])
+    return values[y][x] - values[(y + 1) % h][(x + 1) % w]
+
 # ---------------------------------------------------------------- hymnstone family
 def scatter(seed: int, count: int, spacing: float, w: int = W, h: int = H) -> list[tuple[int, int]]:
     """Up to `count` points at least `spacing` apart on the wrapped w×h torus (seeded dart throwing)."""
@@ -101,133 +141,111 @@ def scatter(seed: int, count: int, spacing: float, w: int = W, h: int = H) -> li
 
 
 def hymnstone_pattern(seed: int = 3) -> Image.Image:
-    """Rose-mauve stone (owner rework, after the teasers' spires): vanilla-stone grain with faint
-    horizontal strata, so cliffs and spires read layered. The strata wander a little in height, so
-    they never line up into stripes across a wall."""
-    grain = tile_noise(W, H, 8, 8, seed, ((1.0, 1), (0.6, 2)))
-    strata = tile_noise(W, H, 2, 6, seed + 50, ((1.0, 1), (0.4, 2)))
-    rnd = random.Random(seed)
-    im = Image.new("RGBA", (W, H))
-    px = im.load()
-    for y in range(H):
-        for x in range(W):
-            v = 0.62 * grain[y][x] + 0.38 * strata[y][x] + (rnd.random() - 0.5) * 0.18
-            i = 2 if v < 0.36 else 3 if v < 0.58 else 4 if v < 0.8 else 5
-            px[x, y] = rgba("hymnstone", i)
-    for x, y in scatter(seed * 13 + 1, 5, 4.5):
-        put(im, [(x, y)], rgba("hymnstone", 1))
+    """Rose-mauve stone (owner playtest 2): vanilla stone's grain in seven close shades, gathered into
+    small blotches, with a couple of dark pits and pale flecks as granite has. No strata: bands across
+    a block lined up into stripes across a wall."""
+    v = grain(seed, clumps=0.38, cells=4, fine=8, jitter=0.42)
+    im = paint("hymnstone", by_rank(v, [0.04, 0.12, 0.22, 0.26, 0.22, 0.10, 0.04]), 1)
+    for x, y in scatter(seed * 13 + 1, 2, 7.0):
+        put(im, [(x, y)], rgba("hymnstone", 0))
+    for x, y in scatter(seed * 17 + 3, 3, 6.0):
+        put(im, [(x, y)], rgba("hymnstone", 8))
     return im
 
+
 def hymnstone_bricks() -> Image.Image:
-    n = tile_noise(W, H, 3, 3, 11)
-    base = bands(n, [0.3, 0.85], [rgba("hymnstone", 2), rgba("hymnstone", 3), rgba("hymnstone", 4)])
-    px = base.load()
-    mortar = rgba("hymnstone", 1)
-    hi, lo = rgba("hymnstone", 5), rgba("hymnstone", 2)
-    # Two courses, 7 px of brick + 1 px mortar; joints offset between courses.
-    for y in (7, 15):
-        for x in range(W):
-            px[x, y] = mortar
-    for (y0, y1, joints) in ((0, 6, (11,)), (8, 14, (3,))):
-        for jx in joints:
-            for y in range(y0, y1 + 1):
-                px[jx, y] = mortar
-        # Bevel: highlight on each brick's top row and left column, shadow on bottom row and right column.
+    """Hymnstone bricks, as vanilla stone bricks: two courses of offset bricks of the stone's grain,
+    each brick a shade of its own, lit on its top and left edges, shaded on its bottom and right,
+    with dark mortar between."""
+    v = grain(11, clumps=0.4, cells=4, fine=8, jitter=0.4)
+    bands_ = by_rank(v, [0.15, 0.3, 0.35, 0.2])
+    im = Image.new("RGBA", (W, H))
+    px = im.load()
+    rnd = random.Random(11)
+    courses = ((0, 6, (11,)), (8, 14, (3,)))
+    for y0, y1, joints in courses:
         starts = sorted([0] + [j + 1 for j in joints])
         ends = sorted([j - 1 for j in joints] + [W - 1])
         for sx, ex in zip(starts, ends):
-            for x in range(sx, ex + 1):
-                px[x, y0] = hi
-                px[x, y1] = lo
+            base = 3 + rnd.choice((0, 0, 1))
             for y in range(y0, y1 + 1):
-                px[sx, y] = hi if y < y1 else lo
-                px[ex, y] = lo
-    return base
+                for x in range(sx, ex + 1):
+                    i = base + bands_[y][x] - 1
+                    if y == y0 or x == sx:
+                        i += 1
+                    if y == y1 or x == ex:
+                        i -= 1
+                    px[x, y] = rgba("hymnstone", max(1, min(8, i)))
+        for jx in joints:
+            for y in range(y0, y1 + 1):
+                px[jx, y] = rgba("hymnstone", 1 if (y + jx) % 3 else 0)
+    for y in (7, 15):
+        for x in range(W):
+            px[x, y] = rgba("hymnstone", 1 if (x * 7 + y) % 5 else 0)
+    return im
 
 
 # ---------------------------------------------------------------- healthy sculk
 
 def healthy_sculk_top(seed: int = 21) -> Image.Image:
-    """The teaser's pink-coral grass top (owner rework): vanilla grass's per-pixel speckle in five
-    close tones with a few bright and dark flecks; nothing larger than two pixels, so it tiles
-    without a pattern, and the blockstates add random rotations as vanilla grass does."""
-    n = tile_noise(W, H, 8, 8, seed, ((1.0, 1), (0.8, 2)))
-    rnd = random.Random(seed)
-    im = Image.new("RGBA", (W, H))
-    px = im.load()
-    for y in range(H):
-        for x in range(W):
-            v = 0.55 * n[y][x] + 0.45 * rnd.random()
-            i = 2 if v < 0.3 else 3 if v < 0.5 else 4 if v < 0.7 else 5
-            px[x, y] = rgba("healthy_sculk", i)
-    for x, y in scatter(seed * 7 + 3, 6, 4.0):
-        put(im, [(x, y)], rgba("healthy_sculk", 6))
-    for x, y in scatter(seed * 7 + 5, 5, 4.0):
-        put(im, [(x, y)], rgba("healthy_sculk", 1))
-    return im
+    """The teaser's pink-coral grass top (owner playtest 2): vanilla grass's fine speckle in seven
+    shades, mostly single pixels and pairs, with a faint drift of lighter and darker patches; the
+    blockstates add random rotations as vanilla grass does."""
+    v = grain(seed, clumps=0.35, cells=4, fine=8, jitter=0.45)
+    return paint("healthy_sculk", by_rank(v, [0.05, 0.12, 0.2, 0.25, 0.2, 0.12, 0.06]), 1)
+
 
 def healthy_sculk_side() -> Image.Image:
-    """Grass over soil, as vanilla's grass block side: the pink top hangs 3 to 5 pixels down in a
-    ragged edge over the maroon Sift soil of the teaser's hill."""
+    """Grass over soil, as vanilla's grass block side: the pink top hangs 2 to 4 pixels over the
+    maroon soil, its edge broken into short drips, with a pixel of shadow under it."""
     im = sift_soil(seed=5)
-    top = healthy_sculk_top()
+    top = healthy_sculk_top(seed=23)
     tp, ip = top.load(), im.load()
-    depth = [3, 4, 3, 3, 5, 4, 3, 2, 4, 3, 3, 5, 4, 3, 3, 4]
+    rnd = random.Random(5)
+    depth = [3, 3, 2, 4, 3, 3, 4, 2, 3, 5, 3, 2, 3, 4, 3, 3]
     for x in range(W):
-        for y in range(depth[x]):
-            ip[x, y] = tp[x, (y + 3) % H]
-        ip[x, depth[x]] = rgba("healthy_sculk", 0)
+        d = depth[x]
+        for y in range(d):
+            ip[x, y] = tp[x, (y + 5) % H]
+        if rnd.random() < 0.7:
+            ip[x, d] = rgba("soil", 0)
     return im
 
 
 def sift_soil(seed: int = 7) -> Image.Image:
-    """Sift soil, the dirt under the grass (owner rework): vanilla dirt's speckled earth in maroon,
-    with a few pale pebbles."""
-    n = tile_noise(W, H, 8, 8, seed, ((1.0, 1), (0.7, 2)))
-    rnd = random.Random(seed)
-    im = Image.new("RGBA", (W, H))
-    px = im.load()
-    for y in range(H):
-        for x in range(W):
-            v = 0.5 * n[y][x] + 0.5 * rnd.random()
-            i = 1 if v < 0.22 else 2 if v < 0.48 else 3 if v < 0.76 else 4
-            px[x, y] = rgba("soil", i)
-    for x, y in scatter(seed * 3 + 1, 5, 4.5):
-        put(im, [(x, y)], rgba("soil", 5))
-        put(im, [(x + 1, y + 1)], rgba("soil", 0))
+    """Sift soil, the earth under the grass (owner playtest 2): vanilla dirt's grain in maroon, six
+    shades in small clumps, with two or three pale pebbles shadowed below."""
+    v = grain(seed, clumps=0.4, cells=4, fine=8, jitter=0.45)
+    im = paint("soil", by_rank(v, [0.06, 0.16, 0.28, 0.28, 0.16, 0.06]), 1)
+    for x, y in scatter(seed * 3 + 1, 3, 6.5):
+        put(im, [(x, y)], rgba("soil", 7))
+        put(im, [(x, y + 1)], rgba("soil", 1))
     return im
 
 
 def tuft(height_px: int, blades: int, seed: int) -> Image.Image:
-    """A tuft of the teaser's pink grass on a 16 × height_px canvas: broad jagged leaves, three
-    pixels wide at the root and one at the tip, dark low and pale high, leaning out from the middle,
-    with stair-step spurs on alternating sides."""
+    """A tuft of the teaser's pink grass on a 16 × height_px canvas: thin blades, one or two pixels
+    wide, of different heights and leans, each shaded dark at the root to light at the tip with a few
+    pixels of its own grain, as vanilla's short grass is drawn."""
     rnd = random.Random(seed)
     im = Image.new("RGBA", (W, height_px), (0, 0, 0, 0))
     px = im.load()
     order = sorted(range(blades), key=lambda b: rnd.random())
     for b in order:
-        x0 = 3.0 + rnd.random() * 10
-        length = height_px * (0.55 + 0.45 * rnd.random())
-        lean = (x0 - 8) / 8 * (0.12 + 0.25 * rnd.random()) + (rnd.random() - 0.5) * 0.12
+        x0 = 2.0 + rnd.random() * 12
+        length = height_px * (0.45 + 0.55 * rnd.random())
+        lean = (x0 - 8) / 8 * (0.1 + 0.2 * rnd.random()) + (rnd.random() - 0.5) * 0.15
+        wide = rnd.random() < 0.45
         for t in range(int(length)):
             y = height_px - 1 - t
             frac = t / length
             x = x0 + lean * t
-            i = 1 if frac < 0.12 else 2 if frac < 0.35 else 3 if frac < 0.6 else 4 if frac < 0.8 else 5 if frac < 0.93 else 6
-            w = 3 if frac < 0.3 else 2 if frac < 0.75 else 1
-            left = int(round(x - w / 2))
-            for xx in range(left, left + w):
+            i = 1 + int(frac * 6.5)
+            i += rnd.choice((-1, 0, 0, 0, 1))
+            xs = [int(round(x))] + ([int(round(x)) + 1] if wide and frac < 0.6 else [])
+            for k, xx in enumerate(xs):
                 if 0 <= xx < W:
-                    # The lit side of the leaf is a shade paler.
-                    px[xx, y] = rgba("healthy_sculk", min(6, i + (1 if xx == left and frac > 0.3 else 0)))
-            if t % 3 == 1 and 0.2 < frac < 0.92:  # stair-step spurs, alternating sides
-                side = -1 if (t // 3 + b) % 2 else w
-                for k in (0, 1):
-                    xs = left + side + (k * (1 if side > 0 else -1))
-                    ys = y - k
-                    if 0 <= xs < W and ys >= 0:
-                        px[xs, ys] = rgba("healthy_sculk", min(6, i + 1))
+                    px[xx, y] = rgba("healthy_sculk", max(0, min(7, i - k)))
     return im
 
 
@@ -250,17 +268,26 @@ FLUTE_SPOTS = {1: ((4, 3), (11, 11)), 2: ((2, 9), (12, 2))}
 
 
 def songwood_log(variant: int = 1) -> Image.Image:
-    """The teasers' dark trunks (owner rework): charcoal-teal bark in long vertical furrows. Variant
-    2 keeps one small flute hole, songwood's mark (the wind whistles through it, items.md)."""
-    n = tile_noise(W, H, 8, 2, 31 + variant * 100, ((1.0, 1), (0.4, 2)))
+    """The teasers' dark trunks (owner playtest 2): vanilla bark, long broken vertical furrows (the
+    darkest shades) between ridges lit on their left edge, in charcoal-teal. Variant 2 keeps one small
+    flute hole, songwood's mark (the wind whistles through it, items.md)."""
+    seed = 31 + variant * 100
+    ridge = tile_noise(W, H, 8, 2, seed, ((1.0, 1), (0.5, 2)))
     rnd = random.Random(variant)
     im = Image.new("RGBA", (W, H))
     px = im.load()
     for y in range(H):
         for x in range(W):
-            v = 0.75 * n[y][x] + 0.25 * rnd.random()
-            i = 1 if v < 0.25 else 2 if v < 0.55 else 3 if v < 0.85 else 4
-            px[x, y] = rgba("songwood_bark", i)
+            v = 0.7 * ridge[y][x] + 0.3 * rnd.random()
+            if v < 0.3:
+                i = 1
+            elif v < 0.42:
+                i = 2
+            else:
+                i = 3 + (1 if v > 0.6 else 0) + (1 if v > 0.78 else 0)
+                if ridge[y][(x - 1) % W] < 0.35:
+                    i += 1  # the lit lip of a furrow
+            px[x, y] = rgba("songwood_bark", min(7, i))
     if variant == 2:
         c = {"L": rgba("flute", 0), "l": rgba("songwood_bark", 5), "b": rgba("songwood_bark", 0)}
         for dy, row in enumerate(FLUTE_HOLE):
@@ -268,18 +295,23 @@ def songwood_log(variant: int = 1) -> Image.Image:
                 put(im, [(9 + dx, 6 + dy)], c[ch])
     return im
 
+
 def songwood_log_top() -> Image.Image:
+    """The cut end: growth rings in the planks' tones that wobble a little, as vanilla log ends do, a
+    bark rim, and the hollow core (songwood's branches are flutes)."""
+    wob = tile_noise(W, H, 4, 4, 77, ((1.0, 1),))
+    rnd = random.Random(77)
     im = Image.new("RGBA", (W, H))
     px = im.load()
     for y in range(H):
         for x in range(W):
-            d = max(abs(x - 7.5), abs(y - 7.5))
-            if d > 6.5:
-                px[x, y] = rgba("songwood_bark", 2 if (x + y) % 3 else 3)
-            else:
-                ring = int(d) % 3
-                px[x, y] = rgba("songwood_planks", (2, 3, 4)[ring])
-    # The hollow core: songwood's branches are flutes.
+            d = max(abs(x - 7.5), abs(y - 7.5)) * 0.7 + math.hypot(x - 7.5, y - 7.5) * 0.3
+            if max(abs(x - 7.5), abs(y - 7.5)) > 6.5:
+                px[x, y] = rgba("songwood_bark", rnd.choice((2, 3, 3, 4)))
+                continue
+            r = d + (wob[y][x] - 0.5) * 1.2
+            ring = int(r) % 3
+            px[x, y] = rgba("songwood_planks", (2, 3, 4)[ring] + (1 if rnd.random() < 0.15 else 0))
     put(im, [(7, 7), (8, 7), (7, 8), (8, 8)], rgba("songwood_bark", 0))
     put(im, [(6, 7), (7, 6), (8, 6), (6, 8)], rgba("flute", 0))
     put(im, [(9, 7), (9, 8), (7, 9), (8, 9)], rgba("songwood_planks", 1))
@@ -287,65 +319,88 @@ def songwood_log_top() -> Image.Image:
 
 
 def songwood_planks() -> Image.Image:
-    n = tile_noise(W, H, 2, 8, 41)
-    im = bands(n, [0.55], [rgba("songwood_planks", 3), rgba("songwood_planks", 4)])
+    """Teal-grey planks, as vanilla's: four boards four pixels tall, each with long grain streaks of
+    its own shade, a dark seam under it and offset end joints."""
+    grain_ = tile_noise(W, H, 2, 8, 41, ((1.0, 1), (0.5, 2)))
+    rnd = random.Random(41)
+    im = Image.new("RGBA", (W, H))
     px = im.load()
-    # Four boards, 4 px tall: a dark seam at each board's bottom, a light edge at its top, offset end joints.
     for b, jx in enumerate((5, 12, 2, 9)):
         y0 = b * 4
+        base = 3 + rnd.choice((0, 0, 1))
+        for y in range(y0, y0 + 3):
+            for x in range(W):
+                g = grain_[y][x]
+                i = base + (1 if g > 0.68 else 0) - (1 if g < 0.3 else 0)
+                if y == y0 and rnd.random() < 0.5:
+                    i += 1
+                px[x, y] = rgba("songwood_planks", max(1, min(5, i)))
         for x in range(W):
-            px[x, y0 + 3] = rgba("songwood_planks", 1)
-        for y in range(y0 + 1, y0 + 3):
-            px[jx, y] = rgba("songwood_planks", 2)
-        # A short grain mark in each board.
-        gx = (jx + 5) % W
-        for x in range(gx, gx + 3):
-            px[x % W, y0 + 1] = rgba("songwood_planks", 2)
+            px[x, y0 + 3] = rgba("songwood_planks", 1 if (x + b) % 4 else 0)
+        for y in range(y0, y0 + 3):
+            px[jx, y] = rgba("songwood_planks", 1)
     return im
 
 
 def songwood_leaves(seed: int = 51) -> Image.Image:
-    """The teasers' pale canopy (owner rework): icy grey-blue leaves, dense on top and fraying at the
-    bottom into a fringe of drips, so every leaf block droops as in the first look."""
-    n = tile_noise(W, H, 6, 6, seed, ((1.0, 1), (0.75, 2)))
+    """The teasers' pale canopy (owner playtest 2): vanilla leaves drawn as overlapping clumps of
+    foliage, each lit on its upper left and shaded blue on its lower right, with holes where no clump
+    reaches; the clumps wrap round the edges, so the block tiles without rows (the old fringe striped
+    every canopy at each block row)."""
     rnd = random.Random(seed)
+    centres = scatter(seed * 3 + 5, 13, 4.2)
+    value = [[-1.0] * W for _ in range(H)]
+    light = [[0.0] * W for _ in range(H)]
+    for cx, cy in centres:
+        r = 2.3 + rnd.random() * 1.0
+        for y in range(H):
+            for x in range(W):
+                dx = (x - cx + W / 2) % W - W / 2
+                dy = (y - cy + H / 2) % H - H / 2
+                d = math.hypot(dx, dy)
+                if d <= r:
+                    v = 1.0 - d / r
+                    if v > value[y][x]:
+                        value[y][x] = v
+                        light[y][x] = -(dx + dy) / (2 * r)  # upper left is lit
     im = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     px = im.load()
-    drip = [rnd.choice((0, 1, 2, 3, 4, 5)) for _ in range(W)]  # how far each column's drip hangs
     for y in range(H):
         for x in range(W):
-            v = n[y][x]
-            fringe = y >= 11
-            if fringe and y - 11 >= drip[x]:
-                continue  # the frayed bottom edge
-            if not fringe and v < 0.16:
-                continue  # a gap in the leaves
-            i = 2 if v < 0.45 else 3 if v < 0.8 else 4
-            if fringe:
-                i = max(1, i - 1)  # the drips sit in shade
-            px[x, y] = rgba("songwood_leaves", i)
-    for y in range(H):
-        for x in range(W):
-            if px[x, y][3] and y + 1 < H and px[x, y + 1][3] == 0 and y < 11:
-                px[x, y] = rgba("songwood_leaves", 0)
+            if value[y][x] < 0:
+                continue
+            i = 3 + round(light[y][x] * 3.2 + value[y][x] * 1.5) + rnd.choice((-1, 0, 0, 0, 1))
+            px[x, y] = rgba("songwood_leaves", max(0, min(7, i)))
     return im
 
 
 def songwood_drapes(tip: bool) -> Image.Image:
     """Pale strands hanging under the canopy ("towering tree-like growths covered in pale-blue
-    vines", the Meadow's canon); the tip frays out."""
+    vines", the Meadow's canon), as vanilla's hanging moss and vines are drawn: strands that start
+    where they like and wander, with small leaf nubs, darker where they cross; the tip frays out."""
     rnd = random.Random(71 if tip else 73)
     im = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     px = im.load()
-    for x0 in (2, 4, 5, 7, 9, 10, 12, 13):
-        x = x0 + rnd.choice((-1, 0, 0, 1))
-        length = H if not tip else rnd.randint(6, 13)
+    starts = sorted(rnd.sample(range(1, 15), 8))
+    for x0 in starts:
+        x = x0
+        length = H if not tip else rnd.randint(4, 14)
         for y in range(length):
             if 0 <= x < W:
-                px[x, y] = rgba("songwood_leaves", 3 if (y + x0) % 5 else 4)
-            if y % 5 == 4:
-                x += rnd.choice((-1, 1)) if 0 < x < W - 1 else 0
+                shade = 4 + rnd.choice((-1, 0, 0, 1, 1, 2))
+                if px[x, y][3]:
+                    shade = 2  # where strands cross
+                if tip and y > length - 3:
+                    shade -= 1
+                px[x, y] = rgba("songwood_leaves", max(1, min(7, shade)))
+                if rnd.random() < 0.2:
+                    nx = x + rnd.choice((-1, 1))
+                    if 0 <= nx < W and not px[nx, y][3]:
+                        px[nx, y] = rgba("songwood_leaves", rnd.choice((3, 5, 6)))
+            if rnd.random() < 0.3:
+                x += rnd.choice((-1, 1))
     return im
+
 
 def songwood_sapling() -> Image.Image:
     rows = [
@@ -378,18 +433,14 @@ def songwood_sapling() -> Image.Image:
 
 # ---------------------------------------------------------------- tide basin
 def tide_sand(seed: int = 61) -> Image.Image:
-    # Fine silt in three close tones, with short broken ripple marks (crest over trough) scattered
-    # per variant rather than lines running across every block.
-    n = tile_noise(W, H, 5, 5, seed, ((1.0, 1), (0.6, 2)))
-    im = bands(n, [0.15, 0.7], [rgba("tide_sand", 2), rgba("tide_sand", 3), rgba("tide_sand", 4)])
-    rnd = random.Random(seed)
-    for (x0, y0) in scatter(seed * 5 + 2, 6, 5.0):
-        ln = rnd.randint(3, 6)
-        phase = rnd.random() * 6.28
-        for i in range(ln):
-            y = y0 + round(math.sin(i / 2.5 + phase) * 0.6)
-            put(im, [(x0 + i, y)], rgba("tide_sand", 1 if 0 < i < ln - 1 else 2))
-            put(im, [(x0 + i, y - 1)], rgba("tide_sand", 5))
+    """Fine grey-violet silt, as vanilla sand: a soft grain in five close shades with scattered darker
+    and lighter single grains (no ripple marks: they lined up from block to block)."""
+    v = grain(seed, clumps=0.3, cells=4, fine=8, jitter=0.5)
+    im = paint("tide_sand", by_rank(v, [0.08, 0.22, 0.4, 0.22, 0.08]), 1)
+    for x, y in scatter(seed * 7 + 1, 5, 4.0):
+        put(im, [(x, y)], rgba("tide_sand", 0))
+    for x, y in scatter(seed * 7 + 2, 4, 4.0):
+        put(im, [(x, y)], rgba("tide_sand", 6))
     return im
 
 
@@ -480,28 +531,37 @@ def membrane_frames(n: int = 32) -> list[Image.Image]:
 
 
 # ---------------------------------------------------------------- ichor
+# Ten tileable waves for ichor's shimmer: whole-number frequencies in many directions, so the field
+# tiles exactly yet has no lattice; each drifts at its own whole-number speed, so the loop closes.
+_ICHOR_WAVES = [(1, 0), (0, 1), (1, 1), (1, -1), (2, 1), (1, -2), (2, -1), (1, 2), (3, 1), (1, 3)]
+_ICHOR_RND = random.Random(214)
+_ICHOR_PHASES = [(_ICHOR_RND.random(), _ICHOR_RND.choice([-2, -1, 1, 2]), 1.0 / (1 + 0.5 * (abs(a) + abs(b))))
+                 for a, b in _ICHOR_WAVES]
+
+
 def ichor_frame(w: int, h: int, t: float, flow: bool) -> Image.Image:
-    """The Sift's water (D-024): clear turquoise like the teaser's pools, translucent like vanilla
-    water. A soft two-tone body with lighter wave crests and a rare glint; low contrast, because every
-    block shows the same frame."""
-    body = noise_fn(3, 3, 111, w, h)
-    crest = noise_fn(5, 4, 113, w, h)
-    glint = noise_fn(7, 7, 117, w, h)
-    im = Image.new("RGBA", (w, h))
-    px = im.load()
-    s = t * w
+    """Ichor (owner playtest 2, D-026): a faint, pale shimmer, as vanilla's water texture is grey.
+    The colour is laid on as it is drawn (thesift.client.IchorSheen), which lays a soap bubble's bands across
+    the whole pond, so this texture must not draw a pattern of its own that repeats block to block:
+    ten soft waves interfere into a smooth field drawn in only three close shades, with a rare
+    highlight where the field peaks. Alpha 214, a little less see-through than water."""
+    tau = 2 * math.pi
+    vals = []
     for y in range(h):
         for x in range(w):
+            u, v = x / w, y / h
             if flow:
-                b, c, g = body(x, y - s), crest(x, y - 2 * s), glint(x, y - 2 * s)
-            else:
-                b, c, g = body(x + s, y), crest(x - s, y + s), glint(x + s, y - s)
-            colour = rgba("ichor", 2, 168) if b < 0.45 else rgba("ichor", 3, 168)
-            if abs(c - 0.5) < 0.045:
-                colour = rgba("ichor", 4, 188)
-            if g > 0.93:
-                colour = rgba("ichor", 5, 200)
-            px[x, y] = colour
+                v -= t
+            vals.append(sum(amp * math.sin(tau * (a * u + b * v + phase + speed * t))
+                            for (a, b), (phase, speed, amp) in zip(_ICHOR_WAVES, _ICHOR_PHASES)))
+    lo, hi = min(vals), max(vals)
+    im = Image.new("RGBA", (w, h))
+    px = im.load()
+    for y in range(h):
+        for x in range(w):
+            n = (vals[y * w + x] - lo) / (hi - lo)
+            shade = 6 if n > 0.93 else 5 if n > 0.72 else 4 if n > 0.35 else 3
+            px[x, y] = rgba("ichor_sheen", shade, 214)
     return im
 
 
@@ -512,7 +572,7 @@ def ichor_overlay() -> Image.Image:
     for y in range(16):
         for x in range(16):
             r, g, b, a = px[x, y]
-            px[x, y] = (r, g, b, a - 48)
+            px[x, y] = (r, g, b, 150)
     return im
 
 
@@ -696,10 +756,11 @@ def main() -> None:
     save(gatestone(top=True), "block/gatestone_top.png")
     save(strip(membrane_frames()), "block/sift_membrane.png")
     save_mcmeta("block/sift_membrane.png", '{\n  "animation": {\n    "frametime": 2,\n    "interpolate": true\n  }\n}\n')
-    save(strip([ichor_frame(16, 16, f / 32, flow=False) for f in range(32)]), "block/ichor_still.png")
-    save_mcmeta("block/ichor_still.png", '{\n  "animation": {\n    "frametime": 3\n  }\n}\n')
-    save(strip([ichor_frame(32, 32, f / 32, flow=True) for f in range(32)]), "block/ichor_flow.png")
-    save_mcmeta("block/ichor_flow.png", '{\n  "animation": {\n    "frametime": 2\n  }\n}\n')
+    # One turn of the sheen's colour cycle in 12 s (48 frames of 5 ticks), smoothed between frames.
+    save(strip([ichor_frame(16, 16, f / 48, flow=False) for f in range(48)]), "block/ichor_still.png")
+    save_mcmeta("block/ichor_still.png", '{\n  "animation": {\n    "frametime": 5,\n    "interpolate": true\n  }\n}\n')
+    save(strip([ichor_frame(32, 32, f / 48, flow=True) for f in range(48)]), "block/ichor_flow.png")
+    save_mcmeta("block/ichor_flow.png", '{\n  "animation": {\n    "frametime": 2,\n    "interpolate": true\n  }\n}\n')
     save(ichor_overlay(), "block/ichor_overlay.png")
     save(ichor_bucket(), "item/ichor_bucket.png")
     save(glow_petal(), "particle/glow_petal.png")

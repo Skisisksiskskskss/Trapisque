@@ -2,6 +2,17 @@
 
 Step-by-step checklists the owner can run in-game. Produced at every gate.
 
+## `v0.1.2-alpha` (2026-10-02): the owner's second playtest
+Your notes on `v0.1.1-alpha`: the ichor looked and acted too much like water and generated like oceans; the trees had one canopy and the forests looked synthetic; the textures were too close to the trailers' flat look. What changed (D-026):
+- **Ichor:** a little less see-through, with a soap bubble's colours (turquoise, mint, gold, rose and lilac in broad bands that blend across the pond, different in every pond); the old busy pattern is gone. It is thicker: it lifts you up (sneak to dive) and spreads more slowly.
+- **No more seas:** ichor now comes as **ponds** in Singer's Meadow, and as the new **Ichor Flats** biome, where shallow ichor lies in blots among the grass and trees, like a mangrove swamp's water.
+- **Trees:** two shapes, a forking songwood (one to three branches, each with its own canopy) and a tall songwood with canopy lobes at several heights, both with drapes. Woods thin out into open meadow instead of standing on a grid.
+- **Textures:** redrawn in vanilla's style rather than the trailers': many close shades with per-pixel grain (grass, soil, hymnstone, bark, planks, leaves, drapes, tide sand). Leaves are clumpy with gaps; grass sides hang over the soil.
+
+**Use a new world** (or delete `<world>/dimensions/thesift/the_sift`): the sea is gone and the biomes moved, so old Sift chunks won't match new ones. Install as below with `thesift-0.1.2-alpha.jar`.
+
+**Tell me:** is the ichor's sheen right (too busy, too faint)? Do the ponds and the Flats feel right in size and number? Do the trees and woods look natural now? Do the textures read as Minecraft?
+
 ## `v0.1.1-alpha` (2026-10-02): the owner's playtest rework
 Your notes on `v0.1.0-alpha`: the terrain didn't look like Minecraft, the textures, mob and trees didn't look like the teasers, and the water was the worst part. What changed (D-024, D-025):
 - **Water:** ichor is now the Sift's water. It is clear turquoise, see-through, and it swims, flows and refills like water; it no longer burns, slows or drains you. There is much more of it: lakes, rivers and shores.

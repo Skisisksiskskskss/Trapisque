@@ -211,7 +211,7 @@ public final class SiftBasinTest {
 								var state = chunk.getBlockState(new BlockPos(x, y, z));
 								if (state.is(ModBlocks.TIDE_VENT)) {
 									vents++;
-									helper.assertTrue(x == 8 && z == 8, "a vent sits in the middle of its chunk");
+									helper.assertTrue(Math.abs(x - 8) <= 1 && Math.abs(z - 8) <= 1, "a vent sits within a block of the middle of its chunk");
 									helper.assertTrue(state.getValue(TideVentBlock.BASIN) > 0, "generated vents are live");
 								} else if (state.is(ModBlocks.ICHOR)) {
 									if (y > top - 16) {

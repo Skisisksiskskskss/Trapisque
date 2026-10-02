@@ -1,0 +1,58 @@
+{
+  "attributes": {
+    "minecraft:audio/ambient_sounds": {
+      "additions": {
+        "sound": "thesift:ambient.singers_meadow.mood",
+        "tick_chance": 6.0E-4
+      },
+      "loop": "thesift:ambient.singers_meadow.loop"
+    },
+    "minecraft:gameplay/creature_world_gen_spawn_probability": 0.03,
+    "minecraft:gameplay/natural_mob_spawns": {
+      "argument": {
+        "spawn_costs": {},
+        "spawns_by_category": {
+          "creature": [
+            {
+              "type": "thesift:blub",
+              "count": {
+                "type": "minecraft:uniform",
+                "max_inclusive": 5,
+                "min_inclusive": 2
+              },
+              "weight": 10
+            }
+          ]
+        }
+      },
+      "modifier": "overlay"
+    }
+  },
+  "carvers": [],
+  "downfall": 0.8,
+  "effects": {
+    "water_color": "#3fb8c8"
+  },
+  "features": [
+    [],
+    [
+      "thesift:pools_ichor_flats",
+      "thesift:ichor_pools_underground"
+    ],
+    [],
+    [],
+    [
+      "thesift:hymnstone_spires_ichor_flats"
+    ],
+    [],
+    [],
+    [],
+    [],
+    [
+      "thesift:trees_ichor_flats",
+      "thesift:grass_ichor_flats"
+    ]
+  ],
+  "has_precipitation": false,
+  "temperature": 0.7
+}

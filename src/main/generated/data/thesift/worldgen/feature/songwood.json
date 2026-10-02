@@ -10,10 +10,14 @@
     }
   ],
   "foliage_placer": {
-    "type": "minecraft:blob_foliage_placer",
-    "height": 3,
+    "type": "minecraft:cherry_foliage_placer",
+    "corner_hole_chance": 0.25,
+    "hanging_leaves_chance": 0.2,
+    "hanging_leaves_extension_chance": 0.33,
+    "height": 5,
     "offset": 0,
-    "radius": 3
+    "radius": 4,
+    "wide_bottom_layer_hole_chance": 0.25
   },
   "foliage_provider": {
     "id": "thesift:songwood_leaves",
@@ -29,10 +33,41 @@
     "upper_size": 2
   },
   "trunk_placer": {
-    "type": "minecraft:forking_trunk_placer",
-    "base_height": 6,
-    "height_rand_a": 3,
-    "height_rand_b": 2
+    "type": "minecraft:cherry_trunk_placer",
+    "base_height": 8,
+    "branch_count": {
+      "type": "minecraft:weighted_list",
+      "distribution": [
+        {
+          "data": 1,
+          "weight": 1
+        },
+        {
+          "data": 2,
+          "weight": 2
+        },
+        {
+          "data": 3,
+          "weight": 2
+        }
+      ]
+    },
+    "branch_end_offset_from_top": {
+      "type": "minecraft:uniform",
+      "max_inclusive": 1,
+      "min_inclusive": -1
+    },
+    "branch_horizontal_length": {
+      "type": "minecraft:uniform",
+      "max_inclusive": 5,
+      "min_inclusive": 2
+    },
+    "branch_start_offset_from_top": {
+      "max_inclusive": -3,
+      "min_inclusive": -5
+    },
+    "height_rand_a": 2,
+    "height_rand_b": 1
   },
   "trunk_provider": {
     "id": "thesift:songwood_log",

@@ -22,6 +22,9 @@ final class ModLanguageProvider extends FabricLanguageProvider {
 		builder.add("thesift.bed.no_sleep", "You can't sleep here: the Sift never goes quiet");
 		builder.add("thesift.bed.rested", "You rest a while; the Tide keeps turning");
 		builder.add("itemGroup.thesift", "The Sift");
+		builder.add("biome.thesift.singers_meadow", "Singer's Meadow");
+		builder.add("biome.thesift.ichor_flats", "Ichor Flats");
+		builder.add("biome.thesift.sift_hollows", "Sift Hollows");
 		builder.add(ModBlocks.HYMNSTONE, "Hymnstone");
 		builder.add(ModBlocks.HYMNSTONE_BRICKS, "Hymnstone Bricks");
 		builder.add(ModBlocks.HYMNSTONE_BRICK_STAIRS, "Hymnstone Brick Stairs");

@@ -10,11 +10,23 @@ import thesift.TheSift;
 /** Keys of the Sift's world-generation features (bootstrapped in datagen). */
 public final class SiftFeatures {
 	public static final ResourceKey<Feature> SONGWOOD_TREE = ResourceKey.create(Registries.FEATURE, TheSift.id("songwood"));
+	/** Owner playtest 2 (D-026): a tall songwood whose trunk scatters into many small canopies, as a big oak. */
+	public static final ResourceKey<Feature> TALL_SONGWOOD_TREE = ResourceKey.create(Registries.FEATURE, TheSift.id("tall_songwood"));
+	public static final ResourceKey<Feature> MEADOW_TREES = ResourceKey.create(Registries.FEATURE, TheSift.id("meadow_trees"));
+	public static final ResourceKey<Feature> ICHOR_FLATS_POOLS = ResourceKey.create(Registries.FEATURE, TheSift.id("ichor_flats_pools"));
+	public static final ResourceKey<PlacedFeature> TALL_SONGWOOD_CHECKED = ResourceKey.create(Registries.PLACED_FEATURE, TheSift.id("tall_songwood_checked"));
+	public static final ResourceKey<PlacedFeature> TREES_FLATS = ResourceKey.create(Registries.PLACED_FEATURE, TheSift.id("trees_ichor_flats"));
+	public static final ResourceKey<PlacedFeature> POOLS_FLATS = ResourceKey.create(Registries.PLACED_FEATURE, TheSift.id("pools_ichor_flats"));
+	public static final ResourceKey<PlacedFeature> PONDS_MEADOW = ResourceKey.create(Registries.PLACED_FEATURE, TheSift.id("ichor_ponds"));
+	public static final ResourceKey<PlacedFeature> SPIRES_FLATS = ResourceKey.create(Registries.PLACED_FEATURE, TheSift.id("hymnstone_spires_ichor_flats"));
+	public static final ResourceKey<PlacedFeature> GRASS_FLATS = ResourceKey.create(Registries.PLACED_FEATURE, TheSift.id("grass_ichor_flats"));
 	public static final ResourceKey<Feature> HEALTHY_SCULK_GRASS_PATCH = ResourceKey.create(Registries.FEATURE, TheSift.id("healthy_sculk_grass_patch"));
 	public static final ResourceKey<Feature> TIDE_BASIN = ResourceKey.create(Registries.FEATURE, TheSift.id("tide_basin"));
 	public static final ResourceKey<Feature> HYMNSTONE_SPIRE = ResourceKey.create(Registries.FEATURE, TheSift.id("hymnstone_spire"));
 	public static final ResourceKey<PlacedFeature> SPIRES_MEADOW = ResourceKey.create(Registries.PLACED_FEATURE, TheSift.id("hymnstone_spires_singers_meadow"));
 	public static final ResourceKey<Feature> ICHOR_POOL = ResourceKey.create(Registries.FEATURE, TheSift.id("ichor_pool"));
+	/** A surface pond: the lake feature with a sandy rim (owner playtest 2: "the max it should be is like a pond"). */
+	public static final ResourceKey<Feature> ICHOR_POND = ResourceKey.create(Registries.FEATURE, TheSift.id("ichor_pond"));
 	public static final ResourceKey<PlacedFeature> SONGWOOD_CHECKED = ResourceKey.create(Registries.PLACED_FEATURE, TheSift.id("songwood_checked"));
 	public static final ResourceKey<PlacedFeature> TREES_MEADOW = ResourceKey.create(Registries.PLACED_FEATURE, TheSift.id("trees_singers_meadow"));
 	public static final ResourceKey<PlacedFeature> LONE_TREES_MEADOW = ResourceKey.create(Registries.PLACED_FEATURE, TheSift.id("lone_trees_singers_meadow"));

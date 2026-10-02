@@ -1,6 +1,6 @@
 # STATUS (session 1, 2026-10-02)
-- **Phase / Milestone:** M1 done; the owner's playtest rework (`v0.1.1-alpha`) done; M2 "the hunt" in design.
-- **Autonomy:** **full-auto** (D-014). **The build to try:** https://github.com/Skisisksiskskskss/Trapisque/releases/tag/v0.1.1-alpha, the owner's playtest rework (D-024, D-025); steps in `docs/PLAYTEST.md` (top section). **Use a new world.** The previous build: https://github.com/Skisisksiskskskss/Trapisque/releases/tag/v0.1.0-alpha
+- **Phase / Milestone:** M1 done; the owner's playtest reworks (`v0.1.1-alpha`, `v0.1.2-alpha`) done; M2 "the hunt" in design.
+- **Autonomy:** **full-auto** (D-014). **The build to try:** https://github.com/Skisisksiskskskss/Trapisque/releases/tag/v0.1.2-alpha, the owner's second playtest rework (D-026); steps in `docs/PLAYTEST.md` (top section). **Use a new world.** The previous build: https://github.com/Skisisksiskskskss/Trapisque/releases/tag/v0.1.1-alpha
 - **Current WP:** WP-064, the M2 blocks' design (lumen, tidewrack, the Endure bloom, the chime bell flower). M2's designs so far are frozen with their BALANCE sections: WP-060 (the hunt system), WP-061 (the Nester), WP-062 (the Bloombud).
 - **Done this session:**
   - Phases 0–3 and M1 (WP-040..053).
@@ -11,12 +11,17 @@
     - new blocks Sift Soil and Songwood Drapes;
     - songwood trees reshaped into groves;
     - the Blub remodelled after the first look.
+  - The owner's second playtest rework (D-026):
+    - ichor: a soap bubble's sheen blended corner to corner, less see-through, buoyant and slower;
+    - no seas: Meadow ponds and the new Ichor Flats biome;
+    - two songwood shapes (forking and tall) placed by biome noise;
+    - a vanilla-grain texture pass.
 - **Next 3 actions:**
-  1. Answer the owner's notes on `v0.1.1-alpha` the moment they arrive.
+  1. Answer the owner's notes on `v0.1.2-alpha` the moment they arrive.
   2. WP-064: the M2 blocks' design doc and critique (the "Sift has no buds" constraint binds its flora).
   3. The M2 code: WP-063 (Hollows, glowcap pools), WP-066 (the hunt system), WP-067/068 (Nester, Bloombud).
 - **Build:** ✅ `./gradlew build` (with GameTests) · datagen no-diff ✅ · `check_bible.py` ✅ · `check_palette.py` ✅ (38 textures) · `check_lang.py` ✅
-- **Tests:** 70/70 server GameTests. The client GameTest walks the entry, the Tides, a basin and the blubs, and its landscape shots (`look_*`) compare the land with the teasers.
+- **Tests:** 71/71 server GameTests. The client GameTest walks the entry, the Tides, a basin and the blubs, and its landscape shots (`look_*`) compare the land with the teasers.
 - **Server boot:** ✅ (the GameTest dedicated server on every build).
 - **Blockers:** none. The Netlify site `magnificent-gelato-563c55` fails on every PR because of its own configuration (owner-side; see the PR comment).
 - **Awaiting owner:** nothing (full-auto). The playtest questions are in `docs/PLAYTEST.md`.

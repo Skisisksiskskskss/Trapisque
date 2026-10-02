@@ -1,11 +1,11 @@
 {
-  "feature": "thesift:songwood",
+  "feature": "thesift:meadow_trees",
   "placement": [
     {
-      "type": "minecraft:noise_threshold_count",
-      "above_noise": 4,
-      "below_noise": 0,
-      "noise_level": 0.25
+      "type": "minecraft:noise_based_count",
+      "noise_factor": 90.0,
+      "noise_offset": -0.3,
+      "noise_to_count_ratio": 5
     },
     {
       "type": "minecraft:in_square"
@@ -20,13 +20,6 @@
     },
     {
       "type": "minecraft:biome"
-    },
-    {
-      "type": "minecraft:block_predicate_filter",
-      "predicate": {
-        "type": "minecraft:would_survive",
-        "state": "thesift:songwood_sapling"
-      }
     }
   ]
 }

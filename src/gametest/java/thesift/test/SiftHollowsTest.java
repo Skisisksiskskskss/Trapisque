@@ -92,11 +92,12 @@ public final class SiftHollowsTest {
 								openVents += enclosed(level, vent, TideVentBlock.inner(state)) ? 0 : 1;
 								}
 							}
-							if ((x & 7) == 4 && (z & 7) == 4 && ground >= level.getSeaLevel() && ground - 50 > level.getMinY() + 8) {
+							if ((x & 7) == 4 && (z & 7) == 4 && chunk.getFluidState(p.set(x, ground + 1, z)).isEmpty() && ground - 50 > level.getMinY() + 8) {
 								int wx = chunk.getPos().getMinBlockX() + x;
 								int wz = chunk.getPos().getMinBlockZ() + z;
 								biomeChecks++;
-								boolean meadowAbove = level.getBiome(new BlockPos(wx, ground + 1, wz)).is(SiftKeys.SINGERS_MEADOW);
+								boolean meadowAbove = level.getBiome(new BlockPos(wx, ground + 1, wz)).is(SiftKeys.SINGERS_MEADOW)
+										|| level.getBiome(new BlockPos(wx, ground + 1, wz)).is(SiftKeys.ICHOR_FLATS);
 								boolean hollowsBelow = level.getBiome(new BlockPos(wx, ground - 50, wz)).is(SiftKeys.SIFT_HOLLOWS);
 								meadowRight += meadowAbove ? 1 : 0;
 								hollowsRight += hollowsBelow ? 1 : 0;
@@ -117,7 +118,7 @@ public final class SiftHollowsTest {
 		helper.assertTrue(near < 10.0, "the Meadow's skin holds; only entrances open it: " + fmt(near) + "% open in the top " + HOLLOWS_DEPTH_BLOCKS);
 		helper.assertTrue(soil > 15.0 && soil < 75.0, "cave floors are hymnstone with patches of soil: " + fmt(soil) + "% soil");
 		// An entrance pit puts its own floor in the Hollows, so a few columns read otherwise.
-		helper.assertTrue(meadowRight >= biomeChecks * 0.9, "on dry land the Meadow is the surface: " + meadowRight + "/" + biomeChecks);
+		helper.assertTrue(meadowRight >= biomeChecks * 0.9, "on dry land the Meadow or the Ichor Flats is the surface: " + meadowRight + "/" + biomeChecks);
 		// Depth is measured from vanilla's smooth offset surface: under a peak the real ground stands
 		// well above it, and the Hollows begin deeper than 50 blocks down.
 		helper.assertTrue(hollowsRight >= biomeChecks * 0.7, "the Hollows lie 50 blocks under most dry land: " + hollowsRight + "/" + biomeChecks);
@@ -224,10 +225,26 @@ public final class SiftHollowsTest {
 			}
 		}
 		TheSift.LOGGER.info("Sift map, {} x {} blocks: {}% under ichor", mapSize, mapSize, fmt(100.0 * wet / (mapSize * mapSize)));
+		// The surface biomes over a wide area, from the biome source alone (no chunks generated): one
+		// pixel per 32 blocks, at y 80.
+		int span = 192;
+		BufferedImage biomes = new BufferedImage(span, span, BufferedImage.TYPE_INT_RGB);
+		var resolver = level.getChunkSource().getGenerator().getBiomeSource().createUncachedResolver(level.getChunkSource().randomState());
+		int flats = 0;
+		for (int i = 0; i < span; i++) {
+			for (int j = 0; j < span; j++) {
+				var biome = resolver.getNoiseBiome((x0 >> 2) + (i - span / 2) * 8, 20, (z0 >> 2) + (j - span / 2) * 8);
+				boolean isFlats = biome.is(SiftKeys.ICHOR_FLATS);
+				flats += isFlats ? 1 : 0;
+				biomes.setRGB(i, j, isFlats ? 0x3ABCCB : biome.is(SiftKeys.SIFT_HOLLOWS) ? 0x101018 : 0xF27B86);
+			}
+		}
+		TheSift.LOGGER.info("Biome map, {} x {} blocks around ({}, {}): {}% Ichor Flats at y 80", span * 32, span * 32, x0, z0, fmt(100.0 * flats / (span * span)));
 		try {
 			ImageIO.write(side, "png", Path.of("hollows_side.png").toFile());
 			ImageIO.write(plan, "png", Path.of("hollows_y20.png").toFile());
 			ImageIO.write(map, "png", Path.of("sift_map.png").toFile());
+			ImageIO.write(biomes, "png", Path.of("biome_map.png").toFile());
 		} catch (IOException e) {
 			TheSift.LOGGER.warn("Couldn't write the Hollows slices", e);
 		}

@@ -231,7 +231,7 @@ public final class SiftPreviewClientTest implements FabricClientGameTest {
 	private static void lookShots(ClientGameTestContext context, TestSingleplayerContext world) {
 		world.getServer().runCommand("execute in thesift:the_sift run time of thesift:tides set thesift:thrive");
 		double[][] views = world.getServer().computeOnServer(server -> lookViews(server.getLevel(SiftKeys.LEVEL)));
-		String[] names = {"look_spire", "look_shore", "look_meadow", "look_overview"};
+		String[] names = {"look_spire", "look_shore", "look_meadow", "look_overview", "look_flats", "look_wood", "look_ichor"};
 		for (int i = 0; i < views.length; i++) {
 			double[] v = views[i];
 			if (v == null) {
@@ -266,22 +266,23 @@ public final class SiftPreviewClientTest implements FabricClientGameTest {
 		}
 	}
 
-	/** Camera views {x, y, z, yaw, pitch} for a spire, a shore, a meadow and an overview (null if none found). */
+	/**
+	 * Camera views {x, y, z, yaw, pitch} for a spire, a pond's shore, a meadow, an overview, the Ichor
+	 * Flats, a wood and a close look at ichor (null if none found).
+	 */
 	private static double[][] lookViews(ServerLevel level) {
 		int cx0 = 40;
 		int cz0 = 40;
-		for (int cx = cx0 - 8; cx <= cx0 + 8; cx++) {
-			for (int cz = cz0 - 8; cz <= cz0 + 8; cz++) {
-				level.getChunk(cx, cz);
-			}
-		}
+		load(level, cx0, cz0, 8);
 		int x0 = cx0 << 4;
 		int z0 = cz0 << 4;
 		double[] spire = null;
 		double[] shore = null;
 		double[] meadow = null;
-		int sea = level.getSeaLevel();
-		for (int dx = -100; dx <= 100 && (spire == null || shore == null || meadow == null); dx += 3) {
+		double[] wood = null;
+		double[] close = null;
+		int bestLeaves = 0;
+		for (int dx = -100; dx <= 100; dx += 3) {
 			for (int dz = -100; dz <= 100; dz += 3) {
 				int x = x0 + dx;
 				int z = z0 + dz;
@@ -290,27 +291,82 @@ public final class SiftPreviewClientTest implements FabricClientGameTest {
 				if (spire == null && h - around(level, x, z, 7) >= 14 && (top.is(ModBlocks.HEALTHY_SCULK) || top.is(ModBlocks.HYMNSTONE))) {
 					double gx = x + 26;
 					double gz = z + 12;
-					// Above any canopy, in open air, on dry land.
+					// Above any canopy, in open air.
 					int gh = level.getHeight(Heightmap.Types.MOTION_BLOCKING, (int) gx, (int) gz);
-					if (gh > sea && level.getBlockState(new BlockPos((int) gx, gh + 1, (int) gz)).isAir()) {
+					if (level.getBlockState(new BlockPos((int) gx, gh + 1, (int) gz)).isAir()) {
 						spire = aim(gx, gh + 2.0, gz, x, h - 6, z);
 					}
 				}
-				if (shore == null && top.is(ModBlocks.ICHOR)) {
-					int lx = x + 14;
-					int lh = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, lx, z);
-					if (lh > sea + 1 && level.getBlockState(new BlockPos(lx, lh - 1, z)).is(ModBlocks.HEALTHY_SCULK)) {
-						shore = aim(lx, lh + 2.5, z, x - 20, sea, z);
+				if (top.is(ModBlocks.ICHOR)) {
+					if (shore == null) {
+						int lx = x + 12;
+						int lh = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, lx, z);
+						if (level.getBlockState(new BlockPos(lx, lh - 1, z)).is(ModBlocks.HEALTHY_SCULK)) {
+							shore = aim(lx, lh + 2.5, z, x - 4, h - 1, z);
+						}
+					}
+					if (close == null) {
+						close = new double[] {x + 0.5, h + 2.2, z - 1.5, 0.0, 55.0};
 					}
 				}
-				if (meadow == null && top.is(ModBlocks.HEALTHY_SCULK) && h > sea + 3 && Math.abs(h - around(level, x, z, 12)) <= 2) {
+				if (meadow == null && top.is(ModBlocks.HEALTHY_SCULK) && Math.abs(h - around(level, x, z, 12)) <= 2) {
 					meadow = new double[] {x + 0.5, h + 0.4, z + 0.5, 225.0, -4.0};
+				}
+				int leaves = leavesAround(level, x, z);
+				if (leaves > bestLeaves) {
+					bestLeaves = leaves;
+					wood = aim(x - 18, h + 4.0, z - 18, x, h + 3, z);
 				}
 			}
 		}
 		int high = level.getHeight(Heightmap.Types.MOTION_BLOCKING, x0, z0) + 45;
 		double[] overview = new double[] {x0, high, z0, 135.0, 32.0};
-		return new double[][] {spire, shore, meadow, overview};
+		return new double[][] {spire, shore, meadow, overview, flatsView(level, x0, z0), wood, close};
+	}
+
+	/** A view over the nearest Ichor Flats: from 14 blocks off and 7 up, at a pool. */
+	private static double[] flatsView(ServerLevel level, int x0, int z0) {
+		var found = level.findClosestBiome3d(biome -> biome.is(SiftKeys.ICHOR_FLATS), new BlockPos(x0, 80, z0), 3000, 32, 64);
+		if (found == null) {
+			return null;
+		}
+		BlockPos at = found.getFirst();
+		load(level, at.getX() >> 4, at.getZ() >> 4, 4);
+		for (int r = 0; r <= 48; r += 2) {
+			for (int dx = -r; dx <= r; dx += 2) {
+				for (int dz : new int[] {-r, r}) {
+					int x = at.getX() + dx;
+					int z = at.getZ() + dz;
+					int h = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
+					if (level.getBlockState(new BlockPos(x, h - 1, z)).is(ModBlocks.ICHOR)) {
+						int cx = x + 14;
+						int ch = Math.max(h, level.getHeight(Heightmap.Types.MOTION_BLOCKING, cx, z + 6));
+						return aim(cx, ch + 7.0, z + 6, x, h - 1, z);
+					}
+				}
+			}
+		}
+		return null;
+	}
+
+	private static void load(ServerLevel level, int cx0, int cz0, int r) {
+		for (int cx = cx0 - r; cx <= cx0 + r; cx++) {
+			for (int cz = cz0 - r; cz <= cz0 + r; cz++) {
+				level.getChunk(cx, cz);
+			}
+		}
+	}
+
+	/** How many columns within 8 blocks are topped by songwood leaves (a wood's density). */
+	private static int leavesAround(ServerLevel level, int x, int z) {
+		int n = 0;
+		for (int dx = -8; dx <= 8; dx += 4) {
+			for (int dz = -8; dz <= 8; dz += 4) {
+				int h = level.getHeight(Heightmap.Types.MOTION_BLOCKING, x + dx, z + dz);
+				n += level.getBlockState(new BlockPos(x + dx, h - 1, z + dz)).is(ModBlocks.SONGWOOD_LEAVES) ? 1 : 0;
+			}
+		}
+		return n;
 	}
 
 	/** The mean ground height on a ring of radius r around a column. */

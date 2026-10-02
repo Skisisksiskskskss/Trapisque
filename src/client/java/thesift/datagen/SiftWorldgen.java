@@ -1,63 +1,37 @@
 package thesift.datagen;
 
-import thesift.registry.ModEntities;
-import thesift.registry.ModSounds;
-import net.minecraft.world.attribute.AmbientAdditionsSettings;
-import net.minecraft.world.attribute.AmbientSounds;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.tags.BlockTags;
-import net.minecraft.world.level.levelgen.Heightmap;
-import net.minecraft.world.level.levelgen.VerticalAnchor;
-import net.minecraft.world.level.levelgen.feature.LakeFeature;
-import net.minecraft.world.level.levelgen.heightproviders.UniformHeight;
-import net.minecraft.world.level.levelgen.placement.EnvironmentScanPlacement;
-import net.minecraft.world.level.levelgen.placement.HeightRangePlacement;
-import net.minecraft.world.level.levelgen.placement.RarityFilter;
-import net.minecraft.world.level.levelgen.placement.SurfaceRelativeThresholdFilter;
-import net.minecraft.world.level.levelgen.placement.SurfaceWaterDepthFilter;
-import thesift.world.feature.DrapesDecorator;
-import thesift.world.feature.HymnstoneSpireFeature;
-import thesift.world.feature.TideBasinFeature;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 
-import net.minecraft.core.HolderGetter;
+import com.mojang.datafixers.util.Pair;
+
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
-import net.minecraft.data.worldgen.BlockStateProviders;
-import net.minecraft.data.worldgen.placement.PlacementUtils;
-import net.minecraft.util.random.WeightedList;
-import net.minecraft.util.valueproviders.ConstantInt;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.levelgen.GenerationStep;
-import net.minecraft.world.level.levelgen.blockpredicates.BlockPredicate;
-import net.minecraft.world.level.levelgen.feature.Feature;
-import net.minecraft.world.level.levelgen.feature.SimpleBlockFeature;
-import net.minecraft.world.level.levelgen.feature.TreeFeature;
-import net.minecraft.world.level.levelgen.feature.featuresize.TwoLayersFeatureSize;
-import net.minecraft.world.level.levelgen.feature.foliageplacers.BlobFoliagePlacer;
-import net.minecraft.world.level.levelgen.feature.stateproviders.BlockStateProvider;
-import net.minecraft.world.level.levelgen.feature.stateproviders.WeightedStateProvider;
-import net.minecraft.world.level.levelgen.feature.trunkplacers.ForkingTrunkPlacer;
-import net.minecraft.world.level.levelgen.placement.BiomeFilter;
-import net.minecraft.world.level.levelgen.placement.BlockPredicateFilter;
-import net.minecraft.world.level.levelgen.placement.CountPlacement;
-import net.minecraft.world.level.levelgen.placement.InSquarePlacement;
-import net.minecraft.world.level.levelgen.placement.NoiseThresholdCountPlacement;
-import net.minecraft.world.level.levelgen.placement.OffsetPlacement;
-import net.minecraft.world.level.levelgen.placement.PlacedFeature;
+import net.minecraft.core.HolderGetter;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.data.worldgen.BlockStateProviders;
 import net.minecraft.data.worldgen.BootstrapContext;
 import net.minecraft.data.worldgen.material.VanillaMaterialConditions;
 import net.minecraft.data.worldgen.material.VanillaMaterialRules;
+import net.minecraft.data.worldgen.placement.PlacementUtils;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.util.ARGB;
 import net.minecraft.util.EasingType;
 import net.minecraft.util.TriState;
+import net.minecraft.util.random.WeightedList;
+import net.minecraft.util.valueproviders.ConstantInt;
+import net.minecraft.util.valueproviders.IntProvider;
 import net.minecraft.util.valueproviders.UniformInt;
+import net.minecraft.util.valueproviders.WeightedListInt;
+import net.minecraft.world.attribute.AmbientAdditionsSettings;
 import net.minecraft.world.attribute.AmbientParticle;
+import net.minecraft.world.attribute.AmbientSounds;
 import net.minecraft.world.attribute.BedRule;
 import net.minecraft.world.attribute.EnvironmentAttributeMap;
 import net.minecraft.world.attribute.EnvironmentAttributes;
@@ -66,34 +40,69 @@ import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeGenerationSettings;
 import net.minecraft.world.level.biome.BiomeSpecialEffects;
 import net.minecraft.world.level.biome.Climate;
-import net.minecraft.world.level.biome.MultiNoiseBiomeSource;
-import com.mojang.datafixers.util.Pair;
-import net.minecraft.world.level.levelgen.NoiseRouterData;
-import net.minecraft.world.level.levelgen.OverworldFunctionSet;
-import net.minecraft.resources.ResourceKey;
-import thesift.TheSift;
 import net.minecraft.world.level.biome.MobSpawnSettings;
+import net.minecraft.world.level.biome.MultiNoiseBiomeSource;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.dimension.LevelStem;
+import net.minecraft.world.level.levelgen.GenerationStep;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
 import net.minecraft.world.level.levelgen.NoiseGeneratorSettings;
+import net.minecraft.world.level.levelgen.NoiseRouterData;
 import net.minecraft.world.level.levelgen.NoiseSettings;
 import net.minecraft.world.level.levelgen.Noises;
+import net.minecraft.world.level.levelgen.OverworldFunctionSet;
+import net.minecraft.world.level.levelgen.VerticalAnchor;
+import net.minecraft.world.level.levelgen.blockpredicates.BlockPredicate;
 import net.minecraft.world.level.levelgen.densityfunction.DensityFunction;
 import net.minecraft.world.level.levelgen.densityfunction.DensityFunctions;
+import net.minecraft.world.level.levelgen.feature.Feature;
+import net.minecraft.world.level.levelgen.feature.LakeFeature;
+import net.minecraft.world.level.levelgen.feature.SimpleBlockFeature;
+import net.minecraft.world.level.levelgen.feature.TreeFeature;
+import net.minecraft.world.level.levelgen.feature.WeightedRandomSelectorFeature;
+import net.minecraft.world.level.levelgen.feature.featuresize.TwoLayersFeatureSize;
+import net.minecraft.world.level.levelgen.feature.foliageplacers.CherryFoliagePlacer;
+import net.minecraft.world.level.levelgen.feature.foliageplacers.FancyFoliagePlacer;
+import net.minecraft.world.level.levelgen.feature.stateproviders.BlockStateProvider;
+import net.minecraft.world.level.levelgen.feature.stateproviders.WeightedStateProvider;
+import net.minecraft.world.level.levelgen.feature.trunkplacers.CherryTrunkPlacer;
+import net.minecraft.world.level.levelgen.feature.trunkplacers.FancyTrunkPlacer;
+import net.minecraft.world.level.levelgen.heightproviders.UniformHeight;
 import net.minecraft.world.level.levelgen.material.MaterialRules;
 import net.minecraft.world.level.levelgen.material.condition.MaterialCondition;
 import net.minecraft.world.level.levelgen.material.rule.MaterialRule;
+import net.minecraft.world.level.levelgen.placement.BiomeFilter;
+import net.minecraft.world.level.levelgen.placement.BlockPredicateFilter;
+import net.minecraft.world.level.levelgen.placement.CountPlacement;
+import net.minecraft.world.level.levelgen.placement.EnvironmentScanPlacement;
+import net.minecraft.world.level.levelgen.placement.HeightRangePlacement;
+import net.minecraft.world.level.levelgen.placement.InSquarePlacement;
+import net.minecraft.world.level.levelgen.placement.NoiseBasedCountPlacement;
+import net.minecraft.world.level.levelgen.placement.NoiseThresholdCountPlacement;
+import net.minecraft.world.level.levelgen.placement.OffsetPlacement;
+import net.minecraft.world.level.levelgen.placement.PlacedFeature;
+import net.minecraft.world.level.levelgen.placement.RarityFilter;
+import net.minecraft.world.level.levelgen.placement.SurfaceRelativeThresholdFilter;
+import net.minecraft.world.level.levelgen.placement.SurfaceWaterDepthFilter;
 import net.minecraft.world.level.levelgen.synth.NormalNoise;
 import net.minecraft.world.timeline.Timeline;
 
+import thesift.TheSift;
 import thesift.registry.ModAttributes;
 import thesift.registry.ModBlocks;
+import thesift.registry.ModEntities;
 import thesift.registry.ModParticles;
+import thesift.registry.ModSounds;
 import thesift.world.SiftFeatures;
 import thesift.world.SiftKeys;
 import thesift.world.Tide;
+import thesift.world.feature.DrapesDecorator;
+import thesift.world.feature.HymnstoneSpireFeature;
+import thesift.world.feature.IchorFlatsFeature;
+import thesift.world.feature.TideBasinFeature;
 
 /**
  * Bootstraps for the Sift's data-driven registries (D-019): the Tide clock and timeline (rules.md,
@@ -118,7 +127,15 @@ final class SiftWorldgen {
 	private static final int MID_RISING = (RISING + ENDURE) / 2;
 	private static final int MID_FALLING = (FALLING + Tide.PERIOD_TICKS) / 2;
 
-	static final int SEA_LEVEL = 63;
+	/**
+	 * No sea (owner playtest 2, D-026): "the max it should be is like a pond". With the sea level at the
+	 * world's floor no ocean or river fills; the Sift's ichor is ponds, the Ichor Flats' pools, tide
+	 * basins and the aquifers' cave pools.
+	 */
+	static final int SEA_LEVEL = -64;
+	/** The Ichor Flats: wet lowlands where vegetation (humidity) is high and erosion flattens the land. */
+	private static final float FLATS_HUMIDITY = 0.15F;
+	private static final float FLATS_EROSION = -0.2F;
 	/** Added to vanilla's continentalness: oceans become lakes and inland seas, the rest is land. */
 	private static final float CONTINENTS_SHIFT = 0.3F;
 	/** The biome source's depth (vanilla's: 0 at the surface) at which the Hollows begin, as caves biomes. */
@@ -306,7 +323,7 @@ final class SiftWorldgen {
 		context.register(SiftKeys.NOISE, new NoiseGeneratorSettings(
 				NoiseSettings.create(-64, 384), // the Overworld's: y -64 to 320
 				ModBlocks.HYMNSTONE.defaultBlockState(),
-				ModBlocks.ICHOR.defaultBlockState(), // the Sift's water fills its seas, lakes and rivers (D-024)
+				ModBlocks.ICHOR.defaultBlockState(), // the Sift's water, in the aquifers' cave pools (D-024, D-026)
 				NoiseRouterData.overworld(functions, SIFT_FUNCTIONS),
 				context.lookup(Registries.MATERIAL_RULE).getOrThrow(SiftKeys.MATERIAL_RULE),
 				List.of(),
@@ -323,6 +340,7 @@ final class SiftWorldgen {
 		// Underground pools before basins, so a basin sees any pool that would open its wall and moves
 		// on (the surface pools went with D-025: the Sift has lakes and rivers now).
 		generation.addFeature(GenerationStep.Decoration.LAKES, SiftFeatures.ICHOR_POOLS_UNDERGROUND);
+		generation.addFeature(GenerationStep.Decoration.LAKES, SiftFeatures.PONDS_MEADOW);
 		generation.addFeature(GenerationStep.Decoration.LAKES, SiftFeatures.TIDE_BASINS_MEADOW);
 		generation.addFeature(GenerationStep.Decoration.SURFACE_STRUCTURES, SiftFeatures.SPIRES_MEADOW);
 		generation.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.TREES_MEADOW);
@@ -344,6 +362,28 @@ final class SiftWorldgen {
 				.mobSpawnSettings(new MobSpawnSettings.Builder().addSpawn(ModEntities.BLUB, 10, 2, 5).build())
 				.generationSettings(generation.build())
 				.build());
+		// The Ichor Flats (owner playtest 2, D-026): the Meadow's wet lowlands, where shallow, blotchy
+		// ichor lies among the grass as a mangrove swamp's water lies among its roots, with more trees
+		// and fewer spires. No tide basins: the flats are already wet.
+		BiomeGenerationSettings.Builder flats = new BiomeGenerationSettings.Builder(placed, context.lookup(Registries.CARVER));
+		flats.addFeature(GenerationStep.Decoration.LAKES, SiftFeatures.POOLS_FLATS);
+		flats.addFeature(GenerationStep.Decoration.LAKES, SiftFeatures.ICHOR_POOLS_UNDERGROUND);
+		flats.addFeature(GenerationStep.Decoration.SURFACE_STRUCTURES, SiftFeatures.SPIRES_FLATS);
+		flats.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.TREES_FLATS);
+		flats.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.GRASS_FLATS);
+		context.register(SiftKeys.ICHOR_FLATS, new Biome.BiomeBuilder()
+				.hasPrecipitation(false)
+				.temperature(0.7F)
+				.downfall(0.8F)
+				.specialEffects(new BiomeSpecialEffects.Builder().waterColor(0x3FB8C8).build())
+				.setAttribute(EnvironmentAttributes.AMBIENT_SOUNDS, new AmbientSounds(
+						Optional.of(ModSounds.MEADOW_LOOP),
+						Optional.empty(),
+						List.of(new AmbientAdditionsSettings(ModSounds.MEADOW_MOOD, 0.0006))))
+				.setAttribute(EnvironmentAttributes.CREATURE_WORLD_GEN_SPAWN_PROBABILITY, 0.03F)
+				.mobSpawnSettings(new MobSpawnSettings.Builder().addSpawn(ModEntities.BLUB, 10, 2, 5).build())
+				.generationSettings(flats.build())
+				.build());
 		// The Hollows: dark hymnstone caverns with ichor pools on their floors. No creatures; its hunters
 		// and its drips-and-echoes ambience come with the rest of M2 (WP-064, WP-070).
 		BiomeGenerationSettings.Builder hollows = new BiomeGenerationSettings.Builder(placed, context.lookup(Registries.CARVER));
@@ -361,18 +401,42 @@ final class SiftWorldgen {
 	@SuppressWarnings("deprecation") // LakeFeature: deprecated, yet still what vanilla's lava lakes use in 26.3
 	static void features(BootstrapContext<Feature> context) {
 		HolderGetter<BlockStateProvider> providers = context.lookup(Registries.BLOCK_STATE_PROVIDER);
-		// Songwood, after the teasers' trees (owner rework): a tall dark trunk that forks into big,
-		// cloud-like canopies of pale leaves, with drapes hanging from their undersides.
+		// Songwood, after the teasers' trees (owner playtest 2, D-026: "more complex shapes and
+		// canopies"): a tall dark trunk that branches into one to three rounded canopies of pale leaves,
+		// as a cherry tree branches, with drapes hanging from their undersides.
+		Holder<BlockStateProvider> soil = Holder.direct(BlockStateProvider.of(ModBlocks.SIFT_SOIL));
 		context.register(SiftFeatures.SONGWOOD_TREE, new TreeFeature.Builder(
 				BlockStateProvider.of(ModBlocks.SONGWOOD_LOG),
-				new ForkingTrunkPlacer(6, 3, 2),
+				new CherryTrunkPlacer(8, 2, 1,
+						new WeightedListInt(WeightedList.<IntProvider>builder().add(ConstantInt.of(1), 1).add(ConstantInt.of(2), 2).add(ConstantInt.of(3), 2).build()),
+						UniformInt.of(2, 5),
+						UniformInt.of(-5, -3),
+						UniformInt.of(-1, 1)),
 				BlockStateProvider.of(ModBlocks.SONGWOOD_LEAVES),
-				new BlobFoliagePlacer(ConstantInt.of(3), ConstantInt.of(0), 3),
+				new CherryFoliagePlacer(ConstantInt.of(4), ConstantInt.of(0), ConstantInt.of(5), 0.25F, 0.5F, 0.2F, 0.33F),
 				new TwoLayersFeatureSize(1, 0, 2),
-				Holder.direct(BlockStateProvider.of(ModBlocks.SIFT_SOIL)))
+				soil)
 				.decorators(List.of(new DrapesDecorator(0.3F)))
 				.ignoreVines()
 				.build());
+		// And the tall kind: a trunk that scatters into many small canopies on its branches, as a big
+		// oak does, so a grove has more than one silhouette.
+		context.register(SiftFeatures.TALL_SONGWOOD_TREE, new TreeFeature.Builder(
+				BlockStateProvider.of(ModBlocks.SONGWOOD_LOG),
+				new FancyTrunkPlacer(9, 7, 0),
+				BlockStateProvider.of(ModBlocks.SONGWOOD_LEAVES),
+				new FancyFoliagePlacer(ConstantInt.of(2), ConstantInt.of(4), 4),
+				new TwoLayersFeatureSize(0, 0, 0, OptionalInt.of(4)),
+				soil)
+				.decorators(List.of(new DrapesDecorator(0.25F)))
+				.ignoreVines()
+				.build());
+		HolderGetter<PlacedFeature> placed = context.lookup(Registries.PLACED_FEATURE);
+		context.register(SiftFeatures.MEADOW_TREES, new WeightedRandomSelectorFeature(WeightedList.<Holder<PlacedFeature>>builder()
+				.add(placed.getOrThrow(SiftFeatures.SONGWOOD_CHECKED), 3)
+				.add(placed.getOrThrow(SiftFeatures.TALL_SONGWOOD_CHECKED), 2)
+				.build()));
+		context.register(SiftFeatures.ICHOR_FLATS_POOLS, IchorFlatsFeature.INSTANCE);
 		context.register(SiftFeatures.HEALTHY_SCULK_GRASS_PATCH, new SimpleBlockFeature(new WeightedStateProvider(
 				WeightedList.<BlockState>builder()
 						.add(ModBlocks.HEALTHY_SCULK_GRASS.defaultBlockState(), 3)
@@ -380,6 +444,13 @@ final class SiftWorldgen {
 						.build())));
 		context.register(SiftFeatures.TIDE_BASIN, TideBasinFeature.INSTANCE);
 		context.register(SiftFeatures.HYMNSTONE_SPIRE, HymnstoneSpireFeature.INSTANCE);
+		// Ponds on the surface (D-026): the same lake with a rim of tide sand where its walls are open.
+		context.register(SiftFeatures.ICHOR_POND, new LakeFeature(
+				BlockStateProvider.holderOf(ModBlocks.ICHOR),
+				BlockStateProvider.holderOf(ModBlocks.TIDE_SAND),
+				BlockPredicate.alwaysTrue(),
+				BlockPredicate.not(BlockPredicate.matchesTag(BlockTags.FEATURES_CANNOT_REPLACE)),
+				BlockPredicate.not(BlockPredicate.matchesTag(BlockTags.LAVA_POOL_STONE_CANNOT_REPLACE))));
 		// Static pools that don't follow the tide: vanilla's lava lake with ichor in hymnstone.
 		context.register(SiftFeatures.ICHOR_POOL, new LakeFeature(
 				BlockStateProvider.holderOf(ModBlocks.ICHOR),
@@ -393,35 +464,51 @@ final class SiftWorldgen {
 		HolderGetter<Feature> features = context.lookup(Registries.FEATURE);
 		Holder<Feature> tree = features.getOrThrow(SiftFeatures.SONGWOOD_TREE);
 		PlacementUtils.register(context, SiftFeatures.SONGWOOD_CHECKED, tree, PlacementUtils.filteredByBlockSurvival(ModBlocks.SONGWOOD_SAPLING));
-		// Groves and open meadow (owner rework, after the first look's open grass and trees on a rise):
-		// where the noise is high a chunk holds 4 trees, elsewhere none. Vanilla's treePlacement: never
-		// under ichor (D-024).
-		PlacementUtils.register(context, SiftFeatures.TREES_MEADOW, tree,
-				NoiseThresholdCountPlacement.of(0.25, 0, 4),
+		PlacementUtils.register(context, SiftFeatures.TALL_SONGWOOD_CHECKED, features.getOrThrow(SiftFeatures.TALL_SONGWOOD_TREE),
+				PlacementUtils.filteredByBlockSurvival(ModBlocks.SONGWOOD_SAPLING));
+		Holder<Feature> trees = features.getOrThrow(SiftFeatures.MEADOW_TREES);
+		// Woods that thicken and thin out across the land (owner playtest 2: the groves looked
+		// synthetic): vanilla's flower noise sets each chunk's count, 0 to 5, so a wood fades into
+		// open meadow instead of stopping at a hard edge. Never under ichor (D-024).
+		PlacementUtils.register(context, SiftFeatures.TREES_MEADOW, trees,
+				NoiseBasedCountPlacement.of(5, 90.0, -0.3),
 				InSquarePlacement.spread(),
 				SurfaceWaterDepthFilter.forMaxDepth(0),
 				PlacementUtils.HEIGHTMAP_OCEAN_FLOOR,
-				BiomeFilter.biome(),
-				BlockPredicateFilter.forPredicate(BlockPredicate.wouldSurvive(ModBlocks.SONGWOOD_SAPLING)));
+				BiomeFilter.biome());
+		// The flats are wooded more evenly, with trees standing among the pools.
+		PlacementUtils.register(context, SiftFeatures.TREES_FLATS, trees,
+				NoiseBasedCountPlacement.of(4, 60.0, 0.4),
+				InSquarePlacement.spread(),
+				SurfaceWaterDepthFilter.forMaxDepth(0),
+				PlacementUtils.HEIGHTMAP_OCEAN_FLOOR,
+				BiomeFilter.biome());
 		// And now and then a lone tree out on the open grass.
-		PlacementUtils.register(context, SiftFeatures.LONE_TREES_MEADOW, tree,
+		PlacementUtils.register(context, SiftFeatures.LONE_TREES_MEADOW, trees,
 				RarityFilter.onAverageOnceEvery(6),
 				InSquarePlacement.spread(),
 				SurfaceWaterDepthFilter.forMaxDepth(0),
 				PlacementUtils.HEIGHTMAP_OCEAN_FLOOR,
 				BiomeFilter.biome(),
 				BlockPredicateFilter.forPredicate(BlockPredicate.wouldSurvive(ModBlocks.SONGWOOD_SAPLING)));
-		PlacementUtils.register(context, SiftFeatures.GRASS_MEADOW, features.getOrThrow(SiftFeatures.HEALTHY_SCULK_GRASS_PATCH),
-				NoiseThresholdCountPlacement.of(-0.8, 5, 10),
-				InSquarePlacement.spread(),
-				PlacementUtils.HEIGHTMAP_WORLD_SURFACE,
-				BiomeFilter.biome(),
-				CountPlacement.of(32),
-				OffsetPlacement.ofTriangle(7, 3),
-				BlockPredicateFilter.forPredicate(BlockPredicate.ONLY_IN_AIR_PREDICATE));
+		for (ResourceKey<PlacedFeature> grass : List.of(SiftFeatures.GRASS_MEADOW, SiftFeatures.GRASS_FLATS)) {
+			PlacementUtils.register(context, grass, features.getOrThrow(SiftFeatures.HEALTHY_SCULK_GRASS_PATCH),
+					NoiseThresholdCountPlacement.of(-0.8, 5, 10),
+					InSquarePlacement.spread(),
+					PlacementUtils.HEIGHTMAP_WORLD_SURFACE,
+					BiomeFilter.biome(),
+					CountPlacement.of(32),
+					OffsetPlacement.ofTriangle(7, 3),
+					BlockPredicateFilter.forPredicate(BlockPredicate.ONLY_IN_AIR_PREDICATE));
+		}
 		// The teasers' rose spires: about one in five chunks, on the grass.
 		PlacementUtils.register(context, SiftFeatures.SPIRES_MEADOW, features.getOrThrow(SiftFeatures.HYMNSTONE_SPIRE),
 				RarityFilter.onAverageOnceEvery(5),
+				InSquarePlacement.spread(),
+				PlacementUtils.HEIGHTMAP,
+				BiomeFilter.biome());
+		PlacementUtils.register(context, SiftFeatures.SPIRES_FLATS, features.getOrThrow(SiftFeatures.HYMNSTONE_SPIRE),
+				RarityFilter.onAverageOnceEvery(14),
 				InSquarePlacement.spread(),
 				PlacementUtils.HEIGHTMAP,
 				BiomeFilter.biome());
@@ -430,11 +517,22 @@ final class SiftWorldgen {
 
 	static void placedBasinsAndPools(BootstrapContext<PlacedFeature> context) {
 		HolderGetter<Feature> features = context.lookup(Registries.FEATURE);
-		// One chance in two per chunk; the feature itself keeps only dry lows (lakes and rivers take the rest).
-		// At the surface before the biome check: underground is the Hollows (WP-063).
+		// One chance in five per chunk (owner playtest 2: more made a grid); the feature itself keeps only
+		// dry lows. At the surface before the biome check: underground is the Hollows (WP-063).
 		PlacementUtils.register(context, SiftFeatures.TIDE_BASINS_MEADOW, features.getOrThrow(SiftFeatures.TIDE_BASIN),
-				RarityFilter.onAverageOnceEvery(2),
+				RarityFilter.onAverageOnceEvery(5),
 				PlacementUtils.HEIGHTMAP_OCEAN_FLOOR,
+				BiomeFilter.biome());
+		// Ponds (D-026): about one chunk in six, at the surface.
+		PlacementUtils.register(context, SiftFeatures.PONDS_MEADOW, features.getOrThrow(SiftFeatures.ICHOR_POND),
+				RarityFilter.onAverageOnceEvery(6),
+				InSquarePlacement.spread(),
+				PlacementUtils.HEIGHTMAP_WORLD_SURFACE,
+				BiomeFilter.biome());
+		// The flats' pools: one pass per chunk, from its corner's surface (the biome check needs the
+		// surface: underground is the Hollows); the feature checks each column's biome itself.
+		PlacementUtils.register(context, SiftFeatures.POOLS_FLATS, features.getOrThrow(SiftFeatures.ICHOR_FLATS_POOLS),
+				PlacementUtils.HEIGHTMAP_WORLD_SURFACE,
 				BiomeFilter.biome());
 		Holder<Feature> pool = features.getOrThrow(SiftFeatures.ICHOR_POOL);
 		PlacementUtils.register(context, SiftFeatures.ICHOR_POOLS_UNDERGROUND, pool,
@@ -453,14 +551,24 @@ final class SiftWorldgen {
 		HolderGetter<NoiseGeneratorSettings> noise = context.lookup(Registries.NOISE_SETTINGS);
 		context.register(SiftKeys.LEVEL_STEM, new LevelStem(types.getOrThrow(SiftKeys.DIMENSION_TYPE),
 				new NoiseBasedChunkGenerator(MultiNoiseBiomeSource.createFromList(new Climate.ParameterList<>(List.of(
-						byDepth(-2.0F, HOLLOWS_DEPTH, biomes.getOrThrow(SiftKeys.SINGERS_MEADOW)),
+						surface(-2.0F, FLATS_HUMIDITY, -2.0F, 2.0F, biomes.getOrThrow(SiftKeys.SINGERS_MEADOW)),
+						surface(FLATS_HUMIDITY, 2.0F, -2.0F, FLATS_EROSION, biomes.getOrThrow(SiftKeys.SINGERS_MEADOW)),
+						surface(FLATS_HUMIDITY, 2.0F, FLATS_EROSION, 2.0F, biomes.getOrThrow(SiftKeys.ICHOR_FLATS)),
 						byDepth(HOLLOWS_DEPTH, 2.0F, biomes.getOrThrow(SiftKeys.SIFT_HOLLOWS))))),
 						noise.getOrThrow(SiftKeys.NOISE))));
 	}
 
-	/** A biome chosen by depth below the surface alone (the other climate noises are zero in the Sift). */
+	/** A biome chosen by depth below the surface alone. */
 	private static Pair<Climate.ParameterPoint, Holder<Biome>> byDepth(float from, float to, Holder<Biome> biome) {
-		Climate.Parameter any = Climate.Parameter.span(-1.0F, 1.0F);
+		Climate.Parameter any = Climate.Parameter.span(-2.0F, 2.0F);
 		return Pair.of(Climate.parameters(any, any, any, any, Climate.Parameter.span(from, to), any, 0.0F), biome);
+	}
+
+	/** A surface biome (above the Hollows) chosen by humidity (vegetation) and erosion. */
+	private static Pair<Climate.ParameterPoint, Holder<Biome>> surface(float humidityFrom, float humidityTo,
+			float erosionFrom, float erosionTo, Holder<Biome> biome) {
+		Climate.Parameter any = Climate.Parameter.span(-2.0F, 2.0F);
+		return Pair.of(Climate.parameters(any, Climate.Parameter.span(humidityFrom, humidityTo), any,
+				Climate.Parameter.span(erosionFrom, erosionTo), Climate.Parameter.span(-2.0F, HOLLOWS_DEPTH), any, 0.0F), biome);
 	}
 }

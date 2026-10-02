@@ -30,6 +30,7 @@ import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.phys.Vec3;
 
 import thesift.registry.ModBlocks;
 import thesift.registry.ModFluids;
@@ -37,11 +38,13 @@ import thesift.registry.ModItems;
 import thesift.registry.ModSounds;
 
 /**
- * Ichor, the Sift's water (D-024, the owner's playtest): clear turquoise, and it behaves as water
- * does. It is in {@code #minecraft:water}, so swimming, currents, breath, boats and putting out fire
- * are vanilla's own; it flows, spreads and refills like water. It is its own fluid so the tide
- * basins, the Blub's bathing and the bucket stay the Sift's, and a soul wisp now and then rises
- * from still ichor, the trace of canon's soul-draining liquid.
+ * Ichor, the Sift's water (D-024, the owner's playtest): turquoise with a soap bubble's sheen, and
+ * swimmable as water is. It is in {@code #minecraft:water}, so swimming, currents, breath, boats and
+ * putting out fire are vanilla's own, and it spreads and refills like water. Owner playtest 2 (D-026,
+ * "acts too much like water"): it is thicker, flowing at 8 ticks a step against water's 5, and
+ * buoyant, so whatever is in it drifts up to the surface unless a player holds sneak to dive. It is
+ * its own fluid so the tide basins, the Blub's bathing and the bucket stay the Sift's, and a soul wisp
+ * now and then rises from still ichor, the trace of canon's soul-draining liquid.
  */
 public abstract class IchorFluid extends FlowingFluid {
 	@Override
@@ -59,9 +62,21 @@ public abstract class IchorFluid extends FlowingFluid {
 		return ModItems.ICHOR_BUCKET;
 	}
 
+	/** Upward push per tick while in ichor, and the fastest it lifts (blocks per tick). */
+	private static final double BUOYANCY = 0.025;
+	private static final double MAX_RISE = 0.18;
+
 	@Override
 	protected void entityInside(Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier) {
 		effectApplier.apply(InsideBlockEffectType.EXTINGUISH);
+		// Buoyancy, once a tick: only from the block at the entity's feet (an entity touches several).
+		// Runs wherever the entity moves (the server, or the client for its own player).
+		if (pos.equals(entity.blockPosition()) && !entity.isShiftKeyDown() && !entity.isNoGravity()) {
+			Vec3 motion = entity.getDeltaMovement();
+			if (motion.y < MAX_RISE) {
+				entity.setDeltaMovement(motion.x, Math.min(MAX_RISE, motion.y + BUOYANCY), motion.z);
+			}
+		}
 	}
 
 	@Override
@@ -112,7 +127,7 @@ public abstract class IchorFluid extends FlowingFluid {
 
 	@Override
 	public int getTickDelay(LevelReader level) {
-		return 5;
+		return 8; // thicker than water's 5 (D-026)
 	}
 
 	@Override

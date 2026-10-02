@@ -44,6 +44,7 @@ Only one WP is IN PROGRESS at a time.
 | WP-052 | Entry advancements and lang pass | 4 | S | DONE |
 | WP-053 | M1 integration and Gate C (self-review) | 4 | M | DONE |
 | WP-054 | The owner's playtest rework: water, terrain, textures, trees, Blub (`v0.1.1-alpha`) | 4 | L | DONE |
+| WP-055 | The owner's second playtest rework: ichor sheen, ponds and flats, trees, texture grain (`v0.1.2-alpha`) | 4 | L | DONE |
 | WP-060 | M2 system design: the hearing rule, retreat, enduring variants, lumen | 4 | L | DONE |
 | WP-061 | Nester design doc | 4 | L | DONE |
 | WP-062 | Bloombud design doc | 4 | L | DONE |
@@ -633,6 +634,17 @@ Source: 01_CONTENT_BIBLE.md §M2 row; bible/creatures.md, items.md, world.md (M2
     - **Songwood:** a forked trunk with blob canopies, drapes, and groves.
     - **Blub:** remodelled at 9 × 7 × 8.
   - Evidence: 70/70 GameTests; worldgen and Hollows samples; landscape screenshots (`look_*`) compared with the stills.
+
+### WP-055 The owner's second playtest rework (`v0.1.2-alpha`)
+- Phase / Milestone: 4 / M1 (owner playtest of `v0.1.1-alpha`) · Tier: L · Status: DONE
+- Goal: the owner's notes: the ichor "looks too much like water and acts too much like water" (less transparent; "multi colored, like the surface of a thin bubble"; the pattern is "hard on the eyes"); it generates "like oceans" (ponds, and "flats ... blotty and kinda like a mangrove"); the trees have "only like one canopy" and the forests are "very synthetic"; the textures are too close to the trailers' flat look.
+- Log:
+  - 2026-10-02: done (D-026).
+    - **Ichor:** alpha 214; pale shimmer textures coloured per vertex along a soap film's colour cycle (`IchorSheen`); a gentle lift and an 8-tick flow step.
+    - **Generation:** no sea; ponds in the Meadow; the new Ichor Flats biome (about a fifth of the surface) with a noise-laid pools feature; basins one chunk in five, nudged off the grid.
+    - **Trees:** a forking (cherry-trunk) and a tall (fancy-oak) songwood, both with drapes, placed by biome noise.
+    - **Textures:** wider ramps and a vanilla-grain pass over every ground, wood and foliage texture.
+  - Evidence: GameTests (including a buoyancy test and the flats share in the Hollows dump); landscape screenshots (`look_*`) in docs/previews.
 
 ### WP-060 M2 system design: the hearing rule, retreat, enduring variants, lumen
 - Phase / Milestone: 4 / M2 · Tier: L (design) · Status: DONE (frozen 2026-10-02 after three critique rounds) · Depends on: Gate C

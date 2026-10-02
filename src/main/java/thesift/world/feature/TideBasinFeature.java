@@ -12,9 +12,9 @@ import net.minecraft.world.level.levelgen.feature.Feature;
 import thesift.world.TideBasin;
 
 /**
- * Places one tide basin in the middle of a chunk when that spot is a low: the basin sits at the
- * lowest point of its rim, and the land around must be higher on average. A basin is
- * at most 13 wide and centred, so it never crosses its chunk.
+ * Places one tide basin near the middle of a chunk when that spot is a low: the basin sits at the
+ * lowest point of its rim, and the land around must be higher on average. A basin is at most 13
+ * wide and within a block of the chunk's middle, so it never crosses its chunk.
  */
 public record TideBasinFeature() implements Feature {
 	public static final TideBasinFeature INSTANCE = new TideBasinFeature();
@@ -29,8 +29,10 @@ public record TideBasinFeature() implements Feature {
 
 	@Override
 	public boolean place(WorldGenLevel level, ChunkGenerator chunkGenerator, RandomSource random, BlockPos origin) {
-		int cx = (origin.getX() & ~15) + 8;
-		int cz = (origin.getZ() & ~15) + 8;
+		// Near the middle of the chunk, a block either way (owner playtest 2: centred basins lined up
+		// into a grid), so it still never crosses its chunk.
+		int cx = (origin.getX() & ~15) + 8 + random.nextInt(3) - 1;
+		int cz = (origin.getZ() & ~15) + 8 + random.nextInt(3) - 1;
 		int inner = 2 + random.nextInt(2);
 		TideBasin shape = new TideBasin(BlockPos.ZERO, inner);
 		// The basin's ground is the lowest cell around it (the outer ring and the cut corners), so
