@@ -58,7 +58,31 @@ public record TideBasinFeature() implements Feature {
 		if (around < 4 * (ground + 1)) {
 			return false;
 		}
+		// Caves can open the side of a low (WP-063): a basin needs rock all round its layers, or its
+		// ichor would run off into them.
+		if (!enclosed(level, shape, cx, cz, basin.vent().getY(), ground)) {
+			return false;
+		}
 		basin.carve(level);
+		return true;
+	}
+
+	/** True if every cell around the footprint is solid from the vent's level up to the ground. */
+	private static boolean enclosed(WorldGenLevel level, TideBasin shape, int cx, int cz, int bottom, int ground) {
+		int rim = shape.half() + 1;
+		BlockPos.MutableBlockPos p = new BlockPos.MutableBlockPos();
+		for (int dx = -rim; dx <= rim; dx++) {
+			for (int dz = -rim; dz <= rim; dz++) {
+				if (shape.inFootprint(dx, dz)) {
+					continue;
+				}
+				for (int y = bottom; y <= ground; y++) {
+					if (level.getBlockState(p.set(cx + dx, y, cz + dz)).isAir()) {
+						return false;
+					}
+				}
+			}
+		}
 		return true;
 	}
 

@@ -23,6 +23,8 @@ public final class SiftKeys {
 	public static final ResourceKey<NoiseGeneratorSettings> NOISE = ResourceKey.create(Registries.NOISE_SETTINGS, TheSift.id("sift"));
 	public static final ResourceKey<MaterialRule> MATERIAL_RULE = ResourceKey.create(Registries.MATERIAL_RULE, TheSift.id("sift"));
 	public static final ResourceKey<Biome> SINGERS_MEADOW = ResourceKey.create(Registries.BIOME, TheSift.id("singers_meadow"));
+	/** The cave layer under the Meadow (WP-063), chosen by depth below the surface. */
+	public static final ResourceKey<Biome> SIFT_HOLLOWS = ResourceKey.create(Registries.BIOME, TheSift.id("sift_hollows"));
 
 	public static final ResourceKey<WorldClock> TIDES_CLOCK = ResourceKey.create(Registries.WORLD_CLOCK, TheSift.id("tides"));
 	public static final ResourceKey<Timeline> TIDES_TIMELINE = ResourceKey.create(Registries.TIMELINE, TheSift.id("tides"));

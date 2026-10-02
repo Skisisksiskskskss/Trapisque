@@ -338,3 +338,21 @@ the others. A flower rings at most once every 10 ticks.
     Endure number, cleared on logout and dimension change; the chime bell flower; the sanctuary deferred
     to WP-070 at the vision's ~16; "hunter" and "listener" defined; the template's sections (how players
     learn, per Tide, data, performance); the subtitle "Nester hears something".
+- **Round 2 (2026-10-02): FAIL**, 4 must-fix; scores template 5, canon 4, vanilla-feel 4, player value 3,
+  readability 4, feasibility 3, bible consistency 3. **Fixes pending**, parked for the owner's playtest
+  rework (terrain, textures, mobs, trees, ichor), which comes first. To fix:
+  - M1, sounds per state: Hunt ignores sounds; Search re-aims without a tell, as Gallop does; say
+    whether a re-aim counts as a reaction for Heard You and Quiet Waters.
+  - M2, `WORLD_SURFACE` counts leaves (songwood crowns ~10 up): classify cave dwellers by the Hollows
+    biome alone (it begins ~19 blocks below the ground, WP-063).
+  - M3, frozen rules missing: the lull (items.md §1, M4), Muffled Steps (items.md §2, M5) and blight
+    shriekers alerting hunters (D-012, M4) need a state, a filter and an input.
+  - M4, false vanilla claims: eating (`minecraft:eat`) is heard while sneaking; the warden's
+    `RECENT_PROJECTILE` is set by any projectile, and it aims at the owner only while not angry.
+  - Should-fix: Quiet Waters (clear on `AFTER_PLAYER_CHANGE_LEVEL`, judge at acceptance); every hunter
+    loses enduring at Thrive; spawn eggs and `/summon` (a saved return-by tick instead of "first tick
+    outside Endure"); surface spawns only in Endure (sky light ramps during Flow); lumen rim points
+    outside every radius, soil inside a radius skipped, paths that avoid radii; "within 2" of whom; the
+    sweep covers loaded, non-ticking entities; the gate mound is soil (§2 row wrong); the sanctuary stays
+    no-spawn only (entry_path.md §7); budget per PLAN WP-067 (≤ 1.5× the nearest analog); score the
+    lumen options; `requiresCustomPersistence` is any vehicle.

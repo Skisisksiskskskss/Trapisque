@@ -62,7 +62,10 @@ import net.minecraft.world.clock.WorldClock;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeGenerationSettings;
 import net.minecraft.world.level.biome.BiomeSpecialEffects;
-import net.minecraft.world.level.biome.FixedBiomeSource;
+import net.minecraft.world.level.biome.Climate;
+import net.minecraft.world.level.biome.MultiNoiseBiomeSource;
+import com.mojang.datafixers.util.Pair;
+import net.minecraft.world.level.levelgen.NoiseRouterData;
 import net.minecraft.world.level.biome.MobSpawnSettings;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.dimension.DimensionType;
@@ -109,6 +112,14 @@ final class SiftWorldgen {
 	private static final int FALLING = Tide.FLOW_FALLING.startTick();
 	private static final int MID_RISING = (RISING + ENDURE) / 2;
 	private static final int MID_FALLING = (FALLING + Tide.PERIOD_TICKS) / 2;
+
+	/** Surface depth (≈ 0.021 per block) at which the Hollows begin: about 19 blocks down. */
+	static final float HOLLOWS_DEPTH = 0.4F;
+	/** Hollows floors are healthy sculk where the patch noise is at least this; elsewhere hymnstone. */
+	private static final double HOLLOWS_SOIL_PATCH = 0.05;
+	/** Vanilla's cheese caverns use 0.27 and 4; lower values open bigger, less flattened caverns. */
+	private static final float CAVERN_SOLIDITY = 0.05F;
+	private static final float CAVERN_LAYERING = 1.0F;
 
 	private SiftWorldgen() {
 	}
@@ -215,11 +226,18 @@ final class SiftWorldgen {
 		HolderGetter<MaterialRule> rules = context.lookup(Registries.MATERIAL_RULE);
 		HolderGetter<MaterialCondition> conditions = context.lookup(Registries.MATERIAL_CONDITION);
 		MaterialCondition onFloor = MaterialRules.getCondition(conditions, VanillaMaterialConditions.ON_FLOOR);
-		// Healthy sculk over hymnstone, like nylium over netherrack (world.md §2–3).
+		BlockState hymnstone = ModBlocks.HYMNSTONE.defaultBlockState();
+		// Healthy sculk over hymnstone, like nylium over netherrack (world.md §2–3). In the Hollows the
+		// floors are bare hymnstone with patches of healthy sculk: hunters spawn on soil only
+		// (system_hunt.md §7), so the patches are where the caves are dangerous.
 		context.register(SiftKeys.MATERIAL_RULE, MaterialRules.sequence(
 				MaterialRules.getRule(rules, VanillaMaterialRules.BEDROCK_FLOOR),
-				MaterialRules.ifTrue(onFloor, MaterialRules.state(ModBlocks.HEALTHY_SCULK.defaultBlockState())),
-				MaterialRules.state(ModBlocks.HYMNSTONE.defaultBlockState())));
+				MaterialRules.ifTrue(onFloor, MaterialRules.sequence(
+						MaterialRules.ifTrue(MaterialRules.isBiome(context.lookup(Registries.BIOME), SiftKeys.SIFT_HOLLOWS),
+								MaterialRules.ifTrue(MaterialRules.not(MaterialRules.noiseCondition2d(Noises.PATCH, HOLLOWS_SOIL_PATCH)),
+										MaterialRules.state(hymnstone))),
+						MaterialRules.state(ModBlocks.HEALTHY_SCULK.defaultBlockState()))),
+				MaterialRules.state(hymnstone)));
 	}
 
 	static void noiseSettings(BootstrapContext<NoiseGeneratorSettings> context) {
@@ -234,11 +252,14 @@ final class SiftWorldgen {
 				DensityFunctions.noise(noises.getOrThrow(Noises.SURFACE_SECONDARY), 3.5, 0.0));
 		DensityFunction detail = DensityFunctions.mul(DensityFunctions.constant(0.03F),
 				DensityFunctions.noise(noises.getOrThrow(Noises.SURFACE_SECONDARY), 8.0, 2.0));
-		DensityFunction finalDensity = DensityFunctions.interpolated(
-				DensityFunctions.add(gradient, DensityFunctions.add(swell, DensityFunctions.add(ripple, detail))), 4, 8);
+		// How far below the surface a point is: about 0.021 per block (the gradient's slope), 0 at the
+		// surface. It is the biome source's depth too, so the Hollows follow the hills.
+		DensityFunction surfaceDepth = DensityFunctions.add(gradient, DensityFunctions.add(swell, ripple));
+		DensityFunction terrain = DensityFunctions.add(surfaceDepth, detail);
+		DensityFunction finalDensity = DensityFunctions.interpolated(hollows(context, surfaceDepth, terrain), 4, 8);
 		NoiseRouter router = new NoiseRouter(
 				DensityFunctions.zero(), DensityFunctions.zero(), DensityFunctions.zero(), DensityFunctions.zero(),
-				DensityFunctions.zero(), DensityFunctions.zero(), DensityFunctions.zero(), finalDensity);
+				surfaceDepth, DensityFunctions.zero(), DensityFunctions.zero(), finalDensity);
 		context.register(SiftKeys.NOISE, new NoiseGeneratorSettings(
 				NoiseSettings.create(0, 256),
 				ModBlocks.HYMNSTONE.defaultBlockState(),
@@ -251,6 +272,36 @@ final class SiftWorldgen {
 				Optional.empty(), // no aquifers
 				false,
 				NoiseGeneratorSettings.DebugFunctions.EMPTY));
+	}
+
+	/**
+	 * The Hollows (WP-063): vanilla's underground caves (cheese caverns layered flat, pillars, 2D
+	 * spaghetti tunnels and entrances), kept off the Meadow's skin. Within about 19 blocks of the
+	 * surface only entrances cut, so the caves open to the Meadow here and there; caverns fade in
+	 * between 19 and 29 blocks down; near the bedrock floor the rock closes again.
+	 */
+	private static DensityFunction hollows(BootstrapContext<NoiseGeneratorSettings> context, DensityFunction surfaceDepth, DensityFunction terrain) {
+		HolderGetter<NormalNoise> noises = context.lookup(Registries.NOISE);
+		HolderGetter<DensityFunction> functions = context.lookup(Registries.DENSITY_FUNCTION);
+		DensityFunction entrances = NoiseRouterData.getFunction(functions, NoiseRouterData.ENTRANCES);
+		DensityFunction cheese = DensityFunctions.noise(noises.getOrThrow(Noises.CAVE_CHEESE), 0.6666666666666666);
+		DensityFunction layered = DensityFunctions.mul(DensityFunctions.constant(CAVERN_LAYERING),
+				DensityFunctions.square(DensityFunctions.noise(noises.getOrThrow(Noises.CAVE_LAYER), 8.0)));
+		DensityFunction topSlide = DensityFunctions.clamp(
+				DensityFunctions.add(DensityFunctions.mul(surfaceDepth, DensityFunctions.constant(-5.0F)), DensityFunctions.constant(3.0F)), 0.0F, 1.0F);
+		DensityFunction floorSlide = DensityFunctions.yClampedGradient(0, 12, 1.5F, 0.0F);
+		DensityFunction caverns = DensityFunctions.add(
+				DensityFunctions.add(DensityFunctions.clamp(DensityFunctions.add(cheese, DensityFunctions.constant(CAVERN_SOLIDITY)), -1.0F, 1.0F), layered),
+				DensityFunctions.add(topSlide, floorSlide));
+		DensityFunction tunnels = DensityFunctions.add(
+				NoiseRouterData.getFunction(functions, NoiseRouterData.SPAGHETTI_2D),
+				NoiseRouterData.getFunction(functions, NoiseRouterData.SPAGHETTI_ROUGHNESS_FUNCTION));
+		DensityFunction pillars = NoiseRouterData.getFunction(functions, NoiseRouterData.PILLARS);
+		DensityFunction underground = DensityFunctions.max(
+				DensityFunctions.min(caverns, DensityFunctions.add(DensityFunctions.min(entrances, tunnels), floorSlide)),
+				DensityFunctions.rangeChoice(pillars, -1000000.0F, 0.03F, DensityFunctions.constant(-1000000.0F), pillars));
+		DensityFunction nearSurface = DensityFunctions.min(terrain, DensityFunctions.mul(DensityFunctions.constant(5.0F), entrances));
+		return DensityFunctions.rangeChoice(surfaceDepth, -1000000.0F, HOLLOWS_DEPTH, nearSurface, DensityFunctions.min(terrain, underground));
 	}
 
 	static void biomes(BootstrapContext<Biome> context) {
@@ -277,6 +328,18 @@ final class SiftWorldgen {
 				.setAttribute(EnvironmentAttributes.CREATURE_WORLD_GEN_SPAWN_PROBABILITY, 0.03F)
 				.mobSpawnSettings(new MobSpawnSettings.Builder().addSpawn(ModEntities.BLUB, 10, 2, 5).build())
 				.generationSettings(generation.build())
+				.build());
+		// The Hollows: dark hymnstone caverns with ichor pools on their floors. No creatures; its hunters
+		// and its drips-and-echoes ambience come with the rest of M2 (WP-064, WP-070).
+		BiomeGenerationSettings.Builder hollows = new BiomeGenerationSettings.Builder(placed, context.lookup(Registries.CARVER));
+		hollows.addFeature(GenerationStep.Decoration.LAKES, SiftFeatures.ICHOR_POOLS_UNDERGROUND);
+		context.register(SiftKeys.SIFT_HOLLOWS, new Biome.BiomeBuilder()
+				.hasPrecipitation(false)
+				.temperature(0.7F)
+				.downfall(0.5F)
+				.specialEffects(new BiomeSpecialEffects.Builder().waterColor(0x3FB8C8).build())
+				.mobSpawnSettings(new MobSpawnSettings.Builder().build())
+				.generationSettings(hollows.build())
 				.build());
 	}
 
@@ -334,8 +397,10 @@ final class SiftWorldgen {
 	static void placedBasinsAndPools(BootstrapContext<PlacedFeature> context) {
 		HolderGetter<Feature> features = context.lookup(Registries.FEATURE);
 		// One chance in three per chunk; the feature itself keeps only the lows.
+		// At the surface before the biome check: underground is the Hollows (WP-063).
 		PlacementUtils.register(context, SiftFeatures.TIDE_BASINS_MEADOW, features.getOrThrow(SiftFeatures.TIDE_BASIN),
 				RarityFilter.onAverageOnceEvery(3),
+				PlacementUtils.HEIGHTMAP_OCEAN_FLOOR,
 				BiomeFilter.biome());
 		Holder<Feature> pool = features.getOrThrow(SiftFeatures.ICHOR_POOL);
 		// "Many pools of ichor, fracturing the terrain": far commoner than vanilla's surface lava lakes (1 in 200).
@@ -359,7 +424,15 @@ final class SiftWorldgen {
 		HolderGetter<Biome> biomes = context.lookup(Registries.BIOME);
 		HolderGetter<NoiseGeneratorSettings> noise = context.lookup(Registries.NOISE_SETTINGS);
 		context.register(SiftKeys.LEVEL_STEM, new LevelStem(types.getOrThrow(SiftKeys.DIMENSION_TYPE),
-				new NoiseBasedChunkGenerator(new FixedBiomeSource(biomes.getOrThrow(SiftKeys.SINGERS_MEADOW)),
+				new NoiseBasedChunkGenerator(MultiNoiseBiomeSource.createFromList(new Climate.ParameterList<>(List.of(
+						byDepth(-2.0F, HOLLOWS_DEPTH, biomes.getOrThrow(SiftKeys.SINGERS_MEADOW)),
+						byDepth(HOLLOWS_DEPTH, 2.0F, biomes.getOrThrow(SiftKeys.SIFT_HOLLOWS))))),
 						noise.getOrThrow(SiftKeys.NOISE))));
+	}
+
+	/** A biome chosen by depth below the surface alone (the other climate noises are zero in the Sift). */
+	private static Pair<Climate.ParameterPoint, Holder<Biome>> byDepth(float from, float to, Holder<Biome> biome) {
+		Climate.Parameter any = Climate.Parameter.span(-1.0F, 1.0F);
+		return Pair.of(Climate.parameters(any, any, any, any, Climate.Parameter.span(from, to), any, 0.0F), biome);
 	}
 }

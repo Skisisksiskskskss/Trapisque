@@ -14,6 +14,7 @@
 			"thesift.test.SiftEntryTest",
 			"thesift.test.SiftIchorTest",
 			"thesift.test.SiftBasinTest",
+      "thesift.test.SiftHollowsTest",
 			"thesift.test.SiftBlubTest",
 			"thesift.test.SiftPerfTest"
 		],

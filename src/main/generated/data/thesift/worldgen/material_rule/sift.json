@@ -6,8 +6,36 @@
       "type": "minecraft:condition",
       "if_true": "minecraft:on_floor",
       "then_run": {
-        "type": "minecraft:block",
-        "result_state": "thesift:healthy_sculk"
+        "type": "minecraft:sequence",
+        "sequence": [
+          {
+            "type": "minecraft:condition",
+            "if_true": {
+              "type": "minecraft:biome",
+              "biome_is": "thesift:sift_hollows"
+            },
+            "then_run": {
+              "type": "minecraft:condition",
+              "if_true": {
+                "type": "minecraft:not",
+                "invert": {
+                  "type": "minecraft:noise_threshold",
+                  "max_threshold": 1.7976931348623157E308,
+                  "min_threshold": 0.05,
+                  "noise": "minecraft:patch"
+                }
+              },
+              "then_run": {
+                "type": "minecraft:block",
+                "result_state": "thesift:hymnstone"
+              }
+            }
+          },
+          {
+            "type": "minecraft:block",
+            "result_state": "thesift:healthy_sculk"
+          }
+        ]
       }
     },
     {
