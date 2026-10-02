@@ -527,11 +527,13 @@ It also found that M1's Tide changed nothing in play (SF4), since the mission as
 ## D-022 Frame cues: frames found from the city's structure data (2026-10-01) [WP-046]
 **Context.** D-020 deferred the dormant frame's "breathing" and 8-block "notice" cues, because frames were only known once someone touched them. The preview's main playtest question is whether players would think to try the frame at all.
 
-**Decision.** `FrameCues` takes D-020's option 1, cheaply. Every 2 s, for each Overworld player, `StructureManager.getStructureAt` (the chunk's own structure references) tells whether they stand in an Ancient City. The first time, the city's `city_center` piece is searched once for the reinforced-deepslate frame. That happens only when all its chunks are loaded (it never loads one) and took 1 ms on a natural city; the result is cached per city for the run. Then:
-- **Rumor:** within 32 blocks of a dormant frame, soul wisps drift into its opening.
+**Decision.** `FrameCues` takes D-020's option 1, cheaply, and **never loads a chunk**. Every 2 s, for each Overworld player, the structure references stored in the player's own chunk name the city's start chunk. That start is read only if its chunk is already loaded. The first time, the city's `city_center` piece (18×31×41 in all three templates) is searched once for the reinforced-deepslate frame, again only with all its chunks loaded. It took 1 ms on a natural city, and the result is cached per city for the run. A cached frame whose border has been broken is forgotten, so a broken frame stays dormant with no cues. A city where no frame was found is searched again after 5 minutes. The cues pause under `/tick freeze`. Then:
+- **Rumor:** within 32 blocks of a dormant frame, soul wisps appear just in front of its opening and drift in. That is once per frame every 4 ticks, however many players are near, and they are sent past the 32-block particle limit so everyone in range sees the same wisps.
 - **Notice:** within 8 blocks of the frame, a player with experience sends wisps toward it, twice as many with an empty hand. A breathy cue plays to that player only, with the subtitle "Your soul stirs toward the frame". Nothing is taken. Being noticed grants the tab's root (an OR with "in an Ancient City", so a city whose frame can't be found still opens the tab).
 
-**Not done:** the XP bar's flicker and the inner edge brightening where the player looks. Both are client rendering, and the cue reads without them.
+**An Offering** goes to the player whose offering wakes the frame and to every player within 16 blocks at that moment. The charge is pooled, and the moment is shared, as vanilla's "Hero of the Village" goes to everyone in the raid.
+
+**Not done:** the XP bar's flicker, the inner edge brightening where the player looks, and the hum deepening as the player nears. The first two are client rendering; the cue reads without all three.
 
 **Revisit if** playtests show the cue is missed (make it stronger, never a posture trigger; D-010).
 

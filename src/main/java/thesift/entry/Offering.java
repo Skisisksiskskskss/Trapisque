@@ -51,6 +51,9 @@ public final class Offering {
 		return offer(serverPlayer, serverLevel, hit.getBlockPos()) ? InteractionResult.SUCCESS : InteractionResult.PASS;
 	}
 
+	/** Players this close to a frame when it wakes share "An Offering". */
+	public static final double WITNESS_RANGE = 16.0;
+
 	/** One use on {@code touched}. Returns false when the block is not part of a frame. */
 	public static boolean offer(ServerPlayer player, ServerLevel level, BlockPos touched) {
 		SiftLinks links = SiftLinks.get(level.getServer());
@@ -82,7 +85,14 @@ public final class Offering {
 		if (updated.awake()) {
 			wake(level, updated.frame());
 			tell(player, Component.translatable("thesift.frame.woke"));
+			// Everyone at the frame when it wakes shares the moment (the charge is pooled), as vanilla's
+			// raid advancement goes to every hero present.
 			SiftAdvancements.award(player, SiftAdvancements.OFFERING);
+			for (ServerPlayer other : level.players()) {
+				if (other != player && !other.isSpectator() && updated.frame().distanceTo(other.position()) <= WITNESS_RANGE) {
+					SiftAdvancements.award(other, SiftAdvancements.OFFERING);
+				}
+			}
 		} else {
 			tell(player, Component.translatable("thesift.frame.offering", updated.charge() * 100 / PRICE));
 		}

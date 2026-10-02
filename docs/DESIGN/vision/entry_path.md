@@ -132,7 +132,7 @@ A sandbox reverses that order on purpose:
 | Griefing | Frames and gates are unbreakable; the membrane obeys the portal rules; music reopens a removed membrane |
 
 ## Performance notes
-- Frames are located from Ancient City structure pieces (a known template and rotation give exact frame coordinates) and cached per chunk in SavedData, never found by scanning blocks.
+- Frames are located from Ancient City structure pieces (a known template and rotation give exact frame coordinates) and cached per chunk in SavedData, never found by scanning blocks. *(Superseded by D-020/D-022: frames are found from the city's structure data with one bounded scan of its centre piece per city, cached for the server's run; touched frames live in `SiftLinks`.)*
 - Offering is a use-block event (Fabric `UseBlockCallback`) checked against known frame positions. There is no per-tick scanning.
 - Music is detected at each awake frame by a vibration listener (note blocks, goat horns) and a jukebox listener, so nothing polls every tick.
-- The ambient "breathing" particles are client-side and run only near dormant frames.
+- The ambient "breathing" particles are client-side and run only near dormant frames. *(Superseded by D-022: server-sent particles, once per frame every 4 ticks, only while a player is within 32 blocks.)*
