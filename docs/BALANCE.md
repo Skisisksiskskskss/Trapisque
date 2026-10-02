@@ -22,6 +22,34 @@ The Sift's water: it behaves as vanilla water does, and is clear turquoise.
 | Rate | 10 points per use, about 50 points per second while *use* is held (~28 s for the full price) | Brushing suspicious sand | Long enough to feel like an offering, short enough not to bore; release stops it at once |
 | Creative | Free (charge still fills at the same pace) | Enchanting in creative | Testing and building |
 
+## The hunt (WP-060, frozen 2026-10-02)
+The system every Sift hunter shares (system_hunt.md); each mob's own stats are in its section.
+**Difficulty:** Peaceful removes hunters (`notInPeaceful()`); the enduring chance is 25 % on Easy and
+Normal and 35 % on Hard; everything else is the same on every difficulty, as the warden's hearing is.
+
+| Number | Value | Vanilla analog | Reasoning |
+|---|---|---|---|
+| Hearing range | 16 (Endure only) | warden 16, sculk sensor 8 | Bible |
+| Jukebox range | 10 | allay 10 | Bible |
+| Reaction cooldown | 40 ticks, from each accepted sound | warden's vibration cooldown 40 | Vanilla rhythm |
+| Tell before gallop | 20 ticks | warden's sniff/roar telegraphs | Time to sneak or flee |
+| Gallop give-up | 200 ticks | — | A spot it can't reach |
+| Search radius / time | 6 blocks (2 for sneakers), line of sight / 60 ticks | — | A lure works; sneaking saves you |
+| Hunt: circling, drop | 30 ticks after a lunge; dropped at 24 blocks or 100 ticks unseen | wolf, spider | The bible's "circles on cooldown" |
+| Bump | a player within 2 blocks of a roaming listener | — | Walking into one is a mistake |
+| Retreat moment | cycle ticks 27 000–29 000, by UUID | — | Staggered |
+| Soil search, dig | 16 blocks across, 6 up or down; 60-tick dig | warden dig 100 ticks | Shorter for a common mob |
+| Fight-on distance | until the target is 16 away, capped by the Thrive sweep | — | Vision, capped (D-023) |
+| Enduring chance | 25 % (Hard 35 %) | zombie leader 5 %, spider effects | Common enough to matter, not every mob |
+| Enduring stats | health ×1.5, damage ×1.25, KB res. +0.2 | — | Tougher, not unfair |
+| Enduring reward | XP ×2; one extra loot roll if it has a table | — | Worth the risk |
+| Repel radius | 6; rim at 7; no spawns within 8 | piglin repellents 8 | A lantern makes a small camp |
+| Rim flee | 16 blocks for 100 ticks | — | Not a weapon |
+| Cave dweller | spawned in the Hollows biome | — | Decided once, by biome alone |
+| Lull | 200 ticks, hunters within 12 | — | items.md §1.2 |
+| Return-by | the next Thrive's first tick, saved at spawn | — | Spawn eggs and `/summon` too |
+| Chime bell | once per 10 ticks, not when sneaking | — | — |
+
 ## Blub (WP-048, frozen 2026-10-01)
 A pet, never a fighter (mob_blub.md). Passive: no difficulty scaling.
 

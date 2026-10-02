@@ -1,4 +1,4 @@
-# The hunt (WP-060)
+# The hunt (WP-060) — FROZEN 2026-10-02
 
 M2's system: **Endure means danger**. The vision (systems.md §4 N8, §1) and the frozen bible fix the
 rules (D-011, D-013; creatures.md rows Nester, Bloombud and "enduring variants"; world.md rows Lumen,
@@ -16,11 +16,14 @@ Fixed by the bible (not reopened here):
 - **Lumen** repels hunters: a small radius they won't enter, as piglins avoid soul fire.
 
 **Words used here:**
-- A **hunter** is any Sift hostile: the entity tag `#thesift:hunters` (Nester, Bloombud; later
-  Pollinator, Sprout). Retreat, lumen, enduring variants and the membrane rule apply to all hunters.
+- A **hunter** is a common Sift hostile in the entity tag `#thesift:hunters`: Nester, Bloombud; later
+  Pollinator, Sprout. Bosses, minibosses and what they summon (the Harmonizer and its Seedlings, the
+  Monstrosity and its Sculk Cubes) are not hunters: their arenas have their own rules. Retreat,
+  lumen, enduring variants and the membrane rule apply to all hunters.
 - A **listener** is a hunter that hears (section 3). In 1.0 only the Nester listens.
-- **Soil** is `#thesift:hunter_burrowable` (healthy sculk, the Meadow's surface over hymnstone; later
-  soils join). Hymnstone, bricks, planks and every vanilla block are not soil.
+- **Soil** is `#thesift:hunter_burrowable`: **healthy sculk** (the Meadow's grass) and **Sift Soil**
+  (the earth under it, D-025); later soils join. Hymnstone, tide sand, bricks, planks and every
+  vanilla block are not soil.
 
 ## 1. The rules, in plain language
 - **In Endure, Nesters listen.** Anything a sculk sensor would hear, they hear from 16 blocks away: your
@@ -28,8 +31,11 @@ Fixed by the bible (not reopened here):
   Sneaking and wool keep you quiet, as in the Deep Dark, though eating and drinking are heard even
   while sneaking.
 - **A Nester that hears goes to the sound, not to you.** It flares its crest, gallops to where the sound
-  was and sniffs around. Whatever it finds there, it attacks. A snowball thrown far away sends it there.
-- **Dawn sends them home.** As the tide falls, surface hunters dig into the soil and are gone by Thrive.
+  was and sniffs around. Whatever it finds there, it attacks. The throw is a sound too, so a lure
+  works when thrown while sneaking, or from more than 16 blocks away: then a snowball's landing
+  sends it there, as players already lure wardens.
+- **Dawn sends them home.** As the tide falls, surface hunters, every Nester and every enduring
+  hunter dig into the soil and are gone by Thrive.
   If one is fighting you, it keeps at it until you get 16 blocks away, but no later than Thrive.
 - **Some come back tougher.** In Endure, about a quarter of hunters are *enduring*: bigger crest, a trail
   of soul wisps, more health and harder hits.
@@ -43,7 +49,7 @@ Fixed by the bible (not reopened here):
 |---|---|
 | They hear | The vanilla vibration particle flies from you to the Nester, then the crest flares and the subtitle "Nester hears something" shows. The first time grants **Heard You** |
 | Sneaking works | The same as a sculk sensor, which players know from the Deep Dark; the particle doesn't fly |
-| They go to the sound | A Nester galloping past you toward a snowball's landing spot; the sniff at the spot |
+| They go to the sound | A Nester galloping past you (you threw while sneaking) toward a snowball's landing spot; the sniff at the spot. Thrown standing up, the throw itself brings it to you first: the lesson the warden already teaches |
 | Dawn | The Blub's herald song before falling Flow (M1), then hunters digging with particles, a sound and the subtitle "Nester burrows" |
 | Enduring | Shape (the larger crest), the trail of wisps, the glow, and a different idle subtitle ("Enduring Nester growls") |
 | Lumen | A Nester pacing the light's edge, turned toward you, close but not coming in. Lumen's tooltip line says "Hunters keep away" |
@@ -91,8 +97,14 @@ Fixed by the bible (not reopened here):
   any other Tide, so outside Endure it hears nothing at no cost. Occlusion (wool), the travel delay and
   the vibration particle are vanilla's, unchanged. Sneaking muffles the events in
   `#ignore_vibrations_sneaking` (steps, landings, swimming, shooting, and starting or finishing an
-  item's use, such as a shield or a spyglass), as with every sensor. Eating and drinking
+  item's use, such as a shield or a spyglass), as with every sensor. (Starting an item's use isn't a
+  vibration at all; only finishing it is, and sneaking muffles that.) Eating and drinking
   (`minecraft:eat`, `minecraft:drink`) aren't in that tag, so they are heard while sneaking too.
+- **Lures.** A thrown projectile makes two sounds: `projectile_shoot` where it leaves the thrower,
+  with the thrower as its source (`Projectile.tick`), and its landing. A listener within 16 accepts
+  the throw first, and its cooldown swallows the landing, so it comes to the thrower. The throw is in
+  the sneaking tag: a lure thrown while sneaking, or from beyond 16 blocks, is heard only where it
+  lands.
 - **Jukeboxes ride the same listener** (9). Its listenable events are a tag of our own,
   `#thesift:hunter_can_listen` = `#minecraft:vibrations` + `minecraft:jukebox_play` +
   `minecraft:shriek`, as the warden's `#warden_can_listen` widens its own (it adds `shriek` too). A playing jukebox repeats its event every second, so a base
@@ -165,7 +177,9 @@ Lumen changes steps 3 to 5 (section 6), and dawn ends them (section 4).
 - **Who retreats:**
   - every **Nester**: it spawns only in Endure (creatures.md, "Endure only"), so it always goes home,
     in caves too;
-  - every hunter flagged **surface** at spawn.
+  - every hunter flagged **surface** at spawn;
+  - every **enduring** hunter, in caves too: systems.md names "Nesters, enduring variants and the
+    other Sift hostiles" among those that burrow, and an enduring variant is of the Endure.
   - Never a persistent mob: vanilla's rule is `isPersistenceRequired()` (a name tag, picked-up gear)
     or `requiresCustomPersistence()` (riding any vehicle, or leashed). Those stay, as they would stay
     from vanilla's despawn.
@@ -176,41 +190,48 @@ Lumen changes steps 3 to 5 (section 6), and dawn ends them (section 4).
   counts songwood crowns. The flag never changes, so a surface Bloombud under a canopy, an overhang
   or a player's roof still retreats, and a cave Bloombud that wanders up still stays.
 - **Return-by:** a hunter that retreats saves, at spawn, the Tide clock's total tick at which the
-  next Thrive begins (the clock's total ticks rounded up to the next multiple of 30 000). Spawn
+  next Thrive begins after its spawn (the next multiple of 30 000 strictly above the clock's total
+  ticks). Spawn
   eggs and `/summon` work the same way: one summoned in Thrive lives through the coming Endure and
   leaves after it. If the clock is set back so that the return-by is more than a cycle ahead, it is
   recomputed.
 - **When:** each picks its moment from its UUID, in the first two thirds of falling Flow (cycle ticks
   27 000 to 29 000), so 30 Nesters don't dig on one tick.
 - **How:** it stops what it's doing (but see "fighting" below) and goes to soil:
-  1. the soil block it stands on, if any; else the nearest soil with air above within 16 blocks and
-     outside every lumen radius, searched a few columns per tick; it walks there (up to 200 ticks);
+  1. the soil block it stands on, if any; else the nearest soil with air above within 16 blocks
+     across and 6 up or down of its feet (a band, not a heightmap, so cave floors and roofed ground
+     are found too), outside every lumen radius, searched a few columns per tick; it walks there (up
+     to 200 ticks). Hurt on the way, it turns on the attacker under the fighting rule below;
   2. it **digs**: 60 ticks of sinking into the block, with the block's particles and a digging sound
      subtitled "Nester burrows" (the warden's dig, shortened for a common mob);
   3. it is removed: no drops, no XP. It left; it wasn't killed. Hurt mid-dig, it keeps digging;
      killed mid-dig, it drops as any kill does.
   - No soil within 16 (a hymnstone floor, a bridge): it walks 8 blocks on and looks again every 100
     ticks.
-- **Fighting:** a hunter hunting at its moment keeps fighting until its target is 16 blocks away (the
-  vision's rule), then retreats.
+- **Fighting:** a hunter hunting at its moment, or attacked on its way to soil, keeps fighting until
+  its target is 16 blocks away (the vision's rule), then retreats.
 - **The guarantee, by Thrive:** at Thrive's first tick, a sweep goes through every loaded hunter
   (`ServerLevel.getAllEntities()`, which includes those in border chunks that don't tick) and removes
-  each non-persistent one past its return-by (still fighting, or never found soil), with a burst of
+  each retreating one past its return-by (still fighting, or never found soil), with a burst of
   soul wisps and the burrow sound: the tide takes it. A hunter in an unloaded chunk is checked when it
-  loads (`ServerEntityEvents.ENTITY_LOAD`), and every hunter checks on its own tick too. So **no
+  loads (`ServerEntityEvents.ENTITY_LOAD` only queues it: removing an entity while its section is
+  being loaded can throw, so the queue is drained at `ServerTickEvents.END_LEVEL_TICK`), and every
+  hunter checks on its own tick too. So **no
   retreating hunter is ever present in Thrive or rising Flow.** The vision's "keeps fighting until 16 blocks away" is capped by
   this sweep (D-023): without the cap, a player who stays close would keep a Nester into Thrive.
 
 ## 5. Enduring variants
 - **Which:** the common hunters: Nester, Bloombud (M2); Pollinator, Sprout (M5). Never bosses.
 - **When:** at a natural spawn in Endure, with a chance of **25 %** (on Hard 35 %).
-- **How long:** until the next Thrive, for **every** hunter: surface, cave and persistent alike. An
-  enduring hunter saves the same return-by tick; past it (at the Thrive sweep, on load or on its own
-  tick) its modifiers go, the trail stops, and a few wisps leave it (the Endure leaves it). Surface
-  ones have usually burrowed by then. So enduring variants exist only around Endure, as the bible
+- **How long:** until the next Thrive. An enduring hunter retreats at dawn like a Nester (section 4),
+  in caves too. A persistent one (a name tag, a boat, a leash) doesn't retreat: past its return-by
+  (at the Thrive sweep, on load or on its own tick) its modifiers go, the trail stops, and a few
+  wisps leave it (the Endure leaves it). So enduring variants exist only around Endure, as the bible
   says.
 - **What:** health ×1.5, attack damage ×1.25, knockback resistance +0.2 (attribute modifiers with the
-  id `thesift:enduring`, so they can be removed cleanly). One extra loot roll while enduring.
+  id `thesift:enduring`, so they can be removed cleanly).
+- **Reward:** experience ×2 (a Nester's 5 becomes 10), and one extra roll of its loot table if it has
+  one (the Nester has none), as the bible's "far more resilient" is worth more.
 - **Read without colour (mission §7.6):** a **larger crest / extra spikes** (a model part only the
   variant shows), **trailing soul wisps** every 10 ticks, a faint emissive glow, and a different idle
   subtitle ("Enduring Nester growls").
@@ -244,14 +265,18 @@ Lumen changes steps 3 to 5 (section 6), and dawn ends them (section 4).
 
 ### Decision: **6, with 7 as the tell**
 Lumen blocks (lumen bloom, lumen lantern) are a **point-of-interest type**, `thesift:lumen`, as vanilla
-finds lightning rods and nether portals. A hunter asks "is there lumen within 6 of this position?" for
+finds lightning rods and nether portals. Distances are straight lines in three dimensions (a sphere).
+A hunter asks "is there lumen within 6 of this position?" for
 **the position it is about to go to**, not only where it stands, and the POI index answers from the
 few sections that hold any. Repel radius **6**:
 1. **Destinations.** Every destination a hunter picks (the gallop spot, the search, a wander target,
    soil to burrow in, each chase step) is checked. One inside the radius is replaced by **the rim
    point**: 7 blocks from the lumen, on the side facing the hunter. If that point is inside another
    lumen's radius, it moves outward a block at a time, up to 16 from the first lumen, until it is
-   outside every radius; if none is, the hunter drops the destination and roams away.
+   outside every radius; if none is, the hunter drops the destination and roams away. The rim point
+   is then snapped to the nearest standable block (solid below, two air above) within 3 up or down.
+   A **wander target** inside a radius isn't moved to the rim but picked again (up to three tries),
+   so idle hunters don't gather at a lantern's edge as if they'd heard something.
 2. **The rim.** A listener whose sound came from inside the radius gallops to the rim point, turns to
    the sound, keeps its crest up and paces along the rim for the search's 60 ticks, then roams away.
    That is the tell: players watch it come close and stop.
@@ -276,17 +301,18 @@ few sections that hold any. Repel radius **6**:
   (lightning rods and portals work the same way).
 
 ## 7. Spawning (shared by all hunters; each mob's doc adds its own)
-In this order, cheapest first: the Tide (Nesters: Endure only; every **surface** spawn: Endure only,
+Vanilla checks the monster cap (70 per spawning area) before any spawn rule. Then ours, in this order,
+cheapest first: the Tide (Nesters: Endure only; every **surface** spawn: Endure only,
 because sky light ramps through the spawnable range during Flow, so a light rule alone would let
 hunters spawn at dusk); light (Endure's dark, or the Hollows' dark in any Tide); the block below is
-**soil** (a stone floor is a safe floor); the monster cap (vanilla's 70 per spawning area); outside
-the gate sanctuary; **no lumen within 8** (the POI index, last). Hunter types are built
+**soil** (a stone floor is a safe floor); outside the gate sanctuary; **no lumen within 8** (the POI
+index, last). Hunter types are built
 with `EntityType.Builder.notInPeaceful()`, so Peaceful removes them (vanilla's `allowedInPeaceful`
 defaults to true).
 
 ## 8. Advancements (items.md §5, M2)
-- **Heard You:** a listener reacts (the tell) to a sound the player caused: the event's source entity,
-  or its projectile's owner. Creative players aren't heard, so it's earned in survival.
+- **Heard You:** a listener reacts (a tell or a re-aim, section 3) to a sound the player caused: the
+  event's source entity, or its projectile's owner. Creative players aren't heard, so it's earned in survival.
 - **Quiet Waters (Should):** be in the Sift for a **whole Endure**, from its first tick to its last,
   without leaving the dimension, and never cause a reaction. Tracked in a player attachment
   `thesift:quiet_endure` (not persistent, so logging out clears it, and not copied on respawn, so
@@ -301,8 +327,8 @@ defaults to true).
 |---|---|---|---|---|
 | Nester | None (the sweep removed any) | None | Spawns on soil in the dark; listens to 16; hunts | Burrows at its moment; a fighting one keeps fighting until 16 away |
 | Bloombud, surface | None | None | Spawns in the dark on soil; ambushes | Burrows |
-| Bloombud, cave | Present (dark) | Present | Present; may spawn enduring | Stays |
-| Enduring variants | Gone, or reverted (caves and persistent) | None | 25 % (Hard 35 %) of natural spawns | Burrow with the rest |
+| Bloombud, cave | Present (dark) | Present | Present; may spawn enduring | Stays (an enduring one burrows) |
+| Enduring variants | Gone, or reverted (persistent ones) | None | 25 % (Hard 35 %) of natural spawns | Burrow, in caves too |
 | Lumen | Repels | Repels | Repels (this is when it matters) | Repels |
 | Jukebox | Nobody listens | Nobody listens | Calls listeners within 10 | Nobody listens |
 | Chime bell flower | Rings; nobody listens | Rings | Rings, and is heard | Rings |
@@ -315,22 +341,23 @@ sneaking (the flower is the careful-walking test). A ring is a `minecraft:block_
 (a vibration) with the walker as its source, so a Nester walking through chime bells doesn't alert
 the others. A flower rings at most once every 10 ticks.
 
-## 10. Numbers (BALANCE.md on freeze)
+## 10. Numbers (copied to BALANCE.md)
 | Number | Value | Vanilla analog | Why |
 |---|---|---|---|
 | Hearing range | 16 (Endure only) | warden 16, sculk sensor 8 | Bible |
 | Jukebox range | 10 | allay 10 | Bible |
-| Reaction cooldown | 40 ticks, from the tell | warden's vibration cooldown 40 | Vanilla rhythm |
+| Reaction cooldown | 40 ticks, from each accepted sound | warden's vibration cooldown 40 | Vanilla rhythm |
 | Tell before gallop | 20 ticks | warden's sniff/roar telegraphs | Time to sneak or flee |
 | Gallop give-up | 200 ticks | — | A spot it can't reach |
 | Search radius / time | 6 blocks (2 for sneakers), line of sight / 60 ticks | — | A lure works; sneaking saves you |
 | Hunt: circling, drop | 30 ticks after a lunge; dropped at 24 blocks or 100 ticks unseen | wolf, spider | The bible's "circles on cooldown" |
 | Bump | a player within 2 blocks of a roaming listener | — | Walking into one is a mistake |
 | Retreat moment | cycle ticks 27 000–29 000, by UUID | — | Staggered |
-| Soil search, dig | 16 blocks; 60-tick dig | warden dig 100 ticks | Shorter for a common mob |
+| Soil search, dig | 16 blocks across, 6 up or down; 60-tick dig | warden dig 100 ticks | Shorter for a common mob |
 | Fight-on distance | until the target is 16 away, capped by the Thrive sweep | — | Vision, capped (D-023) |
 | Enduring chance | 25 % (Hard 35 %) | zombie leader 5 %, spider effects | Common enough to matter, not every mob |
 | Enduring stats | health ×1.5, damage ×1.25, KB res. +0.2 | — | Tougher, not unfair |
+| Enduring reward | XP ×2; one extra loot roll if it has a table | — | Worth the risk |
 | Repel radius | 6; rim at 7; no spawns within 8 | piglin repellents 8 | A lantern makes a small camp |
 | Rim flee | 16 blocks for 100 ticks | — | Not a weapon |
 | Cave dweller | spawned in the Hollows biome | — | Decided once, by biome alone |
@@ -368,7 +395,7 @@ the others. A flower rings at most once every 10 ticks.
 |---|---|---|
 | Listening | Vanilla dispatch by section; radius 0 outside Endure | 30 listening Nesters ≤ 30 wardens' vibration handling |
 | Lumen | A POI query per destination, and every 5 ticks per moving hunter; sections without POIs cost a lookup | ≤ 0.05 ms per tick for 30 hunters near 10 lumen blocks |
-| Soil search | Underfoot first (almost always soil in the Meadow); else a few columns per tick, by heightmap | No tick over 0.5 ms from the search |
+| Soil search | Underfoot first (almost always soil in the Meadow); else a few columns per tick, each over a 13-block band around the hunter's feet | No tick over 0.5 ms from the search |
 | Retreat and sweep | One check per hunter per second in falling Flow; the sweep once per cycle | Negligible; logged |
 | Spawning | Cheap checks first, the POI last | Within the monster cap; no measurable change to spawn cost |
 | Whole system | 30 Nesters hunting in Endure in a 10-chunk view | ≤ 1.5× the same number of the nearest vanilla analog (zombies; PLAN WP-067), by the `SiftPerfTest` method |
@@ -379,7 +406,7 @@ the others. A flower rings at most once every 10 ticks.
 | A listener hearing itself or another hunter | Filtered (section 3): no self-trigger, no pack chains |
 | Peaceful | No hunters spawn; existing ones are removed (`notInPeaceful()`) |
 | Creative and spectator players | Not heard (as the warden); never targets. No Heard You in creative |
-| Blubs | Their steps and hops are vibrations, so a following blub can draw a Nester (accepted, as with wolves near a warden). A curled or sitting blub makes none. Searches find blubs; M1's Endure shelter keeps untamed blubs still |
+| Blubs (checked against mob_blub.md's Endure shelter) | Their steps and hops are vibrations, so a blub following its owner in Endure can draw a Nester (accepted, as with wolves near a warden), and searches find blubs. A curled or sitting blub makes none. The befriended herald's restless hops in Endure's last 30 s would call Nesters to a sheltering pet, so a blub that is sheltering or restless in Endure **steps carefully** (`isSteppingCarefully()`, as a crouching cat or ocelot does): its steps and landings are muffled as a sneaking player's are, and the herald stays a warning rather than a dinner bell (WP-066 adds it to the Blub) |
 | Illagers (M4) | Nesters hunt them too (creatures.md); the camp's Endure behaviour hides them |
 | `mobGriefing` false | Burrowing still removes the hunter (it changes no blocks; the dig is cosmetic) |
 | Unloaded chunks at dawn | A retreating hunter past its return-by is removed when it loads |
@@ -389,7 +416,7 @@ the others. A flower rings at most once every 10 ticks.
 | A fight that won't end | The Thrive sweep ends it |
 | Persistent hunters (name tag, boat, minecart, leash) | Never retreat, never swept, as vanilla never despawns them. They don't listen outside Endure |
 | The membrane | Hunters can't cross (`#thesift:cannot_cross`); none ever reach the Overworld |
-| Overworld | No hunters there; nothing in this doc applies |
+| Overworld | None spawn there and none cross the membrane. A spawn egg can put one there: with no Tide it never hears, never retreats and never becomes enduring; it roams, bumps and fights back as in section 3, and despawns by vanilla's rules |
 | Lumen placed beside a hunter | It walks out to the rim |
 | Lumen broken mid-Endure | The POI goes with it; the next check lets hunters in |
 | The gate sanctuary (WP-070) | No spawns within ~16 (entry_path.md §7); not a repel, so only lumen holds hunters off |
@@ -439,3 +466,19 @@ the others. A flower rings at most once every 10 ticks.
     points outside every radius, soil inside a radius skipped, one re-plan then give up; "within 2 of
     it"; the sweep covers border chunks, and `ENTITY_LOAD` the rest; the §2 soil row; the sanctuary
     is no-spawn only; the 1.5× budget; the lumen rubric; "any vehicle".
+- **Round 3 (2026-10-02, the last): FAIL, narrowly**, 2 must-fix, both small enough to fix in place
+  without another round; scores template 5, canon 4, vanilla-feel 5, player value 4, readability 4,
+  feasibility 4, bible consistency 4. Every vanilla and Fabric claim was found correct. Each finding
+  was checked in the sources before acting (`Projectile.tick` emits `projectile_shoot` with the
+  owner; `item_interact_start` isn't in `#vibrations`). Fixed:
+  - M1, soil didn't name Sift Soil (D-025): soil is healthy sculk and Sift Soil; tide sand isn't.
+  - M2, a snowball thrown standing up brings the listener to the thrower (the throw is heard first,
+    and its cooldown swallows the landing): lures are thrown sneaking or from beyond 16 (§1, §2, §3).
+  - Should-fix, all taken: Heard You counts re-aims (§8); every enduring hunter retreats, in caves
+    too, as systems.md names enduring variants among those that burrow, so the sweep and the §9 row
+    agree; `ENTITY_LOAD` only queues, removal at `END_LEVEL_TICK`; the soil search scans a band, not a
+    heightmap; bosses and summons aren't hunters; hurt on the way to soil, it fights; rim points snap
+    to standable blocks and wander targets are re-rolled; spawn eggs in the Overworld; the item-use
+    wording; the enduring reward (XP ×2); return-by strictly after spawn; the monster cap comes first;
+    distances are spheres.
+- **Frozen 2026-10-02** after round 3 (the cap of three rounds). Numbers go to BALANCE.md.

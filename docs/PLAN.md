@@ -44,7 +44,7 @@ Only one WP is IN PROGRESS at a time.
 | WP-052 | Entry advancements and lang pass | 4 | S | DONE |
 | WP-053 | M1 integration and Gate C (self-review) | 4 | M | DONE |
 | WP-054 | The owner's playtest rework: water, terrain, textures, trees, Blub (`v0.1.1-alpha`) | 4 | L | DONE |
-| WP-060 | M2 system design: the hearing rule, retreat, enduring variants, lumen | 4 | L | IN PROGRESS |
+| WP-060 | M2 system design: the hearing rule, retreat, enduring variants, lumen | 4 | L | DONE |
 | WP-061 | Nester design doc | 4 | L | DRAFT |
 | WP-062 | Bloombud design doc | 4 | L | TODO |
 | WP-063 | Sift Hollows: the cave layer and glowcap pools | 4 | L | IN PROGRESS (caves done in WP-054; glowcap pools wait for WP-064) |
@@ -635,9 +635,13 @@ Source: 01_CONTENT_BIBLE.md §M2 row; bible/creatures.md, items.md, world.md (M2
   - Evidence: 70/70 GameTests; worldgen and Hollows samples; landscape screenshots (`look_*`) compared with the stills.
 
 ### WP-060 M2 system design: the hearing rule, retreat, enduring variants, lumen
-- Phase / Milestone: 4 / M2 · Tier: L (design) · Status: TODO · Depends on: Gate C
+- Phase / Milestone: 4 / M2 · Tier: L (design) · Status: DONE (frozen 2026-10-02 after three critique rounds) · Depends on: Gate C
 - Goal: `docs/DESIGN/system_hunt.md`: what Nesters hear in Endure (the vibrations a sculk sensor hears, D-011), how they retreat at dawn (D-013), the enduring-variant rule (resilient, soul particles, non-colour markers), lumen's repel radius (as soul fire for piglins), Quiet Waters' "never heard" rule, numbers next to vanilla analogs (warden, sculk sensor, piglin).
 - Definition of Done: frozen after critique (≤ 3 rounds); BALANCE.md rows; the M1 blub's Endure shelter checked against the new danger.
+- Evidence (2026-10-02):
+  - [x] Frozen after round 3 (rounds 1–2 FAIL, fixed; round 3 FAIL narrowly on two wording fixes, made in place; log in the doc). Every vanilla and Fabric claim checked in the 26.3 sources.
+  - [x] BALANCE.md section "The hunt".
+  - [x] The blub's Endure shelter checked: a sheltering or restless blub steps carefully, so its herald hops don't call Nesters (system_hunt.md §13, mob_blub.md).
 
 ### WP-061 Nester design doc
 - Tier: L (design) · Depends on: WP-060 · Goal: `mob_nester.md` via the design ladder (≥ 8 concepts), the full §8.1 template, critique ≤ 3, frozen; BALANCE rows.

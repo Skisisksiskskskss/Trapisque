@@ -190,6 +190,9 @@ STROLL / LOOK AROUND
   note particle. Restless wakes a curled blub (the end of Endure is when it matters). Untamed blubs
   simply switch behaviour when the Tide changes.
 - **Souls / vibrations:** none in M1 (no XP interaction; it isn't a vibration listener).
+  *M2 addition (system_hunt.md, frozen):* a blub sheltering or restless in Endure steps carefully, as a
+  crouching cat does, so Endure's listeners don't hear its herald hops; a following blub can still
+  be heard.
 - **Light:** none; its belly glows in Endure and at night (render only).
 - **Ichor:** immune (in `#thesift:ichor_adapted`): no slow, no burn, no drain. It walks and sits in
   it; in deep ichor it walks along the bottom (ichor has no buoyancy), and it can't drown (ichor isn't
