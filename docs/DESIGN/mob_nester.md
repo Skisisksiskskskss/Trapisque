@@ -67,11 +67,14 @@ Notes on the calls:
   dodge melee; surface, Singer's Meadow. Soul corruption (our enduring variants) affects it.
   **Changed in translation:** Dungeons II's top-down combat becomes a first-person duel with vanilla
   verbs (shield, critical hits, bows); its hearing is the Sift's rule (D-011), not canon; it surfaces
-  only in Endure (D-013).
+  only in Endure (D-013). Canon gives only "long-legged" for its look, and no teaser shows it (the
+  stills D-025 sampled have none), so the crest, the snout and the moss-and-gold palette are our
+  inventions, made to read against the teasers' Meadow.
 - **One-sentence fantasy:** a long-legged listener that comes galloping out of the dark at the sound
   you made, and dances around your sword.
 - **Role:** hostile.
-- **Home:** Singer's Meadow and Hymnstone Rise, on soil, in Endure only (world.md §2).
+- **Home:** Singer's Meadow (M2) and Hymnstone Rise once it ships (M3), on soil, in Endure only
+  (world.md §1.1). No structure spawns.
 
 ## Silhouette and look
 - **Hitbox:** 0.9 × 1.5 blocks: a body high on four long legs, head level with a player's chest.
@@ -84,7 +87,8 @@ Notes on the calls:
     against the coral-pink healthy sculk underfoot and is nothing like the Blub's blue.
   - `nester_crest`: `#6e5330` `#a07c45` `#cfaa63` `#f0d690` `#fff1c4`: pale gold fins; the fanned crest
     shows its light side.
-  - Eyes and the enduring glow use the existing `glyph` cyan (emissive layer).
+  - Eyes are plain texture on an ordinary Nester; an enduring one's eyes and glow use the existing
+    `glyph` cyan on an emissive layer, so the glow stays a marker.
 - **Texture:** 64 × 64.
 - **Model parts:** body; neck; head with snout and a hinged jaw; crest (three fins, one hinge each);
   four legs of two segments each (thigh, shin); a short tail tuft; **enduring only:** a second, larger
@@ -109,8 +113,8 @@ Nester's own:
 emerge (40) ──► roam ──hears──► tell (20) ──► gallop ──► search (60) ──finds──► hunt
                   ▲                                         │ nothing             │
                   └─────────────────────────────────────────┘                     ▼
-hunt: approach ──in range 2.5–6──► lunge windup (8) ──► leap (6) ──► recovery (12) ──► circle (30) ──► approach
-      (closer than 2.5: a standing bite: windup 6, no leap)          blocked by a shield: recovery 30
+hunt: approach ──in range 2–4──► lunge windup (8) ──► leap (until it lands, ≤ 12) ──► recovery (12) ──► circle (30) ──► approach
+      (closer than 2: a standing bite: windup 6, no leap, then recovery and the circle)   blocked by a shield: recovery 30
 falling Flow ──► retreat (system §4): to soil ──► dig (60) ──► gone
 a Singer's horn within 12 (M4) ──► lulled (200; system §3) ──► roam
 ```
@@ -119,35 +123,51 @@ re-aim to the new spot without a tell, hunt ignores it.
 - **Emerge:** a naturally spawned Nester rises out of the soil over 40 ticks (it "surfaces", as the
   bible says), with the soil's particles and a sound subtitled "Nester surfaces". It doesn't listen
   while emerging. Nesters from spawn eggs and `/summon` skip it.
-- **Lunge:** from 2.5 to 6 blocks, with line of sight. Windup 8 ticks (crouch and a hiss, subtitled
-  "Nester hisses"), then a leap toward where the target is at the leap's start (0.8 horizontal, 0.35
-  up), biting on contact during the 6 active ticks. Stepping aside or jumping during the windup makes it
-  miss. Recovery 12 ticks, in which it can't dodge.
+- **Lunge:** from **2 to 4 blocks** (vanilla's `LeapAtTargetGoal` range), with line of sight. The
+  aim is **locked when the windup starts**: windup 8 ticks (crouch and a hiss, subtitled "Nester
+  hisses"), then a leap toward that locked spot (about 0.6 horizontal and 0.35 up, tuned in WP-067 so
+  a target standing 4 blocks away is reached; a GameTest). The bite is live from take-off until it
+  lands (at most 12 ticks) and lands once, on the first tick a target is within its melee reach
+  (`isWithinMeleeAttackRange`). So the windup is the read: **step sideways during the 8 ticks** and
+  the leap lands where you were. Recovery 12 ticks, in which it can't dodge.
+- **Close quarters:** a target within 2 blocks gets a standing bite (windup 6, no leap), then the
+  usual recovery and circle. A target that presses in during the circle (within 2) ends the circle
+  early with a standing bite. With no room to circle (a one-wide corridor), it backs off along its
+  path to 3 blocks for the circle's time instead.
 - **Shields:** a bite blocked by a shield staggers it: recovery 30 instead of 12. Shield the lunge,
   then hit it.
-- **Circle:** after each lunge it circles its target at 4 blocks for 30 ticks, facing it.
-- **Dodge** (canon): while circling, a melee hit from its target is dodged 50 % of the time (Easy
-  30 %, Hard 60 %): the hit does nothing, and it hops 2 blocks sideways, with a sound subtitled
-  "Nester dodges". At most one dodge per circle. It never dodges projectiles, in recovery, or while
-  galloping or searching. Counterplay: shoot it while it circles; hit it in recovery.
+- **Circle:** after each bite it circles its target at 4 blocks for 30 ticks (system §3), facing it.
+- **Dodge** (canon), **never a coin flip:** as a circle starts its crest snaps flat (its **guard**,
+  with a click). While the guard is up, the **first** melee hit from its target is dodged (on Hard,
+  the first two): the hit does nothing, and it hops 2 blocks sideways, with a sound subtitled "Nester
+  dodges". Then the crest rises: the guard is down until the next circle. It never dodges
+  projectiles, in recovery, or while galloping or searching. The read: **bait the dodge with a
+  swing, then strike**; or hit it in recovery; or shoot it while it circles. As the enderman always
+  evades projectiles, the rule is always the same.
 - **The gallop is loud:** gallop steps play at volume 1.5 (heard about 24 blocks out), subtitled
   "Nester gallops". Ordinary steps are quiet and unsubtitled, as vanilla steps.
 
 ### AI
-- **Goal selector**, as the wolf and spider (and the Blub, D-021): the states are few and linear, and
-  a Brain adds memory plumbing for nothing. Priorities: 0 float; 1 retreat (falling Flow); 2 lumen
-  rim and walk-out; 3 hunt (lunge, circle); 4 the hearing reaction (tell, gallop, search); 5 roam; 6
-  look around. Targeting: hurt-by (retaliation) and the search's find; never by sight alone (system
-  §3), except a target within 2 blocks.
+- **Goals hosting one explicit state machine**, not a Brain. VANILLA_ANALOGS E3's rule points to a
+  Brain for phased behaviour players read, and the warden (the hearing analog) has one. But the
+  Nester's phases are one strict sequence with one owner: the listener's states (system §3) and the
+  duel are a single `NesterHuntGoal` with an enum state (synced, below), as the evoker's spell goals
+  and the ravager's roar and stun are goal-driven phases, and as the Blub's states are (D-021). A
+  Brain would add memories and sensors for data the goal already holds. Priorities: 0 float; 1
+  emerge (holds everything else); 1 retreat (falling Flow); 2 lumen: rim, walk-out and the rim flee
+  (system §6.5); 2 lulled; 3 the hunt goal (tell, gallop, search, lunge, circle); 5 roam; 6 look
+  around. Targeting: hurt-by (retaliation), the search's find, and a **player** within 2 blocks (the
+  bump, system §3); never by sight alone. So a roaming Nester walks past a curled blub.
 - **Navigation:** ground navigation, step height 1.0 (long legs walk up a block without jumping, as a
-  horse). It avoids water and ichor, the Sift's water (path malus 8; D-024).
+  horse). It avoids water and ichor, the Sift's water (path malus 8, vanilla's default for water;
+  D-024).
 
 ### Reactions
 | To | Reaction |
 |---|---|
 | Players | Hunted when heard and found, when they hurt it, or within 2 blocks. Never by sight alone |
 | Sound and vibrations | The hearing rule (system §3) |
-| Souls (M3) | None in M2 |
+| Souls (M3) | None of its own. Killed near a bloom heart, its death feeds the heart as any non-player death does (world.md, bloom heart) |
 | Tides | Lives through Endure: emerges with it, burrows at falling Flow, always, in caves too (system §4, D-023); its return-by tick is saved at spawn |
 | Light | Lumen repels it (system §6); torches don't, but block light stops spawning |
 | Other Sift mobs | Ignores other hunters (and their sounds). **Blubs** are targets when found |
@@ -159,16 +179,25 @@ re-aim to the new spot without a tell, hunt ignores it.
 |---|---|---|
 | Health | 20 | zombie 20, spider 16, wolf (wild) 8 |
 | Armor | 2 | zombie 2 |
-| Bite damage (Easy / Normal / Hard) | 3 / 4 / 6 | wolf 3 / 4 / 6 |
-| Movement speed | 0.3; gallop and hunt ×1.3, roam ×0.6 | spider 0.3, wolf 0.3 |
+| Bite damage (Easy / Normal / Hard) | 3.5 / 5 / 7.5 against players; a flat 5 against blubs and illagers (vanilla scales only damage to players) | wolf 3 / 4 / 6 |
+| Movement speed | 0.3; gallop and hunt ×1.12 (about **5.0 blocks/s**), roam ×0.6 (about 1.4) | player: walk 4.3, sprint 5.6; wolf 4.0; spider 4.0; zombie 2.3 |
 | Follow range | 24 (the hunt's drop distance) | zombie 35, spider 16 |
 | Knockback resistance | 0 | most mobs 0 |
 | Step height | 1.0 | horse 1.0 |
 | XP | 5 | most hostiles 5 |
-| **Enduring** (system §5) | health 30, bite 3.75 / 5 / 7.5, KB resistance 0.2, XP 10 | — |
+| **Enduring** (system §5) | health 30, bite 4.1 / 6.25 / 9.4 (flat 6.25 against non-players), KB resistance 0.2, XP 10 | — |
 
-At gallop it is a little slower than a sprinting player: a player who reacts to the tell gets away;
-one who doesn't, doesn't.
+Mob speed in vanilla is quadratic: a mob's `zza` is its speed and `moveRelative` multiplies by it
+again, so on the ground it settles at about speed² / 0.454 blocks a tick. At ×1.12 (0.336) that is
+about 5.0 blocks/s: faster than a walking player, slower than a sprinting one, so **a player who
+sprints at the tell gets away; one who walks doesn't**, and the system's "fights until the target is
+16 blocks away" can be met (a GameTest checks the speeds in WP-067).
+
+**Damage over time:** a lunge cycle (windup 8, leap ≤ 12, recovery 12, circle 30, closing in) lasts
+about 70 ticks, so about 1.4 damage a second on Normal, against a zombie's 3 in contact. That's
+intended: the Nester's threat is finding you in the dark, its speed and its company (pairs,
+enduring ones), not raw damage. Time to kill on Normal: an unarmoured player about 14 s (4 bites); in
+iron armour about 28 s (8 bites, as armour halves 5); with a shield used well, much longer.
 
 ## Player interaction
 - **Telegraphs:** the vibration particle, then the tell (crest, sound, subtitle); the gallop's thud;
@@ -177,7 +206,8 @@ one who doesn't, doesn't.
   - *avoid:* sneak, wool, lures, lumen (system); stay under a one-block-high gap;
   - *fight:* shield the lunge and hit the stagger; hit in recovery; shoot it while it circles;
     don't swing while it circles (it dodges).
-- **Companion rules:** none. It can't be leashed (vanilla: no `Enemy` can).
+- **Companion rules:** none. It can't be leashed: vanilla's default `Mob.canBeLeashed` refuses every
+  `Enemy` (the hoglin and zoglin override it; the Nester doesn't).
 - **Why the encounter is interesting:** the hearing rule gives the before (should I move?), the duel
   the during (wait for the crouch), and the tide the after (hold out until dawn, and it leaves).
 
@@ -223,9 +253,9 @@ All original, synthesized in `tools/audio/synth.py`. Subtitles in brackets.
 | Water | Floats and swims slowly; avoids water when pathing (malus 8) |
 | Lava | Vanilla (burns; avoids it) |
 | Ichor | As water: floats and swims slowly; avoids it when pathing |
-| Leashed | Can't be (vanilla: no `Enemy` can be leashed) |
-| Name-tagged | Persistent: never retreats; listens and hunts in Endure; outside Endure it roams and only fights back |
-| Boats and minecarts | Vanilla lets mobs ride them; a riding Nester is persistent (vanilla's `requiresCustomPersistence`), can't gallop or lunge, and still hears |
+| Leashed | Can't be (vanilla's default for an `Enemy`, not overridden) |
+| Name-tagged | Persistent: never retreats; listens and hunts in Endure; outside Endure it roams, bumps and fights back (system §13) |
+| Boats and minecarts | Vanilla lets mobs ride them; a riding Nester is persistent (vanilla's `requiresCustomPersistence`), can't gallop, lunge or circle, still hears, and gives a standing bite to a target in melee reach every 30 ticks |
 | Portals | Can't cross the membrane (`#thesift:cannot_cross`, D-023). Fire lights no other portal in the Sift (vanilla lights them only in the Overworld and the Nether) |
 | Peaceful | Doesn't exist (`notInPeaceful()`) |
 | `mobGriefing` false | No effect: it changes no blocks |
@@ -237,16 +267,41 @@ All original, synthesized in `tools/audio/synth.py`. Subtitles in brackets.
 | A target that dodges every lunge | The circle and the next lunge repeat; it drops the target at 24 blocks or 100 ticks unseen |
 
 ## Tech notes
-- **Synced data:** `STATE` (a byte: roam, tell, gallop, search, windup, leap, recovery, circle, dodge,
-  emerge, dig, lulled) drives the model's clips; `ENDURING` (bool). Saved: `Surface`, `Enduring`,
+- **Synced data:** `STATE` (a byte: roam, tell, gallop, search, windup, leap, recovery, circle, guard,
+  dodge, emerge, dig, lulled) drives the model's clips; `ENDURING` (bool). This refines system §11,
+  which named entity events for the crest flare, the lull and the dig: a synced state lets a client
+  that starts tracking a Nester mid-dig or mid-lull still show it. Saved: `Surface`, `Enduring`,
   `ReturnBy`, the lull, the listener data (system §11).
-- **Dodge:** in `hurtServer`, before damage: if circling, the source is its target's direct melee
-  attack, the roll passes and it hasn't dodged this circle, cancel and hop.
-- **Pathfinding cost:** the gallop paths to one spot per sound (not to a moving entity); the hunt paths
-  every 10 ticks, as a zombie's melee goal does.
+- **Dodge:** in `hurtServer`, before damage: if the guard is up, the source is its target's direct
+  melee attack and dodges remain this circle (1; Hard 2), cancel and hop.
+- **Pathfinding cost:** the gallop paths to one spot per sound (not to a moving entity); the hunt
+  repaths as vanilla's `MeleeAttackGoal` does: every 4–10 ticks while it can see the target, +5
+  beyond 16 blocks, +10 beyond 32, +15 after a failed path.
+- **Cost budget (WP-067):** 30 Nesters roaming plus 10 hunting cost ≤ 1.5× the same numbers of wolves
+  (roaming, and attacking), measured by the `SiftPerfTest` method.
 - **Expected counts:** shared monster cap of 70; with Bloombuds commoner, about 10–20 Nesters around a
   player in Endure.
-- **Risks:** the lunge's contact bite (test on slopes and half-blocks); the dodge feeling unfair (the
-  numbers are per difficulty, and projectiles always land).
+- **Risks:** the lunge's contact bite (test on slopes and half-blocks, and the 4-block reach); the
+  guard being missed (the crest snapping flat, a click, and the same rule every time).
 
 ## Critique log
+- **Round 1 (2026-10-02): FAIL**, 5 must-fix; scores faithful 4, vanilla-native 3, readable 3,
+  meaningful 4, distinct 4, connected 3, feasible 4, template 4, frozen-doc consistency 4. Each
+  vanilla claim was checked in the 26.3 sources before acting (`Mob.setSpeed` sets `zza`, so speed is
+  quadratic; `LeapAtTargetGoal` 2–4 blocks; `Player.hurtServer`'s Easy scaling; `Mob.canBeLeashed`
+  and the hoglin; `MeleeAttackGoal`'s repath). Fixed:
+  - M1, the gallop outran a sprinting player (0.39 is about 6.7 blocks/s): ×1.12, about 5.0, between
+    walking and sprinting, with the blocks/s figures and a GameTest.
+  - M2, the lunge contradicted itself and couldn't land from 6: aim locked at the windup's start
+    (the sidestep window), range 2–4, the bite live until landing, "contact" defined.
+  - M3, the dodge was a coin flip: a guard (crest flat, a click) that always dodges the first swing
+    of a circle (Hard: two).
+  - M4, enduring Easy damage: recomputed from vanilla's formula; non-players take flat damage.
+  - M5, two vanilla claims: leashing (the default, which the hoglin overrides) and the repath rate.
+  - Should-fix, all taken: the bump is players only; name-tagged Nesters bump; close quarters and
+    riding; the synced state refines §11; home cites world.md §1.1, Meadow only until M3, no
+    structures; the look's inventions flagged; the AI choice argued against E3, with emerge, lull
+    and the rim flee in the priorities; souls feed a bloom heart; damage per second and time to
+    kill; the cost budget; eyes. BALANCE rows go in on freeze, as for the Blub. Bite raised to 5
+    (Easy 3.5, Hard 7.5), so a found player is in real danger; the circle stays the frozen
+    system's 30 ticks.
