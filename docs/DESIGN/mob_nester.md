@@ -1,4 +1,4 @@
-# Nester (WP-061) — DRAFT
+# Nester (WP-061) — FROZEN 2026-10-02
 
 The M2 hunter. Fixed by the frozen bible (creatures.md row "Nester", D-011, D-013) and the hunt system
 (`system_hunt.md`, which this doc builds on and doesn't repeat): it **surfaces in Endure**, **hears
@@ -141,19 +141,21 @@ re-aim to the new spot without a tell, hunt ignores it.
   the crouch, time to sidestep; from close in it comes sooner, so **up close, raise the shield early**
   (a shield blocks only after it has been up 5 ticks) or back off. Recovery 12 ticks, in which it
   can't dodge.
-- **Close quarters:** a target within its melee reach (`isWithinMeleeAttackRange`: about 1.6 blocks
-  centre to centre in front, more on the diagonal) gets a **standing bite**: windup 6 ticks in which
+- **Close quarters:** a target within its melee reach (`isWithinMeleeAttackRange`, a box aligned to
+  the world's axes: about 1.6 blocks centre to centre along an axis, about 2.2 on the diagonal) gets a **standing bite**: windup 6 ticks in which
   it steps in toward the target, then the snap, which lands only if the target is still in reach on
   that tick. Hit or miss, the usual recovery and circle follow. A target that presses into melee
   reach during the circle ends the circle early with a standing bite. With no room to circle (a
   one-wide corridor), it backs off along its path to 3 blocks for the circle's time instead.
 - **Shields:** a bite blocked by a shield **staggers** it: 30 ticks instead of the recovery, with a
-  sound subtitled "Nester staggers" (the ravager's stun when its bite is blocked is the precedent).
+  sound subtitled "Nester staggers" (the ravager's stun when its bite is blocked is the precedent;
+  the ravager is stunned half the time, the Nester always).
   Shield the lunge, then hit it.
 - **Circle:** after each bite it circles its target at 4 blocks for 30 ticks (system §3), facing it.
-  A target that walks at it closes in: the circle backs off at about 2.5 blocks/s (×0.8), slower
-  than a walk, so a player can close to sword reach (3 blocks) to bait the guard, and into melee
-  reach for the standing bite.
+  The circle is a **strafe** (it moves while facing its target, as vanilla's `strafe` does), tuned to
+  about 2.5 blocks/s and checked in the speed GameTest. A target that walks at it closes in, since
+  it backs off slower than a walk, so a player can close to sword reach (3 blocks) to bait the
+  guard, and into melee reach for the standing bite.
 - **Dodge** (canon), **never a coin flip:** as a circle starts, its crest fans upright and rattles
   (its **guard**, subtitled "Nester guards"). While the guard is up, the **first** melee hit from its
   target is dodged (on Hard, the first two): any damage whose type is in `#minecraft:is_player_attack`
@@ -161,18 +163,21 @@ re-aim to the new spot without a tell, hunt ignores it.
   hit does nothing, and it hops 2 blocks sideways onto standable ground (never into lumen's radius,
   water, ichor, or off a drop of more than 2; with no such side, it ducks in place and the hit still
   misses), with a sound subtitled "Nester dodges". Then its crest drops: the guard is down until the
-  next circle. It never dodges projectiles, in recovery, in a stagger, or while galloping or
+  next circle. The guard lasts the circle and ends with it, used or not; the **rattle** marks it,
+  not the raised crest alone (the crest is also up while it gallops, system §3, when it never
+  dodges). It never dodges projectiles, in recovery, in a stagger, or while galloping or
   searching. The read: **bait the dodge with a swing, then strike**; or hit it in recovery; or shoot
   it while it circles. As the enderman always evades projectiles, the rule is always the same.
 - **The gallop is loud:** gallop steps play at volume 1.5 (heard about 24 blocks out), subtitled
   "Nester gallops". Ordinary steps play at volume 0.15, as vanilla mobs' steps do, subtitled
   "Nester steps" (as "Warden steps" and "Ravager steps" are), so a deaf player can notice a roaming
   Nester before it hears them.
-- **Out of reach:** a target it can't path to (on a pillar, across ichor) is dropped after 200 ticks
-  without a path (the gallop's limit), and it roams.
-- **Several players:** vanilla's hurt-by rule applies: a hit from another player switches its target
-  to them, and the duel starts over (a new approach, a new guard). Intended: a second player can
-  pull it off a friend.
+- **Out of reach:** a target it can't path to (on a pillar, across a wide ichor lake beyond its path
+  range) is dropped after 200 ticks without a path (the gallop's limit), and it roams.
+- **Several players:** its own rule, not vanilla's: it switches to whoever **last** hurt it (the hunt
+  goal watches `getLastHurtByMobTimestamp`; vanilla's `HurtByTargetGoal` would keep its first
+  attacker while that goal runs), and the duel starts over (a new approach, a new guard). Intended:
+  a second player can pull it off a friend. A GameTest checks it in WP-067.
 
 ### AI
 - **Goals hosting one explicit state machine**, not a Brain. VANILLA_ANALOGS E3's rule points to a
@@ -227,10 +232,12 @@ contact. That's intended: the Nester's threat is finding you in the dark, its sp
 (pairs, enduring ones, Bloombud patches), not raw damage. Time to kill on Normal: an unarmoured
 player about 14 s (4 bites); in iron armour about 28 s (8 bites, as armour halves 5); with a shield
 used well, much longer. **In diamond** (most players arrive through an Ancient City geared) a bite
-does about 1.25, and a well-fed player's regeneration (1 health every 10 ticks while saturated)
-outpaces one Nester: as a zombie is to a player in diamond, a lone Nester is a nuisance there. The
-danger to a geared player is an enduring pair (6.25 a bite), hunger in a long Endure, and what
-the noise brings; that is the intent, as vanilla's own night is for players in diamond.
+does about 1.25 (an enduring one about 1.6), and a well-fed player's fast regeneration (1 health
+every 10 ticks with a full food bar and saturation) outpaces even a pair. But saturation buys only
+about 13 health; after it, regeneration is 1 every 80 ticks, which one ordinary Nester outpaces. So
+the danger to a geared player is **hunger** in a long Endure, and what the noise brings: as a
+zombie is to a player in diamond, a lone Nester is a nuisance until the food runs low. That is the
+intent, as vanilla's own night is for players in diamond.
 
 ## Player interaction
 - **Telegraphs:** "Nester surfaces" and "Nester steps" before it hears you; the vibration particle,
@@ -364,3 +371,14 @@ All original, synthesized in `tools/audio/synth.py`. Subtitles in brackets.
     scaled to its distance; retreat waits for a fight within 16; both cost budgets; the emerge heard
     at 32 blocks; time to kill in diamond, and the intent; several players; out-of-reach targets;
     the dodge hop's footing.
+- **Round 3 (2026-10-02, the last): FAIL, narrowly**, 1 must-fix, small enough to fix in place;
+  scores faithful 5, vanilla-native 4, readable 4, meaningful 4, distinct 4, connected 4, feasible 4,
+  template 5, frozen-doc consistency 5. Every other vanilla claim confirmed; no contradiction with
+  the frozen system. Fixed:
+  - M1, vanilla's `HurtByTargetGoal` keeps its first attacker while running: switching to the last
+    attacker is the Nester's own rule (`getLastHurtByMobTimestamp`), with a GameTest.
+  - Should-fix, all taken: the circle is a strafe tuned to about 2.5 blocks/s; melee reach along a
+    world axis; diamond's real danger is hunger once saturation runs out; "across ichor" narrowed
+    (ichor is water, with a path cost); the guard lasts the circle and the rattle marks it; the
+    ravager stuns half the time; regeneration needs a full food bar.
+- **Frozen 2026-10-02** after round 3 (the cap of three rounds). Numbers in BALANCE.md.

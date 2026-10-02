@@ -1,7 +1,7 @@
 # STATUS (session 1, 2026-10-02)
 - **Phase / Milestone:** M1 done; the owner's playtest rework (`v0.1.1-alpha`) done; M2 "the hunt" in design.
 - **Autonomy:** **full-auto** (D-014). **The build to try:** https://github.com/Skisisksiskskskss/Trapisque/releases/tag/v0.1.1-alpha, the owner's playtest rework (D-024, D-025); steps in `docs/PLAYTEST.md` (top section). **Use a new world.** The previous build: https://github.com/Skisisksiskskskss/Trapisque/releases/tag/v0.1.0-alpha
-- **Current WP:** WP-061, the Nester design doc (draft): critique round 1 next. WP-060 (the hunt system) is frozen, with its BALANCE section.
+- **Current WP:** WP-062, the Bloombud design doc: critique round 2 under way. WP-060 (the hunt system) and WP-061 (the Nester) are frozen, with their BALANCE sections.
 - **Done this session:**
   - Phases 0–3 and M1 (WP-040..053).
   - The owner's playtest rework:
@@ -13,8 +13,8 @@
     - the Blub remodelled after the first look.
 - **Next 3 actions:**
   1. Answer the owner's notes on `v0.1.1-alpha` the moment they arrive.
-  2. WP-061: align the Nester draft with the frozen hunt doc, then critique (≤ 3 rounds) and freeze.
-  3. WP-062 (Bloombud) design, then WP-064 (lumen and M2 blocks).
+  2. WP-062: Bloombud critique rounds 2–3, then freeze.
+  3. WP-064 (lumen, tidewrack, the Endure bloom, the chime bell flower: M2 blocks) design, then the M2 code WPs.
 - **Build:** ✅ `./gradlew build` (with GameTests) · datagen no-diff ✅ · `check_bible.py` ✅ · `check_palette.py` ✅ (38 textures) · `check_lang.py` ✅
 - **Tests:** 70/70 server GameTests. The client GameTest walks the entry, the Tides, a basin and the blubs, and its landscape shots (`look_*`) compare the land with the teasers.
 - **Server boot:** ✅ (the GameTest dedicated server on every build).

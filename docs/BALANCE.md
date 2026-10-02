@@ -50,6 +50,35 @@ Normal and 35 % on Hard; everything else is the same on every difficulty, as the
 | Return-by | the next Thrive's first tick, saved at spawn | — | Spawn eggs and `/summon` too |
 | Chime bell | once per 10 ticks, not when sneaking | — | — |
 
+## Nester (WP-061, frozen 2026-10-02)
+The listening hunter (mob_nester.md), on the hunt system above. **Difficulty:** damage to players
+scales as vanilla's (Easy min(d/2+1, d), Hard ×1.5); the guard dodges one swing (Hard two); the
+enduring chance is the system's (25 %, Hard 35 %); Peaceful removes it.
+
+| Stat | Nester | Wolf | Spider | Zombie | Why |
+|---|---|---|---|---|---|
+| Max health | 20 (enduring 30) | 8 | 16 | 20 | A duelist that lasts a few exchanges |
+| Armor | 2 | 0 | 0 | 2 | |
+| Bite (Easy / Normal / Hard) | 3.5 / 5 / 7.5 (enduring 4.1 / 6.25 / 9.4); flat 5 against non-players | 3 / 4 / 6 | 2 / 2 / 3 | 2.5 / 3 / 4.5 | Few, telegraphed bites that matter |
+| Speed | 0.3; gallop and hunt ×1.12 (about 5.0 blocks/s), roam ×0.6 (1.4), circle a strafe of about 2.5 | 0.3 (4.0) | 0.3 (4.0) | 0.23 (2.3) | Catches a walker (4.3), not a sprinter (5.6) |
+| Follow range | 24 | 16 | 16 | 35 | The hunt's drop distance |
+| Knockback resistance | 0 (enduring 0.2) | 0 | 0 | 0 | |
+| Step height | 1.0 | 0.6 | 0.6 | 0.6 | Long legs (the horse's 1.0) |
+| XP | 5 (enduring 10) | 1–3 | 5 | 5 | No drops: the price of Endure, not a resource |
+
+| Behaviour number | Value | Vanilla analog | Reasoning |
+|---|---|---|---|
+| Lunge | beyond melee reach to 4 blocks; aim locked at an 8-tick windup; leap up to 0.6 / 0.35, scaled to distance; bite live until it lands (≤ 12 ticks) | `LeapAtTargetGoal` 2–4 | The windup is the sidestep window; about 17 ticks from crouch to bite at 4 blocks |
+| Standing bite | at melee reach; windup 6 stepping in; hit or miss, then recovery | melee attack | Close in, shield early |
+| Recovery / stagger | 12 ticks / 30 when a shield blocks the bite | ravager stun 40 (half the time) | Shield it, then hit it |
+| Circle | 30 ticks at 4 blocks, a strafe of about 2.5 blocks/s | wolf, spider | The system's "circles on cooldown" |
+| Guard | the first melee hit of each circle dodged (Hard: two); player attacks, spears, mace smashes, mob attacks; never projectiles | enderman (projectiles, always) | Never a coin flip: bait it, then strike |
+| Damage rate | about 1.4 per second on Normal (one cycle ≈ 70 ticks) | zombie 3, spider 2 | Its threat is being found, its speed and its company |
+| Time to kill (Normal) | unarmoured ≈ 14 s; iron ≈ 28 s; diamond: regeneration wins until hunger | — | Hunger is the long-Endure danger |
+| Sounds | gallop volume 1.5 (24 blocks), emerge volume 2 (32), steps 0.15 subtitled | warden steps | Heard before it hears you |
+| Out of reach | target dropped after 200 ticks without a path | — | Pillars are safe, as in vanilla |
+| Spawning | Singer's Meadow (Hymnstone Rise from M3), Endure only, on soil, groups 1–2; weight in WP-070 (proposal 60 against the Bloombud's 100) | — | Nesters are the event; buds the commoner danger |
+
 ## Blub (WP-048, frozen 2026-10-01)
 A pet, never a fighter (mob_blub.md). Passive: no difficulty scaling.
 

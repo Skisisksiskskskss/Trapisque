@@ -45,7 +45,7 @@ Only one WP is IN PROGRESS at a time.
 | WP-053 | M1 integration and Gate C (self-review) | 4 | M | DONE |
 | WP-054 | The owner's playtest rework: water, terrain, textures, trees, Blub (`v0.1.1-alpha`) | 4 | L | DONE |
 | WP-060 | M2 system design: the hearing rule, retreat, enduring variants, lumen | 4 | L | DONE |
-| WP-061 | Nester design doc | 4 | L | DRAFT |
+| WP-061 | Nester design doc | 4 | L | DONE |
 | WP-062 | Bloombud design doc | 4 | L | DRAFT |
 | WP-063 | Sift Hollows: the cave layer and glowcap pools | 4 | L | IN PROGRESS (caves done in WP-054; glowcap pools wait for WP-064) |
 | WP-064 | Flora II: tidewrack, Endure bloom, glowcap, chime bell flower, lumen bloom | 4 | L | TODO |
@@ -645,6 +645,7 @@ Source: 01_CONTENT_BIBLE.md §M2 row; bible/creatures.md, items.md, world.md (M2
 
 ### WP-061 Nester design doc
 - Tier: L (design) · Depends on: WP-060 · Goal: `mob_nester.md` via the design ladder (≥ 8 concepts), the full §8.1 template, critique ≤ 3, frozen; BALANCE rows.
+- Status: DONE (frozen 2026-10-02). Evidence: a 9-concept ladder; every §8.1 section; three critique rounds (FAIL 5 → FAIL 4 → FAIL 1, each fixed; every vanilla claim checked in the 26.3 sources; log in the doc); BALANCE section "Nester".
 
 ### WP-062 Bloombud design doc
 - Tier: L (design) · Depends on: WP-060 · Goal: `mob_bloombud.md` (groups across the Meadow, canon), same bar as WP-061.
