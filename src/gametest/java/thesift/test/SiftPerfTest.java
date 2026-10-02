@@ -1,5 +1,7 @@
 package thesift.test;
 
+import java.lang.management.GarbageCollectorMXBean;
+import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -74,6 +76,11 @@ public final class SiftPerfTest {
 	 * schedule (once a second, spread by position) as its block entity ticker does. Reports the
 	 * vents' work per server tick: p95 and max. Fluid ticks the fills schedule are not included;
 	 * basin ichor can't spread (solid walls, nothing below), so each is a no-op.
+	 *
+	 * <p>The Flow is run {@link #SWEEPS} times (it ends with every basin empty again) and each tick's
+	 * cost is its least over the sweeps. A GC pause or the OS taking the server thread lands on one
+	 * sweep's tick (a CI runner once put 36 ms on a single tick that measures 3 to 11 ms locally); the
+	 * vents' own work is in every sweep. The raw worst tick is logged too, with whether a GC ran in it.
 	 */
 	@GameTest(maxTicks = 400)
 	public void fiftyBasinsThroughAFlowStayWithinBudget(GameTestHelper helper) {
@@ -89,35 +96,69 @@ public final class SiftPerfTest {
 			vents.add((TideVentBlockEntity) level.getBlockEntity(vent));
 		}
 		long slots = vents.stream().mapToInt(v -> TideVentBlockEntity.phase(v.getBlockPos())).distinct().count();
-		helper.assertTrue(slots >= 15, "50 chunk-centred vents spread over most of the 20 slots: " + slots);
+		// Plain hashes used 5 slots; 50 well-mixed vents use 18 or so (fewer than 15: 1 in 2000; fewer than 12: 1 in 6 x 10^7).
+		helper.assertTrue(slots >= 12, "50 chunk-centred vents spread over most of the 20 slots: " + slots);
 		long start = Tide.FLOW_RISING.startTick() - 40;
 		vents.forEach(v -> v.update(level, start)); // loaded in Thrive: empty
 		int span = (Tide.ENDURE.startTick() - Tide.FLOW_RISING.startTick()) + 80;
-		long[] perTick = new long[2 * span];
+		int n = 2 * span;
+		long[][] perTick = new long[SWEEPS][n];
+		boolean[][] gcInTick = new boolean[SWEEPS][n];
+		long gcStart = gcCount();
 		int changed = 0;
-		int n = 0;
-		for (long from : new long[] {start, Tide.FLOW_FALLING.startTick() - 40}) {
-			for (int t = 0; t < span; t++, n++) {
-				long cycleTick = from + t;
-				long t0 = System.nanoTime();
-				for (TideVentBlockEntity vent : vents) {
-					if (Math.floorMod(cycleTick + TideVentBlockEntity.phase(vent.getBlockPos()), TideVentBlockEntity.UPDATE_INTERVAL) == 0) {
-						changed += vent.update(level, cycleTick);
+		for (int sweep = 0; sweep < SWEEPS; sweep++) {
+			int i = 0;
+			for (long from : new long[] {start, Tide.FLOW_FALLING.startTick() - 40}) {
+				for (int t = 0; t < span; t++, i++) {
+					long cycleTick = from + t;
+					long gc = gcCount();
+					long t0 = System.nanoTime();
+					for (TideVentBlockEntity vent : vents) {
+						if (Math.floorMod(cycleTick + TideVentBlockEntity.phase(vent.getBlockPos()), TideVentBlockEntity.UPDATE_INTERVAL) == 0) {
+							changed += vent.update(level, cycleTick);
+						}
 					}
+					perTick[sweep][i] = System.nanoTime() - t0;
+					gcInTick[sweep][i] = gcCount() != gc;
 				}
-				perTick[n] = System.nanoTime() - t0;
 			}
 		}
-		long[] sorted = Arrays.copyOf(perTick, n);
+		long gcs = gcCount() - gcStart;
+		long[] least = new long[n];
+		int rawSweep = 0;
+		int rawTick = 0;
+		for (int i = 0; i < n; i++) {
+			least[i] = Long.MAX_VALUE;
+			for (int sweep = 0; sweep < SWEEPS; sweep++) {
+				least[i] = Math.min(least[i], perTick[sweep][i]);
+				if (perTick[sweep][i] > perTick[rawSweep][rawTick]) {
+					rawSweep = sweep;
+					rawTick = i;
+				}
+			}
+		}
+		long[] sorted = least.clone();
 		Arrays.sort(sorted);
 		double p95 = sorted[(int) (n * 0.95)] / 1e6;
 		double max = sorted[n - 1] / 1e6;
-		long overOneMs = Arrays.stream(perTick, 0, n).filter(t -> t > 1_000_000).count();
-		TheSift.LOGGER.info("Basins, 50 through a whole Flow (rising and falling, {} ticks, {} slots): {} blocks changed, vent work per tick p95 {} ms, max {} ms, {} ticks over 1 ms (the layer changes)",
-				n, slots, changed, String.format(Locale.ROOT, "%.3f", p95), String.format(Locale.ROOT, "%.3f", max), overOneMs);
-		helper.assertValueEqual(changed, 50 * 2 * layerCells(), "every basin filled and drained all three layers");
-		helper.assertTrue(max < 25.0, "the worst tick's vent work stays under half a tick: " + max + " ms");
+		long overOneMs = Arrays.stream(least).filter(t -> t > 1_000_000).count();
+		TheSift.LOGGER.info("Basins, 50 through a whole Flow (rising and falling, {} ticks, {} slots, least of {} sweeps): {} blocks changed per sweep, vent work per tick p95 {} ms, max {} ms, {} ticks over 1 ms (the layer changes); raw worst {} ms (sweep {}, tick {}, GC in it: {}; {} GCs in all sweeps)",
+				n, slots, SWEEPS, changed / SWEEPS, String.format(Locale.ROOT, "%.3f", p95), String.format(Locale.ROOT, "%.3f", max), overOneMs,
+				String.format(Locale.ROOT, "%.3f", perTick[rawSweep][rawTick] / 1e6), rawSweep, rawTick, gcInTick[rawSweep][rawTick] ? "yes" : "no", gcs);
+		helper.assertValueEqual(changed, SWEEPS * 50 * 2 * layerCells(), "every basin filled and drained all three layers, every sweep");
+		helper.assertTrue(max < 25.0, "the worst tick's vent work (least of " + SWEEPS + " sweeps) stays under half a tick: " + max + " ms");
 		helper.succeed();
+	}
+
+	private static final int SWEEPS = 3;
+
+	/** Collections so far, all collectors. */
+	private static long gcCount() {
+		long count = 0;
+		for (GarbageCollectorMXBean gc : ManagementFactory.getGarbageCollectorMXBeans()) {
+			count += Math.max(0, gc.getCollectionCount());
+		}
+		return count;
 	}
 
 	/** Cells in the three layers of an inner-3 basin. */

@@ -447,6 +447,7 @@ Minimum per mission: entry and return, one area with its own terrain, a small bl
   - 2026-10-01: core done (feature in lows, vent BE one layer/s, catch-up ≤ 507 blocks, static pools, 8 GameTests, Thrive/Endure previews). Left: MSPT p95 measurement, rising-bubble and tide-mark visuals.
 
   - 2026-10-01 (measured, `SiftPerfTest`): 50 basins through a whole rising and falling Flow: vent work per tick p95 0.005 ms, max 5.6–10.4 ms (about 30 layer-change ticks per cycle, ~8 µs per cell with light and fluid scheduling). The test found vents at chunk centres sharing only 5 of the 20 update slots (plain `hashCode`); vents now use a mixed hash (17–19 slots).
+  - 2026-10-02: CI failed the max-tick assertion once (36 ms; release run at the same commit passed). Root cause, reproduced locally: a GC pause inside a timed tick (27.1 ms, the one tick a GC ran in). The test now runs the Flow three times and takes each tick's least, logs the raw worst tick and whether a GC ran in it; max 1.0–3.5 ms. The slot-spread floor went from 15 to 12 (false failure odds 1 in 2000 → 1 in 6×10⁷; the bug it catches used 5).
   - 2026-10-01 (Gate C): done. The rising-bubble visual is left for polish (a known issue in PLAYTEST.md); tide marks are M2–M3 in the bible.
 ### WP-046 Entry I: frames, offering, waking, music
 - Phase / Milestone: 4 / M1
