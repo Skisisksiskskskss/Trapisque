@@ -92,7 +92,7 @@ Every Sift plant (the songwood sapling, lullvine, tidewrack, Endure bloom, glowc
 
 | Entry | What it does | Tier | MS | Source | Links |
 |---|---|---|---|---|---|
-| **Ichor** (fluid) | Thick wade-through liquid: slows, burns (vanilla fire), drains XP from anything that isn't a Sift native; Fire Resistance stops the burning only (D-013). A bucket of it evaporates outside the Sift | **Core** | M1 (D-016) | C (canon hazard) | T S Cr |
+| **Ichor** (fluid) | The Sift's water (D-024): swum as water, harmless, with a soap bubble's sheen; thicker than water, it lifts what floats in it and spreads more slowly (D-026). A bucket of it evaporates outside the Sift. *(Was a hazard that slowed, burned and drained XP: D-013, superseded by D-024.)* | **Core** | M1 (D-016) | C (canon hazard) | T S Cr |
 | **Tidewrack** | Low-tide reagent that grows on tide flats. It opens only in Thrive (logical tide) and drops fronds used for gear traits, dye and blub treats | **Core** | M2 | I | T S W Cr |
 | **Endure bloom** | A flower along the waterline that opens only in Endure. Its petals are a rare reagent (lumen lanterns, traits) | **Core** | M2 | I | T N W |
 | **Glowcap** | A small luminous cave fungus (light 10) that rings glowcap pools | **Should** | M2 | I | W Cr (Bloombuds avoid lit pockets by the light rule) |
