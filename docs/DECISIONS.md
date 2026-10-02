@@ -639,3 +639,18 @@ It also found that M1's Tide changed nothing in play (SF4), since the mission as
 - BALANCE's ichor row records the lift, the 8-tick step and the alpha.
 
 **Revisit if** the owner's next playtest finds the ichor too unlike water to swim comfortably (lower the lift), the sheen too busy (widen the bands), or the Flats too common or too rare (move `FLATS_HUMIDITY`).
+
+## D-027 The M2 flora: tide plants picked by the cycle, wild-only reagents and lumen, plant sounds (2026-10-02) [WP-064] [narrows world.md §4 "at home it is decoration" for three plants; amends world.md §3.1's sound register for plants]
+**Context.** WP-064 designs the M2 plants (`docs/DESIGN/block_flora_ii.md`): tidewrack, the Endure bloom, the glowcap, the chime bell flower and the lumen bloom. The frozen documents say when the reagents can be had (systems.md §1), that growth never produces them (systems.md §2), that they come "only from the flats and the waterline", and that lumen lanterns are how players make their own lumen (world.md §2). Critique round 1 found that any way of moving these plants (shears, Silk Touch) let players duplicate the harvest, garden petals away from Endure's dark, or carry natural lumen for free.
+
+**Decision.**
+- **"The patch you come back to."** Tide plants switch open and closed as eyeblossoms do (a random tick reading `thesift:gameplay/tide`, then a ripple to neighbours). They are picked as sweet berries are (*use* leaves the plant), only when the logical Tide is theirs, once per cycle (a cycle stamp in the block state). A pick is a vibration with the player as source, so in Endure the hunters can hear petals being taken.
+- **Wild-only.** Tidewrack, the Endure bloom and the lumen bloom drop no plant with any tool, Silk Touch included, as budding amethyst. They have creative-only block items. They never grow or spread. So world.md §4's "at home it is decoration" no longer applies to these three (they can't be carried home), and tidewrack still "grows on tide flats".
+- **Sounds.** world.md §3.1 puts healthy sculk's step and break sounds "in the amethyst register". M1 shipped vanilla plant sound types for its plants (grass, pink petals, cherry sapling, moss carpet), and crystal sounds on every flower would grate. So plants keep vanilla plant sound types (tidewrack wet grass, the Endure bloom grass, the glowcap fungus, the lumen bloom spore blossom). The chime bell, whose nature is a chime, takes the small amethyst bud's. §3.1's "chimes and soft hums" are carried by the chime bell's ring and hum.
+
+**Consequences.**
+- Fronds and petals are paced by the Tides and by how many patches a player has found. Lanterns make picking safe once owned, which is the intended progression.
+- The harvest needs one loot condition of our own (`thesift:tide_flora_ready`), and the ichor bucket gets overrides to fill tidewrack.
+
+**Revisit if** players want tidewrack or blooms at home as decoration (a separate decorative variant could be added without reopening the reagent loop), or the playtest finds picking in Endure too punishing.
+

@@ -51,8 +51,8 @@ risks while gathering, so the Tides are felt through the plants rather than read
    layer as the ichor reaches them, a physical rule.
 7. ***Bells around the light*** (unusual): chime bells grow in drifts around lumen blooms, so the
    safe pocket is ringed by noise: you reach it carefully, sneaking through the bells.
-8. **Glowcap pools as camps:** glowcaps' light (10) keeps spawns out of a cave pool's ring, so the
-   Hollows have lit pockets you can find and use.
+8. **Glowcap pools as lit pockets:** glowcaps' light (10) keeps spawns out of a cave pool's ring, so
+   the Hollows have pockets where nothing appears beside you (hunters may still walk in).
 9. **Lumen that sleeps:** lumen blooms give light only in Endure.
 10. **A fixed wild supply:** the tide plants never grow, spread or move. They come from world
     generation and stay where the world put them: no tool gives the plant itself (as budding amethyst
@@ -68,7 +68,7 @@ risks while gathering, so the Tides are felt through the plants rather than read
 | 5 | Drifting wrack | 3 | 2 | 4 | 3 | 5 | 3 | 2 | 22 |
 | 6 | The waterline follows the water | 2 | 3 | 4 | 3 | 4 | 3 | 3 | 22 |
 | 7 | Bells around the light | 4 | 4 | 4 | 4 | 5 | 5 | 4 | **30** |
-| 8 | Glowcap pools as camps | 4 | 5 | 5 | 4 | 3 | 4 | 5 | **30** |
+| 8 | Glowcap pools as lit pockets | 4 | 5 | 5 | 4 | 3 | 4 | 5 | **30** |
 | 9 | Lumen that sleeps | 2 | 3 | 3 | 2 | 3 | 3 | 4 | 20 |
 | 10 | A fixed wild supply | 5 | 5 | 4 | 4 | 3 | 4 | 5 | **30** |
 
@@ -101,15 +101,18 @@ Notes on the calls:
 ## The family
 | Block (id) | What it is | Block light | Tide rule | Drops (any tool, Silk Touch included) |
 |---|---|---|---|---|
-| **Tidewrack** (`thesift:tidewrack`) | Ribbons of wrack lying on a tide basin's floor | 0 | Open in Thrive; closed otherwise | Open, unpicked, in Thrive: 1–2 fronds. Otherwise nothing. Never the plant |
-| **Endure bloom** (`thesift:endure_bloom`) | A low star of petals on the waterline | 0 (open petals emissive) | Open in Endure; closed otherwise | Open, unpicked, in Endure: 1 petal. Otherwise nothing. Never the plant |
+| **Tidewrack** (`thesift:tidewrack`) | Ribbons of wrack lying on a tide basin's floor | 0 | Open in Thrive; closed otherwise | Ready (open, unpicked this cycle, Thrive): 1–2 fronds. Otherwise nothing. Never the plant |
+| **Endure bloom** (`thesift:endure_bloom`) | A low star of petals on the waterline | 0 (open: emissive centre and petal edges) | Open in Endure; closed otherwise | Ready (open, unpicked this cycle, Endure): 1 petal. Otherwise nothing. Never the plant |
 | **Glowcap** (`thesift:glowcap`) | A cluster of small flat-topped cave fungi | 10 | — | Itself |
 | **Chime bell flower** (`thesift:chime_bell_flower`) | Pale-blue flared bells hanging from an arched stem | 0 | Rings in every Tide; heard in Endure | Itself |
 | **Lumen bloom** (`thesift:lumen_bloom`) | Three broad glassy petals splayed flat around a light | 12 | Lumen (repels hunters) in every Tide | Nothing, even with Silk Touch |
 | Potted chime bell flower, potted glowcap | Flower-pot variants, as vanilla's | as above | — | The pot and the plant |
 
 The three that drop nothing as a plant (tidewrack, the Endure bloom, the lumen bloom) follow budding
-amethyst and spawners: the world's own, to be used where they stand.
+amethyst: the world's own, to be used where they stand. Like budding amethyst they still have block
+items, for the creative tab and pick-block, but no survival source (no loot, no recipe, no trade).
+This narrows world.md §4 (tidewrack "grows on tide flats" stays true; "at home it is decoration" no
+longer applies to these three, which can't be carried home): recorded as **D-027**.
 
 ## Shared rules
 - **Scope:** world.md §4: Sift plants grow, spread or take bone meal only where `sift_life` is true.
@@ -121,25 +124,36 @@ amethyst and spawners: the world's own, to be used where they stand.
     is wrong for the Tide, it switches, plays its long switch sound, sends one trail particle upward,
     emits `minecraft:block_change` with no entity source, and schedules a tick for every block **of the
     same block with the same `open` value** within 3 horizontally and 2 vertically, after 5–10 ticks
-    per block of distance (the eyeblossom matches the exact state; ours ignores `picked` and
-    `submerged`, so a patch ripples as one);
+    per block of distance (the eyeblossom matches the exact state; ours ignores `picked_cycle`
+    and `submerged`, so a patch ripples as one);
   - a **scheduled tick** does the same with the short switch sound;
-  - **closing clears `picked`**, and nothing else does; every way a plant is placed (world generation,
-    `/setblock` without states, a creative block item) sets `picked` true, so a plant gives nothing
-    until it has closed once;
+  - **picked is a stamp, not a flag.** The state `picked_cycle` (0–15) holds 0 for unpicked, or the
+    cycle it was picked in: (Tide clock ticks ÷ 30 000, rounded down, mod 15) + 1. A plant counts as
+    picked only if its stamp is the **current** cycle's, so a plant left in an unloaded chunk is fresh
+    again when its next window comes, with no tick needed. A random tick that finds a stale stamp sets
+    it to 0 (so the model shows unpicked again), and closing sets it to 0. World generation, commands
+    and creative items place plants at 0: a new patch yields in its first window. (A plant picked and
+    left unloaded for exactly a multiple of 15 cycles, 6.25 hours, would read as picked until its next
+    window: accepted.)
+  - **a stale state** is fixed by the first *use* too: a use on a plant whose `open` state is wrong for
+    the Tide switches it at once (the short sound, no drop), so a fresh patch generated mid-window can
+    be opened by hand and picked with a second use;
   - at the default `random_tick_speed` 3, one block is picked about once every 1 365 ticks (4 096 blocks
     in a section, 3 picks a tick): a lone plant's mean wait is about 68 s, and about 5 % wait longer
     than 3.4 minutes; in a patch the first switch ripples through the rest within seconds.
 - **Picking (tidewrack, Endure bloom),** as `SweetBerryBushBlock.useWithoutItem`:
   - *use* on the plant (with an empty hand, or an item that has no use on it);
-  - if it is open, unpicked, in the Sift, and the logical Tide is its Tide: it drops its harvest loot
-    table at the plant, plays `thesift:block.flora.pick` (subtitle "Plant picked"), becomes picked,
-    and emits `minecraft:block_change` with the player as source (as the bush does);
-  - if it is open but the Tide has moved on (or outside the Sift), it closes at once (the short
-    switch, no drop);
+  - if it is **ready** (open, not picked this cycle, in the Sift, and the logical Tide is its Tide): it
+    drops its harvest loot table at the plant, plays `thesift:block.flora.pick` (3 variants, subtitle
+    "Plant picked"), stamps the current cycle, and emits `minecraft:block_change` with the player as
+    source (as the bush does); the use succeeds (the hand swings);
+  - if its `open` state is wrong for the Tide (or it is outside the Sift and open), it switches at once
+    (the short switch and its ownerless `block_change`, no drop); the use succeeds;
   - otherwise the use passes (`InteractionResult.PASS`, the default), as on any plain block.
-- **Breaking** uses the block loot table: the harvest under the same conditions (open, unpicked, the
-  Tide right), and nothing otherwise, whatever the tool. No Fortune on either table (sweet berries'
+- **Breaking** uses the block loot table: the harvest if the plant is ready, and nothing otherwise,
+  whatever the tool. "Ready" needs the cycle stamp, which no vanilla loot predicate can compare, so it
+  is one loot condition of our own, `thesift:tide_flora_ready` (registered as a
+  `LootItemConditionType`), used by both the harvest and the block tables. No Fortune on either table (sweet berries'
   break table applies Fortune; a reagent's yield stays fixed). Pistons pop it (`PushReaction.POPPED`,
   as poppies), dropping as a break with no tool. Breaking is the worse choice: the harvest once, and
   the plant gone for good.
@@ -151,9 +165,12 @@ amethyst and spawners: the world's own, to be used where they stand.
 - **Fluids** (`FlowingFluid.canHoldAnyFluid`: a block takes a fluid only if it is a
   `LiquidBlockContainer` or in `#minecraft:washed_away_by_fluids`):
   - **tidewrack** is a container for ichor only (§1);
-  - **glowcaps** are washed away (`#minecraft:washed_away_by_fluids`, as mushrooms and glow lichen);
-  - **Endure blooms, chime bells and lumen blooms** hold fluids back, as poppies do in 26.3 (they are
-    not in that tag): ichor laps against a bloom on the waterline without breaking it.
+  - **glowcaps and chime bells** are washed away (in `#minecraft:washed_away_by_fluids`, as mushrooms,
+    glow lichen and every vanilla small flower: poppies, dandelions, blue orchids, spore blossoms and
+    eyeblossoms are all in it), dropping as a break with no tool;
+  - **Endure blooms and lumen blooms** hold fluids back (not in the tag, not containers), as **sugar
+    cane** does: they are wild and irreplaceable, so a bucket can't wipe a petal patch or a camp for
+    good. Ichor laps against a bloom on the waterline without breaking it.
 
 ## 1. Tidewrack
 - **Identity:** the low-tide reagent of the tide flats (world.md §4): you go down onto the bare basin
@@ -171,13 +188,17 @@ amethyst and spawners: the world's own, to be used where they stand.
     waterlog a slab); `BucketPickup` gives the ichor back into a bucket;
   - the **vent** sets and clears `submerged` directly: its fill also submerges dry tidewrack, its drain
     dries it (one branch each in `TideVentBlockEntity`);
-  - **the ichor bucket** needs its own branch: vanilla's `BucketItem` only puts *water* into a
-    container (`this.content == Fluids.WATER`) and otherwise replaces the clicked block. Our
-    `IchorBucketItem` targets a clicked dry tidewrack and calls `placeLiquid`, as vanilla does for
-    water;
+  - **the ichor bucket** needs two overrides: vanilla's `BucketItem.use` makes the clicked block the
+    target only for water (`this.content == Fluids.WATER`), and `emptyContents` otherwise treats a
+    non-solid plant as replaceable and puts the fluid in its place. `IchorBucketItem` overrides
+    **`use`** (a clicked dry tidewrack is the target) and **`emptyContents`** (a dry tidewrack target
+    gets `placeLiquid`), as vanilla does for water; dispensers call `emptyContents` on the block in
+    front, so a dispensed ichor bucket submerges it too;
   - water and lava don't enter dry tidewrack (a container that refuses them, as a waterloggable block
-    refuses lava); submerged, it is full.
-- **States:** `open`, `picked`, `submerged` (booleans).
+    refuses lava); submerged, it is full. A **water bucket** clicked on dry tidewrack is lost, as on
+    kelp (vanilla targets any container with water and reports success even when `placeLiquid`
+    refuses): vanilla's own quirk, kept.
+- **States:** `open`, `submerged` (booleans); `picked_cycle` (0–15).
 - **Properties:** no collision, instant break, `SoundType.WET_GRASS` (seagrass's), offset XZ, map
   colour `WATER` (as kelp), pushes `POPPED`, not flammable (as kelp), random ticks.
 - **Look** (cutout, 16 × 16, a ramp `tidewrack`: olive green to ochre gold, warm, with sea-green
@@ -194,7 +215,7 @@ amethyst and spawners: the world's own, to be used where they stand.
 - **Loot:** 1–2 fronds (uniform), as sweet berries give 1–2 at age 2.
 - **Tags:** `#thesift:tide_flora` (the two tide plants, for tests and rules).
 - **Advancement:** "Low Tide" (items.md, WP-072): `minecraft:inventory_changed` with a tidewrack frond.
-- **Compost:** none (no item).
+- **Compost:** not compostable (a creative-only item).
 
 ## 2. Endure bloom
 - **Identity:** the high tide's flower (world.md §4): it opens along the waterline as Endure begins,
@@ -208,44 +229,56 @@ amethyst and spawners: the world's own, to be used where they stand.
   - The basin feature gives a basin's ring 3 (its Endure waterline, dry in every Tide) 2–4 blooms
     with a 30 % chance.
   - Survives on healthy sculk, Sift Soil, tide sand and `#minecraft:dirt`.
-- **States:** `open`, `picked` (booleans).
+- **States:** `open` (boolean); `picked_cycle` (0–15).
 - **Properties:** no collision, instant break, `SoundType.GRASS`, offset XZ, map colour `PLANT`,
-  pushes `POPPED`, flammable as flowers (60, 100, as poppies), random ticks. **No block light**
-  (world.md §3.1): the open petals are drawn with an emissive element (`light_emission` 15 in the
-  model, as vanilla's open eyeblossom uses `cross_emissive`), so an open patch shows in Endure's dark
-  without lighting the ground or changing where mobs spawn.
-- **Look** (cutout, a ramp `endure_bloom`: grey-green leaves; pale pink-lavender to silver-white
-  petals):
+  pushes `POPPED`, **not flammable** (a wild supply one fire could end; as kelp and tidewrack), random
+  ticks. **No block light** (world.md §3.1): the open bloom's centre and petal edges are drawn with an
+  emissive element (`light_emission` 15 in the model, as vanilla's open eyeblossom uses
+  `cross_emissive`), so an open patch shows in Endure's dark without lighting the ground or changing
+  where mobs spawn.
+- **Look** (cutout, a ramp `endure_bloom`: grey-green leaves; **cool** lavender to periwinkle petals
+  and a pale blue-white centre; no pink and no warm white, which belong to the Bloombud's `particle`
+  tips):
   - **closed:** a flat rosette of grey-green leaves, 2 px high, no stalk, nothing furled into a ball;
-  - **open:** an eight-pointed star of pale pink-lavender petals lying flat 2 px above the ground,
-    with a silver-white centre; the whole star is emissive, a soft even glow;
+  - **open:** an eight-pointed star of lavender-to-periwinkle petals lying flat 2 px above the ground;
+    only the centre and the petal edges are emissive, so it glows as a thin cool outline of a star;
   - **picked:** the green star of sepals, not emissive;
-  - a flat star on the ground, never points on a bud and never warm: unlike the Bloombud's ring of
-    five warm tips held up on a plum bud (mob_bloombud.md).
+  - a flat cool outline on the ground, never points on a bud and never warm: unlike the Bloombud's
+    ring of five warm tips held up on a plum bud (mob_bloombud.md).
 - **Sounds:** `endure_bloom.open` (a soft glassy swell, 2 variants, "Endure bloom opens"),
   `endure_bloom.close` (the swell falling, 2 variants, "Endure bloom closes"), long and short.
 - **Loot:** 1 petal.
 - **The decision it makes:** a patch opening at Endure's start is a `block_change` (no entity), so
   listeners within 16 turn toward the waterline then; each pick is a `block_change` with you as the
   source, which sneaking doesn't muffle (it isn't in `#ignore_vibrations_sneaking`). So you pick fast
-  and leave, or wait out the first minute while the hunters come to look and go. Wool between the
-  bloom and a listener blocks the sound (vanilla occlusion casts six slightly offset rays, and all must
-  hit an occluding block, so a low wall may not be enough).
-- **Compost:** none (no item).
+  and leave, or wait out the first minute while the hunters come to look and go. Wool on the straight
+  line between the bloom and a listener blocks the sound (vanilla's six rays are that one line nudged
+  by 1e-5, so one wool block on it occludes them all).
+- **Lanterns change it, on purpose.** A lumen lantern by a patch makes picking there safe: a sound
+  inside the radius only sends a hunter to the rim, and a target inside is dropped (system_hunt.md
+  §6). That is the progression the lantern is for: your first petals are taken in the dark, and they
+  buy the light that makes the next ones safe. Petals stay paced by the Tide (one per bloom per
+  Endure, one Endure every 25 minutes, about 2.4 an hour) and by how many patches a player has found
+  and lit; they are spent on lanterns (WP-065) and gear traits (M5's Muffled Steps and others).
+- **Compost:** not compostable (a creative-only item).
 
 ## 3. Glowcap
 - **Identity:** a small luminous cave fungus (world.md §4, light 10) that rings glowcap pools: the
-  Hollows' lit pockets, where vanilla's spawn rule (`monster_spawn_block_light_limit` 0 in the Sift's
-  dimension type) keeps hostiles out.
+  Hollows' lit pockets, where **nothing spawns** (vanilla's rule: `monster_spawn_block_light_limit` 0
+  in the Sift's dimension type). Hunters may still walk in; only lumen holds them off
+  (system_hunt.md §6).
 - **Where it grows:** WP-063's glowcap pools (a Should): ichor pools in the Hollows ringed by
   glowcaps on their floor cells within 2 of the edge; and scattered clusters on Hollows floors, much
   rarer than glow lichen (which places 104–157 attempts a chunk): 2–6 clusters a chunk below the skin.
   On the surface, nowhere.
 - **Properties:** no collision, instant break, `SoundType.FUNGUS`, offset XZ, map colour
   `COLOR_LIGHT_GREEN`, pushes `POPPED`, not flammable (as mushrooms), washed away by fluids (as
-  mushrooms), light **10** (the soul lantern's). Survives on any sturdy top face. Bone meal, in the
-  Sift only: one new glowcap on a free sturdy floor within 2 blocks whose light is below 13 (the
-  mushrooms' spread rule).
+  mushrooms), light **10** (the soul lantern's). Survives on a floor whose top `isSolidRender` (the
+  mushrooms' placement test), in any light. No random spread. **Bone meal**, in the Sift only: one new
+  glowcap on a free solid floor in the 3 × 3 × 3 around it, unless 5 glowcaps already stand in the
+  9 × 3 × 9 box around it (the cap vanilla's mushroom spread uses: a 1-in-25 random tick, at most 5 in
+  that box; vanilla's bone meal instead grows a huge mushroom). So bone meal can light a cave, but not
+  fill it.
 - **Look** (cutout, a ramp `glowcap`: pale seafoam-green caps, grey-green gills and stems): three
   small caps on short stems, each cap a flat disc wider than it is tall (4 px wide, 1 px thick),
   ankle-high (6 px). Flat shelves, never a dome on a stalk, and cool, never warm.
@@ -258,9 +291,10 @@ amethyst and spawners: the world's own, to be used where they stand.
   - flower patches in Singer's Meadow (1 chunk in 4: a random patch of 12 tries within 6 blocks) and
     the Ichor Flats (1 chunk in 6); vanilla's default flower patch is 1 in 32, so the Sift is a
     flowerier place, as the teasers show;
-  - a ring around half of the lumen blooms (concept 7): 8–12 flowers **7–11 blocks** from the bloom,
-    just outside the repel radius (6), on the approach. A ring rung there is heard (system_hunt.md
-    §6: a sound inside the radius only sends a hunter to the rim to pace);
+  - a ring around half of the lumen blooms (concept 7): a **dense band 2 blocks wide, 7–8 blocks** from
+    the bloom (about 70 % of the band's ~100 cells filled, so about 70 flowers), just outside the repel
+    radius (6), all the way round. You cross it by sneaking, or by building over it. A ring rung there
+    is heard (system_hunt.md §6: a sound inside the radius only sends a hunter to the rim to pace);
   - Lullaby Hills (M5) will be its home.
   - Survives on healthy sculk, Sift Soil and `#minecraft:dirt` (`SiftPlants.isSiftGround`).
 - **Ringing** (system_hunt.md §9, decided there):
@@ -281,11 +315,15 @@ amethyst and spawners: the world's own, to be used where they stand.
   particle. It makes no vibration, so a player reading subtitles can tell the harmless hum from a
   ring the hunters hear.
 - **Properties:** a `FlowerBlock` (suspicious stew: Slow Falling, 7 s, by a recipe of its own in
-  WP-065, as each vanilla flower has its own `suspicious_stew_from_*` recipe); no collision, instant
-  break, `SoundType.GRASS`, offset XZ, map colour `PLANT`, pushes `POPPED`, flammable as flowers
-  (60, 100).
-- **Tags:** `#minecraft:small_flowers` (so `#minecraft:flowers`, and endermen carry it, as they carry
-  small flowers: `#enderman_holdable` includes `#small_flowers`) and `#minecraft:bee_attractive`, so
+  WP-065, as each vanilla flower has its own `suspicious_stew_from_*` recipe; vanilla's common flowers
+  already give brewable effects: allium Fire Resistance, poppy Night Vision, cornflower Jump Boost);
+  no collision, instant break, `SoundType.SMALL_AMETHYST_BUD` (a glassy chink: world.md §3.1's
+  amethyst register, for the one plant whose nature is a chime; D-027), offset XZ, map colour `PLANT`,
+  pushes `POPPED`, flammable as flowers (60, 100), washed away by fluids (as every small flower).
+- **Tags:** `#minecraft:small_flowers`, block and item (so `#minecraft:flowers`; the item tag is the
+  one a mooshroom's stew reads; and endermen carry it, as they carry small flowers:
+  `#enderman_holdable` includes `#small_flowers`), `#minecraft:washed_away_by_fluids` and
+  `#minecraft:bee_attractive`, so
   bees visit it whenever they are out (in the Sift, every Tide but Endure: the timeline keeps
   `bees_stay_in_hive` false before 15 000 and from 27 000). A light blue dye recipe (WP-065, one
   flower → one dye, as blue orchid).
@@ -313,7 +351,7 @@ amethyst and spawners: the world's own, to be used where they stand.
   1 in 8) a pale mote drifts up from the core. Shape, colour and motes read as lumen at a glance,
   never as a bud's warm points or a closed tulip.
 - **Loot:** nothing, even with Silk Touch (as budding amethyst). A natural lumen is a place.
-- **Compost:** none (no item).
+- **Compost:** not compostable (a creative-only item).
 
 ## 6. Per Tide
 | | Thrive | Flow (rising) | Endure | Flow (falling) |
@@ -329,7 +367,7 @@ amethyst and spawners: the world's own, to be used where they stand.
 |---|---|---|---|
 | Tidewrack harvest | 1–2 fronds per Thrive per plant | sweet berries 1–2 (age 2) and 2–3 (age 3); glow berries 1 per pick; kelp | ~25–39 plants a basin give ~40–60 fronds a cycle: plenty for dye and treats, paced by Thrive |
 | Endure petal harvest | 1 per Endure per bloom | glow berries 1 per pick; torchflower seeds (rare by source: sniffers); pitcher pods | Rare by where it grows |
-| Endure bloom frequency | patches in 1 of 16 chunks with a shore (2–4 blooms); basin ring 3 in 30 % of basins (2–4) | pumpkin patch 1 in 300 chunks; vanilla default flower patch 1 in 32 | About 0.19 blooms a shore chunk. A careful Endure along shores sees ~100 shore chunks, ~6 patches, ~18 blooms, and picks perhaps 8–12. At WP-065's planning price of 4 petals a lantern, that is 2–3 lanterns a night; lanterns don't burn out, so the pressure falls as a player's camps grow |
+| Endure bloom frequency | patches in 1 of 16 chunks with a shore (2–4 blooms); basin ring 3 in 30 % of basins (2–4) | pumpkin patch 1 in 300 chunks; vanilla default flower patch 1 in 32 | About 0.19 blooms a shore chunk. A careful, sneaking Endure (about 1.3 blocks/s, so ~780 blocks in 10 minutes, seeing ~50–100 chunks) passes ~25–50 shore chunks: ~2–4 patches, ~6–12 blooms; a first night picks perhaps 5–10 petals, one or two lanterns at WP-065's planning price of 4. Later nights add the patches already found and lit, so petals grow with a player's map, never faster than one per bloom per Endure (about 2.4 an hour per bloom) |
 | Switch timing | random tick (lone plant ~68 s mean; 5 % > 3.4 min), ripple 5–10 ticks per block within 3 | eyeblossom (same mechanism) | A patch switches as one event |
 | Light | glowcap 10; lumen bloom 12; Endure bloom 0 (emissive) | soul lantern 10; glow berries 14; glow lichen 7; lantern 15 | A glowcap a pocket, lumen a camp, the bloom a mark that lights nothing |
 | Chime cooldown | 10 ticks (system_hunt.md §9) | sculk sensor: active 30, cooldown 10 | Footsteps ring, a herd doesn't spam |
@@ -342,16 +380,19 @@ amethyst and spawners: the world's own, to be used where they stand.
 |---|---|
 | A cofferdam keeps the ichor out in Endure | Tidewrack stays closed and gives nothing (the logical Tide, systems.md) |
 | Pick, then break or shear the plant | Breaking gives nothing (it's picked); no tool gives the plant |
-| A plant placed by `/setblock` or a creative item | Starts picked: gives nothing until it has closed once |
+| A plant placed by `/setblock` or a creative item | Starts unpicked (stamp 0); creative-only, so no survival source |
+| A patch generated in its window, still closed | Opens on its first random tick, or at once on a use; then yields |
+| Picked, left unloaded, back in the next window | Yields: the stamp is the old cycle's (§ Shared rules) |
 | A tide plant outside the Sift (only by commands) | Never switches; a use closes it; never yields |
-| A chunk unloaded through a Tide change | Its plants switch on their next random ticks after loading; a pick checks the logical Tide, so a stale open plant gives nothing and closes |
+| A chunk unloaded through a Tide change | Its plants switch on their next random ticks after loading; a use checks the logical Tide, so a stale plant switches instead of yielding. Stale tidewrack closing in Endure emits its ownerless `block_change`, so a Nester near a basin may come to look: harmless, listed |
 | `advance_time false` | The Tides stop, so the plants stop switching (as eyeblossoms when the sun stops) |
 | `random_tick_speed 0` | Plants never switch; picks still follow the logical Tide (so an open-looking plant may give nothing) |
 | Bone meal on a tide plant or a lumen bloom | No effect (not bonemealable) |
 | Pistons | Pop all five (`POPPED`), dropping as a break with no tool |
-| Ichor bucket on dry tidewrack | Submerges it (our bucket's branch); an empty bucket takes the ichor back |
+| Ichor bucket on dry tidewrack (clicked or dispensed) | Submerges it (our bucket's overrides); an empty bucket takes the ichor back |
+| Water bucket on dry tidewrack | The water is lost, as on kelp (vanilla's quirk) |
 | Flowing ichor, water or lava against dry tidewrack | Doesn't enter (sources of ichor only, as waterlogging takes source water only) |
-| Ichor or water flowing onto an Endure bloom, chime bell or lumen bloom | Held back, as poppies do in 26.3; a glowcap is washed away (as mushrooms) |
+| Ichor or water flowing onto a plant | Chime bells and glowcaps wash away (as every small flower and mushroom); Endure blooms and lumen blooms hold it back (as sugar cane) |
 | Hoppers, dispensers | Nothing special: a dispensed bucket of ichor follows the bucket's rule; dispensed bone meal does nothing to the three wild plants |
 | Spectators, items, arrows | Don't ring chime bells (living, non-spectator entities only) |
 | Many entities in one chime bell | One ring per 10 ticks |
@@ -370,28 +411,39 @@ amethyst and spawners: the world's own, to be used where they stand.
 - **Synced data:** block states only.
 - **Client:** cutout render type for all five; the Endure bloom's open model adds an emissive element;
   the hum is client-only.
-- **Code touched:** `TideVentBlockEntity` (fill and drain handle tidewrack), `IchorBucketItem` (fill a
-  dry tidewrack), the basin feature (tidewrack on flooding floors, blooms on ring 3), a new
-  `EndureBloomsFeature`, `SiftPlants` (ground rules).
+- **Code touched:** `TideVentBlockEntity` (fill and drain handle tidewrack), `IchorBucketItem` (`use`
+  and `emptyContents` fill a dry tidewrack), the basin feature (tidewrack on flooding floors, blooms on
+  ring 3), a new `EndureBloomsFeature`, `SiftPlants` (ground rules), the loot condition
+  `thesift:tide_flora_ready`, and a helper for the cycle stamp (`Tide.clockTicks` ÷ 30 000).
+- **States:** tidewrack 2 × 2 × 16 = 64, Endure bloom 2 × 16 = 32; the models depend only on `open`,
+  `submerged` and whether the stamp is 0, so the blockstate files map the 16 stamps onto two models.
+- **en_us:** "Tidewrack", "Endure Bloom", "Glowcap", "Chime Bell Flower", "Lumen Bloom", "Potted Glowcap",
+  "Potted Chime Bell Flower"; subtitles "Tidewrack opens", "Tidewrack closes", "Endure bloom opens",
+  "Endure bloom closes", "Plant picked", "Chime bell rings", "Chime bell hums".
 - **Risks:** the pick being heard could feel harsh: checked in the playtest notes. Emissive petals
   must read at 10 blocks in Endure's light without looking like eyes: checked in the previews.
 
 ## 10. Tests (GameTests, WP-064)
 - Tidewrack opens in Thrive and closes in rising Flow (random tick forced); the ripple reaches a
   neighbour within 3 even if one of them is picked.
-- A Thrive pick yields 1–2 fronds and marks it picked; a second pick yields nothing; it unpicks only on
-  closing.
-- **No duplication:** a placed plant starts picked; pick → break → nothing; no tool drops the plant.
+- A Thrive pick yields 1–2 fronds and stamps it; a second pick yields nothing; the next cycle's window
+  yields again.
+- **No duplication:** pick → break → nothing; no tool (Silk Touch, shears) drops the plant.
+- **Fresh and returning patches:** a worldgen patch yields in its first window; a plant picked, then
+  left without ticks while the clock advances a full cycle, yields in the next window.
 - The logical pick: an open tidewrack picked in Endure (set by the clock) yields nothing and closes.
 - Tidewrack holds ichor: the vent's fill submerges it and its drain dries it; an ichor bucket
-  submerges it and an empty bucket empties it; flowing ichor and water don't enter it.
+  (clicked, and dispensed) submerges it and an empty bucket empties it; flowing ichor and water don't
+  enter it.
+- Fluids: flowing ichor washes away a chime bell and a glowcap and stops at an Endure bloom and a
+  lumen bloom.
 - An Endure bloom opens in Endure and closes after; it gives no block light; a pick yields 1 petal and
   emits `block_change` with the player as source (a test listener); the opening emits `block_change`
   with no source.
 - A chime bell rings when a mob walks through (`block_activate` with the mob as source), not when a
   sneaking player does, at most once per 10 ticks; a bell set ringing by `/setblock` resets.
-- Glowcap light 10 and washed away by flowing ichor; lumen bloom light 12, a `thesift:lumen` POI at its
-  position, and no drop with Silk Touch.
+- Glowcap light 10; bone meal stops at 5 in the 9 × 3 × 9 box. Lumen bloom light 12, a `thesift:lumen`
+  POI at its position, and no drop with Silk Touch.
 - Outside the Sift: no switching, no yield.
 - Worldgen sample (the fixed patches): tidewrack in basins (25–39 each), Endure blooms per shore chunk
   (target 0.1–0.3), chime bell patches, and lumen blooms with their rings 7–11 out.
@@ -402,8 +454,8 @@ amethyst and spawners: the world's own, to be used where they stand.
   world.md §3.1's healthy palette (warm, green, pale blue); none teal-black with cyan veins (blight).
 - Previews: each plant in every state, 3 × 3 at 1× and 8×, beside vanilla neighbours (seagrass,
   eyeblossom, glow lichen, blue orchid, spore blossom), under each Tide's light, and from 10 blocks in
-  Endure's light; with the Bloombud's closed bud beside all five, to check "the Sift has no buds" by
-  eye. Blight's textures (M4) are checked against these when they are drawn.
+  Endure's light; with the Bloombud, **closed and open, tips glowing**, beside all five at 10 blocks in
+  Endure's light, to check "the Sift has no buds" by eye (the open Endure bloom above all). Blight's textures (M4) are checked against these when they are drawn.
 - Sounds synthesized by `tools/audio/`, mono, matched for loudness against the eyeblossom's switch,
   sweet berries' pick and the small amethyst chimes.
 
@@ -430,3 +482,26 @@ amethyst and spawners: the world's own, to be used where they stand.
     Low Tide trigger; petal numbers against a lantern's planning price, with analogs.
   - Notes taken: basin sizes and the dry ring 3; `PASS`, not a swing; the ripple matches block and
     `open`; the switch's cost and its timing spread.
+- **Round 2 (2026-10-02): FAIL**, 2 must-fix; scores faithful 4, vanilla-native 3, readable 4,
+  meaningful 3, distinct 4, connected 5, feasible 3, template 4, frozen-doc consistency 3. Checked
+  before acting: `#washed_away_by_fluids` **does** hold poppies, dandelions, blue orchids, spore
+  blossoms and eyeblossoms (round 1's note said otherwise: its search matched only names containing
+  "flower", "grass" and the like, and missed them; corrected here); sugar cane isn't in it;
+  `BucketItem.use` targets a container only for water; `MushroomBlock`'s spread (1 in 25, at most 5 in
+  9 × 3 × 9) and placement (`isSolidRender`); vanilla flowers' stew effects; the amethyst sound types.
+  Fixed:
+  - M1, a picked flag that only closing cleared stuck in unloaded chunks (fresh patches placed picked,
+    returning patches never unpicked): a **cycle stamp** (`picked_cycle`), current-cycle only;
+    worldgen places plants unpicked; a use fixes a stale open state; tests for both cases.
+  - M2, the fluid rule rested on the false poppy claim: chime bells and glowcaps wash away (as every
+    small flower and mushroom); Endure blooms and lumen blooms hold fluids back, as sugar cane.
+  - Should-fix, all taken: the ichor bucket overrides `use` and `emptyContents` (dispensers too), and
+    the water-bucket quirk is kept as kelp's; a cool, non-pink Endure bloom with only its centre and
+    edges emissive, previewed beside the open and closed Bloombud; the bell ring a dense band at 7–8;
+    lanterns making picking safe stated as the intended progression, with petals per hour and sinks;
+    the sound register and the wild-only plants recorded as D-027 (the chime bell takes an amethyst
+    sound type); the glowcap's bone meal restated against vanilla's mushrooms with their cap of 5;
+    the Endure bloom not flammable; creative-only block items; "no spawns", not "keeps hostiles out".
+  - Notes taken: the loot condition `thesift:tide_flora_ready`; the occlusion wording; the use's
+    result, pick variants, en_us names and the small-flowers item tag; the stew's precedent; the
+    route numbers; stale tidewrack closing in Endure listed.
