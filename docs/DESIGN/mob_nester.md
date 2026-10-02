@@ -98,9 +98,13 @@ Notes on the calls:
   - walk: a long-legged trot; **gallop**: a bounding gait, body pitched forward;
   - **tell** (20): stops, head up and turned, crest fans upright;
   - **search** (60): head low, sweeping side to side, sniffing;
-  - **lunge**: windup 8 (crouch, crest flat, jaw open), leap 6 (active: the bite lands on contact),
-    recovery 12 (stands, crest down, head shake);
-  - **circle**: a side-stepping gait facing its target; **dodge** (4): a quick hop sideways;
+  - **lunge**: windup 8 (crouch, crest flat, jaw open), leap (until it lands, about 9–10 ticks; the
+    bite is live throughout), recovery 12 (stands, crest drooped, head shake);
+  - **standing bite**: windup 6 (crouch, crest flat, a step in), snap 2;
+  - **circle**: a side-stepping gait facing its target; **guard**: crest fanned upright and rattling
+    (as the tell's alert, so a raised crest always means "it's ready"); **dodge** (4): a quick hop
+    sideways;
+  - **stagger** (30): reels back, head low, crest drooped;
   - **emerge** (40): rises out of the soil, shaking off particles; **dig** (60): forelegs paw, it sinks;
   - **lulled** (M4): crest folds flat, head sways to the song;
   - hurt: a flinch; death: vanilla's tip-over.
@@ -113,48 +117,72 @@ Nester's own:
 emerge (40) ──► roam ──hears──► tell (20) ──► gallop ──► search (60) ──finds──► hunt
                   ▲                                         │ nothing             │
                   └─────────────────────────────────────────┘                     ▼
-hunt: approach ──in range 2–4──► lunge windup (8) ──► leap (until it lands, ≤ 12) ──► recovery (12) ──► circle (30) ──► approach
-      (closer than 2: a standing bite: windup 6, no leap, then recovery and the circle)   blocked by a shield: recovery 30
+hunt: approach ──beyond melee reach, within 4──► lunge windup (8) ──► leap (until it lands, ≤ 12) ──► recovery (12) ──► circle (30) ──► approach
+      (within melee reach: a standing bite: windup 6, stepping in; hit or miss, then recovery and the circle)   blocked by a shield: stagger 30
 falling Flow ──► retreat (system §4): to soil ──► dig (60) ──► gone
 a Singer's horn within 12 (M4) ──► lulled (200; system §3) ──► roam
 ```
 What a sound does in each state is the system's (§3): roam hears it (the tell), gallop and search
 re-aim to the new spot without a tell, hunt ignores it.
 - **Emerge:** a naturally spawned Nester rises out of the soil over 40 ticks (it "surfaces", as the
-  bible says), with the soil's particles and a sound subtitled "Nester surfaces". It doesn't listen
-  while emerging. Nesters from spawn eggs and `/summon` skip it.
-- **Lunge:** from **2 to 4 blocks** (vanilla's `LeapAtTargetGoal` range), with line of sight. The
-  aim is **locked when the windup starts**: windup 8 ticks (crouch and a hiss, subtitled "Nester
-  hisses"), then a leap toward that locked spot (about 0.6 horizontal and 0.35 up, tuned in WP-067 so
-  a target standing 4 blocks away is reached; a GameTest). The bite is live from take-off until it
-  lands (at most 12 ticks) and lands once, on the first tick a target is within its melee reach
-  (`isWithinMeleeAttackRange`). So the windup is the read: **step sideways during the 8 ticks** and
-  the leap lands where you were. Recovery 12 ticks, in which it can't dodge.
-- **Close quarters:** a target within 2 blocks gets a standing bite (windup 6, no leap), then the
-  usual recovery and circle. A target that presses in during the circle (within 2) ends the circle
-  early with a standing bite. With no room to circle (a one-wide corridor), it backs off along its
-  path to 3 blocks for the circle's time instead.
-- **Shields:** a bite blocked by a shield staggers it: recovery 30 instead of 12. Shield the lunge,
-  then hit it.
+  bible says), with the soil's particles and a sound subtitled "Nester surfaces" at volume 2 (heard
+  32 blocks out: natural spawns are at least 24 blocks from any player, so the sound is how players
+  learn that Nesters come up out of the ground; the sight is rare, and that's accepted). It doesn't
+  listen while emerging. Nesters from spawn eggs and `/summon` skip it.
+- **Lunge:** from just beyond its melee reach out to **4 blocks** (vanilla's `LeapAtTargetGoal`
+  reaches 2–4), with line of sight. The aim is **locked when the windup starts**: windup 8 ticks
+  (crouch and a hiss, subtitled "Nester hisses"), then a leap toward that locked spot, 0.35 up and
+  with its horizontal speed scaled to the locked distance (up to about 0.6, which carries about 2.7
+  blocks in its ~9 airborne ticks, enough for a target 4 blocks away with its reach; tuned and
+  checked by a GameTest in WP-067), so a short lunge doesn't overshoot. The bite is live from
+  take-off until it lands (at most 12 ticks) and lands once, on the first tick a target is within
+  its melee reach (`isWithinMeleeAttackRange`). So the windup is the read: **step sideways during
+  the 8 ticks** and the leap lands where you were. From 4 blocks the bite comes about 17 ticks after
+  the crouch, time to sidestep; from close in it comes sooner, so **up close, raise the shield early**
+  (a shield blocks only after it has been up 5 ticks) or back off. Recovery 12 ticks, in which it
+  can't dodge.
+- **Close quarters:** a target within its melee reach (`isWithinMeleeAttackRange`: about 1.6 blocks
+  centre to centre in front, more on the diagonal) gets a **standing bite**: windup 6 ticks in which
+  it steps in toward the target, then the snap, which lands only if the target is still in reach on
+  that tick. Hit or miss, the usual recovery and circle follow. A target that presses into melee
+  reach during the circle ends the circle early with a standing bite. With no room to circle (a
+  one-wide corridor), it backs off along its path to 3 blocks for the circle's time instead.
+- **Shields:** a bite blocked by a shield **staggers** it: 30 ticks instead of the recovery, with a
+  sound subtitled "Nester staggers" (the ravager's stun when its bite is blocked is the precedent).
+  Shield the lunge, then hit it.
 - **Circle:** after each bite it circles its target at 4 blocks for 30 ticks (system §3), facing it.
-- **Dodge** (canon), **never a coin flip:** as a circle starts its crest snaps flat (its **guard**,
-  with a click). While the guard is up, the **first** melee hit from its target is dodged (on Hard,
-  the first two): the hit does nothing, and it hops 2 blocks sideways, with a sound subtitled "Nester
-  dodges". Then the crest rises: the guard is down until the next circle. It never dodges
-  projectiles, in recovery, or while galloping or searching. The read: **bait the dodge with a
-  swing, then strike**; or hit it in recovery; or shoot it while it circles. As the enderman always
-  evades projectiles, the rule is always the same.
+  A target that walks at it closes in: the circle backs off at about 2.5 blocks/s (×0.8), slower
+  than a walk, so a player can close to sword reach (3 blocks) to bait the guard, and into melee
+  reach for the standing bite.
+- **Dodge** (canon), **never a coin flip:** as a circle starts, its crest fans upright and rattles
+  (its **guard**, subtitled "Nester guards"). While the guard is up, the **first** melee hit from its
+  target is dodged (on Hard, the first two): any damage whose type is in `#minecraft:is_player_attack`
+  (a swing, a spear's jab or charge, a mace smash) or `minecraft:mob_attack` (an illager's axe). The
+  hit does nothing, and it hops 2 blocks sideways onto standable ground (never into lumen's radius,
+  water, ichor, or off a drop of more than 2; with no such side, it ducks in place and the hit still
+  misses), with a sound subtitled "Nester dodges". Then its crest drops: the guard is down until the
+  next circle. It never dodges projectiles, in recovery, in a stagger, or while galloping or
+  searching. The read: **bait the dodge with a swing, then strike**; or hit it in recovery; or shoot
+  it while it circles. As the enderman always evades projectiles, the rule is always the same.
 - **The gallop is loud:** gallop steps play at volume 1.5 (heard about 24 blocks out), subtitled
-  "Nester gallops". Ordinary steps are quiet and unsubtitled, as vanilla steps.
+  "Nester gallops". Ordinary steps play at volume 0.15, as vanilla mobs' steps do, subtitled
+  "Nester steps" (as "Warden steps" and "Ravager steps" are), so a deaf player can notice a roaming
+  Nester before it hears them.
+- **Out of reach:** a target it can't path to (on a pillar, across ichor) is dropped after 200 ticks
+  without a path (the gallop's limit), and it roams.
+- **Several players:** vanilla's hurt-by rule applies: a hit from another player switches its target
+  to them, and the duel starts over (a new approach, a new guard). Intended: a second player can
+  pull it off a friend.
 
 ### AI
 - **Goals hosting one explicit state machine**, not a Brain. VANILLA_ANALOGS E3's rule points to a
   Brain for phased behaviour players read, and the warden (the hearing analog) has one. But the
   Nester's phases are one strict sequence with one owner: the listener's states (system §3) and the
   duel are a single `NesterHuntGoal` with an enum state (synced, below), as the evoker's spell goals
-  and the ravager's roar and stun are goal-driven phases, and as the Blub's states are (D-021). A
-  Brain would add memories and sensors for data the goal already holds. Priorities: 0 float; 1
-  emerge (holds everything else); 1 retreat (falling Flow); 2 lumen: rim, walk-out and the rim flee
+  run a windup and a cast as goal-driven phases, and as the Blub's states are (D-021). A Brain would
+  add memories and sensors for data the goal already holds. Priorities: 0 float; 1 emerge (holds
+  everything else); 1 retreat (falling Flow; it waits while the Nester fights a target within 16, as
+  system §4 says, and the Thrive sweep caps it); 2 lumen: rim, walk-out and the rim flee
   (system §6.5); 2 lulled; 3 the hunt goal (tell, gallop, search, lunge, circle); 5 roam; 6 look
   around. Targeting: hurt-by (retaliation), the search's find, and a **player** within 2 blocks (the
   bump, system §3); never by sight alone. So a roaming Nester walks past a curled blub.
@@ -194,18 +222,25 @@ sprints at the tell gets away; one who walks doesn't**, and the system's "fights
 16 blocks away" can be met (a GameTest checks the speeds in WP-067).
 
 **Damage over time:** a lunge cycle (windup 8, leap ≤ 12, recovery 12, circle 30, closing in) lasts
-about 70 ticks, so about 1.4 damage a second on Normal, against a zombie's 3 in contact. That's
-intended: the Nester's threat is finding you in the dark, its speed and its company (pairs,
-enduring ones), not raw damage. Time to kill on Normal: an unarmoured player about 14 s (4 bites); in
-iron armour about 28 s (8 bites, as armour halves 5); with a shield used well, much longer.
+about 70 ticks, so about 1.4 damage a second on Normal, against a zombie's 3 and a spider's 2 in
+contact. That's intended: the Nester's threat is finding you in the dark, its speed and its company
+(pairs, enduring ones, Bloombud patches), not raw damage. Time to kill on Normal: an unarmoured
+player about 14 s (4 bites); in iron armour about 28 s (8 bites, as armour halves 5); with a shield
+used well, much longer. **In diamond** (most players arrive through an Ancient City geared) a bite
+does about 1.25, and a well-fed player's regeneration (1 health every 10 ticks while saturated)
+outpaces one Nester: as a zombie is to a player in diamond, a lone Nester is a nuisance there. The
+danger to a geared player is an enduring pair (6.25 a bite), hunger in a long Endure, and what
+the noise brings; that is the intent, as vanilla's own night is for players in diamond.
 
 ## Player interaction
-- **Telegraphs:** the vibration particle, then the tell (crest, sound, subtitle); the gallop's thud;
-  the lunge's crouch and hiss; the circle.
+- **Telegraphs:** "Nester surfaces" and "Nester steps" before it hears you; the vibration particle,
+  then the tell (crest, sound, subtitle); the gallop's thud; the lunge's crouch and hiss; the
+  guard's raised, rattling crest; the circle.
 - **Counterplay:**
   - *avoid:* sneak, wool, lures, lumen (system); stay under a one-block-high gap;
-  - *fight:* shield the lunge and hit the stagger; hit in recovery; shoot it while it circles;
-    don't swing while it circles (it dodges).
+  - *fight:* sidestep the lunge from range, or shield it early up close, and hit the stagger; hit in
+    recovery; shoot it while it circles; while its crest is up, bait the dodge with one swing, then
+    strike.
 - **Companion rules:** none. It can't be leashed: vanilla's default `Mob.canBeLeashed` refuses every
   `Enemy` (the hoglin and zoglin override it; the Nester doesn't).
 - **Why the encounter is interesting:** the hearing rule gives the before (should I move?), the duel
@@ -239,12 +274,14 @@ All original, synthesized in `tools/audio/synth.py`. Subtitles in brackets.
 | `entity.nester.sniff` | Short sniffs | "Nester sniffs" | 3 |
 | `entity.nester.hiss` | A hiss with a click (lunge windup) | "Nester hisses" | 3 |
 | `entity.nester.bite` | A wet snap | "Nester bites" | 3 |
+| `entity.nester.guard` | A dry rattle of fins | "Nester guards" | 2 |
 | `entity.nester.dodge` | A quick whoosh | "Nester dodges" | 2 |
+| `entity.nester.stagger` | A dazed, rattling grunt | "Nester staggers" | 2 |
 | `entity.nester.emerge` | Soil crumbling, a shake | "Nester surfaces" | 2 |
 | `entity.nester.burrow` | Pawing, soil closing over | "Nester burrows" | 2 |
 | `entity.nester.hurt` | A sharp squawk | "Nester hurts" | 3 |
 | `entity.nester.death` | A falling whistle and a collapse | "Nester dies" | 2 |
-| `entity.nester.step` | Light quick steps | (none, as vanilla steps) | 4 |
+| `entity.nester.step` | Light quick steps (volume 0.15) | "Nester steps" | 4 |
 | `entity.nester.lulled` (M4) | A soft trill as the crest folds | "Nester lulled" | 2 |
 
 ## Edge cases
@@ -267,22 +304,27 @@ All original, synthesized in `tools/audio/synth.py`. Subtitles in brackets.
 | A target that dodges every lunge | The circle and the next lunge repeat; it drops the target at 24 blocks or 100 ticks unseen |
 
 ## Tech notes
-- **Synced data:** `STATE` (a byte: roam, tell, gallop, search, windup, leap, recovery, circle, guard,
-  dodge, emerge, dig, lulled) drives the model's clips; `ENDURING` (bool). This refines system §11,
+- **Synced data:** `STATE` (a byte: roam, tell, gallop, search, windup, leap, bite, recovery, stagger,
+  circle, guard, dodge, emerge, dig, lulled) drives the model's clips; `ENDURING` (bool). This refines system §11,
   which named entity events for the crest flare, the lull and the dig: a synced state lets a client
   that starts tracking a Nester mid-dig or mid-lull still show it. Saved: `Surface`, `Enduring`,
   `ReturnBy`, the lull, the listener data (system §11).
-- **Dodge:** in `hurtServer`, before damage: if the guard is up, the source is its target's direct
-  melee attack and dodges remain this circle (1; Hard 2), cancel and hop.
+- **Dodge:** in `hurtServer`, before damage: if the guard is up, the source's entity is its target,
+  the damage type is in `#minecraft:is_player_attack` or is `minecraft:mob_attack`, and dodges remain
+  this circle (1; Hard 2), cancel and hop.
+- **Stagger:** vanilla's `LivingEntity.applyItemBlocking` calls `blockedByItem` on the attacker when a
+  shield blocks it; the Nester overrides it to start the stagger, as the ravager's override starts
+  its 40-tick stun.
 - **Pathfinding cost:** the gallop paths to one spot per sound (not to a moving entity); the hunt
   repaths as vanilla's `MeleeAttackGoal` does: every 4–10 ticks while it can see the target, +5
   beyond 16 blocks, +10 beyond 32, +15 after a failed path.
-- **Cost budget (WP-067):** 30 Nesters roaming plus 10 hunting cost ≤ 1.5× the same numbers of wolves
-  (roaming, and attacking), measured by the `SiftPerfTest` method.
+- **Cost budget:** two measurements by the `SiftPerfTest` method, both ≤ 1.5×: the mob's own (WP-067:
+  30 Nesters roaming plus 10 hunting against the same numbers of wolves) and the system's (§12, in
+  WP-066: 30 Nesters hunting in Endure against 30 zombies).
 - **Expected counts:** shared monster cap of 70; with Bloombuds commoner, about 10–20 Nesters around a
   player in Endure.
 - **Risks:** the lunge's contact bite (test on slopes and half-blocks, and the 4-block reach); the
-  guard being missed (the crest snapping flat, a click, and the same rule every time).
+  guard being missed (the raised crest, its rattle and subtitle, and the same rule every time).
 
 ## Critique log
 - **Round 1 (2026-10-02): FAIL**, 5 must-fix; scores faithful 4, vanilla-native 3, readable 3,
@@ -294,7 +336,7 @@ All original, synthesized in `tools/audio/synth.py`. Subtitles in brackets.
     walking and sprinting, with the blocks/s figures and a GameTest.
   - M2, the lunge contradicted itself and couldn't land from 6: aim locked at the windup's start
     (the sidestep window), range 2–4, the bite live until landing, "contact" defined.
-  - M3, the dodge was a coin flip: a guard (crest flat, a click) that always dodges the first swing
+  - M3, the dodge was a coin flip: a guard (a crest signal, a sound) that always dodges the first swing
     of a circle (Hard: two).
   - M4, enduring Easy damage: recomputed from vanilla's formula; non-players take flat damage.
   - M5, two vanilla claims: leashing (the default, which the hoglin overrides) and the repath rate.
@@ -305,3 +347,20 @@ All original, synthesized in `tools/audio/synth.py`. Subtitles in brackets.
     kill; the cost budget; eyes. BALANCE rows go in on freeze, as for the Blub. Bite raised to 5
     (Easy 3.5, Hard 7.5), so a found player is in real danger; the circle stays the frozen
     system's 30 ticks.
+- **Round 2 (2026-10-02): FAIL**, 4 must-fix; scores faithful 4, vanilla-native 4, readable 3,
+  meaningful 4, distinct 4, connected 3, feasible 4, template 4, frozen-doc consistency 4. Round 1's
+  fixes were all confirmed in the sources (speed 4.97 blocks/s; the leap reaches 4 blocks with about
+  0.1 to spare). Checked before acting: the ravager's roar and stun are counters in `aiStep`, its
+  stun comes from `blockedByItem`; `#minecraft:is_player_attack` holds `player_attack`, `spear` and
+  `mace_smash`; vanilla subtitles "Warden steps", "Ravager steps" and others. Fixed:
+  - M1, the ravager isn't a goal-phase precedent: dropped there, cited for the stagger's hook.
+  - M2, steps are subtitled in vanilla: "Nester steps".
+  - M3, the standing bite fired outside its reach: it now fires at melee reach, steps in during
+    the windup, and a miss still goes to recovery and the circle; the lunge starts beyond reach.
+  - M4, spears and the circle: the dodge is defined by damage type (player attacks, spears, mace
+    smashes, mob attacks), and the circle backs off slower than a walk, so a sword can bait it.
+  - Should-fix, all taken: a raised crest always means ready (the guard fans it; recovery droops it);
+    guard and stagger sounds; up close, shield early; leap timing, the standing-bite clip, and a leap
+    scaled to its distance; retreat waits for a fight within 16; both cost budgets; the emerge heard
+    at 32 blocks; time to kill in diamond, and the intent; several players; out-of-reach targets;
+    the dodge hop's footing.
