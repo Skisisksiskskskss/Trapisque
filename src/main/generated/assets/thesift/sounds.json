@@ -46,15 +46,6 @@
     ],
     "subtitle": "subtitles.thesift.ichor.evaporate"
   },
-  "block.ichor.wade": {
-    "sounds": [
-      "thesift:ichor/wade1",
-      "thesift:ichor/wade2",
-      "thesift:ichor/wade3",
-      "thesift:ichor/wade4"
-    ],
-    "subtitle": "subtitles.thesift.ichor.wade"
-  },
   "block.sift_frame.hum": {
     "sounds": [
       "thesift:entry/hum1",

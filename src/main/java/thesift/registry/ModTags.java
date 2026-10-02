@@ -13,8 +13,6 @@ import thesift.TheSift;
 public final class ModTags {
 	public static final TagKey<Block> SONGWOOD_LOGS = TagKey.create(Registries.BLOCK, TheSift.id("songwood_logs"));
 	public static final TagKey<Item> SONGWOOD_LOGS_ITEM = TagKey.create(Registries.ITEM, TheSift.id("songwood_logs"));
-	/** Sift natives that ichor neither slows, burns nor drains (rules.md). */
-	public static final TagKey<EntityType<?>> ICHOR_ADAPTED = TagKey.create(Registries.ENTITY_TYPE, TheSift.id("ichor_adapted"));
 	public static final TagKey<Fluid> ICHOR = TagKey.create(Registries.FLUID, TheSift.id("ichor"));
 	/** Where blubs spawn: healthy sculk and tide sand (mob_blub.md, Spawning). */
 	public static final TagKey<Block> BLUBS_SPAWNABLE_ON = TagKey.create(Registries.BLOCK, TheSift.id("blubs_spawnable_on"));

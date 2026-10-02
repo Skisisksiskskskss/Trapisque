@@ -375,13 +375,13 @@ def tide_vent_top() -> Image.Image:
         for x in range(W):
             d = math.hypot(x - 7.5, y - 7.5)
             if d < 3.2:
-                px[x, y] = rgba("ichor_violet", 1 if d < 2.2 else 2)
+                px[x, y] = rgba("ichor", 1 if d < 2.2 else 2)
             elif d < 4.3:
                 px[x, y] = rgba("hymnstone", 1)
             elif d < 5.2:
                 px[x, y] = rgba("hymnstone", 5) if (x + y) < 15 else rgba("hymnstone", 2)
-    put(im, [(6, 6), (9, 8)], rgba("ichor_teal", 3))
-    put(im, [(7, 9)], rgba("ichor_violet", 4))
+    put(im, [(6, 6), (9, 8)], rgba("ichor", 4))
+    put(im, [(7, 9)], rgba("ichor", 5))
     return im
 
 
@@ -390,7 +390,7 @@ def tide_vent_side() -> Image.Image:
     # Ichor stains running down from the vent's lip.
     for x, ln in ((5, 6), (6, 9), (9, 4), (10, 7)):
         for y in range(ln):
-            put(im, [(x, y)], rgba("ichor_violet", 2 if y < ln - 1 else 3))
+            put(im, [(x, y)], rgba("ichor", 1 if y < ln - 1 else 2))
     put(im, [(x, 0) for x in range(W)], rgba("hymnstone", 5))
     return im
 
@@ -456,27 +456,38 @@ def membrane_frames(n: int = 32) -> list[Image.Image]:
 
 # ---------------------------------------------------------------- ichor
 def ichor_frame(w: int, h: int, t: float, flow: bool) -> Image.Image:
-    """Thick iridescent liquid: a smooth dark-violet body with sparse drifting glints of teal and
-    magenta, like vanilla lava's specks. Low contrast on purpose: every block shows the same frame,
-    so anything bold would draw a grid."""
-    body = noise_fn(4, 4, 111, w, h)
-    teal = noise_fn(5, 5, 113, w, h)
-    magenta = noise_fn(6, 4, 117, w, h)
+    """The Sift's water (D-024): clear turquoise like the teaser's pools, translucent like vanilla
+    water. A soft two-tone body with lighter wave crests and a rare glint; low contrast, because every
+    block shows the same frame."""
+    body = noise_fn(3, 3, 111, w, h)
+    crest = noise_fn(5, 4, 113, w, h)
+    glint = noise_fn(7, 7, 117, w, h)
     im = Image.new("RGBA", (w, h))
     px = im.load()
     s = t * w
     for y in range(h):
         for x in range(w):
             if flow:
-                b, gt, gm = body(x, y - s), teal(x, y - s), magenta(x, y - 2 * s)
+                b, c, g = body(x, y - s), crest(x, y - 2 * s), glint(x, y - 2 * s)
             else:
-                b, gt, gm = body(x + s, y), teal(x, y + s), magenta(x - s, y - s)
-            colour = rgba("ichor_violet", 1) if b < 0.2 else rgba("ichor_violet", 2)
-            if gt > 0.84:
-                colour = rgba("ichor_teal", 1) if gt < 0.93 else rgba("ichor_teal", 2)
-            if gm > 0.9:
-                colour = rgba("ichor_violet", 3)
+                b, c, g = body(x + s, y), crest(x - s, y + s), glint(x + s, y - s)
+            colour = rgba("ichor", 2, 168) if b < 0.45 else rgba("ichor", 3, 168)
+            if abs(c - 0.5) < 0.045:
+                colour = rgba("ichor", 4, 188)
+            if g > 0.93:
+                colour = rgba("ichor", 5, 200)
             px[x, y] = colour
+    return im
+
+
+def ichor_overlay() -> Image.Image:
+    """The face of ichor seen through glass or leaves, as vanilla's water overlay: the body, fainter."""
+    im = ichor_frame(16, 16, 0.0, flow=False)
+    px = im.load()
+    for y in range(16):
+        for x in range(16):
+            r, g, b, a = px[x, y]
+            px[x, y] = (r, g, b, a - 48)
     return im
 
 
@@ -500,7 +511,7 @@ def ichor_bucket() -> Image.Image:
         "................",
     ]
     c = {"5": rgba("pail", 4), "4": rgba("pail", 4), "3": rgba("pail", 3), "2": rgba("pail", 2), "1": rgba("pail", 1),
-         "t": rgba("ichor_teal", 2), "T": rgba("ichor_teal", 3), "v": rgba("ichor_violet", 2), "V": rgba("ichor_violet", 4)}
+         "t": rgba("ichor", 3), "T": rgba("ichor", 4), "v": rgba("ichor", 2), "V": rgba("ichor", 5)}
     im = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     for y, row in enumerate(rows):
         for x, ch in enumerate(row):
@@ -651,6 +662,7 @@ def main() -> None:
     save_mcmeta("block/ichor_still.png", '{\n  "animation": {\n    "frametime": 3\n  }\n}\n')
     save(strip([ichor_frame(32, 32, f / 32, flow=True) for f in range(32)]), "block/ichor_flow.png")
     save_mcmeta("block/ichor_flow.png", '{\n  "animation": {\n    "frametime": 2\n  }\n}\n')
+    save(ichor_overlay(), "block/ichor_overlay.png")
     save(ichor_bucket(), "item/ichor_bucket.png")
     save(glow_petal(), "particle/glow_petal.png")
     save(blub_texture(), "entity/blub/blub.png")

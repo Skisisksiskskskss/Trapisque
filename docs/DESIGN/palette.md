@@ -26,8 +26,7 @@ below allows.
 | `songwood_planks` | `#3a374f` `#4f4b66` `#625e7c` `#75718f` `#8a86a3` `#a09cb8` | Muted violet-blue grey |
 | `songwood_leaves` | `#6d86b8` `#9bb6e0` `#c6d9f2` `#e4edf9` `#f9fbff` | White leaves edged pale blue (untinted) |
 | `tide_sand` | `#6e6680` `#857d98` `#9b94ac` `#afa9bf` `#c3bed1` `#d6d2e1` | Pale grey-violet silt |
-| `ichor_violet` | `#140c26` `#28174a` `#4a2172` `#8a2f8e` `#d45fbf` `#f5c2ee` | Ichor's deep body and magenta sheen |
-| `ichor_teal` | `#0d2b3b` `#155466` `#1e8088` `#3cc0bd` `#a8f6ec` | Ichor's teal body and cyan sheen |
+| `ichor` | `#0f5e7c` `#177e9e` `#229cb8` `#3abccb` `#78dad9` `#c2f5ee` | Ichor, the Sift's clear turquoise water (D-024); textures are translucent |
 | `membrane` | `#0b3f55` `#13687e` `#2598a8` `#55c8cc` `#a3eee8` `#e0fffa` | The Sift membrane's cyan shimmer (translucent) |
 | `pail` | `#2b2b33` `#4b4b56` `#6d6d7a` `#9696a2` `#c2c2cb` `#e6e6ec` | Bucket metal |
 | `blub` | `#2c4f8f` `#3f6fb8` `#5f93d8` `#8ab6ee` `#b9d8fa` `#e6f3ff` | The Blub's soft pale blue: the only pale-blue mob in the Sift (mob_blub.md) |
@@ -58,14 +57,15 @@ below allows.
 | `block/tide_sand.png` | tide_sand |
 | `block/tide_sand_2.png` | tide_sand |
 | `block/tide_sand_3.png` | tide_sand |
-| `block/tide_vent_top.png` | hymnstone, ichor_violet, ichor_teal |
-| `block/tide_vent_side.png` | hymnstone, ichor_violet, ichor_teal |
+| `block/tide_vent_top.png` | hymnstone, ichor |
+| `block/tide_vent_side.png` | hymnstone, ichor |
 | `block/gatestone.png` | gatestone, hymnstone, glyph |
 | `block/gatestone_top.png` | gatestone, hymnstone, glyph |
 | `block/sift_membrane.png` | membrane |
-| `block/ichor_still.png` | ichor_violet, ichor_teal |
-| `block/ichor_flow.png` | ichor_violet, ichor_teal |
-| `item/ichor_bucket.png` | pail, ichor_violet, ichor_teal |
+| `block/ichor_still.png` | ichor |
+| `block/ichor_flow.png` | ichor |
+| `block/ichor_overlay.png` | ichor |
+| `item/ichor_bucket.png` | pail, ichor |
 | `particle/glow_petal.png` | healthy_sculk, particle |
 | `particle/trill.png` | particle |
 | `entity/blub/blub.png` | blub, songwood_bark, particle |

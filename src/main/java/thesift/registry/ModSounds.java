@@ -24,7 +24,6 @@ public final class ModSounds {
 	public static final SoundEvent TIDE_ENDURE = register("ambient.tide.endure");
 	public static final SoundEvent BASIN_FILL = register("block.tide_vent.fill");
 	public static final SoundEvent BASIN_DRAIN = register("block.tide_vent.drain");
-	public static final SoundEvent ICHOR_WADE = register("block.ichor.wade");
 	public static final SoundEvent ICHOR_AMBIENT = register("block.ichor.ambient");
 	public static final SoundEvent ICHOR_EVAPORATE = register("block.ichor.evaporate");
 	public static final SoundEvent BUCKET_FILL_ICHOR = register("item.bucket.fill_ichor");

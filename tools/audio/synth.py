@@ -229,11 +229,11 @@ def tides(rng: np.random.Generator) -> None:
 
 
 def ichor(rng: np.random.Generator) -> None:
-    for i in range(1, 5):  # wading: a thick slosh with one bubble
+    for i in range(1, 5):  # wading was retired (D-024: ichor swims like water); its draws stay so the rest are unchanged
         d = 0.35
         n = int(d * SR)
-        slosh = bandpass(noise(n, rng), 150 + 30 * i, 900) * np.sin(np.linspace(0, np.pi, n)) ** 1.5
-        write(f"ichor/wade{i}", slosh + 0.4 * bubbles(d, 1, 200, 350, rng), ["liquid/swim1.ogg", "liquid/swim2.ogg"])
+        bandpass(noise(n, rng), 150 + 30 * i, 900)
+        bubbles(d, 1, 200, 350, rng)
     for i in range(1, 4):  # ambient: a heavy pop and a little fizz
         d = 0.6
         n = int(d * SR)

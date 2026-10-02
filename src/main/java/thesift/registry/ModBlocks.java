@@ -84,7 +84,7 @@ public final class ModBlocks {
 			.pushReaction(PushReaction.IMMOVEABLE).noLootTable());
 
 	public static final Block ICHOR = registerNoItem("ichor", p -> new LiquidBlock(ModFluids.ICHOR, p), BlockBehaviour.Properties.of()
-			.mapColor(MapColor.COLOR_PURPLE).replaceable().noCollision().strength(100.0F).lightLevel(s -> 4)
+			.mapColor(MapColor.WATER).replaceable().noCollision().strength(100.0F).lightLevel(s -> 4)
 			.pushReaction(PushReaction.POPPED).noLootTable().liquid().sound(SoundType.EMPTY));
 
 	private ModBlocks() {

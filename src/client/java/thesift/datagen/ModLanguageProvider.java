@@ -50,7 +50,6 @@ final class ModLanguageProvider extends FabricLanguageProvider {
 		builder.add("subtitles.thesift.tide.endure", "The Tide rises: Endure");
 		builder.add("subtitles.thesift.basin.fill", "Ichor bubbles up");
 		builder.add("subtitles.thesift.basin.drain", "Ichor drains away");
-		builder.add("subtitles.thesift.ichor.wade", "Wading through ichor");
 		builder.add("subtitles.thesift.ichor.ambient", "Ichor pops");
 		builder.add("subtitles.thesift.ichor.evaporate", "Ichor evaporates");
 		builder.add("subtitles.thesift.bucket.fill_ichor", "Bucket fills");

@@ -116,8 +116,6 @@ final class ModTagProviders {
 			}
 			// Blubs never use the membrane themselves; owners' blubs come along (BlubCrossing).
 			cannotCross.add(ModEntities.BLUB_KEY);
-			// The Sift's natives: blubs bathe in ichor (mob_blub.md).
-			builder(ModTags.ICHOR_ADAPTED).add(ModEntities.BLUB_KEY);
 		}
 	}
 
@@ -131,6 +129,8 @@ final class ModTagProviders {
 			builder(ModTags.ICHOR)
 					.add(BuiltInRegistries.FLUID.getResourceKey(ModFluids.ICHOR).orElseThrow())
 					.add(BuiltInRegistries.FLUID.getResourceKey(ModFluids.FLOWING_ICHOR).orElseThrow());
+			// Ichor is the Sift's water (D-024): swimming, currents, breath and boats are water's.
+			builder(net.minecraft.tags.FluidTags.WATER).addTag(ModTags.ICHOR);
 		}
 	}
 }

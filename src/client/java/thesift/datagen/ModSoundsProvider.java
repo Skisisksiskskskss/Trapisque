@@ -48,7 +48,6 @@ final class ModSoundsProvider extends FabricSoundsProvider {
 		add(exporter, ModSounds.TIDE_ENDURE, "tide/endure", 1, "subtitles.thesift.tide.endure");
 		add(exporter, ModSounds.BASIN_FILL, "tide/basin_fill", 3, "subtitles.thesift.basin.fill");
 		add(exporter, ModSounds.BASIN_DRAIN, "tide/basin_drain", 2, "subtitles.thesift.basin.drain");
-		add(exporter, ModSounds.ICHOR_WADE, "ichor/wade", 4, "subtitles.thesift.ichor.wade");
 		add(exporter, ModSounds.ICHOR_AMBIENT, "ichor/ambient", 3, "subtitles.thesift.ichor.ambient");
 		add(exporter, ModSounds.ICHOR_EVAPORATE, "ichor/evaporate", 1, "subtitles.thesift.ichor.evaporate");
 		add(exporter, ModSounds.BUCKET_FILL_ICHOR, "ichor/bucket_fill", 2, "subtitles.thesift.bucket.fill_ichor");

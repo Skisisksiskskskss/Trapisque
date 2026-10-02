@@ -19,7 +19,6 @@ import net.minecraft.world.phys.Vec3;
 
 import thesift.entity.blub.Blub;
 import thesift.entity.blub.BlubCrossing;
-import thesift.fluid.IchorFluid;
 import thesift.registry.ModBlocks;
 import thesift.registry.ModEntities;
 import thesift.registry.ModTags;
@@ -161,9 +160,8 @@ public final class SiftBlubTest {
 	}
 
 	@GameTest
-	public void blubsAreAtHomeInIchorAndCantCross(GameTestHelper helper) {
+	public void blubsCantCross(GameTestHelper helper) {
 		Blub blub = blub(helper, 2.5, 2.5);
-		helper.assertTrue(IchorFluid.isAdapted(blub), "ichor neither slows, burns nor drains a blub");
 		helper.assertTrue(blub.is(ModTags.CANNOT_CROSS), "no blub walks through a membrane on its own");
 		helper.succeed();
 	}

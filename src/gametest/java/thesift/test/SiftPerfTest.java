@@ -29,24 +29,24 @@ import thesift.world.TideBasin;
  */
 public final class SiftPerfTest {
 	/**
-	 * WP-044: 20 mobs standing in ichor against 20 in lava, each entity ticked by hand in alternating
-	 * order after a warm-up. Zombified piglins are fire-immune, so neither group dies mid-run.
+	 * WP-044, after D-024: 20 mobs swimming in ichor against 20 in water, each entity ticked by hand in
+	 * alternating order after a warm-up. Ichor is water to an entity, so they should cost the same.
 	 */
 	@GameTest(structure = SiftBasinTest.BIG, maxTicks = 400)
-	public void twentyInIchorCostAboutAsMuchAsTwentyInLava(GameTestHelper helper) {
+	public void twentyInIchorCostAboutAsMuchAsTwentyInWater(GameTestHelper helper) {
 		for (int x = 0; x < 17; x++) {
 			for (int z = 0; z < 17; z++) {
 				helper.setBlock(new BlockPos(x, 0, z), Blocks.STONE);
-				helper.setBlock(new BlockPos(x, 1, z), z < 8 ? ModBlocks.ICHOR.defaultBlockState() : Blocks.LAVA.defaultBlockState());
+				helper.setBlock(new BlockPos(x, 1, z), z < 8 ? ModBlocks.ICHOR.defaultBlockState() : Blocks.WATER.defaultBlockState());
 			}
 		}
 		List<Entity> inIchor = new ArrayList<>();
-		List<Entity> inLava = new ArrayList<>();
+		List<Entity> inWater = new ArrayList<>();
 		for (int i = 0; i < 20; i++) {
 			double x = 1.5 + (i % 5) * 3;
 			double z = 1.5 + (i / 5) * 1.5;
 			inIchor.add(helper.spawn(EntityTypes.ZOMBIFIED_PIGLIN, new Vec3(x, 1, z)));
-			inLava.add(helper.spawn(EntityTypes.ZOMBIFIED_PIGLIN, new Vec3(x, 1, z + 9)));
+			inWater.add(helper.spawn(EntityTypes.ZOMBIFIED_PIGLIN, new Vec3(x, 1, z + 9)));
 		}
 		long[] cost = new long[2];
 		for (int round = 0; round < 400; round++) {
@@ -54,7 +54,7 @@ public final class SiftPerfTest {
 			for (int pass = 0; pass < 2; pass++) {
 				boolean ichor = (pass == 0) == ichorFirst;
 				long t0 = System.nanoTime();
-				for (Entity e : ichor ? inIchor : inLava) {
+				for (Entity e : ichor ? inIchor : inWater) {
 					e.tick();
 				}
 				if (round >= 100) {
@@ -63,11 +63,11 @@ public final class SiftPerfTest {
 			}
 		}
 		double ratio = (double) cost[0] / Math.max(1, cost[1]);
-		TheSift.LOGGER.info("Ichor cost, 300 rounds: 20 in ichor {} ms, 20 in lava {} ms, ratio {}",
+		TheSift.LOGGER.info("Ichor cost, 300 rounds: 20 in ichor {} ms, 20 in water {} ms, ratio {}",
 				cost[0] / 1_000_000, cost[1] / 1_000_000, String.format(Locale.ROOT, "%.2f", ratio));
 		inIchor.forEach(Entity::discard);
-		inLava.forEach(Entity::discard);
-		helper.assertTrue(ratio < 3.0, "20 in ichor cost " + ratio + "x 20 in lava");
+		inWater.forEach(Entity::discard);
+		helper.assertTrue(ratio < 2.0, "20 in ichor cost " + ratio + "x 20 in water");
 		helper.succeed();
 	}
 

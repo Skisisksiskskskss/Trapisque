@@ -28,6 +28,8 @@
     "minecraft:visual/sky_color": "#5acbc2",
     "minecraft:visual/sun_angle": 180.0,
     "minecraft:visual/sunrise_sunset_color": "#00000000",
+    "minecraft:visual/water_fog_color": "#1f8fa8",
+    "minecraft:visual/water_fog_end_distance": 64.0,
     "thesift:gameplay/sift_life": true
   },
   "coordinate_scale": 1.0,

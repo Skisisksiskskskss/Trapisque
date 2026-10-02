@@ -190,6 +190,9 @@ final class SiftWorldgen {
 				.set(EnvironmentAttributes.SUNRISE_SUNSET_COLOR, ARGB.vector4fFromARGB32(0))
 				.set(EnvironmentAttributes.SKY_COLOR, ARGB.vector3fFromRGB24(THRIVE_SKY))
 				.set(EnvironmentAttributes.FOG_COLOR, ARGB.vector3fFromRGB24(THRIVE_FOG))
+				// Under ichor, the Sift's water (D-024): a clear turquoise haze, a little shorter than water's.
+				.set(EnvironmentAttributes.WATER_FOG_COLOR, ARGB.vector3fFromRGB24(0x1F8FA8))
+				.set(EnvironmentAttributes.WATER_FOG_END_DISTANCE, 64.0F)
 				.set(EnvironmentAttributes.AMBIENT_LIGHT_COLOR, ARGB.vector3fFromRGB24(0xFF0A0A1A))
 				// Beds set spawn; nobody sleeps (both bed kinds, or straw beds would sleep "when dark").
 				.set(EnvironmentAttributes.BED_RULE, new BedRule(BedRule.Rule.NEVER, BedRule.Rule.ALWAYS, false, false,

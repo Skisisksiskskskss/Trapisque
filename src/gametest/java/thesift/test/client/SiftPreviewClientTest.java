@@ -18,9 +18,9 @@ import net.minecraft.world.level.levelgen.Heightmap;
 
 import thesift.TheSift;
 import thesift.block.MusicNearby;
-import thesift.client.fog.IchorFogEnvironment;
 import thesift.block.entity.TideVentBlockEntity;
 import thesift.registry.ModBlocks;
+import thesift.registry.ModTags;
 import thesift.entity.blub.Blub;
 import thesift.world.SiftAdvancements;
 import thesift.world.SiftKeys;
@@ -242,7 +242,7 @@ public final class SiftPreviewClientTest implements FabricClientGameTest {
 				ground.getX(), ground.getY() + 1, ground.getZ()));
 		world.getConnection().waitForChunksRender();
 		context.waitTicks(20);
-		boolean inIchor = context.computeOnClient(client -> IchorFogEnvironment.eyesInIchor(client.player));
+		boolean inIchor = context.computeOnClient(client -> client.player.level().getFluidState(BlockPos.containing(client.player.getEyePosition())).is(ModTags.ICHOR));
 		if (!inIchor) {
 			throw new AssertionError("the camera should be inside ichor");
 		}

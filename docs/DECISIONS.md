@@ -561,3 +561,22 @@ It also found that M1's Tide changed nothing in play (SF4), since the mission as
 **Consequences.** WP-061 implements the listener and the retreat as specified and adds the tag to `cannot_cross`. The Thrive sweep is a server tick check alongside `TideCues`. rules.md's tech note on an allay-style jukebox listener is superseded by this entry.
 
 **Revisit if** playtests show the dawn sweep reads as a pop rather than a retreat (lengthen the falling-Flow window or the dig), or that jukebox calls through walls feel unfair (they follow vanilla occlusion, so wool is the answer to teach).
+
+## D-024 Ichor is the Sift's water (2026-10-02) [owner playtest] [supersedes D-013's ichor hazard]
+**Context.** The owner's playtest of `v0.1.0-alpha`: the dimension's "water" was the worst part. It was sparse, it acted like lava (slow wading, fire, XP drain, lava-like spread), it was purple, and it wasn't transparent (opaque textures put it in the solid layer). The teasers show clear blue pools at canyon bottoms [S-I4]. Canon calls ichor "a multicolored, thick liquid" that burns heroes [W:Ichor], but the owner's call outranks that reading.
+
+**Decision.**
+- Ichor keeps its name and its own fluid (tide basins, the Blub's bathing, the bucket that evaporates outside the Sift) but behaves as water:
+  - it is in `#minecraft:water`, so swimming, currents, breath, boats and putting out fire are vanilla's;
+  - it flows 7 blocks with water's timing and renews between two sources (the water source conversion rule).
+- It is harmless: no fire, no slowing, no XP drain. A soul wisp now and then rises from still ichor, a quiet trace of canon.
+- It looks like the teasers' pools: translucent turquoise textures (which put it in the translucent layer), a water-style overlay, and a turquoise underwater haze (`water_fog_color`), replacing the purple fog.
+- There is far more of it: lakes and rivers come with the terrain rework.
+
+**Consequences.**
+- The hazard tests are replaced by water-behaviour tests.
+- The wading sound and the `#thesift:ichor_adapted` tag are retired.
+- The M5 trait "Ichor Wading" (items.md) has nothing left to do; it is to be replaced when M5 is designed.
+- Endure's danger now rests on the hunters (M2), not the flood.
+
+**Revisit if** the owner wants a mild hazard back, for example a slow soul drain only while fully submerged in Endure.
