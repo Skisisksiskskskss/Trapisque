@@ -1,7 +1,7 @@
 # STATUS (session 1, 2026-10-02)
 - **Phase / Milestone:** M1 done; the owner's playtest rework (`v0.1.1-alpha`) done; M2 "the hunt" in design.
-- **Autonomy:** **full-auto** (D-014). **The build to try:** `v0.1.1-alpha`, the owner's playtest rework (D-024, D-025), released from the CI's `release_tag`; steps in `docs/PLAYTEST.md` (top section). **Use a new world.** The previous build: https://github.com/Skisisksiskskskss/Trapisque/releases/tag/v0.1.0-alpha
-- **Current WP:** the owner's rework is done. Next is WP-060, the hunt system design: critique round 2 FAILED with 4 must-fix, logged in `system_hunt.md` with the fixes pending.
+- **Autonomy:** **full-auto** (D-014). **The build to try:** https://github.com/Skisisksiskskskss/Trapisque/releases/tag/v0.1.1-alpha, the owner's playtest rework (D-024, D-025); steps in `docs/PLAYTEST.md` (top section). **Use a new world.** The previous build: https://github.com/Skisisksiskskskss/Trapisque/releases/tag/v0.1.0-alpha
+- **Current WP:** WP-060, the hunt system design: critique round 2's findings are fixed; round 3 (the last) is under way.
 - **Done this session:**
   - Phases 0–3 and M1 (WP-040..053).
   - The owner's playtest rework:
@@ -12,8 +12,8 @@
     - songwood trees reshaped into groves;
     - the Blub remodelled after the first look.
 - **Next 3 actions:**
-  1. Watch CI and the `v0.1.1-alpha` release; answer the owner's notes the moment they arrive.
-  2. WP-060: fix critique round 2's findings, then round 3 and freeze.
+  1. Answer the owner's notes on `v0.1.1-alpha` the moment they arrive.
+  2. WP-060: critique round 3, then freeze (BALANCE rows on freeze).
   3. WP-061 (Nester) critique, then WP-062 (Bloombud) design.
 - **Build:** ✅ `./gradlew build` (with GameTests) · datagen no-diff ✅ · `check_bible.py` ✅ · `check_palette.py` ✅ (38 textures) · `check_lang.py` ✅
 - **Tests:** 70/70 server GameTests. The client GameTest walks the entry, the Tides, a basin and the blubs, and its landscape shots (`look_*`) compare the land with the teasers.
