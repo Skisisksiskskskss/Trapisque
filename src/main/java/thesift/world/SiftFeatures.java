@@ -21,7 +21,6 @@ public final class SiftFeatures {
 	public static final ResourceKey<PlacedFeature> GRASS_MEADOW = ResourceKey.create(Registries.PLACED_FEATURE, TheSift.id("grass_singers_meadow"));
 
 	public static final ResourceKey<PlacedFeature> TIDE_BASINS_MEADOW = ResourceKey.create(Registries.PLACED_FEATURE, TheSift.id("tide_basins_singers_meadow"));
-	public static final ResourceKey<PlacedFeature> ICHOR_POOLS_SURFACE = ResourceKey.create(Registries.PLACED_FEATURE, TheSift.id("ichor_pools_surface"));
 	public static final ResourceKey<PlacedFeature> ICHOR_POOLS_UNDERGROUND = ResourceKey.create(Registries.PLACED_FEATURE, TheSift.id("ichor_pools_underground"));
 
 	private SiftFeatures() {

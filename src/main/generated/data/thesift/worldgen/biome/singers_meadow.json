@@ -36,9 +36,8 @@
   "features": [
     [],
     [
-      "thesift:tide_basins_singers_meadow",
-      "thesift:ichor_pools_surface",
-      "thesift:ichor_pools_underground"
+      "thesift:ichor_pools_underground",
+      "thesift:tide_basins_singers_meadow"
     ],
     [],
     [],

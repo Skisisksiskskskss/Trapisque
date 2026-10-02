@@ -195,44 +195,45 @@ public final class SiftBasinTest {
 	@GameTest(dimension = SIFT, maxTicks = 400)
 	public void meadowWorldgenHasBasinsAndPools(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		BlockPos origin = helper.absolutePos(BlockPos.ZERO);
-		int cx0 = (origin.getX() >> 4) + 96;
-		int cz0 = (origin.getZ() >> 4) + 96;
 		int vents = 0;
 		int surfaceIchor = 0;
 		int deepIchor = 0;
-		for (int dx = -5; dx <= 5; dx++) {
-			for (int dz = -5; dz <= 5; dz++) {
-				var chunk = level.getChunk(cx0 + dx, cz0 + dz);
-				for (int x = 0; x < 16; x++) {
-					for (int z = 0; z < 16; z++) {
-						int top = chunk.getHeight(Heightmap.Types.WORLD_SURFACE, x, z);
-						// Whole columns: surface pools sit near the top, underground ones anywhere from y 8 to 90.
-						for (int y = top; y >= level.getMinY(); y--) {
-							var state = chunk.getBlockState(new BlockPos(x, y, z));
-							if (state.is(ModBlocks.TIDE_VENT)) {
-								vents++;
-								helper.assertTrue(x == 8 && z == 8, "a vent sits in the middle of its chunk");
-								helper.assertTrue(state.getValue(TideVentBlock.BASIN) > 0, "generated vents are live");
-							} else if (state.is(ModBlocks.ICHOR)) {
-								if (y > top - 16) {
-									surfaceIchor++;
-								} else {
-									deepIchor++;
+		int blubs = 0;
+		for (int[] centre : SiftSamples.PATCHES) {
+			for (int dx = -SiftSamples.PATCH; dx <= SiftSamples.PATCH; dx++) {
+				for (int dz = -SiftSamples.PATCH; dz <= SiftSamples.PATCH; dz++) {
+					var chunk = level.getChunk(centre[0] + dx, centre[1] + dz);
+					for (int x = 0; x < 16; x++) {
+						for (int z = 0; z < 16; z++) {
+							int top = chunk.getHeight(Heightmap.Types.WORLD_SURFACE, x, z);
+							// Whole columns: rivers and lakes sit near the top, underground pools anywhere from y 8 to 90.
+							for (int y = top; y >= level.getMinY(); y--) {
+								var state = chunk.getBlockState(new BlockPos(x, y, z));
+								if (state.is(ModBlocks.TIDE_VENT)) {
+									vents++;
+									helper.assertTrue(x == 8 && z == 8, "a vent sits in the middle of its chunk");
+									helper.assertTrue(state.getValue(TideVentBlock.BASIN) > 0, "generated vents are live");
+								} else if (state.is(ModBlocks.ICHOR)) {
+									if (y > top - 16) {
+										surfaceIchor++;
+									} else {
+										deepIchor++;
+									}
 								}
 							}
 						}
 					}
 				}
 			}
+			int r = SiftSamples.PATCH;
+			var area = new net.minecraft.world.phys.AABB((centre[0] - r) << 4, level.getMinY(), (centre[1] - r) << 4, (centre[0] + r + 1) << 4, level.getMaxY(), (centre[1] + r + 1) << 4);
+			blubs += level.getEntitiesOfClass(thesift.entity.blub.Blub.class, area).size();
 		}
 		// Blubs from chunk generation (about one group per 30 chunks): logged, not asserted, as a sample
-		// of 121 chunks can hold none.
-		var area = new net.minecraft.world.phys.AABB((cx0 - 5) << 4, level.getMinY(), (cz0 - 5) << 4, (cx0 + 6) << 4, level.getMaxY(), (cz0 + 6) << 4);
-		int blubs = level.getEntitiesOfClass(thesift.entity.blub.Blub.class, area).size();
-		TheSift.LOGGER.info("Worldgen sample, 121 Meadow chunks: {} vents, {} surface ichor, {} deep ichor, {} blubs", vents, surfaceIchor, deepIchor, blubs);
-		helper.assertTrue(vents > 0, "tide basins in 121 Meadow chunks: " + vents);
-		helper.assertTrue(surfaceIchor + deepIchor > 0, "ichor in 121 Meadow chunks: " + surfaceIchor + " near the surface, " + deepIchor + " deeper");
+		// of 100 chunks can hold none.
+		TheSift.LOGGER.info("Worldgen sample, 100 Meadow chunks: {} vents, {} surface ichor, {} deep ichor, {} blubs", vents, surfaceIchor, deepIchor, blubs);
+		helper.assertTrue(vents > 0, "tide basins in 100 Meadow chunks: " + vents);
+		helper.assertTrue(surfaceIchor + deepIchor > 0, "ichor in 100 Meadow chunks: " + surfaceIchor + " near the surface, " + deepIchor + " deeper");
 		helper.succeed();
 	}
 }

@@ -320,10 +320,10 @@ final class SiftWorldgen {
 	static void biomes(BootstrapContext<Biome> context) {
 		HolderGetter<PlacedFeature> placed = context.lookup(Registries.PLACED_FEATURE);
 		BiomeGenerationSettings.Builder generation = new BiomeGenerationSettings.Builder(placed, context.lookup(Registries.CARVER));
-		// Basins first, so pools and trees grow around them rather than being cut in half.
-		generation.addFeature(GenerationStep.Decoration.LAKES, SiftFeatures.TIDE_BASINS_MEADOW);
-		generation.addFeature(GenerationStep.Decoration.LAKES, SiftFeatures.ICHOR_POOLS_SURFACE);
+		// Underground pools before basins, so a basin sees any pool that would open its wall and moves
+		// on (the surface pools went with D-025: the Sift has lakes and rivers now).
 		generation.addFeature(GenerationStep.Decoration.LAKES, SiftFeatures.ICHOR_POOLS_UNDERGROUND);
+		generation.addFeature(GenerationStep.Decoration.LAKES, SiftFeatures.TIDE_BASINS_MEADOW);
 		generation.addFeature(GenerationStep.Decoration.SURFACE_STRUCTURES, SiftFeatures.SPIRES_MEADOW);
 		generation.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.TREES_MEADOW);
 		generation.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.LONE_TREES_MEADOW);
@@ -437,12 +437,6 @@ final class SiftWorldgen {
 				PlacementUtils.HEIGHTMAP_OCEAN_FLOOR,
 				BiomeFilter.biome());
 		Holder<Feature> pool = features.getOrThrow(SiftFeatures.ICHOR_POOL);
-		// "Many pools of ichor, fracturing the terrain": far commoner than vanilla's surface lava lakes (1 in 200).
-		PlacementUtils.register(context, SiftFeatures.ICHOR_POOLS_SURFACE, pool,
-				RarityFilter.onAverageOnceEvery(8),
-				InSquarePlacement.spread(),
-				PlacementUtils.HEIGHTMAP_WORLD_SURFACE,
-				BiomeFilter.biome());
 		PlacementUtils.register(context, SiftFeatures.ICHOR_POOLS_UNDERGROUND, pool,
 				RarityFilter.onAverageOnceEvery(5),
 				InSquarePlacement.spread(),

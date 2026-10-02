@@ -538,7 +538,9 @@ public final class SiftPreviewClientTest implements FabricClientGameTest {
 		world.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute in thesift:the_sift run tp @a %.1f %.1f %.1f %d 15",
 				alongX ? g.x : g.x + 9, g.y + 1, alongX ? g.z + 9 : g.z, alongX ? 180 : 90));
 		world.getConnection().waitForChunksRender();
-		context.waitTicks(40);
+		// A fresh Sift region takes a while to generate and reach the client (the land is vanilla's now).
+		context.waitTicks(160);
+		world.getConnection().waitForChunksRender();
 		context.takeScreenshot("wp047_gate");
 	}
 

@@ -126,30 +126,31 @@ public final class SiftBlocksTest {
 	@GameTest(dimension = SIFT, maxTicks = 400)
 	public void meadowWorldgenHasTreesAndGrass(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		BlockPos origin = helper.absolutePos(BlockPos.ZERO);
-		int cx = (origin.getX() >> 4) + 64, cz = (origin.getZ() >> 4) + 64; // away from GameTest structures
 		int logs = 0, grass = 0;
-		// Trees grow in groves (owner rework), so the sample spans 81 chunks.
-		for (int dx = -4; dx <= 4; dx++) {
-			for (int dz = -4; dz <= 4; dz++) {
-				var chunk = level.getChunk(cx + dx, cz + dz);
-				for (int x = 0; x < 16; x++) {
-					for (int z = 0; z < 16; z++) {
-						int top = chunk.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE, x, z);
-						for (int y = top; y > top - 12; y--) {
-							var state = chunk.getBlockState(new BlockPos(x, y, z));
-							if (state.is(ModBlocks.SONGWOOD_LOG)) {
-								logs++;
-							} else if (state.is(ModBlocks.HEALTHY_SCULK_GRASS) || state.is(ModBlocks.TALL_HEALTHY_SCULK_GRASS)) {
-								grass++;
+		// Trees grow in groves (owner rework), so the sample spans 100 chunks in four places.
+		for (int[] centre : SiftSamples.PATCHES) {
+			for (int dx = -SiftSamples.PATCH; dx <= SiftSamples.PATCH; dx++) {
+				for (int dz = -SiftSamples.PATCH; dz <= SiftSamples.PATCH; dz++) {
+					var chunk = level.getChunk(centre[0] + dx, centre[1] + dz);
+					for (int x = 0; x < 16; x++) {
+						for (int z = 0; z < 16; z++) {
+							int top = chunk.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE, x, z);
+							for (int y = top; y > top - 12; y--) {
+								var state = chunk.getBlockState(new BlockPos(x, y, z));
+								if (state.is(ModBlocks.SONGWOOD_LOG)) {
+									logs++;
+								} else if (state.is(ModBlocks.HEALTHY_SCULK_GRASS) || state.is(ModBlocks.TALL_HEALTHY_SCULK_GRASS)) {
+									grass++;
+								}
 							}
 						}
 					}
 				}
 			}
 		}
-		helper.assertTrue(logs > 0, "songwood logs in 81 Meadow chunks: " + logs);
-		helper.assertTrue(grass > 150, "grass in 81 Meadow chunks: " + grass);
+		thesift.TheSift.LOGGER.info("Meadow sample, 100 chunks: {} songwood logs, {} grass", logs, grass);
+		helper.assertTrue(logs > 0, "songwood logs in 100 Meadow chunks: " + logs);
+		helper.assertTrue(grass > 150, "grass in 100 Meadow chunks: " + grass);
 		helper.succeed();
 	}
 
