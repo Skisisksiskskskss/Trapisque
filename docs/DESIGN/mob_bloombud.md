@@ -63,7 +63,10 @@ Notes on the calls:
 
 ### Decision: **"The patch that wakes"**: 1 + 3, with 2 bounded
 - **The ambush (1):** closed and rooted, it wakes when a target comes within 5 blocks in sight.
-- **The ripple (3):** each bud that opens wakes the closed buds within 8, one by one.
+- **The ripple (3):** a bud woken by a target wakes the closed buds within 8, one by one; rippled and
+  lumen-flushed buds don't ripple.
+- **The lunge:** the bloom is the windup of one short lunge (the bible's "petals open … before it
+  lunges"); after it, a slow walker.
 - **The creep (2):** unwatched, a closed bud may shift one block closer, never into the wake radius.
 - **Why not more:** the Bloombud's whole job is "watch where you walk in the dark"; the fight itself
   stays a plain, slow melee crowd that a player can back away from.
@@ -73,7 +76,8 @@ Notes on the calls:
   and behavioral similarities to vindicators", slow in melee, wandering idly, in "large groups"
   [W:Bloombud]; its working name was "Snout Sifter". **Changed in translation:** the bud mimicry and
   the petal telegraph are the bible's (canon shows no ambush); the snout stays as the thing inside
-  the bud; it doesn't hear (the Nester owns hearing); it surfaces only in Endure (D-013).
+  the bud; it doesn't hear (the Nester owns hearing); on the surface it appears only in Endure
+  (D-013; system §7).
 - **One-sentence fantasy:** a cluster of closed buds in the dark grass that opens, bud by bud, into
   snouted things that come for you.
 - **Role:** hostile.
@@ -81,11 +85,12 @@ Notes on the calls:
   as world.md §1.1's spawn table has it (Hymnstone Rise is the Nester's alone). Always on bare soil.
 
 ## Silhouette and look
-- **Hitbox:** closed 0.7 × 0.9 (a bud on a short stalk, knee-high to a player); open 0.7 × 1.6 (a
+- **Hitbox:** closed 0.7 × 0.9 (a bud on a short stalk, hip-high to a player); open 0.7 × 1.6 (a
   hunched biped, shorter than a vindicator's 1.95). It changes with the synced state, which calls
   `refreshDimensions()` when it changes (as the slime's size does; vanilla refreshes by itself only
   on a pose change). A bud roots only where two blocks of air stand above it, so it can always open;
-  a bud that a player builds over can't bloom and stays a harmless bud until it has room.
+  a bud that a player builds over can't bloom: woken without headroom, it **digs away**, with no XP
+  and no drops (a capped bud is never a free kill).
 - **Readable at 10 blocks:** **the Sift has no buds**: no plant in the Meadow is a round closed bud on
   a stalk, so any bud is a Bloombud. That is a constraint on WP-064's flora (tidewrack, the Endure
   bloom and the glowcap must never look like a closed bud on a stalk) and on spawning: a bud spawns
@@ -102,7 +107,8 @@ Notes on the calls:
     cyan `glyph` glow along its spiked second ring, with soul wisps (system §5), so it differs from
     every bud by shape, particles and colour together.
 - **Texture:** 64 × 64.
-- **Model parts:** body (a short torso); head (the snout, a long blunt muzzle with a hinged jaw);
+- **Model parts:** body (a short torso); head (a **short, blunt, wide snout**, canon's "Snout Sifter",
+  with a broad hinged mouth: nothing like the Nester's long thin muzzle);
   five petals around the head, one hinge each (closed: folded up over the head into a bud; open:
   peeled back into a collar); two long arms (folded around the body when closed); two short legs; a
   stalk (the legs and lower body tucked together when closed). **Enduring only:** a second ring of
@@ -113,7 +119,9 @@ Notes on the calls:
   - **creep** (10): the stalk leans and the bud slides one block, with a rustle;
   - **bloom** (15): petals peel back one after another, the snout pushes out, it rises to full height;
   - walk: a slow, rolling hunched gait, arms low (the vindicator's stance);
-  - **strike**: windup 6 (snout drawn back, arms up), active 2, recovery 12: a short snapping lunge;
+  - **bloom lunge** (once per waking): a short hop out of the bloom, mouth wide, about 8 ticks;
+  - **strike**: windup 10 (head drawn back, arms raised high, the vindicator's overhead), active 3,
+    recovery 16: a slow, heavy chomp;
   - **close** (20): it crouches, folds its arms and petals, and becomes a bud again;
   - **emerge** (30): a bud pushes up out of the soil; **dig** (60): the bud sinks into it;
   - **lulled** (M4): the petals close halfway and sway to the song;
@@ -122,55 +130,70 @@ Notes on the calls:
 ## Behavior
 ### State machine
 ```
-emerge (30) ──► closed ──a target within 5 in sight, or hurt (starts a ripple); or rippled; or lumen within 6──► bloom (15) ──► open
+emerge (30) ──► closed ──a target within 5 in sight, or hurt by one (it starts a ripple); or rippled; or lumen within 6 (no ripple)──► bloom (15) ──► [lunge, once, if woken by a target within 4] ──► open
                   ▲  │ unwatched, a target within 12: creep (1 block, at most every 40 ticks and 3 a minute; never within 6 of any target)
                   │  ▼                                                                         ▼
                   └──── close (20) ◄── bare soil, dark, no target for 100 ticks, wandered 200 ticks ◄── fight / wander
 falling Flow (surface or enduring) ──► retreat (system §4): closed buds dig in place (60) ──► gone
-a Singer's horn within 12 (M4) ──► lulled (200; system §3): open ones fold halfway and wander; closed ones stay closed
+a Singer's horn within 12 (M4) ──► lulled (200; system §3): open ones fold halfway and wander; closed ones stay closed and can't wake on the player who played (others can still wake them)
 ```
 - **Closed** (rooted): it doesn't move or turn and takes damage normally. It **can't be pushed**, as
   a creaking that is being watched: `isPushable()` is false and `push` does nothing while closed, so
-  mobs, players and boats can't shove or pick it up (a boat only picks up pushable mobs), and its
-  movement is zeroed each tick, so an explosion's knockback doesn't move it either. It looks for a
+  mobs, players and boats can't shove or pick it up (a boat only picks up pushable mobs). Like the
+  creaking it also ignores attack knockback while closed (`knockback` does nothing) and stops in
+  place once as it closes (`stopInPlace`); explosions push through `push`, so they don't move it
+  either. Gravity still applies: a bud whose soil is broken falls, and blooms. It looks for a
   target every 10 ticks: a survival or adventure player or an illager within **5 blocks**, in line of
   sight, through vanilla's targeting conditions, so **sneaking and invisibility shrink the radius** as
-  for every mob (`LivingEntity.getVisibilityPercent`: crouching ×0.8, 4 blocks). A closed bud with
-  lumen within 6 (a lantern placed nearby) blooms and walks out to the rim (system §6.3), without a
-  ripple: a lantern flushes out a patch, which is its own tell. Water reaching a closed bud, or its
+  for every mob (`LivingEntity.getVisibilityPercent`: crouching ×0.8, 4 blocks). Every 20 ticks
+  (staggered by its id) it asks the lumen point-of-interest index whether lumen is within 6; if so (a
+  lantern placed nearby) it blooms and walks out to the rim (system §6.3), without a ripple: a
+  lantern flushes out a patch, which is its own tell. Water reaching a closed bud, or its
   soil being broken, makes it bloom too, and it wanders.
 - **Bloom** (the telegraph, 15 ticks): the petals open one after another with a sound subtitled
   "Bloombud blooms" and a puff of petal particles. It can't strike while blooming. A target that walks
   away during the bloom is still its target; one that is gone (out of 16, unseen) when it ends leaves
   it open and wandering.
-- **The ripple:** a bud woken **by a target** (seen, or hurt by one) wakes the closed Bloombuds within
-  **8** of it that can see it, one at a time, **10 ticks apart**, nearest first. **Rippled buds don't
-  ripple further**: one wave per waking, so neighbouring patches never wake each other across the
-  Meadow (the system rejects chains, §3 option 8). A patch of five opens over about 3.5 seconds (the
-  first bloom of 15 ticks, four more 10 ticks apart, the last bloom of 15): the first bud is the
-  warning, the rest are the reason to leave. Each rippled bud takes the nearest target it can see
-  within 16, or wanders.
+- **The ripple:** the moment a bud is woken **by a target** (seen, or hurt by one), it picks the
+  closed Bloombuds within **8** of it that it can see, nearest first, and gives each a **wake tick**:
+  the first neighbour starts blooming as the first bud's bloom ends (15 ticks later), the rest **10
+  ticks apart**. The wake ticks are stored on the neighbours, so the wave runs whatever happens to
+  the first bud: killing it in its bloom (an arrow can) doesn't silence the patch. **Rippled buds and
+  lumen-flushed buds don't ripple**: one wave per waking, so neighbouring patches never wake each
+  other across the Meadow (the system rejects chains, §3 option 8). A patch of five is open after
+  60 ticks (3 s): the first bud is the warning, the rest are the reason to leave. Each rippled bud
+  takes the nearest target it can see within 16, or wanders.
+- **The bloom lunge** (the bible's "petals open … before it lunges"): a bud woken by a target that is
+  still within 4 blocks and in sight when its bloom ends makes **one** short lunge at where the
+  target stood when the bloom began (the aim is locked then, so the 15-tick bloom is the window to
+  step away): a hop of about 2 blocks, biting on landing if the target is within its melee reach.
+  Once per waking; rippled buds don't lunge. After it, a slow walker. Unlike the Nester's repeated,
+  circling lunges, it is the patch's one quick bite at whoever walked in.
 - **Open:** a slow melee mob. An open bud without a target looks for one every 10 ticks: a survival
   or adventure player or an illager within **8 blocks** in sight (×0.8 sneaking, the same vanilla
   conditions); an open bud stands tall and is easy to see, so it may notice a little farther than a
-  closed one. It walks at its target and strikes: windup 6 ticks (snout back, arms up), then the bite
-  lands on the active tick only if the target is within its melee reach then (vanilla's
-  `isWithinMeleeAttackRange`, its hitbox widened by the default attack reach), so **stepping back
-  during the windup avoids it**; recovery 12; a strike every 20 ticks at most (vanilla melee's
-  interval). It drops a target that dies, leaves, is more than 16 blocks away, or has been out of
+  closed one. It walks at its target and strikes: windup 10 ticks (head back, arms raised high, the
+  vindicator's overhead), then the chomp lands on the 3 active ticks only if the target is within its
+  melee reach (vanilla's `isWithinMeleeAttackRange`, its hitbox widened by the default attack
+  reach), so **stepping back during the windup avoids it**; recovery 16; about one strike every 30
+  ticks, slower than the Nester's and than vanilla melee's 20. It drops a target that dies, leaves, is more than 16 blocks away, or has been out of
   sight for 100 ticks, then **wanders idly** (canon).
-- **Close again:** an open Bloombud with no target for 100 ticks walks to bare soil within 8, where
-  **block light is 0** (the spawn rule's light: buds never root in a glowcap pool or a torch-lit base)
-  and outside every lumen radius, and, after wandering for at least 200 ticks, closes (20 ticks)
+- **Close again:** an open Bloombud with no target for 100 ticks walks to bare soil within 8 where
+  the **spawn rule's light test** passes (block light 0, and overall light within the Sift's monster
+  spawn light, 0–7: buds never root in a glowcap pool, a torch-lit base, a sunlit cave mouth or the
+  Meadow in Thrive) and outside every lumen radius, and, after wandering for at least 200 ticks, closes (20 ticks)
   there: a new bud in a new place. A target that comes within 5 during the close interrupts it: it
   blooms again (and ripples, as woken by a target). A Bloombud with no such soil in reach keeps
   wandering and looks again every 100 ticks.
 - **The creep** (closed only), after the **creaking**, vanilla's mob that moves only when no one is
   looking: if a target is within 12 (the creaking's activation range) but no target is within 6, no
   player within 12 is looking at it (the creaking's own test, `isLookingAtMe` with 0.5: within 60°
-  either side of the look direction, at three heights of the bud, with line of sight), and it hasn't
-  moved in 40 ticks, it slides one block toward the target, onto bare soil where block light is 0,
-  outside every lumen radius (system §6.1), with a rustle subtitled "Bloombud rustles". It never
+  either side of the look direction, at three heights of the bud, with line of sight), the bud has
+  **line of sight to the target** (so buds don't gather above a mine), and it hasn't moved in 40
+  ticks, it steps one block toward the target, onto bare soil that passes the spawn rule's light
+  test, that no other entity occupies, and outside every lumen radius (system §6.1), with a rustle
+  subtitled "Bloombud rustles". The step is a one-block position change that clients interpolate,
+  as any entity's move. It never
   creeps to within 6 of **any** target (one block outside the wake radius): **the creep never springs
   the trap; walking into the patch does.** At most 3 creeps per minute per bud.
 - **Retreat** (system §4): a surface or enduring Bloombud retreats at its moment in falling Flow. A
@@ -178,7 +201,10 @@ a Singer's horn within 12 (M4) ──► lulled (200; system §3): open ones fol
   Bloombuds that aren't enduring stay.
 
 ### AI
-- **Goal selector**, as the vindicator, the zombie and the Nester: few, linear states. Priorities: 0
+- **Goals, not a Brain**, as the Nester (whose doc argues it at length): VANILLA_ANALOGS E3 points to a
+  Brain for phased behaviour, and the creaking, the creep's analog, has one; but the bud's states are
+  one sequence (closed, bloom, open, close) owned by one goal set, as the vindicator's and the
+  Blub's are (D-021), and a Brain would add memories for data the goals already hold. Priorities: 0
   float; 1 emerge (holds everything; a bud can't wake while emerging, and is closed when it ends); 1
   retreat (falling Flow); 2 lumen: rim, walk-out (closed buds bloom first) and the rim flee (system
   §6.5); 2 lulled; 3 melee strike; 4 bloom and ripple; 5 close and root; 6 creep (closed only); 7
@@ -294,8 +320,9 @@ All original, synthesized in `tools/audio/synth.py`. Subtitles in brackets.
   lulled) drives the model's clips and, through `refreshDimensions()` on change, the hitbox;
   `ENDURING` (bool). Saved: `State` (closed or open), `Surface`, `Enduring`, `ReturnBy`, the lull
   (system §11).
-- **Closed cost:** a closed bud runs one goal, a target check every 10 ticks over a 5-block box, and
-  the creep check every 40 ticks (only when a target is within 12); no pathfinding.
+- **Closed cost:** a closed bud runs one goal: a target check every 10 ticks over a 5-block box, the
+  creep check every 40 ticks (only when a target is within 12), and a lumen lookup in the POI index
+  every 20 ticks (sections without POIs cost a lookup); no pathfinding.
 - **Pathfinding cost:** open buds repath as vanilla's `MeleeAttackGoal` does (every 4–10 ticks while
   they see the target); wandering uses vanilla's random stroll.
 - **The creep's "unwatched" test:** the creaking's `isLookingAtMe` for each player within 12 (a dot
@@ -311,8 +338,8 @@ All original, synthesized in `tools/audio/synth.py`. Subtitles in brackets.
 ## Critique log
 - **Round 1 (2026-10-02): FAIL**, 8 must-fix; scores faithful 4, vanilla-native 3, readable 4,
   meaningful 4, distinct 3, connected 3, feasible 4, template 4, frozen-doc consistency 2. Each
-  vanilla claim checked in the 26.3 sources before acting (`LivingEntity.knockback` is the only user
-  of knockback resistance; the shulker overrides `push`; the creaking's `isPushable`, `push`, its
+  vanilla claim checked in the 26.3 sources before acting (knockback resistance scales knockback
+  only, and nothing stops `push`; the shulker overrides `push`; the creaking's `isPushable`, `push`, its
   144 activation range and `isLookingAtMe(player, 0.5, …)`). Fixed:
   - M1, Hymnstone Rise isn't Bloombud country (world.md §1.1): dropped; citations corrected.
   - M2, knockback resistance doesn't stop pushing: closed buds are unpushable as a watched creaking.
@@ -330,3 +357,19 @@ All original, synthesized in `tools/audio/synth.py`. Subtitles in brackets.
     in every Tide, with the enduring marker distinct; enduring rolls only in Endure; bloom hearts;
     no structure spawns, the system's check order, BALANCE on freeze; three edge cases; a cost
     budget; the ripple's 3.5 s.
+- **Round 2 (2026-10-02): FAIL**, 3 must-fix; scores faithful 4, vanilla-native 4, readable 4,
+  meaningful 3, distinct 4, connected 4, feasible 4, template 5, frozen-doc consistency 4. Every
+  vanilla claim in the doc confirmed. Fixed:
+  - M1, the Decision and the state machine still let every opened bud ripple: only a bud woken by a
+    target ripples; rippled and lumen-flushed buds don't.
+  - M2, the ripple's start and its fate were undefined: wake ticks are stored on the neighbours when
+    the first bud wakes (the first starts as its bloom ends, the rest 10 ticks apart; open after 60
+    ticks), so killing the first bud doesn't silence the patch.
+  - M3, round 1's log overstated "the only user of knockback resistance" (arrows' Punch, the mace,
+    the hoglin and the sonic boom read it too): corrected.
+  - Should-fix, all taken: knockback and `stopInPlace` as the creaking (gravity kept); a lumen lookup
+    every 20 ticks for closed buds; rooting and creeping need the full spawn light test; the creep
+    needs line of sight and a free block; a capped bud digs away without XP; the lull spares other
+    players; goals argued against E3; the bloom lunge (the bible's "before it lunges") gives a patch
+    teeth; a short, blunt snout and slower strike timings set it apart from the Nester; "hip-high";
+    the D-013 citation.
