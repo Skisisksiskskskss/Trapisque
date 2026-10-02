@@ -98,6 +98,7 @@ Notes on the calls:
     recovery 12 (stands, crest down, head shake);
   - **circle**: a side-stepping gait facing its target; **dodge** (4): a quick hop sideways;
   - **emerge** (40): rises out of the soil, shaking off particles; **dig** (60): forelegs paw, it sinks;
+  - **lulled** (M4): crest folds flat, head sways to the song;
   - hurt: a flinch; death: vanilla's tip-over.
 
 ## Behavior
@@ -111,7 +112,10 @@ emerge (40) ──► roam ──hears──► tell (20) ──► gallop ─�
 hunt: approach ──in range 2.5–6──► lunge windup (8) ──► leap (6) ──► recovery (12) ──► circle (30) ──► approach
       (closer than 2.5: a standing bite: windup 6, no leap)          blocked by a shield: recovery 30
 falling Flow ──► retreat (system §4): to soil ──► dig (60) ──► gone
+a Singer's horn within 12 (M4) ──► lulled (200; system §3) ──► roam
 ```
+What a sound does in each state is the system's (§3): roam hears it (the tell), gallop and search
+re-aim to the new spot without a tell, hunt ignores it.
 - **Emerge:** a naturally spawned Nester rises out of the soil over 40 ticks (it "surfaces", as the
   bible says), with the soil's particles and a sound subtitled "Nester surfaces". It doesn't listen
   while emerging. Nesters from spawn eggs and `/summon` skip it.
@@ -144,7 +148,7 @@ falling Flow ──► retreat (system §4): to soil ──► dig (60) ──�
 | Players | Hunted when heard and found, when they hurt it, or within 2 blocks. Never by sight alone |
 | Sound and vibrations | The hearing rule (system §3) |
 | Souls (M3) | None in M2 |
-| Tides | Exists only in Endure: emerges with it, burrows at falling Flow, always (system §4, D-023) |
+| Tides | Lives through Endure: emerges with it, burrows at falling Flow, always, in caves too (system §4, D-023); its return-by tick is saved at spawn |
 | Light | Lumen repels it (system §6); torches don't, but block light stops spawning |
 | Other Sift mobs | Ignores other hunters (and their sounds). **Blubs** are targets when found |
 | Illagers (M4) | Targets when found or when they hurt it |
@@ -187,7 +191,8 @@ one who doesn't, doesn't.
 - **When:** Endure only.
 - **Rules:** dark, by the Sift's dimension rules (block light 0, then vanilla's 0–7 light roll, which
   Endure's sky light of 4 often passes and Thrive's 15 never does), on **soil**
-  (`#thesift:hunter_burrowable`), no lumen within 8, outside the gate sanctuary (system §7).
+  (`#thesift:hunter_burrowable`: healthy sculk or Sift Soil, never hymnstone or tide sand), no lumen
+  within 8, outside the gate sanctuary (system §7).
 - **Groups:** 1–2. **Weight:** set with the spawn tables in WP-070 (proposal: Nester 60 against
   Bloombud 100, so Bloombuds are commoner and Nesters are the event).
 - **Enduring:** 25 % (Hard 35 %) at a natural spawn.
@@ -224,15 +229,17 @@ All original, synthesized in `tools/audio/synth.py`. Subtitles in brackets.
 | Portals | Can't cross the membrane (`#thesift:cannot_cross`, D-023). Fire lights no other portal in the Sift (vanilla lights them only in the Overworld and the Nether) |
 | Peaceful | Doesn't exist (`notInPeaceful()`) |
 | `mobGriefing` false | No effect: it changes no blocks |
-| `/summon` and spawn eggs | No emerge animation. Outside Endure it digs away at once (Nesters don't stay out of Endure); a name tag or `PersistenceRequired` keeps one |
+| `/summon` and spawn eggs | No emerge animation. Its return-by is the next Thrive after it appears (system §4): one summoned in Thrive roams without hearing (nobody listens outside Endure), hears through the coming Endure, and digs away at falling Flow. A name tag or `PersistenceRequired` keeps one |
+| Outside the Sift (spawn eggs only) | No Tide: it never hears, never retreats, never becomes enduring; it roams, bumps and fights back, and despawns by vanilla's rules (system §13) |
+| Enduring and name-tagged | Persistent, so it doesn't retreat: at Thrive it loses enduring (system §5) |
 | Spectators and creative | Not heard, never targeted (system §3) |
 | Two-block ceilings, one-wide corridors | Fits; a one-block-high gap stops it |
 | A target that dodges every lunge | The circle and the next lunge repeat; it drops the target at 24 blocks or 100 ticks unseen |
 
 ## Tech notes
 - **Synced data:** `STATE` (a byte: roam, tell, gallop, search, windup, leap, recovery, circle, dodge,
-  emerge, dig) drives the model's clips; `ENDURING` (bool). Saved: `Surface`, `Enduring`, the listener
-  data (system §11).
+  emerge, dig, lulled) drives the model's clips; `ENDURING` (bool). Saved: `Surface`, `Enduring`,
+  `ReturnBy`, the lull, the listener data (system §11).
 - **Dodge:** in `hurtServer`, before damage: if circling, the source is its target's direct melee
   attack, the roll passes and it hasn't dodged this circle, cancel and hop.
 - **Pathfinding cost:** the gallop paths to one spot per sound (not to a moving entity); the hunt paths
