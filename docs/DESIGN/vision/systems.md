@@ -55,7 +55,7 @@ Rubric columns: F faithful · V vanilla-native · R readable · M meaningful · 
     - **Endure blooms** open along the waterline, and their reagents can be taken only then.
 - **The hunters retreat, so Thrive is safe.** Vanilla's daylight burning doesn't exist here (`gameplay/monsters_burn` is off, and our mobs don't burn anyway). Mobs also despawn only far from players (`Mob.checkDespawn`). So the retreat is our own rule, and it is telegraphed:
   - During falling Flow, surface hostiles (Nesters, enduring variants and the other Sift hostiles) stop, turn toward the nearest healthy-sculk mound, and **burrow**: a visible dig animation, particles, a sound and a subtitle, as the warden digs.
-  - They are gone by the start of Thrive. A hunter already fighting keeps fighting until its target is 16 blocks away, then burrows.
+  - They are gone by the start of Thrive. A hunter already fighting keeps fighting until its target is 16 blocks away, then burrows. *(Capped by D-023: a sweep at Thrive's first tick takes any hunter still fighting, so Thrive stays safe.)*
   - Hostiles in dark caves stay, as vanilla monsters do.
   - Outside Endure, Nesters never spawn on the surface (light), and none linger.
 - **First arrival is in Thrive.**

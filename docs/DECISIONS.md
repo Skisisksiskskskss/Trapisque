@@ -537,3 +537,27 @@ It also found that M1's Tide changed nothing in play (SF4), since the mission as
 
 **Revisit if** playtests show the cue is missed (make it stronger, never a posture trigger; D-010).
 
+
+## D-023 The hunt: one listener, a capped fight at dawn, hunters stay in the Sift (2026-10-02) [WP-060]
+**Context.** The hunt system (`docs/DESIGN/system_hunt.md`) has to keep three frozen promises at once: hunters listen only in Endure, Thrive is safe, and the Deep Dark's rules (sneaking, wool, the particle) work unchanged. Critique round 1 found places where the vision's own wording, or a tech note, couldn't keep them.
+
+**Options considered.**
+- For jukeboxes, a second listener per hunter as the allay has (rules.md's tech note), a third consumer of our game-event mixin, or the vibration listener with a wider event tag.
+- For a hunter still fighting at dawn, the vision's rule as written (fight until the target is 16 blocks away), or that rule capped by the start of Thrive.
+- For the membrane, letting hunters cross as ordinary mobs do (rules.md), or adding them to `#thesift:cannot_cross`.
+
+**Decision.**
+1. Each listener has **one** vanilla vibration listener whose events are `#thesift:hunter_can_listen` (`#minecraft:vibrations` plus `minecraft:jukebox_play`), as the warden widens its own with `#warden_can_listen`. Jukeboxes get the particle, the delay and wool occlusion for free; the 10-block range is checked in `canReceiveVibration`.
+2. A hunter fighting at its retreat moment keeps fighting until its target is 16 blocks away (the vision), **and** a sweep at Thrive's first tick removes any retreating hunter still present, with wisps and the burrow sound.
+3. `#thesift:hunters` joins `#thesift:cannot_cross`.
+4. Nesters always retreat, in caves too (creatures.md: "Endure only"), while other hunters that spawned in caves stay (systems.md). Enduring variants stay enduring until the next Thrive.
+
+**Why.**
+1. One listener is less code than two, uses vanilla's dispatch, and makes a muffled jukebox work as players expect.
+2. Without the cap, a player who stays close keeps a Nester into Thrive, and "Thrive is safe" breaks.
+3. A hunter in the Overworld has no Tide: it would never hear and never leave.
+4. A Nester is an Endure creature by the bible's own row, and an enduring Bloombud living on in the Hollows would make enduring variants permanent.
+
+**Consequences.** WP-061 implements the listener and the retreat as specified and adds the tag to `cannot_cross`. The Thrive sweep is a server tick check alongside `TideCues`. rules.md's tech note on an allay-style jukebox listener is superseded by this entry.
+
+**Revisit if** playtests show the dawn sweep reads as a pop rather than a retreat (lengthen the falling-Flow window or the dig), or that jukebox calls through walls feel unfair (they follow vanilla occlusion, so wool is the answer to teach).

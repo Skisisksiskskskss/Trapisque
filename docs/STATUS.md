@@ -1,7 +1,7 @@
 # STATUS (session 1, 2026-10-01)
 - **Phase / Milestone:** M1 done (Gate C self-reviewed). Next: M2 "the hunt" planning (Phase 4 continues).
-- **Autonomy:** **full-auto** (D-014). **Deadline (D-018):** the owner tries the mod by 2026-10-04. **`v0.1.0-alpha` (M1) is the build to try**: a GitHub pre-release, with steps in `docs/PLAYTEST.md` (Gate C section).
-- **Current WP:** M2 detailed planning (PLAN.md "Later": Nester, the Hollows, Endure's danger, tidewrack and blub treats).
+- **Autonomy:** **full-auto** (D-014). **Deadline (D-018):** the owner tries the mod by 2026-10-04. **`v0.1.0-alpha` (M1) is the build to try**: the GitHub pre-release https://github.com/Skisisksiskskskss/Trapisque/releases/tag/v0.1.0-alpha (published 2026-10-02 from 76119d6), with steps in `docs/PLAYTEST.md` (Gate C section).
+- **Current WP:** WP-060, the hunt system design (`docs/DESIGN/system_hunt.md`): critique round 1 FAIL (5 must-fix), fixing.
 - **Done this session:** Phases 0–3; M1 WP-040..053 in full. That includes the Blub (design frozen after three critique rounds, art, 27 sounds, AI, 15 GameTests), the advancement tab, the frame cues, and cost measurements.
 - **Next 3 actions:**
   1. Watch CI and the release; answer the owner's playtest notes the moment they arrive.
