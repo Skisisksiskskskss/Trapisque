@@ -9,6 +9,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.random.WeightedList;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.HangingMossBlock;
 import net.minecraft.world.level.block.FlowerPotBlock;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.SlabBlock;
@@ -45,14 +46,21 @@ public final class ModBlocks {
 	public static final Block HYMNSTONE_BRICK_WALL = register("hymnstone_brick_wall", WallBlock::new,
 			BlockBehaviour.Properties.ofFullCopy(HYMNSTONE_BRICKS).forceSolidOn());
 
+	/** The Sift's grass (owner rework: the teaser's pink-coral ground), over Sift soil as grass over dirt. */
 	public static final Block HEALTHY_SCULK = register("healthy_sculk", HealthySculkBlock::new, BlockBehaviour.Properties.of()
-			.mapColor(MapColor.COLOR_ORANGE).instrument(NoteBlockInstrument.BASEDRUM)
-			.requiresCorrectToolForDrops().strength(0.4F).sound(SoundType.NYLIUM).randomTicks());
+			.mapColor(MapColor.COLOR_PINK).strength(0.6F).sound(SoundType.GRASS).randomTicks());
+	/** Sift soil: the maroon earth under the grass, the Sift's dirt (the teaser's hill). */
+	public static final Block SIFT_SOIL = register("sift_soil", Block::new, BlockBehaviour.Properties.of()
+			.mapColor(MapColor.TERRACOTTA_BROWN).strength(0.5F).sound(SoundType.GRAVEL));
 	public static final Block HEALTHY_SCULK_GRASS = register("healthy_sculk_grass", HealthySculkGrassBlock::new, plant());
 	public static final Block TALL_HEALTHY_SCULK_GRASS = register("tall_healthy_sculk_grass", TallHealthySculkGrassBlock::new, plant());
 
 	public static final Block SONGWOOD_LOG = register("songwood_log", SongwoodLogBlock::new, BlockBehaviour.Properties.of()
 			.mapColor(MapColor.COLOR_PURPLE).instrument(NoteBlockInstrument.BASS).strength(2.0F).sound(SoundType.CHERRY_WOOD).ignitedByLava());
+	/** Pale strands hanging under the canopy, as the teaser's drooping leaves (vanilla's hanging moss rules). */
+	public static final Block SONGWOOD_DRAPES = register("songwood_drapes", HangingMossBlock::new, BlockBehaviour.Properties.of()
+			.mapColor(MapColor.SNOW).replaceable().noCollision().instabreak().sound(SoundType.MOSS_CARPET).ignitedByLava()
+			.pushReaction(PushReaction.POPPED));
 	public static final Block SONGWOOD_PLANKS = register("songwood_planks", Block::new, BlockBehaviour.Properties.of()
 			.mapColor(MapColor.COLOR_LIGHT_BLUE).instrument(NoteBlockInstrument.BASS).strength(2.0F, 3.0F).sound(SoundType.CHERRY_WOOD).ignitedByLava());
 	public static final Block SONGWOOD_LEAVES = register("songwood_leaves",

@@ -1,15 +1,23 @@
-# STATUS (session 1, 2026-10-01)
-- **Phase / Milestone:** M1 done (Gate C self-reviewed). Next: M2 "the hunt" planning (Phase 4 continues).
-- **Autonomy:** **full-auto** (D-014). **Deadline (D-018):** the owner tries the mod by 2026-10-04. **`v0.1.0-alpha` (M1) is the build to try**: the GitHub pre-release https://github.com/Skisisksiskskskss/Trapisque/releases/tag/v0.1.0-alpha (published 2026-10-02 from 76119d6), with steps in `docs/PLAYTEST.md` (Gate C section).
-- **Current WP:** WP-060, the hunt system design (`docs/DESIGN/system_hunt.md`): critique round 1 FAIL (5 must-fix), fixing.
-- **Done this session:** Phases 0–3; M1 WP-040..053 in full. That includes the Blub (design frozen after three critique rounds, art, 27 sounds, AI, 15 GameTests), the advancement tab, the frame cues, and cost measurements.
+# STATUS (session 1, 2026-10-02)
+- **Phase / Milestone:** M1 done; the owner's playtest rework (`v0.1.1-alpha`) done; M2 "the hunt" in design.
+- **Autonomy:** **full-auto** (D-014). **The build to try:** `v0.1.1-alpha`, the owner's playtest rework (D-024, D-025), released from the CI's `release_tag`; steps in `docs/PLAYTEST.md` (top section). **Use a new world.** The previous build: https://github.com/Skisisksiskskskss/Trapisque/releases/tag/v0.1.0-alpha
+- **Current WP:** the owner's rework is done. Next is WP-060, the hunt system design: critique round 2 FAILED with 4 must-fix, logged in `system_hunt.md` with the fixes pending.
+- **Done this session:**
+  - Phases 0–3 and M1 (WP-040..053).
+  - The owner's playtest rework:
+    - ichor became the Sift's water;
+    - the terrain was rebuilt on vanilla's terrain functions, with rose spires and the Hollows;
+    - textures redrawn from the teaser stills;
+    - new blocks Sift Soil and Songwood Drapes;
+    - songwood trees reshaped into groves;
+    - the Blub remodelled after the first look.
 - **Next 3 actions:**
-  1. Watch CI and the release; answer the owner's playtest notes the moment they arrive.
-  2. M2 planning: detail WP-060+ from the bible (M2 rows), with the Nester design ladder first.
-  3. Polish from the known issues: basin bubbles, the Sift's own particles for the frame, membrane and ichor.
-- **Build:** ✅ `./gradlew build` (with GameTests) · datagen no-diff ✅ · `check_bible.py` ✅ (144 rows) · `check_palette.py` ✅ (34 textures) · `check_lang.py` ✅
-- **Tests:** 71/71 server GameTests. The client GameTest walks through frame notice, opening, crossing, the Tides, a basin, befriending a blub, the gate and the advancements, with screenshots in `docs/previews/`.
-- **Server boot:** ✅ (the GameTest dedicated server on every build; no `thesift` warnings).
+  1. Watch CI and the `v0.1.1-alpha` release; answer the owner's notes the moment they arrive.
+  2. WP-060: fix critique round 2's findings, then round 3 and freeze.
+  3. WP-061 (Nester) critique, then WP-062 (Bloombud) design.
+- **Build:** ✅ `./gradlew build` (with GameTests) · datagen no-diff ✅ · `check_bible.py` ✅ · `check_palette.py` ✅ (38 textures) · `check_lang.py` ✅
+- **Tests:** 70/70 server GameTests. The client GameTest walks the entry, the Tides, a basin and the blubs, and its landscape shots (`look_*`) compare the land with the teasers.
+- **Server boot:** ✅ (the GameTest dedicated server on every build).
 - **Blockers:** none. The Netlify site `magnificent-gelato-563c55` fails on every PR because of its own configuration (owner-side; see the PR comment).
 - **Awaiting owner:** nothing (full-auto). The playtest questions are in `docs/PLAYTEST.md`.
 

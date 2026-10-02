@@ -21,8 +21,10 @@ final class ModLootProvider extends FabricBlockLootSubProvider {
 		dropSelf(ModBlocks.HYMNSTONE_BRICK_STAIRS);
 		add(ModBlocks.HYMNSTONE_BRICK_SLAB, createSlabItemTable(ModBlocks.HYMNSTONE_BRICK_SLAB));
 		dropSelf(ModBlocks.HYMNSTONE_BRICK_WALL);
-		// Like nylium: hymnstone unless mined with Silk Touch.
-		add(ModBlocks.HEALTHY_SCULK, createSingleItemTableWithSilkTouch(ModBlocks.HEALTHY_SCULK, ModBlocks.HYMNSTONE));
+		// Like grass: soil unless mined with Silk Touch.
+		add(ModBlocks.HEALTHY_SCULK, createSingleItemTableWithSilkTouch(ModBlocks.HEALTHY_SCULK, ModBlocks.SIFT_SOIL));
+		dropSelf(ModBlocks.SIFT_SOIL);
+		add(ModBlocks.SONGWOOD_DRAPES, createShearsOrSilkTouchOnlyDrop(ModBlocks.SONGWOOD_DRAPES));
 		add(ModBlocks.HEALTHY_SCULK_GRASS, createShearsOnlyDrop(ModBlocks.HEALTHY_SCULK_GRASS));
 		add(ModBlocks.TALL_HEALTHY_SCULK_GRASS, createDoublePlantShearsDrop(ModBlocks.HEALTHY_SCULK_GRASS));
 		dropSelf(ModBlocks.SONGWOOD_LOG);

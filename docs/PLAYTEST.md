@@ -2,6 +2,18 @@
 
 Step-by-step checklists the owner can run in-game. Produced at every gate.
 
+## `v0.1.1-alpha` (2026-10-02): the owner's playtest rework
+Your notes on `v0.1.0-alpha`: the terrain didn't look like Minecraft, the textures, mob and trees didn't look like the teasers, and the water was the worst part. What changed (D-024, D-025):
+- **Water:** ichor is now the Sift's water. It is clear turquoise, see-through, and it swims, flows and refills like water; it no longer burns, slows or drains you. There is much more of it: lakes, rivers and shores.
+- **Terrain:** built on vanilla's own Overworld terrain (hills, valleys, plateaus, caves, lakes, rivers), with the teasers' rose hymnstone spires and their mushroom caps standing on it, and the Sift Hollows (caves) below.
+- **Textures:** redrawn from the teaser stills: the first look's pink-coral grass over a new maroon **Sift Soil**, rose-mauve hymnstone, dense jagged pink grass, dark teal trunks, pale icy leaves.
+- **Trees:** tall dark trunks with big pale canopies and **Songwood Drapes** hanging underneath, in groves with open meadow between.
+- **Blub:** the first look's shape: a bigger blue cube with long ears, slit eyes and short legs.
+
+**Use a new world** (or delete `<world>/dimensions/thesift/the_sift`): the Sift's terrain and height changed, so old Sift chunks won't match new ones. Install as below with `thesift-0.1.1-alpha.jar`.
+
+**Tell me:** does it look like the teasers now? What still looks off: colours, grass, trees, spires, water, the Blub?
+
 ## Gate C: M1 `v0.1.0-alpha` (2026-10-01): get in, watch the tide, befriend a blub, get out
 The M1 vertical slice (it supersedes the `v0.1.0-alpha.preview` build). **In it:**
 - the Sift dimension and Singer's Meadow (block set I);
@@ -38,14 +50,14 @@ Every sound is our own, synthesized, with subtitles.
 
 ### P3. Ichor, basins and pools (≈15 minutes)
 1. Find a **tide basin**: a rounded pit that steps down in one-block rings to a pale tide-sand floor with a vent in the middle. **Expect:** empty in Thrive; in rising Flow it fills one layer at a time (3 layers); full through Endure; it drains through falling Flow.
-2. Find an **ichor pool** (violet liquid in the hills and caves). Wade in. **Expect:** you are slowed (but a jump still clears the bank), set on fire for a few seconds, and lose XP; with your head under, a thick violet haze (1/2/4 points a second on Easy/Normal/Hard); soul flames rise. With Fire Resistance you don't burn, but the drain goes on. Creative players are left alone.
+2. Find ichor (since `v0.1.1-alpha`: lakes, rivers and pools of clear turquoise). Swim in it. **Expect:** it behaves as water: you swim, hold your breath, get carried by its current, and fire goes out; under it, a clear turquoise haze. A soul wisp rises from it now and then.
 3. Fill a bucket with ichor. **Expect:** it pours in the Sift; emptied in the Overworld it evaporates in soul smoke.
-4. **Tell me:** does the drain feel like pressure or punishment? Is wading too slow or too quick?
+4. **Tell me:** does it look and feel like the teasers' water?
 
 ### P4. Singer's Meadow and block set I (≈10 minutes)
-1. Look around: rolling coral hills of healthy sculk, white-crowned songwood groves, pink grass.
+1. Look around: pink-coral meadow over maroon soil, dense pink grass, rose spires, rivers and lakes, groves of dark-trunked songwood with pale drooping canopies.
 2. The creative tab **The Sift** lists every block. Craft songwood planks and hymnstone bricks (stairs, slabs, walls; the stonecutter works too).
-3. Saplings grow and bone meal works **only in the Sift**; healthy sculk covered by a block dies back to hymnstone.
+3. Saplings grow and bone meal works **only in the Sift**; healthy sculk covered by a block dies back to Sift Soil, and spreads back onto soil in the light, as grass does.
 4. **Music reactions:** play a note block, goat horn or jukebox near healthy sculk or songwood. **Expect:** glowing petals lift off the sculk and grass, and the songwood's flute holes puff notes (within 12 blocks). It works at home too, and with the sound muted.
 5. **Tell me:** what reads well, and what looks off (colours, textures, the membrane's pattern, the ichor surface)?
 
@@ -56,12 +68,12 @@ Every sound is our own, synthesized, with subtitles.
 4. Play notes near your blubs. **Expect:** each answers 0.3 s later with a squeak at your note plus its own interval. Three befriended in a row make a chord (root, third, fifth), with a note particle each.
 5. *Use* with an empty hand sits a blub, as with a cat. *Sneak-use* on a sitting one releases it. It heals slowly while sitting.
 6. Walk through the membrane. **Expect:** your free-roaming blubs within 16 blocks come along; sitting ones stay.
-7. Watch a Tide cycle with blubs around. Near the end of Thrive and of Endure, yours get **restless** (hops, chirps, note particles): Flow is 30 s away. In **Flow** they potter along the basin waterline. In **Endure** they curl up under leaves with their bellies glowing. In **Thrive**, music makes nearby blubs stack into wobbly towers of up to 5, which topple later. Now and then a blub sits in shallow ichor up to its belly, unharmed.
+7. Watch a Tide cycle with blubs around. Near the end of Thrive and of Endure, yours get **restless** (hops, chirps, note particles): Flow is 30 s away. In **Flow** they potter along the basin waterline. In **Endure** they curl up under leaves with their bellies glowing. In **Thrive**, music makes nearby blubs stack into wobbly towers of up to 5, which topple later. Now and then a blub sits in shallow ichor up to its belly.
 8. **Advancements:** a tab **The Sift** opens when you walk an Ancient City, then "An Offering" (wake a frame), "Where Souls Drift" (enter the Sift) and "The Tide Turns" (be there when it changes). Befriending a blub also counts for vanilla's "Best Friends Forever".
 9. **Tell me:** does befriending feel deliberate or fiddly? Is the echo charming or noisy? Do the towers topple too soon or too late?
 
 ### Known issues in M1
-- The frame's, membrane's and ichor's particles are vanilla stand-ins (the sky's motes and the music petals are the Sift's own). The XP drain uses vanilla's soul sound.
+- The frame's, membrane's and ichor's particles are vanilla stand-ins (the sky's motes and the music petals are the Sift's own).
 - Basins have no rising-bubble visual yet (the bubbling is heard). Blub animations are simple procedural poses, not keyframed clips.
 - Towers of blubs need a few listening blubs close together; a jukebox works best.
 - The membrane and ichor show the same animation frame on every block (as vanilla water does); a faint per-block rhythm can show on wide sheets.

@@ -12,9 +12,12 @@ public final class SiftFeatures {
 	public static final ResourceKey<Feature> SONGWOOD_TREE = ResourceKey.create(Registries.FEATURE, TheSift.id("songwood"));
 	public static final ResourceKey<Feature> HEALTHY_SCULK_GRASS_PATCH = ResourceKey.create(Registries.FEATURE, TheSift.id("healthy_sculk_grass_patch"));
 	public static final ResourceKey<Feature> TIDE_BASIN = ResourceKey.create(Registries.FEATURE, TheSift.id("tide_basin"));
+	public static final ResourceKey<Feature> HYMNSTONE_SPIRE = ResourceKey.create(Registries.FEATURE, TheSift.id("hymnstone_spire"));
+	public static final ResourceKey<PlacedFeature> SPIRES_MEADOW = ResourceKey.create(Registries.PLACED_FEATURE, TheSift.id("hymnstone_spires_singers_meadow"));
 	public static final ResourceKey<Feature> ICHOR_POOL = ResourceKey.create(Registries.FEATURE, TheSift.id("ichor_pool"));
 	public static final ResourceKey<PlacedFeature> SONGWOOD_CHECKED = ResourceKey.create(Registries.PLACED_FEATURE, TheSift.id("songwood_checked"));
 	public static final ResourceKey<PlacedFeature> TREES_MEADOW = ResourceKey.create(Registries.PLACED_FEATURE, TheSift.id("trees_singers_meadow"));
+	public static final ResourceKey<PlacedFeature> LONE_TREES_MEADOW = ResourceKey.create(Registries.PLACED_FEATURE, TheSift.id("lone_trees_singers_meadow"));
 	public static final ResourceKey<PlacedFeature> GRASS_MEADOW = ResourceKey.create(Registries.PLACED_FEATURE, TheSift.id("grass_singers_meadow"));
 
 	public static final ResourceKey<PlacedFeature> TIDE_BASINS_MEADOW = ResourceKey.create(Registries.PLACED_FEATURE, TheSift.id("tide_basins_singers_meadow"));

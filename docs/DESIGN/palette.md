@@ -17,19 +17,21 @@ below allows.
 
 | Ramp | Colours (dark → light) | Notes |
 |---|---|---|
-| `hymnstone` | `#3b1620` `#57222d` `#72303b` `#8c3f4a` `#a4525a` `#bb6a6c` `#cf8680` | Rose-crimson stone. Base `#8c3f4a` sits between netherrack and stone in value |
+| `hymnstone` | `#5a2f3d` `#74404f` `#8e5262` `#a86474` `#bd7a87` `#d1949c` `#e2b0b3` | Rose-mauve stone of the teasers' spires and canyon walls (owner rework) |
 | `gatestone` | `#1d0c14` `#2c1520` `#3f1d2a` | Darker-than-hymnstone body for the unbreakable gate frame |
 | `glyph` | `#2f7f8c` `#5fd3d6` `#b8fbf1` | Pale-cyan inlay: groove, fill, glint |
-| `healthy_sculk` | `#7c2635` `#a9394a` `#cc4f5a` `#e3636c` `#f27b86` `#fb97a0` `#ffbdbd` | Coral-pink petals (the vanilla first look's grass) |
-| `songwood_bark` | `#15122a` `#221d3d` `#2e2750` `#3c3463` `#4d4478` `#605a8f` | Dark blue-violet; the first entry is also a flute hole's bore |
+| `healthy_sculk` | `#b9475a` `#d95a67` `#e4626a` `#ed717f` `#f37e8e` `#f9909d` `#ffaab4` | The teaser's pink-coral grass, sampled from the vanilla first look (owner rework) |
+| `songwood_bark` | `#1a2426` `#233236` `#2d4044` `#3a5054` `#4a6165` `#5d7579` | Dark charcoal-teal trunks of the teasers' trees; the first entry is a flute hole's bore |
 | `flute` | `#8fa3d6` `#c4d4f2` `#eef4ff` | The pale lips of the flute holes |
-| `songwood_planks` | `#3a374f` `#4f4b66` `#625e7c` `#75718f` `#8a86a3` `#a09cb8` | Muted violet-blue grey |
-| `songwood_leaves` | `#6d86b8` `#9bb6e0` `#c6d9f2` `#e4edf9` `#f9fbff` | White leaves edged pale blue (untinted) |
+| `songwood_planks` | `#2f4246` `#3a5054` `#4b6266` `#5d767a` `#708a8e` `#86a0a3` | Teal-grey planks cut from the dark trunks |
+| `songwood_leaves` | `#6f8790` `#8ea6af` `#a9c0c8` `#c2d5dc` `#d9e7ec` | Pale icy grey-blue canopy of the teasers' trees (untinted) |
 | `tide_sand` | `#6e6680` `#857d98` `#9b94ac` `#afa9bf` `#c3bed1` `#d6d2e1` | Pale grey-violet silt |
 | `ichor` | `#0f5e7c` `#177e9e` `#229cb8` `#3abccb` `#78dad9` `#c2f5ee` | Ichor, the Sift's clear turquoise water (D-024); textures are translucent |
 | `membrane` | `#0b3f55` `#13687e` `#2598a8` `#55c8cc` `#a3eee8` `#e0fffa` | The Sift membrane's cyan shimmer (translucent) |
 | `pail` | `#2b2b33` `#4b4b56` `#6d6d7a` `#9696a2` `#c2c2cb` `#e6e6ec` | Bucket metal |
-| `blub` | `#2c4f8f` `#3f6fb8` `#5f93d8` `#8ab6ee` `#b9d8fa` `#e6f3ff` | The Blub's soft pale blue: the only pale-blue mob in the Sift (mob_blub.md) |
+| `blub` | `#3f6a8e` `#4f81a8` `#5f95ba` `#7aabc8` `#9cc2d6` `#c4dde8` | The Blub's blue, sampled from the first look (owner rework): the only blue mob in the Sift |
+| `blub_eye` | `#24204a` `#3d3570` | The Blub's dark violet slit eyes (first look) |
+| `soil` | `#3e2a2c` `#524145` `#6e4a4e` `#875457` `#a2636a` `#c27076` | Sift soil: the maroon earth under the teaser's grass hill (owner rework) |
 | `particle` | `#f0cf8c` `#f9e6b0` `#fff4d6` `#fffdf5` `#ffd9d2` | Glow cores, trill motes |
 
 ## Texture → allowed ramps
@@ -43,7 +45,7 @@ below allows.
 | `block/healthy_sculk_top.png` | healthy_sculk |
 | `block/healthy_sculk_top_2.png` | healthy_sculk |
 | `block/healthy_sculk_top_3.png` | healthy_sculk |
-| `block/healthy_sculk_side.png` | healthy_sculk, hymnstone |
+| `block/healthy_sculk_side.png` | healthy_sculk, soil |
 | `block/healthy_sculk_grass.png` | healthy_sculk |
 | `block/tall_healthy_sculk_grass_bottom.png` | healthy_sculk |
 | `block/tall_healthy_sculk_grass_top.png` | healthy_sculk |
@@ -54,6 +56,9 @@ below allows.
 | `block/songwood_leaves.png` | songwood_leaves |
 | `block/songwood_leaves_2.png` | songwood_leaves |
 | `block/songwood_sapling.png` | songwood_bark, songwood_leaves, flute |
+| `block/songwood_drapes.png` | songwood_leaves |
+| `block/songwood_drapes_tip.png` | songwood_leaves |
+| `block/sift_soil.png` | soil |
 | `block/tide_sand.png` | tide_sand |
 | `block/tide_sand_2.png` | tide_sand |
 | `block/tide_sand_3.png` | tide_sand |
@@ -68,6 +73,6 @@ below allows.
 | `item/ichor_bucket.png` | pail, ichor |
 | `particle/glow_petal.png` | healthy_sculk, particle |
 | `particle/trill.png` | particle |
-| `entity/blub/blub.png` | blub, songwood_bark, particle |
+| `entity/blub/blub.png` | blub, blub_eye |
 | `entity/blub/blub_glow.png` | membrane |
 | `item/blub_spawn_egg.png` | blub, songwood_bark |

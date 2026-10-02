@@ -43,10 +43,11 @@ final class ModModelProvider extends FabricModelProvider {
 				.slab(ModBlocks.HYMNSTONE_BRICK_SLAB)
 				.wall(ModBlocks.HYMNSTONE_BRICK_WALL);
 
-		// Nylium-style: petalled top, fringed side, hymnstone bottom; 3 top variants x 4 rotations.
+		// Grass-style: speckled top, fringed side, soil bottom; 3 top variants x 4 rotations.
+		g.createTrivialCube(ModBlocks.SIFT_SOIL);
 		List<Variant> sculk = new ArrayList<>();
 		for (Variant top : textureVariants(g, ModBlocks.HEALTHY_SCULK, ModelTemplates.CUBE_BOTTOM_TOP, 3, sfx -> new TextureMapping()
-				.put(TextureSlot.BOTTOM, TextureMapping.getBlockTexture(ModBlocks.HYMNSTONE))
+				.put(TextureSlot.BOTTOM, TextureMapping.getBlockTexture(ModBlocks.SIFT_SOIL))
 				.put(TextureSlot.TOP, TextureMapping.getBlockTexture(ModBlocks.HEALTHY_SCULK, "_top" + sfx))
 				.put(TextureSlot.SIDE, TextureMapping.getBlockTexture(ModBlocks.HEALTHY_SCULK, "_side")))) {
 			sculk.addAll(List.of(top, top.with(BlockModelGenerators.Y_ROT_90), top.with(BlockModelGenerators.Y_ROT_180), top.with(BlockModelGenerators.Y_ROT_270)));
@@ -63,6 +64,7 @@ final class ModModelProvider extends FabricModelProvider {
 		g.createTrivialCube(ModBlocks.SONGWOOD_PLANKS);
 		g.blockStateOutput.accept(MultiVariantGenerator.dispatch(ModBlocks.SONGWOOD_LEAVES, BlockModelGenerators.variants(
 				textureVariants(g, ModBlocks.SONGWOOD_LEAVES, ModelTemplates.LEAVES, 2, sfx -> TextureMapping.cube(TextureMapping.getBlockTexture(ModBlocks.SONGWOOD_LEAVES, sfx))))));
+		g.createHangingMoss(ModBlocks.SONGWOOD_DRAPES);
 		g.createPlantWithDefaultItem(ModBlocks.SONGWOOD_SAPLING, ModBlocks.POTTED_SONGWOOD_SAPLING, BlockModelGenerators.PlantType.NOT_TINTED);
 
 		g.blockStateOutput.accept(MultiVariantGenerator.dispatch(ModBlocks.TIDE_SAND, BlockModelGenerators.variants(

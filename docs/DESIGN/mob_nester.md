@@ -136,7 +136,7 @@ falling Flow ──► retreat (system §4): to soil ──► dig (60) ──�
   look around. Targeting: hurt-by (retaliation) and the search's find; never by sight alone (system
   §3), except a target within 2 blocks.
 - **Navigation:** ground navigation, step height 1.0 (long legs walk up a block without jumping, as a
-  horse). It avoids water (path malus 8) and treats ichor as walkable (it's native).
+  horse). It avoids water and ichor, the Sift's water (path malus 8; D-024).
 
 ### Reactions
 | To | Reaction |
@@ -148,7 +148,7 @@ falling Flow ──► retreat (system §4): to soil ──► dig (60) ──�
 | Light | Lumen repels it (system §6); torches don't, but block light stops spawning |
 | Other Sift mobs | Ignores other hunters (and their sounds). **Blubs** are targets when found |
 | Illagers (M4) | Targets when found or when they hurt it |
-| Ichor | Native: `#thesift:ichor_adapted`, so it wades flooded basins unharmed (slowly) |
+| Ichor | The Sift's water (D-024): it swims across when it must, and paths around it |
 
 ## Stats (vanilla analogs side by side)
 | Stat | Nester | Analogs |
@@ -217,7 +217,7 @@ All original, synthesized in `tools/audio/synth.py`. Subtitles in brackets.
 |---|---|
 | Water | Floats and swims slowly; avoids water when pathing (malus 8) |
 | Lava | Vanilla (burns; avoids it) |
-| Ichor | Native: unharmed; wades slowly |
+| Ichor | As water: floats and swims slowly; avoids it when pathing |
 | Leashed | Can't be (vanilla: no `Enemy` can be leashed) |
 | Name-tagged | Persistent: never retreats; listens and hunts in Endure; outside Endure it roams and only fights back |
 | Boats and minecarts | Vanilla lets mobs ride them; a riding Nester is persistent (vanilla's `requiresCustomPersistence`), can't gallop or lunge, and still hears |

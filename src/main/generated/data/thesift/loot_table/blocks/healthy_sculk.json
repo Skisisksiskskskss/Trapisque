@@ -16,7 +16,7 @@
               "condition": {
                 "type": "minecraft:survives_explosion"
               },
-              "name": "thesift:hymnstone"
+              "name": "thesift:sift_soil"
             }
           ]
         }

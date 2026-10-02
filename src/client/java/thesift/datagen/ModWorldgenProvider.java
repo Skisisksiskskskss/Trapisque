@@ -18,6 +18,7 @@ final class ModWorldgenProvider extends FabricDynamicRegistryProvider {
 		entries.addAll(registries.lookupOrThrow(Registries.WORLD_CLOCK));
 		entries.addAll(registries.lookupOrThrow(Registries.TIMELINE));
 		entries.addAll(registries.lookupOrThrow(Registries.DIMENSION_TYPE));
+		entries.addAll(registries.lookupOrThrow(Registries.DENSITY_FUNCTION));
 		entries.addAll(registries.lookupOrThrow(Registries.MATERIAL_RULE));
 		entries.addAll(registries.lookupOrThrow(Registries.NOISE_SETTINGS));
 		entries.addAll(registries.lookupOrThrow(Registries.FEATURE));

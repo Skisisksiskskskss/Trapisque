@@ -1,7 +1,7 @@
 {
   "parent": "minecraft:block/cube_bottom_top",
   "textures": {
-    "bottom": "thesift:block/hymnstone",
+    "bottom": "thesift:block/sift_soil",
     "side": "thesift:block/healthy_sculk_side",
     "top": "thesift:block/healthy_sculk_top_2"
   }

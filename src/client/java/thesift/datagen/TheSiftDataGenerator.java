@@ -32,6 +32,7 @@ public final class TheSiftDataGenerator implements DataGeneratorEntrypoint {
 		builder.add(Registries.WORLD_CLOCK, SiftWorldgen::clocks);
 		builder.add(Registries.TIMELINE, SiftWorldgen::timelines);
 		builder.add(Registries.DIMENSION_TYPE, SiftWorldgen::dimensionTypes);
+		builder.add(Registries.DENSITY_FUNCTION, SiftWorldgen::densityFunctions);
 		builder.add(Registries.MATERIAL_RULE, SiftWorldgen::materialRules);
 		builder.add(Registries.NOISE_SETTINGS, SiftWorldgen::noiseSettings);
 		builder.add(Registries.FEATURE, SiftWorldgen::features);

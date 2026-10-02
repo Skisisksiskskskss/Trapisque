@@ -101,16 +101,22 @@ def scatter(seed: int, count: int, spacing: float, w: int = W, h: int = H) -> li
 
 
 def hymnstone_pattern(seed: int = 3) -> Image.Image:
-    # Soft strata: noise stretched sideways plus fine grain, in four close tones. No lines or other
-    # shapes the eye could follow from block to block (the lesson of vanilla stone).
-    n = tile_noise(W, H, 3, 8, seed, ((1.0, 1), (0.5, 2), (0.3, 4)))
-    im = bands(n, [0.1, 0.5, 0.88], [rgba("hymnstone", 2), rgba("hymnstone", 3), rgba("hymnstone", 4), rgba("hymnstone", 5)])
-    # A few tiny pores: one dark pixel with a lit pixel above it.
-    for x, y in scatter(seed * 13 + 1, 4, 5.0):
+    """Rose-mauve stone (owner rework, after the teasers' spires): vanilla-stone grain with faint
+    horizontal strata, so cliffs and spires read layered. The strata wander a little in height, so
+    they never line up into stripes across a wall."""
+    grain = tile_noise(W, H, 8, 8, seed, ((1.0, 1), (0.6, 2)))
+    strata = tile_noise(W, H, 2, 6, seed + 50, ((1.0, 1), (0.4, 2)))
+    rnd = random.Random(seed)
+    im = Image.new("RGBA", (W, H))
+    px = im.load()
+    for y in range(H):
+        for x in range(W):
+            v = 0.62 * grain[y][x] + 0.38 * strata[y][x] + (rnd.random() - 0.5) * 0.18
+            i = 2 if v < 0.36 else 3 if v < 0.58 else 4 if v < 0.8 else 5
+            px[x, y] = rgba("hymnstone", i)
+    for x, y in scatter(seed * 13 + 1, 5, 4.5):
         put(im, [(x, y)], rgba("hymnstone", 1))
-        put(im, [(x, y - 1)], rgba("hymnstone", 4))
     return im
-
 
 def hymnstone_bricks() -> Image.Image:
     n = tile_noise(W, H, 3, 3, 11)
@@ -140,36 +146,33 @@ def hymnstone_bricks() -> Image.Image:
 
 
 # ---------------------------------------------------------------- healthy sculk
-PETALS = [  # small petal clusters, all lit from the top-left: crown (P), petal (p), shade (s)
-    ["Pp", "ps"],
-    [".P", "Pp", "s."],
-    ["PP.", "pps"],
-    ["P.", "pP", ".s"],
-]
-
 
 def healthy_sculk_top(seed: int = 21) -> Image.Image:
-    # A carpet of tiny petals: fine low-contrast noise, then small scattered clusters in varied
-    # shapes. Blockstates add random rotations on top of the variants, as vanilla grass does.
-    n = tile_noise(W, H, 8, 8, seed, ((1.0, 1), (0.35, 2)))
-    im = bands(n, [0.25], [rgba("healthy_sculk", 3), rgba("healthy_sculk", 4)])
-    colours = {"P": rgba("healthy_sculk", 6), "p": rgba("healthy_sculk", 5), "s": rgba("healthy_sculk", 2)}
+    """The teaser's pink-coral grass top (owner rework): vanilla grass's per-pixel speckle in five
+    close tones with a few bright and dark flecks; nothing larger than two pixels, so it tiles
+    without a pattern, and the blockstates add random rotations as vanilla grass does."""
+    n = tile_noise(W, H, 8, 8, seed, ((1.0, 1), (0.8, 2)))
     rnd = random.Random(seed)
-    for (ox, oy) in scatter(seed * 7 + 3, 8, 4.5):
-        shape = PETALS[rnd.randrange(len(PETALS))]
-        for dy, row in enumerate(shape):
-            for dx, ch in enumerate(row):
-                if ch != ".":
-                    put(im, [(ox + dx, oy + dy)], colours[ch])
+    im = Image.new("RGBA", (W, H))
+    px = im.load()
+    for y in range(H):
+        for x in range(W):
+            v = 0.55 * n[y][x] + 0.45 * rnd.random()
+            i = 2 if v < 0.3 else 3 if v < 0.5 else 4 if v < 0.7 else 5
+            px[x, y] = rgba("healthy_sculk", i)
+    for x, y in scatter(seed * 7 + 3, 6, 4.0):
+        put(im, [(x, y)], rgba("healthy_sculk", 6))
+    for x, y in scatter(seed * 7 + 5, 5, 4.0):
+        put(im, [(x, y)], rgba("healthy_sculk", 1))
     return im
 
-
 def healthy_sculk_side() -> Image.Image:
-    im = hymnstone_pattern(seed=5)
+    """Grass over soil, as vanilla's grass block side: the pink top hangs 3 to 5 pixels down in a
+    ragged edge over the maroon Sift soil of the teaser's hill."""
+    im = sift_soil(seed=5)
     top = healthy_sculk_top()
     tp, ip = top.load(), im.load()
-    # Petal fringe: 3 px everywhere, hanging to 4–5 px in a few tufts, with a dark under-edge.
-    depth = [3, 4, 3, 3, 5, 4, 3, 3, 4, 3, 3, 5, 4, 3, 3, 4]
+    depth = [3, 4, 3, 3, 5, 4, 3, 2, 4, 3, 3, 5, 4, 3, 3, 4]
     for x in range(W):
         for y in range(depth[x]):
             ip[x, y] = tp[x, (y + 3) % H]
@@ -177,75 +180,63 @@ def healthy_sculk_side() -> Image.Image:
     return im
 
 
-GRASS_SHORT = """
-................
-................
-................
-.....6..........
-.....66.....6...
-.....5......66..
-..6..4......5...
-..66.4..6...4...
-..5..43.5..34...
-..4...4.4..4....
-..43..4.43.4..6.
-...4..34.4.4..66
-...43..4.4.43.5.
-....4..44.443.4.
-....43.34.433.4.
-....33.33.333.3.
-"""
-
-GRASS_TALL_TOP = """
-................
-......6.........
-......66....6...
-......5.....66..
-..6...4.....5...
-..66..4.....4...
-..5...4..6..4...
-..4...4..66.4...
-..4..4...5..4...
-..4..4...4..4...
-...4.4...4.4....
-...4.4...4.4....
-...4.4..4..4....
-...4..4.4..4....
-....4.4.4.4.....
-....4.4.4.4.....
-"""
-
-GRASS_TALL_BOTTOM = """
-....4.4.4.4.....
-...4..4.4..4....
-...4..4.4..4....
-...43.4..43.4...
-..4.3.4...4..4..
-..4.3.43..4.43..
-..4..43.3.4.4.3.
-..43.4..3.43..3.
-...3.4..3.4..3..
-...3.43.334..3..
-...33.3.33.4.3..
-....3.3..3.433..
-....33.3.33.33..
-....33.33.333...
-....23.32.232...
-....22.22.222...
-"""
-
-
-def plant(text: str) -> Image.Image:
-    c = {str(i): rgba("healthy_sculk", i) for i in range(7)}
-    rows = [r for r in text.strip().splitlines()]
-    im = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    for y, row in enumerate(rows):
-        assert len(row) == W, (y, row)
-        for x, ch in enumerate(row):
-            if ch != ".":
-                put(im, [(x, y)], c[ch])
+def sift_soil(seed: int = 7) -> Image.Image:
+    """Sift soil, the dirt under the grass (owner rework): vanilla dirt's speckled earth in maroon,
+    with a few pale pebbles."""
+    n = tile_noise(W, H, 8, 8, seed, ((1.0, 1), (0.7, 2)))
+    rnd = random.Random(seed)
+    im = Image.new("RGBA", (W, H))
+    px = im.load()
+    for y in range(H):
+        for x in range(W):
+            v = 0.5 * n[y][x] + 0.5 * rnd.random()
+            i = 1 if v < 0.22 else 2 if v < 0.48 else 3 if v < 0.76 else 4
+            px[x, y] = rgba("soil", i)
+    for x, y in scatter(seed * 3 + 1, 5, 4.5):
+        put(im, [(x, y)], rgba("soil", 5))
+        put(im, [(x + 1, y + 1)], rgba("soil", 0))
     return im
 
+
+def tuft(height_px: int, blades: int, seed: int) -> Image.Image:
+    """A tuft of the teaser's pink grass on a 16 × height_px canvas: broad jagged leaves, three
+    pixels wide at the root and one at the tip, dark low and pale high, leaning out from the middle,
+    with stair-step spurs on alternating sides."""
+    rnd = random.Random(seed)
+    im = Image.new("RGBA", (W, height_px), (0, 0, 0, 0))
+    px = im.load()
+    order = sorted(range(blades), key=lambda b: rnd.random())
+    for b in order:
+        x0 = 3.0 + rnd.random() * 10
+        length = height_px * (0.55 + 0.45 * rnd.random())
+        lean = (x0 - 8) / 8 * (0.12 + 0.25 * rnd.random()) + (rnd.random() - 0.5) * 0.12
+        for t in range(int(length)):
+            y = height_px - 1 - t
+            frac = t / length
+            x = x0 + lean * t
+            i = 1 if frac < 0.12 else 2 if frac < 0.35 else 3 if frac < 0.6 else 4 if frac < 0.8 else 5 if frac < 0.93 else 6
+            w = 3 if frac < 0.3 else 2 if frac < 0.75 else 1
+            left = int(round(x - w / 2))
+            for xx in range(left, left + w):
+                if 0 <= xx < W:
+                    # The lit side of the leaf is a shade paler.
+                    px[xx, y] = rgba("healthy_sculk", min(6, i + (1 if xx == left and frac > 0.3 else 0)))
+            if t % 3 == 1 and 0.2 < frac < 0.92:  # stair-step spurs, alternating sides
+                side = -1 if (t // 3 + b) % 2 else w
+                for k in (0, 1):
+                    xs = left + side + (k * (1 if side > 0 else -1))
+                    ys = y - k
+                    if 0 <= xs < W and ys >= 0:
+                        px[xs, ys] = rgba("healthy_sculk", min(6, i + 1))
+    return im
+
+
+def plant(kind: str) -> Image.Image:
+    """Short grass (one block) or the two halves of tall grass (owner rework, after the teaser)."""
+    if kind == "short":
+        return tuft(16, 10, 11)
+    tall = tuft(32, 15, 13)
+    return tall.crop((0, 16, 16, 32)) if kind == "tall_bottom" else tall.crop((0, 0, 16, 16))
 
 # ---------------------------------------------------------------- songwood
 FLUTE_HOLE = [  # 2×3 hole: lip (L) on the lit top-left, bore (b), shaded rim (l)
@@ -259,17 +250,23 @@ FLUTE_SPOTS = {1: ((4, 3), (11, 11)), 2: ((2, 9), (12, 2))}
 
 
 def songwood_log(variant: int = 1) -> Image.Image:
-    # Bark: vertical furrows (noise stretched vertically); two flute holes, placed per variant.
-    n = tile_noise(W, H, 8, 2, 31 + variant * 100, ((1.0, 1), (0.3, 2)))
-    im = bands(n, [0.22, 0.6, 0.88], [rgba("songwood_bark", 1), rgba("songwood_bark", 2), rgba("songwood_bark", 3), rgba("songwood_bark", 4)])
-    c = {"L": rgba("flute", 0), "l": rgba("songwood_bark", 5), "b": rgba("songwood_bark", 0)}
-    for (ox, oy) in FLUTE_SPOTS[variant]:
+    """The teasers' dark trunks (owner rework): charcoal-teal bark in long vertical furrows. Variant
+    2 keeps one small flute hole, songwood's mark (the wind whistles through it, items.md)."""
+    n = tile_noise(W, H, 8, 2, 31 + variant * 100, ((1.0, 1), (0.4, 2)))
+    rnd = random.Random(variant)
+    im = Image.new("RGBA", (W, H))
+    px = im.load()
+    for y in range(H):
+        for x in range(W):
+            v = 0.75 * n[y][x] + 0.25 * rnd.random()
+            i = 1 if v < 0.25 else 2 if v < 0.55 else 3 if v < 0.85 else 4
+            px[x, y] = rgba("songwood_bark", i)
+    if variant == 2:
+        c = {"L": rgba("flute", 0), "l": rgba("songwood_bark", 5), "b": rgba("songwood_bark", 0)}
         for dy, row in enumerate(FLUTE_HOLE):
             for dx, ch in enumerate(row):
-                if ch != ".":
-                    put(im, [(ox + dx, oy + dy)], c[ch])
+                put(im, [(9 + dx, 6 + dy)], c[ch])
     return im
-
 
 def songwood_log_top() -> Image.Image:
     im = Image.new("RGBA", (W, H))
@@ -308,19 +305,47 @@ def songwood_planks() -> Image.Image:
 
 
 def songwood_leaves(seed: int = 51) -> Image.Image:
-    # Fine-grained so the gaps scatter as single pixels and pairs, like vanilla leaves, instead of
-    # forming blobs that line up from block to block.
+    """The teasers' pale canopy (owner rework): icy grey-blue leaves, dense on top and fraying at the
+    bottom into a fringe of drips, so every leaf block droops as in the first look."""
     n = tile_noise(W, H, 6, 6, seed, ((1.0, 1), (0.75, 2)))
-    im = bands(n, [0.2, 0.42, 0.75, 0.93],
-               [(0, 0, 0, 0), rgba("songwood_leaves", 1), rgba("songwood_leaves", 2), rgba("songwood_leaves", 3), rgba("songwood_leaves", 4)])
+    rnd = random.Random(seed)
+    im = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     px = im.load()
-    # Pale-blue edges where a leaf meets a gap below (shade side).
+    drip = [rnd.choice((0, 1, 2, 3, 4, 5)) for _ in range(W)]  # how far each column's drip hangs
     for y in range(H):
         for x in range(W):
-            if px[x, y][3] and px[x, (y + 1) % H][3] == 0:
+            v = n[y][x]
+            fringe = y >= 11
+            if fringe and y - 11 >= drip[x]:
+                continue  # the frayed bottom edge
+            if not fringe and v < 0.16:
+                continue  # a gap in the leaves
+            i = 2 if v < 0.45 else 3 if v < 0.8 else 4
+            if fringe:
+                i = max(1, i - 1)  # the drips sit in shade
+            px[x, y] = rgba("songwood_leaves", i)
+    for y in range(H):
+        for x in range(W):
+            if px[x, y][3] and y + 1 < H and px[x, y + 1][3] == 0 and y < 11:
                 px[x, y] = rgba("songwood_leaves", 0)
     return im
 
+
+def songwood_drapes(tip: bool) -> Image.Image:
+    """Pale strands hanging under the canopy ("towering tree-like growths covered in pale-blue
+    vines", the Meadow's canon); the tip frays out."""
+    rnd = random.Random(71 if tip else 73)
+    im = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    px = im.load()
+    for x0 in (2, 4, 5, 7, 9, 10, 12, 13):
+        x = x0 + rnd.choice((-1, 0, 0, 1))
+        length = H if not tip else rnd.randint(6, 13)
+        for y in range(length):
+            if 0 <= x < W:
+                px[x, y] = rgba("songwood_leaves", 3 if (y + x0) % 5 else 4)
+            if y % 5 == 4:
+                x += rnd.choice((-1, 1)) if 0 < x < W - 1 else 0
+    return im
 
 def songwood_sapling() -> Image.Image:
     rows = [
@@ -521,60 +546,70 @@ def ichor_bucket() -> Image.Image:
 
 
 # ---------------------------------------------------------------- blub
+def box_faces(u: int, v: int, w: int, h: int, d: int) -> dict[str, tuple[int, int, int, int]]:
+    """The UV rectangles (x, y, width, height) of a model box at texOffs(u, v), vanilla's layout."""
+    return {
+        "top": (u + d, v, w, d), "bottom": (u + d + w, v, w, d),
+        "right": (u, v + d, d, h), "front": (u + d, v + d, w, h),
+        "left": (u + d + w, v + d, d, h), "back": (u + 2 * d + w, v + d, w, h),
+    }
+
+
 def blub_texture() -> Image.Image:
-    """32 x 32 entity texture laid out for BlubModel: body box (7x6x7) at (0,0), ears at (0,13) and
-    (6,13), feet at (12,13), tail at (20,13). Light from the top-left; a pale belly; two dark eyes
-    with a catch-light, set high on the front face (the face is the body's front)."""
-    im = Image.new("RGBA", (32, 32), (0, 0, 0, 0))
+    """64 x 32, laid out for BlubModel (owner rework, after the first look): a 9 x 7 x 8 body of the
+    teaser's soft blue, lit from above; two dark violet slit eyes set low on the front; long ears with
+    a paler inner face; darker legs."""
+    im = Image.new("RGBA", (64, 32), (0, 0, 0, 0))
     px = im.load()
     fur = [rgba("blub", i) for i in range(6)]
-    n = tile_noise(32, 32, 8, 8, 131, ((1.0, 1), (0.5, 2)))
+    n = tile_noise(64, 32, 16, 8, 131, ((1.0, 1), (0.5, 2)))
 
-    def fill(x0, y0, w, h, base, light_top=True):
+    def fill(rect, base):
+        x0, y0, w, h = rect
         for y in range(y0, y0 + h):
             for x in range(x0, x0 + w):
-                i = base + (1 if n[y][x] > 0.72 else 0) - (1 if n[y][x] < 0.18 else 0)
-                if light_top and y == y0:
-                    i += 1
+                i = base + (1 if n[y][x] > 0.75 else 0) - (1 if n[y][x] < 0.2 else 0)
                 px[x, y] = fur[max(0, min(5, i))]
 
-    # Body box: top (7..14, 0..7), bottom (14..21, 0..7); sides row y 7..13: right, front, left, back.
-    fill(7, 0, 7, 7, 4, light_top=False)     # top: lit
-    fill(14, 0, 7, 7, 1, light_top=False)    # bottom: shaded
-    fill(0, 7, 7, 6, 3)                      # right side (+x faces away from light)
-    fill(7, 7, 7, 6, 3)                      # front: the face
-    fill(14, 7, 7, 6, 2)                     # left side
-    fill(21, 7, 7, 6, 2)                     # back
-    # Face: eyes (1 x 2) at columns 1 and 5, a catch-light on top; a pale belly patch below.
-    for ex in (8, 12):
-        px[ex, 8] = rgba("particle", 3)
-        px[ex, 9] = rgba("songwood_bark", 0)
-    for x in range(9, 12):
-        for y in range(10, 13):
-            px[x, y] = fur[5] if y < 12 else fur[4]
-    px[10, 9] = fur[2]  # a tiny mouth between the eyes
-    # Ears (2 x 4 x 1): front faces lighter with a pale inner stripe.
-    for ox in (0, 6):
-        fill(ox, 13, 6, 5, 3)
-        for y in range(14, 18):
-            px[ox + 1, y] = fur[5]
-    # Feet and tail: a shade darker.
-    fill(12, 13, 8, 3, 2)
-    fill(20, 13, 6, 3, 4)
+    shade = {"top": 4, "bottom": 1, "right": 3, "front": 3, "left": 2, "back": 2}
+    for part in (box_faces(0, 0, 9, 7, 8), box_faces(36, 0, 2, 5, 1), box_faces(42, 0, 2, 5, 1),
+                 box_faces(48, 0, 2, 1, 2), box_faces(36, 8, 2, 2, 1)):
+        for face, rect in part.items():
+            fill(rect, shade[face] - (1 if part is not None and rect[2] == 2 and rect[3] == 1 else 0))
+    # The body's top edge on every side is a shade lighter, as light catches the rim.
+    body = box_faces(0, 0, 9, 7, 8)
+    for face in ("right", "front", "left", "back"):
+        x0, y0, w, h = body[face]
+        for x in range(x0, x0 + w):
+            px[x, y0] = fur[4]
+    # Face: two slit eyes (2 x 1), with a dark lid line below, low on the front as in the first look.
+    fx, fy, fw, fh = body["front"]
+    for ex in (fx + 1, fx + 6):
+        put(im, [(ex, fy + 3), (ex + 1, fy + 3)], rgba("blub_eye", 0))
+        put(im, [(ex, fy + 4), (ex + 1, fy + 4)], rgba("blub_eye", 1))
+    # Ears: a paler stripe on the front (inner) face.
+    for u in (36, 42):
+        x0, y0, w, h = box_faces(u, 0, 2, 5, 1)["front"]
+        for y in range(y0 + 1, y0 + h):
+            px[x0, y] = fur[5]
+    # Legs: a shade darker all round.
+    for face, rect in box_faces(48, 0, 2, 1, 2).items():
+        fill(rect, 1)
     return im
 
 
 def blub_glow_texture() -> Image.Image:
-    """The emissive belly layer (mob_blub.md, Endure lantern): the same layout as blub.png, transparent
-    except the belly patch on the front face (x 9..11, y 10..12) and a faint rim beside it."""
-    im = Image.new("RGBA", (32, 32), (0, 0, 0, 0))
+    """The belly glow in Endure (emissive), on the body's bottom face and the lower front."""
+    im = Image.new("RGBA", (64, 32), (0, 0, 0, 0))
     px = im.load()
-    for x in range(9, 12):
-        for y in range(10, 13):
-            px[x, y] = rgba("membrane", 5 if (x == 10 and y == 11) else 4)
-    for y in range(10, 13):  # a soft rim on each side of the belly
-        px[8, y] = rgba("membrane", 4, 90)
-        px[12, y] = rgba("membrane", 4, 90)
+    body = box_faces(0, 0, 9, 7, 8)
+    x0, y0, w, h = body["bottom"]
+    for y in range(y0 + 1, y0 + h - 1):
+        for x in range(x0 + 1, x0 + w - 1):
+            px[x, y] = rgba("membrane", 4 if (x + y) % 3 else 5)
+    fx, fy, fw, fh = body["front"]
+    for x in range(fx + 2, fx + fw - 2):
+        px[x, fy + fh - 1] = rgba("membrane", 4)
     return im
 
 
@@ -639,9 +674,9 @@ def main() -> None:
     save(healthy_sculk_top(seed=22), "block/healthy_sculk_top_2.png")
     save(healthy_sculk_top(seed=27), "block/healthy_sculk_top_3.png")
     save(healthy_sculk_side(), "block/healthy_sculk_side.png")
-    save(plant(GRASS_SHORT), "block/healthy_sculk_grass.png")
-    save(plant(GRASS_TALL_BOTTOM), "block/tall_healthy_sculk_grass_bottom.png")
-    save(plant(GRASS_TALL_TOP), "block/tall_healthy_sculk_grass_top.png")
+    save(plant("short"), "block/healthy_sculk_grass.png")
+    save(plant("tall_bottom"), "block/tall_healthy_sculk_grass_bottom.png")
+    save(plant("tall_top"), "block/tall_healthy_sculk_grass_top.png")
     save(songwood_log(), "block/songwood_log.png")
     save(songwood_log(variant=2), "block/songwood_log_2.png")
     save(songwood_log_top(), "block/songwood_log_top.png")
@@ -649,6 +684,9 @@ def main() -> None:
     save(songwood_leaves(), "block/songwood_leaves.png")
     save(songwood_leaves(seed=57), "block/songwood_leaves_2.png")
     save(songwood_sapling(), "block/songwood_sapling.png")
+    save(songwood_drapes(tip=False), "block/songwood_drapes.png")
+    save(songwood_drapes(tip=True), "block/songwood_drapes_tip.png")
+    save(sift_soil(), "block/sift_soil.png")
     save(tide_sand(), "block/tide_sand.png")
     save(tide_sand(seed=62), "block/tide_sand_2.png")
     save(tide_sand(seed=67), "block/tide_sand_3.png")

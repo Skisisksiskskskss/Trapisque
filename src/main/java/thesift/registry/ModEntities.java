@@ -19,7 +19,7 @@ public final class ModEntities {
 	public static final ResourceKey<EntityType<?>> BLUB_KEY = ResourceKey.create(Registries.ENTITY_TYPE, TheSift.id("blub"));
 	/** 0.5 x 0.5 blocks: a third of a player's height (mob_blub.md). */
 	public static final EntityType<Blub> BLUB = Registry.register(BuiltInRegistries.ENTITY_TYPE, BLUB_KEY,
-			EntityType.Builder.of(Blub::new, MobCategory.CREATURE).sized(0.5F, 0.5F).eyeHeight(0.35F)
+			EntityType.Builder.of(Blub::new, MobCategory.CREATURE).sized(0.55F, 0.5F).eyeHeight(0.35F)
 					.passengerAttachments(0.5F).clientTrackingRange(8).build(BLUB_KEY));
 
 	private ModEntities() {

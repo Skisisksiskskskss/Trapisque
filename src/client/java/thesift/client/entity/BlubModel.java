@@ -38,21 +38,22 @@ public class BlubModel extends EntityModel<BlubRenderState> {
 	public static LayerDefinition createBodyLayer() {
 		MeshDefinition mesh = new MeshDefinition();
 		PartDefinition root = mesh.getRoot();
-		// The body pivots at its base centre, one pixel above the ground (the feet's height).
+		// After the first look (owner rework): a 9 × 7 × 8 cube body, two long ears standing at the
+		// front of its top, short legs. The body pivots at its base centre, one pixel above the ground.
 		PartDefinition body = root.addOrReplaceChild("body",
-				CubeListBuilder.create().texOffs(0, 0).addBox(-3.5F, -6.0F, -3.5F, 7.0F, 6.0F, 7.0F)
-						.texOffs(20, 13).addBox(-1.0F, -3.0F, 3.5F, 2.0F, 2.0F, 1.0F),
+				CubeListBuilder.create().texOffs(0, 0).addBox(-4.5F, -7.0F, -4.0F, 9.0F, 7.0F, 8.0F)
+						.texOffs(36, 8).addBox(-1.0F, -3.0F, 4.0F, 2.0F, 2.0F, 1.0F),
 				PartPose.offset(0.0F, 23.0F, 0.0F));
-		body.addOrReplaceChild("left_ear", CubeListBuilder.create().texOffs(0, 13).addBox(-1.0F, -4.0F, -0.5F, 2.0F, 4.0F, 1.0F),
-				PartPose.offset(1.75F, -6.0F, 0.0F));
-		body.addOrReplaceChild("right_ear", CubeListBuilder.create().texOffs(6, 13).addBox(-1.0F, -4.0F, -0.5F, 2.0F, 4.0F, 1.0F),
-				PartPose.offset(-1.75F, -6.0F, 0.0F));
-		CubeListBuilder foot = CubeListBuilder.create().texOffs(12, 13).addBox(-1.0F, 0.0F, -1.0F, 2.0F, 1.0F, 2.0F);
-		root.addOrReplaceChild("front_left_foot", foot, PartPose.offset(2.0F, 23.0F, -2.0F));
-		root.addOrReplaceChild("front_right_foot", foot, PartPose.offset(-2.0F, 23.0F, -2.0F));
-		root.addOrReplaceChild("back_left_foot", foot, PartPose.offset(2.0F, 23.0F, 2.0F));
-		root.addOrReplaceChild("back_right_foot", foot, PartPose.offset(-2.0F, 23.0F, 2.0F));
-		return LayerDefinition.create(mesh, 32, 32);
+		body.addOrReplaceChild("left_ear", CubeListBuilder.create().texOffs(36, 0).addBox(-1.0F, -5.0F, -0.5F, 2.0F, 5.0F, 1.0F),
+				PartPose.offset(2.25F, -7.0F, -1.5F));
+		body.addOrReplaceChild("right_ear", CubeListBuilder.create().texOffs(42, 0).addBox(-1.0F, -5.0F, -0.5F, 2.0F, 5.0F, 1.0F),
+				PartPose.offset(-2.25F, -7.0F, -1.5F));
+		CubeListBuilder foot = CubeListBuilder.create().texOffs(48, 0).addBox(-1.0F, 0.0F, -1.0F, 2.0F, 1.0F, 2.0F);
+		root.addOrReplaceChild("front_left_foot", foot, PartPose.offset(2.5F, 23.0F, -2.5F));
+		root.addOrReplaceChild("front_right_foot", foot, PartPose.offset(-2.5F, 23.0F, -2.5F));
+		root.addOrReplaceChild("back_left_foot", foot, PartPose.offset(2.5F, 23.0F, 2.5F));
+		root.addOrReplaceChild("back_right_foot", foot, PartPose.offset(-2.5F, 23.0F, 2.5F));
+		return LayerDefinition.create(mesh, 64, 32);
 	}
 
 	@Override

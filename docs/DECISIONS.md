@@ -580,3 +580,28 @@ It also found that M1's Tide changed nothing in play (SF4), since the mission as
 - Endure's danger now rests on the hunters (M2), not the flood.
 
 **Revisit if** the owner wants a mild hazard back, for example a slow soul drain only while fully submerged in Endure.
+
+## D-025 The Sift looks like the teasers (2026-10-02) [owner playtest] [supersedes D-016/D-017 on the Meadow's look; world.md healthy sculk; mob_blub.md look]
+**Context.** The owner's playtest of `v0.1.0-alpha`: the terrain "doesn't look like Minecraft at all", and the textures, the mob and the trees "don't look like the teasers"; "be as faithful to the teasers as possible". Our terrain was a single gradient with 2D noise, which gave uniform stepped mounds. Our textures came from palette ramps chosen by eye. The teaser stills were re-downloaded and sampled for this rework [S-I1, S-I3, S-I4].
+
+**Decision.**
+- **Terrain.** Vanilla's own Overworld terrain functions, registered again under `thesift:sift/*`:
+  - continentalness is raised by 0.3, so the Sift is land with lakes, rivers and a few inland seas (about 15 % water);
+  - the height is the Overworld's (-64 to 320), with sea level 63 filled with ichor;
+  - vanilla's caves and aquifers become the Sift Hollows below (a multi-noise source: the Meadow at the surface, `sift_hollows` from depth 0.2).
+  On that land stand the teasers' **rose hymnstone spires** (14–33 tall, most with a mushroom cap, one in five chunks).
+- **Ground.** Healthy sculk becomes the Sift's grass over a new **Sift Soil**, as grass over dirt (the teaser's hill shows pink grass on maroon earth):
+  - it dies back to soil when covered and spreads onto soil in light;
+  - it drops soil without Silk Touch, and both are shovel blocks;
+  - steep slopes show hymnstone; shores and lake floors are tide sand.
+- **Textures.** Ramps sampled from the stills: the first look's pink-coral grass (vanilla-grass speckle), maroon soil, rose-mauve hymnstone with faint strata, dense jagged pink grass tufts, dark charcoal-teal bark, pale icy leaves that fray into drips, and the first look's sky (#60D5C8).
+- **Trees.** Songwood: a forked trunk (6–11) with large blob canopies and **Songwood Drapes** (vanilla's hanging-moss rules) hanging beneath, in noise-placed groves of four a chunk, with an occasional lone tree out on the open meadow.
+- **Blub.** The first look's shape: a 9 × 7 × 8 body (hitbox 0.55 × 0.5), long ears at the front of its top, dark violet slit eyes, short legs, and a blue sampled from the still.
+
+**Consequences.**
+- Old worlds' Sift chunks don't match new ones, so playtests use a new world.
+- Basins are rarer, because many lows are now lakes: they are placed one chunk in two, and only in dry lows with rock all round.
+- The worldgen tests measure the new land (caves, biomes, basins, trees in groves).
+- The look is checked by client screenshots (`SIFT_LOOK_ONLY=1 tools/dev/client-previews.sh`).
+
+**Revisit if** the owner's next playtest says it still doesn't read as the teasers (next steps: teal grass patches as in the Dungeons II stills, an aurora sky).

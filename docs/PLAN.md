@@ -43,10 +43,11 @@ Only one WP is IN PROGRESS at a time.
 | WP-051 | Blub entity: AI and tests | 4 | L | DONE |
 | WP-052 | Entry advancements and lang pass | 4 | S | DONE |
 | WP-053 | M1 integration and Gate C (self-review) | 4 | M | DONE |
-| WP-060 | M2 system design: the hearing rule, retreat, enduring variants, lumen | 4 | L | TODO |
-| WP-061 | Nester design doc | 4 | L | TODO |
+| WP-054 | The owner's playtest rework: water, terrain, textures, trees, Blub (`v0.1.1-alpha`) | 4 | L | DONE |
+| WP-060 | M2 system design: the hearing rule, retreat, enduring variants, lumen | 4 | L | IN PROGRESS |
+| WP-061 | Nester design doc | 4 | L | DRAFT |
 | WP-062 | Bloombud design doc | 4 | L | TODO |
-| WP-063 | Sift Hollows: the cave layer and glowcap pools | 4 | L | TODO |
+| WP-063 | Sift Hollows: the cave layer and glowcap pools | 4 | L | IN PROGRESS (caves done in WP-054; glowcap pools wait for WP-064) |
 | WP-064 | Flora II: tidewrack, Endure bloom, glowcap, chime bell flower, lumen bloom | 4 | L | TODO |
 | WP-065 | Materials and items: tidewrack frond, Endure petal, lumen lantern, blub treats | 4 | M | TODO |
 | WP-066 | The hearing rule and hunter retreat; lumen repelling hunters | 4 | L | TODO |
@@ -620,6 +621,19 @@ Minimum per mission: entry and return, one area with its own terrain, a small bl
 Source: 01_CONTENT_BIBLE.md §M2 row; bible/creatures.md, items.md, world.md (M2 rows); systems.md §4; D-011, D-013, D-016. Every WP follows the M1 template; designs go through the ladder and ≤ 3 critique rounds, code through fresh adversarial review before Gate D.
 
   - 2026-10-02: the second post-preview review (frame cues, advancements, vents, the lang check) found six defects and no crash, all fixed in 76119d6: no chunk loads in frame discovery, a /tick freeze guard, wisps that reach the opening, a stale-cache rule, "An Offering" shared with players at the frame, and a lang check read from the registry sources. Released from that commit.
+### WP-054 The owner's playtest rework (`v0.1.1-alpha`)
+- Phase / Milestone: 4 / M1 (owner playtest of `v0.1.0-alpha`) · Tier: L · Status: DONE
+- Goal: the owner's notes: "the terrain doesn't look like Minecraft", "textures, mobs and trees don't look like the teasers", "the water is the worst: sparse, acts like lava, purple, not transparent".
+- Log:
+  - 2026-10-02: done (D-024, D-025). The teaser stills were re-downloaded and sampled.
+    - **Ichor** is the Sift's water: `#minecraft:water`, water's flow, harmless, translucent turquoise, and a turquoise haze underneath.
+    - **Terrain** is vanilla's Overworld functions with continentalness +0.3 and sea level 63 of ichor (~15 % water in a 512² sample). On it stand rose spires (a new feature). The Hollows are vanilla's caves under a depth-chosen biome.
+    - **New blocks:** Sift Soil (grass over dirt; healthy sculk spreads onto it) and Songwood Drapes.
+    - **Textures** were redrawn from sampled ramps.
+    - **Songwood:** a forked trunk with blob canopies, drapes, and groves.
+    - **Blub:** remodelled at 9 × 7 × 8.
+  - Evidence: 70/70 GameTests; worldgen and Hollows samples; landscape screenshots (`look_*`) compared with the stills.
+
 ### WP-060 M2 system design: the hearing rule, retreat, enduring variants, lumen
 - Phase / Milestone: 4 / M2 · Tier: L (design) · Status: TODO · Depends on: Gate C
 - Goal: `docs/DESIGN/system_hunt.md`: what Nesters hear in Endure (the vibrations a sculk sensor hears, D-011), how they retreat at dawn (D-013), the enduring-variant rule (resilient, soul particles, non-colour markers), lumen's repel radius (as soul fire for piglins), Quiet Waters' "never heard" rule, numbers next to vanilla analogs (warden, sculk sensor, piglin).

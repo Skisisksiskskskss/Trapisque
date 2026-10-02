@@ -23,13 +23,13 @@ public final class SiftBlocksTest {
 	private static final BlockPos ON_GROUND = GROUND.above();
 
 	@GameTest(dimension = SIFT)
-	public void coveredHealthySculkDiesBackToHymnstone(GameTestHelper helper) {
+	public void coveredHealthySculkDiesBackToSoil(GameTestHelper helper) {
 		helper.setBlock(GROUND, ModBlocks.HEALTHY_SCULK);
 		helper.setBlock(ON_GROUND, Blocks.STONE);
 		ServerLevel level = helper.getLevel();
 		BlockPos pos = helper.absolutePos(GROUND);
 		level.getBlockState(pos).randomTick(level, pos, level.getRandom());
-		helper.assertBlockPresent(ModBlocks.HYMNSTONE, GROUND);
+		helper.assertBlockPresent(ModBlocks.SIFT_SOIL, GROUND);
 		helper.succeed();
 	}
 
@@ -44,12 +44,40 @@ public final class SiftBlocksTest {
 	}
 
 	@GameTest(dimension = SIFT)
-	public void healthySculkDropsHymnstoneWithoutSilkTouch(GameTestHelper helper) {
+	public void healthySculkDropsSoilWithoutSilkTouch(GameTestHelper helper) {
 		helper.setBlock(GROUND, ModBlocks.HEALTHY_SCULK);
 		BlockPos pos = helper.absolutePos(GROUND);
 		List<ItemStack> drops = Block.getDrops(helper.getLevel().getBlockState(pos), helper.getLevel(), pos, null);
-		helper.assertTrue(drops.size() == 1 && drops.getFirst().is(ModBlocks.HYMNSTONE.asItem()), "drops " + drops);
+		helper.assertTrue(drops.size() == 1 && drops.getFirst().is(ModBlocks.SIFT_SOIL.asItem()), "drops " + drops);
 		helper.succeed();
+	}
+
+	@GameTest(dimension = SIFT)
+	public void healthySculkSpreadsOntoSoilInLight(GameTestHelper helper) {
+		for (int x = 0; x <= 2; x++) {
+			for (int z = 0; z <= 2; z++) {
+				helper.setBlock(new BlockPos(x, 1, z), ModBlocks.SIFT_SOIL);
+			}
+		}
+		helper.setBlock(new BlockPos(1, 1, 1), ModBlocks.HEALTHY_SCULK);
+		// Test areas in the Sift lie underground: a light overhead stands in for the sky, once the
+		// light engine has caught up.
+		helper.setBlock(new BlockPos(1, 3, 1), Blocks.GLOWSTONE);
+		helper.runAfterDelay(10, () -> {
+			ServerLevel level = helper.getLevel();
+			BlockPos pos = helper.absolutePos(new BlockPos(1, 1, 1));
+			for (int i = 0; i < 200; i++) {
+				level.getBlockState(pos).randomTick(level, pos, level.getRandom());
+			}
+			int grass = 0;
+			for (int x = 0; x <= 2; x++) {
+				for (int z = 0; z <= 2; z++) {
+					grass += level.getBlockState(helper.absolutePos(new BlockPos(x, 1, z))).is(ModBlocks.HEALTHY_SCULK) ? 1 : 0;
+				}
+			}
+			helper.assertTrue(grass > 1, "healthy sculk spreads onto the soil around it, as grass onto dirt: " + grass);
+			helper.succeed();
+		});
 	}
 
 	@GameTest(dimension = SIFT)
@@ -101,8 +129,9 @@ public final class SiftBlocksTest {
 		BlockPos origin = helper.absolutePos(BlockPos.ZERO);
 		int cx = (origin.getX() >> 4) + 64, cz = (origin.getZ() >> 4) + 64; // away from GameTest structures
 		int logs = 0, grass = 0;
-		for (int dx = -2; dx <= 2; dx++) {
-			for (int dz = -2; dz <= 2; dz++) {
+		// Trees grow in groves (owner rework), so the sample spans 81 chunks.
+		for (int dx = -4; dx <= 4; dx++) {
+			for (int dz = -4; dz <= 4; dz++) {
 				var chunk = level.getChunk(cx + dx, cz + dz);
 				for (int x = 0; x < 16; x++) {
 					for (int z = 0; z < 16; z++) {
@@ -119,8 +148,8 @@ public final class SiftBlocksTest {
 				}
 			}
 		}
-		helper.assertTrue(logs > 0, "songwood logs in 25 Meadow chunks: " + logs);
-		helper.assertTrue(grass > 50, "grass in 25 Meadow chunks: " + grass);
+		helper.assertTrue(logs > 0, "songwood logs in 81 Meadow chunks: " + logs);
+		helper.assertTrue(grass > 150, "grass in 81 Meadow chunks: " + grass);
 		helper.succeed();
 	}
 

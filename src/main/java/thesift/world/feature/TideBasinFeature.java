@@ -44,6 +44,10 @@ public record TideBasinFeature() implements Feature {
 				}
 			}
 		}
+		// Not in a lake or river: a basin is a dry hollow the tide fills (D-024 brought standing ichor).
+		if (!level.getFluidState(new BlockPos(cx, groundAt(level, cx, cz) + 1, cz)).isEmpty()) {
+			return false;
+		}
 		// Not on a hilltop: the middle may stand at most a little above the rim's low point.
 		if (groundAt(level, cx, cz) - ground > MAX_MIDDLE_ABOVE_RIM) {
 			return false;

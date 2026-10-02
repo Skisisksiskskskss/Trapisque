@@ -48,10 +48,12 @@ final class ModTagProviders {
 		@Override
 		protected void addTags(HolderLookup.Provider registries) {
 			tag(BlockTags.MINEABLE_WITH_PICKAXE, ModBlocks.HYMNSTONE, ModBlocks.HYMNSTONE_BRICKS, ModBlocks.HYMNSTONE_BRICK_STAIRS,
-					ModBlocks.HYMNSTONE_BRICK_SLAB, ModBlocks.HYMNSTONE_BRICK_WALL, ModBlocks.HEALTHY_SCULK, ModBlocks.TIDE_VENT);
+					ModBlocks.HYMNSTONE_BRICK_SLAB, ModBlocks.HYMNSTONE_BRICK_WALL, ModBlocks.TIDE_VENT);
 			tag(BlockTags.MINEABLE_WITH_AXE, ModBlocks.SONGWOOD_LOG, ModBlocks.SONGWOOD_PLANKS);
-			tag(BlockTags.MINEABLE_WITH_HOE, ModBlocks.SONGWOOD_LEAVES);
-			tag(BlockTags.MINEABLE_WITH_SHOVEL, ModBlocks.TIDE_SAND);
+			tag(BlockTags.MINEABLE_WITH_HOE, ModBlocks.SONGWOOD_LEAVES, ModBlocks.SONGWOOD_DRAPES);
+			tag(BlockTags.MINEABLE_WITH_SHOVEL, ModBlocks.TIDE_SAND, ModBlocks.HEALTHY_SCULK, ModBlocks.SIFT_SOIL);
+			// Sift soil is the Sift's dirt: plants that grow on dirt grow on it.
+			tag(BlockTags.DIRT, ModBlocks.SIFT_SOIL);
 			tag(BlockTags.STAIRS, ModBlocks.HYMNSTONE_BRICK_STAIRS);
 			tag(BlockTags.SLABS, ModBlocks.HYMNSTONE_BRICK_SLAB);
 			tag(BlockTags.WALLS, ModBlocks.HYMNSTONE_BRICK_WALL);
@@ -60,15 +62,15 @@ final class ModTagProviders {
 			tag(BlockTags.FLOWER_POTS, ModBlocks.POTTED_SONGWOOD_SAPLING);
 			tag(BlockTags.PLANKS, ModBlocks.SONGWOOD_PLANKS);
 			tag(ModTags.SONGWOOD_LOGS, ModBlocks.SONGWOOD_LOG);
-			tag(ModTags.BLUBS_SPAWNABLE_ON, ModBlocks.HEALTHY_SCULK, ModBlocks.TIDE_SAND);
+			tag(ModTags.BLUBS_SPAWNABLE_ON, ModBlocks.HEALTHY_SCULK, ModBlocks.SIFT_SOIL, ModBlocks.TIDE_SAND);
 			builder(BlockItemTags.LOGS_THAT_BURN.block()).addTag(ModTags.SONGWOOD_LOGS);
 			// Like vanilla grass: trees, mushrooms and flowing liquids replace it.
 			tag(BlockTags.REPLACEABLE, ModBlocks.HEALTHY_SCULK_GRASS, ModBlocks.TALL_HEALTHY_SCULK_GRASS);
-			tag(BlockTags.REPLACEABLE_BY_TREES, ModBlocks.HEALTHY_SCULK_GRASS, ModBlocks.TALL_HEALTHY_SCULK_GRASS);
+			tag(BlockTags.REPLACEABLE_BY_TREES, ModBlocks.HEALTHY_SCULK_GRASS, ModBlocks.TALL_HEALTHY_SCULK_GRASS, ModBlocks.SONGWOOD_DRAPES);
 			tag(BlockTags.REPLACEABLE_BY_MUSHROOMS, ModBlocks.HEALTHY_SCULK_GRASS, ModBlocks.TALL_HEALTHY_SCULK_GRASS);
 			tag(BlockTags.WASHED_AWAY_BY_FLUIDS, ModBlocks.HEALTHY_SCULK_GRASS, ModBlocks.TALL_HEALTHY_SCULK_GRASS);
 			// 26.3 decides "blocks motion" (heightmaps, spawning, worldgen placement) by tag, not by shape.
-			tag(BlockTags.BLOCKS_MOTION_NO_LEAVES, ModBlocks.HYMNSTONE, ModBlocks.HYMNSTONE_BRICKS, ModBlocks.HEALTHY_SCULK,
+			tag(BlockTags.BLOCKS_MOTION_NO_LEAVES, ModBlocks.HYMNSTONE, ModBlocks.HYMNSTONE_BRICKS, ModBlocks.HEALTHY_SCULK, ModBlocks.SIFT_SOIL,
 					ModBlocks.TIDE_SAND, ModBlocks.TIDE_VENT, ModBlocks.GATESTONE);
 			tag(BlockTags.WITHER_IMMUNE, ModBlocks.GATESTONE, ModBlocks.SIFT_MEMBRANE);
 			tag(BlockTags.DRAGON_IMMUNE, ModBlocks.GATESTONE, ModBlocks.SIFT_MEMBRANE);

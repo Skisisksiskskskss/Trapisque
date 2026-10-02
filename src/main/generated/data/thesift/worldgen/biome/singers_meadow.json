@@ -42,13 +42,16 @@
     ],
     [],
     [],
-    [],
+    [
+      "thesift:hymnstone_spires_singers_meadow"
+    ],
     [],
     [],
     [],
     [],
     [
       "thesift:trees_singers_meadow",
+      "thesift:lone_trees_singers_meadow",
       "thesift:grass_singers_meadow"
     ]
   ],

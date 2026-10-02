@@ -40,6 +40,15 @@ import thesift.entry.SiftLinks;
 public final class SiftPreviewClientTest implements FabricClientGameTest {
 	@Override
 	public void runTest(ClientGameTestContext context) {
+		// For look development (SIFT_LOOK_ONLY=1 tools/dev/client-previews.sh): only the landscape shots.
+		if ("1".equals(System.getenv("SIFT_LOOK_ONLY"))) {
+			try (TestSingleplayerContext world = context.worldBuilder().create()) {
+				world.getServer().runCommand("gamerule advance_time false");
+				world.getServer().runCommand("gamemode spectator @a");
+				lookShots(context, world);
+			}
+			return;
+		}
 		try (TestSingleplayerContext world = context.worldBuilder().create()) {
 			world.getServer().runCommand("gamerule advance_time false");
 			world.getServer().runCommand("gamemode spectator @a");
@@ -52,6 +61,7 @@ public final class SiftPreviewClientTest implements FabricClientGameTest {
 			world.getServer().runCommand("execute in thesift:the_sift run tp @a 8 90 8 -35 30");
 			world.getConnection().waitForChunksRender();
 			shoot(context, world, "thesift:thrive", "sift_thrive_close");
+			lookShots(context, world);
 			basinShots(context, world);
 			musicShot(context, world);
 			ichorFogShot(context, world);
@@ -214,6 +224,114 @@ public final class SiftPreviewClientTest implements FabricClientGameTest {
 	}
 
 	/** The "game mode updated" lines would cover the bottom of the shot. */
+	/**
+	 * The owner's playtest rework: the land as a player first meets it, to compare with the teasers.
+	 * The server finds a spire, a shore, a stretch of meadow and a high viewpoint in fresh land.
+	 */
+	private static void lookShots(ClientGameTestContext context, TestSingleplayerContext world) {
+		world.getServer().runCommand("execute in thesift:the_sift run time of thesift:tides set thesift:thrive");
+		double[][] views = world.getServer().computeOnServer(server -> lookViews(server.getLevel(SiftKeys.LEVEL)));
+		String[] names = {"look_spire", "look_shore", "look_meadow", "look_overview"};
+		for (int i = 0; i < views.length; i++) {
+			double[] v = views[i];
+			if (v == null) {
+				TheSift.LOGGER.warn("No spot found for {}", names[i]);
+				continue;
+			}
+			run(world, "tp @a %.1f %.1f %.1f %.1f %.1f", v[0], v[1], v[2], v[3], v[4]);
+			world.getConnection().waitForChunksRender();
+			clearChat(context);
+			context.waitTicks(40);
+			context.takeScreenshot(names[i]);
+		}
+		double[] meadow = views[2];
+		if (meadow != null) {
+			// The first look's framing: low in the grass, a blub walking toward the camera.
+			double yaw = Math.toRadians(meadow[3]);
+			double fx = -Math.sin(yaw);
+			double fz = Math.cos(yaw);
+			world.getServer().runCommand(String.format(java.util.Locale.ROOT,
+					"execute in thesift:the_sift run summon thesift:blub %.1f %.1f %.1f {NoAI:1b,Rotation:[%.1ff,0f]}",
+					meadow[0] + fx * 3.0, meadow[1] - 0.4, meadow[2] + fz * 3.0, meadow[3] + 180.0));
+			run(world, "tp @a %.1f %.1f %.1f %.1f %.1f", meadow[0], meadow[1] - 0.1, meadow[2], meadow[3], 8.0);
+			clearChat(context);
+			context.waitTicks(40);
+			context.takeScreenshot("look_blub");
+			run(world, "tp @a %.1f %.1f %.1f %.1f %.1f", meadow[0], meadow[1], meadow[2], meadow[3], meadow[4]);
+			world.getServer().runCommand("execute in thesift:the_sift run time of thesift:tides set thesift:endure");
+			clearChat(context);
+			context.waitTicks(40);
+			context.takeScreenshot("look_meadow_endure");
+			world.getServer().runCommand("execute in thesift:the_sift run time of thesift:tides set thesift:thrive");
+		}
+	}
+
+	/** Camera views {x, y, z, yaw, pitch} for a spire, a shore, a meadow and an overview (null if none found). */
+	private static double[][] lookViews(ServerLevel level) {
+		int cx0 = 40;
+		int cz0 = 40;
+		for (int cx = cx0 - 8; cx <= cx0 + 8; cx++) {
+			for (int cz = cz0 - 8; cz <= cz0 + 8; cz++) {
+				level.getChunk(cx, cz);
+			}
+		}
+		int x0 = cx0 << 4;
+		int z0 = cz0 << 4;
+		double[] spire = null;
+		double[] shore = null;
+		double[] meadow = null;
+		int sea = level.getSeaLevel();
+		for (int dx = -100; dx <= 100 && (spire == null || shore == null || meadow == null); dx += 3) {
+			for (int dz = -100; dz <= 100; dz += 3) {
+				int x = x0 + dx;
+				int z = z0 + dz;
+				int h = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
+				var top = level.getBlockState(new BlockPos(x, h - 1, z));
+				if (spire == null && h - around(level, x, z, 7) >= 14 && (top.is(ModBlocks.HEALTHY_SCULK) || top.is(ModBlocks.HYMNSTONE))) {
+					double gx = x + 26;
+					double gz = z + 12;
+					// Above any canopy, in open air, on dry land.
+					int gh = level.getHeight(Heightmap.Types.MOTION_BLOCKING, (int) gx, (int) gz);
+					if (gh > sea && level.getBlockState(new BlockPos((int) gx, gh + 1, (int) gz)).isAir()) {
+						spire = aim(gx, gh + 2.0, gz, x, h - 6, z);
+					}
+				}
+				if (shore == null && top.is(ModBlocks.ICHOR)) {
+					int lx = x + 14;
+					int lh = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, lx, z);
+					if (lh > sea + 1 && level.getBlockState(new BlockPos(lx, lh - 1, z)).is(ModBlocks.HEALTHY_SCULK)) {
+						shore = aim(lx, lh + 2.5, z, x - 20, sea, z);
+					}
+				}
+				if (meadow == null && top.is(ModBlocks.HEALTHY_SCULK) && h > sea + 3 && Math.abs(h - around(level, x, z, 12)) <= 2) {
+					meadow = new double[] {x + 0.5, h + 0.4, z + 0.5, 225.0, -4.0};
+				}
+			}
+		}
+		int high = level.getHeight(Heightmap.Types.MOTION_BLOCKING, x0, z0) + 45;
+		double[] overview = new double[] {x0, high, z0, 135.0, 32.0};
+		return new double[][] {spire, shore, meadow, overview};
+	}
+
+	/** The mean ground height on a ring of radius r around a column. */
+	private static int around(ServerLevel level, int x, int z, int r) {
+		int sum = 0;
+		for (int[] d : new int[][] {{r, 0}, {-r, 0}, {0, r}, {0, -r}}) {
+			sum += level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x + d[0], z + d[1]);
+		}
+		return sum / 4;
+	}
+
+	/** A camera at (x, y, z) looking at (tx, ty, tz): {x, y, z, yaw, pitch}. */
+	private static double[] aim(double x, double y, double z, double tx, double ty, double tz) {
+		double dx = tx - x;
+		double dy = ty - y;
+		double dz = tz - z;
+		double yaw = Math.toDegrees(Math.atan2(-dx, dz));
+		double pitch = -Math.toDegrees(Math.atan2(dy, Math.sqrt(dx * dx + dz * dz)));
+		return new double[] {x, y, z, yaw, pitch};
+	}
+
 	private static void clearChat(ClientGameTestContext context) {
 		context.runOnClient(client -> client.gui.hud.getChat().clearMessages(false));
 	}

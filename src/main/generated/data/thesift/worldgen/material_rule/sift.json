@@ -4,36 +4,139 @@
     "minecraft:bedrock_floor",
     {
       "type": "minecraft:condition",
-      "if_true": "minecraft:on_floor",
+      "if_true": {
+        "type": "minecraft:biome",
+        "biome_is": "thesift:sift_hollows"
+      },
+      "then_run": {
+        "type": "minecraft:condition",
+        "if_true": "minecraft:on_floor",
+        "then_run": {
+          "type": "minecraft:condition",
+          "if_true": {
+            "type": "minecraft:noise_threshold",
+            "max_threshold": 1.7976931348623157E308,
+            "min_threshold": 0.05,
+            "noise": "minecraft:patch"
+          },
+          "then_run": {
+            "type": "minecraft:block",
+            "result_state": "thesift:healthy_sculk"
+          }
+        }
+      }
+    },
+    {
+      "type": "minecraft:condition",
+      "if_true": {
+        "type": "minecraft:above_preliminary_surface"
+      },
       "then_run": {
         "type": "minecraft:sequence",
         "sequence": [
           {
             "type": "minecraft:condition",
-            "if_true": {
-              "type": "minecraft:biome",
-              "biome_is": "thesift:sift_hollows"
-            },
+            "if_true": "minecraft:on_floor",
             "then_run": {
-              "type": "minecraft:condition",
-              "if_true": {
-                "type": "minecraft:not",
-                "invert": {
-                  "type": "minecraft:noise_threshold",
-                  "max_threshold": 1.7976931348623157E308,
-                  "min_threshold": 0.05,
-                  "noise": "minecraft:patch"
+              "type": "minecraft:sequence",
+              "sequence": [
+                {
+                  "type": "minecraft:condition",
+                  "if_true": {
+                    "type": "minecraft:not",
+                    "invert": "minecraft:not_underwater"
+                  },
+                  "then_run": {
+                    "type": "minecraft:block",
+                    "result_state": "thesift:tide_sand"
+                  }
+                },
+                {
+                  "type": "minecraft:condition",
+                  "if_true": {
+                    "type": "minecraft:not",
+                    "invert": {
+                      "type": "minecraft:y_above",
+                      "add_stone_depth": false,
+                      "anchor": {
+                        "absolute": 64
+                      },
+                      "surface_depth_multiplier": 0
+                    }
+                  },
+                  "then_run": {
+                    "type": "minecraft:block",
+                    "result_state": "thesift:tide_sand"
+                  }
+                },
+                {
+                  "type": "minecraft:condition",
+                  "if_true": {
+                    "type": "minecraft:steep"
+                  },
+                  "then_run": {
+                    "type": "minecraft:block",
+                    "result_state": "thesift:hymnstone"
+                  }
+                },
+                {
+                  "type": "minecraft:block",
+                  "result_state": "thesift:healthy_sculk"
                 }
-              },
-              "then_run": {
-                "type": "minecraft:block",
-                "result_state": "thesift:hymnstone"
-              }
+              ]
             }
           },
           {
-            "type": "minecraft:block",
-            "result_state": "thesift:healthy_sculk"
+            "type": "minecraft:condition",
+            "if_true": "minecraft:under_floor",
+            "then_run": {
+              "type": "minecraft:sequence",
+              "sequence": [
+                {
+                  "type": "minecraft:condition",
+                  "if_true": {
+                    "type": "minecraft:not",
+                    "invert": "minecraft:not_underwater"
+                  },
+                  "then_run": {
+                    "type": "minecraft:block",
+                    "result_state": "thesift:tide_sand"
+                  }
+                },
+                {
+                  "type": "minecraft:condition",
+                  "if_true": {
+                    "type": "minecraft:not",
+                    "invert": {
+                      "type": "minecraft:y_above",
+                      "add_stone_depth": false,
+                      "anchor": {
+                        "absolute": 64
+                      },
+                      "surface_depth_multiplier": 0
+                    }
+                  },
+                  "then_run": {
+                    "type": "minecraft:block",
+                    "result_state": "thesift:tide_sand"
+                  }
+                },
+                {
+                  "type": "minecraft:condition",
+                  "if_true": {
+                    "type": "minecraft:steep"
+                  },
+                  "then_run": {
+                    "type": "minecraft:block",
+                    "result_state": "thesift:hymnstone"
+                  }
+                },
+                {
+                  "type": "minecraft:block",
+                  "result_state": "thesift:sift_soil"
+                }
+              ]
+            }
           }
         ]
       }

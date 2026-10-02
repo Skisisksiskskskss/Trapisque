@@ -136,3 +136,5 @@ Every Sift plant (the songwood sapling, lullvine, tidewrack, Endure bloom, glowc
 - The music reactions have a mechanism (§3.2).
 - The blight palette is back to the vision's colour, told apart by shape.
 - The gate mound's change is recorded.
+
+*(Owner playtest rework, D-024 and D-025: ichor is the Sift's water, harmless and swimmable; healthy sculk is the Sift's grass over a new **Sift Soil** block (it dies back to soil, not hymnstone); songwood has **Songwood Drapes** hanging from its canopy; the Meadow stands on vanilla-shaped terrain with rose hymnstone spires.)*

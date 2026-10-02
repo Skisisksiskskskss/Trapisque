@@ -60,7 +60,7 @@ public final class SiftHollowsTest {
 						for (int y = ground; y >= level.getMinY(); y--) {
 							BlockState state = chunk.getBlockState(p.set(x, y, z));
 							int depth = ground - y;
-							boolean air = state.isAir();
+							boolean air = state.isAir() || state.is(ModBlocks.ICHOR); // open: caves below sea level fill with ichor
 							if (y <= level.getMinY() + 2 && air) {
 								bottomAir++;
 							}
@@ -84,12 +84,12 @@ public final class SiftHollowsTest {
 								openVents += enclosed(chunk, p.immutable(), TideVentBlock.inner(state)) ? 0 : 1;
 							}
 						}
-						if (x == 8 && z == 8 && ground - 30 > level.getMinY() + 8) {
+						if (x == 8 && z == 8 && ground >= level.getSeaLevel() && ground - 50 > level.getMinY() + 8) {
 							int wx = chunk.getPos().getMinBlockX() + x;
 							int wz = chunk.getPos().getMinBlockZ() + z;
 							biomeChecks++;
 							boolean meadowAbove = level.getBiome(new BlockPos(wx, ground + 1, wz)).is(SiftKeys.SINGERS_MEADOW);
-							boolean hollowsBelow = level.getBiome(new BlockPos(wx, ground - 30, wz)).is(SiftKeys.SIFT_HOLLOWS);
+							boolean hollowsBelow = level.getBiome(new BlockPos(wx, ground - 50, wz)).is(SiftKeys.SIFT_HOLLOWS);
 							biomeRight += meadowAbove && hollowsBelow ? 1 : 0;
 						}
 					}
@@ -99,14 +99,14 @@ public final class SiftHollowsTest {
 		double near = 100.0 * nearAir / Math.max(1, nearAll);
 		double deep = 100.0 * deepAir / Math.max(1, deepAll);
 		double soil = 100.0 * soilFloors / Math.max(1, soilFloors + hymnstoneFloors);
-		TheSift.LOGGER.info("Hollows sample, 121 chunks: air {}% in the top {} blocks, {}% below; cave floors {} ({}% healthy sculk); biomes right in {}/{} columns; {} vents, {} open; {} air blocks at the bottom",
+		TheSift.LOGGER.info("Hollows sample, 121 chunks: open {}% in the top {} blocks, {}% below; cave floors {} ({}% healthy sculk); biomes right in {}/{} columns; {} vents, {} open; {} air blocks at the bottom",
 				fmt(near), HOLLOWS_DEPTH_BLOCKS, fmt(deep), soilFloors + hymnstoneFloors, fmt(soil), biomeRight, biomeChecks, vents, openVents, bottomAir);
 		dumpSlices(level, cx0, cz0);
-		helper.assertTrue(deep > 3.0 && deep < 30.0, "the Hollows are caves, not a void: " + fmt(deep) + "% air below " + HOLLOWS_DEPTH_BLOCKS);
-		helper.assertTrue(near < 6.0, "the Meadow's skin holds; only entrances open it: " + fmt(near) + "% air in the top " + HOLLOWS_DEPTH_BLOCKS);
+		helper.assertTrue(deep > 3.0 && deep < 30.0, "the Hollows are caves, not a void: " + fmt(deep) + "% open below " + HOLLOWS_DEPTH_BLOCKS);
+		helper.assertTrue(near < 10.0, "the Meadow's skin holds; only entrances open it: " + fmt(near) + "% open in the top " + HOLLOWS_DEPTH_BLOCKS);
 		helper.assertTrue(soil > 15.0 && soil < 75.0, "cave floors are hymnstone with patches of soil: " + fmt(soil) + "% soil");
 		// An entrance pit puts its own floor in the Hollows, so a few columns read otherwise.
-		helper.assertTrue(biomeRight >= biomeChecks * 0.9, "Meadow above, Hollows 30 blocks down: " + biomeRight + "/" + biomeChecks);
+		helper.assertTrue(biomeRight >= biomeChecks * 0.9, "on dry land, Meadow above and Hollows 50 blocks down: " + biomeRight + "/" + biomeChecks);
 		helper.assertValueEqual(openVents, 0, "every generated basin is walled in rock (its ichor can't run into a cave)");
 		helper.assertValueEqual(bottomAir, 0, "the bedrock floor is whole");
 		helper.succeed();
@@ -169,12 +169,45 @@ public final class SiftHollowsTest {
 				side.setRGB(i, level.getMaxY() - 1 - y, colour(state, y >= surface));
 			}
 			for (int j = 0; j < size; j++) {
-				plan.setRGB(i, j, colour(level.getBlockState(new BlockPos(x0 + i, 40, z0 + j)), false));
+				plan.setRGB(i, j, colour(level.getBlockState(new BlockPos(x0 + i, 20, z0 + j)), false));
 			}
 		}
+		// A shaded map of a wider area, to judge the land as a whole.
+		int mapSize = 32 * 16;
+		int mx0 = x0 - mapSize / 2 + size / 2;
+		int mz0 = z0 - mapSize / 2 + size / 2;
+		BufferedImage map = new BufferedImage(mapSize, mapSize, BufferedImage.TYPE_INT_RGB);
+		int[][] heights = new int[mapSize][mapSize];
+		for (int cx = mx0 >> 4; cx <= (mx0 + mapSize - 1) >> 4; cx++) {
+			for (int cz = mz0 >> 4; cz <= (mz0 + mapSize - 1) >> 4; cz++) {
+				level.getChunk(cx, cz);
+			}
+		}
+		int wet = 0;
+		for (int i = 0; i < mapSize; i++) {
+			for (int j = 0; j < mapSize; j++) {
+				heights[i][j] = level.getHeight(Heightmap.Types.WORLD_SURFACE, mx0 + i, mz0 + j);
+			}
+		}
+		for (int i = 0; i < mapSize; i++) {
+			for (int j = 0; j < mapSize; j++) {
+				int h = heights[i][j];
+				BlockState top = level.getBlockState(new BlockPos(mx0 + i, h - 1, mz0 + j));
+				wet += top.is(ModBlocks.ICHOR) ? 1 : 0;
+				int c = colour(top, false);
+				int slope = (i > 0 ? heights[i][j] - heights[i - 1][j] : 0) + (j > 0 ? heights[i][j] - heights[i][j - 1] : 0);
+				double shade = Math.max(0.55, Math.min(1.3, 1.0 + slope * 0.08));
+				int r = (int) Math.min(255, ((c >> 16) & 255) * shade);
+				int g = (int) Math.min(255, ((c >> 8) & 255) * shade);
+				int b = (int) Math.min(255, (c & 255) * shade);
+				map.setRGB(i, j, (r << 16) | (g << 8) | b);
+			}
+		}
+		TheSift.LOGGER.info("Sift map, {} x {} blocks: {}% under ichor", mapSize, mapSize, fmt(100.0 * wet / (mapSize * mapSize)));
 		try {
 			ImageIO.write(side, "png", Path.of("hollows_side.png").toFile());
-			ImageIO.write(plan, "png", Path.of("hollows_y40.png").toFile());
+			ImageIO.write(plan, "png", Path.of("hollows_y20.png").toFile());
+			ImageIO.write(map, "png", Path.of("sift_map.png").toFile());
 		} catch (IOException e) {
 			TheSift.LOGGER.warn("Couldn't write the Hollows slices", e);
 		}
@@ -191,7 +224,7 @@ public final class SiftHollowsTest {
 			return 0xF27B86;
 		}
 		if (state.is(ModBlocks.ICHOR)) {
-			return 0xD45FBF;
+			return 0x3ABCCB;
 		}
 		if (state.is(ModBlocks.TIDE_SAND) || state.is(ModBlocks.TIDE_VENT)) {
 			return 0xC3BED1;

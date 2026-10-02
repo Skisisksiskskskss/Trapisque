@@ -84,7 +84,7 @@ Notes on the calls:
 - **Home:** Singer's Meadow, near tide basins and ichor pools. Reacts to every Tide (below).
 
 ## Silhouette and look
-- **Hitbox:** 0.5 × 0.5 blocks (rabbit 0.49 × 0.6, allay 0.35 × 0.6). About a third of a player's
+- **Hitbox:** 0.5 × 0.5 blocks (rabbit 0.49 × 0.6, allay 0.35 × 0.6). About a third of a player's *(Superseded by D-025: 0.55 × 0.5, a 9 × 7 × 8 body after the first look.)*
   height: smaller than a cat, bigger than a silverfish.
 - **Readable at 10 blocks:** a rounded pale-blue box with two upright ear tufts and a bright belly;
   it is the only pale-blue mob in the Sift (the meadow is coral, the sky teal, the trees white).
