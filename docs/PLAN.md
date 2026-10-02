@@ -46,7 +46,7 @@ Only one WP is IN PROGRESS at a time.
 | WP-054 | The owner's playtest rework: water, terrain, textures, trees, Blub (`v0.1.1-alpha`) | 4 | L | DONE |
 | WP-060 | M2 system design: the hearing rule, retreat, enduring variants, lumen | 4 | L | DONE |
 | WP-061 | Nester design doc | 4 | L | DONE |
-| WP-062 | Bloombud design doc | 4 | L | DRAFT |
+| WP-062 | Bloombud design doc | 4 | L | DONE |
 | WP-063 | Sift Hollows: the cave layer and glowcap pools | 4 | L | IN PROGRESS (caves done in WP-054; glowcap pools wait for WP-064) |
 | WP-064 | Flora II: tidewrack, Endure bloom, glowcap, chime bell flower, lumen bloom | 4 | L | TODO |
 | WP-065 | Materials and items: tidewrack frond, Endure petal, lumen lantern, blub treats | 4 | M | TODO |
@@ -649,6 +649,7 @@ Source: 01_CONTENT_BIBLE.md §M2 row; bible/creatures.md, items.md, world.md (M2
 
 ### WP-062 Bloombud design doc
 - Tier: L (design) · Depends on: WP-060 · Goal: `mob_bloombud.md` (groups across the Meadow, canon), same bar as WP-061.
+- Status: DONE (frozen 2026-10-02). Evidence: a 10-concept ladder; every §8.1 section; three critique rounds (FAIL 8 → FAIL 3 → FAIL 2, each fixed; every vanilla claim checked in the 26.3 sources; log in the doc); BALANCE section "Bloombud".
 
 ### WP-063 Sift Hollows: the cave layer and glowcap pools
 - Tier: L · Depends on: WP-060 · Goal: the underground biome (multi-noise depth), hymnstone caverns, glowcap pools (Should); screenshots looked at; chunk-generation cost ≤ 1.5× the Overworld (measured as in M1).

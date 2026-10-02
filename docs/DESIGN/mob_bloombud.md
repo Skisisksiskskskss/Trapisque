@@ -1,4 +1,4 @@
-# Bloombud (WP-062) — DRAFT
+# Bloombud (WP-062) — FROZEN 2026-10-02
 
 The M2 ambusher. Fixed by the frozen bible (creatures.md row "Bloombud"; world.md §1 and the §1.1
 spawn table rows Singer's Meadow and Sift Hollows) and the hunt system (`system_hunt.md`, frozen, which this doc builds on and
@@ -89,15 +89,19 @@ Notes on the calls:
   hunched biped, shorter than a vindicator's 1.95). It changes with the synced state, which calls
   `refreshDimensions()` when it changes (as the slime's size does; vanilla refreshes by itself only
   on a pose change). A bud roots only where two blocks of air stand above it, so it can always open;
-  a bud that a player builds over can't bloom: woken without headroom, it **digs away**, with no XP
-  and no drops (a capped bud is never a free kill).
+  a bud that a player builds over can't bloom: woken without headroom, it **digs away** where it
+  stands (the dig is cosmetic, as the hunt's is), and one killed while digging away from a cap drops
+  no XP (an exception to system §4's "killed mid-dig, it drops as any kill does"), so a capped bud is
+  never a free kill. The entity type is registered at its open size (0.7 × 1.6), so vanilla's spawn
+  check itself needs that headroom.
 - **Readable at 10 blocks:** **the Sift has no buds**: no plant in the Meadow is a round closed bud on
-  a stalk, so any bud is a Bloombud. That is a constraint on WP-064's flora (tidewrack, the Endure
-  bloom and the glowcap must never look like a closed bud on a stalk) and on spawning: a bud spawns
+  a stalk, so any bud is a Bloombud. That is a constraint on all of WP-064's flora (tidewrack, the
+  Endure bloom, the glowcap, the chime bell flower and the lumen bloom must never look like a closed
+  bud on a stalk) and on spawning: a bud spawns
   and roots only on **bare** soil, with air at its feet, never inside a grass tuft. The petal tips
   glow steadily (emissive, never pulsing: pulsing is blight's grammar, world.md §3.1), a ring of five
-  warm points low to the ground, seen in the dark in every Tide; open, the long snout and the five
-  petals splayed back like a collar.
+  warm points low to the ground, seen in the dark in every Tide; open, the short blunt snout and the
+  five petals splayed back like a collar.
 - **Palette** (new ramps, added to palette.md in WP-068; dark → light):
   - `bloombud`: `#24192f` `#33243f` `#463152` `#5b4068` `#73527f` `#8e6a96`: a dusky plum bud, dark
     against the coral-pink grass, nothing like the Nester's moss or the Blub's blue.
@@ -162,11 +166,15 @@ a Singer's horn within 12 (M4) ──► lulled (200; system §3): open ones fol
   lumen-flushed buds don't ripple**: one wave per waking, so neighbouring patches never wake each
   other across the Meadow (the system rejects chains, §3 option 8). A patch of five is open after
   60 ticks (3 s): the first bud is the warning, the rest are the reason to leave. Each rippled bud
-  takes the nearest target it can see within 16, or wanders.
+  takes the nearest target it can see within 16, or wanders. A bud waiting on a wake tick that a
+  target wakes first blooms then, ripples as any target-woken bud, and drops the pending tick.
 - **The bloom lunge** (the bible's "petals open … before it lunges"): a bud woken by a target that is
   still within 4 blocks and in sight when its bloom ends makes **one** short lunge at where the
   target stood when the bloom began (the aim is locked then, so the 15-tick bloom is the window to
-  step away): a hop of about 2 blocks, biting on landing if the target is within its melee reach.
+  step away): a hop scaled to the locked distance (at most about 3 blocks, as the Nester's leap is
+  scaled), biting on landing if the target is within its melee reach; a target already within melee
+  reach is bitten in place, without a hop. A GameTest checks the bite from 2 to 4 blocks, along an
+  axis and on the diagonal.
   Once per waking; rippled buds don't lunge. After it, a slow walker. Unlike the Nester's repeated,
   circling lunges, it is the patch's one quick bite at whoever walked in.
 - **Open:** a slow melee mob. An open bud without a target looks for one every 10 ticks: a survival
@@ -176,12 +184,15 @@ a Singer's horn within 12 (M4) ──► lulled (200; system §3): open ones fol
   vindicator's overhead), then the chomp lands on the 3 active ticks only if the target is within its
   melee reach (vanilla's `isWithinMeleeAttackRange`, its hitbox widened by the default attack
   reach), so **stepping back during the windup avoids it**; recovery 16; about one strike every 30
-  ticks, slower than the Nester's and than vanilla melee's 20. It drops a target that dies, leaves, is more than 16 blocks away, or has been out of
+  ticks. Each phase is slower than the Nester's bite (windup 6, recovery 12), and slower than vanilla
+  melee's 20-tick interval, but with no circle it strikes more often than a Nester does. It stands
+  still during the windup. The strike is its own goal, `BloombudStrikeGoal` (a `MeleeAttackGoal`
+  whose attack starts the windup, with a 30-tick cooldown), since vanilla's melee hits at once. It drops a target that dies, leaves, is more than 16 blocks away, or has been out of
   sight for 100 ticks, then **wanders idly** (canon).
 - **Close again:** an open Bloombud with no target for 100 ticks walks to bare soil within 8 where
-  the **spawn rule's light test** passes (block light 0, and overall light within the Sift's monster
-  spawn light, 0–7: buds never root in a glowcap pool, a torch-lit base, a sunlit cave mouth or the
-  Meadow in Thrive) and outside every lumen radius, and, after wandering for at least 200 ticks, closes (20 ticks)
+  the **light test** passes: block light 0 and raw brightness ≤ 7, a fixed check matching the Sift's
+  monster spawn light (0–7), not vanilla's spawn roll (buds never root in a glowcap pool, a torch-lit
+  base, a sunlit cave mouth or the Meadow in Thrive) and outside every lumen radius, and, after wandering for at least 200 ticks, closes (20 ticks)
   there: a new bud in a new place. A target that comes within 5 during the close interrupts it: it
   blooms again (and ripples, as woken by a target). A Bloombud with no such soil in reach keeps
   wandering and looks again every 100 ticks.
@@ -190,10 +201,10 @@ a Singer's horn within 12 (M4) ──► lulled (200; system §3): open ones fol
   player within 12 is looking at it (the creaking's own test, `isLookingAtMe` with 0.5: within 60°
   either side of the look direction, at three heights of the bud, with line of sight), the bud has
   **line of sight to the target** (so buds don't gather above a mine), and it hasn't moved in 40
-  ticks, it steps one block toward the target, onto bare soil that passes the spawn rule's light
-  test, that no other entity occupies, and outside every lumen radius (system §6.1), with a rustle
-  subtitled "Bloombud rustles". The step is a one-block position change that clients interpolate,
-  as any entity's move. It never
+  ticks, it steps one block toward the target, onto bare soil that passes the light test, that no
+  other entity occupies, and outside every lumen radius (system §6.1), with a rustle subtitled
+  "Bloombud rustles". The server moves it a tenth of a block a tick over the creep clip's 10 ticks,
+  so the slide matches the animation (clients interpolate each step, as any entity's move). It never
   creeps to within 6 of **any** target (one block outside the wake radius): **the creep never springs
   the trap; walking into the patch does.** At most 3 creeps per minute per bud.
 - **Retreat** (system §4): a surface or enduring Bloombud retreats at its moment in falling Flow. A
@@ -233,7 +244,7 @@ a Singer's horn within 12 (M4) ──► lulled (200; system §3): open ones fol
 | Strike damage (Easy / Normal / Hard) | 3 / 4 / 6 against players; a flat 4 against illagers (vanilla scales only damage to players) | zombie 2.5 / 3 / 4.5, vindicator (iron axe) 7.5 / 13 / 19.5 |
 | Movement speed | 0.23 (open); 0 (closed) | zombie 0.23, vindicator 0.35 |
 | Follow range | 16 | zombie 35, vindicator 12 |
-| Knockback resistance | 0 (closed: can't be pushed or moved at all) | creaking (unpushable while watched) |
+| Knockback resistance | 0 (closed: no pushing and no knockback, as a watched creaking; pistons still move it) | creaking (unpushable while watched) |
 | Wake radius | closed 5, open 8 (×0.8 sneaking, vanilla) | — |
 | XP | 5 | most hostiles 5 |
 | **Enduring** (system §5) | health 21, strike 3.5 / 5 / 7.5 against players (flat 5 against illagers), KB resistance 0.2 open, XP 10 | — |
@@ -272,7 +283,7 @@ player who backs away at the first bloom always gets out.
   against Nester 60, so buds are the commoner danger). A group spawns closed (it emerges as buds).
 - **Enduring:** 25 % (Hard 35 %) per Bloombud at a natural spawn **in Endure** (system §5); cave buds
   spawned in Thrive or Flow never are.
-- **BALANCE.md** rows go in on freeze, as for the Blub.
+- **BALANCE.md:** section "Bloombud", with the damage rate and time to kill.
 - **Despawn:** vanilla's monster rules (a closed bud far from players despawns like any monster),
   then the retreat (system §4).
 
@@ -311,7 +322,8 @@ All original, synthesized in `tools/audio/synth.py`. Subtitles in brackets.
 | A bud placed on a ledge | It roots only on bare soil with two blocks of air above; the creep only moves onto such soil at the same height or one block up or down |
 | The soil under a closed bud is broken | It blooms and wanders, then roots elsewhere |
 | A target appears mid-close | The close is interrupted: it blooms again and ripples |
-| A block placed over a closed bud | It can't bloom while there is no room; a harmless bud until there is |
+| A block placed over a closed bud | Woken (the player is almost always within 5), it can't bloom, so it digs away; killed while digging, it drops no XP. A closed bud that fell where it has no room stays closed until it has room, or until woken, when it digs away |
+| A piston pushes a closed bud | Pistons move it (vanilla's `move(MoverType.PISTON)`); pushed off its soil, it blooms and wanders |
 | A patch around a gate | The sanctuary stops spawns there (system §7); a bud can still root inside it after wandering in, as any hunter may walk in |
 | A player standing still at 6 blocks | Nothing happens: the creep stops at 6, and the wake radius is 5 |
 
@@ -322,7 +334,9 @@ All original, synthesized in `tools/audio/synth.py`. Subtitles in brackets.
   (system §11).
 - **Closed cost:** a closed bud runs one goal: a target check every 10 ticks over a 5-block box, the
   creep check every 40 ticks (only when a target is within 12), and a lumen lookup in the POI index
-  every 20 ticks (sections without POIs cost a lookup); no pathfinding.
+  every 20 ticks (radius 6 scans a 3 × 3 chunk area, 216 section lookups, mostly empty); no
+  pathfinding. If that shows in the cost budget, a newly placed lumen block can alert the closed
+  buds near it instead.
 - **Pathfinding cost:** open buds repath as vanilla's `MeleeAttackGoal` does (every 4–10 ticks while
   they see the target); wandering uses vanilla's random stroll.
 - **The creep's "unwatched" test:** the creaking's `isLookingAtMe` for each player within 12 (a dot
@@ -373,3 +387,17 @@ All original, synthesized in `tools/audio/synth.py`. Subtitles in brackets.
     players; goals argued against E3; the bloom lunge (the bible's "before it lunges") gives a patch
     teeth; a short, blunt snout and slower strike timings set it apart from the Nester; "hip-high";
     the D-013 citation.
+- **Round 3 (2026-10-02, the last): FAIL, narrowly**, 2 must-fix, both small enough to fix in place;
+  scores faithful 4, vanilla-native 4, readable 4, meaningful 4, distinct 4, connected 4, feasible 4,
+  template 5, frozen-doc consistency 4. Every vanilla claim confirmed (the creaking's overrides,
+  explosions through `push`, gravity kept, boats' `pushableBy`, the Sift's spawn light 0–7, client
+  interpolation of small moves, `MeleeAttackGoal` hitting at once). Fixed:
+  - M1, the capped bud contradicted itself: it digs away, and a kill during that dig gives no XP.
+  - M2, "slower than the Nester's" was false: each phase is slower, but with no circle it strikes
+    more often.
+  - Should-fix, all taken: the bloom lunge's hop scaled to distance (bite in place within reach), a
+    GameTest along an axis and the diagonal; `BloombudStrikeGoal` named; a fixed light test, not
+    vanilla's roll; the creep's slide timed to its clip; pistons; the type registered at its open
+    size; ripple precedence; every WP-064 plant named; damage rate and time to kill in BALANCE.md;
+    the lumen lookup's cost.
+- **Frozen 2026-10-02** after round 3 (the cap of three rounds). Numbers in BALANCE.md.

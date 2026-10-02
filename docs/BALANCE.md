@@ -79,6 +79,33 @@ enduring chance is the system's (25 %, Hard 35 %); Peaceful removes it.
 | Out of reach | target dropped after 200 ticks without a path | — | Pillars are safe, as in vanilla |
 | Spawning | Singer's Meadow (Hymnstone Rise from M3), Endure only, on soil, groups 1–2; weight in WP-070 (proposal 60 against the Bloombud's 100) | — | Nesters are the event; buds the commoner danger |
 
+## Bloombud (WP-062, frozen 2026-10-02)
+The ambusher (mob_bloombud.md), a hunter that doesn't listen. **Difficulty:** damage to players
+scales as vanilla's; the enduring chance is the system's; Peaceful removes it.
+
+| Stat | Bloombud | Zombie | Vindicator | Why |
+|---|---|---|---|---|
+| Max health | 14 (enduring 21) | 20 | 24 | Weak alone; the patch is the threat |
+| Armor | 2 | 2 | 0 | |
+| Strike (Easy / Normal / Hard) | 3 / 4 / 6 (enduring 3.5 / 5 / 7.5); flat 4 against illagers | 2.5 / 3 / 4.5 | 7.5 / 13 / 19.5 (iron axe) | |
+| Speed | 0.23 open (about 2.3 blocks/s), 0 closed | 0.23 | 0.35 | Slow, as canon says: a walking player (4.3) always gets away |
+| Follow range | 16 | 35 | 12 | |
+| Knockback resistance | 0 (closed: no pushing or knockback) | 0 | 0 | Rooted as a watched creaking |
+| XP | 5 (enduring 10; none if killed digging away from a cap) | 5 | 5 | No drops: a hazard, not a resource |
+
+| Behaviour number | Value | Vanilla analog | Reasoning |
+|---|---|---|---|
+| Wake radius | closed 5, open 8, in sight (×0.8 sneaking) | `TargetingConditions` | Sneak past at 4 |
+| Bloom | 15 ticks, the telegraph | — | The window to step away |
+| Ripple | only from a target-woken bud; neighbours within 8 that it sees, nearest first, the first as the bloom ends, then 10 ticks apart; no chains | — | A patch of five is open after 60 ticks (3 s) |
+| Bloom lunge | once per waking, if the target is within 4 at the bloom's end; aim locked at the bloom's start; hop scaled to distance, at most about 3 | `LeapAtTargetGoal` | The bible's "before it lunges" |
+| Strike | windup 10, active 3, recovery 16; about one per 30 ticks | `MeleeAttackGoal` 20 | Step back in the windup |
+| Damage rate (Normal) | about 2.7 per second for one bud in reach; a patch of five around you up to about 13 | zombie 3 | A patch punishes standing in it |
+| Time to kill (Normal, one bud) | unarmoured about 7.5 s; iron about 16 s; diamond under 1 a strike | — | One bud is a nuisance; five are not |
+| Creep | one block, at most every 40 ticks and 3 a minute, only unwatched, never within 6 of a target | creaking (activation 12, look test 0.5) | Dread, never a sprung trap |
+| Rooting light | block light 0 and raw brightness ≤ 7 | Sift monster spawn light 0–7 | Never in a lit pocket |
+| Spawning | Singer's Meadow (Endure) and the Sift Hollows (any Tide, dark), on bare soil, groups 3–5; weight in WP-070 (proposal 100 against the Nester's 60) | — | The commoner danger |
+
 ## Blub (WP-048, frozen 2026-10-01)
 A pet, never a fighter (mob_blub.md). Passive: no difficulty scaling.
 
