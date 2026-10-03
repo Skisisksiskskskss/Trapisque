@@ -2,6 +2,13 @@
 
 Step-by-step checklists the owner can run in-game. Produced at every gate.
 
+## `v0.1.8-alpha` (2026-10-03): the Nester, as Dungeons II shows it
+Your note: the Nesters didn't look good, and the mod should follow what Mojang showed (D-034). The Nester is redrawn from Dungeons II's official render:
+- a big boxy head, teal over a tan jaw, with navy eyes at its corners and two feathery antennae;
+- a thin neck on four long legs with tan feet.
+
+It gallops leaning forward and rears up to pounce with its whole mouth gaping. Enduring Nesters are pale glowing cyan, like Dungeons II's soul-corrupted Nester. When one hears you, its antennae shoot up. Try `/summon thesift:nester` and `/summon thesift:nester ~ ~ ~ {Enduring:1b}` in the Sift.
+
 ## `v0.1.7-alpha` (2026-10-03): living in the Sift, part 1: ores, food, hymnstone as stone
 Your notes: the Sift needs ores and a way to progress from nothing; hymnstone should work as stone (D-032, D-033, survival_sift.md). What to try in a **new world** (ores generate in new chunks only):
 - **Hymnstone works as stone:** a pickaxe gets **cobbled hymnstone**. It makes stone tools and a furnace, and smelts back into hymnstone. Smelting hymnstone gives **smooth hymnstone**; 2 × 2 smooth gives **polished**. Smelting hymnstone bricks gives **cracked** bricks, and two brick slabs make **chiseled** bricks. Stairs, slabs and walls are on the crafting table and the stonecutter.
