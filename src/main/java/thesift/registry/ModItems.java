@@ -22,6 +22,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.PlaceOnWaterBlockItem;
+import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.DispenserBlock;
@@ -31,6 +32,7 @@ import net.minecraft.world.level.storage.loot.providers.number.ints.ContextIntPr
 
 import thesift.TheSift;
 import thesift.item.IchorBucketItem;
+import thesift.item.RiftForkItem;
 
 /** Items (D-019). Block items are registered together with their blocks, in creative-tab order. */
 public final class ModItems {
@@ -44,6 +46,9 @@ public final class ModItems {
 	/** Picked from open tidewrack in Thrive (block_flora_ii.md §1); its uses come in WP-065. */
 	public static final Item TIDEWRACK_FROND = other(register(key("tidewrack_frond"), Item::new,
 			new Item.Properties().compostable(ContextIntProviders.COMPOSTABLE_LOW)));
+	/** Opens a rift for a minute, 8 times (survival_sift.md §2.4). */
+	public static final Item RIFT_FORK = other(register(key("rift_fork"), RiftForkItem::new,
+			new Item.Properties().durability(8).rarity(Rarity.UNCOMMON)));
 	// Living in the Sift (survival_sift.md §1): food from the leaves, the caves and the shores.
 	/** Plants tide roots (on tide sand beside ichor); raw, a little food, as a potato. */
 	public static final Item TIDE_ROOT = other(register(key("tide_root"), p -> new BlockItem(ModBlocks.TIDE_ROOTS, p),

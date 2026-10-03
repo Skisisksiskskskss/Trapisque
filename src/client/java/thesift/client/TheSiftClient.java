@@ -15,6 +15,7 @@ import thesift.client.entity.BlubModel;
 import thesift.client.entity.BlubRenderer;
 import thesift.client.entity.NesterModel;
 import thesift.client.entity.NesterRenderer;
+import thesift.client.entity.RiftRenderer;
 import thesift.client.particle.SiftMoteParticle;
 import thesift.registry.ModEntities;
 import thesift.registry.ModFluids;
@@ -40,6 +41,7 @@ public final class TheSiftClient implements ClientModInitializer {
 		ModelLayerRegistry.registerModelLayer(NesterRenderer.LAYER, NesterModel::createBodyLayer);
 		EntityRenderers.register(ModEntities.BLUB, BlubRenderer::new);
 		EntityRenderers.register(ModEntities.NESTER, NesterRenderer::new);
+		EntityRenderers.register(ModEntities.RIFT, RiftRenderer::new);
 		// The sound manager exists once the client has started.
 		ClientLifecycleEvents.CLIENT_STARTED.register(client -> MusicListener.install());
 	}

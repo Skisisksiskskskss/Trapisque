@@ -79,7 +79,7 @@ public final class SiftGates {
 		return transition;
 	}
 
-	private static final TeleportTransition.PostTeleportTransition CROSSING_SOUND = SiftGates::playCrossingSound;
+	static final TeleportTransition.PostTeleportTransition CROSSING_SOUND = SiftGates::playCrossingSound;
 
 	/** The crossing chime, heard by the traveller only (as vanilla's portal travel sound is). */
 	private static void playCrossingSound(Entity entity) {

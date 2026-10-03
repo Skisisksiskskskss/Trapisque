@@ -82,6 +82,10 @@ final class ModSoundsProvider extends FabricSoundsProvider {
 		add(exporter, ModSounds.NESTER_GUARD, "nester/guard", 2, "subtitles.thesift.nester.guard");
 		add(exporter, ModSounds.NESTER_DODGE, "nester/dodge", 2, "subtitles.thesift.nester.dodge");
 		add(exporter, ModSounds.NESTER_STAGGER, "nester/stagger", 2, "subtitles.thesift.nester.stagger");
+		add(exporter, ModSounds.RIFT_HUM, "rift/hum", 1, "subtitles.thesift.rift.hum");
+		add(exporter, ModSounds.RIFT_OPEN, "rift/open", 1, "subtitles.thesift.rift.open");
+		add(exporter, ModSounds.RIFT_CLOSE, "rift/close", 1, "subtitles.thesift.rift.close");
+		add(exporter, ModSounds.RIFT_FORK_STRIKE, "rift/fork_strike", 1, "subtitles.thesift.rift_fork.strike");
 		add(exporter, ModSounds.NESTER_EMERGE, "nester/emerge", 2, "subtitles.thesift.nester.emerge");
 		add(exporter, ModSounds.NESTER_BURROW, "nester/burrow", 2, "subtitles.thesift.nester.burrow");
 		add(exporter, ModSounds.NESTER_HURT, "nester/hurt", 3, "subtitles.thesift.nester.hurt");

@@ -68,6 +68,7 @@ below allows.
 | `tide_root_baked` | `#6a3c3e` `#8e544c` `#b2725c` `#cf9672` `#e8bb8f` | Baked, the root browns |
 | `songfruit` | `#3d3480` `#5648a6` `#7464c6` `#9c8de4` `#cbc2fa` | Songfruit: indigo to pale lavender, the songwood's fruit |
 | `bowl` | `#4a2c18` `#6b4226` `#8c5a34` `#ad7646` | A wooden bowl's browns (the glowcap stew) |
+| `rift_gold` | `#7a4a12` `#b07a1c` `#e0b23a` `#fbe27a` | The rift fork's gold stem (survival_sift.md §2.4) |
 
 ## Texture → allowed ramps
 
@@ -152,6 +153,8 @@ below allows.
 | `item/baked_tide_root.png` | tide_root_baked |
 | `item/songfruit.png` | songfruit, songwood_bark, songwood_leaves |
 | `item/glowcap_stew.png` | bowl, glowcap, glowcap_stem |
+| `entity/rift/rift.png` | ichor, membrane |
+| `item/rift_fork.png` | rift_gold, echo |
 | `entity/blub/blub.png` | blub_fur, blub_eye, blub_mouth, blub_blush |
 | `entity/blub/blub_glow.png` | membrane |
 | `entity/nester/nester.png` | nester, nester_jaw, nester_mouth, nester_tooth, nester_eye |

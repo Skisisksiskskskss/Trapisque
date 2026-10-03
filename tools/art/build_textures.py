@@ -1583,6 +1583,59 @@ def glowcap_stew() -> Image.Image:
     return im
 
 
+# ---------------------------------------------------------------- rifts (survival_sift.md §2)
+def rift_frames(n: int = 16, w: int = 32, h: int = 64) -> list[Image.Image]:
+    """A rift: a tall tear, widest at its middle, with a ragged rim of the membrane's pale cyan; inside,
+    the ichor's film colours swirl in slanted bands that turn frame by frame (16 frames, one turn)."""
+    film = RAMPS["ichor"][:20]
+    rim = [rgba("membrane", i) for i in range(6)]
+    edge_noise = noise_fn(4, 8, 401, w, h)
+    swirl = noise_fn(3, 6, 403, w, h)
+    frames = []
+    for f in range(n):
+        t = f / n
+        im = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+        px = im.load()
+        for y in range(h):
+            v = (y + 0.5) / h
+            half = (w / 2 - 1.5) * math.sin(math.pi * v) ** 0.75 * (0.82 + 0.18 * edge_noise(f * 0.7, y))
+            for x in range(w):
+                d = abs(x + 0.5 - w / 2)
+                if d > half:
+                    continue
+                if d > half - 1.2:
+                    px[x, y] = rim[4 if (x + y + f) % 3 else 5]
+                    continue
+                if d > half - 2.4:
+                    px[x, y] = rim[3]
+                    continue
+                k = d / max(half, 1.0)
+                band = (y * 0.11 + x * 0.05 + 2.0 * swirl(x + 6.0 * math.sin(2 * math.pi * t), y + 12.0 * t) - 2.0 * t + k) % 1.0
+                if k < 0.09:
+                    px[x, y] = rim[5] if (y + f) % 4 else rim[4]  # a bright seam down the middle
+                else:
+                    px[x, y] = (*film[int(band * len(film)) % len(film)], 255)
+        frames.append(im)
+    return frames
+
+
+def rift_fork() -> Image.Image:
+    """The rift fork, held as a tool (corner to corner): a gold stem and yoke, two echo-shard prongs."""
+    im = _blank()
+    for i in range(6):  # the stem, two pixels thick, lit along its top edge
+        _set(im, 2 + i, 13 - i, rgba("rift_gold", 1))
+        _set(im, 3 + i, 13 - i, rgba("rift_gold", 2 if i % 2 else 3))
+    _set(im, 1, 14, rgba("rift_gold", 0))
+    _set(im, 2, 14, rgba("rift_gold", 1))
+    for x, y, c in ((8, 7, 3), (9, 7, 2), (8, 8, 1), (9, 8, 2), (10, 8, 1), (7, 7, 2)):  # the yoke
+        _set(im, x, y, rgba("rift_gold", c))
+    for (x0, y0), n in (((8, 6), 5), ((11, 8), 4)):  # the prongs, running up and out in parallel
+        for i in range(n):
+            _set(im, x0 + i, y0 - i, rgba("echo", 3 if i < n - 1 else 4))
+            _set(im, x0 + i + 1, y0 - i, rgba("echo", 1))
+    return im
+
+
 def main() -> None:
     save(hymnstone_pattern(), "block/hymnstone.png")
     save(hymnstone_pattern(seed=4), "block/hymnstone_2.png")
@@ -1603,6 +1656,8 @@ def main() -> None:
     save(tide_root_item(baked=True), "item/baked_tide_root.png")
     save(songfruit(), "item/songfruit.png")
     save(glowcap_stew(), "item/glowcap_stew.png")
+    save(strip(rift_frames()), "entity/rift/rift.png")
+    save(rift_fork(), "item/rift_fork.png")
     save(healthy_sculk_top(), "block/healthy_sculk_top.png")
     save(healthy_sculk_top(seed=22), "block/healthy_sculk_top_2.png")
     save(healthy_sculk_top(seed=27), "block/healthy_sculk_top_3.png")

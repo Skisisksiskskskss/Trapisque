@@ -1,5 +1,7 @@
 package thesift.datagen;
 
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
@@ -9,6 +11,8 @@ import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.AdvancementRequirements;
 import net.minecraft.advancements.AdvancementType;
+import net.minecraft.advancements.predicates.ItemPredicate;
+import net.minecraft.advancements.predicates.entity.EntityPredicate;
 import net.minecraft.advancements.triggers.CriteriaTriggers;
 import net.minecraft.advancements.triggers.ChangeDimensionTrigger;
 import net.minecraft.advancements.triggers.ImpossibleTrigger;
@@ -93,5 +97,34 @@ final class ModAdvancementProvider extends FabricAdvancementProvider {
 				.addCriterion(SiftAdvancements.AWARDED, CriteriaTriggers.IMPOSSIBLE.createCriterion(new ImpossibleTrigger.TriggerInstance()))
 				.build(SiftAdvancements.HEARD_YOU);
 		out.accept(heardYou);
+		// Living in the Sift (survival_sift.md §6).
+		AdvancementHolder throughTheRift = Advancement.Builder.advancement()
+				.parent(enter)
+				.display(Items.ECHO_SHARD,
+						Component.translatable("advancements.thesift.through_the_rift.title"),
+						Component.translatable("advancements.thesift.through_the_rift.description"),
+						AdvancementType.TASK, true, true, false)
+				.addCriterion(SiftAdvancements.AWARDED, CriteriaTriggers.IMPOSSIBLE.createCriterion(new ImpossibleTrigger.TriggerInstance()))
+				.build(SiftAdvancements.THROUGH_THE_RIFT);
+		out.accept(throughTheRift);
+		out.accept(Advancement.Builder.advancement()
+				.parent(throughTheRift)
+				.display(ModItems.RIFT_FORK,
+						Component.translatable("advancements.thesift.tuned_in.title"),
+						Component.translatable("advancements.thesift.tuned_in.description"),
+						AdvancementType.TASK, true, true, false)
+				.addCriterion("has_rift_fork", InventoryChangeTrigger.TriggerInstance.hasItems(ModItems.RIFT_FORK))
+				.build(SiftAdvancements.TUNED_IN));
+		out.accept(Advancement.Builder.advancement()
+				.parent(enter)
+				.display(Items.DIAMOND,
+						Component.translatable("advancements.thesift.sift_born.title"),
+						Component.translatable("advancements.thesift.sift_born.description"),
+						AdvancementType.GOAL, true, true, false)
+				.addCriterion("diamond_in_sift", CriteriaTriggers.INVENTORY_CHANGED.createCriterion(new InventoryChangeTrigger.TriggerInstance(
+						Optional.of(EntityPredicate.wrap(EntityPredicate.Builder.entity().located(LocationPredicate.Builder.inDimension(SiftKeys.LEVEL)))),
+						InventoryChangeTrigger.TriggerInstance.Slots.ANY,
+						List.of(ItemPredicate.Builder.item().of(registries.lookupOrThrow(Registries.ITEM), Items.DIAMOND).build()))))
+				.build(SiftAdvancements.SIFT_BORN));
 	}
 }

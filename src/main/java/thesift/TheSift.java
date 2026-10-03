@@ -10,6 +10,7 @@ import thesift.entity.hunt.Hunt;
 import thesift.entry.FrameCues;
 import thesift.entry.FrameMusic;
 import thesift.entry.Offering;
+import thesift.entry.Rifts;
 import thesift.registry.ModAttachments;
 import thesift.registry.ModAttributes;
 import thesift.registry.ModBlockEntities;
@@ -18,6 +19,7 @@ import thesift.registry.ModEntities;
 import thesift.registry.ModFeatureTypes;
 import thesift.registry.ModCreativeTab;
 import thesift.registry.ModFluids;
+import thesift.registry.ModGameRules;
 import thesift.registry.ModLootConditions;
 import thesift.registry.ModParticles;
 import thesift.registry.ModPoiTypes;
@@ -39,6 +41,7 @@ public final class TheSift implements ModInitializer {
 	@Override
 	public void onInitialize() {
 		ModAttributes.init();
+		ModGameRules.init();
 		ModAttachments.init();
 		ModSounds.init();
 		ModParticles.init();
@@ -59,6 +62,7 @@ public final class TheSift implements ModInitializer {
 		TideCues.init();
 		BlubCrossing.init();
 		Hunt.init();
+		Rifts.init();
 		LOGGER.info("The Sift initialized (unofficial fan project)");
 	}
 

@@ -86,6 +86,9 @@ final class ModRecipeProvider extends FabricRecipeProvider {
 				stonecutterResultFromBase(RecipeCategory.BUILDING_BLOCKS, ModBlocks.POLISHED_HYMNSTONE_SLAB, ModBlocks.HYMNSTONE, 2);
 				stonecutterResultFromBase(RecipeCategory.BUILDING_BLOCKS, ModBlocks.POLISHED_HYMNSTONE, ModBlocks.SMOOTH_HYMNSTONE);
 				stonecutterResultFromBase(RecipeCategory.BUILDING_BLOCKS, ModBlocks.CHISELED_HYMNSTONE_BRICKS, ModBlocks.HYMNSTONE_BRICKS);
+				// The rift fork (survival_sift.md §2.4): two echo shards, the prongs, over a gold stem.
+				shaped(RecipeCategory.TOOLS, ModItems.RIFT_FORK).define('E', Items.ECHO_SHARD).define('G', Items.GOLD_INGOT)
+						.pattern("E E").pattern(" G ").pattern(" G ").unlockedBy(getHasName(Items.ECHO_SHARD), has(Items.ECHO_SHARD)).save(output);
 				// M2 materials (items_m2.md): a frond is a cyan dye, four Endure petals around hymnstone a lumen lantern.
 				oneToOneConversionRecipe(Items.DYE.cyan(), ModItems.TIDEWRACK_FROND, "cyan_dye");
 				// Living in the Sift (survival_sift.md §1): stew, string, a baked root, smelted ores.

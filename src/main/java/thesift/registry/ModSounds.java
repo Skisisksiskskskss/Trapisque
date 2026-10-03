@@ -63,6 +63,11 @@ public final class ModSounds {
 	public static final SoundEvent FLORA_PICK = register("block.flora.pick");
 	public static final SoundEvent CHIME_BELL_RING = register("block.chime_bell_flower.ring");
 	public static final SoundEvent CHIME_BELL_HUM = register("block.chime_bell_flower.hum");
+	// Rifts (survival_sift.md §2): a hum heard 32 blocks off, opening heard 64, closing; the fork's struck note.
+	public static final SoundEvent RIFT_HUM = register("entity.rift.hum");
+	public static final SoundEvent RIFT_OPEN = register("entity.rift.open");
+	public static final SoundEvent RIFT_CLOSE = register("entity.rift.close");
+	public static final SoundEvent RIFT_FORK_STRIKE = register("item.rift_fork.strike");
 	public static final Holder<SoundEvent> MEADOW_LOOP = registerHolder("ambient.singers_meadow.loop");
 	public static final Holder<SoundEvent> MEADOW_MOOD = registerHolder("ambient.singers_meadow.mood");
 

@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "E": "minecraft:echo_shard",
+    "G": "minecraft:gold_ingot"
+  },
+  "pattern": [
+    "E E",
+    " G ",
+    " G "
+  ],
+  "result": {
+    "id": "thesift:rift_fork"
+  }
+}

@@ -210,6 +210,7 @@ final class ModModelProvider extends FabricModelProvider {
 			g.generateFlatItem(food, ModelTemplates.FLAT_ITEM);
 		}
 		g.generateFlatItem(ModItems.NESTER_SPAWN_EGG, ModelTemplates.FLAT_ITEM);
+		g.generateFlatItem(ModItems.RIFT_FORK, ModelTemplates.FLAT_HANDHELD_ITEM);
 		g.generateFlatItem(ModItems.TIDEWRACK_FROND, ModelTemplates.FLAT_ITEM);
 		g.generateFlatItem(ModItems.ENDURE_PETAL, ModelTemplates.FLAT_ITEM);
 	}

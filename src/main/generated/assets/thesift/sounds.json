@@ -364,6 +364,24 @@
     ],
     "subtitle": "subtitles.thesift.nester.step"
   },
+  "entity.rift.close": {
+    "sounds": [
+      "thesift:rift/close"
+    ],
+    "subtitle": "subtitles.thesift.rift.close"
+  },
+  "entity.rift.hum": {
+    "sounds": [
+      "thesift:rift/hum"
+    ],
+    "subtitle": "subtitles.thesift.rift.hum"
+  },
+  "entity.rift.open": {
+    "sounds": [
+      "thesift:rift/open"
+    ],
+    "subtitle": "subtitles.thesift.rift.open"
+  },
   "item.bucket.empty_ichor": {
     "sounds": [
       "thesift:ichor/bucket_empty1",
@@ -377,5 +395,11 @@
       "thesift:ichor/bucket_fill2"
     ],
     "subtitle": "subtitles.thesift.bucket.fill_ichor"
+  },
+  "item.rift_fork.strike": {
+    "sounds": [
+      "thesift:rift/fork_strike"
+    ],
+    "subtitle": "subtitles.thesift.rift_fork.strike"
   }
 }

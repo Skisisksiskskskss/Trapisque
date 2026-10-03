@@ -1,0 +1,32 @@
+{
+  "parent": "thesift:sift/through_the_rift",
+  "criteria": {
+    "has_rift_fork": {
+      "conditions": {
+        "items": [
+          {
+            "items": "thesift:rift_fork"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.thesift.tuned_in.description"
+    },
+    "icon": {
+      "id": "thesift:rift_fork"
+    },
+    "title": {
+      "translate": "advancements.thesift.tuned_in.title"
+    }
+  },
+  "requirements": [
+    [
+      "has_rift_fork"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

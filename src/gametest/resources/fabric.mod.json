@@ -13,6 +13,7 @@
 			"thesift.test.SiftBlocksTest",
 			"thesift.test.SiftFloraTest",
 			"thesift.test.SiftSurvivalTest",
+			"thesift.test.SiftRiftTest",
 			"thesift.test.SiftHuntTest",
 			"thesift.test.SiftEntryTest",
 			"thesift.test.SiftIchorTest",

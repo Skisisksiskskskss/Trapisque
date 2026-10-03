@@ -141,6 +141,21 @@ final class ModLanguageProvider extends FabricLanguageProvider {
 		builder.add("subtitles.thesift.nester.step", "Nester steps");
 		builder.add("advancements.thesift.heard_you.title", "Heard You");
 		builder.add("advancements.thesift.heard_you.description", "Make a sound a Nester hears");
+		// Rifts (survival_sift.md §2, §6).
+		builder.add(ModEntities.RIFT, "Rift");
+		builder.add(ModItems.RIFT_FORK, "Rift Fork");
+		builder.add("subtitles.thesift.rift.hum", "Rift hums");
+		builder.add("subtitles.thesift.rift.open", "Rift opens");
+		builder.add("subtitles.thesift.rift.close", "Rift closes");
+		builder.add("subtitles.thesift.rift_fork.strike", "Rift fork rings");
+		builder.add("gamerule.thesift.spawn_rifts", "Spawn rifts");
+		builder.add("gamerule.thesift.start_in_sift", "Start in the Sift");
+		builder.add("advancements.thesift.through_the_rift.title", "Through the Rift");
+		builder.add("advancements.thesift.through_the_rift.description", "Step through a rift between the worlds");
+		builder.add("advancements.thesift.tuned_in.title", "Tuned In");
+		builder.add("advancements.thesift.tuned_in.description", "Make a rift fork, and open the way at will");
+		builder.add("advancements.thesift.sift_born.title", "Sift-Born");
+		builder.add("advancements.thesift.sift_born.description", "Get a diamond while in the Sift");
 		builder.add(ModItems.BLUB_SPAWN_EGG, "Blub Spawn Egg");
 		builder.add("advancements.thesift.root.title", "The Sift");
 		builder.add("advancements.thesift.root.description", "Walk an Ancient City, where something old is listening");

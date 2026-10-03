@@ -14,6 +14,7 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import thesift.TheSift;
 import thesift.entity.blub.Blub;
 import thesift.entity.nester.Nester;
+import thesift.entity.rift.RiftEntity;
 
 /** Entity types (D-019). */
 public final class ModEntities {
@@ -28,6 +29,12 @@ public final class ModEntities {
 	public static final EntityType<Nester> NESTER = Registry.register(BuiltInRegistries.ENTITY_TYPE, NESTER_KEY,
 			EntityType.Builder.of(Nester::new, MobCategory.MONSTER).sized(0.8F, 1.75F).eyeHeight(1.45F).notInPeaceful()
 					.clientTrackingRange(8).build(NESTER_KEY));
+
+	public static final ResourceKey<EntityType<?>> RIFT_KEY = ResourceKey.create(Registries.ENTITY_TYPE, TheSift.id("rift"));
+	/** 1.5 × 3 blocks: a tear a player walks into (survival_sift.md §2.1). Seen from 10 chunks off. */
+	public static final EntityType<RiftEntity> RIFT = Registry.register(BuiltInRegistries.ENTITY_TYPE, RIFT_KEY,
+			EntityType.Builder.<RiftEntity>of(RiftEntity::new, MobCategory.MISC).sized(1.5F, 3.0F).fireImmune().noLootTable()
+					.clientTrackingRange(10).updateInterval(20).build(RIFT_KEY));
 
 	private ModEntities() {
 	}

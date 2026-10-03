@@ -2,6 +2,17 @@
 
 Step-by-step checklists the owner can run in-game. Produced at every gate.
 
+## `v0.1.9-alpha` (2026-10-03): rifts, the rift fork, and starting in the Sift
+You asked to get in and out of the Sift without the Deep Dark (D-032, survival_sift.md §2-3). What to try:
+- **Natural rifts:** tall shimmering tears that open on their own. In the Overworld one opens about every 40 minutes near each player; in the Sift, about every 10. They open 24-48 blocks away, and you hear them hum and open.
+  - Walk into one and you arrive at the same x and z in the other world, on safe ground.
+  - Friends have 10 seconds to follow before it closes. A rift lasts 5 minutes otherwise.
+- **Rift fork:** two echo shards over two gold ingots (a tuning fork). Right-click to open a rift 3 blocks ahead for a minute; it has 8 uses and a 5-second cooldown. Echo shards come from **echo ore** deep in the Hollows, or from the Deep Dark.
+- **Start in the Sift:** in Create World → Game Rules, turn on **Start in the Sift**. New players then begin on the Sift's surface near 0, 0 with nothing, and respawn there.
+- **Game rules:** `/gamerule thesift:spawn_rifts false` turns natural rifts off.
+- **Advancements:** Through the Rift, Tuned In (make a rift fork), Sift-Born (get a diamond in the Sift).
+- To find one fast: `/summon thesift:rift ~ ~ ~3`.
+
 ## `v0.1.8-alpha` (2026-10-03): the Nester, as Dungeons II shows it
 Your note: the Nesters didn't look good, and the mod should follow what Mojang showed (D-034). The Nester is redrawn from Dungeons II's official render:
 - a big boxy head, teal over a tan jaw, with navy eyes at its corners and two feathery antennae;
