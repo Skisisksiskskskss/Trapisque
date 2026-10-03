@@ -95,7 +95,7 @@ public final class SiftRiftTest {
 		RiftEntity rift = rifts.getFirst();
 		helper.assertTrue(rift.getZ() > at.z + 2.0, "it opened ahead of the player: " + rift.position());
 		helper.assertValueEqual(rift.closesAt() - rift.openedAt(), (long) RiftEntity.FORK_LIFE, "a fork rift's lifetime");
-		helper.assertValueEqual(fork.getDamageValue(), 1, "one use spent");
+		helper.assertValueEqual(fork.getDamageValue(), player.hasInfiniteMaterials() ? 0 : 1, "one use spent (none in creative, as any tool)");
 		helper.assertTrue(player.getCooldowns().isOnCooldown(fork), "the fork cools down");
 		rift.discard();
 		level.getServer().getPlayerList().remove(player);

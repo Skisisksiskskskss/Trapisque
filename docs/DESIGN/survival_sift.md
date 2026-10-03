@@ -115,22 +115,35 @@ Overworld's (the Sift's height is the Overworld's, D-025):
 | Redstone | 4 + 8 lower | 8 | −64–15 | 4–5 redstone | redstone |
 | Lapis | 2 + 4 buried | 7 | −64–64 | 4–9 lapis | lapis |
 | Diamond | 7 + 4 buried | 4 / 8 | −64–16 | diamond | diamond |
-| Emerald | 100 tries, size 3 | 3 | −16–320, Hymnstone Rise only | emerald | emerald |
+| Emerald | 100 tries, size 3 | 3 | −16–320, Lullaby Hills only (D-035) | emerald | emerald |
 | **Echo** | 4 tries | 4 | −64–0, Hollows only | 1–2 echo shards (Fortune +) | the Sift's own |
 
 Echo ore glows faintly (light 3) and its specks pulse slowly (an animated texture), so it reads in a
 dark cave as the Deep Dark's echo; it is hard (as deepslate ores: 4.5) and needs iron.
 
 ## 5. Biomes
-The bible's two Should biomes join the Meadow and the Flats. Biomes don't shape vanilla-style terrain
-(the noise router does); each takes the terrain where its character already is:
-- **Hymnstone Rise** (`thesift:hymnstone_rise`): the steep country (vanilla's low erosion, where the
-  router builds peaks and cliffs). Steep faces show bare hymnstone; flat tops keep healthy sculk;
-  spires stand three times as often; few trees; emerald ore. Blubs are rarer; Nesters spawn (soil only).
-- **Lullaby Hills** (`thesift:lullaby_hills`): the rolling high country between (middle erosion, dry
-  side). Chime bell flowers in wide drifts, lumen blooms more common, songwood in loose groves, quiet
-  (the Meadow's music, sparser).
-- **Singer's Meadow** keeps the gentler, lower land; the **Ichor Flats** keep the wet, flat land; the
+*Revised by D-035, canon first: Dungeons II names the Carapace and Lullaby Hills. The first draft's
+invented "Hymnstone Rise" is dropped.* Biomes don't shape vanilla-style terrain (the noise router
+does). Each takes the land where its character already is:
+- **The Carapace** (`thesift:carapace`). Canon: "a flat, dry biome composed of dark blue stone and vast
+  fields of sand and dust", "red and yellow grass patches", "colossal fossils … the largest of these
+  are the humbler husks, which can be entered".
+  - It takes the flat, dry land (humidity < −0.3, erosion > 0.3): **Sift dust** over **carapace stone**,
+    carapace stone on steep faces.
+  - **Red and yellow carapace grass** in patches.
+  - A **husk fossil** about every ten chunks: a half-buried rib cage you can walk into, with a hollow
+    skull.
+  - Nesters come up out of the dust in Endure (canon spawns them in Humbler Huskland); no Blubs.
+  - Not yet: sculkers (canon: "the home of sculkers"), bouncy slimes, enterable humbler husks with
+    rooms.
+- **Lullaby Hills** (`thesift:lullaby_hills`). The name is canon; the look is ours, since the wiki
+  doesn't describe it.
+  - The hilly, dry land (erosion < −0.35): the rolling high country.
+  - Chime bell flowers in drifts in every chunk; lumen blooms half again as common; songwood in loose
+    groves only.
+  - **Emerald ore**, as the Overworld's mountains have.
+  - Blubs and Nesters (canon spawns Nesters there).
+- **Singer's Meadow** keeps the gentler middle land; the **Ichor Flats** keep the wet, flat land; the
   **Sift Hollows** stay below.
 
 ## 6. Advancements

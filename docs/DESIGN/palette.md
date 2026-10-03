@@ -69,6 +69,11 @@ below allows.
 | `songfruit` | `#3d3480` `#5648a6` `#7464c6` `#9c8de4` `#cbc2fa` | Songfruit: indigo to pale lavender, the songwood's fruit |
 | `bowl` | `#4a2c18` `#6b4226` `#8c5a34` `#ad7646` | A wooden bowl's browns (the glowcap stew) |
 | `rift_gold` | `#7a4a12` `#b07a1c` `#e0b23a` `#fbe27a` | The rift fork's gold stem (survival_sift.md §2.4) |
+| `carapace_stone` | `#1d3f55` `#24506a` `#2c6280` `#3a7896` `#4d8eab` `#64a3be` | The Carapace's "dark blue stone" (D-035): dusty blue, after the official screenshot |
+| `sift_dust` | `#8fb9bf` `#a3cacd` `#b8d8d9` `#cbe4e3` `#dcefed` | Its dust fields: pale blue-white |
+| `carapace_red` | `#5e1838` `#86224f` `#ad3367` `#d14f86` `#e874a3` | Its red grass: crimson to coral pink |
+| `carapace_yellow` | `#6f7022` `#949330` `#b9b444` `#dbd462` `#efe98c` | Its yellow grass |
+| `husk_bone` | `#9fa69b` `#b9bfb2` `#d2d6c8` `#e8eadf` | Husk fossils' bone: ivory with a cool cast |
 
 ## Texture → allowed ramps
 
@@ -155,6 +160,12 @@ below allows.
 | `item/glowcap_stew.png` | bowl, glowcap, glowcap_stem |
 | `entity/rift/rift.png` | ichor, membrane |
 | `item/rift_fork.png` | rift_gold, echo |
+| `block/carapace_stone.png` | carapace_stone, sift_dust |
+| `block/sift_dust.png` | sift_dust, carapace_stone |
+| `block/husk_bone_block_side.png` | husk_bone |
+| `block/husk_bone_block_top.png` | husk_bone |
+| `block/red_carapace_grass.png` | carapace_red |
+| `block/yellow_carapace_grass.png` | carapace_yellow |
 | `entity/blub/blub.png` | blub_fur, blub_eye, blub_mouth, blub_blush |
 | `entity/blub/blub_glow.png` | membrane |
 | `entity/nester/nester.png` | nester, nester_jaw, nester_mouth, nester_tooth, nester_eye |

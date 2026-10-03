@@ -96,6 +96,14 @@ public final class SiftFeatures {
 	public static final ResourceKey<Feature> TIDE_ROOTS_PATCH = feature("tide_roots");
 	public static final ResourceKey<PlacedFeature> TIDE_ROOTS_SHORES = placed("tide_roots_shores");
 
+	// The Carapace and Lullaby Hills (D-035).
+	public static final ResourceKey<Feature> HUSK_FOSSIL = feature("husk_fossil");
+	public static final ResourceKey<PlacedFeature> HUSK_FOSSILS_CARAPACE = placed("husk_fossils_carapace");
+	public static final ResourceKey<Feature> CARAPACE_GRASS = feature("carapace_grass");
+	public static final ResourceKey<PlacedFeature> CARAPACE_GRASS_PATCHES = placed("carapace_grass_patches");
+	public static final ResourceKey<PlacedFeature> CHIME_BELLS_HILLS = placed("chime_bells_lullaby_hills");
+	public static final ResourceKey<PlacedFeature> LUMEN_HILLS = placed("lumen_lullaby_hills");
+
 	private static ResourceKey<Feature> feature(String name) {
 		return ResourceKey.create(Registries.FEATURE, TheSift.id(name));
 	}

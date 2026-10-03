@@ -1,7 +1,7 @@
 # STATUS (session 1, 2026-10-02)
 - **Phase / Milestone:** M1 done; the owner's playtest reworks (`v0.1.1-alpha` to `v0.1.4-alpha`) done; M2 under way (flora, materials and items in code; the hunt next).
-- **Autonomy:** **full-auto** (D-014). **The build to try:** https://github.com/Skisisksiskskskss/Trapisque/releases/tag/v0.1.8-alpha: the Nester redrawn after Dungeons II's render (D-034), on top of v0.1.7's ores, food and hymnstone family (D-032, D-033); steps in `docs/PLAYTEST.md` (top sections).
-- **Current WP:** WP-082 (rifts both ways, the rift fork, the `start_in_sift` gamerule), then WP-083 with canon biomes first (Dungeons II names the Carapace and Lullaby Hills; the invented Hymnstone Rise is dropped unless needed). WP-066/067 leftovers wait behind them.
+- **Autonomy:** **full-auto** (D-014). **The build to try:** https://github.com/Skisisksiskskskss/Trapisque/releases/tag/v0.1.10-alpha: rifts both ways, the rift fork, the `start_in_sift` gamerule (D-032), and the canon biomes the Carapace and Lullaby Hills (D-035), on top of v0.1.8's Nester and v0.1.7's ores, food and hymnstone family; steps in `docs/PLAYTEST.md` (top sections).
+- **Current WP:** the owner's survival request (D-032) is built: WP-081..083 done. Next, canon-first: the Singer (bible M4: Singer's grove, Singer's horn), then sculkers in the Carapace. WP-066/067 leftovers (Quiet Waters, cost measurements) wait behind them.
 - **Done this session:**
   - Phases 0–3 and M1 (WP-040..053).
   - The owner's playtest rework:

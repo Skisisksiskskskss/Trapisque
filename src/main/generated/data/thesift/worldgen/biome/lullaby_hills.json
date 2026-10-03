@@ -1,0 +1,89 @@
+{
+  "attributes": {
+    "minecraft:audio/ambient_sounds": {
+      "additions": {
+        "sound": "thesift:ambient.singers_meadow.mood",
+        "tick_chance": 4.0E-4
+      },
+      "loop": "thesift:ambient.singers_meadow.loop"
+    },
+    "minecraft:gameplay/creature_world_gen_spawn_probability": 0.03,
+    "minecraft:gameplay/natural_mob_spawns": {
+      "argument": {
+        "spawn_costs": {},
+        "spawns_by_category": {
+          "creature": [
+            {
+              "type": "thesift:blub",
+              "count": {
+                "type": "minecraft:uniform",
+                "max_inclusive": 5,
+                "min_inclusive": 2
+              },
+              "weight": 10
+            }
+          ],
+          "monster": [
+            {
+              "type": "thesift:nester",
+              "count": {
+                "type": "minecraft:uniform",
+                "max_inclusive": 2,
+                "min_inclusive": 1
+              },
+              "weight": 60
+            }
+          ]
+        }
+      },
+      "modifier": "overlay"
+    }
+  },
+  "carvers": [],
+  "downfall": 0.4,
+  "effects": {
+    "water_color": "#3fb8c8"
+  },
+  "features": [
+    [],
+    [
+      "thesift:ichor_pools_underground",
+      "thesift:ichor_ponds"
+    ],
+    [],
+    [],
+    [
+      "thesift:hymnstone_spires_singers_meadow"
+    ],
+    [],
+    [
+      "thesift:ore_hymnstone_coal_upper",
+      "thesift:ore_hymnstone_coal_lower",
+      "thesift:ore_hymnstone_iron_upper",
+      "thesift:ore_hymnstone_iron_middle",
+      "thesift:ore_hymnstone_iron_small",
+      "thesift:ore_hymnstone_gold",
+      "thesift:ore_hymnstone_redstone",
+      "thesift:ore_hymnstone_redstone_lower",
+      "thesift:ore_hymnstone_diamond",
+      "thesift:ore_hymnstone_diamond_large",
+      "thesift:ore_hymnstone_diamond_buried",
+      "thesift:ore_hymnstone_lapis",
+      "thesift:ore_hymnstone_lapis_buried",
+      "thesift:ore_hymnstone_copper",
+      "thesift:ore_hymnstone_emerald"
+    ],
+    [],
+    [],
+    [
+      "thesift:lone_trees_singers_meadow",
+      "thesift:lumen_lullaby_hills",
+      "thesift:endure_blooms_singers_meadow",
+      "thesift:chime_bells_lullaby_hills",
+      "thesift:grass_singers_meadow",
+      "thesift:tide_roots_shores"
+    ]
+  ],
+  "has_precipitation": false,
+  "temperature": 0.6
+}

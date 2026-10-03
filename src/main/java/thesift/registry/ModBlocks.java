@@ -9,17 +9,20 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.util.ColorRGBA;
 import net.minecraft.util.random.WeightedList;
 import net.minecraft.util.valueproviders.ConstantInt;
 import net.minecraft.util.valueproviders.UniformInt;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.ColoredFallingBlock;
 import net.minecraft.world.level.block.DropExperienceBlock;
 import net.minecraft.world.level.block.HangingMossBlock;
 import net.minecraft.world.level.block.FlowerPotBlock;
 import net.minecraft.world.level.block.LanternBlock;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.RedStoneOreBlock;
+import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.StairBlock;
@@ -34,6 +37,7 @@ import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.level.storage.loot.providers.number.ints.ContextIntProviders;
 
 import thesift.TheSift;
+import thesift.block.CarapaceGrassBlock;
 import thesift.block.ChimeBellFlowerBlock;
 import thesift.block.EndureBloomBlock;
 import thesift.block.GlowcapBlock;
@@ -89,6 +93,16 @@ public final class ModBlocks {
 	public static final Block POLISHED_HYMNSTONE_SLAB = slab("polished_hymnstone_slab", POLISHED_HYMNSTONE);
 	public static final Block POLISHED_HYMNSTONE_WALL = wall("polished_hymnstone_wall", POLISHED_HYMNSTONE);
 
+	// The Carapace (canon: "a flat, dry biome composed of dark blue stone and vast fields of sand and dust",
+	// "red and yellow grass patches", "colossal fossils"; D-035).
+	public static final Block CARAPACE_STONE = register("carapace_stone", Block::new, BlockBehaviour.Properties.of()
+			.mapColor(MapColor.COLOR_BLUE).instrument(NoteBlockInstrument.BASEDRUM).requiresCorrectToolForDrops().strength(1.5F, 6.0F)
+			.sound(SoundType.STONE));
+	public static final Block SIFT_DUST = register("sift_dust", p -> new ColoredFallingBlock(new ColorRGBA(0xB8D8D9), p),
+			BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_LIGHT_BLUE).instrument(NoteBlockInstrument.SNARE).strength(0.5F).sound(SoundType.SAND));
+	public static final Block HUSK_BONE_BLOCK = register("husk_bone_block", RotatedPillarBlock::new, BlockBehaviour.Properties.of()
+			.mapColor(MapColor.SAND).instrument(NoteBlockInstrument.XYLOPHONE).requiresCorrectToolForDrops().strength(2.0F).sound(SoundType.BONE_BLOCK));
+
 	/** The Sift's grass (owner rework: the teaser's pink-coral ground), over Sift soil as grass over dirt. */
 	public static final Block HEALTHY_SCULK = register("healthy_sculk", HealthySculkBlock::new, BlockBehaviour.Properties.of()
 			.mapColor(MapColor.COLOR_PINK).strength(0.6F).sound(SoundType.GRASS).randomTicks());
@@ -97,6 +111,8 @@ public final class ModBlocks {
 			.mapColor(MapColor.TERRACOTTA_BROWN).strength(0.5F).sound(SoundType.GRAVEL));
 	public static final Block HEALTHY_SCULK_GRASS = register("healthy_sculk_grass", HealthySculkGrassBlock::new, plant());
 	public static final Block TALL_HEALTHY_SCULK_GRASS = register("tall_healthy_sculk_grass", TallHealthySculkGrassBlock::new, plant());
+	public static final Block RED_CARAPACE_GRASS = register("red_carapace_grass", CarapaceGrassBlock::new, plant().mapColor(MapColor.COLOR_MAGENTA));
+	public static final Block YELLOW_CARAPACE_GRASS = register("yellow_carapace_grass", CarapaceGrassBlock::new, plant().mapColor(MapColor.COLOR_YELLOW));
 
 	public static final Block SONGWOOD_LOG = register("songwood_log", SongwoodLogBlock::new, BlockBehaviour.Properties.of()
 			.mapColor(MapColor.COLOR_PURPLE).instrument(NoteBlockInstrument.BASS).strength(2.0F).sound(SoundType.CHERRY_WOOD).ignitedByLava());

@@ -30,6 +30,13 @@ final class ModLanguageProvider extends FabricLanguageProvider {
 		builder.add(ModBlocks.HYMNSTONE_BRICK_STAIRS, "Hymnstone Brick Stairs");
 		builder.add(ModBlocks.HYMNSTONE_BRICK_SLAB, "Hymnstone Brick Slab");
 		builder.add(ModBlocks.HYMNSTONE_BRICK_WALL, "Hymnstone Brick Wall");
+		builder.add(ModBlocks.CARAPACE_STONE, "Carapace Stone");
+		builder.add(ModBlocks.SIFT_DUST, "Sift Dust");
+		builder.add(ModBlocks.HUSK_BONE_BLOCK, "Husk Bone Block");
+		builder.add(ModBlocks.RED_CARAPACE_GRASS, "Red Carapace Grass");
+		builder.add(ModBlocks.YELLOW_CARAPACE_GRASS, "Yellow Carapace Grass");
+		builder.add("biome.thesift.carapace", "The Carapace");
+		builder.add("biome.thesift.lullaby_hills", "Lullaby Hills");
 		builder.add(ModBlocks.CRACKED_HYMNSTONE_BRICKS, "Cracked Hymnstone Bricks");
 		builder.add(ModBlocks.CHISELED_HYMNSTONE_BRICKS, "Chiseled Hymnstone Bricks");
 		builder.add(ModBlocks.HYMNSTONE_STAIRS, "Hymnstone Stairs");

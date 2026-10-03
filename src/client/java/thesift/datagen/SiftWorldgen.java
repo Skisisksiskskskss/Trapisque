@@ -81,6 +81,7 @@ import net.minecraft.world.level.levelgen.material.condition.MaterialCondition;
 import net.minecraft.world.level.levelgen.material.rule.MaterialRule;
 import net.minecraft.world.level.levelgen.placement.BiomeFilter;
 import net.minecraft.world.level.levelgen.placement.BlockPredicateFilter;
+import net.minecraft.world.level.levelgen.placement.CaveSurface;
 import net.minecraft.world.level.levelgen.placement.CountPlacement;
 import net.minecraft.world.level.levelgen.placement.EnvironmentScanPlacement;
 import net.minecraft.world.level.levelgen.placement.HeightRangePlacement;
@@ -107,6 +108,7 @@ import thesift.world.SiftFeatures;
 import thesift.world.SiftKeys;
 import thesift.world.Tide;
 import thesift.world.feature.DrapesDecorator;
+import thesift.world.feature.HuskFossilFeature;
 import thesift.world.feature.HymnstoneSpireFeature;
 import thesift.world.feature.IchorFlatsFeature;
 import thesift.world.feature.LumenBloomFeature;
@@ -146,6 +148,10 @@ final class SiftWorldgen {
 	/** The Ichor Flats: wet lowlands where vegetation (humidity) is high and erosion flattens the land. */
 	private static final float FLATS_HUMIDITY = 0.15F;
 	private static final float FLATS_EROSION = -0.2F;
+	/** Dry and flat land (low humidity, high erosion) is the Carapace; dry, steeper land (low erosion) Lullaby Hills (D-035). */
+	private static final float CARAPACE_HUMIDITY = -0.3F;
+	private static final float CARAPACE_EROSION = 0.3F;
+	private static final float HILLS_EROSION = -0.35F;
 	/** Added to vanilla's continentalness: oceans become lakes and inland seas, the rest is land. */
 	private static final float CONTINENTS_SHIFT = 0.3F;
 	/** The biome source's depth (vanilla's: 0 at the surface) at which the Hollows begin, as caves biomes. */
@@ -307,10 +313,20 @@ final class SiftWorldgen {
 						MaterialRules.state(ModBlocks.SIFT_SOIL.defaultBlockState()))));
 		MaterialRule hollowsFloor = MaterialRules.ifTrue(MaterialRules.isBiome(context.lookup(Registries.BIOME), SiftKeys.SIFT_HOLLOWS),
 				MaterialRules.ifTrue(onFloor, MaterialRules.ifTrue(MaterialRules.noiseCondition2d(Noises.PATCH, HOLLOWS_SOIL_PATCH), MaterialRules.state(grass))));
+		// The Carapace (D-035): Sift dust on the floor and under it, carapace stone on steep faces and in a
+		// band below, as sand over sandstone in a desert.
+		BlockState dust = ModBlocks.SIFT_DUST.defaultBlockState();
+		BlockState blueStone = ModBlocks.CARAPACE_STONE.defaultBlockState();
+		MaterialRule carapace = MaterialRules.ifTrue(MaterialRules.isBiome(context.lookup(Registries.BIOME), SiftKeys.CARAPACE), MaterialRules.sequence(
+				MaterialRules.ifTrue(onFloor, MaterialRules.sequence(
+						MaterialRules.ifTrue(MaterialRules.steep(), MaterialRules.state(blueStone)),
+						MaterialRules.state(dust))),
+				MaterialRules.ifTrue(underFloor, MaterialRules.state(dust)),
+				MaterialRules.ifTrue(MaterialRules.stoneDepthCheck(8, true, 0, CaveSurface.FLOOR), MaterialRules.state(blueStone))));
 		context.register(SiftKeys.MATERIAL_RULE, MaterialRules.sequence(
 				MaterialRules.getRule(rules, VanillaMaterialRules.BEDROCK_FLOOR),
 				hollowsFloor,
-				MaterialRules.ifTrue(MaterialRules.abovePreliminarySurface(), surface),
+				MaterialRules.ifTrue(MaterialRules.abovePreliminarySurface(), MaterialRules.sequence(carapace, surface)),
 				MaterialRules.state(hymnstone)));
 	}
 
@@ -348,13 +364,14 @@ final class SiftWorldgen {
 				NoiseGeneratorSettings.DebugFunctions.EMPTY));
 	}
 
-	/** The Overworld's ores in every Sift biome, in one order; echo ore in the Hollows only (survival_sift.md §4). */
-	private static void ores(BiomeGenerationSettings.Builder generation, boolean echo) {
+	/** The Overworld's ores in every Sift biome, in one order, then the biome's own: echo ore in the Hollows, emerald in Lullaby Hills (survival_sift.md §4). */
+	@SafeVarargs
+	private static void ores(BiomeGenerationSettings.Builder generation, ResourceKey<PlacedFeature>... own) {
 		for (ResourceKey<PlacedFeature> ore : SiftFeatures.ORES) {
 			generation.addFeature(GenerationStep.Decoration.UNDERGROUND_ORES, ore);
 		}
-		if (echo) {
-			generation.addFeature(GenerationStep.Decoration.UNDERGROUND_ORES, SiftFeatures.ORE_ECHO_PLACED);
+		for (ResourceKey<PlacedFeature> ore : own) {
+			generation.addFeature(GenerationStep.Decoration.UNDERGROUND_ORES, ore);
 		}
 	}
 
@@ -374,7 +391,7 @@ final class SiftWorldgen {
 		generation.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.CHIME_BELLS_MEADOW);
 		generation.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.GRASS_MEADOW);
 		generation.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.TIDE_ROOTS_SHORES);
-		ores(generation, false);
+		ores(generation);
 		context.register(SiftKeys.SINGERS_MEADOW, new Biome.BiomeBuilder()
 				.hasPrecipitation(false)
 				.temperature(0.7F)
@@ -407,7 +424,7 @@ final class SiftWorldgen {
 		flats.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.GLOWCAPS_FLATS);
 		flats.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.GRASS_FLATS);
 		flats.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.TIDE_ROOTS_SHORES);
-		ores(flats, false);
+		ores(flats);
 		context.register(SiftKeys.ICHOR_FLATS, new Biome.BiomeBuilder()
 				.hasPrecipitation(false)
 				.temperature(0.7F)
@@ -421,13 +438,59 @@ final class SiftWorldgen {
 				.mobSpawnSettings(new MobSpawnSettings.Builder().addSpawn(ModEntities.BLUB, 10, 2, 5).build())
 				.generationSettings(flats.build())
 				.build());
+		// Lullaby Hills (D-035; canon by name): the rolling high country. Chime bells in wide drifts, lumen
+		// more often, songwood in loose groves only, emerald in the stone; the Meadow's creatures.
+		BiomeGenerationSettings.Builder hills = new BiomeGenerationSettings.Builder(placed, context.lookup(Registries.CARVER));
+		hills.addFeature(GenerationStep.Decoration.LAKES, SiftFeatures.ICHOR_POOLS_UNDERGROUND);
+		hills.addFeature(GenerationStep.Decoration.LAKES, SiftFeatures.PONDS_MEADOW);
+		hills.addFeature(GenerationStep.Decoration.SURFACE_STRUCTURES, SiftFeatures.SPIRES_MEADOW);
+		hills.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.LONE_TREES_MEADOW);
+		hills.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.LUMEN_HILLS);
+		hills.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.ENDURE_BLOOMS_MEADOW);
+		hills.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.CHIME_BELLS_HILLS);
+		hills.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.GRASS_MEADOW);
+		hills.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.TIDE_ROOTS_SHORES);
+		ores(hills, SiftFeatures.ORE_EMERALD_PLACED);
+		context.register(SiftKeys.LULLABY_HILLS, new Biome.BiomeBuilder()
+				.hasPrecipitation(false)
+				.temperature(0.6F)
+				.downfall(0.4F)
+				.specialEffects(new BiomeSpecialEffects.Builder().waterColor(0x3FB8C8).build())
+				.setAttribute(EnvironmentAttributes.AMBIENT_SOUNDS, new AmbientSounds(
+						Optional.of(ModSounds.MEADOW_LOOP),
+						Optional.empty(),
+						List.of(new AmbientAdditionsSettings(ModSounds.MEADOW_MOOD, 0.0004))))
+				.setAttribute(EnvironmentAttributes.CREATURE_WORLD_GEN_SPAWN_PROBABILITY, 0.03F)
+				.mobSpawnSettings(new MobSpawnSettings.Builder().addSpawn(ModEntities.BLUB, 10, 2, 5).addSpawn(ModEntities.NESTER, 60, 1, 2).build())
+				.generationSettings(hills.build())
+				.build());
+		// The Carapace (D-035; canon: flat and dry, dark blue stone, fields of sand and dust, red and yellow
+		// grass, colossal fossils): Sift dust over carapace stone, husk fossils, grass patches. No creatures;
+		// Nesters come up out of the dust in Endure.
+		BiomeGenerationSettings.Builder carapace = new BiomeGenerationSettings.Builder(placed, context.lookup(Registries.CARVER));
+		carapace.addFeature(GenerationStep.Decoration.LAKES, SiftFeatures.ICHOR_POOLS_UNDERGROUND);
+		carapace.addFeature(GenerationStep.Decoration.SURFACE_STRUCTURES, SiftFeatures.HUSK_FOSSILS_CARAPACE);
+		carapace.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.CARAPACE_GRASS_PATCHES);
+		ores(carapace);
+		context.register(SiftKeys.CARAPACE, new Biome.BiomeBuilder()
+				.hasPrecipitation(false)
+				.temperature(1.0F)
+				.downfall(0.0F)
+				.specialEffects(new BiomeSpecialEffects.Builder().waterColor(0x3FB8C8).build())
+				.setAttribute(EnvironmentAttributes.AMBIENT_SOUNDS, new AmbientSounds(
+						Optional.empty(),
+						Optional.empty(),
+						List.of(new AmbientAdditionsSettings(ModSounds.MEADOW_MOOD, 0.0003))))
+				.mobSpawnSettings(new MobSpawnSettings.Builder().addSpawn(ModEntities.NESTER, 40, 1, 2).build())
+				.generationSettings(carapace.build())
+				.build());
 		// The Hollows: dark hymnstone caverns with ichor pools on their floors. No creatures; its hunters
 		// and its drips-and-echoes ambience come with the rest of M2 (WP-064, WP-070).
 		BiomeGenerationSettings.Builder hollows = new BiomeGenerationSettings.Builder(placed, context.lookup(Registries.CARVER));
 		hollows.addFeature(GenerationStep.Decoration.LAKES, SiftFeatures.ICHOR_POOLS_UNDERGROUND);
 		hollows.addFeature(GenerationStep.Decoration.UNDERGROUND_DECORATION, SiftFeatures.GLOWCAPS_HOLLOWS);
 		hollows.addFeature(GenerationStep.Decoration.UNDERGROUND_DECORATION, SiftFeatures.LUMEN_HOLLOWS);
-		ores(hollows, true);
+		ores(hollows, SiftFeatures.ORE_ECHO_PLACED);
 		context.register(SiftKeys.SIFT_HOLLOWS, new Biome.BiomeBuilder()
 				.hasPrecipitation(false)
 				.temperature(0.7F)
@@ -506,6 +569,13 @@ final class SiftWorldgen {
 		ore(context, SiftFeatures.ORE_EMERALD, ModBlocks.HYMNSTONE_EMERALD_ORE, 3, 0.0F);
 		ore(context, SiftFeatures.ORE_ECHO, ModBlocks.ECHO_ORE, 4, 0.5F);
 		context.register(SiftFeatures.TIDE_ROOTS_PATCH, TideRootsShoreFeature.INSTANCE);
+		// The Carapace (D-035): husk fossils, and red and yellow grass in patches.
+		context.register(SiftFeatures.HUSK_FOSSIL, HuskFossilFeature.INSTANCE);
+		context.register(SiftFeatures.CARAPACE_GRASS, new SimpleBlockFeature(new WeightedStateProvider(
+				WeightedList.<BlockState>builder()
+						.add(ModBlocks.RED_CARAPACE_GRASS.defaultBlockState(), 3)
+						.add(ModBlocks.YELLOW_CARAPACE_GRASS.defaultBlockState(), 2)
+						.build())));
 		// Ponds on the surface (D-026): the same lake with a rim of tide sand where its walls are open.
 		context.register(SiftFeatures.ICHOR_POND, new LakeFeature(
 				BlockStateProvider.holderOf(ModBlocks.ICHOR),
@@ -568,6 +638,20 @@ final class SiftWorldgen {
 
 	static void placedFeatures(BootstrapContext<PlacedFeature> context) {
 		placedOres(context);
+		// The Carapace (D-035): a husk fossil every ten chunks or so; grass in patches on the dust.
+		PlacementUtils.register(context, SiftFeatures.HUSK_FOSSILS_CARAPACE, context.lookup(Registries.FEATURE).getOrThrow(SiftFeatures.HUSK_FOSSIL),
+				RarityFilter.onAverageOnceEvery(10),
+				InSquarePlacement.spread(),
+				PlacementUtils.HEIGHTMAP_WORLD_SURFACE,
+				BiomeFilter.biome());
+		PlacementUtils.register(context, SiftFeatures.CARAPACE_GRASS_PATCHES, context.lookup(Registries.FEATURE).getOrThrow(SiftFeatures.CARAPACE_GRASS),
+				CountPlacement.of(3),
+				InSquarePlacement.spread(),
+				PlacementUtils.HEIGHTMAP_WORLD_SURFACE,
+				BiomeFilter.biome(),
+				CountPlacement.of(16),
+				OffsetPlacement.ofTriangle(5, 1),
+				BlockPredicateFilter.forPredicate(BlockPredicate.ONLY_IN_AIR_PREDICATE));
 		// Wild tide roots at the ichor's edge: two looks per chunk, each over a 13-block square.
 		PlacementUtils.register(context, SiftFeatures.TIDE_ROOTS_SHORES, context.lookup(Registries.FEATURE).getOrThrow(SiftFeatures.TIDE_ROOTS_PATCH),
 				CountPlacement.of(2),
@@ -615,7 +699,8 @@ final class SiftWorldgen {
 					BlockPredicateFilter.forPredicate(BlockPredicate.ONLY_IN_AIR_PREDICATE));
 		}
 		// Flora II (block_flora_ii.md, BALANCE "Flora II"): bells in patches, blooms on shores, lumen rare.
-		for (var bells : List.of(Map.entry(SiftFeatures.CHIME_BELLS_MEADOW, 4), Map.entry(SiftFeatures.CHIME_BELLS_FLATS, 6))) {
+		for (var bells : List.of(Map.entry(SiftFeatures.CHIME_BELLS_MEADOW, 4), Map.entry(SiftFeatures.CHIME_BELLS_FLATS, 6),
+				Map.entry(SiftFeatures.CHIME_BELLS_HILLS, 1))) {
 			PlacementUtils.register(context, bells.getKey(), features.getOrThrow(SiftFeatures.CHIME_BELL_PATCH),
 					RarityFilter.onAverageOnceEvery(bells.getValue()),
 					InSquarePlacement.spread(),
@@ -633,7 +718,8 @@ final class SiftWorldgen {
 					BiomeFilter.biome());
 		}
 		// The Flats are lit twice as often (owner playtest 3, D-029).
-		for (var lumen : List.of(Map.entry(SiftFeatures.LUMEN_MEADOW, 12), Map.entry(SiftFeatures.LUMEN_FLATS, 6))) {
+		for (var lumen : List.of(Map.entry(SiftFeatures.LUMEN_MEADOW, 12), Map.entry(SiftFeatures.LUMEN_FLATS, 6),
+				Map.entry(SiftFeatures.LUMEN_HILLS, 8))) {
 			PlacementUtils.register(context, lumen.getKey(), features.getOrThrow(SiftFeatures.LUMEN_BLOOM),
 					RarityFilter.onAverageOnceEvery(lumen.getValue()),
 					InSquarePlacement.spread(),
@@ -723,7 +809,12 @@ final class SiftWorldgen {
 		HolderGetter<NoiseGeneratorSettings> noise = context.lookup(Registries.NOISE_SETTINGS);
 		context.register(SiftKeys.LEVEL_STEM, new LevelStem(types.getOrThrow(SiftKeys.DIMENSION_TYPE),
 				new NoiseBasedChunkGenerator(MultiNoiseBiomeSource.createFromList(new Climate.ParameterList<>(List.of(
-						surface(-2.0F, FLATS_HUMIDITY, -2.0F, 2.0F, biomes.getOrThrow(SiftKeys.SINGERS_MEADOW)),
+						surface(CARAPACE_HUMIDITY, FLATS_HUMIDITY, HILLS_EROSION, CARAPACE_EROSION, biomes.getOrThrow(SiftKeys.SINGERS_MEADOW)),
+						surface(-2.0F, CARAPACE_HUMIDITY, -0.2F, CARAPACE_EROSION, biomes.getOrThrow(SiftKeys.SINGERS_MEADOW)),
+						surface(-2.0F, CARAPACE_HUMIDITY, CARAPACE_EROSION, 2.0F, biomes.getOrThrow(SiftKeys.CARAPACE)),
+						surface(CARAPACE_HUMIDITY, FLATS_HUMIDITY, CARAPACE_EROSION, 2.0F, biomes.getOrThrow(SiftKeys.SINGERS_MEADOW)),
+						surface(-2.0F, FLATS_HUMIDITY, -2.0F, HILLS_EROSION, biomes.getOrThrow(SiftKeys.LULLABY_HILLS)),
+						surface(-2.0F, CARAPACE_HUMIDITY, HILLS_EROSION, -0.2F, biomes.getOrThrow(SiftKeys.LULLABY_HILLS)),
 						surface(FLATS_HUMIDITY, 2.0F, -2.0F, FLATS_EROSION, biomes.getOrThrow(SiftKeys.SINGERS_MEADOW)),
 						surface(FLATS_HUMIDITY, 2.0F, FLATS_EROSION, 2.0F, biomes.getOrThrow(SiftKeys.ICHOR_FLATS)),
 						byDepth(HOLLOWS_DEPTH, 2.0F, biomes.getOrThrow(SiftKeys.SIFT_HOLLOWS))))),

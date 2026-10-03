@@ -1636,6 +1636,78 @@ def rift_fork() -> Image.Image:
     return im
 
 
+# ---------------------------------------------------------------- the Carapace (D-035)
+def carapace_stone(seed: int = 501) -> Image.Image:
+    """Carapace stone (canon: "dark blue stone"): vanilla stone's grain in the dusty blue of the
+    Carapace's blocks, with a few pale flecks of the dust caught in it."""
+    v = grain(seed, clumps=0.38, cells=4, fine=8, jitter=0.42)
+    im = paint("carapace_stone", by_rank(v, [0.08, 0.2, 0.3, 0.26, 0.12, 0.04]), 0)
+    for x, y in scatter(seed * 13 + 1, 2, 7.0):
+        put(im, [(x, y)], rgba("sift_dust", 1))
+    return im
+
+
+def sift_dust(seed: int = 511) -> Image.Image:
+    """Sift dust (canon: "vast fields of sand and dust"): pale blue-white, as fine as vanilla sand."""
+    v = grain(seed, clumps=0.3, cells=4, fine=8, jitter=0.5)
+    im = paint("sift_dust", by_rank(v, [0.12, 0.3, 0.34, 0.18, 0.06]), 0)
+    for x, y in scatter(seed * 7 + 1, 2, 7.0):
+        put(im, [(x, y)], rgba("sift_dust", 0))
+    return im
+
+
+def husk_bone_side() -> Image.Image:
+    """A husk fossil's bone, along its length (as vanilla's bone block side): pale ivory in long
+    streaks, a darker groove now and then, worn pits."""
+    rnd = random.Random(521)
+    im = Image.new("RGBA", (W, H))
+    px = im.load()
+    cols = [rnd.choice((1, 2, 2, 3)) for _ in range(W)]
+    streaks = tile_noise(W, H, 2, 6, 525)
+    for x in range(W):
+        for y in range(H):
+            i = cols[x] + (1 if streaks[y][x] > 0.68 else 0) - (1 if x in (4, 11) else 0)
+            px[x, y] = rgba("husk_bone", max(0, min(3, i)))
+    for x, y in scatter(523, 4, 5.0):
+        put(im, [(x, y)], rgba("husk_bone", 0))
+    return im
+
+
+def husk_bone_top() -> Image.Image:
+    """The bone's end: a pale rim, a ring, and the darker honeycomb of the marrow inside."""
+    marrow = grain(527, clumps=0.3, cells=4, fine=8, jitter=0.5)
+    im = Image.new("RGBA", (W, H))
+    px = im.load()
+    for y in range(H):
+        for x in range(W):
+            d = max(abs(x - 7.5), abs(y - 7.5))
+            i = 3 if d > 6.5 else 2 if d > 4.5 else 1 if marrow[y][x] > 0.45 else 0
+            px[x, y] = rgba("husk_bone", i)
+    return im
+
+
+def carapace_grass(ramp: str, seed: int, coral: bool) -> Image.Image:
+    """Red and yellow grass (canon: "red and yellow grass patches"): red grows as stiff branching fans,
+    as the screenshot's crimson tufts; yellow as thin swaying blades."""
+    rnd = random.Random(seed)
+    im = _blank()
+    n = len(RAMPS[ramp])
+    for b in range(5 if coral else 7):
+        x0 = 2 + rnd.random() * 12
+        length = (7 if coral else 6) + rnd.random() * (6 if coral else 7)
+        lean = (x0 - 8) / 8 * 0.25 + (rnd.random() - 0.5) * 0.2
+        for t in range(int(length)):
+            y = 15 - t
+            x = int(round(x0 + lean * t))
+            i = min(n - 1, 1 + int(t / length * (n - 1)))
+            _set(im, x, y, rgba(ramp, i))
+            if coral and t > 3 and t % 3 == 0:  # side branches, up and out
+                side = 1 if rnd.random() < 0.5 else -1
+                _set(im, x + side, y - 1, rgba(ramp, min(n - 1, i + 1)))
+                _set(im, x + 2 * side, y - 2, rgba(ramp, n - 1))
+    return im
+
+
 def main() -> None:
     save(hymnstone_pattern(), "block/hymnstone.png")
     save(hymnstone_pattern(seed=4), "block/hymnstone_2.png")
@@ -1657,6 +1729,12 @@ def main() -> None:
     save(songfruit(), "item/songfruit.png")
     save(glowcap_stew(), "item/glowcap_stew.png")
     save(strip(rift_frames()), "entity/rift/rift.png")
+    save(carapace_stone(), "block/carapace_stone.png")
+    save(sift_dust(), "block/sift_dust.png")
+    save(husk_bone_side(), "block/husk_bone_block_side.png")
+    save(husk_bone_top(), "block/husk_bone_block_top.png")
+    save(carapace_grass("carapace_red", 531, True), "block/red_carapace_grass.png")
+    save(carapace_grass("carapace_yellow", 533, False), "block/yellow_carapace_grass.png")
     save(rift_fork(), "item/rift_fork.png")
     save(healthy_sculk_top(), "block/healthy_sculk_top.png")
     save(healthy_sculk_top(seed=22), "block/healthy_sculk_top_2.png")

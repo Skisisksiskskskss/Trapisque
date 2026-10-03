@@ -27,6 +27,10 @@ public final class SiftKeys {
 	public static final ResourceKey<Biome> SIFT_HOLLOWS = ResourceKey.create(Registries.BIOME, TheSift.id("sift_hollows"));
 	/** The Ichor Flats (owner playtest 2, D-026): lowland meadow with shallow, blotchy pools. */
 	public static final ResourceKey<Biome> ICHOR_FLATS = ResourceKey.create(Registries.BIOME, TheSift.id("ichor_flats"));
+	/** Canon (Dungeons II): "a flat, dry biome composed of dark blue stone and vast fields of sand and dust" (D-035). */
+	public static final ResourceKey<Biome> CARAPACE = ResourceKey.create(Registries.BIOME, TheSift.id("carapace"));
+	/** Canon (Dungeons II) by name; drawn as the rolling high country of chime bells and lumen (D-035). */
+	public static final ResourceKey<Biome> LULLABY_HILLS = ResourceKey.create(Registries.BIOME, TheSift.id("lullaby_hills"));
 
 	public static final ResourceKey<WorldClock> TIDES_CLOCK = ResourceKey.create(Registries.WORLD_CLOCK, TheSift.id("tides"));
 	public static final ResourceKey<Timeline> TIDES_TIMELINE = ResourceKey.create(Registries.TIMELINE, TheSift.id("tides"));

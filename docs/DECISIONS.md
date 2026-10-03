@@ -794,3 +794,16 @@ The enduring Nester takes the soul corrupted Nester's pale glowing cyan. The spi
 
 **Revisit if** more official art shows details (the back, the feet, the tail or the lack of one).
 
+## D-035 Canon biomes: the Carapace and Lullaby Hills (2026-10-03) [owner request: canon first] [amends D-032]
+**Context.** The owner asked that content follow what Mojang showed rather than inventions. D-032 planned two biomes, one invented (Hymnstone Rise). Dungeons II names the Carapace, with a written description and an official screenshot (RESEARCH.md S-I5), and Lullaby Hills, by name only.
+
+**Decision.** The Carapace replaces the Hymnstone Rise; Lullaby Hills stays (survival_sift.md §5).
+- **The Carapace:** flat, dry land. Sift dust over carapace stone, red and yellow carapace grass, half-buried husk fossils you can walk into. Nesters only. Colours are drawn to the screenshot.
+- **Lullaby Hills:** the hilly, dry land. Chime bell drifts, more lumen, loose songwood groves, emerald ore.
+
+**Inventions, kept small.** Block names (carapace stone, Sift dust, husk bone block, red/yellow carapace grass) and the fossil's exact shape are ours. So is Lullaby Hills' look.
+
+**Not yet.** Sculkers, bouncy slimes, and enterable humbler husks with rooms.
+
+**Revisit if** more official footage shows Lullaby Hills or the humbler husks' insides.
+

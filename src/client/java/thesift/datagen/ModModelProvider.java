@@ -60,6 +60,12 @@ final class ModModelProvider extends FabricModelProvider {
 		g.createTrivialCube(ModBlocks.CRACKED_HYMNSTONE_BRICKS);
 		g.createTrivialCube(ModBlocks.CHISELED_HYMNSTONE_BRICKS);
 		hymnstoneCuts(g);
+		// The Carapace (D-035).
+		g.createTrivialCube(ModBlocks.CARAPACE_STONE);
+		g.createTrivialCube(ModBlocks.SIFT_DUST);
+		g.createAxisAlignedPillarBlock(ModBlocks.HUSK_BONE_BLOCK, TexturedModel.COLUMN);
+		g.createCrossBlockWithDefaultItem(ModBlocks.RED_CARAPACE_GRASS, BlockModelGenerators.PlantType.NOT_TINTED);
+		g.createCrossBlockWithDefaultItem(ModBlocks.YELLOW_CARAPACE_GRASS, BlockModelGenerators.PlantType.NOT_TINTED);
 		g.family(ModBlocks.COBBLED_HYMNSTONE)
 				.stairs(ModBlocks.COBBLED_HYMNSTONE_STAIRS)
 				.slab(ModBlocks.COBBLED_HYMNSTONE_SLAB)

@@ -2,7 +2,16 @@
 
 Step-by-step checklists the owner can run in-game. Produced at every gate.
 
-## `v0.1.9-alpha` (2026-10-03): rifts, the rift fork, and starting in the Sift
+## `v0.1.10-alpha` (2026-10-03): two canon biomes: the Carapace and Lullaby Hills
+Following what Dungeons II shows (D-035). In a **new world**:
+- **The Carapace:** flat, dry plains of pale **Sift dust** over **dark blue carapace stone**, with **red and yellow grass** in patches, as in Dungeons II's screenshot.
+  - Look for **husk fossils**: giant half-buried rib cages you can walk into, with a hollow skull at one end.
+  - Nesters come up out of the dust in Endure.
+- **Lullaby Hills:** the hilly dry country. Drifts of chime bell flowers, more lumen blooms, scattered songwood.
+  - **Emerald ore** is in its stone.
+- Try `/locate biome thesift:carapace` and `/locate biome thesift:lullaby_hills` in the Sift.
+
+## `v0.1.10-alpha` (2026-10-03), also: rifts, the rift fork, and starting in the Sift
 You asked to get in and out of the Sift without the Deep Dark (D-032, survival_sift.md §2-3). What to try:
 - **Natural rifts:** tall shimmering tears that open on their own. In the Overworld one opens about every 40 minutes near each player; in the Sift, about every 10. They open 24-48 blocks away, and you hear them hum and open.
   - Walk into one and you arrive at the same x and z in the other world, on safe ground.

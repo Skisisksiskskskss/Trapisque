@@ -17,12 +17,162 @@
               0.2
             ],
             "erosion": [
+              -0.35,
+              0.3
+            ],
+            "humidity": [
+              -0.3,
+              0.15
+            ],
+            "offset": 0.0,
+            "temperature": [
               -2.0,
+              2.0
+            ],
+            "weirdness": [
+              -2.0,
+              2.0
+            ]
+          }
+        },
+        {
+          "biome": "thesift:singers_meadow",
+          "parameters": {
+            "continentalness": [
+              -2.0,
+              2.0
+            ],
+            "depth": [
+              -2.0,
+              0.2
+            ],
+            "erosion": [
+              -0.2,
+              0.3
+            ],
+            "humidity": [
+              -2.0,
+              -0.3
+            ],
+            "offset": 0.0,
+            "temperature": [
+              -2.0,
+              2.0
+            ],
+            "weirdness": [
+              -2.0,
+              2.0
+            ]
+          }
+        },
+        {
+          "biome": "thesift:carapace",
+          "parameters": {
+            "continentalness": [
+              -2.0,
+              2.0
+            ],
+            "depth": [
+              -2.0,
+              0.2
+            ],
+            "erosion": [
+              0.3,
               2.0
             ],
             "humidity": [
               -2.0,
+              -0.3
+            ],
+            "offset": 0.0,
+            "temperature": [
+              -2.0,
+              2.0
+            ],
+            "weirdness": [
+              -2.0,
+              2.0
+            ]
+          }
+        },
+        {
+          "biome": "thesift:singers_meadow",
+          "parameters": {
+            "continentalness": [
+              -2.0,
+              2.0
+            ],
+            "depth": [
+              -2.0,
+              0.2
+            ],
+            "erosion": [
+              0.3,
+              2.0
+            ],
+            "humidity": [
+              -0.3,
               0.15
+            ],
+            "offset": 0.0,
+            "temperature": [
+              -2.0,
+              2.0
+            ],
+            "weirdness": [
+              -2.0,
+              2.0
+            ]
+          }
+        },
+        {
+          "biome": "thesift:lullaby_hills",
+          "parameters": {
+            "continentalness": [
+              -2.0,
+              2.0
+            ],
+            "depth": [
+              -2.0,
+              0.2
+            ],
+            "erosion": [
+              -2.0,
+              -0.35
+            ],
+            "humidity": [
+              -2.0,
+              0.15
+            ],
+            "offset": 0.0,
+            "temperature": [
+              -2.0,
+              2.0
+            ],
+            "weirdness": [
+              -2.0,
+              2.0
+            ]
+          }
+        },
+        {
+          "biome": "thesift:lullaby_hills",
+          "parameters": {
+            "continentalness": [
+              -2.0,
+              2.0
+            ],
+            "depth": [
+              -2.0,
+              0.2
+            ],
+            "erosion": [
+              -0.35,
+              -0.2
+            ],
+            "humidity": [
+              -2.0,
+              -0.3
             ],
             "offset": 0.0,
             "temperature": [

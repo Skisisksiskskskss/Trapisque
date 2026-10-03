@@ -97,7 +97,9 @@ public final class SiftHollowsTest {
 								int wz = chunk.getPos().getMinBlockZ() + z;
 								biomeChecks++;
 								boolean meadowAbove = level.getBiome(new BlockPos(wx, ground + 1, wz)).is(SiftKeys.SINGERS_MEADOW)
-										|| level.getBiome(new BlockPos(wx, ground + 1, wz)).is(SiftKeys.ICHOR_FLATS);
+										|| level.getBiome(new BlockPos(wx, ground + 1, wz)).is(SiftKeys.ICHOR_FLATS)
+										|| level.getBiome(new BlockPos(wx, ground + 1, wz)).is(SiftKeys.CARAPACE)
+										|| level.getBiome(new BlockPos(wx, ground + 1, wz)).is(SiftKeys.LULLABY_HILLS);
 								boolean hollowsBelow = level.getBiome(new BlockPos(wx, ground - 50, wz)).is(SiftKeys.SIFT_HOLLOWS);
 								meadowRight += meadowAbove ? 1 : 0;
 								hollowsRight += hollowsBelow ? 1 : 0;

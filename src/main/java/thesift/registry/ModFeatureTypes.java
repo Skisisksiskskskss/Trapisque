@@ -5,6 +5,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 
 import thesift.TheSift;
 import thesift.world.feature.DrapesDecorator;
+import thesift.world.feature.HuskFossilFeature;
 import thesift.world.feature.HymnstoneSpireFeature;
 import thesift.world.feature.EndureBloomsFeature;
 import thesift.world.feature.IchorFlatsFeature;
@@ -21,6 +22,7 @@ public final class ModFeatureTypes {
 		Registry.register(BuiltInRegistries.FEATURE_TYPE, TheSift.id("endure_blooms"), EndureBloomsFeature.CODEC);
 		Registry.register(BuiltInRegistries.FEATURE_TYPE, TheSift.id("lumen_bloom"), LumenBloomFeature.CODEC);
 		Registry.register(BuiltInRegistries.FEATURE_TYPE, TheSift.id("tide_roots_shore"), TideRootsShoreFeature.CODEC);
+		Registry.register(BuiltInRegistries.FEATURE_TYPE, TheSift.id("husk_fossil"), HuskFossilFeature.CODEC);
 	}
 
 	private ModFeatureTypes() {
