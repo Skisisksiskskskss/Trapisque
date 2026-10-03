@@ -506,6 +506,16 @@ public class Blub extends TamableAnimal {
 		}
 	}
 
+	/**
+	 * A sheltering (curled) or restless blub steps carefully, as a crouching cat does (system_hunt.md
+	 * §13): its steps and landings are muffled for listeners, so the herald stays a warning rather
+	 * than a dinner bell.
+	 */
+	@Override
+	public boolean isSteppingCarefully() {
+		return super.isSteppingCarefully() || this.isCurled() || this.isRestless();
+	}
+
 	/** A baby blub is drawn and sized at 0.6 (items_m2.md). */
 	@Override
 	public float getAgeScale() {

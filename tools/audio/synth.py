@@ -703,6 +703,121 @@ def blub(rng: np.random.Generator) -> None:
         write(f"blub/step{i}", out, ["mob/frog/step1.ogg", "mob/frog/step2.ogg"])
 
 
+def clicks(rng: np.random.Generator, count: int, spacing: float, body=(1800, 3600), q: float = 7.0, jitter: float = 0.3) -> np.ndarray:
+    """A train of dry clicks (a beak, a fin, a rattle) at about `spacing` seconds, each ringing through a small hard body."""
+    n = n_of(spacing * count + 0.05)
+    imp = np.zeros(n)
+    t = 0.005
+    for _ in range(count):
+        s = n_of(t)
+        if s < n:
+            imp[s] += rng.uniform(0.5, 1.0)
+        t += spacing * rng.uniform(1 - jitter, 1 + jitter)
+    out = sum(reson(imp, f * rng.uniform(0.9, 1.1), q) for f in body)
+    return out + 0.15 * hp(imp, 4000)
+
+
+def nester(rng: np.random.Generator) -> None:
+    """The Nester (mob_nester.md, Audio): a dry, clicking, long-legged thing. Its gallop is loud on purpose."""
+    growl = ["mob/wolf/growl1.ogg", "mob/wolf/growl2.ogg", "mob/spider/say1.ogg", "mob/spider/say2.ogg"]
+    for i in range(1, 5):  # ambient: dry beak clicks and a low trilled chirr
+        d = 1.0
+        out = np.zeros(n_of(d))
+        place(out, clicks(rng, rng.integers(2, 5), 0.07, (1600 + 150 * i, 3300)), 0.0, 0.6)
+        chirr = voice([150 + 10 * i, 160 + 10 * i, 140], [(0, "o"), (1, "u")], 0.55, rng, 1.0, 1.6, 0.25, 0.02, 0.1, False)
+        chirr *= 0.6 + 0.4 * np.sin(2 * np.pi * 28 * t_axis(len(chirr)))
+        place(out, chirr, 0.25, 0.8)
+        write(f"nester/ambient{i}", out, growl)
+    for i in range(1, 4):  # ambient, enduring: the chirr deeper, with a rasp
+        d = 1.2
+        out = np.zeros(n_of(d))
+        place(out, clicks(rng, 3, 0.09, (1200, 2600)), 0.0, 0.5)
+        chirr = voice([100 + 6 * i, 110, 92], [(0, "o"), (0.6, "a"), (1, "u")], 0.8, rng, 0.9, 1.4, 0.35, 0.03, 0.2, False)
+        rasp = bp(noise(len(chirr), rng), 300, 2500) * (0.5 + 0.5 * np.sin(2 * np.pi * 31 * t_axis(len(chirr)))) ** 2 * ar(len(chirr), 0.05, 0.3)
+        place(out, chirr * (0.6 + 0.4 * np.sin(2 * np.pi * 24 * t_axis(len(chirr)))) + 0.25 * norm(rasp), 0.2, 0.9)
+        write(f"nester/ambient_enduring{i}", out, growl)
+    for i in range(1, 4):  # hear: the crest snapping open, then a rising whistle
+        d = 0.75
+        n = n_of(d)
+        out = np.zeros(n)
+        place(out, rustle(0.09, lambda u: 1 - u, rng, 2500, 9000, (0.001, 0.005), (3, 6), 4000), 0.0, 0.8)
+        place(out, clicks(rng, 2, 0.02, (2400, 4800)), 0.0, 0.5)
+        m = n_of(0.5)
+        whistle = osc(np.geomspace(800 + 60 * i, 1700 + 80 * i, m), m) * swell(m, 1.5)
+        breath = reson(noise(m, rng), 1300, 6) * swell(m, 1.5)
+        place(out, whistle * 0.5 + 0.2 * norm(breath), 0.1)
+        write(f"nester/hear{i}", out, ["mob/warden/listening_1.ogg", "mob/warden/listening_2.ogg"])
+    for i in range(1, 5):  # gallop: heavy quick double thuds, a scuff of grass
+        out = np.zeros(n_of(0.3))
+        place(out, thump(rng, 72 + 4 * i, 0.12, 1.2), 0.0)
+        place(out, thump(rng, 66 + 4 * i, 0.12, 1.0), 0.085 + 0.01 * rng.uniform())
+        place(out, rustle(0.15, lambda u: 1 - u, rng, 800, 4000, rate=900), 0.0, 0.2)
+        write(f"nester/gallop{i}", out, ["mob/horse/gallop1.ogg", "mob/horse/gallop2.ogg", "mob/ravager/step1.ogg"])
+    for i in range(1, 4):  # sniff: two or three quick inhales through a long snout
+        out = np.zeros(n_of(0.5))
+        for k in range(2 + (i % 2)):
+            m = n_of(0.09)
+            puff = reson(noise(m, rng), 1700 + 200 * k, 3) * np.linspace(0.2, 1, m) ** 2 * ar(m, 0.01, 0.02)
+            place(out, puff, 0.12 * k)
+        write(f"nester/sniff{i}", out, ["mob/fox/sniff1.ogg", "mob/fox/sniff2.ogg"])
+    for i in range(1, 4):  # hiss: the lunge's windup, a hiss and a click of the jaw
+        d = 0.5
+        n = n_of(d)
+        hiss = hp(noise(n, rng), 2200) * ar(n, 0.04, 0.2) * (0.8 + 0.2 * slow_noise(n, 20, rng))
+        out = 0.6 * norm(hiss)
+        place(out, clicks(rng, 1, 0.01, (1500, 3000), 6), d - 0.07, 0.6)
+        write(f"nester/hiss{i}", out, ["mob/cat/hiss1.ogg", "mob/cat/hiss2.ogg"])
+    for i in range(1, 4):  # bite: a wet snap of the jaws
+        out = np.zeros(n_of(0.25))
+        place(out, snap(rng, (900 + 100 * i, 2100, 3600), 6.0, 0.01), 0.0, 1.0)
+        place(out, squish(rng, 0.08, 1400, 500, 0.0), 0.005, 0.4)
+        write(f"nester/bite{i}", out, ["mob/wolf/bark1.ogg", "entity/fox/bite1.ogg", "mob/fox/bite1.ogg"])
+    for i in range(1, 3):  # guard: a dry rattle of the fins
+        write(f"nester/guard{i}", clicks(rng, 16, 0.025, (1400 + 200 * i, 2900, 5000), 9, 0.15) * ar(n_of(0.45), 0.02, 0.2)[:n_of(0.025 * 16 + 0.05)],
+              ["mob/rattle.ogg", "block/bamboo/step1.ogg"])
+    for i in range(1, 3):  # dodge: a quick whoosh
+        n = n_of(0.22)
+        w = sweep(noise(n, rng), np.geomspace(400, 2600 + 300 * i, n), 1.5) * swell(n, 1.5)
+        write(f"nester/dodge{i}", w, ["entity/player/attack/sweep1.ogg", "entity/player/attack/sweep2.ogg"])
+    for i in range(1, 3):  # stagger: a dazed grunt and a loose rattle
+        out = np.zeros(n_of(0.7))
+        place(out, voice([180, 150, 120], [(0, "a"), (1, "u")], 0.45, rng, 1.0, 1.5, 0.3, 0.05, 0.2, False), 0.0)
+        place(out, clicks(rng, 6, 0.05, (1300, 2700), 7, 0.4), 0.2, 0.5)
+        write(f"nester/stagger{i}", out, ["mob/ravager/stun1.ogg", "mob/ravager/stun2.ogg"])
+    for i in range(1, 3):  # emerge: soil crumbling apart, a heave, a shake
+        d = 2.0
+        out = np.zeros(n_of(d))
+        place(out, rustle(1.5, lambda u: np.sin(np.pi * u) ** 1.5, rng, 200, 1800, (0.004, 0.03), (1.5, 4), 900), 0.0, 0.8)
+        for k in range(3):
+            place(out, thump(rng, 60 + 8 * k, 0.15, 1.0), 0.3 + 0.35 * k + rng.uniform(0, 0.1), 0.7)
+        place(out, clicks(rng, 10, 0.03, (1200, 2500), 6, 0.3), 1.5, 0.4)
+        write(f"nester/emerge{i}", out, ["mob/warden/emerge.ogg"])
+    for i in range(1, 3):  # burrow: forelegs pawing, the soil closing over
+        d = 1.8
+        out = np.zeros(n_of(d))
+        for k in range(5):
+            place(out, add(thump(rng, 90, 0.08, 0.6), 0.5 * rustle(0.12, lambda u: 1 - u, rng, 300, 2500, rate=1200)), 0.12 * k + rng.uniform(0, 0.03))
+        place(out, rustle(1.0, lambda u: np.sin(np.pi * u), rng, 150, 1200, (0.005, 0.03), (1.5, 3), 900), 0.6, 0.8)
+        write(f"nester/burrow{i}", out, ["mob/warden/dig.ogg"])
+    for i in range(1, 4):  # hurt: a sharp squawk
+        write(f"nester/hurt{i}", voice([520 + 40 * i, 900, 560], [(0, "a"), (0.4, "e"), (1, "a")], 0.2, rng, 1.1, 1.1, 0.2, 0.03, 0.15, False),
+              ["mob/wolf/hurt1.ogg", "mob/wolf/hurt2.ogg", "mob/spider/say1.ogg"])
+    for i in range(1, 3):  # death: a falling whistle and a collapse
+        d = 1.3
+        n = n_of(d)
+        out = np.zeros(n)
+        m = n_of(0.8)
+        place(out, (osc(np.geomspace(1400, 260, m), m) + 0.3 * norm(reson(noise(m, rng), 900, 4))) * swell(m, 0.8), 0.0, 0.5)
+        place(out, thump(rng, 70, 0.25, 1.3), 0.75)
+        place(out, rustle(0.3, lambda u: 1 - u, rng, 400, 3000, rate=900), 0.76, 0.3)
+        write(f"nester/death{i}", out, ["mob/wolf/death.ogg", "mob/spider/death.ogg"])
+    for i in range(1, 5):  # step: light quick steps (played at 0.15)
+        out = np.zeros(n_of(0.12))
+        place(out, thump(rng, 130 + 10 * i, 0.05, 0.5), 0.0)
+        place(out, rustle(0.06, lambda u: 1 - u, rng, 1500, 6000, (0.002, 0.006), rate=900), 0.002, 0.2)
+        write(f"nester/step{i}", out, ["mob/spider/step1.ogg", "mob/spider/step2.ogg"])
+
+
 def flora(rng: np.random.Generator) -> None:
     """Flora II: wrack unfurls wet and slippery, the Endure bloom's glassy petals rustle open, a pick
     is a stem snapping, chime bells ring small and sing along with music."""
@@ -758,6 +873,7 @@ def main() -> None:
     blub(np.random.default_rng(20261041))
     notice(np.random.default_rng(20261002))
     flora(np.random.default_rng(20261003))
+    nester(np.random.default_rng(20261051))
     log = REPO / "docs" / "DESIGN" / "audio_levels.md"
     log.write_text("# Audio levels\n\nGenerated by `tools/audio/synth.py` (procedural foley, D-029): each sound's peak / RMS (dBFS, audible part) after matching the RMS to the listed vanilla sounds' mean; the vanilla levels are measured from the game's own files, which are never copied. Mono 44.1 kHz Ogg Vorbis.\n\n| Sound | Length | Peak / RMS | Vanilla reference | Reference peak, RMS |\n|---|---|---|---|---|\n" + "\n".join(LOG) + "\n")
     print(f"{len(LOG)} sounds written")

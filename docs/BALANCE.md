@@ -119,6 +119,7 @@ enduring chance is the system's (25 %, Hard 35 %); Peaceful removes it.
 | Sounds | gallop volume 1.5 (24 blocks), emerge volume 2 (32), steps 0.15 subtitled | warden steps | Heard before it hears you |
 | Out of reach | target dropped after 200 ticks without a path | — | Pillars are safe, as in vanilla |
 | Spawning | Singer's Meadow (Hymnstone Rise from M3), Endure only, on soil, groups 1–2; weight in WP-070 (proposal 60 against the Bloombud's 100) | — | Nesters are the event; buds the commoner danger |
+| Local cap (D-030) | No natural spawn where 12 Nesters are within 48 blocks | — | Until the Bloombud shares the monster cap (70) |
 
 ## Bloombud (WP-062, frozen 2026-10-02)
 The ambusher (mob_bloombud.md), a hunter that doesn't listen. **Difficulty:** damage to players

@@ -370,7 +370,8 @@ final class SiftWorldgen {
 						List.of(new AmbientAdditionsSettings(ModSounds.MEADOW_MOOD, 0.0006))))
 				// Blubs: about one group per 30 chunks at generation (vanilla's default is 0.1), mob_blub.md.
 				.setAttribute(EnvironmentAttributes.CREATURE_WORLD_GEN_SPAWN_PROBABILITY, 0.03F)
-				.mobSpawnSettings(new MobSpawnSettings.Builder().addSpawn(ModEntities.BLUB, 10, 2, 5).build())
+				// Nesters (mob_nester.md, Spawning): monsters, 1-2, Endure only by their spawn rule.
+				.mobSpawnSettings(new MobSpawnSettings.Builder().addSpawn(ModEntities.BLUB, 10, 2, 5).addSpawn(ModEntities.NESTER, 60, 1, 2).build())
 				.generationSettings(generation.build())
 				.build());
 		// The Ichor Flats (owner playtest 2, D-026): the Meadow's wet lowlands, where shallow, blotchy

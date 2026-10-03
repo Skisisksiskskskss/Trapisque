@@ -37,6 +37,8 @@ public final class ModItems {
 
 	public static final Item BLUB_SPAWN_EGG = other(register(key("blub_spawn_egg"), SpawnEggItem::new,
 			new Item.Properties().spawnEgg(ModEntities.BLUB)));
+	public static final Item NESTER_SPAWN_EGG = other(register(key("nester_spawn_egg"), SpawnEggItem::new,
+			new Item.Properties().spawnEgg(ModEntities.NESTER)));
 	/** Picked from open tidewrack in Thrive (block_flora_ii.md §1); its uses come in WP-065. */
 	public static final Item TIDEWRACK_FROND = other(register(key("tidewrack_frond"), Item::new,
 			new Item.Properties().compostable(ContextIntProviders.COMPOSTABLE_LOW)));

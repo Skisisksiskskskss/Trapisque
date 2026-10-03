@@ -256,6 +256,16 @@ public final class SiftPreviewClientTest implements FabricClientGameTest {
 			clearChat(context);
 			context.waitTicks(40);
 			context.takeScreenshot("look_blub");
+			// WP-067: a Nester (and an enduring one) in the same framing, a few blocks off.
+			world.getServer().runCommand(String.format(java.util.Locale.ROOT,
+					"execute in thesift:the_sift run summon thesift:nester %.1f %.1f %.1f {NoAI:1b,Rotation:[%.1ff,0f]}",
+					meadow[0] + fx * 5.0 - fz * 1.5, meadow[1] - 0.4, meadow[2] + fz * 5.0 + fx * 1.5, meadow[3] + 150.0));
+			world.getServer().runCommand(String.format(java.util.Locale.ROOT,
+					"execute in thesift:the_sift run summon thesift:nester %.1f %.1f %.1f {NoAI:1b,Enduring:1b,Rotation:[%.1ff,0f]}",
+					meadow[0] + fx * 6.0 + fz * 2.5, meadow[1] - 0.4, meadow[2] + fz * 6.0 - fx * 2.5, meadow[3] + 210.0));
+			clearChat(context);
+			context.waitTicks(40);
+			context.takeScreenshot("look_nester");
 			run(world, "tp @a %.1f %.1f %.1f %.1f %.1f", meadow[0], meadow[1], meadow[2], meadow[3], meadow[4]);
 			world.getServer().runCommand("execute in thesift:the_sift run time of thesift:tides set thesift:endure");
 			clearChat(context);

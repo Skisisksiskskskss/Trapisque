@@ -704,3 +704,26 @@ It also found that M1's Tide changed nothing in play (SF4), since the mission as
 - The sounds were checked by spectrogram, not by ear (the build machine has no speakers). The owner's ears are the test.
 
 **Revisit if** the grain now reads as blurry, the foraging blub fetches so much that it sidesteps a visit to the basin (raise the cooldown), or a sound reads wrong in game.
+
+## D-030 The hunt and the Nester in code: a local cap, and what waits (2026-10-03) [WP-066, WP-067]
+**Context.** The hunt (system_hunt.md) and the Nester (mob_nester.md) are frozen designs. The Nester is the only hunter in code: the Bloombud (WP-068) isn't. So the Meadow's monster spawn list holds the Nester alone, and vanilla's monster cap (70 around each player) would fill with Nesters in every Endure. The design expects 10–20, with Bloombuds commoner.
+
+**Decision.**
+- **In code:**
+  - **Hearing.** One vanilla vibration listener per Nester: radius 16 in Endure and 0 otherwise, the tag `#thesift:hunter_can_listen`, and §3's filters (run when the sound is made and again on arrival). Wool, sneaking and the travel delay are vanilla's.
+  - **States and the duel.** Tell, gallop, re-aim, search; the lunge (a windup with locked aim, a leap with a live bite), the standing bite, recovery, and the circle with the guard. The guard's dodge works as mob_nester.md says. A shield block staggers it.
+  - **Retreat and the sweep.** Retreat at a UUID-staggered moment in falling Flow, onto soil. The Thrive sweep: a per-tick check, a sweep of every loaded hunter on Thrive's first tick, and a check of hunters loaded later. A persistent enduring Nester reverts instead.
+  - **Enduring variants.** 25 % of natural Endure spawns, 35 % on Hard: health 30, bite ×1.25, knockback resistance +0.2, XP 10. They show spikes, a soul-wisp trail and glyph-cyan eyes and spine.
+  - **Lumen.** Destinations move to the rim, wander targets are re-picked, a Nester walks out when inside, and a target inside lumen is dropped. No spawns within 8.
+  - **Other rules.** Natural spawns only on soil, only in Endure. Heard You. A sheltering or restless blub steps carefully.
+- **A local cap:** a natural Nester spawn is refused where 12 or more Nesters are already within 48 blocks. This holds until the Bloombud shares the monster cap (WP-068, then WP-070 tunes the weights); then it can be revisited.
+- **Tests that need a Tide** run in their own test environments (vanilla's `clock_time`: `thesift-gametest:endure`, `dawn`, `next_thrive`), which set the Tide clock for their batch and restore it after, so tests needing different Tides never run side by side.
+- **Not yet, in order:**
+  - Quiet Waters (Should; the player attachment);
+  - the measured cost budgets (§12; the mob's against wolves);
+  - the speed and lunge-reach GameTests;
+  - the one-wide-corridor back-off;
+  - rim pacing, which is a simple strafe on the rim for the search's time;
+  - the lull (M4: the horn).
+
+**Revisit if** Endures feel empty or crowded once the Bloombud is in (the cap, the weights), or the perf measurement fails its ≤ 1.5× budget.

@@ -1048,6 +1048,119 @@ def blub_glow_texture() -> Image.Image:
     return im  # the belly only: a lit strip on the front read as a mouth that came out at night (D-029)
 
 
+def nester_texture() -> Image.Image:
+    """64 x 64, laid out for NesterModel (mob_nester.md): a moss-green hide drawn as vanilla's mobs are,
+    lit on top and darker toward the belly, with scale-like clumps; a paler throat and snout tip; gold
+    eyes set back on the head's sides; pale gold fins; darker shins and feet."""
+    im = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
+    px = im.load()
+    hide = [rgba("nester", i) for i in range(6)]
+    clumps = grain(211, w=64, h=64, clumps=0.5, cells=16, fine=32, jitter=0.25)
+    dither = random.Random(213)
+
+    def face(rect, top, bottom, ramp=hide, top_i=5):
+        x0, y0, w, h = rect
+        for y in range(y0, y0 + h):
+            k = (y - y0) / max(1, h - 1)
+            base = top + (bottom - top) * k
+            for x in range(x0, x0 + w):
+                v = clumps[y][x]
+                i = base + (0.7 if v > 0.66 else -0.7 if v < 0.32 else 0.0) + (dither.random() - 0.5) * 0.6
+                px[x, y] = ramp[max(0, min(top_i, int(round(i))))]
+
+    def box(u, v, w, h, d, top=4.6, bottom=1.6, under=1.0):
+        for name, rect in box_faces(u, v, w, h, d).items():
+            if rect[2] <= 0 or rect[3] <= 0:
+                continue
+            if name == "top":
+                face(rect, top + 0.3, top)
+            elif name == "bottom":
+                face(rect, under, under)
+            else:
+                face(rect, top, bottom)
+
+    box(0, 0, 10, 8, 14)                       # body
+    box(0, 22, 4, 8, 4, 4.4, 2.4)              # neck
+    box(16, 22, 5, 5, 6, 4.8, 2.6)             # head
+    box(38, 22, 3, 3, 4, 4.4, 3.0)             # snout
+    box(38, 29, 3, 1, 4, 2.6, 2.0, 1.4)        # jaw
+    box(0, 34, 3, 6, 3, 3.8, 2.2)              # thigh
+    box(12, 34, 2, 6, 2, 2.4, 0.6, 0.3)        # shin and foot
+    box(20, 34, 2, 2, 5, 4.2, 2.6)             # tail tuft
+    crest = [rgba("nester_crest", i) for i in range(5)]
+    for rect in box_faces(34, 34, 0, 4, 3).values():   # fins: gold, lighter at the edge
+        if rect[2] > 0 and rect[3] > 0:
+            face(rect, 3.6, 1.2, crest, 4)
+    for rect in box_faces(40, 34, 1, 4, 1).values():   # enduring spikes: dark tipped pale
+        if rect[2] > 0 and rect[3] > 0:
+            face(rect, 3.0, 0.4, crest, 4)
+    # A paler throat down the neck's front and under the jaw.
+    nx, ny, nw, nh = box_faces(0, 22, 4, 8, 4)["front"]
+    for y in range(ny + 1, ny + nh):
+        for x in range(nx + 1, nx + nw - 1):
+            px[x, y] = hide[5] if (x + y) % 3 else hide[4]
+    # Eyes on the head's sides, near the front: a pale gold iris round a dark pupil.
+    head = box_faces(16, 22, 5, 5, 6)
+    rx, ry, rw, rh = head["right"]
+    lx, ly, lw, lh = head["left"]
+    for ex, ey in ((rx + rw - 2, ry + 1), (lx + 1, ly + 1)):
+        put(im, [(ex, ey)], rgba("nester_eye", 1))
+        put(im, [(ex, ey + 1)], rgba("nester_eye", 0))
+    # Nostrils at the snout's tip.
+    sx, sy, sw, sh = box_faces(38, 22, 3, 3, 4)["front"]
+    put(im, [(sx, sy), (sx + sw - 1, sy)], rgba("nester", 0))
+    return im
+
+
+def nester_glow_texture() -> Image.Image:
+    """An enduring Nester's glow (system_hunt.md §5): glyph-cyan eyes and a line down its spine."""
+    im = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
+    head = box_faces(16, 22, 5, 5, 6)
+    rx, ry, rw, rh = head["right"]
+    lx, ly, lw, lh = head["left"]
+    for ex, ey in ((rx + rw - 2, ry + 1), (lx + 1, ly + 1)):
+        put(im, [(ex, ey), (ex, ey + 1)], rgba("glyph", 2))
+    tx, ty, tw, th = box_faces(0, 0, 10, 8, 14)["top"]
+    for y in range(ty, ty + th):
+        put(im, [(tx + tw // 2, y)], rgba("glyph", 1 if y % 2 else 2))
+    for rect in box_faces(40, 34, 1, 4, 1).values():
+        x0, y0, w, h = rect
+        for y in range(y0, y0 + h):
+            for x in range(x0, x0 + w):
+                put(im, [(x, y)], rgba("glyph", 1))
+    return im
+
+
+def nester_spawn_egg() -> Image.Image:
+    rows = [
+        "................",
+        "......2332......",
+        ".....23443......",
+        "....2334443.....",
+        "....233g443.....",
+        "...2233g4433....",
+        "...2e3gg443e3...",
+        "...223g33433....",
+        "...2223g3332....",
+        "...22223g332....",
+        "....222g332.....",
+        "....2222222.....",
+        ".....11111......",
+        "......000.......",
+        "................",
+        "................",
+    ]
+    c = {str(i): rgba("nester", i) for i in range(6)}
+    c["g"] = rgba("nester_crest", 3)
+    c["e"] = rgba("nester_eye", 1)
+    im = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    for y, row in enumerate(rows):
+        for x, ch in enumerate(row):
+            if ch != ".":
+                put(im, [(x, y)], c[ch])
+    return im
+
+
 def blub_spawn_egg() -> Image.Image:
     rows = [
         "................",
@@ -1162,6 +1275,9 @@ def main() -> None:
     save(glow_petal(), "particle/glow_petal.png")
     save(blub_texture(), "entity/blub/blub.png")
     save(blub_glow_texture(), "entity/blub/blub_glow.png")
+    save(nester_texture(), "entity/nester/nester.png")
+    save(nester_glow_texture(), "entity/nester/nester_glow.png")
+    save(nester_spawn_egg(), "item/nester_spawn_egg.png")
     save(blub_spawn_egg(), "item/blub_spawn_egg.png")
     save(trill(), "particle/trill.png")
     print("textures written")

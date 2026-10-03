@@ -13,6 +13,8 @@ import net.minecraft.client.resources.model.sprite.Material;
 import thesift.TheSift;
 import thesift.client.entity.BlubModel;
 import thesift.client.entity.BlubRenderer;
+import thesift.client.entity.NesterModel;
+import thesift.client.entity.NesterRenderer;
 import thesift.client.particle.SiftMoteParticle;
 import thesift.registry.ModEntities;
 import thesift.registry.ModFluids;
@@ -35,7 +37,9 @@ public final class TheSiftClient implements ClientModInitializer {
 		ParticleProviderRegistry.getInstance().register(ModParticles.GLIMMER, FireflyParticle.FireflyProvider::new);
 		ParticleProviderRegistry.getInstance().register(ModParticles.GLOW_PETAL, SiftMoteParticle.GlowPetalProvider::new);
 		ModelLayerRegistry.registerModelLayer(BlubRenderer.LAYER, BlubModel::createBodyLayer);
+		ModelLayerRegistry.registerModelLayer(NesterRenderer.LAYER, NesterModel::createBodyLayer);
 		EntityRenderers.register(ModEntities.BLUB, BlubRenderer::new);
+		EntityRenderers.register(ModEntities.NESTER, NesterRenderer::new);
 		// The sound manager exists once the client has started.
 		ClientLifecycleEvents.CLIENT_STARTED.register(client -> MusicListener.install());
 	}

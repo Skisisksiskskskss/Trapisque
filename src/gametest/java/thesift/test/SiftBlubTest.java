@@ -353,14 +353,21 @@ public final class SiftBlubTest {
 	}
 
 	/** Natural spawns stop in Endure; generation spawns don't (a lit spot in the Sift). */
-	@GameTest(dimension = "thesift:the_sift", structure = SiftBasinTest.BIG)
+	@GameTest(dimension = "thesift:the_sift", structure = SiftBasinTest.BIG, maxTicks = 100)
 	public void naturalSpawnsWaitOutEndure(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		helper.setBlock(new BlockPos(4, 0, 4), ModBlocks.TIDE_SAND);
 		helper.setBlock(new BlockPos(5, 1, 4), Blocks.GLOWSTONE);
 		BlockPos at = helper.absolutePos(new BlockPos(4, 1, 4));
 		var server = level.getServer();
-		helper.runAfterDelay(10, () -> checkSpawnsAcrossTides(helper, level, at, server)); // let the glowstone's light spread
+		// Wait for the glowstone's light to spread (the light engine can lag a few ticks under load).
+		boolean[] checked = {false};
+		helper.onEachTick(() -> {
+			if (!checked[0] && level.getRawBrightness(at, 0) > 8) {
+				checked[0] = true;
+				checkSpawnsAcrossTides(helper, level, at, server);
+			}
+		});
 	}
 
 	private static void checkSpawnsAcrossTides(GameTestHelper helper, ServerLevel level, BlockPos at, net.minecraft.server.MinecraftServer server) {

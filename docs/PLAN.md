@@ -52,8 +52,8 @@ Only one WP is IN PROGRESS at a time.
 | WP-063 | Sift Hollows: the cave layer and glowcap pools | 4 | L | IN PROGRESS (caves done in WP-054; glowcap pools wait for WP-064) |
 | WP-064 | Flora II: tidewrack, Endure bloom, glowcap, chime bell flower, lumen bloom | 4 | L | IN PROGRESS (design frozen; code under way) |
 | WP-065 | Materials and items: tidewrack frond, Endure petal, lumen lantern, blub treats | 4 | M | DONE (2026-10-03) |
-| WP-066 | The hearing rule and hunter retreat; lumen repelling hunters | 4 | L | TODO |
-| WP-067 | Nester: art, audio, AI, tests | 4 | L | TODO |
+| WP-066 | The hearing rule and hunter retreat; lumen repelling hunters | 4 | L | IN PROGRESS (in code, D-030; Quiet Waters and the cost measurement remain) |
+| WP-067 | Nester: art, audio, AI, tests | 4 | L | IN PROGRESS (in code, D-030; speed/reach tests, perf, corridor back-off remain) |
 | WP-068 | Bloombud: art, audio, AI, tests | 4 | L | TODO |
 | WP-069 | Enduring variants (the rule, with non-colour markers) | 4 | M | TODO |
 | WP-070 | Spawn tables and the gate sanctuary rule | 4 | M | TODO |

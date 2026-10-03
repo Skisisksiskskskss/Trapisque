@@ -84,5 +84,14 @@ final class ModAdvancementProvider extends FabricAdvancementProvider {
 				.addCriterion("has_frond", InventoryChangeTrigger.TriggerInstance.hasItems(ModItems.TIDEWRACK_FROND))
 				.build(SiftAdvancements.LOW_TIDE);
 		out.accept(lowTide);
+		AdvancementHolder heardYou = Advancement.Builder.advancement()
+				.parent(enter)
+				.display(ModItems.NESTER_SPAWN_EGG,
+						Component.translatable("advancements.thesift.heard_you.title"),
+						Component.translatable("advancements.thesift.heard_you.description"),
+						AdvancementType.TASK, true, true, false)
+				.addCriterion(SiftAdvancements.AWARDED, CriteriaTriggers.IMPOSSIBLE.createCriterion(new ImpossibleTrigger.TriggerInstance()))
+				.build(SiftAdvancements.HEARD_YOU);
+		out.accept(heardYou);
 	}
 }

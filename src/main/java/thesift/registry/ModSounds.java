@@ -40,6 +40,22 @@ public final class ModSounds {
 	public static final SoundEvent BLUB_DEATH = register("entity.blub.death");
 	public static final SoundEvent BLUB_HOP = register("entity.blub.hop");
 	public static final SoundEvent BLUB_STEP = register("entity.blub.step");
+	// The Nester (mob_nester.md, Audio).
+	public static final SoundEvent NESTER_AMBIENT = register("entity.nester.ambient");
+	public static final SoundEvent NESTER_AMBIENT_ENDURING = register("entity.nester.ambient_enduring");
+	public static final SoundEvent NESTER_HEAR = register("entity.nester.hear");
+	public static final SoundEvent NESTER_GALLOP = register("entity.nester.gallop");
+	public static final SoundEvent NESTER_SNIFF = register("entity.nester.sniff");
+	public static final SoundEvent NESTER_HISS = register("entity.nester.hiss");
+	public static final SoundEvent NESTER_BITE = register("entity.nester.bite");
+	public static final SoundEvent NESTER_GUARD = register("entity.nester.guard");
+	public static final SoundEvent NESTER_DODGE = register("entity.nester.dodge");
+	public static final SoundEvent NESTER_STAGGER = register("entity.nester.stagger");
+	public static final SoundEvent NESTER_EMERGE = register("entity.nester.emerge");
+	public static final SoundEvent NESTER_BURROW = register("entity.nester.burrow");
+	public static final SoundEvent NESTER_HURT = register("entity.nester.hurt");
+	public static final SoundEvent NESTER_DEATH = register("entity.nester.death");
+	public static final SoundEvent NESTER_STEP = register("entity.nester.step");
 	public static final SoundEvent TIDEWRACK_OPEN = register("block.tidewrack.open");
 	public static final SoundEvent TIDEWRACK_CLOSE = register("block.tidewrack.close");
 	public static final SoundEvent ENDURE_BLOOM_OPEN = register("block.endure_bloom.open");

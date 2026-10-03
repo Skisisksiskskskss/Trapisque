@@ -71,6 +71,22 @@ final class ModSoundsProvider extends FabricSoundsProvider {
 		add(exporter, ModSounds.BLUB_DEATH, "blub/death", 1, "subtitles.thesift.blub.death");
 		add(exporter, ModSounds.BLUB_HOP, "blub/hop", 3, "subtitles.thesift.blub.hop");
 		add(exporter, ModSounds.BLUB_STEP, "blub/step", 4, null); // steps have no subtitle, as in vanilla
+		// The Nester: its steps have a subtitle, as "Warden steps" does, so a roaming one can be noticed.
+		add(exporter, ModSounds.NESTER_AMBIENT, "nester/ambient", 4, "subtitles.thesift.nester.ambient");
+		add(exporter, ModSounds.NESTER_AMBIENT_ENDURING, "nester/ambient_enduring", 3, "subtitles.thesift.nester.ambient_enduring");
+		add(exporter, ModSounds.NESTER_HEAR, "nester/hear", 3, "subtitles.thesift.nester.hear");
+		add(exporter, ModSounds.NESTER_GALLOP, "nester/gallop", 4, "subtitles.thesift.nester.gallop");
+		add(exporter, ModSounds.NESTER_SNIFF, "nester/sniff", 3, "subtitles.thesift.nester.sniff");
+		add(exporter, ModSounds.NESTER_HISS, "nester/hiss", 3, "subtitles.thesift.nester.hiss");
+		add(exporter, ModSounds.NESTER_BITE, "nester/bite", 3, "subtitles.thesift.nester.bite");
+		add(exporter, ModSounds.NESTER_GUARD, "nester/guard", 2, "subtitles.thesift.nester.guard");
+		add(exporter, ModSounds.NESTER_DODGE, "nester/dodge", 2, "subtitles.thesift.nester.dodge");
+		add(exporter, ModSounds.NESTER_STAGGER, "nester/stagger", 2, "subtitles.thesift.nester.stagger");
+		add(exporter, ModSounds.NESTER_EMERGE, "nester/emerge", 2, "subtitles.thesift.nester.emerge");
+		add(exporter, ModSounds.NESTER_BURROW, "nester/burrow", 2, "subtitles.thesift.nester.burrow");
+		add(exporter, ModSounds.NESTER_HURT, "nester/hurt", 3, "subtitles.thesift.nester.hurt");
+		add(exporter, ModSounds.NESTER_DEATH, "nester/death", 2, "subtitles.thesift.nester.death");
+		add(exporter, ModSounds.NESTER_STEP, "nester/step", 4, "subtitles.thesift.nester.step");
 		add(exporter, ModSounds.MEADOW_LOOP.value(), "ambient/meadow_loop", 1, "subtitles.thesift.meadow.loop");
 		add(exporter, ModSounds.MEADOW_MOOD.value(), "ambient/meadow_mood", 4, "subtitles.thesift.meadow.mood");
 	}

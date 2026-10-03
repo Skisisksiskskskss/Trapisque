@@ -36,6 +36,9 @@ below allows.
 | `blub_fur` | `#3f6a8e` `#4a789c` `#5486aa` `#5f95ba` `#6da0c1` `#7aabc8` `#8bb7cf` `#9cc2d6` `#b0d0df` `#c4dde8` | The Blub's coat drawn as vanilla's mobs are (D-029, owner playtest 3: "less cell shaded"): the `blub` ramp with a shade between each pair, for soft gradients |
 | `blub_mouth` | `#2a2246` `#4a3a68` | Its small mouth, always visible (D-029) |
 | `blub_blush` | `#a7a3d9` | Its cheeks |
+| `nester` | `#1e2a24` `#2c3d33` `#3d5143` `#526a55` `#6c8566` `#8aa27c` | The Nester's hide (mob_nester.md): moss green, so it reads against the coral grass and is nothing like the Blub's blue |
+| `nester_crest` | `#6e5330` `#a07c45` `#cfaa63` `#f0d690` `#fff1c4` | Its pale gold fins |
+| `nester_eye` | `#14100c` `#e2c867` | Its eyes: a dark pupil in a pale gold iris |
 | `soil` | `#34222a` `#432d33` `#533a3f` `#64454a` `#765155` `#8a5e60` `#9f6d6d` `#b5807c` | Sift soil: the maroon earth under the teaser's grass hill, eight shades as vanilla dirt (owner playtest 2) |
 | `tidewrack` | `#2c3317` `#3d4620` `#535e29` `#6b7832` `#85903b` `#a2a548` `#c0b65a` `#d8c878` | Tidewrack's ribbons (block_flora_ii.md §1): olive at the root to ochre at the tips; warm, never blight's teal |
 | `tidewrack_underside` | `#3b6a52` `#538a69` `#73a985` | The sea-green undersides an open frond shows |
@@ -112,4 +115,7 @@ below allows.
 | `particle/trill.png` | particle |
 | `entity/blub/blub.png` | blub_fur, blub_eye, blub_mouth, blub_blush |
 | `entity/blub/blub_glow.png` | membrane |
+| `entity/nester/nester.png` | nester, nester_crest, nester_eye |
+| `entity/nester/nester_glow.png` | glyph |
+| `item/nester_spawn_egg.png` | nester, nester_crest, nester_eye |
 | `item/blub_spawn_egg.png` | blub, songwood_bark |

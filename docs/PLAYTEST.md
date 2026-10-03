@@ -2,6 +2,20 @@
 
 Step-by-step checklists the owner can run in-game. Produced at every gate.
 
+## `v0.1.5-alpha` (2026-10-03): the hunt begins: Nesters in Endure
+The Sift's first danger (system_hunt.md, mob_nester.md, D-030). What to try:
+- **In Endure (high tide), Nesters come up out of the Meadow's grass.** They don't see you; they **hear** you, like a warden: steps, blocks, doors, eating, a jukebox within 10. A vibration particle flies to the Nester, its gold crest fans up ("Nester hears something"), and it gallops to **where the sound was**.
+- **Stay quiet:** sneak (and don't eat), walk on wool, or throw a snowball while sneaking. It lands far off, and the Nester goes there instead.
+- **If it finds you, it duels:**
+  - it crouches and hisses before a lunge, so step sideways;
+  - up close, raise a shield early: a blocked bite staggers it, so hit it then;
+  - after each bite it circles with its crest rattling, and it dodges your first swing then, so bait it with one swing and strike with the next;
+  - arrows catch it circling.
+- **Lumen keeps them out:** no Nester comes within 6 blocks of a lumen bloom or a **lumen lantern**, or spawns within 8. Watch one pace at the edge of the light.
+- **Stone floors are safe:** they only come up out of soil (grass and Sift soil), never hymnstone, planks or bricks.
+- **At dawn** (falling Flow) they dig back into the soil and are gone by Thrive. **Enduring** Nesters (spikes, soul wisps, glowing eyes) are tougher and worth double XP.
+- Advancement: **Heard You**.
+
 ## `v0.1.4-alpha` (2026-10-03): quieter textures, livelier ichor, the Flats' lights, a real pet, new sounds
 Your notes on `v0.1.3-alpha`, and what changed (D-029, items_m2.md):
 - **Textures:** the grain is calmer: smaller noise, closer shades, so blocks sit beside vanilla's.

@@ -54,6 +54,8 @@ final class ModTagProviders {
 			tag(BlockTags.MINEABLE_WITH_SHOVEL, ModBlocks.TIDE_SAND, ModBlocks.HEALTHY_SCULK, ModBlocks.SIFT_SOIL);
 			// Sift soil is the Sift's dirt: plants that grow on dirt grow on it.
 			tag(BlockTags.DIRT, ModBlocks.SIFT_SOIL);
+			// Soil (system_hunt.md): hunters come up out of it and dig back in; stone and planks are safe floors.
+			tag(ModTags.HUNTER_BURROWABLE, ModBlocks.HEALTHY_SCULK, ModBlocks.SIFT_SOIL);
 			tag(BlockTags.STAIRS, ModBlocks.HYMNSTONE_BRICK_STAIRS);
 			tag(BlockTags.SLABS, ModBlocks.HYMNSTONE_BRICK_SLAB);
 			tag(BlockTags.WALLS, ModBlocks.HYMNSTONE_BRICK_WALL);
@@ -127,6 +129,9 @@ final class ModTagProviders {
 			}
 			// Blubs never use the membrane themselves; owners' blubs come along (BlubCrossing).
 			cannotCross.add(ModEntities.BLUB_KEY);
+			// Hunters never cross: in an Ancient City there is no Tide, so one would never hear and never leave (D-023).
+			builder(ModTags.HUNTERS).add(ModEntities.NESTER_KEY);
+			cannotCross.addTag(ModTags.HUNTERS);
 		}
 	}
 

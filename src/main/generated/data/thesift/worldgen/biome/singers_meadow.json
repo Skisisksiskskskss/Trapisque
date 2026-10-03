@@ -22,6 +22,17 @@
               },
               "weight": 10
             }
+          ],
+          "monster": [
+            {
+              "type": "thesift:nester",
+              "count": {
+                "type": "minecraft:uniform",
+                "max_inclusive": 2,
+                "min_inclusive": 1
+              },
+              "weight": 60
+            }
           ]
         }
       },
