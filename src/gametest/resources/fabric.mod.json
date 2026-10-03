@@ -11,6 +11,7 @@
 			"thesift.test.SmokeTest",
 			"thesift.test.SiftDimensionTest",
 			"thesift.test.SiftBlocksTest",
+			"thesift.test.SiftFloraTest",
 			"thesift.test.SiftEntryTest",
 			"thesift.test.SiftIchorTest",
 			"thesift.test.SiftBasinTest",

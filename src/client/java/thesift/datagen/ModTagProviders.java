@@ -75,6 +75,13 @@ final class ModTagProviders {
 			tag(BlockTags.WITHER_IMMUNE, ModBlocks.GATESTONE, ModBlocks.SIFT_MEMBRANE);
 			tag(BlockTags.DRAGON_IMMUNE, ModBlocks.GATESTONE, ModBlocks.SIFT_MEMBRANE);
 			tag(BlockTags.PORTALS, ModBlocks.SIFT_MEMBRANE);
+			// Flora II (block_flora_ii.md): the chime bell is a small flower (bees, stew, endermen); it and the
+			// glowcap wash away as vanilla's flowers and mushrooms do; the two wild blooms hold fluids back.
+			tag(ModTags.TIDE_FLORA, ModBlocks.TIDEWRACK, ModBlocks.ENDURE_BLOOM);
+			tag(BlockTags.SMALL_FLOWERS, ModBlocks.CHIME_BELL_FLOWER);
+			tag(BlockTags.BEE_ATTRACTIVE, ModBlocks.CHIME_BELL_FLOWER);
+			tag(BlockTags.WASHED_AWAY_BY_FLUIDS, ModBlocks.CHIME_BELL_FLOWER, ModBlocks.GLOWCAP);
+			tag(BlockTags.FLOWER_POTS, ModBlocks.POTTED_GLOWCAP, ModBlocks.POTTED_CHIME_BELL_FLOWER);
 		}
 	}
 
@@ -100,6 +107,8 @@ final class ModTagProviders {
 			tag(ItemTags.PLANKS, ModBlocks.SONGWOOD_PLANKS);
 			tag(ModTags.SONGWOOD_LOGS_ITEM, ModBlocks.SONGWOOD_LOG);
 			builder(ItemTags.LOGS_THAT_BURN).addTag(ModTags.SONGWOOD_LOGS_ITEM);
+			tag(BlockItemTags.SMALL_FLOWERS.item(), ModBlocks.CHIME_BELL_FLOWER);
+			tag(BlockItemTags.BEE_FOOD.item(), ModBlocks.CHIME_BELL_FLOWER);
 		}
 	}
 

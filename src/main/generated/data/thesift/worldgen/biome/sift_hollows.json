@@ -17,6 +17,15 @@
     [],
     [
       "thesift:ichor_pools_underground"
+    ],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [
+      "thesift:glowcaps_sift_hollows",
+      "thesift:lumen_bloom_sift_hollows"
     ]
   ],
   "has_precipitation": false,

@@ -1,0 +1,6 @@
+{
+  "parent": "thesift:block/template_flat_plant",
+  "textures": {
+    "plant": "thesift:block/endure_bloom_picked"
+  }
+}

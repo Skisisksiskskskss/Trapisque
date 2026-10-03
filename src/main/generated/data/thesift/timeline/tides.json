@@ -155,6 +155,22 @@
         }
       ]
     },
+    "minecraft:visual/moon_angle": {
+      "keyframes": [
+        {
+          "ticks": 0,
+          "value": 120.0
+        },
+        {
+          "ticks": 20000,
+          "value": 360.0
+        },
+        {
+          "ticks": 20000,
+          "value": 0.0
+        }
+      ]
+    },
     "minecraft:visual/sky_color": {
       "keyframes": [
         {
@@ -243,6 +259,22 @@
         },
         {
           "ticks": 28500,
+          "value": 0.0
+        }
+      ]
+    },
+    "minecraft:visual/sun_angle": {
+      "keyframes": [
+        {
+          "ticks": 0,
+          "value": 300.0
+        },
+        {
+          "ticks": 5000,
+          "value": 360.0
+        },
+        {
+          "ticks": 5000,
           "value": 0.0
         }
       ]

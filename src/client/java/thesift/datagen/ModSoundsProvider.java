@@ -52,6 +52,13 @@ final class ModSoundsProvider extends FabricSoundsProvider {
 		add(exporter, ModSounds.ICHOR_EVAPORATE, "ichor/evaporate", 1, "subtitles.thesift.ichor.evaporate");
 		add(exporter, ModSounds.BUCKET_FILL_ICHOR, "ichor/bucket_fill", 2, "subtitles.thesift.bucket.fill_ichor");
 		add(exporter, ModSounds.BUCKET_EMPTY_ICHOR, "ichor/bucket_empty", 2, "subtitles.thesift.bucket.empty_ichor");
+		add(exporter, ModSounds.TIDEWRACK_OPEN, "flora/tidewrack_open", 2, "subtitles.thesift.tidewrack.open");
+		add(exporter, ModSounds.TIDEWRACK_CLOSE, "flora/tidewrack_close", 2, "subtitles.thesift.tidewrack.close");
+		add(exporter, ModSounds.ENDURE_BLOOM_OPEN, "flora/endure_bloom_open", 2, "subtitles.thesift.endure_bloom.open");
+		add(exporter, ModSounds.ENDURE_BLOOM_CLOSE, "flora/endure_bloom_close", 2, "subtitles.thesift.endure_bloom.close");
+		add(exporter, ModSounds.FLORA_PICK, "flora/pick", 3, "subtitles.thesift.flora.pick");
+		add(exporter, ModSounds.CHIME_BELL_RING, "flora/chime_ring", 4, "subtitles.thesift.chime_bell.ring");
+		add(exporter, ModSounds.CHIME_BELL_HUM, "flora/chime_hum", 2, "subtitles.thesift.chime_bell.hum");
 		add(exporter, ModSounds.BLUB_AMBIENT, "blub/ambient", 4, "subtitles.thesift.blub.ambient");
 		add(exporter, ModSounds.BLUB_LISTEN, "blub/listen", 2, "subtitles.thesift.blub.listen");
 		add(exporter, ModSounds.BLUB_HAPPY, "blub/happy", 2, "subtitles.thesift.blub.happy");

@@ -142,7 +142,7 @@ public abstract class IchorFluid extends FlowingFluid {
 
 	@Override
 	public boolean canBeReplacedWith(FluidState state, BlockGetter level, BlockPos pos, Fluid other, Direction direction) {
-		return direction == Direction.DOWN && !other.is(FluidTags.WATER);
+		return direction == Direction.DOWN && !other.defaultFluidState().is(FluidTags.WATER);
 	}
 
 	@Override

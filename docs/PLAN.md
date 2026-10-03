@@ -669,6 +669,7 @@ Source: 01_CONTENT_BIBLE.md §M2 row; bible/creatures.md, items.md, world.md (M2
 ### WP-064 Flora II
 - Tier: L · Depends on: WP-063 · Status: IN PROGRESS (design frozen 2026-10-03; code under way) · Goal: tidewrack (opens in Thrive), Endure bloom (opens in Endure, at the waterline), glowcap (light 10), chime bell flower (rings when walked through: a vibration), lumen bloom; textures by script (palette check), models, loot, tags, sounds, GameTests per behaviour.
 - Log:
+  - 2026-10-03: code in: the five plants and two pots, the pick-by-cycle rules, the loot condition, the lumen POI, the ichor bucket's tidewrack fill and dispenser behaviour, world generation (basins, shores, patches, lumen with its bell band, Hollows glowcaps), textures, sounds, 6 GameTests (77/77). Released in `v0.1.3-alpha` with D-028's fixes. Still to do: the worldgen sample counts and previews beside the Bloombud (with WP-067/068).
   - 2026-10-03: design frozen after three critique rounds (`docs/DESIGN/block_flora_ii.md`, D-027; BALANCE "Flora II"). Tide plants switch like eyeblossoms, are picked like sweet berries once per cycle (a cycle stamp), and are heard when picked; tidewrack, the Endure bloom and the lumen bloom are wild-only; tidewrack holds ichor through the flood; lumen blooms are ringed by chime bells.
 
 ### WP-065 Materials and items

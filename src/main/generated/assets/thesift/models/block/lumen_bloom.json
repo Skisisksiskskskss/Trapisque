@@ -1,0 +1,7 @@
+{
+  "parent": "thesift:block/template_flat_plant_cross",
+  "textures": {
+    "cross": "thesift:block/lumen_bloom_core",
+    "plant": "thesift:block/lumen_bloom"
+  }
+}

@@ -2,6 +2,7 @@ package thesift.datagen;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 
 import net.fabricmc.fabric.api.client.datagen.v1.provider.FabricModelProvider;
@@ -24,11 +25,23 @@ import net.minecraft.client.data.models.model.TexturedModel;
 import net.minecraft.world.level.block.Block;
 
 import thesift.TheSift;
+import thesift.block.ChimeBellFlowerBlock;
+import thesift.block.TideFloraBlock;
+import thesift.block.TidewrackBlock;
 import thesift.registry.ModBlocks;
 import thesift.registry.ModItems;
 
 /** Blockstates, block models and item models for block set I (textures: WP-041). */
 final class ModModelProvider extends FabricModelProvider {
+	private static final TextureSlot PLANT_EMISSIVE = TextureSlot.create("plant_emissive");
+	private static final ModelTemplate FLAT_PLANT = template("template_flat_plant", TextureSlot.PLANT);
+	private static final ModelTemplate FLAT_PLANT_CROSS = template("template_flat_plant_cross", TextureSlot.PLANT, TextureSlot.CROSS);
+	private static final ModelTemplate FLAT_PLANT_EMISSIVE = template("template_flat_plant_emissive", TextureSlot.PLANT, PLANT_EMISSIVE);
+
+	private static ModelTemplate template(String name, TextureSlot... slots) {
+		return new ModelTemplate(Optional.of(TheSift.id("block/" + name)), Optional.empty(), slots);
+	}
+
 	ModModelProvider(FabricPackOutput output) {
 		super(output);
 	}
@@ -74,11 +87,59 @@ final class ModModelProvider extends FabricModelProvider {
 				.put(TextureSlot.SIDE, TextureMapping.getBlockTexture(ModBlocks.GATESTONE))
 				.put(TextureSlot.END, TextureMapping.getBlockTexture(ModBlocks.GATESTONE, "_top"))));
 		g.createAirLikeBlock(ModBlocks.ICHOR, new Material(TheSift.id("block/ichor_still")));
+		flora(g);
 		// Like the Nether portal: hand-written thin models (assets/thesift/models/block/sift_membrane_{ns,ew}.json).
 		g.blockStateOutput.accept(MultiVariantGenerator.dispatch(ModBlocks.SIFT_MEMBRANE).with(
 				PropertyDispatch.initial(BlockStateProperties.HORIZONTAL_AXIS)
 						.select(Direction.Axis.X, BlockModelGenerators.plainVariant(ModelLocationUtils.getModelLocation(ModBlocks.SIFT_MEMBRANE, "_ns")))
 						.select(Direction.Axis.Z, BlockModelGenerators.plainVariant(ModelLocationUtils.getModelLocation(ModBlocks.SIFT_MEMBRANE, "_ew")))));
+	}
+
+	/** Flora II (block_flora_ii.md): flat plants lie on the ground (hand-written parents in assets/thesift/models/block). */
+	private static void flora(BlockModelGenerators g) {
+		// Tidewrack: a flat knot with a low cross when closed; ribbons spread flat when open; bare stems when picked.
+		Identifier wrackClosed = FLAT_PLANT_CROSS.createWithSuffix(ModBlocks.TIDEWRACK, "_closed", new TextureMapping()
+				.put(TextureSlot.PLANT, TextureMapping.getBlockTexture(ModBlocks.TIDEWRACK, "_closed"))
+				.put(TextureSlot.CROSS, TextureMapping.getBlockTexture(ModBlocks.TIDEWRACK, "_knot")), g.modelOutput);
+		Identifier wrackOpen = FLAT_PLANT.create(ModBlocks.TIDEWRACK, plant(ModBlocks.TIDEWRACK, ""), g.modelOutput);
+		Identifier wrackPicked = FLAT_PLANT.createWithSuffix(ModBlocks.TIDEWRACK, "_picked", plant(ModBlocks.TIDEWRACK, "_picked"), g.modelOutput);
+		g.blockStateOutput.accept(MultiVariantGenerator.dispatch(ModBlocks.TIDEWRACK).with(
+				PropertyDispatch.initial(TideFloraBlock.OPEN, TideFloraBlock.PICKED_CYCLE, TidewrackBlock.SUBMERGED).generate((open, picked, submerged) ->
+						BlockModelGenerators.plainVariant(!open ? wrackClosed : picked == 0 ? wrackOpen : wrackPicked))));
+		g.registerSimpleFlatItemModel(ModBlocks.TIDEWRACK);
+
+		// The Endure bloom: a flat rosette when closed; open, a star whose centre and petal edges are emissive.
+		Identifier bloomClosed = FLAT_PLANT.createWithSuffix(ModBlocks.ENDURE_BLOOM, "_closed", plant(ModBlocks.ENDURE_BLOOM, "_closed"), g.modelOutput);
+		Identifier bloomOpen = FLAT_PLANT_EMISSIVE.create(ModBlocks.ENDURE_BLOOM, plant(ModBlocks.ENDURE_BLOOM, "")
+				.put(PLANT_EMISSIVE, TextureMapping.getBlockTexture(ModBlocks.ENDURE_BLOOM, "_emissive")), g.modelOutput);
+		Identifier bloomPicked = FLAT_PLANT.createWithSuffix(ModBlocks.ENDURE_BLOOM, "_picked", plant(ModBlocks.ENDURE_BLOOM, "_picked"), g.modelOutput);
+		g.blockStateOutput.accept(MultiVariantGenerator.dispatch(ModBlocks.ENDURE_BLOOM).with(
+				PropertyDispatch.initial(TideFloraBlock.OPEN, TideFloraBlock.PICKED_CYCLE).generate((open, picked) ->
+						BlockModelGenerators.plainVariant(!open ? bloomClosed : picked == 0 ? bloomOpen : bloomPicked))));
+		g.registerSimpleFlatItemModel(ModBlocks.ENDURE_BLOOM);
+
+		g.createPlantWithDefaultItem(ModBlocks.GLOWCAP, ModBlocks.POTTED_GLOWCAP, BlockModelGenerators.PlantType.NOT_TINTED);
+
+		// The chime bell: its bells swing while it rings.
+		Identifier chime = ModelTemplates.CROSS.create(ModBlocks.CHIME_BELL_FLOWER, TextureMapping.cross(ModBlocks.CHIME_BELL_FLOWER), g.modelOutput);
+		Identifier chimeRinging = ModelTemplates.CROSS.createWithSuffix(ModBlocks.CHIME_BELL_FLOWER, "_ringing",
+				TextureMapping.cross(TextureMapping.getBlockTexture(ModBlocks.CHIME_BELL_FLOWER, "_ringing")), g.modelOutput);
+		g.blockStateOutput.accept(MultiVariantGenerator.dispatch(ModBlocks.CHIME_BELL_FLOWER).with(
+				PropertyDispatch.initial(ChimeBellFlowerBlock.RINGING).generate(ringing -> BlockModelGenerators.plainVariant(ringing ? chimeRinging : chime))));
+		g.registerSimpleFlatItemModel(ModBlocks.CHIME_BELL_FLOWER);
+		Identifier pottedChime = ModelTemplates.FLOWER_POT_CROSS.create(ModBlocks.POTTED_CHIME_BELL_FLOWER,
+				TextureMapping.plant(ModBlocks.CHIME_BELL_FLOWER), g.modelOutput);
+		g.blockStateOutput.accept(BlockModelGenerators.createSimpleBlock(ModBlocks.POTTED_CHIME_BELL_FLOWER, BlockModelGenerators.plainVariant(pottedChime)));
+
+		// The lumen bloom: glassy petals splayed flat around a low core.
+		Identifier lumen = FLAT_PLANT_CROSS.create(ModBlocks.LUMEN_BLOOM, plant(ModBlocks.LUMEN_BLOOM, "")
+				.put(TextureSlot.CROSS, TextureMapping.getBlockTexture(ModBlocks.LUMEN_BLOOM, "_core")), g.modelOutput);
+		g.blockStateOutput.accept(BlockModelGenerators.createSimpleBlock(ModBlocks.LUMEN_BLOOM, BlockModelGenerators.plainVariant(lumen)));
+		g.registerSimpleFlatItemModel(ModBlocks.LUMEN_BLOOM);
+	}
+
+	private static TextureMapping plant(Block block, String suffix) {
+		return new TextureMapping().put(TextureSlot.PLANT, TextureMapping.getBlockTexture(block, suffix));
 	}
 
 	/**
@@ -102,5 +163,7 @@ final class ModModelProvider extends FabricModelProvider {
 	public void generateItemModels(ItemModelGenerators g) {
 		g.generateFlatItem(ModItems.ICHOR_BUCKET, ModelTemplates.FLAT_ITEM);
 		g.generateFlatItem(ModItems.BLUB_SPAWN_EGG, ModelTemplates.FLAT_ITEM);
+		g.generateFlatItem(ModItems.TIDEWRACK_FROND, ModelTemplates.FLAT_ITEM);
+		g.generateFlatItem(ModItems.ENDURE_PETAL, ModelTemplates.FLAT_ITEM);
 	}
 }

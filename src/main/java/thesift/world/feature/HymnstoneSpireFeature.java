@@ -84,7 +84,7 @@ public record HymnstoneSpireFeature() implements Feature {
 				}
 				p.set(cx + dx, y, cz + dz);
 				BlockState here = level.getBlockState(p);
-				if (roots ? !here.isSolid() : (here.isAir() || here.canBeReplaced())) {
+				if (roots ? !here.isCollisionShapeFullBlock(level, p) : (here.isAir() || here.canBeReplaced())) {
 					level.setBlock(p, state, Block.UPDATE_CLIENTS);
 				}
 			}

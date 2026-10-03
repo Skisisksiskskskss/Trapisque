@@ -12,6 +12,7 @@ import net.minecraft.world.level.block.state.BlockState;
 
 import thesift.registry.ModSounds;
 import thesift.block.TideVentBlock;
+import thesift.block.TidewrackBlock;
 import thesift.registry.ModBlockEntities;
 import thesift.registry.ModBlocks;
 import thesift.registry.ModFluids;
@@ -80,7 +81,10 @@ public class TideVentBlockEntity extends BlockEntity {
 		return changed;
 	}
 
-	/** Fills empty cells only: a block a player put in the basin stays. */
+	/**
+	 * Fills empty cells only: a block a player put in the basin stays. Tidewrack holds the ichor
+	 * instead (block_flora_ii.md §1), as a waterloggable block holds water.
+	 */
 	private static int fill(ServerLevel level, TideBasin basin, int k) {
 		int changed = 0;
 		BlockState ichor = ModBlocks.ICHOR.defaultBlockState();
@@ -88,6 +92,9 @@ public class TideVentBlockEntity extends BlockEntity {
 			BlockState state = level.getBlockState(p);
 			if (state.isAir() || (state.is(ModBlocks.ICHOR) && !state.getFluidState().isSource())) {
 				level.setBlock(p, ichor, Block.UPDATE_CLIENTS);
+				changed++;
+			} else if (state.is(ModBlocks.TIDEWRACK) && !state.getValue(TidewrackBlock.SUBMERGED)) {
+				level.setBlock(p, TidewrackBlock.withSubmerged(state, true), Block.UPDATE_CLIENTS);
 				changed++;
 			}
 		}
@@ -97,8 +104,12 @@ public class TideVentBlockEntity extends BlockEntity {
 	private static int drain(ServerLevel level, TideBasin basin, int k) {
 		int changed = 0;
 		for (BlockPos p : basin.layer(k)) {
-			if (level.getFluidState(p).getType().isSame(ModFluids.ICHOR) && level.getBlockState(p).is(ModBlocks.ICHOR)) {
+			BlockState state = level.getBlockState(p);
+			if (level.getFluidState(p).getType().isSame(ModFluids.ICHOR) && state.is(ModBlocks.ICHOR)) {
 				level.setBlock(p, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
+				changed++;
+			} else if (state.is(ModBlocks.TIDEWRACK) && state.getValue(TidewrackBlock.SUBMERGED)) {
+				level.setBlock(p, TidewrackBlock.withSubmerged(state, false), Block.UPDATE_CLIENTS);
 				changed++;
 			}
 		}

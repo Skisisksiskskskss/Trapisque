@@ -17,7 +17,9 @@ import thesift.registry.ModEntities;
 import thesift.registry.ModFeatureTypes;
 import thesift.registry.ModCreativeTab;
 import thesift.registry.ModFluids;
+import thesift.registry.ModLootConditions;
 import thesift.registry.ModParticles;
+import thesift.registry.ModPoiTypes;
 import thesift.registry.ModSounds;
 import thesift.registry.ModItems;
 import thesift.world.EndureRest;
@@ -41,6 +43,8 @@ public final class TheSift implements ModInitializer {
 		ModParticles.init();
 		ModFluids.init();
 		ModBlocks.init();
+		ModPoiTypes.init();
+		ModLootConditions.init();
 		ModBlockEntities.init();
 		ModEntities.init();
 		ModFeatureTypes.init();

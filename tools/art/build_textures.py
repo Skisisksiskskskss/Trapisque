@@ -342,35 +342,29 @@ def songwood_planks() -> Image.Image:
     return im
 
 
-def songwood_leaves(seed: int = 51) -> Image.Image:
-    """The teasers' pale canopy (owner playtest 2): vanilla leaves drawn as overlapping clumps of
-    foliage, each lit on its upper left and shaded blue on its lower right, with holes where no clump
-    reaches; the clumps wrap round the edges, so the block tiles without rows (the old fringe striped
-    every canopy at each block row)."""
+def songwood_leaves(seed: int = 63) -> Image.Image:
+    """The teasers' pale canopy, drawn as vanilla draws leaves (owner playtest 3: the clump version
+    read as cobble, and darker than the drapes): a fine per-pixel grain in the ramp's pale end, small
+    leaf dabs lit on the upper left with a shade below, and scattered gaps where the sky shows
+    through. The same pale shades as the drapes, so canopy and strands read as one tree."""
     rnd = random.Random(seed)
-    centres = scatter(seed * 3 + 5, 13, 4.2)
-    value = [[-1.0] * W for _ in range(H)]
-    light = [[0.0] * W for _ in range(H)]
-    for cx, cy in centres:
-        r = 2.3 + rnd.random() * 1.0
-        for y in range(H):
-            for x in range(W):
-                dx = (x - cx + W / 2) % W - W / 2
-                dy = (y - cy + H / 2) % H - H / 2
-                d = math.hypot(dx, dy)
-                if d <= r:
-                    v = 1.0 - d / r
-                    if v > value[y][x]:
-                        value[y][x] = v
-                        light[y][x] = -(dx + dy) / (2 * r)  # upper left is lit
-    im = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    v = grain(seed, clumps=0.35, cells=4, fine=8, jitter=0.55)
+    bands = by_rank(v, [0.06, 0.18, 0.32, 0.28, 0.16])
+    im = paint("songwood_leaves", bands, 3)
     px = im.load()
+    for x, y in scatter(seed * 5 + 3, 22, 2.6):  # leaf dabs
+        px[x % W, y % H] = rgba("songwood_leaves", 7)
+        px[(x + 1) % W, y % H] = rgba("songwood_leaves", 6)
+        px[(x + 1) % W, (y + 1) % H] = rgba("songwood_leaves", 3)
+    holes = grain(seed + 11, clumps=0.2, cells=4, fine=8, jitter=0.8)
+    flat = sorted(val for row in holes for val in row)
+    cut = flat[int(len(flat) * 0.16)]
     for y in range(H):
         for x in range(W):
-            if value[y][x] < 0:
-                continue
-            i = 3 + round(light[y][x] * 3.2 + value[y][x] * 1.5) + rnd.choice((-1, 0, 0, 0, 1))
-            px[x, y] = rgba("songwood_leaves", max(0, min(7, i)))
+            if holes[y][x] < cut:
+                px[x, y] = (0, 0, 0, 0)
+            elif rnd.random() < 0.04:
+                px[x, y] = rgba("songwood_leaves", 2)  # a deep shadow pixel now and then, as vanilla's
     return im
 
 
@@ -392,7 +386,7 @@ def songwood_drapes(tip: bool) -> Image.Image:
                     shade = 2  # where strands cross
                 if tip and y > length - 3:
                     shade -= 1
-                px[x, y] = rgba("songwood_leaves", max(1, min(7, shade)))
+                px[x, y] = rgba("songwood_leaves", max(3, min(7, shade)))
                 if rnd.random() < 0.2:
                     nx = x + rnd.choice((-1, 1))
                     if 0 <= nx < W and not px[nx, y][3]:
@@ -429,6 +423,234 @@ def songwood_sapling() -> Image.Image:
             if ch != ".":
                 put(im, [(x, y)], c[ch])
     return im
+
+
+# ---------------------------------------------------------------- flora II (block_flora_ii.md, WP-064)
+def _blank() -> Image.Image:
+    return Image.new("RGBA", (W, H), (0, 0, 0, 0))
+
+
+def _set(im: Image.Image, x: int, y: int, colour) -> None:
+    if 0 <= x < W and 0 <= y < H:
+        im.load()[x, y] = colour
+
+
+def _ribbons(seed: int, count: int, length: tuple[float, float], curl: float, underside: bool, stems: bool = False) -> Image.Image:
+    """Wrack ribbons lying flat, seen from above: each runs out from near the centre with a wobble,
+    olive at the root and ochre at the tip; an open frond shows its sea-green underside along one edge."""
+    rnd = random.Random(seed)
+    im = _blank()
+    base = rnd.random() * math.tau
+    for i in range(count):
+        a = base + i * math.tau / count + rnd.uniform(-0.35, 0.35)
+        n = rnd.uniform(*length)
+        phase = rnd.random() * math.tau
+        steps = int(n * 3)
+        for k in range(steps + 1):
+            t = k / steps
+            r = 0.8 + t * n
+            ang = a + curl * math.sin(phase + t * 3.0) * t
+            x, y = 7.5 + r * math.cos(ang), 7.5 + r * math.sin(ang)
+            shade = 1 + int(t * 6.99) if not stems else 4 + int(t * 2.99)
+            _set(im, int(round(x)), int(round(y)), rgba("tidewrack", min(7, shade)))
+            if not stems:
+                nx, ny = -math.sin(ang), math.cos(ang)
+                edge = rgba("tidewrack_underside", min(2, int(t * 2.99))) if underside else rgba("tidewrack", max(0, shade - 2))
+                _set(im, int(round(x + nx)), int(round(y + ny)), edge)
+    return im
+
+
+def tidewrack(state: str) -> Image.Image:
+    if state == "open":
+        return _ribbons(311, 7, (4.5, 7.0), 0.5, underside=True)
+    if state == "closed":
+        return _ribbons(312, 6, (1.8, 3.2), 2.4, underside=False)
+    return _ribbons(313, 7, (2.5, 4.5), 0.3, underside=False, stems=True)
+
+
+def tidewrack_knot() -> Image.Image:
+    """The closed knot seen from the side: a low lump of curled ribbon, 3 px high."""
+    rows = [
+        "......3434......",
+        "....24543532....",
+        "...1232121232...",
+    ]
+    im = _blank()
+    for y, row in enumerate(rows):
+        for x, ch in enumerate(row):
+            if ch != ".":
+                _set(im, x, 13 + y, rgba("tidewrack", int(ch)))
+    return im
+
+
+def _petals(count: int, length: float, width: float, ramp: str, shades, seed: int, offset: float = 0.0,
+            outline_only: bool = False, outline_ramp: str | None = None) -> Image.Image:
+    """Pointed petals radiating flat from the centre, seen from above: darker at the base, lighter toward
+    the tip, the edge one shade lighter (light from the top-left)."""
+    im = _blank()
+    rnd = random.Random(seed)
+    for y in range(H):
+        for x in range(W):
+            dx, dy = x + 0.5 - 8.0, y + 0.5 - 8.0
+            r = math.hypot(dx, dy)
+            if r > length + 0.5 or r < 0.01:
+                continue
+            ang = math.atan2(dy, dx) - offset
+            sector = math.tau / count
+            rel = (ang + sector / 2) % sector - sector / 2
+            half = width * (1 - (r / (length + 0.5)) ** 1.6) * (0.55 + 0.45 * min(1.0, r / 2.0))
+            dist = abs(rel) * r
+            if dist > half:
+                continue
+            edge = dist > half - 0.9 or r > length - 0.4
+            t = r / length
+            if outline_only:
+                if edge:
+                    _set(im, x, y, rgba(outline_ramp or ramp, shades[-1]))
+                continue
+            i = shades[min(len(shades) - 1, int(t * len(shades)))]
+            if edge:
+                i = min(len(RAMPS[ramp]) - 1, i + 1)
+            if rnd.random() < 0.08:
+                i = max(0, i - 1)
+            _set(im, x, y, rgba(ramp, i))
+    return im
+
+
+def _centre(im: Image.Image, ramp: str, shades) -> None:
+    for (x, y), i in zip([(7, 7), (8, 7), (7, 8), (8, 8)], shades):
+        _set(im, x, y, rgba(ramp, i))
+
+
+def endure_bloom(state: str) -> Image.Image:
+    if state == "closed":
+        im = _petals(6, 5.2, 2.2, "endure_leaf", [1, 2, 2, 3], 401)
+        _centre(im, "endure_leaf", [0, 1, 1, 0])
+        return im
+    if state == "picked":
+        im = _petals(8, 3.6, 1.2, "endure_leaf", [1, 2, 3], 402, offset=math.pi / 8)
+        _centre(im, "endure_leaf", [0, 0, 1, 0])
+        return im
+    im = _petals(8, 3.4, 1.4, "endure_leaf", [1, 2, 3], 403, offset=math.pi / 8)
+    star = _petals(8, 7.3, 2.0, "endure_petal", [1, 2, 3, 4, 5], 404)
+    im.alpha_composite(star)
+    _centre(im, "endure_petal", [6, 5, 5, 6])
+    return im
+
+
+def endure_bloom_emissive() -> Image.Image:
+    """Only the centre and the petal edges glow: a thin cool outline of the star."""
+    im = _petals(8, 7.3, 2.0, "endure_petal", [5], 404, outline_only=True)
+    _centre(im, "endure_petal", [6, 6, 6, 6])
+    return im
+
+
+def glowcap() -> Image.Image:
+    """Three small flat-topped caps on short stems, ankle-high: shelves, never a dome."""
+    im = _blank()
+    caps = [(5, 9, 5, 11), (1, 11, 4, 13), (10, 12, 5, 14)]  # x, top y, width, stem bottom start
+    for x0, top, w, _ in caps:
+        stem_x = x0 + w // 2
+        for y in range(top + 2, 16):
+            _set(im, stem_x, y, rgba("glowcap_stem", 1 if y % 2 else 2))
+        for x in range(x0, x0 + w):
+            _set(im, x, top, rgba("glowcap", 4 if x == x0 else 3 if x < x0 + w - 1 else 2))
+            _set(im, x, top + 1, rgba("glowcap_stem", 0 if x in (x0, x0 + w - 1) else 1))
+        _set(im, x0 + 1, top, rgba("glowcap", 4))
+    return im
+
+
+def chime_bell_flower(ringing: bool = False) -> Image.Image:
+    """An arched stem with three bells hanging mouth-down from its curve, at staggered heights; each
+    bell narrow at the top and open at the mouth, the dark inside showing. Ringing, they swing."""
+    im = _blank()
+    arch = [(3, y) for y in range(15, 5, -1)] + [(4, 5), (5, 4), (6, 4), (7, 4), (8, 4), (9, 4), (10, 4), (11, 4), (12, 5), (13, 5)]
+    for i, (x, y) in enumerate(arch):
+        _set(im, x, y, rgba("chime_stem", 2 if i % 3 else 3))
+    for x, y in [(2, 13), (1, 12), (4, 11), (5, 10)]:  # two leaves low on the stem
+        _set(im, x, y, rgba("chime_stem", 3 if y < 12 else 2))
+    swing = 1 if ringing else 0
+    for cx, top in [(6, 7), (10, 6), (13, 8)]:
+        for y in range(5, top):
+            _set(im, cx, y, rgba("chime_stem", 1))
+        x = cx + swing
+        _set(im, x, top, rgba("chime_bell", 3))
+        for dx, i in [(-1, 4), (0, 3), (1, 2)]:
+            _set(im, x + dx, top + 1, rgba("chime_bell", i))
+        for dx, i in [(-1, 3), (0, 1), (1, 1)]:
+            _set(im, x + dx, top + 2, rgba("chime_bell", i))
+        _set(im, x - 1, top + 3, rgba("chime_bell", 2))
+        _set(im, x, top + 3, rgba("chime_stem", 0))
+        _set(im, x + 1, top + 3, rgba("chime_bell", 0))
+    return im
+
+
+def lumen_bloom() -> Image.Image:
+    """Three broad glassy petals splayed flat, seen from above: separate ovals around a white core,
+    pale at the rim (glass catching the light), deeper blue toward the middle."""
+    im = _blank()
+    for k in range(3):
+        a = -math.pi / 2 + k * math.tau / 3
+        cx, cy = 8.0 + 4.0 * math.cos(a), 8.0 + 4.0 * math.sin(a)
+        for y in range(H):
+            for x in range(W):
+                dx, dy = x + 0.5 - cx, y + 0.5 - cy
+                along = dx * math.cos(a) + dy * math.sin(a)
+                across = -dx * math.sin(a) + dy * math.cos(a)
+                d = (along / 3.6) ** 2 + (across / 2.4) ** 2
+                if d <= 1.0:
+                    _set(im, x, y, rgba("lumen", 4 if d > 0.62 else 3 if d > 0.3 else 2))
+    _centre(im, "lumen", [5, 5, 4, 5])
+    return im
+
+
+def lumen_bloom_core() -> Image.Image:
+    """The bloom from the side: a low bright core, the petal edges rising either side."""
+    rows = [
+        "......4554......",
+        ".23..345543..32.",
+        "..2334444443322.",
+    ]
+    im = _blank()
+    for y, row in enumerate(rows):
+        for x, ch in enumerate(row):
+            if ch != ".":
+                _set(im, x, 13 + y, rgba("lumen", int(ch)))
+    return im
+
+
+def tidewrack_frond() -> Image.Image:
+    """One frond, as an item: a wavy ribbon, olive to ochre, its sea-green underside along one edge."""
+    im = _blank()
+    for k in range(40):
+        t = k / 39
+        x = 2 + t * 11
+        y = 13 - t * 11 + 1.2 * math.sin(t * 7.0)
+        _set(im, int(round(x)), int(round(y)), rgba("tidewrack", 2 + int(t * 5.99)))
+        _set(im, int(round(x)) + 1, int(round(y)), rgba("tidewrack_underside", min(2, int(t * 2.99))))
+    return im
+
+
+def endure_petal_item() -> Image.Image:
+    """One petal, as an item: a pointed oval, periwinkle at the base to pale blue at the tip."""
+    im = _blank()
+    for y in range(H):
+        for x in range(W):
+            u = (x - 2) / 12.0
+            v = (y - 13) / -12.0
+            along = (u + v) / 2
+            across = (u - v)
+            if not 0 <= along <= 1:
+                continue
+            half = 0.34 * math.sin(math.pi * along) ** 0.8
+            if abs(across) > half:
+                continue
+            i = 1 + int(along * 4.99)
+            if abs(across) > half - 0.09:
+                i = min(6, i + 1)
+            _set(im, x, y, rgba("endure_petal", i))
+    return im
+
 
 
 # ---------------------------------------------------------------- tide basin
@@ -763,6 +985,21 @@ def main() -> None:
     save_mcmeta("block/ichor_flow.png", '{\n  "animation": {\n    "frametime": 2,\n    "interpolate": true\n  }\n}\n')
     save(ichor_overlay(), "block/ichor_overlay.png")
     save(ichor_bucket(), "item/ichor_bucket.png")
+    save(tidewrack("open"), "block/tidewrack.png")
+    save(tidewrack("closed"), "block/tidewrack_closed.png")
+    save(tidewrack("picked"), "block/tidewrack_picked.png")
+    save(tidewrack_knot(), "block/tidewrack_knot.png")
+    save(endure_bloom("open"), "block/endure_bloom.png")
+    save(endure_bloom_emissive(), "block/endure_bloom_emissive.png")
+    save(endure_bloom("closed"), "block/endure_bloom_closed.png")
+    save(endure_bloom("picked"), "block/endure_bloom_picked.png")
+    save(glowcap(), "block/glowcap.png")
+    save(chime_bell_flower(), "block/chime_bell_flower.png")
+    save(chime_bell_flower(ringing=True), "block/chime_bell_flower_ringing.png")
+    save(lumen_bloom(), "block/lumen_bloom.png")
+    save(lumen_bloom_core(), "block/lumen_bloom_core.png")
+    save(tidewrack_frond(), "item/tidewrack_frond.png")
+    save(endure_petal_item(), "item/endure_petal.png")
     save(glow_petal(), "particle/glow_petal.png")
     save(blub_texture(), "entity/blub/blub.png")
     save(blub_glow_texture(), "entity/blub/blub_glow.png")

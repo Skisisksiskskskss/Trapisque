@@ -655,3 +655,15 @@ It also found that M1's Tide changed nothing in play (SF4), since the mission as
 
 **Revisit if** players want tidewrack or blooms at home as decoration (a separate decorative variant could be added without reopening the reagent loop), or the playtest finds picking in Endure too punishing.
 
+
+## D-028 Shader-safe sky, renderer-safe ichor colour, leaves that match their drapes (2026-10-03) [owner playtest 3] [supersedes rules.md "Sun & moon: none visible" and the daylight-detector row]
+**Context.** The owner's third look: with shaders "everything turns pitch black"; the ichor showed white (their renderer, Sodium under Iris, draws fluids itself and skips our per-vertex colouring); the ichor's pattern should span many blocks; the leaves were ugly and a different colour from the drapes.
+
+**Decision.**
+- **Sky.** Shader packs light the world from the sun and moon. Both were parked at 180°, below the horizon, so a pack saw a moonless night. Now the sun crosses the sky through Thrive and sets in rising Flow, and the moon rides through Endure: one turn per Tide cycle (the `thesift:tides` timeline). Vanilla's lighting is unchanged (it reads the sky-light tracks). A plain daylight detector now reads the Tide too (day in Thrive, dark in Endure); an inverted one still senses Endure's darkness.
+- **Ichor colour.** The fluid model gets a real tint source: the bubble field's colour at each block's centre. Renderers that tint fluids per block (Sodium, Iris) draw it and blend it as they blend water's biome colour. Vanilla's renderer keeps the smoother path: `IchorSheen` swaps each vertex's block tint for the field at its own corner, so the bands flow across blocks with no edge. The field's bands are many blocks wide, so the pattern is a large one, not a block-sized one.
+- **Leaves.** Redrawn as vanilla draws leaves (a fine grain, small lit leaf dabs, scattered gaps), in the same pale shades as the drapes.
+
+**Consequences.** rules.md's "none visible" sun row and its daylight-detector note are superseded. The sky shows a sun in Thrive and a moon in Endure.
+
+**Revisit if** a shader pack still renders the Sift wrongly (then the dimension's id may need a shader-pack mapping note in the README), or the moving sun reads as un-Sift-like.

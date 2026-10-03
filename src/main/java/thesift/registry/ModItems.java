@@ -4,17 +4,24 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
+import net.minecraft.core.dispenser.BlockSource;
+import net.minecraft.core.dispenser.DefaultDispenseItemBehavior;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.DoubleHighBlockItem;
+import net.minecraft.world.item.DispensibleContainerItem;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.DispenserBlock;
 import net.minecraft.world.level.block.DoublePlantBlock;
 
 import thesift.TheSift;
@@ -27,6 +34,10 @@ public final class ModItems {
 
 	public static final Item BLUB_SPAWN_EGG = other(register(key("blub_spawn_egg"), SpawnEggItem::new,
 			new Item.Properties().spawnEgg(ModEntities.BLUB)));
+	/** Picked from open tidewrack in Thrive (block_flora_ii.md §1); its uses come in WP-065. */
+	public static final Item TIDEWRACK_FROND = other(register(key("tidewrack_frond"), Item::new, new Item.Properties()));
+	/** Picked from an open Endure bloom in Endure (block_flora_ii.md §2); lanterns and traits use it (WP-065). */
+	public static final Item ENDURE_PETAL = other(register(key("endure_petal"), Item::new, new Item.Properties()));
 	public static final Item ICHOR_BUCKET = other(register(key("ichor_bucket"), p -> new IchorBucketItem(ModFluids.ICHOR, p),
 			new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1)));
 
@@ -34,11 +45,16 @@ public final class ModItems {
 	}
 
 	static void registerBlockItem(Block block) {
+		registerBlockItem(block, UnaryOperator.identity());
+	}
+
+	/** A block item with extra item properties (a compost chance, say). */
+	static void registerBlockItem(Block block, UnaryOperator<Item.Properties> extra) {
 		ResourceKey<Item> key = ResourceKey.create(Registries.ITEM, BuiltInRegistries.BLOCK.getKey(block));
 		Function<Item.Properties, Item> factory = block instanceof DoublePlantBlock
 				? p -> new DoubleHighBlockItem(block, p)
 				: p -> new BlockItem(block, p);
-		Item item = register(key, factory, new Item.Properties().useBlockDescriptionPrefix());
+		Item item = register(key, factory, extra.apply(new Item.Properties().useBlockDescriptionPrefix()));
 		CREATIVE_ORDER.add(item);
 	}
 
@@ -67,6 +83,21 @@ public final class ModItems {
 	}
 
 	public static void init() {
-		// Block items register with ModBlocks.
+		// Block items register with ModBlocks. Dispensers know only vanilla's buckets, so the ichor
+		// bucket brings vanilla's filled-bucket behaviour along (it can then fill a tidewrack in front).
+		DispenserBlock.registerBehavior(ICHOR_BUCKET, new DefaultDispenseItemBehavior() {
+			private final DefaultDispenseItemBehavior eject = new DefaultDispenseItemBehavior();
+
+			@Override
+			public ItemStack execute(BlockSource source, ItemStack dispensed) {
+				DispensibleContainerItem bucket = (DispensibleContainerItem) dispensed.getItem();
+				BlockPos target = source.pos().relative(source.state().getValue(DispenserBlock.FACING));
+				if (bucket.emptyContents(null, source.level(), target, null)) {
+					bucket.checkExtraContent(null, source.level(), dispensed, target);
+					return this.consumeWithRemainder(source, dispensed, new ItemStack(Items.BUCKET));
+				}
+				return this.eject.dispense(source, dispensed);
+			}
+		});
 	}
 }

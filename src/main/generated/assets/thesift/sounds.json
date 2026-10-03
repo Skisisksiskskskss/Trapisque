@@ -32,6 +32,44 @@
     ],
     "subtitle": "subtitles.thesift.tide.thrive"
   },
+  "block.chime_bell_flower.hum": {
+    "sounds": [
+      "thesift:flora/chime_hum1",
+      "thesift:flora/chime_hum2"
+    ],
+    "subtitle": "subtitles.thesift.chime_bell.hum"
+  },
+  "block.chime_bell_flower.ring": {
+    "sounds": [
+      "thesift:flora/chime_ring1",
+      "thesift:flora/chime_ring2",
+      "thesift:flora/chime_ring3",
+      "thesift:flora/chime_ring4"
+    ],
+    "subtitle": "subtitles.thesift.chime_bell.ring"
+  },
+  "block.endure_bloom.close": {
+    "sounds": [
+      "thesift:flora/endure_bloom_close1",
+      "thesift:flora/endure_bloom_close2"
+    ],
+    "subtitle": "subtitles.thesift.endure_bloom.close"
+  },
+  "block.endure_bloom.open": {
+    "sounds": [
+      "thesift:flora/endure_bloom_open1",
+      "thesift:flora/endure_bloom_open2"
+    ],
+    "subtitle": "subtitles.thesift.endure_bloom.open"
+  },
+  "block.flora.pick": {
+    "sounds": [
+      "thesift:flora/pick1",
+      "thesift:flora/pick2",
+      "thesift:flora/pick3"
+    ],
+    "subtitle": "subtitles.thesift.flora.pick"
+  },
   "block.ichor.ambient": {
     "sounds": [
       "thesift:ichor/ambient1",
@@ -108,6 +146,20 @@
       "thesift:tide/basin_fill3"
     ],
     "subtitle": "subtitles.thesift.basin.fill"
+  },
+  "block.tidewrack.close": {
+    "sounds": [
+      "thesift:flora/tidewrack_close1",
+      "thesift:flora/tidewrack_close2"
+    ],
+    "subtitle": "subtitles.thesift.tidewrack.close"
+  },
+  "block.tidewrack.open": {
+    "sounds": [
+      "thesift:flora/tidewrack_open1",
+      "thesift:flora/tidewrack_open2"
+    ],
+    "subtitle": "subtitles.thesift.tidewrack.open"
   },
   "entity.blub.ambient": {
     "sounds": [

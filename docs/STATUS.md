@@ -1,6 +1,6 @@
 # STATUS (session 1, 2026-10-02)
 - **Phase / Milestone:** M1 done; the owner's playtest reworks (`v0.1.1-alpha`, `v0.1.2-alpha`) done; M2 "the hunt" in design.
-- **Autonomy:** **full-auto** (D-014). **The build to try:** https://github.com/Skisisksiskskskss/Trapisque/releases/tag/v0.1.2-alpha, the owner's second playtest rework (D-026); steps in `docs/PLAYTEST.md` (top section). **Use a new world.** The previous build: https://github.com/Skisisksiskskskss/Trapisque/releases/tag/v0.1.1-alpha
+- **Autonomy:** **full-auto** (D-014). **The build to try:** https://github.com/Skisisksiskskskss/Trapisque/releases/tag/v0.1.3-alpha: shaders, ichor colour under Sodium/Iris, leaves, and the M2 plants (D-027, D-028); steps in `docs/PLAYTEST.md` (top section). The previous build: https://github.com/Skisisksiskskskss/Trapisque/releases/tag/v0.1.2-alpha
 - **Current WP:** WP-064, the M2 blocks' design (lumen, tidewrack, the Endure bloom, the chime bell flower). M2's designs so far are frozen with their BALANCE sections: WP-060 (the hunt system), WP-061 (the Nester), WP-062 (the Bloombud).
 - **Done this session:**
   - Phases 0–3 and M1 (WP-040..053).
@@ -21,7 +21,7 @@
   2. WP-064: the M2 blocks' design doc and critique (the "Sift has no buds" constraint binds its flora).
   3. The M2 code: WP-063 (Hollows, glowcap pools), WP-066 (the hunt system), WP-067/068 (Nester, Bloombud).
 - **Build:** ✅ `./gradlew build` (with GameTests) · datagen no-diff ✅ · `check_bible.py` ✅ · `check_palette.py` ✅ (38 textures) · `check_lang.py` ✅
-- **Tests:** 71/71 server GameTests. The client GameTest walks the entry, the Tides, a basin and the blubs, and its landscape shots (`look_*`) compare the land with the teasers.
+- **Tests:** 77/77 server GameTests. The client GameTest walks the entry, the Tides, a basin and the blubs, and its landscape shots (`look_*`) compare the land with the teasers.
 - **Server boot:** ✅ (the GameTest dedicated server on every build).
 - **Blockers:** none. The Netlify site `magnificent-gelato-563c55` fails on every PR because of its own configuration (owner-side; see the PR comment).
 - **Awaiting owner:** nothing (full-auto). The playtest questions are in `docs/PLAYTEST.md`.

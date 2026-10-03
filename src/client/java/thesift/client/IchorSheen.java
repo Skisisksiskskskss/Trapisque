@@ -3,6 +3,7 @@ package thesift.client;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandler;
+import net.minecraft.client.color.block.BlockTintSource;
 import net.minecraft.client.renderer.block.BlockAndTintGetter;
 import net.minecraft.client.renderer.block.FluidRenderer;
 import net.minecraft.core.BlockPos;
@@ -17,9 +18,12 @@ import net.minecraft.world.level.material.FluidState;
  * entries in docs/DESIGN/palette.md), so turquoise, mint, gold, rose and lilac lie in broad bands
  * across a pond, as a bubble's colours lie, instead of one pattern repeating on every block.
  *
- * <p>A tint source gives a whole block one colour, which turned ponds into a mosaic. So vanilla's
- * geometry is drawn untinted and each vertex takes the colour at its own corner: neighbouring
- * blocks share their corners, and the colours blend across faces with no edge.
+ * <p>The fluid model's tint source ({@link #TINT}) gives each block the field's colour at its centre:
+ * that is what other renderers (Sodium, with Iris shaders) draw, blending it between blocks as they
+ * blend water's biome colour; the owner saw white ichor before it existed. Vanilla's renderer gives
+ * a whole face one tint, which would make ponds a mosaic, so this handler re-colours each vertex with
+ * the field at its own corner instead: neighbouring blocks share their corners, and the colours blend
+ * across faces with no edge.
  */
 public final class IchorSheen implements FluidRenderHandler {
 	/** The ichor ramp's film cycle, in order (palette.md). */
@@ -31,14 +35,28 @@ public final class IchorSheen implements FluidRenderHandler {
 	/** Blocks per radian of the field: turquoise patches a dozen or so blocks across, rimmed by bands a few blocks wide. */
 	private static final double SCALE = 8.0;
 
+	/** The block-centre colour, for the fluid model (and any renderer that tints per block). */
+	public static final BlockTintSource TINT = new BlockTintSource() {
+		@Override
+		public int color(BlockState state) {
+			return film(0.0);
+		}
+
+		@Override
+		public int colorInWorld(BlockState state, BlockAndTintGetter level, BlockPos pos) {
+			return colourAt(pos.getX() + 0.5, pos.getZ() + 0.5);
+		}
+	};
+
 	@Override
 	public void renderFluid(FluidRenderer fluidRenderer, BlockPos pos, BlockAndTintGetter level, FluidRenderer.Output output,
 			BlockState blockState, FluidState fluidState) {
 		// Vertices arrive relative to the 16-block section; their world corner is the section's origin plus that.
 		int originX = pos.getX() & ~15;
 		int originZ = pos.getZ() & ~15;
+		int blockTint = colourAt(pos.getX() + 0.5, pos.getZ() + 0.5);
 		FluidRenderHandler.super.renderFluid(fluidRenderer, pos, level,
-				layer -> new Tinted(output.getBuilder(layer), originX, originZ), blockState, fluidState);
+				layer -> new Tinted(output.getBuilder(layer), originX, originZ, blockTint), blockState, fluidState);
 	}
 
 	/** The sheen at a point of the world, opaque. */
@@ -64,13 +82,22 @@ public final class IchorSheen implements FluidRenderHandler {
 		return ARGB.srgbLerp((float) (s - i), 0xFF000000 | from, 0xFF000000 | to);
 	}
 
-	/** Passes vanilla's fluid vertices on, each multiplied by the sheen at its corner. */
-	private record Tinted(VertexConsumer inner, int originX, int originZ) implements VertexConsumer {
+	/**
+	 * Passes vanilla's fluid vertices on with the block's tint swapped for the sheen at each corner.
+	 * Vanilla's colour is the tint scaled by the face's shading, so the shading is recovered as the ratio
+	 * of their brightest channels.
+	 */
+	private record Tinted(VertexConsumer inner, int originX, int originZ, int blockTint) implements VertexConsumer {
 		@Override
 		public void addVertex(float x, float y, float z, int color, float u, float v, int overlayCoords, int lightCoords,
 				float nx, float ny, float nz) {
-			int sheen = colourAt(originX + x, originZ + z);
-			inner.addVertex(x, y, z, ARGB.multiply(color, sheen), u, v, overlayCoords, lightCoords, nx, ny, nz);
+			float shade = brightest(color) / (float) Math.max(1, brightest(this.blockTint));
+			int corner = ARGB.scaleRGB(colourAt(originX + x, originZ + z), Math.min(1.0F, shade));
+			inner.addVertex(x, y, z, ARGB.color(ARGB.alpha(color), corner), u, v, overlayCoords, lightCoords, nx, ny, nz);
+		}
+
+		private static int brightest(int color) {
+			return Math.max(ARGB.red(color), Math.max(ARGB.green(color), ARGB.blue(color)));
 		}
 
 		@Override

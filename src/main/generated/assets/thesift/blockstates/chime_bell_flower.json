@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "ringing=false": {
+      "model": "thesift:block/chime_bell_flower"
+    },
+    "ringing=true": {
+      "model": "thesift:block/chime_bell_flower_ringing"
+    }
+  }
+}

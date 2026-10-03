@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:block_use",
+  "pools": [
+    {
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "thesift:endure_petal"
+        }
+      ],
+      "rolls": 1
+    }
+  ]
+}

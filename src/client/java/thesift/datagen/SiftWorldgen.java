@@ -1,6 +1,7 @@
 package thesift.datagen;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 
@@ -67,6 +68,7 @@ import net.minecraft.world.level.levelgen.feature.featuresize.TwoLayersFeatureSi
 import net.minecraft.world.level.levelgen.feature.foliageplacers.CherryFoliagePlacer;
 import net.minecraft.world.level.levelgen.feature.foliageplacers.FancyFoliagePlacer;
 import net.minecraft.world.level.levelgen.feature.stateproviders.BlockStateProvider;
+import net.minecraft.world.level.levelgen.feature.stateproviders.SimpleStateProvider;
 import net.minecraft.world.level.levelgen.feature.stateproviders.WeightedStateProvider;
 import net.minecraft.world.level.levelgen.feature.trunkplacers.CherryTrunkPlacer;
 import net.minecraft.world.level.levelgen.feature.trunkplacers.FancyTrunkPlacer;
@@ -102,6 +104,8 @@ import thesift.world.Tide;
 import thesift.world.feature.DrapesDecorator;
 import thesift.world.feature.HymnstoneSpireFeature;
 import thesift.world.feature.IchorFlatsFeature;
+import thesift.world.feature.LumenBloomFeature;
+import thesift.world.feature.EndureBloomsFeature;
 import thesift.world.feature.TideBasinFeature;
 
 /**
@@ -202,6 +206,13 @@ final class SiftWorldgen {
 				.addTrack(EnvironmentAttributes.STAR_BRIGHTNESS, t -> t
 						.addKeyframe(THRIVE, 0.0F).addKeyframe(MID_RISING, 0.0F).addKeyframe(ENDURE, 0.5F)
 						.addKeyframe(FALLING, 0.5F).addKeyframe(MID_FALLING, 0.0F))
+				// D-028 (owner: shaders went pitch black with both bodies parked below the horizon): the sun
+				// crosses the sky through Thrive and sets in rising Flow; the moon rides through Endure. One turn
+				// per cycle, so shader packs light Thrive as day and Endure as a moonlit night.
+				.addTrack(EnvironmentAttributes.SUN_ANGLE, t -> t
+						.addKeyframe(THRIVE, 300.0F).addKeyframe(5_000, 360.0F).addKeyframe(5_000, 0.0F))
+				.addTrack(EnvironmentAttributes.MOON_ANGLE, t -> t
+						.addKeyframe(THRIVE, 120.0F).addKeyframe(20_000, 360.0F).addKeyframe(20_000, 0.0F))
 				.addTrack(EnvironmentAttributes.STAR_ANGLE, t -> t
 						.addKeyframe(THRIVE, 0.0F).addKeyframe(ENDURE, 0.0F).addKeyframe(FALLING, 180.0F).addKeyframe(MID_FALLING, 180.0F))
 				// Ambient motes (rules.md): Trills drift up through Thrive, glow petals fall through Endure.
@@ -224,9 +235,6 @@ final class SiftWorldgen {
 		HolderGetter<WorldClock> clocks = context.lookup(Registries.WORLD_CLOCK);
 		EnvironmentAttributeMap attributes = EnvironmentAttributeMap.builder()
 				.set(ModAttributes.SIFT_LIFE, true)
-				// No sun or moon: parked below the horizon (rules.md; a normal daylight detector reads 0).
-				.set(EnvironmentAttributes.SUN_ANGLE, 180.0F)
-				.set(EnvironmentAttributes.MOON_ANGLE, 180.0F)
 				.set(EnvironmentAttributes.SUNRISE_SUNSET_COLOR, ARGB.vector4fFromARGB32(0))
 				.set(EnvironmentAttributes.SKY_COLOR, ARGB.vector3fFromRGB24(THRIVE_SKY))
 				.set(EnvironmentAttributes.FOG_COLOR, ARGB.vector3fFromRGB24(THRIVE_FOG))
@@ -345,6 +353,9 @@ final class SiftWorldgen {
 		generation.addFeature(GenerationStep.Decoration.SURFACE_STRUCTURES, SiftFeatures.SPIRES_MEADOW);
 		generation.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.TREES_MEADOW);
 		generation.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.LONE_TREES_MEADOW);
+		generation.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.LUMEN_MEADOW);
+		generation.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.ENDURE_BLOOMS_MEADOW);
+		generation.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.CHIME_BELLS_MEADOW);
 		generation.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.GRASS_MEADOW);
 		context.register(SiftKeys.SINGERS_MEADOW, new Biome.BiomeBuilder()
 				.hasPrecipitation(false)
@@ -370,6 +381,9 @@ final class SiftWorldgen {
 		flats.addFeature(GenerationStep.Decoration.LAKES, SiftFeatures.ICHOR_POOLS_UNDERGROUND);
 		flats.addFeature(GenerationStep.Decoration.SURFACE_STRUCTURES, SiftFeatures.SPIRES_FLATS);
 		flats.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.TREES_FLATS);
+		flats.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.LUMEN_FLATS);
+		flats.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.ENDURE_BLOOMS_FLATS);
+		flats.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.CHIME_BELLS_FLATS);
 		flats.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.GRASS_FLATS);
 		context.register(SiftKeys.ICHOR_FLATS, new Biome.BiomeBuilder()
 				.hasPrecipitation(false)
@@ -388,6 +402,8 @@ final class SiftWorldgen {
 		// and its drips-and-echoes ambience come with the rest of M2 (WP-064, WP-070).
 		BiomeGenerationSettings.Builder hollows = new BiomeGenerationSettings.Builder(placed, context.lookup(Registries.CARVER));
 		hollows.addFeature(GenerationStep.Decoration.LAKES, SiftFeatures.ICHOR_POOLS_UNDERGROUND);
+		hollows.addFeature(GenerationStep.Decoration.UNDERGROUND_DECORATION, SiftFeatures.GLOWCAPS_HOLLOWS);
+		hollows.addFeature(GenerationStep.Decoration.UNDERGROUND_DECORATION, SiftFeatures.LUMEN_HOLLOWS);
 		context.register(SiftKeys.SIFT_HOLLOWS, new Biome.BiomeBuilder()
 				.hasPrecipitation(false)
 				.temperature(0.7F)
@@ -443,6 +459,11 @@ final class SiftWorldgen {
 						.add(ModBlocks.TALL_HEALTHY_SCULK_GRASS.defaultBlockState(), 2)
 						.build())));
 		context.register(SiftFeatures.TIDE_BASIN, TideBasinFeature.INSTANCE);
+		// Flora II (block_flora_ii.md).
+		context.register(SiftFeatures.ENDURE_BLOOMS, EndureBloomsFeature.INSTANCE);
+		context.register(SiftFeatures.LUMEN_BLOOM, LumenBloomFeature.INSTANCE);
+		context.register(SiftFeatures.CHIME_BELL_PATCH, new SimpleBlockFeature(new SimpleStateProvider(ModBlocks.CHIME_BELL_FLOWER.defaultBlockState())));
+		context.register(SiftFeatures.GLOWCAP_PATCH, new SimpleBlockFeature(new SimpleStateProvider(ModBlocks.GLOWCAP.defaultBlockState())));
 		context.register(SiftFeatures.HYMNSTONE_SPIRE, HymnstoneSpireFeature.INSTANCE);
 		// Ponds on the surface (D-026): the same lake with a rim of tide sand where its walls are open.
 		context.register(SiftFeatures.ICHOR_POND, new LakeFeature(
@@ -501,6 +522,46 @@ final class SiftWorldgen {
 					OffsetPlacement.ofTriangle(7, 3),
 					BlockPredicateFilter.forPredicate(BlockPredicate.ONLY_IN_AIR_PREDICATE));
 		}
+		// Flora II (block_flora_ii.md, BALANCE "Flora II"): bells in patches, blooms on shores, lumen rare.
+		for (var bells : List.of(Map.entry(SiftFeatures.CHIME_BELLS_MEADOW, 4), Map.entry(SiftFeatures.CHIME_BELLS_FLATS, 6))) {
+			PlacementUtils.register(context, bells.getKey(), features.getOrThrow(SiftFeatures.CHIME_BELL_PATCH),
+					RarityFilter.onAverageOnceEvery(bells.getValue()),
+					InSquarePlacement.spread(),
+					PlacementUtils.HEIGHTMAP_WORLD_SURFACE,
+					BiomeFilter.biome(),
+					CountPlacement.of(12),
+					OffsetPlacement.ofTriangle(6, 2),
+					BlockPredicateFilter.forPredicate(BlockPredicate.ONLY_IN_AIR_PREDICATE));
+		}
+		for (var blooms : List.of(SiftFeatures.ENDURE_BLOOMS_MEADOW, SiftFeatures.ENDURE_BLOOMS_FLATS)) {
+			PlacementUtils.register(context, blooms, features.getOrThrow(SiftFeatures.ENDURE_BLOOMS),
+					RarityFilter.onAverageOnceEvery(16),
+					InSquarePlacement.spread(),
+					PlacementUtils.HEIGHTMAP_WORLD_SURFACE,
+					BiomeFilter.biome());
+		}
+		for (var lumen : List.of(SiftFeatures.LUMEN_MEADOW, SiftFeatures.LUMEN_FLATS)) {
+			PlacementUtils.register(context, lumen, features.getOrThrow(SiftFeatures.LUMEN_BLOOM),
+					RarityFilter.onAverageOnceEvery(12),
+					InSquarePlacement.spread(),
+					PlacementUtils.HEIGHTMAP_WORLD_SURFACE,
+					BiomeFilter.biome());
+		}
+		// Cave floors: scan down to solid ground, then step up into the air above it.
+		PlacementUtils.register(context, SiftFeatures.LUMEN_HOLLOWS, features.getOrThrow(SiftFeatures.LUMEN_BLOOM),
+				RarityFilter.onAverageOnceEvery(24),
+				InSquarePlacement.spread(),
+				HeightRangePlacement.uniform(VerticalAnchor.absolute(-56), VerticalAnchor.absolute(40)),
+				EnvironmentScanPlacement.scanningFor(Direction.DOWN, BlockPredicate.solid(), BlockPredicate.ONLY_IN_AIR_PREDICATE, 12),
+				OffsetPlacement.vertical(ConstantInt.of(1)),
+				BiomeFilter.biome());
+		PlacementUtils.register(context, SiftFeatures.GLOWCAPS_HOLLOWS, features.getOrThrow(SiftFeatures.GLOWCAP_PATCH),
+				CountPlacement.of(16),
+				InSquarePlacement.spread(),
+				HeightRangePlacement.uniform(VerticalAnchor.absolute(-56), VerticalAnchor.absolute(40)),
+				EnvironmentScanPlacement.scanningFor(Direction.DOWN, BlockPredicate.solid(), BlockPredicate.ONLY_IN_AIR_PREDICATE, 12),
+				OffsetPlacement.vertical(ConstantInt.of(1)),
+				BiomeFilter.biome());
 		// The teasers' rose spires: about one in five chunks, on the grass.
 		PlacementUtils.register(context, SiftFeatures.SPIRES_MEADOW, features.getOrThrow(SiftFeatures.HYMNSTONE_SPIRE),
 				RarityFilter.onAverageOnceEvery(5),

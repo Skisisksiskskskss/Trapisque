@@ -223,7 +223,6 @@ public final class SiftPreviewClientTest implements FabricClientGameTest {
 		return hit.getType() == net.minecraft.world.phys.HitResult.Type.MISS || frame.box().inflate(0.5).contains(hit.getLocation());
 	}
 
-	/** The "game mode updated" lines would cover the bottom of the shot. */
 	/**
 	 * The owner's playtest rework: the land as a player first meets it, to compare with the teasers.
 	 * The server finds a spire, a shore, a stretch of meadow and a high viewpoint in fresh land.

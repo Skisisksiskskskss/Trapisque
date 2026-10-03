@@ -40,6 +40,13 @@ public final class ModSounds {
 	public static final SoundEvent BLUB_DEATH = register("entity.blub.death");
 	public static final SoundEvent BLUB_HOP = register("entity.blub.hop");
 	public static final SoundEvent BLUB_STEP = register("entity.blub.step");
+	public static final SoundEvent TIDEWRACK_OPEN = register("block.tidewrack.open");
+	public static final SoundEvent TIDEWRACK_CLOSE = register("block.tidewrack.close");
+	public static final SoundEvent ENDURE_BLOOM_OPEN = register("block.endure_bloom.open");
+	public static final SoundEvent ENDURE_BLOOM_CLOSE = register("block.endure_bloom.close");
+	public static final SoundEvent FLORA_PICK = register("block.flora.pick");
+	public static final SoundEvent CHIME_BELL_RING = register("block.chime_bell_flower.ring");
+	public static final SoundEvent CHIME_BELL_HUM = register("block.chime_bell_flower.hum");
 	public static final Holder<SoundEvent> MEADOW_LOOP = registerHolder("ambient.singers_meadow.loop");
 	public static final Holder<SoundEvent> MEADOW_MOOD = registerHolder("ambient.singers_meadow.mood");
 

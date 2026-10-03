@@ -34,6 +34,15 @@ below allows.
 | `blub` | `#3f6a8e` `#4f81a8` `#5f95ba` `#7aabc8` `#9cc2d6` `#c4dde8` | The Blub's blue, sampled from the first look (owner rework): the only blue mob in the Sift |
 | `blub_eye` | `#24204a` `#3d3570` | The Blub's dark violet slit eyes (first look) |
 | `soil` | `#34222a` `#432d33` `#533a3f` `#64454a` `#765155` `#8a5e60` `#9f6d6d` `#b5807c` | Sift soil: the maroon earth under the teaser's grass hill, eight shades as vanilla dirt (owner playtest 2) |
+| `tidewrack` | `#2c3317` `#3d4620` `#535e29` `#6b7832` `#85903b` `#a2a548` `#c0b65a` `#d8c878` | Tidewrack's ribbons (block_flora_ii.md §1): olive at the root to ochre at the tips; warm, never blight's teal |
+| `tidewrack_underside` | `#3b6a52` `#538a69` `#73a985` | The sea-green undersides an open frond shows |
+| `endure_leaf` | `#2f3e35` `#435549` `#5a6e5f` `#738a78` | The Endure bloom's grey-green rosette and sepals |
+| `endure_petal` | `#48619a` `#5c78b3` `#7690c9` `#93a9db` `#b2c4ea` `#d3e0f6` `#eef4fd` | Its petals: periwinkle to pale blue, cool (no pink, no warm white: those are the Bloombud's) |
+| `glowcap` | `#4f7d6c` `#6c9f8a` `#8fc2aa` `#b5dfc8` `#dcf6e6` | Glowcap caps: pale seafoam green |
+| `glowcap_stem` | `#34433d` `#4a5c54` `#63786d` | Glowcap gills and stems |
+| `chime_bell` | `#557aa0` `#7398bc` `#97b8d6` `#bdd6ec` `#e2f0fb` | Chime bells: pale ice blue (canon's "pale-blue flowers") |
+| `chime_stem` | `#2a3f2e` `#34503a` `#47664b` `#5f805f` | The chime bell's arched stem, and the dark of a bell's mouth |
+| `lumen` | `#6276a3` `#8597c2` `#a9bbde` `#cddcf2` `#ecf3fd` `#ffffff` | The lumen bloom: cool white to moonlit blue, a white core |
 | `particle` | `#f0cf8c` `#f9e6b0` `#fff4d6` `#fffdf5` `#ffd9d2` | Glow cores, trill motes |
 
 ## Texture → allowed ramps
@@ -72,6 +81,21 @@ below allows.
 | `block/ichor_still.png` | ichor_sheen |
 | `block/ichor_flow.png` | ichor_sheen |
 | `block/ichor_overlay.png` | ichor_sheen |
+| `block/tidewrack.png` | tidewrack, tidewrack_underside |
+| `block/tidewrack_closed.png` | tidewrack |
+| `block/tidewrack_knot.png` | tidewrack |
+| `block/tidewrack_picked.png` | tidewrack |
+| `block/endure_bloom.png` | endure_leaf, endure_petal |
+| `block/endure_bloom_emissive.png` | endure_petal |
+| `block/endure_bloom_closed.png` | endure_leaf |
+| `block/endure_bloom_picked.png` | endure_leaf |
+| `block/glowcap.png` | glowcap, glowcap_stem |
+| `block/chime_bell_flower.png` | chime_bell, chime_stem |
+| `block/chime_bell_flower_ringing.png` | chime_bell, chime_stem |
+| `block/lumen_bloom.png` | lumen |
+| `block/lumen_bloom_core.png` | lumen |
+| `item/tidewrack_frond.png` | tidewrack, tidewrack_underside |
+| `item/endure_petal.png` | endure_petal |
 | `item/ichor_bucket.png` | pail, ichor |
 | `particle/glow_petal.png` | healthy_sculk, particle |
 | `particle/trill.png` | particle |

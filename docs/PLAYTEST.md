@@ -2,6 +2,21 @@
 
 Step-by-step checklists the owner can run in-game. Produced at every gate.
 
+## `v0.1.3-alpha` (2026-10-03): shaders, ichor colour, leaves, and new plants
+Your notes on `v0.1.2-alpha`: white ichor, ugly leaves that didn't match the drapes, pitch black with shaders. What changed (D-028, D-027):
+- **Shaders:** the Sift has a sun again. It crosses the sky through Thrive and the moon rides through Endure, so shader packs light the Sift as day and as a moonlit night instead of black.
+- **Ichor:** colourful with Sodium and Iris too (it was white there); the colours flow in bands across many blocks rather than repeating per block.
+- **Leaves:** redrawn in vanilla's leaf style, in the same pale colour as the drapes.
+- **New plants (things to find and do):**
+  - **Tidewrack** on tide basin floors: right-click it in Thrive (low tide) for **tidewrack fronds**, once per Tide cycle.
+  - **Endure blooms** on ichor shores: they open, glowing faintly, in Endure (high tide); right-click for an **Endure petal**. Careful: picking makes a sound the coming hunters will hear.
+  - **Chime bell flowers** in the Meadow: they ring when you walk through them (sneak to pass quietly), and hum when music plays.
+  - **Lumen blooms**: rare glowing plants, often ringed by chime bells; the Sift's hunters will keep away from them.
+  - **Glowcaps** light the Hollows' caves.
+  Fronds and petals get their uses next (dye, blub treats, lumen lanterns).
+
+**A new world is best** (the plants generate with new chunks; old chunks keep what they had). Install as below with `thesift-0.1.3-alpha.jar`.
+
 ## `v0.1.2-alpha` (2026-10-02): the owner's second playtest
 Your notes on `v0.1.1-alpha`: the ichor looked and acted too much like water and generated like oceans; the trees had one canopy and the forests looked synthetic; the textures were too close to the trailers' flat look. What changed (D-026):
 - **Ichor:** a little less see-through, with a soap bubble's colours (turquoise, mint, gold, rose and lilac in broad bands that blend across the pond, different in every pond); the old busy pattern is gone. It is thicker: it lifts you up (sneak to dive) and spreads more slowly.

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -95,6 +96,40 @@ public record TideBasin(BlockPos vent, int inner) {
 
 	private static long flowLength(Tide flow) {
 		return flow == Tide.FLOW_RISING ? Tide.ENDURE.startTick() - Tide.FLOW_RISING.startTick() : Tide.PERIOD_TICKS - Tide.FLOW_FALLING.startTick();
+	}
+
+	/**
+	 * The basin's flora (block_flora_ii.md): tidewrack on 35 % of the floor cells that flood in Endure
+	 * (the pool and rings 1-2, leaving the vent and its four neighbours bare), and in 30 % of basins
+	 * 2-4 Endure blooms on ring 3, the Endure waterline (dry in every Tide). Worldgen only.
+	 */
+	public void plant(LevelAccessor level, RandomSource random) {
+		for (int dx = -this.half(); dx <= this.half(); dx++) {
+			for (int dz = -this.half(); dz <= this.half(); dz++) {
+				if (!this.inFootprint(dx, dz) || Math.abs(dx) + Math.abs(dz) <= 1 || this.ring(dx, dz) > 2 || random.nextFloat() >= 0.35F) {
+					continue;
+				}
+				BlockPos p = this.vent.offset(dx, this.floorY(dx, dz) - this.vent.getY() + 1, dz);
+				if (level.getBlockState(p).isAir()) {
+					level.setBlock(p, ModBlocks.TIDEWRACK.defaultBlockState(), Block.UPDATE_CLIENTS);
+				}
+			}
+		}
+		if (random.nextFloat() < 0.3F) {
+			int blooms = 2 + random.nextInt(3);
+			for (int tries = 0; tries < 40 && blooms > 0; tries++) {
+				int dx = random.nextIntBetweenInclusive(-this.half(), this.half());
+				int dz = random.nextIntBetweenInclusive(-this.half(), this.half());
+				if (!this.inFootprint(dx, dz) || this.ring(dx, dz) != RINGS) {
+					continue;
+				}
+				BlockPos p = this.vent.offset(dx, this.floorY(dx, dz) - this.vent.getY() + 1, dz);
+				if (level.getBlockState(p).isAir()) {
+					level.setBlock(p, ModBlocks.ENDURE_BLOOM.defaultBlockState(), Block.UPDATE_CLIENTS);
+					blooms--;
+				}
+			}
+		}
 	}
 
 	/** Digs the basin into the ground (worldgen, or a test) and sets the vent. Returns blocks changed. */

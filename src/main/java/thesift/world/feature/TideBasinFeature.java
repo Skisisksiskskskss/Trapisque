@@ -70,6 +70,7 @@ public record TideBasinFeature() implements Feature {
 			return false;
 		}
 		basin.carve(level);
+		basin.plant(level, random);
 		return true;
 	}
 

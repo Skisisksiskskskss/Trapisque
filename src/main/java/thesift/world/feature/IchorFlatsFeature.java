@@ -85,18 +85,18 @@ public record IchorFlatsFeature() implements Feature {
 		return state.is(ModBlocks.HEALTHY_SCULK) || state.is(ModBlocks.SIFT_SOIL) || state.is(ModBlocks.TIDE_SAND);
 	}
 
-	/** True if every side of the column, at every level it will hold, is solid or already ichor. */
+	/** True if every side of the column, at every level it will hold, is a full block or already ichor. */
 	private static boolean contained(WorldGenLevel level, int x, int y, int z, int depth) {
 		BlockPos.MutableBlockPos p = new BlockPos.MutableBlockPos();
 		for (int d = 0; d < depth; d++) {
 			for (Direction side : Direction.Plane.HORIZONTAL) {
 				BlockState state = level.getBlockState(p.set(x + side.getStepX(), y - d, z + side.getStepZ()));
-				if (!state.is(ModBlocks.ICHOR) && !state.isSolid()) {
+				if (!state.is(ModBlocks.ICHOR) && !state.isCollisionShapeFullBlock(level, p)) {
 					return false;
 				}
 			}
 		}
-		return level.getBlockState(p.set(x, y - depth, z)).isSolid();
+		return level.getBlockState(p.set(x, y - depth, z)).isCollisionShapeFullBlock(level, p);
 	}
 
 	private static SeededNoise noise(long seed) {

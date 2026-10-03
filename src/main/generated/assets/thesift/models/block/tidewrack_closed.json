@@ -1,0 +1,7 @@
+{
+  "parent": "thesift:block/template_flat_plant_cross",
+  "textures": {
+    "cross": "thesift:block/tidewrack_knot",
+    "plant": "thesift:block/tidewrack_closed"
+  }
+}

@@ -1,13 +1,16 @@
 package thesift.registry;
 
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
+import net.fabricmc.fabric.api.registry.FlammableBlockRegistry;
 import net.minecraft.core.Registry;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.random.WeightedList;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.HangingMossBlock;
 import net.minecraft.world.level.block.FlowerPotBlock;
@@ -23,15 +26,21 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.material.PushReaction;
+import net.minecraft.world.level.storage.loot.providers.number.ints.ContextIntProviders;
 
 import thesift.TheSift;
+import thesift.block.ChimeBellFlowerBlock;
+import thesift.block.EndureBloomBlock;
+import thesift.block.GlowcapBlock;
 import thesift.block.HealthySculkBlock;
 import thesift.block.HealthySculkGrassBlock;
+import thesift.block.LumenBloomBlock;
 import thesift.block.SiftMembraneBlock;
 import thesift.block.SongwoodLogBlock;
 import thesift.block.SongwoodSaplingBlock;
 import thesift.block.TideVentBlock;
 import thesift.block.TallHealthySculkGrassBlock;
+import thesift.block.TidewrackBlock;
 import thesift.world.SiftFeatures;
 
 /** Block set I (world.md §3; M1). Registration mirrors vanilla's {@code Blocks.register} (D-019). */
@@ -81,6 +90,28 @@ public final class ModBlocks {
 	public static final Block TIDE_VENT = register("tide_vent", TideVentBlock::new, BlockBehaviour.Properties.of()
 			.mapColor(MapColor.TERRACOTTA_RED).instrument(NoteBlockInstrument.BASEDRUM)
 			.requiresCorrectToolForDrops().strength(1.5F, 6.0F).sound(SoundType.CALCITE));
+	// Flora II (block_flora_ii.md, D-027). The tide plants and the lumen bloom are wild-only: their
+	// block items exist for creative and pick-block, but no loot, recipe or trade gives them.
+	public static final Block TIDEWRACK = register("tidewrack", TidewrackBlock::new, BlockBehaviour.Properties.of()
+			.mapColor(MapColor.WATER).noCollision().instabreak().sound(SoundType.WET_GRASS).offsetType(BlockBehaviour.OffsetType.XZ)
+			.randomTicks().pushReaction(PushReaction.POPPED));
+	public static final Block ENDURE_BLOOM = register("endure_bloom", EndureBloomBlock::new, BlockBehaviour.Properties.of()
+			.mapColor(MapColor.PLANT).noCollision().instabreak().sound(SoundType.GRASS).offsetType(BlockBehaviour.OffsetType.XZ)
+			.randomTicks().pushReaction(PushReaction.POPPED));
+	public static final Block GLOWCAP = register("glowcap", GlowcapBlock::new, BlockBehaviour.Properties.of()
+			.mapColor(MapColor.COLOR_LIGHT_GREEN).noCollision().instabreak().sound(SoundType.FUNGUS).offsetType(BlockBehaviour.OffsetType.XZ)
+			.lightLevel(s -> 10).pushReaction(PushReaction.POPPED), ModBlocks::compostMedium);
+	public static final Block POTTED_GLOWCAP = registerNoItem("potted_glowcap", p -> new FlowerPotBlock(GLOWCAP, p),
+			BlockBehaviour.Properties.of().instabreak().noOcclusion().lightLevel(s -> 10).pushReaction(PushReaction.POPPED));
+	public static final Block CHIME_BELL_FLOWER = register("chime_bell_flower", ChimeBellFlowerBlock::new, BlockBehaviour.Properties.of()
+			.mapColor(MapColor.PLANT).noCollision().instabreak().sound(SoundType.SMALL_AMETHYST_BUD).offsetType(BlockBehaviour.OffsetType.XZ)
+			.ignitedByLava().pushReaction(PushReaction.POPPED), ModBlocks::compostMedium);
+	public static final Block POTTED_CHIME_BELL_FLOWER = registerNoItem("potted_chime_bell_flower", p -> new FlowerPotBlock(CHIME_BELL_FLOWER, p),
+			BlockBehaviour.Properties.of().instabreak().noOcclusion().pushReaction(PushReaction.POPPED));
+	public static final Block LUMEN_BLOOM = register("lumen_bloom", LumenBloomBlock::new, BlockBehaviour.Properties.of()
+			.mapColor(MapColor.COLOR_LIGHT_BLUE).noCollision().instabreak().sound(SoundType.SPORE_BLOSSOM).lightLevel(s -> 12)
+			.pushReaction(PushReaction.POPPED).noLootTable());
+
 	/** The Sift-side gate's frame: unbreakable in survival, like the end portal frame. */
 	public static final Block GATESTONE = register("gatestone", Block::new, BlockBehaviour.Properties.of()
 			.mapColor(MapColor.COLOR_BLACK).instrument(NoteBlockInstrument.BASEDRUM)
@@ -108,9 +139,19 @@ public final class ModBlocks {
 	}
 
 	private static Block register(String name, Function<BlockBehaviour.Properties, Block> factory, BlockBehaviour.Properties properties) {
+		return register(name, factory, properties, UnaryOperator.identity());
+	}
+
+	private static Block register(String name, Function<BlockBehaviour.Properties, Block> factory, BlockBehaviour.Properties properties,
+			UnaryOperator<Item.Properties> item) {
 		Block block = registerNoItem(name, factory, properties);
-		ModItems.registerBlockItem(block);
+		ModItems.registerBlockItem(block, item);
 		return block;
+	}
+
+	/** Composts as flowers and mushrooms do. */
+	private static Item.Properties compostMedium(Item.Properties properties) {
+		return properties.compostable(ContextIntProviders.COMPOSTABLE_MEDIUM);
 	}
 
 	private static Block registerNoItem(String name, Function<BlockBehaviour.Properties, Block> factory, BlockBehaviour.Properties properties) {
@@ -119,6 +160,8 @@ public final class ModBlocks {
 	}
 
 	public static void init() {
-		// Class loading registers the fields above.
+		// Class loading registers the fields above. The chime bell burns as poppies do (FireBlock: ignite 60, burn 100);
+		// the tide plants, the glowcap and the lumen bloom don't burn (block_flora_ii.md).
+		FlammableBlockRegistry.getDefaultInstance().add(CHIME_BELL_FLOWER, 60, 100);
 	}
 }
