@@ -84,6 +84,7 @@ Notes on the calls:
 - **Home:** Singer's Meadow, near tide basins and ichor pools. Reacts to every Tide (below).
 
 ## Silhouette and look
+*(D-029, owner playtest 4: the texture is drawn as vanilla's mobs, with gradients, fur clumps, catch-lit eyes and a small mouth always there; the glow is on the belly only; four pet goals are added: greet, beg, forage, play.)*
 - **Hitbox:** 0.5 × 0.5 blocks (rabbit 0.49 × 0.6, allay 0.35 × 0.6). About a third of a player's *(Superseded by D-025: 0.55 × 0.5, a 9 × 7 × 8 body after the first look.)*
   height: smaller than a cat, bigger than a silverfish.
 - **Readable at 10 blocks:** a rounded pale-blue box with two upright ear tufts and a bright belly;

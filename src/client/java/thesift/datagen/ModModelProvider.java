@@ -137,6 +137,9 @@ final class ModModelProvider extends FabricModelProvider {
 		g.blockStateOutput.accept(BlockModelGenerators.createSimpleBlock(ModBlocks.LUMEN_BLOOM, BlockModelGenerators.plainVariant(lumen)));
 		g.registerSimpleFlatItemModel(ModBlocks.LUMEN_BLOOM);
 		g.createLantern(ModBlocks.LUMEN_LANTERN);
+		// The ichor lily: a hand-made model (a pad with a glowing bud), turned at random as lily pads are.
+		g.createRotatedVariantBlock(ModBlocks.ICHOR_LILY, TheSift.id("block/ichor_lily"));
+		g.registerSimpleFlatItemModel(ModBlocks.ICHOR_LILY.asItem());
 	}
 
 	private static TextureMapping plant(Block block, String suffix) {

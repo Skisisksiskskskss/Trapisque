@@ -50,6 +50,19 @@ The M2 plants (block_flora_ii.md, D-027): tidewrack and the Endure bloom are pic
 | Lantern light | 15 | lantern 15, soul lantern 10 | A lantern |
 | Frond compost | low (30%) | kelp | A sea plant |
 
+## Rework 4 (D-029, 2026-10-03)
+| Number | Value | Vanilla analogs | Why |
+|---|---|---|---|
+| Ichor lily light | 9 | glow lichen 7, sea pickles 6–15, frog light 15 | Lights a blot of ichor without washing out the night |
+| Ichor lilies | 2 patches a Flats chunk, 14 tries each, only on an ichor source | swamp lily pads (4 patches of 10) | The Flats' blots are smaller than a swamp's water |
+| Lumen in the Flats | 1 in 6 chunks (Meadow 1 in 12) | — | "More light" in the Flats |
+| Glowcaps in the Flats | a patch (10 tries) 1 chunk in 3 | swamp mushrooms | A swamp's mushrooms |
+| Greet | after 30 s away (out of 24 blocks, or gone) | — | Long enough to mean "came back" |
+| Forage | ready tidewrack within 12 blocks; every 2–4 min at most, Thrive only | allay, fox | Helpful, but a basin visit still pays |
+| Tag | 8–12 s, 1 chance in about a minute of idleness | — | Seen now and then, never a constant blur |
+| Grain softening | jitter ×0.4, clumps ×0.6, contrast ×0.72 | vanilla stone, dirt | "A slight change will come far" |
+| Still ichor frame | 3 ticks (was 5) | water 2 | "Slightly faster" |
+
 ## The hunt (WP-060, frozen 2026-10-02)
 The system every Sift hunter shares (system_hunt.md); each mob's own stats are in its section.
 **Difficulty:** Peaceful removes hunters (`notInPeaceful()`); the enduring chance is 25 % on Easy and

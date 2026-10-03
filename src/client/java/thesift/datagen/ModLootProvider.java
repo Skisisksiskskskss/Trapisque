@@ -43,6 +43,7 @@ final class ModLootProvider extends FabricBlockLootSubProvider {
 		dropSelf(ModBlocks.TIDE_SAND);
 		dropSelf(ModBlocks.TIDE_VENT);
 		dropSelf(ModBlocks.LUMEN_LANTERN);
+		dropSelf(ModBlocks.ICHOR_LILY);
 		// Flora II (block_flora_ii.md, D-027): the tide plants give their harvest when broken ready, and
 		// never themselves, whatever the tool; the lumen bloom gives nothing (no loot table at all).
 		add(ModBlocks.TIDEWRACK, readyHarvest(ModItems.TIDEWRACK_FROND, 1, 2));

@@ -6,6 +6,7 @@ import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.MobRenderer;
 import net.minecraft.client.renderer.entity.layers.LivingEntityEmissiveLayer;
+import net.minecraft.client.renderer.entity.state.HoldingEntityRenderState;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
@@ -27,6 +28,7 @@ public final class BlubRenderer extends MobRenderer<Blub, BlubRenderState, BlubM
 	public BlubRenderer(EntityRendererProvider.Context context) {
 		super(context, new BlubModel(context.bakeLayer(LAYER)), 0.3F);
 		// The Endure lantern: render only, fading in and out (the warden's glow layer, with our alpha).
+		this.addLayer(new BlubHeldItemLayer(this));
 		this.addLayer(new LivingEntityEmissiveLayer<>(this, state -> GLOW, (state, ageInTicks) -> state.glow,
 				this.getModel(), RenderTypes::entityTranslucentEmissive, false));
 	}
@@ -49,6 +51,8 @@ public final class BlubRenderer extends MobRenderer<Blub, BlubRenderState, BlubM
 		state.listening = entity.isListening();
 		state.curled = entity.isCurled();
 		state.restless = entity.isRestless();
+		state.interested = entity.isInterested();
+		HoldingEntityRenderState.extractHoldingEntityRenderState(entity, state, this.itemModelResolver);
 		state.stacked = entity.isPassenger() && entity.getVehicle() instanceof Blub || entity.isVehicle();
 		int level = 0;
 		for (Entity e = entity.getVehicle(); e instanceof Blub; e = e.getVehicle()) {

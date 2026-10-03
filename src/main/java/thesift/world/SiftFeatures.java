@@ -32,6 +32,10 @@ public final class SiftFeatures {
 	public static final ResourceKey<PlacedFeature> CHIME_BELLS_MEADOW = ResourceKey.create(Registries.PLACED_FEATURE, TheSift.id("chime_bells_singers_meadow"));
 	public static final ResourceKey<PlacedFeature> CHIME_BELLS_FLATS = ResourceKey.create(Registries.PLACED_FEATURE, TheSift.id("chime_bells_ichor_flats"));
 	public static final ResourceKey<PlacedFeature> GLOWCAPS_HOLLOWS = ResourceKey.create(Registries.PLACED_FEATURE, TheSift.id("glowcaps_sift_hollows"));
+	// Owner playtest 3 (D-029): the Flats' lights, and their own plant.
+	public static final ResourceKey<Feature> ICHOR_LILY_PATCH = ResourceKey.create(Registries.FEATURE, TheSift.id("ichor_lily_patch"));
+	public static final ResourceKey<PlacedFeature> ICHOR_LILIES_FLATS = ResourceKey.create(Registries.PLACED_FEATURE, TheSift.id("ichor_lilies_ichor_flats"));
+	public static final ResourceKey<PlacedFeature> GLOWCAPS_FLATS = ResourceKey.create(Registries.PLACED_FEATURE, TheSift.id("glowcaps_ichor_flats"));
 	public static final ResourceKey<PlacedFeature> GRASS_FLATS = ResourceKey.create(Registries.PLACED_FEATURE, TheSift.id("grass_ichor_flats"));
 	public static final ResourceKey<Feature> HEALTHY_SCULK_GRASS_PATCH = ResourceKey.create(Registries.FEATURE, TheSift.id("healthy_sculk_grass_patch"));
 	public static final ResourceKey<Feature> TIDE_BASIN = ResourceKey.create(Registries.FEATURE, TheSift.id("tide_basin"));

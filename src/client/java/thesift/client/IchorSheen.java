@@ -64,13 +64,20 @@ public final class IchorSheen implements FluidRenderHandler {
 		return film(field(x, z));
 	}
 
-	/** Where (x, z) falls on the walk, before wrapping: a swirled interference of two waves. */
+	/**
+	 * Where (x, z) falls on the walk, before wrapping: an interference of two waves, swirled twice (a
+	 * broad swirl, then a finer wiggle riding on it, as oil on water: owner playtest 3), plus a slow
+	 * term that stretches some stretches of the walk and squeezes others, so the bands are uneven.
+	 */
 	static double field(double x, double z) {
 		double a = x / SCALE;
 		double b = z / SCALE;
 		double wa = a + 0.9 * Math.sin(0.7 * b + 1.3) + 0.4 * Math.sin(1.9 * b - 0.6 * a);
 		double wb = b + 0.9 * Math.sin(0.8 * a + 4.1) + 0.4 * Math.sin(1.7 * a + 0.5 * b + 2.2);
-		return 1.15 * (0.5 + 0.3 * Math.sin(wa + 0.6 * wb) + 0.2 * Math.sin(1.3 * wb - 0.4 * wa + 2.0));
+		double fa = wa + 0.45 * Math.sin(2.6 * wb + 0.9 * wa + 0.7) + 0.12 * Math.sin(4.3 * wb - 1.1);
+		double fb = wb + 0.45 * Math.sin(2.4 * wa - 0.8 * wb + 2.9) + 0.12 * Math.sin(4.7 * wa + 0.4);
+		return 1.15 * (0.5 + 0.3 * Math.sin(fa + 0.6 * fb) + 0.2 * Math.sin(1.3 * fb - 0.4 * fa + 2.0))
+				+ 0.12 * Math.sin(0.45 * a - 0.3 * b + 1.0);
 	}
 
 	/** The film colour at a point on the walk, blended between its two nearest stops. */

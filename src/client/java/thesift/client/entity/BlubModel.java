@@ -35,6 +35,11 @@ public class BlubModel extends EntityModel<BlubRenderState> {
 		this.backRightFoot = root.getChild("back_right_foot");
 	}
 
+	/** The body, for layers that draw on it (the frond carried in its mouth). */
+	public ModelPart body() {
+		return this.body;
+	}
+
 	public static LayerDefinition createBodyLayer() {
 		MeshDefinition mesh = new MeshDefinition();
 		PartDefinition root = mesh.getRoot();
@@ -96,6 +101,14 @@ public class BlubModel extends EntityModel<BlubRenderState> {
 			this.leftEar.xRot = -0.15F;
 			this.rightEar.xRot = -0.15F;
 			this.body.zRot += Mth.sin(t * 0.52F) * 0.08F;
+		}
+		if (state.interested) {
+			// Beg: head on one side, ears pricked, as a wolf watching a treat.
+			this.body.zRot += 0.22F;
+			this.leftEar.zRot = 0.05F;
+			this.rightEar.zRot = -0.3F;
+			this.leftEar.xRot = -0.2F;
+			this.rightEar.xRot = -0.2F;
 		}
 		if (state.restless) {
 			// The herald: quick ear flicks.

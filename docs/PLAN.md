@@ -45,6 +45,7 @@ Only one WP is IN PROGRESS at a time.
 | WP-053 | M1 integration and Gate C (self-review) | 4 | M | DONE |
 | WP-054 | The owner's playtest rework: water, terrain, textures, trees, Blub (`v0.1.1-alpha`) | 4 | L | DONE |
 | WP-055 | The owner's second playtest rework: ichor sheen, ponds and flats, trees, texture grain (`v0.1.2-alpha`) | 4 | L | DONE |
+| WP-056 | The owner's fourth playtest notes: quieter grain, wigglier ichor, ichor lily and Flats lights, blub redraw and pet behaviours, foley sound rework (`v0.1.4-alpha`, D-029) | 4 | L | DONE |
 | WP-060 | M2 system design: the hearing rule, retreat, enduring variants, lumen | 4 | L | DONE |
 | WP-061 | Nester design doc | 4 | L | DONE |
 | WP-062 | Bloombud design doc | 4 | L | DONE |

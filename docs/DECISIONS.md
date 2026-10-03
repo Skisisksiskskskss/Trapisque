@@ -667,3 +667,39 @@ It also found that M1's Tide changed nothing in play (SF4), since the mission as
 **Consequences.** rules.md's "none visible" sun row and its daylight-detector note are superseded. The sky shows a sun in Thrive and a moon in Endure.
 
 **Revisit if** a shader pack still renders the Sift wrongly (then the dimension's id may need a shader-pack mapping note in the README), or the moving sun reads as un-Sift-like.
+
+## D-029 Quieter textures, livelier ichor, the Flats' lights, a pet that does things, foley not tones (2026-10-03) [owner playtest 4] [supersedes D-026 on the texture grain, mob_blub.md on the face and the glow strip, the WP-043 synthesis method]
+**Context.** The owner's notes on `v0.1.3-alpha`:
+- the "vanilla" grain is "honestly just grain": hard on the eyes, and the blocks don't flow with vanilla's; "a slight change will come far";
+- ichor: "slightly faster animation and less uniform gradient, more wiggly";
+- the Ichor Flats: "more light producing fauna, and even an exclusive to that biome";
+- the blub: more faithful to the trailer but drawn like vanilla, "less cell shaded", with a small mouth "and not only at night"; "more dynamic behaviour and AI and actual stuff that it does as a pet, not just exists";
+- sound: "full rework", more vanilla, with effort behind it, "not just random synthetic tones, especially for ichor".
+
+**Decision.**
+- **Textures.** The shared grain gives most of its per-pixel jitter (×0.4) and some of its block-sized clumps (×0.6) to 2-pixel blotches, and the shade bands sit closer together (contrast ×0.72), so blocks read as vanilla's quiet stone and dirt. Hymnstone's pits and flecks are a shade softer. Every grain texture changes a little; none changes its palette.
+- **Ichor.** The still texture animates faster (a frame every 3 ticks; it was 5). The colour field is swirled twice: a broad swirl, then a finer wiggle on it, plus a slow term that stretches and squeezes the bands. It reads as oil on water, not even rings.
+- **The Ichor Flats' lights.**
+  - **Ichor lily** (`thesift:ichor_lily`), the Flats' own plant: vanilla's lily pad that floats only on an ichor source, with a glowing lilac bud (light 9; glow lichen 7, sea pickles 6–15). It lets **glimmers** drift up, drawn and moving as vanilla's fireflies. It drops itself, composts as a lily pad does, and boats break it. Two patches a Flats chunk (14 tries each), only where it survives.
+  - Lumen blooms are twice as common in the Flats (1 in 6 chunks; the Meadow keeps 1 in 12). Glowcaps grow in the Flats' grass as mushrooms do in a swamp (a patch 1 chunk in 3).
+- **The blub.**
+  - Redrawn as vanilla draws its mobs: soft top-to-bottom gradients with low-contrast fur clumps and a little dither, round dark eyes with a catch-light, a small mouth and cheeks that are always there. The Endure glow stays on the belly only: the lit strip on the front read as a mouth that came out at night.
+  - New pet behaviours (goals), each built on a vanilla precedent:
+    - **Greet** (a dog at the door): an owner back after 30 s away (out of 24 blocks, or gone) is run to, met with hearts and hops.
+    - **Beg** (the wolf's head tilt): a frond in the owner's hand within 8 blocks.
+    - **Forage** (the allay and fox): in Thrive, every 2 to 4 minutes at most, it picks ready tidewrack within 12 blocks. It picks exactly as a player does, so the cycle stamp holds. It carries the frond in its mouth (drawn) and drops it at its owner's feet.
+    - **Play** (tag): two idle befriended blubs of one owner chase each other for 8–12 s with hops; a catch is a chirp and swaps who is "it".
+- **Sound.** `tools/audio/synth.py` is rewritten as procedural foley. Every one of the 78 files is regenerated, with the same names and vanilla-matched levels:
+  - Liquids: Minnaert bubbles with van den Doel's damping and rising pitch, bursting films, splashes with entrained bubble clouds and droplets. Ichor is a denser, thicker liquid, so its bubbles ring lower and die faster.
+  - Plants: granular leaf rustle and snapping stems.
+  - Bells, glass and gongs: modal synthesis with beating partial pairs.
+  - The blub: source-filter formant synthesis, a voice with lips, vowels and breath.
+  - Bodies: thumps and squishes.
+  - Ambience: wind gusts and a breathy flute.
+
+**Consequences.**
+- mob_blub.md's face, glow strip and goal list are superseded here.
+- Tests: the lily's footing and light, begging, a forage delivered to the owner (83 GameTests).
+- The sounds were checked by spectrogram, not by ear (the build machine has no speakers). The owner's ears are the test.
+
+**Revisit if** the grain now reads as blurry, the foraging blub fetches so much that it sidesteps a visit to the basin (raise the cooldown), or a sound reads wrong in game.

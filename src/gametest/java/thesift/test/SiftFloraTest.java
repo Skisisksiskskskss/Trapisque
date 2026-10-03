@@ -16,6 +16,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
@@ -170,5 +171,53 @@ public final class SiftFloraTest {
 			helper.assertTrue(babies.size() == 1, "one baby");
 			helper.assertTrue(babies.getFirst().isOwnedBy(player), "the baby is the owner's");
 		});
+	}
+
+	/** D-029: the ichor lily floats on an ichor source only, and glows (light 9). */
+	@GameTest(dimension = SIFT)
+	public void ichorLilyFloatsOnIchorOnly(GameTestHelper helper) {
+		helper.setBlock(GROUND, ModFluids.ICHOR.getSource(false).createLegacyBlock());
+		helper.assertTrue(ModBlocks.ICHOR_LILY.defaultBlockState().canSurvive(helper.getLevel(), helper.absolutePos(PLANT)), "floats on ichor");
+		helper.setBlock(GROUND, Blocks.WATER);
+		helper.assertFalse(ModBlocks.ICHOR_LILY.defaultBlockState().canSurvive(helper.getLevel(), helper.absolutePos(PLANT)), "not on water");
+		helper.assertTrue(ModBlocks.ICHOR_LILY.defaultBlockState().getLightEmission() == 9, "light 9");
+		helper.succeed();
+	}
+
+	/** D-029: a frond in its owner's hand within 8 blocks makes a befriended blub beg. */
+	@GameTest(dimension = SIFT, structure = SiftBasinTest.BIG, maxTicks = 100)
+	public void blubBegsForAFrond(GameTestHelper helper) {
+		floor(helper);
+		Player owner = helper.makeMockServerPlayer(GameType.SURVIVAL);
+		owner.setPos(helper.absoluteVec(new Vec3(8.5, 1, 4.5)));
+		Blub blub = helper.spawn(ModEntities.BLUB, new Vec3(8.5, 1, 8.5));
+		blub.tame(owner);
+		owner.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.TIDEWRACK_FROND));
+		helper.succeedWhen(() -> helper.assertTrue(blub.isInterested(), "begging"));
+	}
+
+	/** D-029: in Thrive a befriended blub picks ready tidewrack and drops the frond at its owner's feet. */
+	@GameTest(dimension = SIFT, structure = SiftBasinTest.BIG, maxTicks = 900)
+	public void blubForagesAFrondForItsOwner(GameTestHelper helper) {
+		setTide(helper, Tide.THRIVE);
+		floor(helper);
+		helper.setBlock(new BlockPos(12, 0, 12), ModBlocks.TIDE_SAND);
+		helper.setBlock(new BlockPos(12, 1, 12), ModBlocks.TIDEWRACK.defaultBlockState().setValue(TideFloraBlock.OPEN, true));
+		Player owner = helper.makeMockServerPlayer(GameType.SURVIVAL);
+		owner.setPos(helper.absoluteVec(new Vec3(3.5, 1, 3.5)));
+		Blub blub = helper.spawn(ModEntities.BLUB, new Vec3(5.5, 1, 5.5));
+		blub.tame(owner);
+		helper.succeedWhen(() -> {
+			helper.assertTrue(TideFloraBlock.isPicked(helper.getBlockState(new BlockPos(12, 1, 12)), helper.getLevel()), "the blub picked it");
+			helper.assertItemEntityPresent(ModItems.TIDEWRACK_FROND, new BlockPos(3, 1, 3), 3.0);
+		});
+	}
+
+	private static void floor(GameTestHelper helper) {
+		for (int x = 0; x < 17; x++) {
+			for (int z = 0; z < 17; z++) {
+				helper.setBlock(new BlockPos(x, 0, z), ModBlocks.HEALTHY_SCULK);
+			}
+		}
 	}
 }

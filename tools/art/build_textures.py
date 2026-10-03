@@ -88,19 +88,28 @@ def put(im: Image.Image, pts, colour) -> None:
 
 
 # ---------------------------------------------------------------- vanilla-style grain (owner playtest 2)
+SOFTEN = 0.4
+CONTRAST = 0.72
+
+
 def grain(seed: int, w: int = W, h: int = H, clumps: float = 0.55, cells: int = 4, fine: int = 8,
-          jitter: float = 0.35) -> list[list[float]]:
+          jitter: float = 0.35, soft: bool = True) -> list[list[float]]:
     """Vanilla's texture grain (owner playtest 2, D-026): small clumps (a coarse tileable noise) under
     per-pixel jitter, so neighbouring pixels differ but shades still gather into 2-4 px blotches, as on
     vanilla stone, dirt and grass. Seamless: every term wraps at the texture's edge."""
     coarse = tile_noise(w, h, cells, cells, seed, ((1.0, 1),))
     mid = tile_noise(w, h, fine, fine, seed + 1, ((1.0, 1),))
     rnd = random.Random(seed * 31 + 7)
+    if soft:
+        # Owner playtest 3: pixel-level noise read as harsh grain, and block-sized clumps repeat from
+        # block to block; most of the weight goes to the 2 px blotches between them.
+        jitter *= SOFTEN
+        clumps *= 0.6
     rest = 1.0 - clumps - jitter
     return [[clumps * coarse[y][x] + rest * mid[y][x] + jitter * rnd.random() for x in range(w)] for y in range(h)]
 
 
-def by_rank(values: list[list[float]], shares: list[float]) -> list[list[int]]:
+def by_rank(values: list[list[float]], shares: list[float], soft: bool = True) -> list[list[int]]:
     """Assigns each pixel a band 0..len(shares)-1 by its rank, so each band covers its share of the
     texture whatever the noise's spread (a bell of shares keeps most pixels mid-tone)."""
     flat = sorted(v for row in values for v in row)
@@ -109,7 +118,13 @@ def by_rank(values: list[list[float]], shares: list[float]) -> list[list[int]]:
     for sh in shares[:-1]:
         acc += sh / total
         cuts.append(flat[min(len(flat) - 1, int(acc * len(flat)))])
-    return [[sum(v >= c for c in cuts) for v in row] for row in values]
+    bands = [[sum(v >= c for c in cuts) for v in row] for row in values]
+    if not soft:
+        return bands
+    # Owner playtest 3: draw the bands closer together (fewer extreme shades), as vanilla's low-contrast
+    # stone and dirt, so the blocks sit quietly beside vanilla's.
+    mid = (len(shares) - 1) / 2
+    return [[int(round(mid + (b - mid) * CONTRAST)) for b in row] for row in bands]
 
 
 def paint(ramp: str, bands: list[list[int]], offset: int, w: int = W, h: int = H) -> Image.Image:
@@ -147,9 +162,9 @@ def hymnstone_pattern(seed: int = 3) -> Image.Image:
     v = grain(seed, clumps=0.38, cells=4, fine=8, jitter=0.42)
     im = paint("hymnstone", by_rank(v, [0.04, 0.12, 0.22, 0.26, 0.22, 0.10, 0.04]), 1)
     for x, y in scatter(seed * 13 + 1, 2, 7.0):
-        put(im, [(x, y)], rgba("hymnstone", 0))
-    for x, y in scatter(seed * 17 + 3, 3, 6.0):
-        put(im, [(x, y)], rgba("hymnstone", 8))
+        put(im, [(x, y)], rgba("hymnstone", 2))  # quiet pits and flecks (owner playtest 3)
+    for x, y in scatter(seed * 17 + 3, 2, 6.0):
+        put(im, [(x, y)], rgba("hymnstone", 6))
     return im
 
 
@@ -356,7 +371,7 @@ def songwood_leaves(seed: int = 63) -> Image.Image:
         px[x % W, y % H] = rgba("songwood_leaves", 7)
         px[(x + 1) % W, y % H] = rgba("songwood_leaves", 6)
         px[(x + 1) % W, (y + 1) % H] = rgba("songwood_leaves", 3)
-    holes = grain(seed + 11, clumps=0.2, cells=4, fine=8, jitter=0.8)
+    holes = grain(seed + 11, clumps=0.2, cells=4, fine=8, jitter=0.8, soft=False)
     flat = sorted(val for row in holes for val in row)
     cut = flat[int(len(flat) * 0.16)]
     for y in range(H):
@@ -675,6 +690,75 @@ def lumen_lantern_item() -> Image.Image:
     return im
 
 
+def ichor_lily() -> Image.Image:
+    """The ichor lily's pad (D-029), drawn as vanilla's lily pad: a round leaf with a notch cut to its
+    centre and veins running out from it, darker at the rim, a few soft blotches, no hard grain."""
+    im = _blank()
+    rnd = random.Random(17)
+    shade = grain(17, clumps=0.4, cells=4, fine=8, jitter=0.2)
+    notch = math.radians(-60)
+    for y in range(H):
+        for x in range(W):
+            dx, dy = x + 0.5 - 8.0, y + 0.5 - 8.0
+            d = math.hypot(dx, dy)
+            if d > 7.6:
+                continue
+            a = math.atan2(dy, dx)
+            if d > 1.2 and abs((a - notch + math.pi) % math.tau - math.pi) < 0.22:
+                continue  # the notch
+            i = 3 + (1 if shade[y][x] > 0.55 else 0) - (1 if d > 6.4 else 0)
+            vein = min(abs((a * 5 / math.pi + 0.5) % 1.0 - 0.5), 0.5)  # ten veins from the centre
+            if vein < 0.08 and 1.5 < d < 6.6:
+                i = 2
+            if d > 7.0:
+                i = 1
+            if rnd.random() < 0.03:
+                i = max(1, i - 1)
+            _set(im, x, y, rgba("ichor_lily", i))
+    return im
+
+
+def ichor_lily_bud() -> Image.Image:
+    """The bud standing on the pad, seen from the side (a cross model): a closed lilac flower on a short
+    teal stem, pale at its tip where it glows."""
+    rows = [
+        "......4.....",
+        ".....343....",
+        ".....232....",
+        "....12321...",
+        "....01210...",
+        ".....s0s....",
+        "......s.....",
+    ]
+    im = _blank()
+    for y, row in enumerate(rows):
+        for x, ch in enumerate(row):
+            if ch == "s":
+                _set(im, 2 + x, 9 + y, rgba("ichor_lily", 3))
+            elif ch != ".":
+                _set(im, 2 + x, 9 + y, rgba("ichor_lily_bud", int(ch)))
+    return im
+
+
+def ichor_lily_item() -> Image.Image:
+    """The lily as an item: the pad with the bud on it."""
+    im = ichor_lily()
+    bud = ichor_lily_bud()
+    for y in range(9, 16):
+        for x in range(W):
+            p = bud.getpixel((x, y))
+            if p[3]:
+                _set(im, x, y - 6, p)
+    return im
+
+
+def glimmer() -> Image.Image:
+    """A glimmer (D-029), drawn as vanilla's firefly: a tiny bright point, here lilac-white."""
+    im = Image.new("RGBA", (8, 8), (0, 0, 0, 0))
+    im.putpixel((0, 0), rgba("ichor_lily_bud", 4))
+    return im
+
+
 def tidewrack_frond() -> Image.Image:
     """One frond, as an item: a wavy ribbon, olive to ochre, its sea-green underside along one edge."""
     im = _blank()
@@ -894,50 +978,60 @@ def box_faces(u: int, v: int, w: int, h: int, d: int) -> dict[str, tuple[int, in
 
 
 def blub_texture() -> Image.Image:
-    """64 x 32, laid out for BlubModel (owner rework, after the first look): a 9 x 7 x 8 body of the
-    teaser's soft blue, lit from above; two dark violet slit eyes set low on the front; long ears with
-    a paler inner face; darker legs."""
+    """64 x 32, laid out for BlubModel, drawn as vanilla draws its mobs (owner playtest 3, D-029: "drawn
+    more like vanilla, less cell shaded"): every face a soft gradient, lit at the top and shaded toward
+    the ground, with low-contrast fur clumps; round dark eyes with a catch-light, a small mouth always
+    there, a touch of blush; paler inner ears, darker feet, a fluffy pale tail."""
     im = Image.new("RGBA", (64, 32), (0, 0, 0, 0))
     px = im.load()
-    fur = [rgba("blub", i) for i in range(6)]
-    n = tile_noise(64, 32, 16, 8, 131, ((1.0, 1), (0.5, 2)))
+    fur = [rgba("blub_fur", i) for i in range(10)]
+    clumps = grain(131, w=64, h=32, clumps=0.5, cells=8, fine=16, jitter=0.25)
+    dither = random.Random(137)
 
-    def fill(rect, base):
+    def paint_face(rect, top_shade, bottom_shade):
         x0, y0, w, h = rect
         for y in range(y0, y0 + h):
+            k = (y - y0) / max(1, h - 1)
+            base = top_shade + (bottom_shade - top_shade) * k
             for x in range(x0, x0 + w):
-                i = base + (1 if n[y][x] > 0.75 else 0) - (1 if n[y][x] < 0.2 else 0)
-                px[x, y] = fur[max(0, min(5, i))]
+                v = clumps[y][x]
+                # Fur clumps and a little dither break the gradient's rows, as on vanilla's mobs.
+                i = base + (0.8 if v > 0.66 else -0.8 if v < 0.32 else 0.0) + (dither.random() - 0.5) * 0.7
+                px[x, y] = fur[max(0, min(9, int(round(i))))]
 
-    shade = {"top": 4, "bottom": 1, "right": 3, "front": 3, "left": 2, "back": 2}
-    for part in (box_faces(0, 0, 9, 7, 8), box_faces(36, 0, 2, 5, 1), box_faces(42, 0, 2, 5, 1),
-                 box_faces(48, 0, 2, 1, 2), box_faces(36, 8, 2, 2, 1)):
-        for face, rect in part.items():
-            fill(rect, shade[face] - (1 if part is not None and rect[2] == 2 and rect[3] == 1 else 0))
-    # The body's top edge on every side is a shade lighter, as light catches the rim.
     body = box_faces(0, 0, 9, 7, 8)
+    paint_face(body["top"], 8, 7)
+    paint_face(body["bottom"], 2, 2)
     for face in ("right", "front", "left", "back"):
-        x0, y0, w, h = body[face]
-        for x in range(x0, x0 + w):
-            px[x, y0] = fur[4]
-    # Face: two slit eyes (2 x 1), with a dark lid line below, low on the front as in the first look.
+        paint_face(body[face], 6.8, 3.6)
+    for u in (36, 42):  # ears: lit at the tip, a pale inner face
+        ear = box_faces(u, 0, 2, 5, 1)
+        for face, rect in ear.items():
+            paint_face(rect, 8, 4)
+        x0, y0, w, h = ear["front"]
+        for y in range(y0 + 1, y0 + h - 1):
+            px[x0, y] = fur[9]
+            px[x0 + 1, y] = fur[8]
+    for face, rect in box_faces(48, 0, 2, 1, 2).items():  # feet
+        paint_face(rect, 3, 1)
+    for face, rect in box_faces(36, 8, 2, 2, 1).items():  # tail tuft
+        paint_face(rect, 9, 7)
     fx, fy, fw, fh = body["front"]
-    for ex in (fx + 1, fx + 6):
-        put(im, [(ex, fy + 3), (ex + 1, fy + 3)], rgba("blub_eye", 0))
-        put(im, [(ex, fy + 4), (ex + 1, fy + 4)], rgba("blub_eye", 1))
-    # Ears: a paler stripe on the front (inner) face.
-    for u in (36, 42):
-        x0, y0, w, h = box_faces(u, 0, 2, 5, 1)["front"]
-        for y in range(y0 + 1, y0 + h):
-            px[x0, y] = fur[5]
-    # Legs: a shade darker all round.
-    for face, rect in box_faces(48, 0, 2, 1, 2).items():
-        fill(rect, 1)
+    # Eyes: 2 x 2, dark violet, a catch-light at the upper outer corner.
+    for ex, light_x in ((fx + 1, fx + 1), (fx + 6, fx + 7)):
+        for dx in (0, 1):
+            put(im, [(ex + dx, fy + 3)], rgba("blub_eye", 0))
+            put(im, [(ex + dx, fy + 4)], rgba("blub_eye", 1 if dx == (1 if ex == fx + 1 else 0) else 0))
+        put(im, [(light_x, fy + 3)], rgba("blub_eye", 2))
+    # A small mouth between and below the eyes, always there; cheeks just outside it.
+    put(im, [(fx + 3, fy + 5), (fx + 5, fy + 5)], rgba("blub_mouth", 1))
+    put(im, [(fx + 4, fy + 5)], rgba("blub_mouth", 0))
+    put(im, [(fx + 1, fy + 5), (fx + 7, fy + 5)], rgba("blub_blush", 0))
     return im
 
 
 def blub_glow_texture() -> Image.Image:
-    """The belly glow in Endure (emissive), on the body's bottom face and the lower front."""
+    """The belly glow in Endure (emissive), on the body's bottom face."""
     im = Image.new("RGBA", (64, 32), (0, 0, 0, 0))
     px = im.load()
     body = box_faces(0, 0, 9, 7, 8)
@@ -945,10 +1039,7 @@ def blub_glow_texture() -> Image.Image:
     for y in range(y0 + 1, y0 + h - 1):
         for x in range(x0 + 1, x0 + w - 1):
             px[x, y] = rgba("membrane", 4 if (x + y) % 3 else 5)
-    fx, fy, fw, fh = body["front"]
-    for x in range(fx + 2, fx + fw - 2):
-        px[x, fy + fh - 1] = rgba("membrane", 4)
-    return im
+    return im  # the belly only: a lit strip on the front read as a mouth that came out at night (D-029)
 
 
 def blub_spawn_egg() -> Image.Image:
@@ -1036,7 +1127,7 @@ def main() -> None:
     save_mcmeta("block/sift_membrane.png", '{\n  "animation": {\n    "frametime": 2,\n    "interpolate": true\n  }\n}\n')
     # One turn of the sheen's colour cycle in 12 s (48 frames of 5 ticks), smoothed between frames.
     save(strip([ichor_frame(16, 16, f / 48, flow=False) for f in range(48)]), "block/ichor_still.png")
-    save_mcmeta("block/ichor_still.png", '{\n  "animation": {\n    "frametime": 5,\n    "interpolate": true\n  }\n}\n')
+    save_mcmeta("block/ichor_still.png", '{\n  "animation": {\n    "frametime": 3,\n    "interpolate": true\n  }\n}\n')
     save(strip([ichor_frame(32, 32, f / 48, flow=True) for f in range(48)]), "block/ichor_flow.png")
     save_mcmeta("block/ichor_flow.png", '{\n  "animation": {\n    "frametime": 2,\n    "interpolate": true\n  }\n}\n')
     save(ichor_overlay(), "block/ichor_overlay.png")
@@ -1058,6 +1149,10 @@ def main() -> None:
     save(endure_petal_item(), "item/endure_petal.png")
     save(lumen_lantern(), "block/lumen_lantern.png")
     save(lumen_lantern_item(), "item/lumen_lantern.png")
+    save(ichor_lily(), "block/ichor_lily.png")
+    save(ichor_lily_bud(), "block/ichor_lily_bud.png")
+    save(ichor_lily_item(), "item/ichor_lily.png")
+    save(glimmer(), "particle/glimmer.png")
     save(glow_petal(), "particle/glow_petal.png")
     save(blub_texture(), "entity/blub/blub.png")
     save(blub_glow_texture(), "entity/blub/blub_glow.png")

@@ -52,6 +52,7 @@ final class ModLanguageProvider extends FabricLanguageProvider {
 		builder.add(ModBlocks.POTTED_CHIME_BELL_FLOWER, "Potted Chime Bell Flower");
 		builder.add(ModBlocks.LUMEN_BLOOM, "Lumen Bloom");
 		builder.add(ModBlocks.LUMEN_LANTERN, "Lumen Lantern");
+		builder.add(ModBlocks.ICHOR_LILY, "Ichor Lily");
 		builder.add(ModItems.TIDEWRACK_FROND, "Tidewrack Frond");
 		builder.add(ModItems.ENDURE_PETAL, "Endure Petal");
 		builder.add("subtitles.thesift.tidewrack.open", "Tidewrack opens");

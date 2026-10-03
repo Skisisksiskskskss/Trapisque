@@ -75,6 +75,11 @@ public class Blub extends TamableAnimal {
 	private static final EntityDataAccessor<Boolean> DATA_CURLED = SynchedEntityData.defineId(Blub.class, EntityDataSerializers.BOOLEAN);
 	private static final EntityDataAccessor<Boolean> DATA_RESTLESS = SynchedEntityData.defineId(Blub.class, EntityDataSerializers.BOOLEAN);
 	private static final EntityDataAccessor<Integer> DATA_VARIANT = SynchedEntityData.defineId(Blub.class, EntityDataSerializers.INT);
+	/** Watching a frond in its owner's hand, head on one side (BlubGoals.Beg, D-029). */
+	private static final EntityDataAccessor<Boolean> DATA_INTERESTED = SynchedEntityData.defineId(Blub.class, EntityDataSerializers.BOOLEAN);
+	/** An owner gone this long (out of 24 blocks, or away) is greeted on coming back (BlubGoals.Greet). */
+	static final int GREET_AWAY_TICKS = 600;
+	static final double GREET_RANGE = 24.0;
 
 	// Server state.
 	private int echoInterval;
@@ -85,6 +90,14 @@ public class Blub extends TamableAnimal {
 	private long lastEcho = -ECHO_COOLDOWN; // not MIN_VALUE: "now - lastEcho" would overflow
 	private @Nullable Vec3 ownerLastPos;
 	private int ownerStillTicks;
+	/** Game time the owner was last within GREET_RANGE; saved, so time in unloaded chunks counts. */
+	private long ownerSeenAt;
+	/** Until when a greeting is due (0: none). */
+	private long greetUntil;
+	/** Tag (BlubGoals.Play): the other blub, the ticks left, and whether this one is "it". */
+	@Nullable Blub playmate;
+	int playTicks;
+	boolean chasing;
 	private long nextHeraldCue;
 	private int lastSungNote = -1;
 	// The tower this blub is the bottom of (BlubGoals.Stack.tickTower).
@@ -137,6 +150,7 @@ public class Blub extends TamableAnimal {
 		builder.define(DATA_CURLED, false);
 		builder.define(DATA_RESTLESS, false);
 		builder.define(DATA_VARIANT, 0);
+		builder.define(DATA_INTERESTED, false);
 	}
 
 	@Override
@@ -145,13 +159,17 @@ public class Blub extends TamableAnimal {
 		this.goalSelector.addGoal(1, new TamableAnimal.TamableAnimalPanicGoal(1.6));
 		this.goalSelector.addGoal(2, new SitWhenOrderedToGoal(this));
 		this.goalSelector.addGoal(3, new BlubGoals.Shelter(this));
+		this.goalSelector.addGoal(3, new BlubGoals.Greet(this));
+		this.goalSelector.addGoal(3, new BlubGoals.Forage(this)); // above following: a fetch may go 12 blocks out
 		this.goalSelector.addGoal(4, new FollowOwnerGoal(this, 1.6, 6.0F, 2.0F));
 		this.goalSelector.addGoal(4, new BreedGoal(this, 1.0));
+		this.goalSelector.addGoal(6, new BlubGoals.Beg(this));
 		this.goalSelector.addGoal(5, new BlubGoals.Waterline(this));
 		// STACK ranks above LISTEN: a running higher goal would keep MOVE, and a tower only starts while listening.
 		this.goalSelector.addGoal(6, new BlubGoals.Stack(this));
 		this.goalSelector.addGoal(7, new BlubGoals.Listen(this));
 		this.goalSelector.addGoal(8, new BlubGoals.Bathe(this));
+		this.goalSelector.addGoal(8, new BlubGoals.Play(this));
 		this.goalSelector.addGoal(9, new WaterAvoidingRandomStrollGoal(this, 1.0));
 		this.goalSelector.addGoal(10, new LookAtPlayerGoal(this, Player.class, 6.0F));
 		this.goalSelector.addGoal(11, new RandomLookAroundGoal(this));
@@ -174,6 +192,23 @@ public class Blub extends TamableAnimal {
 				this.playSound(ModSounds.BLUB_CURL, 0.6F, this.getVoicePitch());
 			}
 		}
+	}
+
+	public boolean isInterested() {
+		return this.entityData.get(DATA_INTERESTED);
+	}
+
+	void setInterested(boolean interested) {
+		this.entityData.set(DATA_INTERESTED, interested);
+	}
+
+	/** A greeting is due: the owner came back after GREET_AWAY_TICKS away. */
+	boolean greetDue() {
+		return this.greetUntil > this.level().getGameTime();
+	}
+
+	void greeted() {
+		this.greetUntil = 0;
 	}
 
 	public boolean isRestless() {
@@ -223,6 +258,7 @@ public class Blub extends TamableAnimal {
 	/** Befriended by {@code player}'s hand-played note: takes the player's next chord interval. */
 	void befriend(Player player, int interval) {
 		this.tame(player);
+		this.ownerSeenAt = this.level().getGameTime(); // no greeting for the friend standing right there
 		this.echoInterval = interval;
 		this.setOrderedToSit(false);
 		this.setInSittingPose(false);
@@ -305,6 +341,13 @@ public class Blub extends TamableAnimal {
 			this.ownerLastPos = null;
 			this.ownerStillTicks = 0;
 			return;
+		}
+		long now = this.level().getGameTime();
+		if (this.distanceToSqr(owner) < GREET_RANGE * GREET_RANGE) {
+			if (now - this.ownerSeenAt >= GREET_AWAY_TICKS && !this.isOrderedToSit()) {
+				this.greetUntil = now + 200; // back after a while: run to meet them (BlubGoals.Greet)
+			}
+			this.ownerSeenAt = now;
 		}
 		Vec3 pos = owner.position();
 		if (this.ownerLastPos != null && pos.distanceToSqr(this.ownerLastPos) < 0.01) {
@@ -482,6 +525,7 @@ public class Blub extends TamableAnimal {
 		if (baby != null && this.isTame()) {
 			baby.setOwnerReference(this.getOwnerReference());
 			baby.setTame(true, true);
+			baby.ownerSeenAt = level.getGameTime();
 		}
 		return baby;
 	}
@@ -543,6 +587,7 @@ public class Blub extends TamableAnimal {
 		output.putInt("EchoInterval", this.echoInterval);
 		output.putLong("ListenUntil", this.listenUntil);
 		output.putInt("Variant", this.variant());
+		output.putLong("OwnerSeenAt", this.ownerSeenAt);
 	}
 
 	@Override
@@ -552,5 +597,6 @@ public class Blub extends TamableAnimal {
 		this.echoInterval = interval == 4 || interval == 7 ? interval : 0;
 		this.listenUntil = input.getLongOr("ListenUntil", 0L);
 		this.entityData.set(DATA_VARIANT, input.getIntOr("Variant", 0));
+		this.ownerSeenAt = input.getLongOr("OwnerSeenAt", 0L);
 	}
 }

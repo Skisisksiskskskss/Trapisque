@@ -384,6 +384,8 @@ final class SiftWorldgen {
 		flats.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.LUMEN_FLATS);
 		flats.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.ENDURE_BLOOMS_FLATS);
 		flats.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.CHIME_BELLS_FLATS);
+		flats.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.ICHOR_LILIES_FLATS);
+		flats.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.GLOWCAPS_FLATS);
 		flats.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.GRASS_FLATS);
 		context.register(SiftKeys.ICHOR_FLATS, new Biome.BiomeBuilder()
 				.hasPrecipitation(false)
@@ -464,6 +466,7 @@ final class SiftWorldgen {
 		context.register(SiftFeatures.LUMEN_BLOOM, LumenBloomFeature.INSTANCE);
 		context.register(SiftFeatures.CHIME_BELL_PATCH, new SimpleBlockFeature(new SimpleStateProvider(ModBlocks.CHIME_BELL_FLOWER.defaultBlockState())));
 		context.register(SiftFeatures.GLOWCAP_PATCH, new SimpleBlockFeature(new SimpleStateProvider(ModBlocks.GLOWCAP.defaultBlockState())));
+		context.register(SiftFeatures.ICHOR_LILY_PATCH, new SimpleBlockFeature(new SimpleStateProvider(ModBlocks.ICHOR_LILY.defaultBlockState())));
 		context.register(SiftFeatures.HYMNSTONE_SPIRE, HymnstoneSpireFeature.INSTANCE);
 		// Ponds on the surface (D-026): the same lake with a rim of tide sand where its walls are open.
 		context.register(SiftFeatures.ICHOR_POND, new LakeFeature(
@@ -540,13 +543,32 @@ final class SiftWorldgen {
 					PlacementUtils.HEIGHTMAP_WORLD_SURFACE,
 					BiomeFilter.biome());
 		}
-		for (var lumen : List.of(SiftFeatures.LUMEN_MEADOW, SiftFeatures.LUMEN_FLATS)) {
-			PlacementUtils.register(context, lumen, features.getOrThrow(SiftFeatures.LUMEN_BLOOM),
-					RarityFilter.onAverageOnceEvery(12),
+		// The Flats are lit twice as often (owner playtest 3, D-029).
+		for (var lumen : List.of(Map.entry(SiftFeatures.LUMEN_MEADOW, 12), Map.entry(SiftFeatures.LUMEN_FLATS, 6))) {
+			PlacementUtils.register(context, lumen.getKey(), features.getOrThrow(SiftFeatures.LUMEN_BLOOM),
+					RarityFilter.onAverageOnceEvery(lumen.getValue()),
 					InSquarePlacement.spread(),
 					PlacementUtils.HEIGHTMAP_WORLD_SURFACE,
 					BiomeFilter.biome());
 		}
+		// Ichor lilies on the Flats' blots (as lily pads on a swamp's water: the patch only takes where
+		// the lily survives, on an ichor source), and glowcaps in the Flats' grass, as a swamp's mushrooms.
+		PlacementUtils.register(context, SiftFeatures.ICHOR_LILIES_FLATS, features.getOrThrow(SiftFeatures.ICHOR_LILY_PATCH),
+				CountPlacement.of(2),
+				InSquarePlacement.spread(),
+				PlacementUtils.HEIGHTMAP_WORLD_SURFACE,
+				BiomeFilter.biome(),
+				CountPlacement.of(14),
+				OffsetPlacement.ofTriangle(6, 1),
+				BlockPredicateFilter.forPredicate(BlockPredicate.ONLY_IN_AIR_PREDICATE));
+		PlacementUtils.register(context, SiftFeatures.GLOWCAPS_FLATS, features.getOrThrow(SiftFeatures.GLOWCAP_PATCH),
+				RarityFilter.onAverageOnceEvery(3),
+				InSquarePlacement.spread(),
+				PlacementUtils.HEIGHTMAP_WORLD_SURFACE,
+				BiomeFilter.biome(),
+				CountPlacement.of(10),
+				OffsetPlacement.ofTriangle(4, 1),
+				BlockPredicateFilter.forPredicate(BlockPredicate.ONLY_IN_AIR_PREDICATE));
 		// Cave floors: scan down to solid ground, then step up into the air above it.
 		PlacementUtils.register(context, SiftFeatures.LUMEN_HOLLOWS, features.getOrThrow(SiftFeatures.LUMEN_BLOOM),
 				RarityFilter.onAverageOnceEvery(24),

@@ -35,6 +35,7 @@ import thesift.block.EndureBloomBlock;
 import thesift.block.GlowcapBlock;
 import thesift.block.HealthySculkBlock;
 import thesift.block.HealthySculkGrassBlock;
+import thesift.block.IchorLilyBlock;
 import thesift.block.LumenBloomBlock;
 import thesift.block.SiftMembraneBlock;
 import thesift.block.SongwoodLogBlock;
@@ -112,6 +113,10 @@ public final class ModBlocks {
 	public static final Block LUMEN_BLOOM = register("lumen_bloom", LumenBloomBlock::new, BlockBehaviour.Properties.of()
 			.mapColor(MapColor.COLOR_LIGHT_BLUE).noCollision().instabreak().sound(SoundType.SPORE_BLOSSOM).lightLevel(s -> 12)
 			.pushReaction(PushReaction.POPPED).noLootTable());
+	/** The ichor lily (D-029): the Ichor Flats' own plant, a glowing lily pad on ichor. */
+	public static final Block ICHOR_LILY = register("ichor_lily", IchorLilyBlock::new, BlockBehaviour.Properties.of()
+			.mapColor(MapColor.COLOR_CYAN).instabreak().sound(SoundType.LILY_PAD).noOcclusion().lightLevel(s -> 9)
+			.pushReaction(PushReaction.POPPED), ModBlocks::compostMedium);
 	/** The lumen lantern (items_m2.md): vanilla's lantern, its light lumen (it joins the {@code thesift:lumen} POI). */
 	public static final Block LUMEN_LANTERN = register("lumen_lantern", LanternBlock::new, BlockBehaviour.Properties.of()
 			.mapColor(MapColor.COLOR_LIGHT_BLUE).forceSolidOn().strength(3.5F).sound(SoundType.LANTERN).lightLevel(s -> 15)

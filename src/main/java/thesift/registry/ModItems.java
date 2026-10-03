@@ -19,10 +19,12 @@ import net.minecraft.world.item.DispensibleContainerItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.PlaceOnWaterBlockItem;
 import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.DispenserBlock;
 import net.minecraft.world.level.block.DoublePlantBlock;
+import net.minecraft.world.level.block.LilyPadBlock;
 import net.minecraft.world.level.storage.loot.providers.number.ints.ContextIntProviders;
 
 import thesift.TheSift;
@@ -53,8 +55,8 @@ public final class ModItems {
 	/** A block item with extra item properties (a compost chance, say). */
 	static void registerBlockItem(Block block, UnaryOperator<Item.Properties> extra) {
 		ResourceKey<Item> key = ResourceKey.create(Registries.ITEM, BuiltInRegistries.BLOCK.getKey(block));
-		Function<Item.Properties, Item> factory = block instanceof DoublePlantBlock
-				? p -> new DoubleHighBlockItem(block, p)
+		Function<Item.Properties, Item> factory = block instanceof DoublePlantBlock ? p -> new DoubleHighBlockItem(block, p)
+				: block instanceof LilyPadBlock ? p -> new PlaceOnWaterBlockItem(block, p) // placed on a liquid's surface
 				: p -> new BlockItem(block, p);
 		Item item = register(key, factory, extra.apply(new Item.Properties().useBlockDescriptionPrefix()));
 		CREATIVE_ORDER.add(item);

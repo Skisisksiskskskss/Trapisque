@@ -2,6 +2,28 @@
 
 Step-by-step checklists the owner can run in-game. Produced at every gate.
 
+## `v0.1.4-alpha` (2026-10-03): quieter textures, livelier ichor, the Flats' lights, a real pet, new sounds
+Your notes on `v0.1.3-alpha`, and what changed (D-029, items_m2.md):
+- **Textures:** the grain is calmer: smaller noise, closer shades, so blocks sit beside vanilla's.
+- **Ichor:** animates a little faster; its colours wiggle and swirl unevenly, like oil on water.
+- **Ichor Flats:** the new **ichor lily** grows only there, a glowing lily pad on ichor that lets glimmers drift up like fireflies. Place it on ichor as you would a lily pad. Lumen blooms are twice as common there, and glowcaps grow in the Flats' grass.
+- **Blub:** redrawn in vanilla's style with a small mouth that's always there. As a pet it now:
+  - runs to greet you when you come back after a while;
+  - tilts its head and begs when you hold a tidewrack frond;
+  - in Thrive, fetches fronds from ready tidewrack nearby and drops them at your feet (every few minutes at most);
+  - plays tag with your other blubs.
+- **Feeding and babies:** right-click your blub with a **tidewrack frond** to heal it (2 hearts); at full health it looks for a mate, and two make a **baby blub** that is yours.
+- **Uses for the new plants:** a frond crafts into **cyan dye**. Four **Endure petals** around a **hymnstone** make a **lumen lantern** (light 15, hunters will avoid it). Picking your first frond gives the **Low Tide** advancement.
+- **Sound:** every sound was rebuilt as foley:
+  - ichor bubbles, glugs, splashes and bursts like a thick liquid;
+  - plants rustle and snap;
+  - bells ring with real partials;
+  - the blub has a little voice.
+
+  I checked them by their spectrograms, not by ear, so tell me which ones sound wrong.
+
+**A new world is best** for the lilies (they generate with new chunks). Install as below with `thesift-0.1.4-alpha.jar`.
+
 ## `v0.1.3-alpha` (2026-10-03): shaders, ichor colour, leaves, and new plants
 Your notes on `v0.1.2-alpha`: white ichor, ugly leaves that didn't match the drapes, pitch black with shaders. What changed (D-028, D-027):
 - **Shaders:** the Sift has a sun again. It crosses the sky through Thrive and the moon rides through Endure, so shader packs light the Sift as day and as a moonlit night instead of black.

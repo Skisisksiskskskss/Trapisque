@@ -12,8 +12,12 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.behavior.BehaviorUtils;
 import net.minecraft.world.entity.ai.goal.Goal;
+import net.minecraft.world.entity.ai.util.DefaultRandomPos;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -21,8 +25,10 @@ import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
 
+import thesift.block.TideFloraBlock;
 import thesift.block.entity.TideVentBlockEntity;
 import thesift.registry.ModBlocks;
+import thesift.registry.ModItems;
 import thesift.registry.ModSounds;
 import thesift.registry.ModTags;
 import thesift.world.Tide;
@@ -613,6 +619,366 @@ final class BlubGoals {
 				}
 			}
 			return null;
+		}
+	}
+
+	// ------------------------------------------------------------------ the pet (owner playtest 3, D-029)
+
+	private static @Nullable LivingEntity owner(Blub blub) {
+		LivingEntity owner = blub.isTame() ? blub.getOwner() : null;
+		return owner != null && owner.isAlive() && owner.level() == blub.level() ? owner : null;
+	}
+
+	private static void hop(Blub blub) {
+		if (blub.onGround()) {
+			blub.getJumpControl().jump();
+		}
+	}
+
+	/**
+	 * GREET: an owner back after 30 s away (out of 24 blocks, or gone) is met: the blub hurries over,
+	 * hops at their feet with a happy chirp and hearts, as a dog meets you at the door.
+	 */
+	static final class Greet extends Goal {
+		private final Blub blub;
+		private int ticks;
+		private int hops;
+		private boolean arrived;
+
+		Greet(Blub blub) {
+			this.blub = blub;
+			this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.JUMP, Goal.Flag.LOOK));
+		}
+
+		@Override
+		public boolean canUse() {
+			return this.blub.greetDue() && free(this.blub) && owner(this.blub) != null;
+		}
+
+		@Override
+		public boolean canContinueToUse() {
+			return this.ticks > 0 && this.hops < 3 && free(this.blub) && owner(this.blub) != null;
+		}
+
+		@Override
+		public void start() {
+			this.blub.greeted();
+			this.ticks = reducedTickDelay(240);
+			this.hops = 0;
+			this.arrived = false;
+		}
+
+		@Override
+		public void tick() {
+			LivingEntity owner = owner(this.blub);
+			if (owner == null) {
+				return;
+			}
+			this.ticks--;
+			this.blub.getLookControl().setLookAt(owner, 30.0F, 30.0F);
+			if (this.blub.distanceToSqr(owner) > 4.0) {
+				if (this.ticks % 5 == 0 || this.blub.getNavigation().isDone()) {
+					this.blub.getNavigation().moveTo(owner, 1.6);
+				}
+				return;
+			}
+			this.blub.getNavigation().stop();
+			if (!this.arrived) {
+				this.arrived = true;
+				this.blub.playSound(ModSounds.BLUB_HAPPY, 1.0F, this.blub.getVoicePitch());
+				this.blub.level().broadcastEntityEvent(this.blub, (byte) 7); // hearts, as vanilla taming
+			}
+			if (this.blub.onGround() && this.blub.getRandom().nextInt(3) == 0) {
+				hop(this.blub);
+				this.hops++;
+			}
+		}
+
+		@Override
+		public void stop() {
+			this.blub.getNavigation().stop();
+		}
+	}
+
+	/** BEG: a tidewrack frond in the owner's hand within 8 blocks: the blub watches it, head on one side, as a wolf begs. */
+	static final class Beg extends Goal {
+		private final Blub blub;
+
+		Beg(Blub blub) {
+			this.blub = blub;
+			this.setFlags(EnumSet.of(Goal.Flag.LOOK));
+		}
+
+		private @Nullable LivingEntity begFrom() {
+			LivingEntity owner = owner(this.blub);
+			return owner != null && this.blub.distanceToSqr(owner) < 64.0 && owner.isHolding(ModItems.TIDEWRACK_FROND) ? owner : null;
+		}
+
+		@Override
+		public boolean canUse() {
+			return !this.blub.isCurled() && this.begFrom() != null;
+		}
+
+		@Override
+		public boolean canContinueToUse() {
+			return this.canUse();
+		}
+
+		@Override
+		public void start() {
+			this.blub.setInterested(true);
+		}
+
+		@Override
+		public void tick() {
+			LivingEntity owner = this.begFrom();
+			if (owner != null) {
+				this.blub.getLookControl().setLookAt(owner.getX(), owner.getEyeY(), owner.getZ(), 10.0F, this.blub.getMaxHeadXRot());
+			}
+		}
+
+		@Override
+		public void stop() {
+			this.blub.setInterested(false);
+		}
+	}
+
+	/**
+	 * FORAGE: in Thrive a befriended blub now and then fetches a frond from ready tidewrack within 12
+	 * blocks, picking it as you would (the plant's cycle stamp holds), carries it in its mouth and drops
+	 * it at its owner's feet, as an allay brings what it finds. Every 2 to 4 minutes at most.
+	 */
+	static final class Forage extends Goal {
+		static final int RANGE = 12;
+		private final Blub blub;
+		private @Nullable BlockPos plant;
+		private int cooldown = reducedTickDelay(200);
+		private int walkTicks;
+		private boolean delivered;
+
+		Forage(Blub blub) {
+			this.blub = blub;
+			this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.JUMP));
+		}
+
+		private boolean able() {
+			LivingEntity owner = owner(this.blub);
+			return free(this.blub) && !this.blub.isListening() && !this.blub.isBaby() && owner != null
+					&& this.blub.distanceToSqr(owner) < 24.0 * 24.0;
+		}
+
+		private boolean carrying() {
+			return !this.blub.getMainHandItem().isEmpty();
+		}
+
+		@Override
+		public boolean canUse() {
+			if (!this.able()) {
+				return false;
+			}
+			if (this.carrying()) {
+				return true; // a frond still in its mouth (a save, or an interrupted trip): deliver it
+			}
+			if (this.blub.tide() != Tide.THRIVE || --this.cooldown > 0) {
+				return false;
+			}
+			this.cooldown = reducedTickDelay(400);
+			this.plant = findReady(this.blub);
+			return this.plant != null;
+		}
+
+		@Override
+		public boolean canContinueToUse() {
+			return !this.delivered && this.able() && this.walkTicks < reducedTickDelay(600)
+					&& (this.carrying() || this.plant != null && isReady(this.blub.level(), this.plant));
+		}
+
+		@Override
+		public void start() {
+			this.walkTicks = 0;
+			this.delivered = false;
+		}
+
+		@Override
+		public void tick() {
+			this.walkTicks++;
+			LivingEntity owner = owner(this.blub);
+			if (owner == null) {
+				return;
+			}
+			if (this.carrying()) {
+				if (this.blub.distanceToSqr(owner) > 3.0) {
+					if (this.walkTicks % 10 == 0 || this.blub.getNavigation().isDone()) {
+						this.blub.getNavigation().moveTo(owner, 1.3);
+					}
+					return;
+				}
+				// At the owner's feet: drop it toward them, chirp, hop.
+				ItemStack frond = this.blub.getMainHandItem().copy();
+				this.blub.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+				BehaviorUtils.throwItem(this.blub, frond, owner.position().add(0.0, 0.5, 0.0));
+				this.blub.playSound(ModSounds.BLUB_HAPPY, 0.9F, this.blub.getVoicePitch());
+				hop(this.blub);
+				this.delivered = true;
+				return;
+			}
+			if (this.plant == null) {
+				return;
+			}
+			if (this.blub.distanceToSqr(Vec3.atBottomCenterOf(this.plant)) < 2.5) {
+				BlockState state = this.blub.level().getBlockState(this.plant);
+				if (this.blub.level() instanceof ServerLevel level && state.getBlock() instanceof TideFloraBlock flora && flora.isReady(state, level)) {
+					List<ItemStack> picked = new ArrayList<>();
+					flora.pick(level, this.plant, state, this.blub, picked::add);
+					for (ItemStack stack : picked) {
+						if (this.blub.getMainHandItem().isEmpty()) {
+							this.blub.setItemSlot(EquipmentSlot.MAINHAND, stack);
+							this.blub.setGuaranteedDrop(EquipmentSlot.MAINHAND);
+						} else {
+							BehaviorUtils.throwItem(this.blub, stack, owner.position()); // a second frond falls; the owner can take it
+						}
+					}
+				}
+				this.plant = null;
+				this.blub.getNavigation().stop();
+			} else if (this.walkTicks % 20 == 0 || this.blub.getNavigation().isDone()) {
+				walkTo(this.blub, this.plant, 1.1);
+			}
+		}
+
+		@Override
+		public void stop() {
+			this.blub.getNavigation().stop();
+			this.plant = null;
+			if (this.delivered) {
+				this.cooldown = reducedTickDelay(2400 + this.blub.getRandom().nextInt(2400));
+			}
+		}
+
+		static boolean isReady(Level level, BlockPos pos) {
+			BlockState state = level.getBlockState(pos);
+			return state.is(ModBlocks.TIDEWRACK) && ((TideFloraBlock) state.getBlock()).isReady(state, level);
+		}
+
+		/** The nearest ready tidewrack within RANGE blocks across and 3 up or down, or null. */
+		static @Nullable BlockPos findReady(Blub blub) {
+			BlockPos origin = blub.blockPosition();
+			BlockPos best = null;
+			double bestDist = Double.MAX_VALUE;
+			for (BlockPos p : BlockPos.betweenClosed(origin.offset(-RANGE, -3, -RANGE), origin.offset(RANGE, 3, RANGE))) {
+				if (blub.level().isLoaded(p) && isReady(blub.level(), p)) {
+					double d = p.distSqr(origin);
+					if (d < bestDist) {
+						bestDist = d;
+						best = p.immutable();
+					}
+				}
+			}
+			return best;
+		}
+	}
+
+	/**
+	 * PLAY: tag. Two befriended blubs of one owner, both idle in Thrive, now and then chase each other
+	 * for 8 to 12 seconds with little hops; a catch is a chirp, and the other one is "it".
+	 */
+	static final class Play extends Goal {
+		private final Blub blub;
+		private int walkTicks;
+
+		Play(Blub blub) {
+			this.blub = blub;
+			this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.JUMP));
+		}
+
+		private static boolean idle(Blub blub) {
+			return blub.isTame() && free(blub) && !blub.isListening() && !blub.isCurled() && blub.tide() == Tide.THRIVE
+					&& blub.getMainHandItem().isEmpty();
+		}
+
+		@Override
+		public boolean canUse() {
+			if (this.blub.playTicks > 0) {
+				return this.blub.playmate != null && idle(this.blub); // invited
+			}
+			if (!idle(this.blub) || this.blub.getRandom().nextInt(reducedTickDelay(1200)) != 0) {
+				return false;
+			}
+			Blub mate = null;
+			for (Blub other : this.blub.level().getEntitiesOfClass(Blub.class, this.blub.getBoundingBox().inflate(10.0))) {
+				if (other != this.blub && other.playTicks == 0 && idle(other) && other.getOwnerReference() != null
+						&& other.getOwnerReference().equals(this.blub.getOwnerReference())) {
+					mate = other;
+					break;
+				}
+			}
+			if (mate == null) {
+				return false;
+			}
+			int ticks = reducedTickDelay(160 + this.blub.getRandom().nextInt(81));
+			this.blub.playmate = mate;
+			mate.playmate = this.blub;
+			this.blub.playTicks = ticks;
+			mate.playTicks = ticks;
+			this.blub.chasing = true;
+			mate.chasing = false;
+			this.blub.playSound(ModSounds.BLUB_HAPPY, 0.7F, this.blub.getVoicePitch() * 1.1F);
+			return true;
+		}
+
+		@Override
+		public boolean canContinueToUse() {
+			Blub mate = this.blub.playmate;
+			return this.blub.playTicks > 0 && mate != null && mate.isAlive() && mate.playmate == this.blub && free(this.blub)
+					&& this.blub.distanceToSqr(mate) < 16.0 * 16.0;
+		}
+
+		@Override
+		public void start() {
+			this.walkTicks = 0;
+		}
+
+		@Override
+		public void tick() {
+			Blub mate = this.blub.playmate;
+			if (mate == null) {
+				return;
+			}
+			this.blub.playTicks--;
+			this.walkTicks++;
+			if (this.blub.chasing) {
+				if (this.blub.distanceToSqr(mate) < 1.7) {
+					// Tag: the other one is "it" now.
+					this.blub.chasing = false;
+					mate.chasing = true;
+					this.blub.playSound(ModSounds.BLUB_HAPPY, 0.7F, this.blub.getVoicePitch() * 1.15F);
+					hop(this.blub);
+					hop(mate);
+					this.walkTicks = 0;
+				} else if (this.walkTicks % 5 == 0 || this.blub.getNavigation().isDone()) {
+					this.blub.getNavigation().moveTo(mate, 1.5);
+				}
+			} else if (this.walkTicks % 15 == 0 || this.blub.getNavigation().isDone()) {
+				Vec3 away = DefaultRandomPos.getPosAway(this.blub, 6, 3, mate.position());
+				if (away != null) {
+					this.blub.getNavigation().moveTo(away.x, away.y, away.z, 1.4);
+				}
+			}
+			if (this.blub.getRandom().nextInt(8) == 0) {
+				hop(this.blub);
+			}
+		}
+
+		@Override
+		public void stop() {
+			Blub mate = this.blub.playmate;
+			this.blub.playTicks = 0;
+			this.blub.playmate = null;
+			this.blub.chasing = false;
+			if (mate != null && mate.playmate == this.blub) {
+				mate.playTicks = 0;
+			}
+			this.blub.getNavigation().stop();
 		}
 	}
 }

@@ -1,5 +1,7 @@
 package thesift.block;
 
+import java.util.function.Consumer;
+
 import org.jspecify.annotations.Nullable;
 
 import net.minecraft.core.BlockPos;
@@ -10,7 +12,9 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.VegetationBlock;
@@ -152,14 +156,21 @@ public abstract class TideFloraBlock extends VegetationBlock {
 			return InteractionResult.PASS;
 		}
 		if (level instanceof ServerLevel serverLevel) {
-			Block.dropFromBlockInteractLootTable(serverLevel, this.harvestTable(), pos, state, null, null, player,
-					(l, stack) -> Block.popResource(l, pos, stack));
-			serverLevel.playSound(null, pos, ModSounds.FLORA_PICK, SoundSource.BLOCKS, 1.0F, 0.8F + serverLevel.getRandom().nextFloat() * 0.4F);
-			BlockState picked = state.setValue(PICKED_CYCLE, stamp(serverLevel));
-			serverLevel.setBlock(pos, picked, Block.UPDATE_CLIENTS);
-			// As the sweet berry bush: a block change with the picker as its source (heard in Endure).
-			serverLevel.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, picked));
+			this.pick(serverLevel, pos, state, player, stack -> Block.popResource(serverLevel, pos, stack));
 		}
 		return InteractionResult.SUCCESS;
+	}
+
+	/**
+	 * Picks a ready plant for {@code picker}, a player's use or a befriended blub foraging (D-029): the
+	 * harvest goes to {@code out}, the cycle is stamped, and the pick is heard.
+	 */
+	public void pick(ServerLevel level, BlockPos pos, BlockState state, Entity picker, Consumer<ItemStack> out) {
+		Block.dropFromBlockInteractLootTable(level, this.harvestTable(), pos, state, null, null, picker, (l, stack) -> out.accept(stack));
+		level.playSound(null, pos, ModSounds.FLORA_PICK, SoundSource.BLOCKS, 1.0F, 0.8F + level.getRandom().nextFloat() * 0.4F);
+		BlockState picked = state.setValue(PICKED_CYCLE, stamp(level));
+		level.setBlock(pos, picked, Block.UPDATE_CLIENTS);
+		// As the sweet berry bush: a block change with the picker as its source (heard in Endure).
+		level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(picker, picked));
 	}
 }

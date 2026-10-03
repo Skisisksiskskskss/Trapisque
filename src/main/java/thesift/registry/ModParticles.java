@@ -11,6 +11,8 @@ import thesift.TheSift;
 public final class ModParticles {
 	public static final SimpleParticleType TRILL = Registry.register(BuiltInRegistries.PARTICLE_TYPE, TheSift.id("trill"), FabricParticleTypes.simple(false));
 	public static final SimpleParticleType GLOW_PETAL = Registry.register(BuiltInRegistries.PARTICLE_TYPE, TheSift.id("glow_petal"), FabricParticleTypes.simple(false));
+	/** Drifting lights over the Ichor Flats, let go by ichor lilies (D-029); drawn as vanilla's fireflies. */
+	public static final SimpleParticleType GLIMMER = Registry.register(BuiltInRegistries.PARTICLE_TYPE, TheSift.id("glimmer"), FabricParticleTypes.simple(false));
 
 	private ModParticles() {
 	}

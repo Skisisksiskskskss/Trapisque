@@ -32,7 +32,10 @@ below allows.
 | `membrane` | `#0b3f55` `#13687e` `#2598a8` `#55c8cc` `#a3eee8` `#e0fffa` | The Sift membrane's cyan shimmer (translucent) |
 | `pail` | `#2b2b33` `#4b4b56` `#6d6d7a` `#9696a2` `#c2c2cb` `#e6e6ec` | Bucket metal |
 | `blub` | `#3f6a8e` `#4f81a8` `#5f95ba` `#7aabc8` `#9cc2d6` `#c4dde8` | The Blub's blue, sampled from the first look (owner rework): the only blue mob in the Sift |
-| `blub_eye` | `#24204a` `#3d3570` | The Blub's dark violet slit eyes (first look) |
+| `blub_eye` | `#24204a` `#3d3570` `#eaf4ff` | The Blub's dark violet eyes (first look), and their catch-light (D-029) |
+| `blub_fur` | `#3f6a8e` `#4a789c` `#5486aa` `#5f95ba` `#6da0c1` `#7aabc8` `#8bb7cf` `#9cc2d6` `#b0d0df` `#c4dde8` | The Blub's coat drawn as vanilla's mobs are (D-029, owner playtest 3: "less cell shaded"): the `blub` ramp with a shade between each pair, for soft gradients |
+| `blub_mouth` | `#2a2246` `#4a3a68` | Its small mouth, always visible (D-029) |
+| `blub_blush` | `#a7a3d9` | Its cheeks |
 | `soil` | `#34222a` `#432d33` `#533a3f` `#64454a` `#765155` `#8a5e60` `#9f6d6d` `#b5807c` | Sift soil: the maroon earth under the teaser's grass hill, eight shades as vanilla dirt (owner playtest 2) |
 | `tidewrack` | `#2c3317` `#3d4620` `#535e29` `#6b7832` `#85903b` `#a2a548` `#c0b65a` `#d8c878` | Tidewrack's ribbons (block_flora_ii.md §1): olive at the root to ochre at the tips; warm, never blight's teal |
 | `tidewrack_underside` | `#3b6a52` `#538a69` `#73a985` | The sea-green undersides an open frond shows |
@@ -43,6 +46,8 @@ below allows.
 | `chime_bell` | `#557aa0` `#7398bc` `#97b8d6` `#bdd6ec` `#e2f0fb` | Chime bells: pale ice blue (canon's "pale-blue flowers") |
 | `chime_stem` | `#2a3f2e` `#34503a` `#47664b` `#5f805f` | The chime bell's arched stem, and the dark of a bell's mouth |
 | `lumen` | `#6276a3` `#8597c2` `#a9bbde` `#cddcf2` `#ecf3fd` `#ffffff` | The lumen bloom: cool white to moonlit blue, a white core |
+| `ichor_lily` | `#1b4a55` `#22606a` `#2c7a7c` `#3c928a` `#56a99a` `#78c0aa` | The ichor lily's pad (D-029): deep teal to sea-green, cooler than the Meadow's coral and darker than the ichor it floats on |
+| `ichor_lily_bud` | `#b77fcf` `#cf9fe0` `#e4c3ee` `#f5e3f8` `#fffaff` | Its glowing bud and the glimmers it lets go: lilac to white |
 | `particle` | `#f0cf8c` `#f9e6b0` `#fff4d6` `#fffdf5` `#ffd9d2` | Glow cores, trill motes |
 
 ## Texture → allowed ramps
@@ -97,10 +102,14 @@ below allows.
 | `item/tidewrack_frond.png` | tidewrack, tidewrack_underside |
 | `item/endure_petal.png` | endure_petal |
 | `block/lumen_lantern.png` | hymnstone, lumen |
+| `block/ichor_lily.png` | ichor_lily |
+| `block/ichor_lily_bud.png` | ichor_lily_bud, ichor_lily |
+| `item/ichor_lily.png` | ichor_lily, ichor_lily_bud |
+| `particle/glimmer.png` | ichor_lily_bud |
 | `item/lumen_lantern.png` | hymnstone, lumen |
 | `item/ichor_bucket.png` | pail, ichor |
 | `particle/glow_petal.png` | healthy_sculk, particle |
 | `particle/trill.png` | particle |
-| `entity/blub/blub.png` | blub, blub_eye |
+| `entity/blub/blub.png` | blub_fur, blub_eye, blub_mouth, blub_blush |
 | `entity/blub/blub_glow.png` | membrane |
 | `item/blub_spawn_egg.png` | blub, songwood_bark |
