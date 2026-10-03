@@ -136,6 +136,7 @@ final class ModModelProvider extends FabricModelProvider {
 				.put(TextureSlot.CROSS, TextureMapping.getBlockTexture(ModBlocks.LUMEN_BLOOM, "_core")), g.modelOutput);
 		g.blockStateOutput.accept(BlockModelGenerators.createSimpleBlock(ModBlocks.LUMEN_BLOOM, BlockModelGenerators.plainVariant(lumen)));
 		g.registerSimpleFlatItemModel(ModBlocks.LUMEN_BLOOM);
+		g.createLantern(ModBlocks.LUMEN_LANTERN);
 	}
 
 	private static TextureMapping plant(Block block, String suffix) {

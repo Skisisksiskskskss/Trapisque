@@ -619,6 +619,62 @@ def lumen_bloom_core() -> Image.Image:
     return im
 
 
+def _rows(im: Image.Image, x0: int, y0: int, rows: list[str], key: dict) -> None:
+    """Paints a character map at (x0, y0): each character names a (ramp, shade) in key; '.' is clear."""
+    for y, row in enumerate(rows):
+        for x, ch in enumerate(row):
+            if ch != ".":
+                ramp, shade = key[ch]
+                _set(im, x0 + x, y0 + y, rgba(ramp, shade))
+
+
+_LANTERN_KEY = {
+    "d": ("hymnstone", 1), "m": ("hymnstone", 3), "l": ("hymnstone", 5), "h": ("hymnstone", 7),
+    "1": ("lumen", 1), "2": ("lumen", 2), "3": ("lumen", 3), "4": ("lumen", 4), "5": ("lumen", 5),
+}
+
+
+def lumen_lantern() -> Image.Image:
+    """The lumen lantern in vanilla's lantern layout (template_lantern UVs): a hymnstone frame and cap
+    around pale glass, a bloom-white flame at its heart. Few shades, no grain: it should read at a glance."""
+    im = _blank()
+    _rows(im, 1, 0, ["mllm", "dmmd"], _LANTERN_KEY)              # cap sides
+    _rows(im, 0, 2, ["dmllmd",                                     # body sides
+                     "m2332m",
+                     "l3453l",
+                     "l3553l",
+                     "m2443m",
+                     "m1221m",
+                     "dmmmmd"], _LANTERN_KEY)
+    _rows(im, 0, 9, ["dmmmmd",                                     # body top and bottom, cap top inside
+                     "mlhhlm",
+                     "mhllhm",
+                     "mhllhm",
+                     "mlhhlm",
+                     "dmmmmd"], _LANTERN_KEY)
+    _rows(im, 11, 1, ["mlm", "d.d"], _LANTERN_KEY)                 # handle
+    _rows(im, 11, 10, ["mlm", "d.d"], _LANTERN_KEY)
+    return im
+
+
+def lumen_lantern_item() -> Image.Image:
+    """The lantern as an item: the handle, the cap, the glowing glass, as vanilla's lantern icon stands."""
+    im = _blank()
+    _rows(im, 5, 1, ["..mlm.",
+                     "..d.d.",
+                     ".mllm.",
+                     ".dmmd.",
+                     "dmllmd",
+                     "m2332m",
+                     "l3453l",
+                     "l3553l",
+                     "l3453l",
+                     "m2443m",
+                     "m1221m",
+                     "dmmmmd"], _LANTERN_KEY)
+    return im
+
+
 def tidewrack_frond() -> Image.Image:
     """One frond, as an item: a wavy ribbon, olive to ochre, its sea-green underside along one edge."""
     im = _blank()
@@ -1000,6 +1056,8 @@ def main() -> None:
     save(lumen_bloom_core(), "block/lumen_bloom_core.png")
     save(tidewrack_frond(), "item/tidewrack_frond.png")
     save(endure_petal_item(), "item/endure_petal.png")
+    save(lumen_lantern(), "block/lumen_lantern.png")
+    save(lumen_lantern_item(), "item/lumen_lantern.png")
     save(glow_petal(), "particle/glow_petal.png")
     save(blub_texture(), "entity/blub/blub.png")
     save(blub_glow_texture(), "entity/blub/blub_glow.png")

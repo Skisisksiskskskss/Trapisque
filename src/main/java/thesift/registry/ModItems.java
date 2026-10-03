@@ -23,6 +23,7 @@ import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.DispenserBlock;
 import net.minecraft.world.level.block.DoublePlantBlock;
+import net.minecraft.world.level.storage.loot.providers.number.ints.ContextIntProviders;
 
 import thesift.TheSift;
 import thesift.item.IchorBucketItem;
@@ -35,7 +36,8 @@ public final class ModItems {
 	public static final Item BLUB_SPAWN_EGG = other(register(key("blub_spawn_egg"), SpawnEggItem::new,
 			new Item.Properties().spawnEgg(ModEntities.BLUB)));
 	/** Picked from open tidewrack in Thrive (block_flora_ii.md §1); its uses come in WP-065. */
-	public static final Item TIDEWRACK_FROND = other(register(key("tidewrack_frond"), Item::new, new Item.Properties()));
+	public static final Item TIDEWRACK_FROND = other(register(key("tidewrack_frond"), Item::new,
+			new Item.Properties().compostable(ContextIntProviders.COMPOSTABLE_LOW)));
 	/** Picked from an open Endure bloom in Endure (block_flora_ii.md §2); lanterns and traits use it (WP-065). */
 	public static final Item ENDURE_PETAL = other(register(key("endure_petal"), Item::new, new Item.Properties()));
 	public static final Item ICHOR_BUCKET = other(register(key("ichor_bucket"), p -> new IchorBucketItem(ModFluids.ICHOR, p),

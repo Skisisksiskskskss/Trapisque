@@ -14,6 +14,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.HangingMossBlock;
 import net.minecraft.world.level.block.FlowerPotBlock;
+import net.minecraft.world.level.block.LanternBlock;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.SoundType;
@@ -111,6 +112,10 @@ public final class ModBlocks {
 	public static final Block LUMEN_BLOOM = register("lumen_bloom", LumenBloomBlock::new, BlockBehaviour.Properties.of()
 			.mapColor(MapColor.COLOR_LIGHT_BLUE).noCollision().instabreak().sound(SoundType.SPORE_BLOSSOM).lightLevel(s -> 12)
 			.pushReaction(PushReaction.POPPED).noLootTable());
+	/** The lumen lantern (items_m2.md): vanilla's lantern, its light lumen (it joins the {@code thesift:lumen} POI). */
+	public static final Block LUMEN_LANTERN = register("lumen_lantern", LanternBlock::new, BlockBehaviour.Properties.of()
+			.mapColor(MapColor.COLOR_LIGHT_BLUE).forceSolidOn().strength(3.5F).sound(SoundType.LANTERN).lightLevel(s -> 15)
+			.noOcclusion().pushReaction(PushReaction.POPPED));
 
 	/** The Sift-side gate's frame: unbreakable in survival, like the end portal frame. */
 	public static final Block GATESTONE = register("gatestone", Block::new, BlockBehaviour.Properties.of()

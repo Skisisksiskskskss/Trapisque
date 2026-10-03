@@ -11,7 +11,7 @@ import thesift.TheSift;
  * joins the lumen bloom here.
  */
 public final class ModPoiTypes {
-	public static final PoiType LUMEN = PoiHelper.register(TheSift.id("lumen"), 0, 1, ModBlocks.LUMEN_BLOOM);
+	public static final PoiType LUMEN = PoiHelper.register(TheSift.id("lumen"), 0, 1, ModBlocks.LUMEN_BLOOM, ModBlocks.LUMEN_LANTERN);
 
 	private ModPoiTypes() {
 	}

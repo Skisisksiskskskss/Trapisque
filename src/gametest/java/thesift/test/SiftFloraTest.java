@@ -8,16 +8,22 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 
 import thesift.block.TideFloraBlock;
 import thesift.block.TidewrackBlock;
+import thesift.entity.blub.Blub;
 import thesift.registry.ModBlocks;
+import thesift.registry.ModEntities;
 import thesift.registry.ModFluids;
 import thesift.registry.ModItems;
 import thesift.world.Tide;
@@ -110,5 +116,59 @@ public final class SiftFloraTest {
 				"an open Endure bloom gives no block light");
 		helper.assertTrue(helper.getLevel().getPoiManager().getType(helper.absolutePos(PLANT)).isPresent(), "lumen is a POI");
 		helper.succeed();
+	}
+
+	/** items_m2.md: the lumen lantern is a lantern (light 15) whose light is lumen. */
+	@GameTest(dimension = SIFT)
+	public void lumenLanternIsLumen(GameTestHelper helper) {
+		helper.setBlock(GROUND, ModBlocks.HYMNSTONE);
+		helper.setBlock(PLANT, ModBlocks.LUMEN_LANTERN);
+		helper.assertTrue(helper.getBlockState(PLANT).getLightEmission() == 15, "lantern light 15");
+		helper.assertTrue(helper.getLevel().getPoiManager().getType(helper.absolutePos(PLANT)).isPresent(), "the lantern is lumen");
+		helper.succeed();
+	}
+
+	/** items_m2.md: a frond heals a befriended blub by 4 for its owner; a wild blub won't eat. */
+	@GameTest(dimension = SIFT)
+	public void frondTreatsBefriendedBlubsOnly(GameTestHelper helper) {
+		helper.setBlock(GROUND, ModBlocks.HEALTHY_SCULK);
+		Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+		Blub wild = helper.spawn(ModEntities.BLUB, new Vec3(1.5, 2, 1.5));
+		Blub friend = helper.spawn(ModEntities.BLUB, new Vec3(3.5, 2, 1.5));
+		friend.tame(player);
+		friend.setHealth(2.0F);
+		wild.setHealth(2.0F);
+		player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.TIDEWRACK_FROND, 2));
+		helper.assertTrue(wild.mobInteract(player, InteractionHand.MAIN_HAND) == InteractionResult.PASS, "a wild blub won't eat");
+		friend.mobInteract(player, InteractionHand.MAIN_HAND);
+		helper.assertTrue(friend.getHealth() == 6.0F, "the treat heals 4");
+		helper.assertTrue(player.getMainHandItem().getCount() == 1, "one frond eaten");
+		helper.assertTrue(wild.getHealth() == 2.0F, "the wild blub is unhealed");
+		helper.succeed();
+	}
+
+	/** items_m2.md: two befriended blubs in love make a baby blub, befriended to their owner. */
+	@GameTest(dimension = SIFT, structure = SiftBasinTest.BIG, maxTicks = 300)
+	public void blubsBreedAnOwnedBaby(GameTestHelper helper) {
+		setTide(helper, Tide.THRIVE);
+		for (int x = 0; x < 5; x++) {
+			for (int z = 0; z < 5; z++) {
+				helper.setBlock(new BlockPos(x, 0, z), ModBlocks.HEALTHY_SCULK);
+			}
+		}
+		// A real (mock server) owner in the level: a tamed mob whose owner is offline sits, as vanilla's.
+		Player player = helper.makeMockServerPlayer(GameType.SURVIVAL);
+		player.setPos(helper.absoluteVec(new Vec3(2.5, 1, 3.5)));
+		Blub a = helper.spawn(ModEntities.BLUB, new Vec3(1.5, 1, 1.5));
+		Blub b = helper.spawn(ModEntities.BLUB, new Vec3(3.5, 1, 1.5));
+		for (Blub blub : List.of(a, b)) {
+			blub.tame(player);
+			blub.setInLove(player);
+		}
+		helper.succeedWhen(() -> {
+			List<Blub> babies = helper.getEntities(ModEntities.BLUB).stream().filter(Blub::isBaby).toList();
+			helper.assertTrue(babies.size() == 1, "one baby");
+			helper.assertTrue(babies.getFirst().isOwnedBy(player), "the baby is the owner's");
+		});
 	}
 }

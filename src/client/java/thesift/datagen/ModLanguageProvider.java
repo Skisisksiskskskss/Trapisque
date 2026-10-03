@@ -51,6 +51,7 @@ final class ModLanguageProvider extends FabricLanguageProvider {
 		builder.add(ModBlocks.CHIME_BELL_FLOWER, "Chime Bell Flower");
 		builder.add(ModBlocks.POTTED_CHIME_BELL_FLOWER, "Potted Chime Bell Flower");
 		builder.add(ModBlocks.LUMEN_BLOOM, "Lumen Bloom");
+		builder.add(ModBlocks.LUMEN_LANTERN, "Lumen Lantern");
 		builder.add(ModItems.TIDEWRACK_FROND, "Tidewrack Frond");
 		builder.add(ModItems.ENDURE_PETAL, "Endure Petal");
 		builder.add("subtitles.thesift.tidewrack.open", "Tidewrack opens");
@@ -101,6 +102,8 @@ final class ModLanguageProvider extends FabricLanguageProvider {
 		builder.add("advancements.thesift.where_souls_drift.description", "Play music to an awake frame and cross into the Sift");
 		builder.add("advancements.thesift.the_tide_turns.title", "The Tide Turns");
 		builder.add("advancements.thesift.the_tide_turns.description", "Be in the Sift when the Tide changes");
+		builder.add("advancements.thesift.low_tide.title", "Low Tide");
+		builder.add("advancements.thesift.low_tide.description", "Gather tidewrack at low tide");
 		builder.add("tag.fluid.thesift.ichor", "Ichor");
 		builder.add("tag.item.thesift.songwood_logs", "Songwood Logs");
 		builder.add("thesift.frame.offering", "Your soul flows into the frame (%s%%)");

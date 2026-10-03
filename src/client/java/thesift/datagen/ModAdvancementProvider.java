@@ -12,6 +12,7 @@ import net.minecraft.advancements.AdvancementType;
 import net.minecraft.advancements.triggers.CriteriaTriggers;
 import net.minecraft.advancements.triggers.ChangeDimensionTrigger;
 import net.minecraft.advancements.triggers.ImpossibleTrigger;
+import net.minecraft.advancements.triggers.InventoryChangeTrigger;
 import net.minecraft.advancements.predicates.LocationPredicate;
 import net.minecraft.advancements.triggers.PlayerTrigger;
 import net.minecraft.core.HolderLookup;
@@ -74,5 +75,14 @@ final class ModAdvancementProvider extends FabricAdvancementProvider {
 				.addCriterion(SiftAdvancements.AWARDED, CriteriaTriggers.IMPOSSIBLE.createCriterion(new ImpossibleTrigger.TriggerInstance()))
 				.build(SiftAdvancements.TIDE_TURNS);
 		out.accept(tideTurns);
+		AdvancementHolder lowTide = Advancement.Builder.advancement()
+				.parent(enter)
+				.display(ModItems.TIDEWRACK_FROND,
+						Component.translatable("advancements.thesift.low_tide.title"),
+						Component.translatable("advancements.thesift.low_tide.description"),
+						AdvancementType.TASK, true, true, false)
+				.addCriterion("has_frond", InventoryChangeTrigger.TriggerInstance.hasItems(ModItems.TIDEWRACK_FROND))
+				.build(SiftAdvancements.LOW_TIDE);
+		out.accept(lowTide);
 	}
 }

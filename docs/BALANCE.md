@@ -39,6 +39,17 @@ The M2 plants (block_flora_ii.md, D-027): tidewrack and the Endure bloom are pic
 | Rate | 10 points per use, about 50 points per second while *use* is held (~28 s for the full price) | Brushing suspicious sand | Long enough to feel like an offering, short enough not to bore; release stops it at once |
 | Creative | Free (charge still fills at the same pace) | Enchanting in creative | Testing and building |
 
+## Materials (WP-065, frozen 2026-10-03)
+| Number | Value | Vanilla analogs | Why |
+|---|---|---|---|
+| Treat heal | 4 HP (a blub has 8) | wolf eating meat (food value); horse wheat 2 | A real heal on the move; the rest-heal stays slow |
+| Baby growth | 20 min (24 000 ticks), fronds speed it | all vanilla babies | Vanilla's rule |
+| Baby scale | 0.6 | vanilla babies 0.5 | A blub is small already; 0.5 would vanish in grass |
+| Frond → dye | 1 → 1 cyan | cornflower → 1 blue | A flower's rate |
+| Lantern price | 4 petals + 1 hymnstone | lantern (iron nuggets + torch) | About one careful Endure's picking (block_flora_ii.md) |
+| Lantern light | 15 | lantern 15, soul lantern 10 | A lantern |
+| Frond compost | low (30%) | kelp | A sea plant |
+
 ## The hunt (WP-060, frozen 2026-10-02)
 The system every Sift hunter shares (system_hunt.md); each mob's own stats are in its section.
 **Difficulty:** Peaceful removes hunters (`notInPeaceful()`); the enduring chance is 25 % on Easy and

@@ -16,6 +16,7 @@ public final class SiftAdvancements {
 	public static final Identifier OFFERING = TheSift.id("sift/an_offering");
 	public static final Identifier ENTER = TheSift.id("sift/where_souls_drift");
 	public static final Identifier TIDE_TURNS = TheSift.id("sift/the_tide_turns");
+	public static final Identifier LOW_TIDE = TheSift.id("sift/low_tide");
 	/** The criterion name of the code-awarded advancements. */
 	public static final String AWARDED = "awarded";
 

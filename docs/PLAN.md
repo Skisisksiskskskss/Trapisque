@@ -50,7 +50,7 @@ Only one WP is IN PROGRESS at a time.
 | WP-062 | Bloombud design doc | 4 | L | DONE |
 | WP-063 | Sift Hollows: the cave layer and glowcap pools | 4 | L | IN PROGRESS (caves done in WP-054; glowcap pools wait for WP-064) |
 | WP-064 | Flora II: tidewrack, Endure bloom, glowcap, chime bell flower, lumen bloom | 4 | L | IN PROGRESS (design frozen; code under way) |
-| WP-065 | Materials and items: tidewrack frond, Endure petal, lumen lantern, blub treats | 4 | M | TODO |
+| WP-065 | Materials and items: tidewrack frond, Endure petal, lumen lantern, blub treats | 4 | M | DONE (2026-10-03) |
 | WP-066 | The hearing rule and hunter retreat; lumen repelling hunters | 4 | L | TODO |
 | WP-067 | Nester: art, audio, AI, tests | 4 | L | TODO |
 | WP-068 | Bloombud: art, audio, AI, tests | 4 | L | TODO |
@@ -673,7 +673,9 @@ Source: 01_CONTENT_BIBLE.md §M2 row; bible/creatures.md, items.md, world.md (M2
   - 2026-10-03: design frozen after three critique rounds (`docs/DESIGN/block_flora_ii.md`, D-027; BALANCE "Flora II"). Tide plants switch like eyeblossoms, are picked like sweet berries once per cycle (a cycle stamp), and are heard when picked; tidewrack, the Endure bloom and the lumen bloom are wild-only; tidewrack holds ichor through the flood; lumen blooms are ringed by chime bells.
 
 ### WP-065 Materials and items
-- Tier: M · Depends on: WP-064 · Goal: tidewrack frond (dye, blub treats), Endure petal, lumen lantern; recipes; blub treats heal and breed blubs (the M1 doc's M2 hook; a baby blub model and texture); GameTests.
+- Tier: M · Depends on: WP-064 · Status: DONE · Goal: tidewrack frond (dye, blub treats), Endure petal, lumen lantern; recipes; blub treats heal and breed blubs (the M1 doc's M2 hook; a baby blub model and texture); GameTests.
+- Log:
+  - 2026-10-03: design frozen with one self-review (`docs/DESIGN/items_m2.md`, owner's credit request) and coded: a frond is 1 cyan dye and the blub's treat (heals 4, love mode, a baby blub owned by the parents' owner, drawn at 0.6; wild blubs won't eat); 4 Endure petals around hymnstone make a lumen lantern (vanilla's lantern, light 15, lumen POI); fronds compost low; the Low Tide advancement. 3 GameTests (80/80).
 
 ### WP-066 The hearing rule and hunter retreat; lumen
 - Tier: L · Depends on: WP-060, WP-064 · Goal: the system in code (a listener per hunter, no polling), retreat (burrowing) as Endure ends, lumen repelling hunters; GameTests for each rule; cost measured.

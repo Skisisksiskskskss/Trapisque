@@ -1,5 +1,7 @@
 package thesift.client.entity;
 
+import com.mojang.blaze3d.vertex.PoseStack;
+
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.MobRenderer;
@@ -32,6 +34,12 @@ public final class BlubRenderer extends MobRenderer<Blub, BlubRenderState, BlubM
 	@Override
 	public BlubRenderState createRenderState() {
 		return new BlubRenderState();
+	}
+
+	/** Babies are drawn at their age scale (items_m2.md). */
+	@Override
+	protected void scale(BlubRenderState state, PoseStack poseStack) {
+		poseStack.scale(state.ageScale, state.ageScale, state.ageScale);
 	}
 
 	@Override

@@ -23,6 +23,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.goal.BreedGoal;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.goal.FollowOwnerGoal;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
@@ -40,6 +41,8 @@ import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.Vec3;
 
+import thesift.registry.ModEntities;
+import thesift.registry.ModItems;
 import thesift.registry.ModSounds;
 import thesift.registry.ModTags;
 import thesift.world.Tide;
@@ -66,6 +69,8 @@ public class Blub extends TamableAnimal {
 	public static final int REST_HEAL_TICKS = 600;
 	public static final int[] INTERVALS = {0, 4, 7};
 
+	/** Health a treat restores (items_m2.md): two hearts of a blub's four. */
+	private static final float TREAT_HEAL = 4.0F;
 	private static final EntityDataAccessor<Boolean> DATA_LISTENING = SynchedEntityData.defineId(Blub.class, EntityDataSerializers.BOOLEAN);
 	private static final EntityDataAccessor<Boolean> DATA_CURLED = SynchedEntityData.defineId(Blub.class, EntityDataSerializers.BOOLEAN);
 	private static final EntityDataAccessor<Boolean> DATA_RESTLESS = SynchedEntityData.defineId(Blub.class, EntityDataSerializers.BOOLEAN);
@@ -141,6 +146,7 @@ public class Blub extends TamableAnimal {
 		this.goalSelector.addGoal(2, new SitWhenOrderedToGoal(this));
 		this.goalSelector.addGoal(3, new BlubGoals.Shelter(this));
 		this.goalSelector.addGoal(4, new FollowOwnerGoal(this, 1.6, 6.0F, 2.0F));
+		this.goalSelector.addGoal(4, new BreedGoal(this, 1.0));
 		this.goalSelector.addGoal(5, new BlubGoals.Waterline(this));
 		// STACK ranks above LISTEN: a running higher goal would keep MOVE, and a tower only starts while listening.
 		this.goalSelector.addGoal(6, new BlubGoals.Stack(this));
@@ -404,6 +410,22 @@ public class Blub extends TamableAnimal {
 	@Override
 	public InteractionResult mobInteract(Player player, InteractionHand hand) {
 		ItemStack stack = player.getItemInHand(hand);
+		// Tidewrack fronds are the treat (items_m2.md): a befriended blub's owner heals it with one, or
+		// (at full health) sets it looking for a mate, as vanilla's animals; wild blubs don't eat.
+		if (this.isFood(stack)) {
+			if (!this.isTame() || !this.isOwnedBy(player)) {
+				return InteractionResult.PASS;
+			}
+			if (this.getHealth() < this.getMaxHealth()) {
+				if (!this.level().isClientSide()) {
+					this.usePlayerItem(player, hand, stack);
+					this.heal(TREAT_HEAL);
+					this.playSound(ModSounds.BLUB_HAPPY, 0.8F, this.getVoicePitch());
+				}
+				return InteractionResult.SUCCESS;
+			}
+			return super.mobInteract(player, hand);
+		}
 		if (this.isTame() && this.isOwnedBy(player) && stack.isEmpty() && hand == InteractionHand.MAIN_HAND) {
 			if (!this.level().isClientSide()) {
 				if (player.isSecondaryUseActive()) {
@@ -441,15 +463,27 @@ public class Blub extends TamableAnimal {
 		}
 	}
 
-	/** No food until M2's tidewrack treats (mob_blub.md). */
+	/** A baby blub is drawn and sized at 0.6 (items_m2.md). */
 	@Override
-	public boolean isFood(ItemStack itemStack) {
-		return false;
+	public float getAgeScale() {
+		return this.isBaby() ? 0.6F : 1.0F;
 	}
 
+	/** Tidewrack fronds, M2's treat (mob_blub.md's hook; items_m2.md). */
+	@Override
+	public boolean isFood(ItemStack itemStack) {
+		return itemStack.is(ModItems.TIDEWRACK_FROND);
+	}
+
+	/** A baby blub, befriended to its parents' owner, as a wolf pup is. */
 	@Override
 	public @Nullable AgeableMob getBreedOffspring(ServerLevel level, AgeableMob partner) {
-		return null;
+		Blub baby = ModEntities.BLUB.create(level, EntitySpawnReason.BREEDING);
+		if (baby != null && this.isTame()) {
+			baby.setOwnerReference(this.getOwnerReference());
+			baby.setTame(true, true);
+		}
+		return baby;
 	}
 
 	/** Blubs stack by riding each other, but a rider never steers the blub below (mob_blub.md, tech notes). */

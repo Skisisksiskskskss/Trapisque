@@ -48,7 +48,7 @@ final class ModTagProviders {
 		@Override
 		protected void addTags(HolderLookup.Provider registries) {
 			tag(BlockTags.MINEABLE_WITH_PICKAXE, ModBlocks.HYMNSTONE, ModBlocks.HYMNSTONE_BRICKS, ModBlocks.HYMNSTONE_BRICK_STAIRS,
-					ModBlocks.HYMNSTONE_BRICK_SLAB, ModBlocks.HYMNSTONE_BRICK_WALL, ModBlocks.TIDE_VENT);
+					ModBlocks.HYMNSTONE_BRICK_SLAB, ModBlocks.HYMNSTONE_BRICK_WALL, ModBlocks.TIDE_VENT, ModBlocks.LUMEN_LANTERN);
 			tag(BlockTags.MINEABLE_WITH_AXE, ModBlocks.SONGWOOD_LOG, ModBlocks.SONGWOOD_PLANKS);
 			tag(BlockTags.MINEABLE_WITH_HOE, ModBlocks.SONGWOOD_LEAVES, ModBlocks.SONGWOOD_DRAPES);
 			tag(BlockTags.MINEABLE_WITH_SHOVEL, ModBlocks.TIDE_SAND, ModBlocks.HEALTHY_SCULK, ModBlocks.SIFT_SOIL);

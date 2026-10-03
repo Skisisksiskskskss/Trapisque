@@ -96,6 +96,8 @@ below allows.
 | `block/lumen_bloom_core.png` | lumen |
 | `item/tidewrack_frond.png` | tidewrack, tidewrack_underside |
 | `item/endure_petal.png` | endure_petal |
+| `block/lumen_lantern.png` | hymnstone, lumen |
+| `item/lumen_lantern.png` | hymnstone, lumen |
 | `item/ichor_bucket.png` | pail, ichor |
 | `particle/glow_petal.png` | healthy_sculk, particle |
 | `particle/trill.png` | particle |

@@ -1,6 +1,8 @@
 {
   "advancements.thesift.an_offering.description": "Wake an Ancient City's frame with your experience",
   "advancements.thesift.an_offering.title": "An Offering",
+  "advancements.thesift.low_tide.description": "Gather tidewrack at low tide",
+  "advancements.thesift.low_tide.title": "Low Tide",
   "advancements.thesift.root.description": "Walk an Ancient City, where something old is listening",
   "advancements.thesift.root.title": "The Sift",
   "advancements.thesift.the_tide_turns.description": "Be in the Sift when the Tide changes",
@@ -23,6 +25,7 @@
   "block.thesift.hymnstone_bricks": "Hymnstone Bricks",
   "block.thesift.ichor": "Ichor",
   "block.thesift.lumen_bloom": "Lumen Bloom",
+  "block.thesift.lumen_lantern": "Lumen Lantern",
   "block.thesift.potted_chime_bell_flower": "Potted Chime Bell Flower",
   "block.thesift.potted_glowcap": "Potted Glowcap",
   "block.thesift.potted_songwood_sapling": "Potted Songwood Sapling",
