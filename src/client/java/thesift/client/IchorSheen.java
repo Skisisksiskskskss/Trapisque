@@ -3,13 +3,20 @@ package thesift.client;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandler;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.color.block.BlockTintSource;
 import net.minecraft.client.renderer.block.BlockAndTintGetter;
 import net.minecraft.client.renderer.block.FluidRenderer;
+import net.minecraft.client.renderer.texture.TextureAtlas;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.client.resources.model.sprite.AtlasManager;
+import net.minecraft.client.resources.model.sprite.SpriteId;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.ARGB;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FluidState;
+
+import thesift.TheSift;
 
 /**
  * Ichor's soap-bubble sheen (owner playtest 2, D-026). The ichor textures are a faint, pale
@@ -32,6 +39,10 @@ public final class IchorSheen implements FluidRenderHandler {
 			0xf2c7a2, 0xf1b4b5, 0xe8a7c8, 0xd7a3dc, 0xbea5ea, 0xa3aaf0, 0x889fe4, 0x6d97d2, 0x5590c3, 0x3a86ae};
 	/** The walk over the cycle: it lingers in turquoise (2-5) before going once round, so turquoise leads. */
 	private static final int[] WALK = {2, 3, 4, 5, 4, 3, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 0, 1};
+	/** The film's tile, in blocks (tools/art/build_textures.py ICHOR_FILM_TILE). */
+	static final int FILM_TILE = 8;
+	private static final SpriteId STILL_SPRITE = new SpriteId(TextureAtlas.LOCATION_BLOCKS, TheSift.id("block/ichor_still"));
+	private static final SpriteId FILM_SPRITE = new SpriteId(TextureAtlas.LOCATION_BLOCKS, TheSift.id("block/ichor_film"));
 	/** Blocks per radian of the field: turquoise patches a dozen or so blocks across, rimmed by bands a few blocks wide. */
 	private static final double SCALE = 8.0;
 
@@ -55,8 +66,26 @@ public final class IchorSheen implements FluidRenderHandler {
 		int originX = pos.getX() & ~15;
 		int originZ = pos.getZ() & ~15;
 		int blockTint = colourAt(pos.getX() + 0.5, pos.getZ() + 0.5);
+		AtlasManager atlases = Minecraft.getInstance().getAtlasManager();
+		Film film = new Film(atlases.get(STILL_SPRITE), atlases.get(FILM_SPRITE), Math.floorMod(pos.getX(), FILM_TILE), Math.floorMod(pos.getZ(), FILM_TILE),
+				pos.getX() - originX, pos.getZ() - originZ);
 		FluidRenderHandler.super.renderFluid(fluidRenderer, pos, level,
-				layer -> new Tinted(output.getBuilder(layer), originX, originZ, blockTint), blockState, fluidState);
+				layer -> new Tinted(output.getBuilder(layer), originX, originZ, blockTint, film), blockState, fluidState);
+	}
+
+	/**
+	 * Owner playtest 5: the colours must move. A vertex colour is fixed when its chunk is meshed, so
+	 * still surfaces (the vanilla still sprite's face) are re-mapped onto {@code ichor_film}, an
+	 * animated 8 x 8-block tile of the same film colours (tools/art: two swirled layers drifting
+	 * about a block a second), by world position: the bands move, and span many blocks. Flowing faces
+	 * keep the swirled tint above. Renderers that draw fluids themselves (Sodium) keep the tint only.
+	 */
+	private record Film(TextureAtlasSprite still, TextureAtlasSprite film, int tileX, int tileZ, int blockX, int blockZ) {
+		/** Whether (u, v) lies on the still sprite: a still surface's vertex. */
+		boolean onStill(float u, float v) {
+			float eps = 1.0E-5F;
+			return u >= this.still.getU0() - eps && u <= this.still.getU1() + eps && v >= this.still.getV0() - eps && v <= this.still.getV1() + eps;
+		}
 	}
 
 	/** The sheen at a point of the world, opaque. */
@@ -94,12 +123,21 @@ public final class IchorSheen implements FluidRenderHandler {
 	 * Vanilla's colour is the tint scaled by the face's shading, so the shading is recovered as the ratio
 	 * of their brightest channels.
 	 */
-	private record Tinted(VertexConsumer inner, int originX, int originZ, int blockTint) implements VertexConsumer {
+	private record Tinted(VertexConsumer inner, int originX, int originZ, int blockTint, Film film) implements VertexConsumer {
 		@Override
 		public void addVertex(float x, float y, float z, int color, float u, float v, int overlayCoords, int lightCoords,
 				float nx, float ny, float nz) {
-			float shade = brightest(color) / (float) Math.max(1, brightest(this.blockTint));
-			int corner = ARGB.scaleRGB(colourAt(originX + x, originZ + z), Math.min(1.0F, shade));
+			float shade = Math.min(1.0F, brightest(color) / (float) Math.max(1, brightest(this.blockTint)));
+			if (this.film.onStill(u, v)) {
+				// The block's place in the 8 x 8 tile plus the vertex's corner of the block.
+				float tu = (this.film.tileX() + (x - this.film.blockX())) / FILM_TILE;
+				float tv = (this.film.tileZ() + (z - this.film.blockZ())) / FILM_TILE;
+				int white = ARGB.scaleRGB(0xFFFFFFFF, shade);
+				inner.addVertex(x, y, z, ARGB.color(ARGB.alpha(color), white), this.film.film().getU(tu), this.film.film().getV(tv),
+						overlayCoords, lightCoords, nx, ny, nz);
+				return;
+			}
+			int corner = ARGB.scaleRGB(colourAt(originX + x, originZ + z), shade);
 			inner.addVertex(x, y, z, ARGB.color(ARGB.alpha(color), corner), u, v, overlayCoords, lightCoords, nx, ny, nz);
 		}
 

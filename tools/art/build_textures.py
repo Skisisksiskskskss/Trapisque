@@ -907,6 +907,40 @@ _ICHOR_PHASES = [(_ICHOR_RND.random(), _ICHOR_RND.choice([-2, -1, 1, 2]), 1.0 / 
                  for a, b in _ICHOR_WAVES]
 
 
+# The ichor film (owner playtest 5): the colour bands must move. Vertex colours are fixed when a chunk
+# is meshed, so the moving colour lives in an animated texture instead: an 8 x 8-block seamless tile
+# that still ichor maps by world position (thesift.client.IchorSheen), so the pattern spans many blocks.
+ICHOR_FILM_TILE = 8
+ICHOR_FILM_FRAMES = 32
+_FILM_WALK = [2, 3, 4, 5, 4, 3, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 0, 1]
+
+
+def ichor_film() -> Image.Image:
+    """The soap-film colours of still ichor, animated. Two swirled layers drift across the tile in
+    different directions (one tile per loop each, so the loop and the tile both stay seamless) and
+    interfere, so the bands wander and change shape rather than slide; a rare pale glint rides on them.
+    Drawn in the ichor ramp's film stops only, as pixel-art bands."""
+    size = 16 * ICHOR_FILM_TILE
+    tau2 = 2 * math.pi
+    im = Image.new("RGBA", (size, size * ICHOR_FILM_FRAMES))
+    px = im.load()
+    for f in range(ICHOR_FILM_FRAMES):
+        t = tau2 * f / ICHOR_FILM_FRAMES
+        for y in range(size):
+            Z = tau2 * (y + 0.5) / size
+            for x in range(size):
+                X = tau2 * (x + 0.5) / size
+                a = X - t + 1.1 * math.sin(Z + t + 1.3) + 0.4 * math.sin(2 * Z - X + t)
+                b = Z + t + 1.1 * math.sin(X - t + 0.7) + 0.4 * math.sin(2 * X + Z - 2 * t + 2.0)
+                p = 1.6 * (0.5 + 0.28 * math.sin(a + b) + 0.22 * math.sin(2 * a - b + 1.7))
+                s = (p - math.floor(p)) * len(_FILM_WALK)
+                colour = rgba("ichor", _FILM_WALK[int(s) % len(_FILM_WALK)], 214)
+                if math.sin(3 * a + 2 * b - t) * math.sin(2 * a - 3 * b + 2 * t) > 0.92:
+                    colour = rgba("ichor_sheen", 6, 214)
+                px[x, f * size + y] = colour
+    return im
+
+
 def ichor_frame(w: int, h: int, t: float, flow: bool) -> Image.Image:
     """Ichor (owner playtest 2, D-026): a faint, pale shimmer, as vanilla's water texture is grey.
     The colour is laid on as it is drawn (thesift.client.IchorSheen), which lays a soap bubble's bands across
@@ -1248,6 +1282,8 @@ def main() -> None:
     save(strip([ichor_frame(16, 16, f / 48, flow=False) for f in range(48)]), "block/ichor_still.png")
     save_mcmeta("block/ichor_still.png", '{\n  "animation": {\n    "frametime": 3,\n    "interpolate": true\n  }\n}\n')
     save(strip([ichor_frame(32, 32, f / 48, flow=True) for f in range(48)]), "block/ichor_flow.png")
+    save(ichor_film(), "block/ichor_film.png")
+    save_mcmeta("block/ichor_film.png", '{\n  "animation": {\n    "frametime": 5,\n    "interpolate": true\n  }\n}\n')
     save_mcmeta("block/ichor_flow.png", '{\n  "animation": {\n    "frametime": 2,\n    "interpolate": true\n  }\n}\n')
     save(ichor_overlay(), "block/ichor_overlay.png")
     save(ichor_bucket(), "item/ichor_bucket.png")

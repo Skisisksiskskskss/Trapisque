@@ -1,6 +1,6 @@
 # STATUS (session 1, 2026-10-02)
 - **Phase / Milestone:** M1 done; the owner's playtest reworks (`v0.1.1-alpha` to `v0.1.4-alpha`) done; M2 under way (flora, materials and items in code; the hunt next).
-- **Autonomy:** **full-auto** (D-014). **The build to try:** https://github.com/Skisisksiskskskss/Trapisque/releases/tag/v0.1.5-alpha: the hunt, with Nesters in Endure (D-030); steps in `docs/PLAYTEST.md` (top section). The previous build: https://github.com/Skisisksiskskskss/Trapisque/releases/tag/v0.1.4-alpha (D-029, WP-065)
+- **Autonomy:** **full-auto** (D-014). **The build to try:** https://github.com/Skisisksiskskskss/Trapisque/releases/tag/v0.1.6-alpha: moving ichor colours (D-031) and the hunt, with Nesters in Endure (D-030); steps in `docs/PLAYTEST.md` (top section). The previous build: https://github.com/Skisisksiskskskss/Trapisque/releases/tag/v0.1.4-alpha (D-029, WP-065)
 - **Current WP:** WP-066/067 finishing (Quiet Waters, cost measurements, speed tests), then WP-068 (the Bloombud). M2's designs so far are frozen with their BALANCE sections: WP-060 (the hunt system), WP-061 (the Nester), WP-062 (the Bloombud), WP-064 (flora), WP-065 (materials).
 - **Done this session:**
   - Phases 0–3 and M1 (WP-040..053).
@@ -20,7 +20,7 @@
   1. Answer the owner's notes on `v0.1.2-alpha` the moment they arrive.
   2. WP-064: the M2 blocks' design doc and critique (the "Sift has no buds" constraint binds its flora).
   3. The M2 code: WP-063 (Hollows, glowcap pools), WP-066 (the hunt system), WP-067/068 (Nester, Bloombud).
-- **Build:** ✅ `./gradlew build` (with GameTests) · datagen no-diff ✅ · `check_bible.py` ✅ · `check_palette.py` ✅ (62 textures) · `check_lang.py` ✅
+- **Build:** ✅ `./gradlew build` (with GameTests) · datagen no-diff ✅ · `check_bible.py` ✅ · `check_palette.py` ✅ (63 textures) · `check_lang.py` ✅
 - **Tests:** 92/92 server GameTests. The client GameTest walks the entry, the Tides, a basin and the blubs, and its landscape shots (`look_*`) compare the land with the teasers.
 - **Server boot:** ✅ (the GameTest dedicated server on every build).
 - **Blockers:** none. The Netlify site `magnificent-gelato-563c55` fails on every PR because of its own configuration (owner-side; see the PR comment).

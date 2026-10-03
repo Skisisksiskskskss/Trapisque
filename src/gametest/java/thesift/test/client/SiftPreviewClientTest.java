@@ -242,6 +242,11 @@ public final class SiftPreviewClientTest implements FabricClientGameTest {
 			clearChat(context);
 			context.waitTicks(40);
 			context.takeScreenshot(names[i]);
+			if ("look_ichor".equals(names[i])) {
+				// Owner playtest 5: the film colours move. The same view three seconds on.
+				context.waitTicks(60);
+				context.takeScreenshot("look_ichor_later");
+			}
 		}
 		double[] meadow = views[2];
 		if (meadow != null) {

@@ -727,3 +727,14 @@ It also found that M1's Tide changed nothing in play (SF4), since the mission as
   - the lull (M4: the horn).
 
 **Revisit if** Endures feel empty or crowded once the Bloombud is in (the cap, the weights), or the perf measurement fails its ≤ 1.5× budget.
+
+## D-031 Ichor's colours move (2026-10-03) [owner playtest 5]
+**Context.** The owner: "the ichor multi colored gradient has stopped moving, please fix, make sure it moves and at a decent speed". Since D-026 the colours were per-vertex tints (IchorSheen), and a vertex's colour is fixed when its chunk is meshed, so the bands never moved. Only the pale shimmer under them did. (The colour moved before D-026, when it was in the block texture.)
+
+**Decision.** Still ichor surfaces draw `block/ichor_film`, an animated, seamless 8 × 8-block tile of the film's colours (the `ichor` ramp's stops, as pixel-art bands) mapped by world position, so the pattern spans many blocks and never repeats per block.
+- **The motion.** Two swirled layers drift across the tile in different directions, one tile per loop each, so the bands wander and change shape rather than slide. The loop is 32 frames at 5 ticks, interpolated: 8 s, about a block a second.
+- **Flowing faces** keep D-026's swirled per-corner tint.
+- **Sodium and Iris** draw fluids themselves and skip the re-mapping, so there the colours stay still (the tint source, D-028).
+- Checked in the client preview: two shots 60 ticks apart differ visibly.
+
+**Revisit if** the 8-block repeat shows on large ponds (widen the tile), or the speed reads as too fast or too slow.

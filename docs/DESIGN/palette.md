@@ -88,6 +88,7 @@ below allows.
 | `block/sift_membrane.png` | membrane |
 | `block/ichor_still.png` | ichor_sheen |
 | `block/ichor_flow.png` | ichor_sheen |
+| `block/ichor_film.png` | ichor, ichor_sheen |
 | `block/ichor_overlay.png` | ichor_sheen |
 | `block/tidewrack.png` | tidewrack, tidewrack_underside |
 | `block/tidewrack_closed.png` | tidewrack |

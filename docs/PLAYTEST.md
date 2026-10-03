@@ -2,6 +2,9 @@
 
 Step-by-step checklists the owner can run in-game. Produced at every gate.
 
+## `v0.1.6-alpha` (2026-10-03): ichor's colours move
+Your note: the multicoloured gradient had stopped moving (D-031). Still ichor now shows the soap-film colours as a slowly swirling pattern that spans many blocks and drifts about a block a second. Flowing ichor keeps its colours still. With Sodium or Iris the colours stay still, as before: those renderers draw fluids their own way.
+
 ## `v0.1.5-alpha` (2026-10-03): the hunt begins: Nesters in Endure
 The Sift's first danger (system_hunt.md, mob_nester.md, D-030). What to try:
 - **In Endure (high tide), Nesters come up out of the Meadow's grass.** They don't see you; they **hear** you, like a warden: steps, blocks, doors, eating, a jukebox within 10. A vibration particle flies to the Nester, its gold crest fans up ("Nester hears something"), and it gallops to **where the sound was**.
