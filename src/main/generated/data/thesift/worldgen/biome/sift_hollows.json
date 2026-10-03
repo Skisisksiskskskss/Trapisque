@@ -22,7 +22,23 @@
     [],
     [],
     [],
-    [],
+    [
+      "thesift:ore_hymnstone_coal_upper",
+      "thesift:ore_hymnstone_coal_lower",
+      "thesift:ore_hymnstone_iron_upper",
+      "thesift:ore_hymnstone_iron_middle",
+      "thesift:ore_hymnstone_iron_small",
+      "thesift:ore_hymnstone_gold",
+      "thesift:ore_hymnstone_redstone",
+      "thesift:ore_hymnstone_redstone_lower",
+      "thesift:ore_hymnstone_diamond",
+      "thesift:ore_hymnstone_diamond_large",
+      "thesift:ore_hymnstone_diamond_buried",
+      "thesift:ore_hymnstone_lapis",
+      "thesift:ore_hymnstone_lapis_buried",
+      "thesift:ore_hymnstone_copper",
+      "thesift:ore_echo"
+    ],
     [
       "thesift:glowcaps_sift_hollows",
       "thesift:lumen_bloom_sift_hollows"

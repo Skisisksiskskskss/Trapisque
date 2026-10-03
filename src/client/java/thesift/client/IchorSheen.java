@@ -5,9 +5,9 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.color.block.BlockTintSource;
+import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.renderer.block.BlockAndTintGetter;
 import net.minecraft.client.renderer.block.FluidRenderer;
-import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.sprite.AtlasManager;
 import net.minecraft.client.resources.model.sprite.SpriteId;
@@ -41,8 +41,8 @@ public final class IchorSheen implements FluidRenderHandler {
 	private static final int[] WALK = {2, 3, 4, 5, 4, 3, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 0, 1};
 	/** The film's tile, in blocks (tools/art/build_textures.py ICHOR_FILM_TILE). */
 	static final int FILM_TILE = 8;
-	private static final SpriteId STILL_SPRITE = new SpriteId(TextureAtlas.LOCATION_BLOCKS, TheSift.id("block/ichor_still"));
-	private static final SpriteId FILM_SPRITE = new SpriteId(TextureAtlas.LOCATION_BLOCKS, TheSift.id("block/ichor_film"));
+	private static final SpriteId STILL_SPRITE = Sheets.BLOCKS_MAPPER.apply(TheSift.id("ichor_still"));
+	private static final SpriteId FILM_SPRITE = Sheets.BLOCKS_MAPPER.apply(TheSift.id("ichor_film"));
 	/** Blocks per radian of the field: turquoise patches a dozen or so blocks across, rimmed by bands a few blocks wide. */
 	private static final double SCALE = 8.0;
 

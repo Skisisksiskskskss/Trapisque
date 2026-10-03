@@ -1247,11 +1247,329 @@ def trill() -> Image.Image:
     return im
 
 
+# ---------------------------------------------------------------- the hymnstone family II (owner: hymnstone works as stone)
+def _cells(seed: int, count: int, spacing: float):
+    """Voronoi cells on the wrapped tile: per pixel, (its nearest point's index, the gap to the second
+    nearest point, and its offset from its own point)."""
+    pts = scatter(seed, count, spacing)
+    out = []
+    for y in range(H):
+        row = []
+        for x in range(W):
+            ds = sorted((((x - px_ + W / 2) % W - W / 2) ** 2 + ((y - py_ + H / 2) % H - H / 2) ** 2, i,
+                         (x - px_ + W / 2) % W - W / 2, (y - py_ + H / 2) % H - H / 2) for i, (px_, py_) in enumerate(pts))
+            row.append((ds[0][1], math.sqrt(ds[1][0]) - math.sqrt(ds[0][0]), ds[0][2], ds[0][3]))
+        out.append(row)
+    return out
+
+
+def cobbled_hymnstone() -> Image.Image:
+    """Cobbled hymnstone, as vanilla cobblestone: rounded stones of the stone's grain, each its own shade,
+    lit toward the top-left and shaded toward the bottom-right, packed with dark gaps."""
+    cells = _cells(41, 6, 5.6)
+    v = grain(41, clumps=0.3, cells=4, fine=8, jitter=0.4)
+    rnd = random.Random(41)
+    base = [rnd.choice((3, 4, 4, 5)) for _ in range(9)]
+    im = Image.new("RGBA", (W, H))
+    px = im.load()
+    for y in range(H):
+        for x in range(W):
+            i, gap, dx, dy = cells[y][x]
+            if gap < 0.75:
+                px[x, y] = rgba("hymnstone", 1 if (x * 3 + y) % 4 else 0)
+                continue
+            shade = base[i] + (1 if dx + dy < -1.5 else -1 if dx + dy > 2.0 else 0)
+            shade += 1 if v[y][x] > 0.62 else -1 if v[y][x] < 0.38 else 0
+            if gap < 1.6:
+                shade -= 1  # a stone's rim falls away into the gap
+            px[x, y] = rgba("hymnstone", max(1, min(7, shade)))
+    return im
+
+
+def smooth_hymnstone() -> Image.Image:
+    """Smooth hymnstone, as vanilla smooth stone: a face ground flat, two close shades in slow clouds,
+    inside a one-pixel frame a shade darker."""
+    v = tile_noise(W, H, 4, 4, 51)
+    im = Image.new("RGBA", (W, H))
+    px = im.load()
+    for y in range(H):
+        for x in range(W):
+            edge = x in (0, W - 1) or y in (0, H - 1)
+            px[x, y] = rgba("hymnstone", 4 if edge else 6 if v[y][x] > 0.56 else 5)
+    return im
+
+
+def polished_hymnstone() -> Image.Image:
+    """Polished hymnstone, as vanilla polished andesite: the grain smoothed into broad soft blotches,
+    framed by a bevel lit on its top and left edges and shaded on its bottom and right."""
+    v = tile_noise(W, H, 3, 3, 57, ((1.0, 1), (0.5, 2)))
+    b = by_rank(v, [0.25, 0.45, 0.30], soft=False)
+    im = Image.new("RGBA", (W, H))
+    px = im.load()
+    for y in range(H):
+        for x in range(W):
+            shade = 4 + b[y][x]
+            if x == W - 1 or y == H - 1:
+                shade = 3
+            elif x == 0 or y == 0:
+                shade = 7
+            px[x, y] = rgba("hymnstone", shade)
+    return im
+
+
+def cracked_hymnstone_bricks() -> Image.Image:
+    """The bricks, fired until they crack: a few dark cracks wandering down across them, each with a lit
+    lip on its right, and a chipped corner."""
+    im = hymnstone_bricks()
+    px = im.load()
+    rnd = random.Random(71)
+    crack = set()
+    for x, y, steps, drift in ((2, 1, 7, 1), (12, 9, 6, -1)):
+        for _ in range(steps):
+            crack.add((x % W, y % H))
+            if rnd.random() < 0.5:
+                x += drift
+            else:
+                y += 1
+    for x, y in crack:
+        px[x, y] = rgba("hymnstone", 0)
+        if ((x + 1) % W, y) not in crack:
+            px[(x + 1) % W, y] = rgba("hymnstone", 6)
+    for x, y in ((14, 8), (15, 8), (15, 9)):
+        px[x, y] = rgba("hymnstone", 1)
+    return im
+
+
+def chiseled_hymnstone_bricks() -> Image.Image:
+    """Chiseled hymnstone bricks: a bevelled panel carved with a ring (a bell's mouth, seen head-on) and
+    two arcs of sound either side of it; carved lines are dark with a lit lower lip."""
+    v = grain(83, clumps=0.4, cells=4, fine=8, jitter=0.4)
+    b = by_rank(v, [0.3, 0.4, 0.3])
+    im = Image.new("RGBA", (W, H))
+    px = im.load()
+    for y in range(H):
+        for x in range(W):
+            shade = 4 + b[y][x]
+            if x in (0, W - 1) or y in (0, H - 1):
+                shade = 1
+            elif x == 1 or y == 1:
+                shade = 7
+            elif x == W - 2 or y == H - 2:
+                shade = 2
+            px[x, y] = rgba("hymnstone", max(1, min(7, shade)))
+    cx = cy = 7.5
+    carved = set()
+    for y in range(3, H - 3):
+        for x in range(3, W - 3):
+            d = math.hypot(x - cx, y - cy)
+            if abs(d - 2.6) < 0.55 or abs(d - 5.0) < 0.5 and abs(x - cx) > abs(y - cy) * 1.4:
+                carved.add((x, y))
+    for x, y in carved:
+        px[x, y] = rgba("hymnstone", 1)
+        if (x, y + 1) not in carved:
+            px[x, y + 1] = rgba("hymnstone", 6)
+    for x, y in ((7, 7), (8, 7)):
+        px[x, y] = rgba("hymnstone", 7)
+    for x, y in ((7, 8), (8, 8)):
+        px[x, y] = rgba("hymnstone", 3)
+    return im
+
+
+# ---------------------------------------------------------------- ores (survival_sift.md §2)
+# Cluster shapes: a = the ore's darkest shade .. d = its lightest (clamped to the ramp); vanilla's ore
+# colours, so each reads as its ore, in clusters drawn anew on hymnstone.
+_ORE_SHAPES = {
+    "coal": ([".bb.", "bccb", "abbc", ".aa."], ["bc.", "abb", ".a."], [".cb", "bba", "a.."]),
+    "copper": ([".cd.", "bcde", ".abf"], ["cd.", "bce", ".a."], [".dc", "bca", ".a."]),
+    "iron": ([".cd", "bcc", "ab."], ["dc.", "cbb", ".a."], [".d.", "cbc", ".a."]),
+    "gold": ([".dc", "cdb", "ab."], ["dc.", "bcb", ".a."], [".d.", "dcb", ".ba"]),
+    "redstone": ([".d.", "dcb", ".ba"], ["c.c", ".b."], ["dc", "ba"], [".c", "b."]),
+    "lapis": ([".dc.", "cdcb", ".bba"], ["dc", "cb", ".a"], [".d.", "cba"]),
+    "diamond": ([".d.", "dcd", "bcb", ".a."], [".dc", "dcb", ".a."], ["cd", "ba"]),
+    "emerald": ([".d.", "dcd", "bcb", ".a."], [".c.", "cdb", ".a."]),
+}
+_ORE_COUNTS = {"coal": 5, "copper": 5, "iron": 5, "gold": 4, "redstone": 6, "lapis": 5, "diamond": 4, "emerald": 3}
+
+
+def _cluster(im: Image.Image, x0: int, y0: int, shape: list[str], ramp: str, lift: int = 0) -> set:
+    px = im.load()
+    n = len(RAMPS[ramp])
+    hit = set()
+    for dy, row in enumerate(shape):
+        for dx, ch in enumerate(row):
+            if ch != ".":
+                p = ((x0 + dx) % W, (y0 + dy) % H)
+                px[p] = rgba(ramp, min(n - 1, "abcdef".index(ch) + lift))
+                hit.add(p)
+    for x, y in hit:  # a dark seat below and right of the cluster, as vanilla's ores have
+        q = ((x + 1) % W, (y + 1) % H)
+        if q not in hit:
+            px[q] = rgba("hymnstone", 2)
+    return hit
+
+
+def hymnstone_ore(kind: str) -> Image.Image:
+    im = hymnstone_pattern()
+    shapes = _ORE_SHAPES[kind]
+    for i, (x, y) in enumerate(scatter(sum(map(ord, kind)), _ORE_COUNTS[kind], 5.5)):
+        _cluster(im, x, y, shapes[i % len(shapes)], "ore_" + kind)
+    return im
+
+
+def echo_ore_frames(n: int = 16) -> list[Image.Image]:
+    """Echo ore (an invention, survival_sift.md §2): long shards of echo in the stone, each pulsing in
+    turn, as a sound does when it comes back."""
+    shards = (["..c", ".cb", "ca."], ["c.", "cb", ".a"], [".c", "cb", "ba"], ["cc", ".b"])
+    spots = scatter(301, 5, 5.0)
+    frames = []
+    for f in range(n):
+        im = hymnstone_pattern()
+        for i, (x, y) in enumerate(spots):
+            pulse = 0.5 + 0.5 * math.cos(2 * math.pi * (f / n - i / len(spots)))
+            _cluster(im, x, y, shards[i % len(shards)], "echo", lift=1 if pulse > 0.66 else 0)
+            if pulse > 0.85:
+                put(im, [(x + len(shards[i % len(shards)][0]) - 1, y)], rgba("echo", 4))
+        frames.append(im)
+    return frames
+
+
+# ---------------------------------------------------------------- food (survival_sift.md §1)
+def tide_roots(stage: int) -> Image.Image:
+    """Tide roots in vanilla's crop layout: teal blades rising with each stage; at the last, the lilac
+    shoulders of the roots show at the soil."""
+    im = _blank()
+    tops = (13, 10, 7, 4)[stage]
+    for i, x in enumerate((2, 6, 9, 13)):
+        top = tops + (i % 2) * (1 if stage else 0)
+        if stage == 0 and i % 2:
+            continue
+        lean = (-1, 1, -1, 1)[i]
+        for y in range(15, top - 1, -1):
+            sx = x + (lean if y < top + (15 - top) // 2 else 0)
+            _set(im, sx, y, rgba("tidewrack_underside", 0 if y > 12 else 1))
+            if stage >= 1 and (y + i) % 3 == 0 and y < 14:
+                _set(im, sx + lean, y, rgba("tidewrack_underside", 2))
+        _set(im, x + (lean if stage else 0), top, rgba("tidewrack_underside", 2))
+    if stage == 3:
+        for x in (2, 6, 9, 13):
+            _set(im, x - 1, 15, rgba("tide_root", 2))
+            _set(im, x, 15, rgba("tide_root", 3))
+            _set(im, x + 1, 15, rgba("tide_root", 1))
+            _set(im, x, 14, rgba("tide_root", 4))
+    return im
+
+
+_ROOT_ROWS = [
+    "................",
+    "...........g.G..",
+    "..........gG.H..",
+    "...........GgG..",
+    ".........ddHg...",
+    "........dedc....",
+    ".......dedcb....",
+    "......dedcba....",
+    ".....dedcba.....",
+    "....cddcba......",
+    "...cdccba.......",
+    "...ccbaa........",
+    "..cbaa..........",
+    "..ba............",
+    ".a..............",
+    "................",
+]
+
+
+def tide_root_item(baked: bool = False) -> Image.Image:
+    """The tide root, lying corner to corner as vanilla's carrot does: a lilac root banded by the rings
+    it grew, teal blades at its crown. Baked, it browns, loses its blades and splits along a ring."""
+    im = _blank()
+    ramp = "tide_root_baked" if baked else "tide_root"
+    key = {"a": (ramp, 0), "b": (ramp, 1), "c": (ramp, 2), "d": (ramp, 3), "e": (ramp, 4),
+           "g": ("tidewrack_underside", 0), "G": ("tidewrack_underside", 1), "H": ("tidewrack_underside", 2)}
+    rows = [r.translate(str.maketrans("gGH", "...")) if baked else r for r in _ROOT_ROWS]
+    _rows(im, 0, 0, rows, key)
+    for x, y in ((6, 9), (7, 8), (8, 7)) if not baked else ():
+        _set(im, x, y, rgba(ramp, 1))  # a growth ring
+    if baked:
+        for x, y in ((6, 8), (7, 7), (9, 5)):
+            _set(im, x, y, rgba(ramp, 0))
+        _set(im, 10, 4, rgba(ramp, 2))
+    return im
+
+
+def songfruit() -> Image.Image:
+    """Songfruit: a round indigo fruit on a songwood stalk with one leaf, lit from the top-left."""
+    im = _blank()
+    key = {"a": ("songfruit", 0), "b": ("songfruit", 1), "c": ("songfruit", 2), "d": ("songfruit", 3), "e": ("songfruit", 4),
+           "k": ("songwood_bark", 5), "L": ("songwood_leaves", 4), "l": ("songwood_leaves", 2)}
+    _rows(im, 0, 0, [
+        "................",
+        "................",
+        ".......k.LL.....",
+        ".......kLLl.....",
+        "......kLl.......",
+        ".....bbkbb......",
+        "....bccccbb.....",
+        "...bcedccbba....",
+        "...bcdcccbba....",
+        "...bccccbbba....",
+        "...bbcccbbaa....",
+        "....bbbbbaa.....",
+        ".....aaaaa......",
+        "................",
+        "................",
+        "................",
+    ], key)
+    return im
+
+
+def glowcap_stew() -> Image.Image:
+    """Glowcap stew, as vanilla's stews: a wooden bowl seen from a little above, full of pale-green broth
+    with glowcap shelves floating in it."""
+    im = _blank()
+    key = {"v": ("bowl", 0), "w": ("bowl", 1), "x": ("bowl", 2), "r": ("bowl", 3),
+           "s": ("glowcap", 1), "g": ("glowcap", 3), "G": ("glowcap", 4), "t": ("glowcap_stem", 1)}
+    _rows(im, 0, 0, [
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "....rrrrrrrr....",
+        "..rrsGgssGgsrr..",
+        ".rssgtsGgtssGsr.",
+        ".rsGgssgtssgGsr.",
+        ".xrssstssGgssrx.",
+        ".xxrrrrrrrrrrxx.",
+        "..wxxxxxxxxxxw..",
+        "...vwwxxxxwwv...",
+        "....vvwwwwvv....",
+        "......vvvv......",
+        "................",
+    ], key)
+    return im
+
+
 def main() -> None:
     save(hymnstone_pattern(), "block/hymnstone.png")
     save(hymnstone_pattern(seed=4), "block/hymnstone_2.png")
     save(hymnstone_pattern(seed=9), "block/hymnstone_3.png")
     save(hymnstone_bricks(), "block/hymnstone_bricks.png")
+    save(cobbled_hymnstone(), "block/cobbled_hymnstone.png")
+    save(smooth_hymnstone(), "block/smooth_hymnstone.png")
+    save(polished_hymnstone(), "block/polished_hymnstone.png")
+    save(cracked_hymnstone_bricks(), "block/cracked_hymnstone_bricks.png")
+    save(chiseled_hymnstone_bricks(), "block/chiseled_hymnstone_bricks.png")
+    for kind in _ORE_SHAPES:
+        save(hymnstone_ore(kind), f"block/hymnstone_{kind}_ore.png")
+    save(strip(echo_ore_frames()), "block/echo_ore.png")
+    save_mcmeta("block/echo_ore.png", '{\n  "animation": {\n    "frametime": 4,\n    "interpolate": true\n  }\n}\n')
+    for stage in range(4):
+        save(tide_roots(stage), f"block/tide_roots_stage{stage}.png")
+    save(tide_root_item(), "item/tide_root.png")
+    save(tide_root_item(baked=True), "item/baked_tide_root.png")
+    save(songfruit(), "item/songfruit.png")
+    save(glowcap_stew(), "item/glowcap_stew.png")
     save(healthy_sculk_top(), "block/healthy_sculk_top.png")
     save(healthy_sculk_top(seed=22), "block/healthy_sculk_top_2.png")
     save(healthy_sculk_top(seed=27), "block/healthy_sculk_top_3.png")

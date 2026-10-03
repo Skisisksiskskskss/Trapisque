@@ -48,17 +48,40 @@ final class ModTagProviders {
 		@Override
 		protected void addTags(HolderLookup.Provider registries) {
 			tag(BlockTags.MINEABLE_WITH_PICKAXE, ModBlocks.HYMNSTONE, ModBlocks.HYMNSTONE_BRICKS, ModBlocks.HYMNSTONE_BRICK_STAIRS,
-					ModBlocks.HYMNSTONE_BRICK_SLAB, ModBlocks.HYMNSTONE_BRICK_WALL, ModBlocks.TIDE_VENT, ModBlocks.LUMEN_LANTERN);
+					ModBlocks.HYMNSTONE_BRICK_SLAB, ModBlocks.HYMNSTONE_BRICK_WALL, ModBlocks.CRACKED_HYMNSTONE_BRICKS, ModBlocks.CHISELED_HYMNSTONE_BRICKS, ModBlocks.HYMNSTONE_STAIRS, ModBlocks.HYMNSTONE_SLAB,
+					ModBlocks.COBBLED_HYMNSTONE, ModBlocks.COBBLED_HYMNSTONE_STAIRS, ModBlocks.COBBLED_HYMNSTONE_SLAB, ModBlocks.COBBLED_HYMNSTONE_WALL,
+					ModBlocks.SMOOTH_HYMNSTONE, ModBlocks.SMOOTH_HYMNSTONE_SLAB, ModBlocks.POLISHED_HYMNSTONE, ModBlocks.POLISHED_HYMNSTONE_STAIRS,
+					ModBlocks.POLISHED_HYMNSTONE_SLAB, ModBlocks.POLISHED_HYMNSTONE_WALL, ModBlocks.TIDE_VENT,
+					ModBlocks.LUMEN_LANTERN);
 			tag(BlockTags.MINEABLE_WITH_AXE, ModBlocks.SONGWOOD_LOG, ModBlocks.SONGWOOD_PLANKS);
 			tag(BlockTags.MINEABLE_WITH_HOE, ModBlocks.SONGWOOD_LEAVES, ModBlocks.SONGWOOD_DRAPES);
 			tag(BlockTags.MINEABLE_WITH_SHOVEL, ModBlocks.TIDE_SAND, ModBlocks.HEALTHY_SCULK, ModBlocks.SIFT_SOIL);
 			// Sift soil is the Sift's dirt: plants that grow on dirt grow on it.
 			tag(BlockTags.DIRT, ModBlocks.SIFT_SOIL);
+			// Hymnstone ores (survival_sift.md §4): vanilla's ore tags and tool tiers.
+			tag(BlockTags.MINEABLE_WITH_PICKAXE, ModBlocks.HYMNSTONE_COAL_ORE, ModBlocks.HYMNSTONE_COPPER_ORE, ModBlocks.HYMNSTONE_IRON_ORE,
+					ModBlocks.HYMNSTONE_GOLD_ORE, ModBlocks.HYMNSTONE_REDSTONE_ORE, ModBlocks.HYMNSTONE_LAPIS_ORE, ModBlocks.HYMNSTONE_DIAMOND_ORE,
+					ModBlocks.HYMNSTONE_EMERALD_ORE, ModBlocks.ECHO_ORE);
+			tag(BlockTags.NEEDS_STONE_TOOL, ModBlocks.HYMNSTONE_COPPER_ORE, ModBlocks.HYMNSTONE_IRON_ORE, ModBlocks.HYMNSTONE_LAPIS_ORE);
+			tag(BlockTags.NEEDS_IRON_TOOL, ModBlocks.HYMNSTONE_GOLD_ORE, ModBlocks.HYMNSTONE_REDSTONE_ORE, ModBlocks.HYMNSTONE_DIAMOND_ORE,
+					ModBlocks.HYMNSTONE_EMERALD_ORE, ModBlocks.ECHO_ORE);
+			tag(BlockItemTags.COAL_ORES.block(), ModBlocks.HYMNSTONE_COAL_ORE);
+			tag(BlockItemTags.COPPER_ORES.block(), ModBlocks.HYMNSTONE_COPPER_ORE);
+			tag(BlockItemTags.IRON_ORES.block(), ModBlocks.HYMNSTONE_IRON_ORE);
+			tag(BlockItemTags.GOLD_ORES.block(), ModBlocks.HYMNSTONE_GOLD_ORE);
+			tag(BlockItemTags.REDSTONE_ORES.block(), ModBlocks.HYMNSTONE_REDSTONE_ORE);
+			tag(BlockItemTags.LAPIS_ORES.block(), ModBlocks.HYMNSTONE_LAPIS_ORE);
+			tag(BlockItemTags.DIAMOND_ORES.block(), ModBlocks.HYMNSTONE_DIAMOND_ORE);
+			tag(BlockItemTags.EMERALD_ORES.block(), ModBlocks.HYMNSTONE_EMERALD_ORE);
+			tag(BlockTags.CROPS, ModBlocks.TIDE_ROOTS);
 			// Soil (system_hunt.md): hunters come up out of it and dig back in; stone and planks are safe floors.
 			tag(ModTags.HUNTER_BURROWABLE, ModBlocks.HEALTHY_SCULK, ModBlocks.SIFT_SOIL);
-			tag(BlockTags.STAIRS, ModBlocks.HYMNSTONE_BRICK_STAIRS);
-			tag(BlockTags.SLABS, ModBlocks.HYMNSTONE_BRICK_SLAB);
-			tag(BlockTags.WALLS, ModBlocks.HYMNSTONE_BRICK_WALL);
+			tag(BlockTags.STAIRS, ModBlocks.HYMNSTONE_BRICK_STAIRS,
+					ModBlocks.HYMNSTONE_STAIRS, ModBlocks.COBBLED_HYMNSTONE_STAIRS, ModBlocks.POLISHED_HYMNSTONE_STAIRS);
+			tag(BlockTags.SLABS, ModBlocks.HYMNSTONE_BRICK_SLAB,
+					ModBlocks.HYMNSTONE_SLAB, ModBlocks.COBBLED_HYMNSTONE_SLAB, ModBlocks.SMOOTH_HYMNSTONE_SLAB, ModBlocks.POLISHED_HYMNSTONE_SLAB);
+			tag(BlockTags.WALLS, ModBlocks.HYMNSTONE_BRICK_WALL,
+					ModBlocks.COBBLED_HYMNSTONE_WALL, ModBlocks.POLISHED_HYMNSTONE_WALL);
 			tag(BlockTags.LEAVES, ModBlocks.SONGWOOD_LEAVES);
 			tag(BlockTags.SAPLINGS, ModBlocks.SONGWOOD_SAPLING);
 			tag(BlockTags.FLOWER_POTS, ModBlocks.POTTED_SONGWOOD_SAPLING);
@@ -101,12 +124,18 @@ final class ModTagProviders {
 
 		@Override
 		protected void addTags(HolderLookup.Provider registries) {
-			tag(BlockItemTags.STAIRS.item(), ModBlocks.HYMNSTONE_BRICK_STAIRS);
-			tag(BlockItemTags.SLABS.item(), ModBlocks.HYMNSTONE_BRICK_SLAB);
-			tag(ItemTags.WALLS, ModBlocks.HYMNSTONE_BRICK_WALL);
+			tag(BlockItemTags.STAIRS.item(), ModBlocks.HYMNSTONE_BRICK_STAIRS,
+					ModBlocks.HYMNSTONE_STAIRS, ModBlocks.COBBLED_HYMNSTONE_STAIRS, ModBlocks.POLISHED_HYMNSTONE_STAIRS);
+			tag(BlockItemTags.SLABS.item(), ModBlocks.HYMNSTONE_BRICK_SLAB,
+					ModBlocks.HYMNSTONE_SLAB, ModBlocks.COBBLED_HYMNSTONE_SLAB, ModBlocks.SMOOTH_HYMNSTONE_SLAB, ModBlocks.POLISHED_HYMNSTONE_SLAB);
+			tag(ItemTags.WALLS, ModBlocks.HYMNSTONE_BRICK_WALL,
+					ModBlocks.COBBLED_HYMNSTONE_WALL, ModBlocks.POLISHED_HYMNSTONE_WALL);
 			tag(ItemTags.LEAVES, ModBlocks.SONGWOOD_LEAVES);
 			tag(ItemTags.SAPLINGS, ModBlocks.SONGWOOD_SAPLING);
 			tag(ItemTags.PLANKS, ModBlocks.SONGWOOD_PLANKS);
+			// Hymnstone is the Sift's cobblestone: stone tools and furnaces (survival_sift.md §1).
+			tag(ItemTags.STONE_TOOL_MATERIALS, ModBlocks.COBBLED_HYMNSTONE);
+			tag(ItemTags.STONE_CRAFTING_MATERIALS, ModBlocks.COBBLED_HYMNSTONE);
 			tag(ModTags.SONGWOOD_LOGS_ITEM, ModBlocks.SONGWOOD_LOG);
 			builder(ItemTags.LOGS_THAT_BURN).addTag(ModTags.SONGWOOD_LOGS_ITEM);
 			tag(BlockItemTags.SMALL_FLOWERS.item(), ModBlocks.CHIME_BELL_FLOWER);

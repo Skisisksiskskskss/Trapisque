@@ -14,6 +14,7 @@ import net.minecraft.client.data.models.blockstates.PropertyDispatch;
 import net.minecraft.client.data.models.model.ModelLocationUtils;
 import net.minecraft.client.resources.model.sprite.Material;
 import net.minecraft.core.Direction;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.client.data.models.model.ModelTemplate;
 import net.minecraft.client.data.models.model.ModelTemplates;
@@ -27,6 +28,7 @@ import net.minecraft.world.level.block.Block;
 import thesift.TheSift;
 import thesift.block.ChimeBellFlowerBlock;
 import thesift.block.TideFloraBlock;
+import thesift.block.TideRootsBlock;
 import thesift.block.TidewrackBlock;
 import thesift.registry.ModBlocks;
 import thesift.registry.ModItems;
@@ -55,6 +57,18 @@ final class ModModelProvider extends FabricModelProvider {
 				.stairs(ModBlocks.HYMNSTONE_BRICK_STAIRS)
 				.slab(ModBlocks.HYMNSTONE_BRICK_SLAB)
 				.wall(ModBlocks.HYMNSTONE_BRICK_WALL);
+		g.createTrivialCube(ModBlocks.CRACKED_HYMNSTONE_BRICKS);
+		g.createTrivialCube(ModBlocks.CHISELED_HYMNSTONE_BRICKS);
+		hymnstoneCuts(g);
+		g.family(ModBlocks.COBBLED_HYMNSTONE)
+				.stairs(ModBlocks.COBBLED_HYMNSTONE_STAIRS)
+				.slab(ModBlocks.COBBLED_HYMNSTONE_SLAB)
+				.wall(ModBlocks.COBBLED_HYMNSTONE_WALL);
+		g.family(ModBlocks.SMOOTH_HYMNSTONE).slab(ModBlocks.SMOOTH_HYMNSTONE_SLAB);
+		g.family(ModBlocks.POLISHED_HYMNSTONE)
+				.stairs(ModBlocks.POLISHED_HYMNSTONE_STAIRS)
+				.slab(ModBlocks.POLISHED_HYMNSTONE_SLAB)
+				.wall(ModBlocks.POLISHED_HYMNSTONE_WALL);
 
 		// Grass-style: speckled top, fringed side, soil bottom; 3 top variants x 4 rotations.
 		g.createTrivialCube(ModBlocks.SIFT_SOIL);
@@ -137,6 +151,12 @@ final class ModModelProvider extends FabricModelProvider {
 		g.blockStateOutput.accept(BlockModelGenerators.createSimpleBlock(ModBlocks.LUMEN_BLOOM, BlockModelGenerators.plainVariant(lumen)));
 		g.registerSimpleFlatItemModel(ModBlocks.LUMEN_BLOOM);
 		g.createLantern(ModBlocks.LUMEN_LANTERN);
+		// Living in the Sift: ores, the tide-root crop.
+		for (Block ore : new Block[] {ModBlocks.HYMNSTONE_COAL_ORE, ModBlocks.HYMNSTONE_COPPER_ORE, ModBlocks.HYMNSTONE_IRON_ORE, ModBlocks.HYMNSTONE_GOLD_ORE,
+				ModBlocks.HYMNSTONE_REDSTONE_ORE, ModBlocks.HYMNSTONE_LAPIS_ORE, ModBlocks.HYMNSTONE_DIAMOND_ORE, ModBlocks.HYMNSTONE_EMERALD_ORE, ModBlocks.ECHO_ORE}) {
+			g.createTrivialCube(ore);
+		}
+		g.createCropBlock(ModBlocks.TIDE_ROOTS, TideRootsBlock.AGE, 0, 1, 2, 3);
 		// The ichor lily: a hand-made model (a pad with a glowing bud), turned at random as lily pads are.
 		g.createRotatedVariantBlock(ModBlocks.ICHOR_LILY, TheSift.id("block/ichor_lily"));
 		g.registerSimpleFlatItemModel(ModBlocks.ICHOR_LILY.asItem());
@@ -144,6 +164,24 @@ final class ModModelProvider extends FabricModelProvider {
 
 	private static TextureMapping plant(Block block, String suffix) {
 		return new TextureMapping().put(TextureSlot.PLANT, TextureMapping.getBlockTexture(block, suffix));
+	}
+
+	/** Hymnstone's stairs and slab: by hand, as hymnstone's own blockstate picks among texture variants (no family full block). */
+	private static void hymnstoneCuts(BlockModelGenerators g) {
+		TextureMapping hymnstone = TextureMapping.cube(ModBlocks.HYMNSTONE);
+		Block stairs = ModBlocks.HYMNSTONE_STAIRS;
+		Identifier straight = ModelTemplates.STAIRS_STRAIGHT.create(stairs, hymnstone, g.modelOutput);
+		g.blockStateOutput.accept(BlockModelGenerators.createStairs(stairs,
+				BlockModelGenerators.plainVariant(ModelTemplates.STAIRS_INNER.create(stairs, hymnstone, g.modelOutput)),
+				BlockModelGenerators.plainVariant(straight),
+				BlockModelGenerators.plainVariant(ModelTemplates.STAIRS_OUTER.create(stairs, hymnstone, g.modelOutput))));
+		g.registerSimpleItemModel(stairs, straight);
+		Block slab = ModBlocks.HYMNSTONE_SLAB;
+		Identifier bottom = ModelTemplates.SLAB_BOTTOM.create(slab, hymnstone, g.modelOutput);
+		g.blockStateOutput.accept(BlockModelGenerators.createSlab(slab, BlockModelGenerators.plainVariant(bottom),
+				BlockModelGenerators.plainVariant(ModelTemplates.SLAB_TOP.create(slab, hymnstone, g.modelOutput)),
+				BlockModelGenerators.plainVariant(ModelLocationUtils.getModelLocation(ModBlocks.HYMNSTONE))));
+		g.registerSimpleItemModel(slab, bottom);
 	}
 
 	/**
@@ -167,6 +205,10 @@ final class ModModelProvider extends FabricModelProvider {
 	public void generateItemModels(ItemModelGenerators g) {
 		g.generateFlatItem(ModItems.ICHOR_BUCKET, ModelTemplates.FLAT_ITEM);
 		g.generateFlatItem(ModItems.BLUB_SPAWN_EGG, ModelTemplates.FLAT_ITEM);
+		// The tide root's flat item model comes with its crop (createCropBlock), as the carrot's does.
+		for (Item food : new Item[] {ModItems.BAKED_TIDE_ROOT, ModItems.SONGFRUIT, ModItems.GLOWCAP_STEW}) {
+			g.generateFlatItem(food, ModelTemplates.FLAT_ITEM);
+		}
 		g.generateFlatItem(ModItems.NESTER_SPAWN_EGG, ModelTemplates.FLAT_ITEM);
 		g.generateFlatItem(ModItems.TIDEWRACK_FROND, ModelTemplates.FLAT_ITEM);
 		g.generateFlatItem(ModItems.ENDURE_PETAL, ModelTemplates.FLAT_ITEM);

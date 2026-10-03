@@ -43,6 +43,7 @@ import net.minecraft.world.level.biome.BiomeSpecialEffects;
 import net.minecraft.world.level.biome.Climate;
 import net.minecraft.world.level.biome.MobSpawnSettings;
 import net.minecraft.world.level.biome.MultiNoiseBiomeSource;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.dimension.DimensionType;
@@ -59,8 +60,10 @@ import net.minecraft.world.level.levelgen.VerticalAnchor;
 import net.minecraft.world.level.levelgen.blockpredicates.BlockPredicate;
 import net.minecraft.world.level.levelgen.densityfunction.DensityFunction;
 import net.minecraft.world.level.levelgen.densityfunction.DensityFunctions;
+import net.minecraft.world.level.levelgen.feature.BlockReplacement;
 import net.minecraft.world.level.levelgen.feature.Feature;
 import net.minecraft.world.level.levelgen.feature.LakeFeature;
+import net.minecraft.world.level.levelgen.feature.OreFeature;
 import net.minecraft.world.level.levelgen.feature.SimpleBlockFeature;
 import net.minecraft.world.level.levelgen.feature.TreeFeature;
 import net.minecraft.world.level.levelgen.feature.WeightedRandomSelectorFeature;
@@ -86,9 +89,11 @@ import net.minecraft.world.level.levelgen.placement.NoiseBasedCountPlacement;
 import net.minecraft.world.level.levelgen.placement.NoiseThresholdCountPlacement;
 import net.minecraft.world.level.levelgen.placement.OffsetPlacement;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
+import net.minecraft.world.level.levelgen.placement.PlacementModifier;
 import net.minecraft.world.level.levelgen.placement.RarityFilter;
 import net.minecraft.world.level.levelgen.placement.SurfaceRelativeThresholdFilter;
 import net.minecraft.world.level.levelgen.placement.SurfaceWaterDepthFilter;
+import net.minecraft.world.level.levelgen.structure.templatesystem.BlockMatchTest;
 import net.minecraft.world.level.levelgen.synth.NormalNoise;
 import net.minecraft.world.timeline.Timeline;
 
@@ -107,6 +112,7 @@ import thesift.world.feature.IchorFlatsFeature;
 import thesift.world.feature.LumenBloomFeature;
 import thesift.world.feature.EndureBloomsFeature;
 import thesift.world.feature.TideBasinFeature;
+import thesift.world.feature.TideRootsShoreFeature;
 
 /**
  * Bootstraps for the Sift's data-driven registries (D-019): the Tide clock and timeline (rules.md,
@@ -342,6 +348,16 @@ final class SiftWorldgen {
 				NoiseGeneratorSettings.DebugFunctions.EMPTY));
 	}
 
+	/** The Overworld's ores in every Sift biome, in one order; echo ore in the Hollows only (survival_sift.md §4). */
+	private static void ores(BiomeGenerationSettings.Builder generation, boolean echo) {
+		for (ResourceKey<PlacedFeature> ore : SiftFeatures.ORES) {
+			generation.addFeature(GenerationStep.Decoration.UNDERGROUND_ORES, ore);
+		}
+		if (echo) {
+			generation.addFeature(GenerationStep.Decoration.UNDERGROUND_ORES, SiftFeatures.ORE_ECHO_PLACED);
+		}
+	}
+
 	static void biomes(BootstrapContext<Biome> context) {
 		HolderGetter<PlacedFeature> placed = context.lookup(Registries.PLACED_FEATURE);
 		BiomeGenerationSettings.Builder generation = new BiomeGenerationSettings.Builder(placed, context.lookup(Registries.CARVER));
@@ -357,6 +373,8 @@ final class SiftWorldgen {
 		generation.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.ENDURE_BLOOMS_MEADOW);
 		generation.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.CHIME_BELLS_MEADOW);
 		generation.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.GRASS_MEADOW);
+		generation.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.TIDE_ROOTS_SHORES);
+		ores(generation, false);
 		context.register(SiftKeys.SINGERS_MEADOW, new Biome.BiomeBuilder()
 				.hasPrecipitation(false)
 				.temperature(0.7F)
@@ -388,6 +406,8 @@ final class SiftWorldgen {
 		flats.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.ICHOR_LILIES_FLATS);
 		flats.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.GLOWCAPS_FLATS);
 		flats.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.GRASS_FLATS);
+		flats.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.TIDE_ROOTS_SHORES);
+		ores(flats, false);
 		context.register(SiftKeys.ICHOR_FLATS, new Biome.BiomeBuilder()
 				.hasPrecipitation(false)
 				.temperature(0.7F)
@@ -407,6 +427,7 @@ final class SiftWorldgen {
 		hollows.addFeature(GenerationStep.Decoration.LAKES, SiftFeatures.ICHOR_POOLS_UNDERGROUND);
 		hollows.addFeature(GenerationStep.Decoration.UNDERGROUND_DECORATION, SiftFeatures.GLOWCAPS_HOLLOWS);
 		hollows.addFeature(GenerationStep.Decoration.UNDERGROUND_DECORATION, SiftFeatures.LUMEN_HOLLOWS);
+		ores(hollows, true);
 		context.register(SiftKeys.SIFT_HOLLOWS, new Biome.BiomeBuilder()
 				.hasPrecipitation(false)
 				.temperature(0.7F)
@@ -469,6 +490,22 @@ final class SiftWorldgen {
 		context.register(SiftFeatures.GLOWCAP_PATCH, new SimpleBlockFeature(new SimpleStateProvider(ModBlocks.GLOWCAP.defaultBlockState())));
 		context.register(SiftFeatures.ICHOR_LILY_PATCH, new SimpleBlockFeature(new SimpleStateProvider(ModBlocks.ICHOR_LILY.defaultBlockState())));
 		context.register(SiftFeatures.HYMNSTONE_SPIRE, HymnstoneSpireFeature.INSTANCE);
+		// Ores (survival_sift.md §4): vanilla's vein sizes and air-exposure discards, in hymnstone.
+		ore(context, SiftFeatures.ORE_COAL, ModBlocks.HYMNSTONE_COAL_ORE, 17, 0.0F);
+		ore(context, SiftFeatures.ORE_COAL_BURIED, ModBlocks.HYMNSTONE_COAL_ORE, 17, 0.5F);
+		ore(context, SiftFeatures.ORE_COPPER, ModBlocks.HYMNSTONE_COPPER_ORE, 10, 0.0F);
+		ore(context, SiftFeatures.ORE_IRON, ModBlocks.HYMNSTONE_IRON_ORE, 9, 0.0F);
+		ore(context, SiftFeatures.ORE_IRON_SMALL, ModBlocks.HYMNSTONE_IRON_ORE, 4, 0.0F);
+		ore(context, SiftFeatures.ORE_GOLD_BURIED, ModBlocks.HYMNSTONE_GOLD_ORE, 9, 0.5F);
+		ore(context, SiftFeatures.ORE_REDSTONE, ModBlocks.HYMNSTONE_REDSTONE_ORE, 8, 0.0F);
+		ore(context, SiftFeatures.ORE_LAPIS, ModBlocks.HYMNSTONE_LAPIS_ORE, 7, 0.0F);
+		ore(context, SiftFeatures.ORE_LAPIS_BURIED, ModBlocks.HYMNSTONE_LAPIS_ORE, 7, 1.0F);
+		ore(context, SiftFeatures.ORE_DIAMOND_SMALL, ModBlocks.HYMNSTONE_DIAMOND_ORE, 4, 0.5F);
+		ore(context, SiftFeatures.ORE_DIAMOND_LARGE, ModBlocks.HYMNSTONE_DIAMOND_ORE, 12, 0.7F);
+		ore(context, SiftFeatures.ORE_DIAMOND_BURIED, ModBlocks.HYMNSTONE_DIAMOND_ORE, 8, 1.0F);
+		ore(context, SiftFeatures.ORE_EMERALD, ModBlocks.HYMNSTONE_EMERALD_ORE, 3, 0.0F);
+		ore(context, SiftFeatures.ORE_ECHO, ModBlocks.ECHO_ORE, 4, 0.5F);
+		context.register(SiftFeatures.TIDE_ROOTS_PATCH, TideRootsShoreFeature.INSTANCE);
 		// Ponds on the surface (D-026): the same lake with a rim of tide sand where its walls are open.
 		context.register(SiftFeatures.ICHOR_POND, new LakeFeature(
 				BlockStateProvider.holderOf(ModBlocks.ICHOR),
@@ -485,7 +522,58 @@ final class SiftWorldgen {
 				BlockPredicate.not(BlockPredicate.matchesTag(BlockTags.LAVA_POOL_STONE_CANNOT_REPLACE))));
 	}
 
+	private static void ore(BootstrapContext<Feature> context, ResourceKey<Feature> key, Block ore, int size, float discard) {
+		context.register(key, new OreFeature(List.of(new BlockReplacement(new BlockMatchTest(ModBlocks.HYMNSTONE), ore.defaultBlockState())), size, discard));
+	}
+
+	private static void placeOre(BootstrapContext<PlacedFeature> context, ResourceKey<PlacedFeature> key, ResourceKey<Feature> ore,
+			PlacementModifier frequency, PlacementModifier height) {
+		PlacementUtils.register(context, key, context.lookup(Registries.FEATURE).getOrThrow(ore), frequency, InSquarePlacement.spread(), height,
+				BiomeFilter.biome());
+	}
+
+	/** The Overworld's ore placements (vanilla's OrePlacements), in the Sift's Overworld-high world. */
+	private static void placedOres(BootstrapContext<PlacedFeature> context) {
+		placeOre(context, SiftFeatures.ORE_COAL_UPPER, SiftFeatures.ORE_COAL, CountPlacement.of(30),
+				HeightRangePlacement.uniform(VerticalAnchor.absolute(136), VerticalAnchor.top()));
+		placeOre(context, SiftFeatures.ORE_COAL_LOWER, SiftFeatures.ORE_COAL_BURIED, CountPlacement.of(20),
+				HeightRangePlacement.triangle(VerticalAnchor.absolute(0), VerticalAnchor.absolute(192)));
+		placeOre(context, SiftFeatures.ORE_IRON_UPPER, SiftFeatures.ORE_IRON, CountPlacement.of(90),
+				HeightRangePlacement.triangle(VerticalAnchor.absolute(80), VerticalAnchor.absolute(384)));
+		placeOre(context, SiftFeatures.ORE_IRON_MIDDLE, SiftFeatures.ORE_IRON, CountPlacement.of(10),
+				HeightRangePlacement.triangle(VerticalAnchor.absolute(-24), VerticalAnchor.absolute(56)));
+		placeOre(context, SiftFeatures.ORE_IRON_SMALL_PLACED, SiftFeatures.ORE_IRON_SMALL, CountPlacement.of(10),
+				HeightRangePlacement.uniform(VerticalAnchor.bottom(), VerticalAnchor.absolute(72)));
+		placeOre(context, SiftFeatures.ORE_GOLD, SiftFeatures.ORE_GOLD_BURIED, CountPlacement.of(4),
+				HeightRangePlacement.triangle(VerticalAnchor.absolute(-64), VerticalAnchor.absolute(32)));
+		placeOre(context, SiftFeatures.ORE_REDSTONE_PLACED, SiftFeatures.ORE_REDSTONE, CountPlacement.of(4),
+				HeightRangePlacement.uniform(VerticalAnchor.bottom(), VerticalAnchor.absolute(15)));
+		placeOre(context, SiftFeatures.ORE_REDSTONE_LOWER, SiftFeatures.ORE_REDSTONE, CountPlacement.of(8),
+				HeightRangePlacement.triangle(VerticalAnchor.aboveBottom(-32), VerticalAnchor.aboveBottom(32)));
+		HeightRangePlacement diamonds = HeightRangePlacement.triangle(VerticalAnchor.aboveBottom(-80), VerticalAnchor.aboveBottom(80));
+		placeOre(context, SiftFeatures.ORE_DIAMOND, SiftFeatures.ORE_DIAMOND_SMALL, CountPlacement.of(7), diamonds);
+		placeOre(context, SiftFeatures.ORE_DIAMOND_LARGE_PLACED, SiftFeatures.ORE_DIAMOND_LARGE, RarityFilter.onAverageOnceEvery(9), diamonds);
+		placeOre(context, SiftFeatures.ORE_DIAMOND_BURIED_PLACED, SiftFeatures.ORE_DIAMOND_BURIED, CountPlacement.of(4), diamonds);
+		placeOre(context, SiftFeatures.ORE_LAPIS_PLACED, SiftFeatures.ORE_LAPIS, CountPlacement.of(2),
+				HeightRangePlacement.triangle(VerticalAnchor.absolute(-32), VerticalAnchor.absolute(32)));
+		placeOre(context, SiftFeatures.ORE_LAPIS_BURIED_PLACED, SiftFeatures.ORE_LAPIS_BURIED, CountPlacement.of(4),
+				HeightRangePlacement.uniform(VerticalAnchor.bottom(), VerticalAnchor.absolute(64)));
+		placeOre(context, SiftFeatures.ORE_COPPER_PLACED, SiftFeatures.ORE_COPPER, CountPlacement.of(16),
+				HeightRangePlacement.triangle(VerticalAnchor.absolute(-16), VerticalAnchor.absolute(112)));
+		placeOre(context, SiftFeatures.ORE_EMERALD_PLACED, SiftFeatures.ORE_EMERALD, CountPlacement.of(100),
+				HeightRangePlacement.triangle(VerticalAnchor.absolute(-16), VerticalAnchor.absolute(480)));
+		placeOre(context, SiftFeatures.ORE_ECHO_PLACED, SiftFeatures.ORE_ECHO, CountPlacement.of(4),
+				HeightRangePlacement.uniform(VerticalAnchor.absolute(-64), VerticalAnchor.absolute(0)));
+	}
+
 	static void placedFeatures(BootstrapContext<PlacedFeature> context) {
+		placedOres(context);
+		// Wild tide roots at the ichor's edge: two looks per chunk, each over a 13-block square.
+		PlacementUtils.register(context, SiftFeatures.TIDE_ROOTS_SHORES, context.lookup(Registries.FEATURE).getOrThrow(SiftFeatures.TIDE_ROOTS_PATCH),
+				CountPlacement.of(2),
+				InSquarePlacement.spread(),
+				PlacementUtils.HEIGHTMAP_WORLD_SURFACE,
+				BiomeFilter.biome());
 		HolderGetter<Feature> features = context.lookup(Registries.FEATURE);
 		Holder<Feature> tree = features.getOrThrow(SiftFeatures.SONGWOOD_TREE);
 		PlacementUtils.register(context, SiftFeatures.SONGWOOD_CHECKED, tree, PlacementUtils.filteredByBlockSurvival(ModBlocks.SONGWOOD_SAPLING));

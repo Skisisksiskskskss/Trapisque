@@ -1,5 +1,7 @@
 package thesift.world;
 
+import java.util.List;
+
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.levelgen.feature.Feature;
@@ -53,5 +55,52 @@ public final class SiftFeatures {
 	public static final ResourceKey<PlacedFeature> ICHOR_POOLS_UNDERGROUND = ResourceKey.create(Registries.PLACED_FEATURE, TheSift.id("ichor_pools_underground"));
 
 	private SiftFeatures() {
+	}
+
+	// Ores (survival_sift.md §4): the Overworld's veins, in hymnstone; echo ore in the Hollows only.
+	public static final ResourceKey<Feature> ORE_COAL = feature("ore_hymnstone_coal");
+	public static final ResourceKey<Feature> ORE_COAL_BURIED = feature("ore_hymnstone_coal_buried");
+	public static final ResourceKey<Feature> ORE_COPPER = feature("ore_hymnstone_copper");
+	public static final ResourceKey<Feature> ORE_IRON = feature("ore_hymnstone_iron");
+	public static final ResourceKey<Feature> ORE_IRON_SMALL = feature("ore_hymnstone_iron_small");
+	public static final ResourceKey<Feature> ORE_GOLD_BURIED = feature("ore_hymnstone_gold_buried");
+	public static final ResourceKey<Feature> ORE_REDSTONE = feature("ore_hymnstone_redstone");
+	public static final ResourceKey<Feature> ORE_LAPIS = feature("ore_hymnstone_lapis");
+	public static final ResourceKey<Feature> ORE_LAPIS_BURIED = feature("ore_hymnstone_lapis_buried");
+	public static final ResourceKey<Feature> ORE_DIAMOND_SMALL = feature("ore_hymnstone_diamond_small");
+	public static final ResourceKey<Feature> ORE_DIAMOND_LARGE = feature("ore_hymnstone_diamond_large");
+	public static final ResourceKey<Feature> ORE_DIAMOND_BURIED = feature("ore_hymnstone_diamond_buried");
+	public static final ResourceKey<Feature> ORE_EMERALD = feature("ore_hymnstone_emerald");
+	public static final ResourceKey<Feature> ORE_ECHO = feature("ore_echo");
+	public static final ResourceKey<PlacedFeature> ORE_COAL_UPPER = placed("ore_hymnstone_coal_upper");
+	public static final ResourceKey<PlacedFeature> ORE_COAL_LOWER = placed("ore_hymnstone_coal_lower");
+	public static final ResourceKey<PlacedFeature> ORE_IRON_UPPER = placed("ore_hymnstone_iron_upper");
+	public static final ResourceKey<PlacedFeature> ORE_IRON_MIDDLE = placed("ore_hymnstone_iron_middle");
+	public static final ResourceKey<PlacedFeature> ORE_IRON_SMALL_PLACED = placed("ore_hymnstone_iron_small");
+	public static final ResourceKey<PlacedFeature> ORE_GOLD = placed("ore_hymnstone_gold");
+	public static final ResourceKey<PlacedFeature> ORE_REDSTONE_PLACED = placed("ore_hymnstone_redstone");
+	public static final ResourceKey<PlacedFeature> ORE_REDSTONE_LOWER = placed("ore_hymnstone_redstone_lower");
+	public static final ResourceKey<PlacedFeature> ORE_DIAMOND = placed("ore_hymnstone_diamond");
+	public static final ResourceKey<PlacedFeature> ORE_DIAMOND_LARGE_PLACED = placed("ore_hymnstone_diamond_large");
+	public static final ResourceKey<PlacedFeature> ORE_DIAMOND_BURIED_PLACED = placed("ore_hymnstone_diamond_buried");
+	public static final ResourceKey<PlacedFeature> ORE_LAPIS_PLACED = placed("ore_hymnstone_lapis");
+	public static final ResourceKey<PlacedFeature> ORE_LAPIS_BURIED_PLACED = placed("ore_hymnstone_lapis_buried");
+	public static final ResourceKey<PlacedFeature> ORE_COPPER_PLACED = placed("ore_hymnstone_copper");
+	public static final ResourceKey<PlacedFeature> ORE_EMERALD_PLACED = placed("ore_hymnstone_emerald");
+	public static final ResourceKey<PlacedFeature> ORE_ECHO_PLACED = placed("ore_echo");
+	/** Every biome's ores, in one order (feature order must agree across biomes); emerald and echo are added where they belong. */
+	public static final List<ResourceKey<PlacedFeature>> ORES = List.of(ORE_COAL_UPPER, ORE_COAL_LOWER, ORE_IRON_UPPER, ORE_IRON_MIDDLE,
+			ORE_IRON_SMALL_PLACED, ORE_GOLD, ORE_REDSTONE_PLACED, ORE_REDSTONE_LOWER, ORE_DIAMOND, ORE_DIAMOND_LARGE_PLACED,
+			ORE_DIAMOND_BURIED_PLACED, ORE_LAPIS_PLACED, ORE_LAPIS_BURIED_PLACED, ORE_COPPER_PLACED);
+	// Wild tide roots, grown, on the sand at the ichor's edge (survival_sift.md §1).
+	public static final ResourceKey<Feature> TIDE_ROOTS_PATCH = feature("tide_roots");
+	public static final ResourceKey<PlacedFeature> TIDE_ROOTS_SHORES = placed("tide_roots_shores");
+
+	private static ResourceKey<Feature> feature(String name) {
+		return ResourceKey.create(Registries.FEATURE, TheSift.id(name));
+	}
+
+	private static ResourceKey<PlacedFeature> placed(String name) {
+		return ResourceKey.create(Registries.PLACED_FEATURE, TheSift.id(name));
 	}
 }

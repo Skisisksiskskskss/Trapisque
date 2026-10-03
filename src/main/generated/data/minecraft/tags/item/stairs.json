@@ -1,5 +1,8 @@
 {
   "values": [
-    "thesift:hymnstone_brick_stairs"
+    "thesift:hymnstone_brick_stairs",
+    "thesift:hymnstone_stairs",
+    "thesift:cobbled_hymnstone_stairs",
+    "thesift:polished_hymnstone_stairs"
   ]
 }

@@ -45,7 +45,22 @@
       "thesift:hymnstone_spires_ichor_flats"
     ],
     [],
-    [],
+    [
+      "thesift:ore_hymnstone_coal_upper",
+      "thesift:ore_hymnstone_coal_lower",
+      "thesift:ore_hymnstone_iron_upper",
+      "thesift:ore_hymnstone_iron_middle",
+      "thesift:ore_hymnstone_iron_small",
+      "thesift:ore_hymnstone_gold",
+      "thesift:ore_hymnstone_redstone",
+      "thesift:ore_hymnstone_redstone_lower",
+      "thesift:ore_hymnstone_diamond",
+      "thesift:ore_hymnstone_diamond_large",
+      "thesift:ore_hymnstone_diamond_buried",
+      "thesift:ore_hymnstone_lapis",
+      "thesift:ore_hymnstone_lapis_buried",
+      "thesift:ore_hymnstone_copper"
+    ],
     [],
     [],
     [
@@ -55,7 +70,8 @@
       "thesift:chime_bells_ichor_flats",
       "thesift:ichor_lilies_ichor_flats",
       "thesift:glowcaps_ichor_flats",
-      "thesift:grass_ichor_flats"
+      "thesift:grass_ichor_flats",
+      "thesift:tide_roots_shores"
     ]
   ],
   "has_precipitation": false,

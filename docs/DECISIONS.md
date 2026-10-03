@@ -738,3 +738,44 @@ It also found that M1's Tide changed nothing in play (SF4), since the mission as
 - Checked in the client preview: two shots 60 ticks apart differ visibly.
 
 **Revisit if** the 8-block repeat shows on large ponds (widen the tile), or the speed reads as too fast or too slow.
+
+## D-032 Living in the Sift: rifts, ores, food, a Sift start, two biomes (2026-10-03) [owner request] [supersedes D-007's "the frame is the only way in" and D-009's "rifts after 1.0"]
+**Context.** The owner: the dimension "lacks basic things like ores, progression, and biomes"; "I want to be able to spawn in this dimension in survival from nothing and be able to actually progress"; "incorporate rifts and how you don't necessarily need to go through the Deep Dark to enter or exit the Sift". Canon has rifts as the everyday way in (RESEARCH.md row 5).
+
+**Decision** (`docs/DESIGN/survival_sift.md`, frozen with a self-review):
+- **Materials.**
+  - Hymnstone counts as cobblestone for stone tools and furnaces (refined by D-033: cobbled hymnstone does).
+  - Hymnstone ores of coal, copper, iron, gold, redstone, lapis and diamond, with the Overworld's distributions; emerald in the Hymnstone Rise.
+  - **Echo ore** deep in the Hollows gives echo shards.
+  - Three songwood drapes make a string.
+- **Food.**
+  - **Songfruit** from songwood leaves (as apples).
+  - **Glowcap stew**.
+  - **Tide roots**, a crop grown on tide sand beside ichor (raw or baked, as potatoes).
+- **Rifts**, temporary tears between the Overworld and the Sift:
+  - They open on their own near players (about every 40 minutes in the Overworld, every 10 in the Sift) and stay 5 minutes.
+  - They carry players to the same x and z on safe ground, then close 10 s behind them.
+  - The **rift fork** (two echo shards over two gold ingots) opens one for a minute, 8 uses.
+  - Gamerule `thesift:spawn_rifts`.
+  - The frame and gate stay.
+- **A Sift start:** gamerule `thesift:start_in_sift` puts first-time players on the Sift's surface near 0, 0, with nothing, their respawn point set there.
+- **Biomes:** the Hymnstone Rise (the steep country: bare hymnstone faces, spires, emeralds) and the Lullaby Hills (the rolling high country: chime bell drifts, lumen) join the Meadow, the Flats and the Hollows.
+- **Advancements:** Through the Rift, Tuned In, Sift-Born.
+
+**Consequences.** The Sift is a place one can live in from nothing. Leather, feathers, bones, gunpowder and flint still come from the Overworld, which rifts make easy to reach. Rifts carry players only (D-023 kept).
+
+**Revisit if** rifts feel too common or too rare, or the Sift start needs a starter shelter.
+
+## D-033 Hymnstone works as stone (2026-10-03) [owner request] [refines D-032]
+**Context.** The owner: "hymnstone should just act like normal stone in terms of crafting and stuff, but smooth hymnstone should be its own thing along with other stone cut/ground stuff". The bible's M3 row already listed cobbled, polished, cracked and chiseled hymnstone.
+
+**Decision.** Hymnstone gets vanilla stone's whole family:
+- **Cobbled hymnstone** is what a pickaxe gets from hymnstone (Silk Touch keeps hymnstone). It makes the stone tools and the furnace (`#stone_tool_materials`, `#stone_crafting_materials`; hymnstone itself leaves those tags) and smelts back into hymnstone.
+- **Smooth hymnstone** comes from smelting hymnstone, as smooth stone does, with its own slab.
+- **Polished hymnstone** is 2 × 2 smooth hymnstone, or cut from hymnstone or smooth hymnstone; it has stairs, a slab and a wall. (Stone's 2 × 2 already makes bricks, so polishing starts from smooth.)
+- **Cracked hymnstone bricks** come from smelting the bricks. **Chiseled hymnstone bricks** come from two brick slabs, or from the stonecutter.
+- Hymnstone and cobbled hymnstone get stairs and slabs; cobbled also gets a wall. The stonecutter makes every cut from its base.
+
+**Consequences.** M3's hymnstone building set arrives early. Every piece uses hymnstone's ramp only. The chiseled face is a bell's mouth with two arcs of sound. Mined hymnstone no longer stacks with placed hymnstone.
+
+**Revisit if** the owner wants hymnstone itself back in the tool recipes, or polished from cobbled (deepslate's way).

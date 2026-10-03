@@ -2,6 +2,18 @@
 
 Step-by-step checklists the owner can run in-game. Produced at every gate.
 
+## `v0.1.7-alpha` (2026-10-03): living in the Sift, part 1: ores, food, hymnstone as stone
+Your notes: the Sift needs ores and a way to progress from nothing; hymnstone should work as stone (D-032, D-033, survival_sift.md). What to try in a **new world** (ores generate in new chunks only):
+- **Hymnstone works as stone:** a pickaxe gets **cobbled hymnstone**. It makes stone tools and a furnace, and smelts back into hymnstone. Smelting hymnstone gives **smooth hymnstone**; 2 × 2 smooth gives **polished**. Smelting hymnstone bricks gives **cracked** bricks, and two brick slabs make **chiseled** bricks. Stairs, slabs and walls are on the crafting table and the stonecutter.
+- **Ores in the hymnstone:** coal, copper, iron, gold, redstone, lapis and diamond, at the heights you know from the Overworld (diamonds deep, iron in the mountains and below). Each drops vanilla's item and takes the same pickaxe.
+- **Echo ore**, deep in the **Hollows** only (y −64 to 0): faintly lit dark-teal specks that pulse. It needs iron and gives 1–2 echo shards.
+- **Food:**
+  - **Tide roots** grow wild where tide sand meets ichor. Replant them on tide sand beside ichor, in light; eat raw or bake.
+  - **Songfruit** sometimes drops from songwood leaves (as apples do).
+  - **Glowcap stew** is two glowcaps and a bowl.
+  - **Three songwood drapes** make a **string**.
+- **Still to come** (WP-082/083): rifts (the way in and out without the Deep Dark), the rift fork, the `start_in_sift` gamerule, and the Hymnstone Rise (emeralds) and Lullaby Hills biomes.
+
 ## `v0.1.6-alpha` (2026-10-03): ichor's colours move
 Your note: the multicoloured gradient had stopped moving (D-031). Still ichor now shows the soap-film colours as a slowly swirling pattern that spans many blocks and drifts about a block a second. Flowing ichor keeps its colours still. With Sodium or Iris the colours stay still, as before: those renderers draw fluids their own way.
 

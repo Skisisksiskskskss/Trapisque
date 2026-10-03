@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/slab",
+  "textures": {
+    "bottom": "thesift:block/polished_hymnstone",
+    "side": "thesift:block/polished_hymnstone",
+    "top": "thesift:block/polished_hymnstone"
+  }
+}

@@ -10,12 +10,16 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.random.WeightedList;
+import net.minecraft.util.valueproviders.ConstantInt;
+import net.minecraft.util.valueproviders.UniformInt;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.DropExperienceBlock;
 import net.minecraft.world.level.block.HangingMossBlock;
 import net.minecraft.world.level.block.FlowerPotBlock;
 import net.minecraft.world.level.block.LanternBlock;
 import net.minecraft.world.level.block.LiquidBlock;
+import net.minecraft.world.level.block.RedStoneOreBlock;
 import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.StairBlock;
@@ -40,6 +44,7 @@ import thesift.block.LumenBloomBlock;
 import thesift.block.SiftMembraneBlock;
 import thesift.block.SongwoodLogBlock;
 import thesift.block.SongwoodSaplingBlock;
+import thesift.block.TideRootsBlock;
 import thesift.block.TideVentBlock;
 import thesift.block.TallHealthySculkGrassBlock;
 import thesift.block.TidewrackBlock;
@@ -47,6 +52,14 @@ import thesift.world.SiftFeatures;
 
 /** Block set I (world.md §3; M1). Registration mirrors vanilla's {@code Blocks.register} (D-019). */
 public final class ModBlocks {
+	/**
+	 * Tide roots (survival_sift.md §1): the crop of the ichor shores; its item is the root
+	 * ({@link ModItems#TIDE_ROOT}). Declared first: ModItems initializes during the first block-item
+	 * registration below, and its tide root needs this block to exist by then.
+	 */
+	public static final Block TIDE_ROOTS = registerNoItem("tide_roots", TideRootsBlock::new, BlockBehaviour.Properties.of()
+			.mapColor(MapColor.PLANT).noCollision().randomTicks().instabreak().sound(SoundType.CROP).pushReaction(PushReaction.POPPED));
+
 	public static final Block HYMNSTONE = register("hymnstone", Block::new, BlockBehaviour.Properties.of()
 			.mapColor(MapColor.TERRACOTTA_RED).instrument(NoteBlockInstrument.BASEDRUM)
 			.requiresCorrectToolForDrops().strength(1.5F, 6.0F).sound(SoundType.CALCITE));
@@ -56,6 +69,25 @@ public final class ModBlocks {
 	public static final Block HYMNSTONE_BRICK_SLAB = register("hymnstone_brick_slab", SlabBlock::new, BlockBehaviour.Properties.ofFullCopy(HYMNSTONE_BRICKS));
 	public static final Block HYMNSTONE_BRICK_WALL = register("hymnstone_brick_wall", WallBlock::new,
 			BlockBehaviour.Properties.ofFullCopy(HYMNSTONE_BRICKS).forceSolidOn());
+	public static final Block CRACKED_HYMNSTONE_BRICKS = register("cracked_hymnstone_bricks", Block::new, BlockBehaviour.Properties.ofFullCopy(HYMNSTONE));
+	public static final Block CHISELED_HYMNSTONE_BRICKS = register("chiseled_hymnstone_bricks", Block::new, BlockBehaviour.Properties.ofFullCopy(HYMNSTONE));
+
+	// The rest of the family (owner: hymnstone works as stone): mined, it breaks to cobbled hymnstone, which crafts
+	// the stone tools and furnace and smelts back; smelted again it turns smooth. Polished is cut or crafted 2x2.
+	public static final Block HYMNSTONE_STAIRS = stairs("hymnstone_stairs", HYMNSTONE);
+	public static final Block HYMNSTONE_SLAB = slab("hymnstone_slab", HYMNSTONE);
+	public static final Block COBBLED_HYMNSTONE = register("cobbled_hymnstone", Block::new,
+			BlockBehaviour.Properties.ofFullCopy(HYMNSTONE).strength(2.0F, 6.0F));
+	public static final Block COBBLED_HYMNSTONE_STAIRS = stairs("cobbled_hymnstone_stairs", COBBLED_HYMNSTONE);
+	public static final Block COBBLED_HYMNSTONE_SLAB = slab("cobbled_hymnstone_slab", COBBLED_HYMNSTONE);
+	public static final Block COBBLED_HYMNSTONE_WALL = wall("cobbled_hymnstone_wall", COBBLED_HYMNSTONE);
+	public static final Block SMOOTH_HYMNSTONE = register("smooth_hymnstone", Block::new,
+			BlockBehaviour.Properties.ofFullCopy(HYMNSTONE).strength(2.0F, 6.0F));
+	public static final Block SMOOTH_HYMNSTONE_SLAB = slab("smooth_hymnstone_slab", SMOOTH_HYMNSTONE);
+	public static final Block POLISHED_HYMNSTONE = register("polished_hymnstone", Block::new, BlockBehaviour.Properties.ofFullCopy(HYMNSTONE));
+	public static final Block POLISHED_HYMNSTONE_STAIRS = stairs("polished_hymnstone_stairs", POLISHED_HYMNSTONE);
+	public static final Block POLISHED_HYMNSTONE_SLAB = slab("polished_hymnstone_slab", POLISHED_HYMNSTONE);
+	public static final Block POLISHED_HYMNSTONE_WALL = wall("polished_hymnstone_wall", POLISHED_HYMNSTONE);
 
 	/** The Sift's grass (owner rework: the teaser's pink-coral ground), over Sift soil as grass over dirt. */
 	public static final Block HEALTHY_SCULK = register("healthy_sculk", HealthySculkBlock::new, BlockBehaviour.Properties.of()
@@ -113,6 +145,20 @@ public final class ModBlocks {
 	public static final Block LUMEN_BLOOM = register("lumen_bloom", LumenBloomBlock::new, BlockBehaviour.Properties.of()
 			.mapColor(MapColor.COLOR_LIGHT_BLUE).noCollision().instabreak().sound(SoundType.SPORE_BLOSSOM).lightLevel(s -> 12)
 			.pushReaction(PushReaction.POPPED).noLootTable());
+	// Living in the Sift (survival_sift.md §1, §4): hymnstone ores drop vanilla's items, as deepslate's do.
+	public static final Block HYMNSTONE_COAL_ORE = ore("hymnstone_coal_ore", p -> new DropExperienceBlock(UniformInt.of(0, 2), p));
+	public static final Block HYMNSTONE_COPPER_ORE = ore("hymnstone_copper_ore", p -> new DropExperienceBlock(ConstantInt.of(0), p));
+	public static final Block HYMNSTONE_IRON_ORE = ore("hymnstone_iron_ore", p -> new DropExperienceBlock(ConstantInt.of(0), p));
+	public static final Block HYMNSTONE_GOLD_ORE = ore("hymnstone_gold_ore", p -> new DropExperienceBlock(ConstantInt.of(0), p));
+	public static final Block HYMNSTONE_REDSTONE_ORE = register("hymnstone_redstone_ore", RedStoneOreBlock::new, oreProperties()
+			.randomTicks().lightLevel(s -> s.getValue(RedStoneOreBlock.LIT) ? 9 : 0));
+	public static final Block HYMNSTONE_LAPIS_ORE = ore("hymnstone_lapis_ore", p -> new DropExperienceBlock(UniformInt.of(2, 5), p));
+	public static final Block HYMNSTONE_DIAMOND_ORE = ore("hymnstone_diamond_ore", p -> new DropExperienceBlock(UniformInt.of(3, 7), p));
+	public static final Block HYMNSTONE_EMERALD_ORE = ore("hymnstone_emerald_ore", p -> new DropExperienceBlock(UniformInt.of(3, 7), p));
+	/** Echo ore: the Sift's own, deep in the Hollows; a faint glow, as deepslate ores are hard. Echo shards. */
+	public static final Block ECHO_ORE = register("echo_ore", p -> new DropExperienceBlock(UniformInt.of(3, 7), p), oreProperties()
+			.strength(4.5F, 3.0F).lightLevel(s -> 3));
+
 	/** The ichor lily (D-029): the Ichor Flats' own plant, a glowing lily pad on ichor. */
 	public static final Block ICHOR_LILY = register("ichor_lily", IchorLilyBlock::new, BlockBehaviour.Properties.of()
 			.mapColor(MapColor.COLOR_CYAN).instabreak().sound(SoundType.LILY_PAD).noOcclusion().lightLevel(s -> 9)
@@ -137,6 +183,28 @@ public final class ModBlocks {
 			.pushReaction(PushReaction.POPPED).noLootTable().liquid().sound(SoundType.EMPTY));
 
 	private ModBlocks() {
+	}
+
+	/** Hymnstone ores: as vanilla's stone ores (3.0), with hymnstone's sound. */
+	private static BlockBehaviour.Properties oreProperties() {
+		return BlockBehaviour.Properties.of().mapColor(MapColor.TERRACOTTA_PINK).instrument(NoteBlockInstrument.BASEDRUM)
+				.requiresCorrectToolForDrops().strength(3.0F, 3.0F).sound(SoundType.CALCITE);
+	}
+
+	private static Block ore(String name, Function<BlockBehaviour.Properties, Block> factory) {
+		return register(name, factory, oreProperties());
+	}
+
+	private static Block stairs(String name, Block base) {
+		return register(name, p -> new StairBlock(base.defaultBlockState(), p), BlockBehaviour.Properties.ofFullCopy(base));
+	}
+
+	private static Block slab(String name, Block base) {
+		return register(name, SlabBlock::new, BlockBehaviour.Properties.ofFullCopy(base));
+	}
+
+	private static Block wall(String name, Block base) {
+		return register(name, WallBlock::new, BlockBehaviour.Properties.ofFullCopy(base).forceSolidOn());
 	}
 
 	private static BlockBehaviour.Properties plant() {

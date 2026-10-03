@@ -50,6 +50,20 @@ The M2 plants (block_flora_ii.md, D-027): tidewrack and the Endure bloom are pic
 | Lantern light | 15 | lantern 15, soul lantern 10 | A lantern |
 | Frond compost | low (30%) | kelp | A sea plant |
 
+## Living in the Sift: materials (WP-081, survival_sift.md §1, §4; D-033)
+| Number | Value | Vanilla analogs | Why |
+|---|---|---|---|
+| Hymnstone ores | vanilla's Overworld veins (counts, sizes, heights, air discards), in hymnstone | coal … diamond ores | The Sift's height is the Overworld's (D-025), so the same ladder |
+| Ore hardness | 3.0; echo ore 4.5 | stone ores 3.0, deepslate ores 4.5 | Echo ore is deep |
+| Echo ore | 4 veins of 4 per chunk, y −64 to 0, Hollows only, discard 0.5; 1–2 shards, Fortune adds | diamond (7 veins of 4) | Rarer than diamond; a rift fork is 2 shards |
+| Echo ore light | 3 | — | Reads in a dark cave without lighting it |
+| Tide roots | 4 stages, grow at light ≥ 9 with a 1/6 chance per random tick | potatoes (light 9, faster on farmland) | No farmland: sand by ichor instead |
+| Tide root | raw 2 / 0.3, baked 5 / 6.0 | potato 1 / 0.3, baked potato 5 / 6.0 | A staple |
+| Songfruit | 0.5 % per leaf (Fortune raises it); 4 / 2.4 | apple | — |
+| Glowcap stew | 2 glowcaps + bowl; 6 / 7.2 | mushroom stew | — |
+| Cobbled hymnstone | hardness 2.0, as cobblestone; hymnstone 1.5, as stone | cobblestone, stone | Stone's ladder |
+| Wild tide roots | 3 tries of 16 per chunk, where sand meets ichor | — | A first crop to find |
+
 ## Rework 4 (D-029, 2026-10-03)
 | Number | Value | Vanilla analogs | Why |
 |---|---|---|---|

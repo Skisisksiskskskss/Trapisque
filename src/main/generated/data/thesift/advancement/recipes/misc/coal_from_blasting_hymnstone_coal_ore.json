@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_hymnstone_coal_ore": {
+      "conditions": {
+        "items": [
+          {
+            "items": "thesift:hymnstone_coal_ore"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipes": "thesift:coal_from_blasting_hymnstone_coal_ore"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_hymnstone_coal_ore"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "thesift:coal_from_blasting_hymnstone_coal_ore"
+    ]
+  }
+}

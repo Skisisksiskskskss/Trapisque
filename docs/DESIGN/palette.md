@@ -52,6 +52,19 @@ below allows.
 | `ichor_lily` | `#1b4a55` `#22606a` `#2c7a7c` `#3c928a` `#56a99a` `#78c0aa` | The ichor lily's pad (D-029): deep teal to sea-green, cooler than the Meadow's coral and darker than the ichor it floats on |
 | `ichor_lily_bud` | `#b77fcf` `#cf9fe0` `#e4c3ee` `#f5e3f8` `#fffaff` | Its glowing bud and the glimmers it lets go: lilac to white |
 | `particle` | `#f0cf8c` `#f9e6b0` `#fff4d6` `#fffdf5` `#ffd9d2` | Glow cores, trill motes |
+| `ore_coal` | `#1b191d` `#2d2a30` `#45414a` | Ores (survival_sift.md §2): vanilla's ore colours, so each reads at a glance as the ore it is; the clusters are drawn anew on hymnstone |
+| `ore_copper` | `#7c3f22` `#a5562b` `#c9733a` `#e39a5a` `#4f9a7c` `#72c3a0` | Copper with a verdigris fleck |
+| `ore_iron` | `#8a6a52` `#b38e6d` `#d8af8a` `#efd2b2` | |
+| `ore_gold` | `#a86e14` `#dca01f` `#fcd23b` `#fff09a` | |
+| `ore_redstone` | `#6e0b0b` `#a51414` `#dc2a20` `#ff5a48` | |
+| `ore_lapis` | `#1a2f7a` `#2546a8` `#3a6ad6` `#6c98ee` | |
+| `ore_diamond` | `#1d7a7a` `#2fb5b0` `#5fe0d6` `#b8fff4` | |
+| `ore_emerald` | `#0d6b2a` `#17a040` `#3fd56a` `#9cf5b4` | |
+| `echo` | `#0a2a33` `#0f414d` `#166a72` `#2ea39e` `#8fe6d8` | Echo ore (an invention, survival_sift.md §2): the echo shard's deep teal, pulsing |
+| `tide_root` | `#5a3f70` `#7a5a94` `#9c7cb6` `#bf9fd4` `#dcc3ec` | The tide root (survival_sift.md §1): a lilac root, ichor-fed |
+| `tide_root_baked` | `#6a3c3e` `#8e544c` `#b2725c` `#cf9672` `#e8bb8f` | Baked, the root browns |
+| `songfruit` | `#3d3480` `#5648a6` `#7464c6` `#9c8de4` `#cbc2fa` | Songfruit: indigo to pale lavender, the songwood's fruit |
+| `bowl` | `#4a2c18` `#6b4226` `#8c5a34` `#ad7646` | A wooden bowl's browns (the glowcap stew) |
 
 ## Texture → allowed ramps
 
@@ -114,6 +127,28 @@ below allows.
 | `item/ichor_bucket.png` | pail, ichor |
 | `particle/glow_petal.png` | healthy_sculk, particle |
 | `particle/trill.png` | particle |
+| `block/cobbled_hymnstone.png` | hymnstone |
+| `block/smooth_hymnstone.png` | hymnstone |
+| `block/polished_hymnstone.png` | hymnstone |
+| `block/cracked_hymnstone_bricks.png` | hymnstone |
+| `block/chiseled_hymnstone_bricks.png` | hymnstone |
+| `block/hymnstone_coal_ore.png` | hymnstone, ore_coal |
+| `block/hymnstone_copper_ore.png` | hymnstone, ore_copper |
+| `block/hymnstone_iron_ore.png` | hymnstone, ore_iron |
+| `block/hymnstone_gold_ore.png` | hymnstone, ore_gold |
+| `block/hymnstone_redstone_ore.png` | hymnstone, ore_redstone |
+| `block/hymnstone_lapis_ore.png` | hymnstone, ore_lapis |
+| `block/hymnstone_diamond_ore.png` | hymnstone, ore_diamond |
+| `block/hymnstone_emerald_ore.png` | hymnstone, ore_emerald |
+| `block/echo_ore.png` | hymnstone, echo |
+| `block/tide_roots_stage0.png` | tidewrack_underside, tide_root |
+| `block/tide_roots_stage1.png` | tidewrack_underside, tide_root |
+| `block/tide_roots_stage2.png` | tidewrack_underside, tide_root |
+| `block/tide_roots_stage3.png` | tidewrack_underside, tide_root |
+| `item/tide_root.png` | tidewrack_underside, tide_root |
+| `item/baked_tide_root.png` | tide_root_baked |
+| `item/songfruit.png` | songfruit, songwood_bark, songwood_leaves |
+| `item/glowcap_stew.png` | bowl, glowcap, glowcap_stem |
 | `entity/blub/blub.png` | blub_fur, blub_eye, blub_mouth, blub_blush |
 | `entity/blub/blub_glow.png` | membrane |
 | `entity/nester/nester.png` | nester, nester_crest, nester_eye |
