@@ -10,14 +10,15 @@ import net.minecraft.resources.Identifier;
 import thesift.TheSift;
 import thesift.entity.nester.Nester;
 
-/** The Nester: its model's clips follow the synced state; an enduring one's eyes and spine glow (system_hunt.md §5). */
+/** The Nester: its model's clips follow the synced state; an enduring one is pale cyan, its eyes and antennae aglow (D-034). */
 public final class NesterRenderer extends MobRenderer<Nester, NesterRenderState, NesterModel> {
 	public static final ModelLayerLocation LAYER = new ModelLayerLocation(TheSift.id("nester"), "main");
 	private static final Identifier TEXTURE = TheSift.id("textures/entity/nester/nester.png");
+	private static final Identifier SOUL = TheSift.id("textures/entity/nester/nester_soul.png");
 	private static final Identifier GLOW = TheSift.id("textures/entity/nester/nester_glow.png");
 
 	public NesterRenderer(EntityRendererProvider.Context context) {
-		super(context, new NesterModel(context.bakeLayer(LAYER)), 0.6F);
+		super(context, new NesterModel(context.bakeLayer(LAYER)), 0.5F);
 		this.addLayer(new LivingEntityEmissiveLayer<>(this, state -> GLOW, (state, ageInTicks) -> state.glow,
 				this.getModel(), RenderTypes::entityTranslucentEmissive, false));
 	}
@@ -38,6 +39,6 @@ public final class NesterRenderer extends MobRenderer<Nester, NesterRenderState,
 
 	@Override
 	public Identifier getTextureLocation(NesterRenderState state) {
-		return TEXTURE;
+		return state.enduring ? SOUL : TEXTURE;
 	}
 }

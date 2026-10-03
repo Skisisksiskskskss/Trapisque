@@ -261,13 +261,13 @@ public final class SiftPreviewClientTest implements FabricClientGameTest {
 			clearChat(context);
 			context.waitTicks(40);
 			context.takeScreenshot("look_blub");
-			// WP-067: a Nester (and an enduring one) in the same framing, a few blocks off.
+			// WP-067: a Nester (and an enduring one) in the same framing, a few blocks off, on the ground there.
 			world.getServer().runCommand(String.format(java.util.Locale.ROOT,
-					"execute in thesift:the_sift run summon thesift:nester %.1f %.1f %.1f {NoAI:1b,Rotation:[%.1ff,0f]}",
-					meadow[0] + fx * 5.0 - fz * 1.5, meadow[1] - 0.4, meadow[2] + fz * 5.0 + fx * 1.5, meadow[3] + 150.0));
+					"execute in thesift:the_sift positioned %.1f 0 %.1f positioned over motion_blocking_no_leaves run summon thesift:nester ~ ~ ~ {NoAI:1b,Rotation:[%.1ff,0f]}",
+					meadow[0] + fx * 5.0 - fz * 1.5, meadow[2] + fz * 5.0 + fx * 1.5, meadow[3] + 150.0));
 			world.getServer().runCommand(String.format(java.util.Locale.ROOT,
-					"execute in thesift:the_sift run summon thesift:nester %.1f %.1f %.1f {NoAI:1b,Enduring:1b,Rotation:[%.1ff,0f]}",
-					meadow[0] + fx * 6.0 + fz * 2.5, meadow[1] - 0.4, meadow[2] + fz * 6.0 - fx * 2.5, meadow[3] + 210.0));
+					"execute in thesift:the_sift positioned %.1f 0 %.1f positioned over motion_blocking_no_leaves run summon thesift:nester ~ ~ ~ {NoAI:1b,Enduring:1b,Rotation:[%.1ff,0f]}",
+					meadow[0] + fx * 6.0 + fz * 2.5, meadow[2] + fz * 6.0 - fx * 2.5, meadow[3] + 210.0));
 			clearChat(context);
 			context.waitTicks(40);
 			context.takeScreenshot("look_nester");

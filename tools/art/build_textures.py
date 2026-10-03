@@ -1082,111 +1082,144 @@ def blub_glow_texture() -> Image.Image:
     return im  # the belly only: a lit strip on the front read as a mouth that came out at night (D-029)
 
 
-def nester_texture() -> Image.Image:
-    """64 x 64, laid out for NesterModel (mob_nester.md): a moss-green hide drawn as vanilla's mobs are,
-    lit on top and darker toward the belly, with scale-like clumps; a paler throat and snout tip; gold
-    eyes set back on the head's sides; pale gold fins; darker shins and feet."""
+# The Nester (D-034: redrawn after Dungeons II's render): a big boxy head split at the mouth, teal above
+# and tan below, navy eyes at its front corners, two feathery antennae; a thin neck on four long legs
+# with tan feet. Model boxes (NesterModel): head 10x5x10 at (0, 0), jaw 10x5x10 at (0, 15), neck 5x9x4
+# at (40, 0), leg 3x10x3 at (0, 30), antenna plane 0x8x5 at (16, 30).
+_NESTER_HEAD, _NESTER_JAW = (0, 0, 10, 5, 10), (0, 15, 10, 5, 10)
+_NESTER_NECK, _NESTER_LEG, _NESTER_ANTENNA = (40, 0, 5, 9, 4), (0, 30, 3, 10, 3), (16, 30, 0, 8, 5)
+
+
+def nester_texture(soul: bool = False) -> Image.Image:
+    """64 x 64 for NesterModel. Drawn as vanilla's mobs are: each face a shade lit on top and darker
+    below, with small clumps. `soul`: the enduring Nester, pale glowing cyan as Dungeons II's soul
+    corrupted Nester."""
     im = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
     px = im.load()
-    hide = [rgba("nester", i) for i in range(6)]
+    hide_ramp = "nester_soul" if soul else "nester"
+    hide = [rgba(hide_ramp, i) for i in range(6)]
+    jaw = [rgba("nester_soul", i) for i in (2, 3, 3, 4, 5)] if soul else [rgba("nester_jaw", i) for i in range(5)]
+    mouth = [rgba("nester_mouth", i) for i in range(4)]
     clumps = grain(211, w=64, h=64, clumps=0.5, cells=16, fine=32, jitter=0.25)
     dither = random.Random(213)
 
-    def face(rect, top, bottom, ramp=hide, top_i=5):
+    def face(rect, top, bottom, ramp):
         x0, y0, w, h = rect
         for y in range(y0, y0 + h):
             k = (y - y0) / max(1, h - 1)
             base = top + (bottom - top) * k
             for x in range(x0, x0 + w):
                 v = clumps[y][x]
-                i = base + (0.7 if v > 0.66 else -0.7 if v < 0.32 else 0.0) + (dither.random() - 0.5) * 0.6
-                px[x, y] = ramp[max(0, min(top_i, int(round(i))))]
+                i = base + (0.7 if v > 0.68 else -0.7 if v < 0.3 else 0.0) + (dither.random() - 0.5) * 0.5
+                px[x, y] = ramp[max(0, min(len(ramp) - 1, int(round(i))))]
 
-    def box(u, v, w, h, d, top=4.6, bottom=1.6, under=1.0):
-        for name, rect in box_faces(u, v, w, h, d).items():
-            if rect[2] <= 0 or rect[3] <= 0:
-                continue
-            if name == "top":
-                face(rect, top + 0.3, top)
-            elif name == "bottom":
-                face(rect, under, under)
-            else:
-                face(rect, top, bottom)
+    def box(spec, ramp, top, bottom, skip=()):
+        for name, rect in box_faces(*spec).items():
+            if rect[2] > 0 and rect[3] > 0 and name not in skip:
+                if name == "top":
+                    face(rect, top + 0.4, top + 0.2, ramp)
+                elif name == "bottom":
+                    face(rect, bottom - 0.3, bottom - 0.3, ramp)
+                else:
+                    face(rect, top, bottom, ramp)
 
-    box(0, 0, 10, 8, 14)                       # body
-    box(0, 22, 4, 8, 4, 4.4, 2.4)              # neck
-    box(16, 22, 5, 5, 6, 4.8, 2.6)             # head
-    box(38, 22, 3, 3, 4, 4.4, 3.0)             # snout
-    box(38, 29, 3, 1, 4, 2.6, 2.0, 1.4)        # jaw
-    box(0, 34, 3, 6, 3, 3.8, 2.2)              # thigh
-    box(12, 34, 2, 6, 2, 2.4, 0.6, 0.3)        # shin and foot
-    box(20, 34, 2, 2, 5, 4.2, 2.6)             # tail tuft
-    crest = [rgba("nester_crest", i) for i in range(5)]
-    for rect in box_faces(34, 34, 0, 4, 3).values():   # fins: gold, lighter at the edge
-        if rect[2] > 0 and rect[3] > 0:
-            face(rect, 3.6, 1.2, crest, 4)
-    for rect in box_faces(40, 34, 1, 4, 1).values():   # enduring spikes: dark tipped pale
-        if rect[2] > 0 and rect[3] > 0:
-            face(rect, 3.0, 0.4, crest, 4)
-    # A paler throat down the neck's front and under the jaw.
-    nx, ny, nw, nh = box_faces(0, 22, 4, 8, 4)["front"]
-    for y in range(ny + 1, ny + nh):
-        for x in range(nx + 1, nx + nw - 1):
-            px[x, y] = hide[5] if (x + y) % 3 else hide[4]
-    # Eyes on the head's sides, near the front: a pale gold iris round a dark pupil.
-    head = box_faces(16, 22, 5, 5, 6)
-    rx, ry, rw, rh = head["right"]
-    lx, ly, lw, lh = head["left"]
-    for ex, ey in ((rx + rw - 2, ry + 1), (lx + 1, ly + 1)):
-        put(im, [(ex, ey)], rgba("nester_eye", 1))
-        put(im, [(ex, ey + 1)], rgba("nester_eye", 0))
-    # Nostrils at the snout's tip.
-    sx, sy, sw, sh = box_faces(38, 22, 3, 3, 4)["front"]
-    put(im, [(sx, sy), (sx + sw - 1, sy)], rgba("nester", 0))
+    def mouth_face(rect, teeth_edge):
+        """The inside of the mouth: dark at the back, warm toward the lips, a row of teeth on three edges."""
+        x0, y0, w, h = rect
+        for y in range(y0, y0 + h):
+            for x in range(x0, x0 + w):
+                depth = (y - y0) / max(1, h - 1) if teeth_edge == "bottom" else 1 - (y - y0) / max(1, h - 1)
+                px[x, y] = mouth[min(3, int(depth * 3.2))] if 0 < x - x0 < w - 1 else mouth[1]
+        tooth = rgba("nester_tooth", 1)
+        shade = rgba("nester_tooth", 0)
+        lip = y0 + h - 1 if teeth_edge == "bottom" else y0
+        for x in range(x0 + 1, x0 + w - 1, 2):
+            px[x, lip] = tooth
+            px[x + 1 if x + 1 < x0 + w - 1 else x, lip] = shade if x + 1 < x0 + w - 1 else tooth
+        for y in range(y0 + 1, y0 + h - 1, 2):
+            px[x0, y] = tooth
+            px[x0 + w - 1, y] = tooth
+
+    box(_NESTER_HEAD, hide, 4.3, 2.8, skip=("bottom",))
+    mouth_face(box_faces(*_NESTER_HEAD)["bottom"], "bottom")
+    box(_NESTER_JAW, jaw, 3.4, 1.6, skip=("top",))
+    mouth_face(box_faces(*_NESTER_JAW)["top"], "top")
+    box(_NESTER_NECK, hide, 3.4, 2.4)
+    box(_NESTER_LEG, hide, 3.0, 1.8)
+    for name, (x0, y0, w, h) in box_faces(*_NESTER_LEG).items():  # tan feet
+        if name in ("front", "back", "left", "right"):
+            for y in (y0 + h - 2, y0 + h - 1):
+                for x in range(x0, x0 + w):
+                    px[x, y] = jaw[3 if y == y0 + h - 2 else 2]
+        elif name == "bottom":
+            for y in range(y0, y0 + h):
+                for x in range(x0, x0 + w):
+                    px[x, y] = jaw[1]
+    # Eyes at the head's front corners, just above the mouth: navy, a white glint, wrapping the corner.
+    heads = box_faces(*_NESTER_HEAD)
+    fx, fy, fw, fh = heads["front"]
+    rx, ry, rw, rh = heads["right"]
+    lx, ly, lw, lh = heads["left"]
+    navy, dark, glint = rgba("nester_eye", 0), rgba("nester_eye", 1), rgba("nester_eye", 2)
+    for y in (fy + fh - 3, fy + fh - 2):
+        put(im, [(fx, y), (fx + 1, y), (fx + fw - 1, y), (fx + fw - 2, y)], navy)
+        put(im, [(rx + rw - 1, y), (lx, y)], dark)
+    put(im, [(fx + 1, fy + fh - 3), (fx + fw - 2, fy + fh - 3)], glint)
+    # Antennae: a stalk up the middle with barbs swept up and out, as a fern's (transparent around).
+    for name in ("left", "right"):
+        x0, y0, w, h = box_faces(*_NESTER_ANTENNA)[name]
+        for y in range(y0, y0 + h):
+            for x in range(x0, x0 + w):
+                px[x, y] = (0, 0, 0, 0)
+        mid = x0 + w // 2
+        for y in range(y0, y0 + h):
+            px[mid, y] = hide[3 if y < y0 + h - 2 else 2]
+        for i, y in enumerate(range(y0 + 1, y0 + h - 2, 2)):
+            px[mid - 1, y] = hide[4]
+            px[mid + 1, y] = hide[4]
+            if i % 2 == 0:
+                px[mid - 2, y - 1] = hide[5]
+                px[mid + 2, y - 1] = hide[5]
     return im
 
 
 def nester_glow_texture() -> Image.Image:
-    """An enduring Nester's glow (system_hunt.md §5): glyph-cyan eyes and a line down its spine."""
+    """The enduring (soul) Nester's glow: its eyes and the stalks of its antennae."""
     im = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
-    head = box_faces(16, 22, 5, 5, 6)
-    rx, ry, rw, rh = head["right"]
-    lx, ly, lw, lh = head["left"]
-    for ex, ey in ((rx + rw - 2, ry + 1), (lx + 1, ly + 1)):
-        put(im, [(ex, ey), (ex, ey + 1)], rgba("glyph", 2))
-    tx, ty, tw, th = box_faces(0, 0, 10, 8, 14)["top"]
-    for y in range(ty, ty + th):
-        put(im, [(tx + tw // 2, y)], rgba("glyph", 1 if y % 2 else 2))
-    for rect in box_faces(40, 34, 1, 4, 1).values():
-        x0, y0, w, h = rect
-        for y in range(y0, y0 + h):
-            for x in range(x0, x0 + w):
-                put(im, [(x, y)], rgba("glyph", 1))
+    heads = box_faces(*_NESTER_HEAD)
+    fx, fy, fw, fh = heads["front"]
+    for y in (fy + fh - 3, fy + fh - 2):
+        put(im, [(fx, y), (fx + 1, y), (fx + fw - 1, y), (fx + fw - 2, y)], rgba("nester_soul", 5))
+    for name in ("left", "right"):
+        x0, y0, w, h = box_faces(*_NESTER_ANTENNA)[name]
+        for y in range(y0, y0 + h - 2):
+            put(im, [(x0 + w // 2, y)], rgba("nester_soul", 4))
     return im
 
 
 def nester_spawn_egg() -> Image.Image:
+    """The Nester's spawn egg: the head's teal over the jaw's tan, a navy eye on each side."""
     rows = [
         "................",
-        "......2332......",
-        ".....23443......",
-        "....2334443.....",
-        "....233g443.....",
-        "...2233g4433....",
-        "...2e3gg443e3...",
-        "...223g33433....",
-        "...2223g3332....",
-        "...22223g332....",
-        "....222g332.....",
-        "....2222222.....",
-        ".....11111......",
-        "......000.......",
+        "......3443......",
+        ".....344543.....",
+        "....34455443....",
+        "....34444443....",
+        "...e3444444e3...",
+        "...e2333333e2...",
+        "...ttttttttttt..",
+        "...tTTTtTTTTTt..",
+        "...jjjjjjjjjjj..",
+        "....jjjjjjjjj...",
+        "....jjjJjjjjj...",
+        ".....JjjjjjJ....",
+        "......JJJJJ.....",
         "................",
         "................",
     ]
     c = {str(i): rgba("nester", i) for i in range(6)}
-    c["g"] = rgba("nester_crest", 3)
-    c["e"] = rgba("nester_eye", 1)
+    c.update({"e": rgba("nester_eye", 0), "t": rgba("nester_tooth", 1), "T": rgba("nester_mouth", 1),
+              "j": rgba("nester_jaw", 3), "J": rgba("nester_jaw", 1)})
     im = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     for y, row in enumerate(rows):
         for x, ch in enumerate(row):
@@ -1630,6 +1663,7 @@ def main() -> None:
     save(blub_texture(), "entity/blub/blub.png")
     save(blub_glow_texture(), "entity/blub/blub_glow.png")
     save(nester_texture(), "entity/nester/nester.png")
+    save(nester_texture(soul=True), "entity/nester/nester_soul.png")
     save(nester_glow_texture(), "entity/nester/nester_glow.png")
     save(nester_spawn_egg(), "item/nester_spawn_egg.png")
     save(blub_spawn_egg(), "item/blub_spawn_egg.png")

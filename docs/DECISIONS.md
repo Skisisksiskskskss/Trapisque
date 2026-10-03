@@ -779,3 +779,18 @@ It also found that M1's Tide changed nothing in play (SF4), since the mission as
 **Consequences.** M3's hymnstone building set arrives early. Every piece uses hymnstone's ramp only. The chiseled face is a bell's mouth with two arcs of sound. Mined hymnstone no longer stacks with placed hymnstone.
 
 **Revisit if** the owner wants hymnstone itself back in the tool recipes, or polished from cobbled (deepslate's way).
+
+## D-034 The Nester redrawn after Dungeons II's render (2026-10-03) [owner request] [amends WP-061's look]
+**Context.** The owner: "the nesters ain't look that good", and the mod should go mostly off what Mojang showed, not inventions. The minecraft.wiki page for the Dungeons II Nester has its official render (File:Nester.png, with a pounce screenshot and the soul corrupted variant). The first model (a green long-necked stilt-walker with a gold crest) had been drawn from the name and the behaviour text alone.
+
+**Decision.** The model, textures and hitbox follow the render (mob_nester.md, Silhouette and look):
+- a boxy head split at the mouth (teal over a tan jaw), navy eyes, two feathery antennae;
+- a thin neck on four long legs with tan feet;
+- rearing with the mouth wide to pounce.
+
+The enduring Nester takes the soul corrupted Nester's pale glowing cyan. The spikes are gone, and the antennae take over the crest's job as the hearing tell. The behaviour was already canon (gallop, lunge and bite, stand around during the cooldown, dodge) and is unchanged. Hitbox: 0.8 × 1.75, eyes at 1.45.
+
+**Consequences.** The palette's `nester` ramps are replaced. Our own colours and pixels are drawn to the render's design, not copied from it. The antennae as the hearing tell are ours.
+
+**Revisit if** more official art shows details (the back, the feet, the tail or the lack of one).
+

@@ -77,36 +77,35 @@ Notes on the calls:
   (world.md §1.1). No structure spawns.
 
 ## Silhouette and look
-- **Hitbox:** 0.9 × 1.5 blocks: a body high on four long legs, head level with a player's chest.
-  It fits under a two-block ceiling and through a one-wide corridor; a one-block-high gap stops it.
-- **Readable at 10 blocks:** the stilt legs (no other Sift mob is long-legged), the forward-thrust
-  neck and long snout, and the **crest**: three fins folded flat along the neck, fanned upright and
-  pale when it hears.
-- **Palette** (new ramps, added to palette.md in WP-067; dark → light):
-  - `nester`: `#1e2a24` `#2c3d33` `#3d5143` `#526a55` `#6c8566` `#8aa27c`: moss green, so it reads
-    against the coral-pink healthy sculk underfoot and is nothing like the Blub's blue.
-  - `nester_crest`: `#6e5330` `#a07c45` `#cfaa63` `#f0d690` `#fff1c4`: pale gold fins; the fanned crest
-    shows its light side.
-  - Eyes are plain texture on an ordinary Nester; an enduring one's eyes and glow use the existing
-    `glyph` cyan on an emissive layer, so the glow stays a marker.
-- **Texture:** 64 × 64.
-- **Model parts:** body; neck; head with snout and a hinged jaw; crest (three fins, one hinge each);
-  four legs of two segments each (thigh, shin); a short tail tuft; **enduring only:** a second, larger
-  crest row with spikes (a separate part, hidden on ordinary Nesters).
+*Redrawn after Dungeons II's own render of the Nester (D-034, owner: "the nesters ain't look that
+good"; RESEARCH.md S-I9). The first look (a green stilt-walker with a gold crest) was invented before the render
+was found.*
+- **Hitbox:** 0.8 × 1.75 blocks, eyes at 1.45: a boxy head on a thin neck and four long legs, its eyes
+  level with a player's. It fits under a two-block ceiling and through a one-wide corridor.
+- **Readable at 10 blocks** (as the render): the big **boxy head split at the mouth**, teal above and
+  tan below, with navy eyes at its front corners; two **feathery antennae** standing up from the back of
+  the head; the thin upright **neck** on four long **legs** with tan feet, the hind pair slanting back.
+  It pounces reared up, forelegs raised and the whole mouth gaping, a ring of teeth inside.
+- **Palette** (palette.md; dark → light): `nester` teal hide, `nester_jaw` tan jaw and feet,
+  `nester_mouth` (dark red to warm orange), `nester_tooth`, `nester_eye` (navy with a white glint).
+- **Enduring:** pale glowing cyan (`nester_soul`), as Dungeons II's soul corrupted Nester, its eyes and
+  antenna stalks on an emissive layer. (The old spike row is gone: not in the canon.)
+- **Texture:** 64 × 64 (`nester.png`, `nester_soul.png`, `nester_glow.png`).
+- **Model parts:** neck; head (the upper half) hinged at the back to the jaw (the lower half); two
+  antennae (flat planes, each with a stalk and swept barbs); four one-piece legs.
 - **Animations** (procedural clips in the model, as the Blub's, D-021). Durations in ticks:
-  - idle: head bobs, crest twitches, weight shifts;
-  - walk: a long-legged trot; **gallop**: a bounding gait, body pitched forward;
-  - **tell** (20): stops, head up and turned, crest fans upright;
-  - **search** (60): head low, sweeping side to side, sniffing;
-  - **lunge**: windup 8 (crouch, crest flat, jaw open), leap (until it lands, about 9–10 ticks; the
-    bite is live throughout), recovery 12 (stands, crest drooped, head shake);
-  - **standing bite**: windup 6 (crouch, crest flat, a step in), snap 2;
-  - **circle**: a side-stepping gait facing its target; **guard**: crest fanned upright and rattling
-    (as the tell's alert, so a raised crest always means "it's ready"); **dodge** (4): a quick hop
-    sideways;
-  - **stagger** (30): reels back, head low, crest drooped;
-  - **emerge** (40): rises out of the soil, shaking off particles; **dig** (60): forelegs paw, it sinks;
-  - **lulled** (M4): crest folds flat, head sways to the song;
+  - idle: the head bobs, the antennae sway;
+  - walk: a long-legged gait in diagonal pairs; **gallop** (canon: "rapidly gallop towards heroes"):
+    leaning forward, bounding front pair then hind pair, antennae swept back;
+  - **tell** (20): antennae up and forward, head raised, mouth just open;
+  - **search** (60): head low, sweeping side to side, the jaw chattering;
+  - **lunge** (canon: "lunging and biting once in range"): windup 8 (rears back, forelegs lift, mouth
+    opens), leap (stretched forward, forelegs reaching, head thrown back, mouth wide), the bite snaps
+    it shut; recovery 12: a head shake;
+  - **guard** (canon: "they stand idly around the hero" while the bite cools down): forelegs half
+    raised, antennae quivering; **dodge** (4, canon: "a chance of dodging melee attacks"): a lean aside;
+  - **stagger** (30): head low and swaying, the jaw hanging, antennae drooped;
+  - **emerge** (40): rises out of the soil, shaking; **dig** (60): forelegs paw, it sinks;
   - hurt: a flinch; death: vanilla's tip-over.
 
 ## Behavior

@@ -278,6 +278,7 @@ Metadata and quotes come from Modrinth, 2026-09-30: `research/prior_art_2026-09-
 | S-I4 | File:MCD2_Singer's_Meadow_portal.jpg (minecraft.net asset `MCL_Dungeons2_sift_1280x720.jpg`, Mojang Studios, 2026-09-26), viewed | 2026-09-30 |
 | S-I5 | File:MCD2_Carapace_environment1.jpg (from an official video, YouTube `9njefMDxzqw`, Mojang Studios, 2026-09-26), viewed | 2026-09-30 |
 | S-I8 | File:Singer MCD2 ad Appearance.png ("A screenshot of the Singer as it appears in an ad for Minecraft Dungeons 2"; source YouTube `ypJN_cWKFo0`, Mojang Studios; uploaded 2026-08-21), viewed | 2026-09-30 |
+| S-I9 | minecraft.wiki Dungeons_II:Nester: File:Nester.png (render), File:MCD2_NesterPounce.png, File:Soul_Corrupted_Nester.png; the page: 'Nesters rapidly gallop towards heroes, lunging and biting once in range'; codename 'Wild Sentinel'; spawns outdoors in Singer's Meadow, Lullaby Hills and Humbler Huskland, viewed | 2026-10-03 |
 | S-I6 | File:Dungeons 2 Screenshot 5.png (Minecraft Launcher asset, Mojang Studios, 2026-03-21), viewed | 2026-09-30 |
 | S-I7 | File:Dungeons II Ancient City Portal lit.png (Steam store asset, 2026-03-21), viewed | 2026-09-30 |
 | XW1 | Xbox Wire, "Minecraft Dungeons II's New Dimension Coming to Minecraft Java & Bedrock Edition" (J. Skrebels, 2026-09-26) https://news.xbox.com/en-us/2026/09/26/minecraft-new-dimension-sift-dungeons-2/ | 2026-09-30 |
