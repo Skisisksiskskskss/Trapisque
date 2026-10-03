@@ -371,13 +371,19 @@ def songwood_leaves(seed: int = 63) -> Image.Image:
         px[x % W, y % H] = rgba("songwood_leaves", 7)
         px[(x + 1) % W, y % H] = rgba("songwood_leaves", 6)
         px[(x + 1) % W, (y + 1) % H] = rgba("songwood_leaves", 3)
-    holes = grain(seed + 11, clumps=0.2, cells=4, fine=8, jitter=0.8, soft=False)
-    flat = sorted(val for row in holes for val in row)
-    cut = flat[int(len(flat) * 0.16)]
+    # Fewer, evenly spread gaps (owner playtest 4): pixel noise over the canopy's dark inside read as
+    # black speckle on these pale leaves. Single pixels and pairs, spaced apart as vanilla's leaf gaps.
+    gaps = set()
+    for k, (x, y) in enumerate(scatter(seed * 3 + 11, 14, 3.4)):
+        gaps.add((x % W, y % H))
+        if k % 2 == 0:
+            gaps.add(((x + 1) % W, y % H))
     for y in range(H):
         for x in range(W):
-            if holes[y][x] < cut:
-                px[x, y] = (0, 0, 0, 0)
+            if (x, y) in gaps:
+                # A gap keeps a deep leaf colour under zero alpha, as vanilla's leaves do (mipmaps and
+                # Fast graphics read it).
+                px[x, y] = rgba("songwood_leaves", 2, 0)
             elif rnd.random() < 0.04:
                 px[x, y] = rgba("songwood_leaves", 2)  # a deep shadow pixel now and then, as vanilla's
     return im

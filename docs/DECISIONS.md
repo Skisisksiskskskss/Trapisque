@@ -689,6 +689,7 @@ It also found that M1's Tide changed nothing in play (SF4), since the mission as
     - **Beg** (the wolf's head tilt): a frond in the owner's hand within 8 blocks.
     - **Forage** (the allay and fox): in Thrive, every 2 to 4 minutes at most, it picks ready tidewrack within 12 blocks. It picks exactly as a player does, so the cycle stamp holds. It carries the frond in its mouth (drawn) and drops it at its owner's feet.
     - **Play** (tag): two idle befriended blubs of one owner chase each other for 8–12 s with hops; a catch is a chirp and swaps who is "it".
+- **Leaves.** Their gaps are fewer (about 8 %) and spread evenly as single pixels and pairs, and each keeps a deep leaf colour under zero alpha, as vanilla's do. The canopy's dark inside showing through scattered pixel holes read as black speckle on the pale leaves.
 - **Sound.** `tools/audio/synth.py` is rewritten as procedural foley. Every one of the 78 files is regenerated, with the same names and vanilla-matched levels:
   - Liquids: Minnaert bubbles with van den Doel's damping and rising pitch, bursting films, splashes with entrained bubble clouds and droplets. Ichor is a denser, thicker liquid, so its bubbles ring lower and die faster.
   - Plants: granular leaf rustle and snapping stems.
