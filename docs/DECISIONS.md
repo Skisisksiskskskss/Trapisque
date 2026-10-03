@@ -651,6 +651,7 @@ It also found that M1's Tide changed nothing in play (SF4), since the mission as
 **Consequences.**
 - Fronds and petals are paced by the Tides and by how many patches a player has found. Lanterns make picking safe once owned, which is the intended progression.
 - The harvest needs one loot condition of our own (`thesift:tide_flora_ready`), and the ichor bucket gets overrides to fill tidewrack.
+- items.md's tide shell, "crafted from tidewrack + hymnstone", means tidewrack **fronds** (the plant has no survival item); WP-065 and M5 read it so.
 
 **Revisit if** players want tidewrack or blooms at home as decoration (a separate decorative variant could be added without reopening the reagent loop), or the playtest finds picking in Endure too punishing.
 

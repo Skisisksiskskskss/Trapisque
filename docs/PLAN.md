@@ -49,7 +49,7 @@ Only one WP is IN PROGRESS at a time.
 | WP-061 | Nester design doc | 4 | L | DONE |
 | WP-062 | Bloombud design doc | 4 | L | DONE |
 | WP-063 | Sift Hollows: the cave layer and glowcap pools | 4 | L | IN PROGRESS (caves done in WP-054; glowcap pools wait for WP-064) |
-| WP-064 | Flora II: tidewrack, Endure bloom, glowcap, chime bell flower, lumen bloom | 4 | L | TODO |
+| WP-064 | Flora II: tidewrack, Endure bloom, glowcap, chime bell flower, lumen bloom | 4 | L | IN PROGRESS (design frozen; code under way) |
 | WP-065 | Materials and items: tidewrack frond, Endure petal, lumen lantern, blub treats | 4 | M | TODO |
 | WP-066 | The hearing rule and hunter retreat; lumen repelling hunters | 4 | L | TODO |
 | WP-067 | Nester: art, audio, AI, tests | 4 | L | TODO |
@@ -667,7 +667,9 @@ Source: 01_CONTENT_BIBLE.md §M2 row; bible/creatures.md, items.md, world.md (M2
 - Tier: L · Depends on: WP-060 · Goal: the underground biome (multi-noise depth), hymnstone caverns, glowcap pools (Should); screenshots looked at; chunk-generation cost ≤ 1.5× the Overworld (measured as in M1).
 
 ### WP-064 Flora II
-- Tier: L · Depends on: WP-063 · Goal: tidewrack (opens in Thrive), Endure bloom (opens in Endure, at the waterline), glowcap (light 10), chime bell flower (rings when walked through: a vibration), lumen bloom; textures by script (palette check), models, loot, tags, sounds, GameTests per behaviour.
+- Tier: L · Depends on: WP-063 · Status: IN PROGRESS (design frozen 2026-10-03; code under way) · Goal: tidewrack (opens in Thrive), Endure bloom (opens in Endure, at the waterline), glowcap (light 10), chime bell flower (rings when walked through: a vibration), lumen bloom; textures by script (palette check), models, loot, tags, sounds, GameTests per behaviour.
+- Log:
+  - 2026-10-03: design frozen after three critique rounds (`docs/DESIGN/block_flora_ii.md`, D-027; BALANCE "Flora II"). Tide plants switch like eyeblossoms, are picked like sweet berries once per cycle (a cycle stamp), and are heard when picked; tidewrack, the Endure bloom and the lumen bloom are wild-only; tidewrack holds ichor through the flood; lumen blooms are ringed by chime bells.
 
 ### WP-065 Materials and items
 - Tier: M · Depends on: WP-064 · Goal: tidewrack frond (dye, blub treats), Endure petal, lumen lantern; recipes; blub treats heal and breed blubs (the M1 doc's M2 hook; a baby blub model and texture); GameTests.

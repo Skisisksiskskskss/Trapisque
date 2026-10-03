@@ -16,6 +16,22 @@ The Sift's water: it swims as vanilla water does, but is a little thicker and ca
 | Outside the Sift | A bucket evaporates (soul smoke) | Places | rules.md: nothing from the Sift spreads at home |
 | Cost (20 mobs swimming) | 1.08× water | 1× | Measured, `SiftPerfTest` |
 
+## Flora II (WP-064, frozen 2026-10-03)
+The M2 plants (block_flora_ii.md, D-027): tidewrack and the Endure bloom are picked once per cycle, only in their own Tide; the glowcap and the lumen bloom are lights; the chime bell rings.
+**Difficulty:** none of these numbers change with difficulty (as vanilla's plants).
+
+| Number | Value | Vanilla analogs | Why |
+|---|---|---|---|
+| Tidewrack harvest | 1–2 fronds per Thrive per plant | sweet berries 1–2 (age 2) and 2–3 (age 3); glow berries 1 per pick; kelp | ~25–39 plants a basin give ~40–60 fronds a cycle: plenty for dye and treats, paced by Thrive |
+| Endure petal harvest | 1 per Endure per bloom | glow berries 1 per pick; torchflower seeds (rare by source: sniffers); pitcher pods | Rare by where it grows |
+| Endure bloom frequency | patches in 1 of 16 chunks with a shore (2–4 blooms); basin ring 3 in 30 % of basins (2–4) | pumpkin patch 1 in 300 chunks; vanilla default flower patch 1 in 32 | About 0.19 blooms a shore chunk. A careful, sneaking Endure (about 1.3 blocks/s, so ~780 blocks in 10 minutes, seeing ~50–100 chunks) passes ~25–50 shore chunks: ~2–4 patches, ~6–12 blooms; a first night picks perhaps 5–10 petals, one or two lanterns at WP-065's planning price of 4. Later nights add the patches already found and lit, so petals grow with a player's map, never faster than one per bloom per Endure (about 2.4 an hour per bloom) |
+| Switch timing | random tick (lone plant ~68 s mean; 5 % > 3.4 min), ripple 5–10 ticks per block within 3 | eyeblossom (same mechanism) | A patch switches as one event |
+| Light | glowcap 10; lumen bloom 12; Endure bloom 0 (emissive) | soul lantern 10; glow berries 14; glow lichen 7; lantern 15 | A glowcap a pocket, lumen a camp, the bloom a mark that lights nothing |
+| Chime cooldown | 10 ticks (system_hunt.md §9) | sculk sensor: active 30, cooldown 10 | Footsteps ring, a herd doesn't spam |
+| Tidewrack density | 35 % of a basin's flooding floor | — | A short pick, not a field |
+| Chime bell patches | Meadow 1 chunk in 4, Flats 1 in 6 | vanilla default flower patch 1 in 32 | Common enough to step in |
+| Lumen bloom | surface 1 chunk in 12; Hollows 1 in 24 | pumpkin patch 1 in 300 | Rare enough to be a find; common enough that most Endures pass one |
+
 ## Frame offering (WP-046)
 | Property | Value | Vanilla analog | Reasoning |
 |---|---|---|---|
