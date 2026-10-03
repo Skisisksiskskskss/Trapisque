@@ -226,6 +226,32 @@ public class Nester extends Monster implements VibrationSystem, Hunt.Hunter {
 		return !event.is(GameEvent.JUKEBOX_PLAY.key()) || pos.distToCenterSqr(this.position()) <= Hunt.JUKEBOX_RANGE * Hunt.JUKEBOX_RANGE;
 	}
 
+	private java.util.@Nullable UUID lulledAgainst;
+	private long lulledUntil;
+
+	/**
+	 * A Singer's horn sang near it (items.md §1.2): it drops its target and its sound, stops hunting, and
+	 * won't take the singer again, nor hear their song, for {@code ticks}.
+	 */
+	public void lull(ServerLevel level, Entity singer, int ticks) {
+		this.lulledAgainst = singer.getUUID();
+		this.lulledUntil = level.getGameTime() + ticks;
+		this.setTarget(null);
+		this.soundPos = null;
+		NesterState state = this.state();
+		if (state != NesterState.EMERGE && state != NesterState.DIG && state != NesterState.ROAM) {
+			this.setState(NesterState.ROAM);
+		}
+		this.getNavigation().stop();
+		level.sendParticles(net.minecraft.core.particles.ParticleTypes.NOTE, this.getX(), this.getY() + 2.0, this.getZ(), 4, 0.4, 0.3, 0.4, 1.0);
+		this.playSound(ModSounds.NESTER_LULLED, 1.0F, 1.0F);
+	}
+
+	/** Whether a horn's lull still keeps it off {@code entity}. */
+	public boolean lulledAgainst(@Nullable Entity entity) {
+		return entity != null && entity.getUUID().equals(this.lulledAgainst) && this.level().getGameTime() < this.lulledUntil;
+	}
+
 	/** A sound arrived and was accepted: roam hears it (the tell); a gallop or search re-aims (§3). */
 	void hear(ServerLevel level, BlockPos pos, @Nullable Entity cause) {
 		this.cooldownUntil = level.getGameTime() + COOLDOWN;
@@ -276,7 +302,8 @@ public class Nester extends Monster implements VibrationSystem, Hunt.Hunter {
 		public void onReceiveVibration(ServerLevel level, BlockPos pos, Holder<GameEvent> event, @Nullable Entity sourceEntity,
 				@Nullable Entity projectileOwner, float receivingDistance) {
 			// The state can change during the travel time: the filters run again on arrival.
-			if (Nester.this.accepts(level, pos, event, sourceEntity, projectileOwner)) {
+			if (Nester.this.accepts(level, pos, event, sourceEntity, projectileOwner) && !Nester.this.lulledAgainst(sourceEntity)
+					&& !Nester.this.lulledAgainst(projectileOwner)) {
 				Nester.this.hear(level, pos, projectileOwner != null ? projectileOwner : sourceEntity);
 			}
 		}

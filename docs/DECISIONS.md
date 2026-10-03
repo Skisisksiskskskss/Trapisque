@@ -807,3 +807,24 @@ The enduring Nester takes the soul corrupted Nester's pale glowing cyan. The spi
 
 **Revisit if** more official footage shows Lullaby Hills or the humbler husks' insides.
 
+## D-036 The Singer, its grove, soul blocks and the Singer's horn, early (2026-10-03) [owner request: "like the singer for example"] [pulls M4's core forward]
+**Context.** The owner asked for canon content, naming the Singer. The bible already specifies the Singer, its grove and the gift of song (creatures.md §2, items.md §1.1-1.2) as M4 Core. Canon:
+- the Singer's look: the Dungeons II ad still (RESEARCH.md S-I8), "pale green bodies, shaggy fur, tiny faces on their elongated necks, pale antlers, short legs, and long arms";
+- "Singers are passive and can only communicate through song";
+- soul blocks and "Lost Harmonies: Find the stolen soul blocks".
+
+**Decision.** Build that slice now, as the bible has it:
+- **The Singer:** tall and shaggy, mint green, with a tiny face, antlers and long arms, drawn after the ad. One per grove, never spawning on its own. It hums broken phrases until its grove is restored and sings after. It is silent in Endure, and for a Tide cycle after being hurt. It can't die: at zero health it fades into its grove and returns at the next Thrive. It drops nothing.
+- **Singer's groves:** about one per 48 Meadow chunks. Each has a clearing of healthy sculk, a grove heart, three chorus stones and a ring of chime bells.
+- **Soul blocks:** pale glowing cubes, like the one at the Singer's feet in the ad.
+  - The grove heart condenses 5 levels of a player's XP into one ("pay").
+  - A pillager outpost's chest holds one half the time ("fight": the stolen soul blocks).
+- **The song:** fill all three chorus stones, then play a note block or an instrument by hand near the Singer, outside Endure. It sings the whole song and the grove's soil blooms. Every player within 16 who hasn't had one gets a **Singer's horn**, once per grove.
+- **The horn:** each player has 3 song charges, kept on death. They recharge in the Sift: Thrive at twice Flow's rate, Endure not at all.
+  - A song in the Sift grows healthy sculk within 12 blocks and lulls Nesters for 10 s.
+  - Outside the Sift it plays like a goat horn and spends no charge.
+
+**Not yet** (later M4 work): blight curing and musical gates (neither exists yet), echo golems, Illager camps in the Sift, and the soul-block cue particles.
+
+**Inventions, kept small.** The 5-level cost, the outpost loot chance, the grove's layout, the chorus stone and grove heart looks, and the horn's look. Each is recorded in BALANCE.md or here.
+

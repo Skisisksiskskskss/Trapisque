@@ -148,6 +148,26 @@ final class ModLanguageProvider extends FabricLanguageProvider {
 		builder.add("subtitles.thesift.nester.step", "Nester steps");
 		builder.add("advancements.thesift.heard_you.title", "Heard You");
 		builder.add("advancements.thesift.heard_you.description", "Make a sound a Nester hears");
+		// The Singer and its grove (items.md §1.1-1.2).
+		builder.add(ModEntities.SINGER, "Singer");
+		builder.add(ModItems.SINGER_SPAWN_EGG, "Singer Spawn Egg");
+		builder.add(ModBlocks.SOUL_BLOCK, "Soul Block");
+		builder.add(ModBlocks.CHORUS_STONE, "Chorus Stone");
+		builder.add(ModBlocks.GROVE_HEART, "Grove Heart");
+		builder.add(ModItems.SINGERS_HORN, "Singer's Horn");
+		builder.add("item.thesift.singers_horn.charges", "Song charges: %s/%s");
+		builder.add("item.thesift.singers_horn.no_charges", "No song charges left: they return in Thrive and Flow");
+		builder.add("subtitles.thesift.singer.hum", "Singer hums");
+		builder.add("subtitles.thesift.singer.sing", "Singer sings");
+		builder.add("subtitles.thesift.singer.song", "Singer sings the whole song");
+		builder.add("subtitles.thesift.singer.fade", "Singer fades");
+		builder.add("subtitles.thesift.singer.hurt", "Singer hurts");
+		builder.add("subtitles.thesift.chorus_stone.fill", "Chorus stone chimes");
+		builder.add("subtitles.thesift.grove_heart.condense", "Souls condense");
+		builder.add("subtitles.thesift.singers_horn.song", "Singer's horn sings");
+		builder.add("subtitles.thesift.nester.lulled", "Nester lulled");
+		builder.add("advancements.thesift.the_singers_gift.title", "The Singer's Gift");
+		builder.add("advancements.thesift.the_singers_gift.description", "Restore a Singer's grove and receive the gift of song");
 		// Rifts (survival_sift.md §2, §6).
 		builder.add(ModEntities.RIFT, "Rift");
 		builder.add(ModItems.RIFT_FORK, "Rift Fork");

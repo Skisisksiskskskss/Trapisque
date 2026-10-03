@@ -82,6 +82,15 @@ final class ModSoundsProvider extends FabricSoundsProvider {
 		add(exporter, ModSounds.NESTER_GUARD, "nester/guard", 2, "subtitles.thesift.nester.guard");
 		add(exporter, ModSounds.NESTER_DODGE, "nester/dodge", 2, "subtitles.thesift.nester.dodge");
 		add(exporter, ModSounds.NESTER_STAGGER, "nester/stagger", 2, "subtitles.thesift.nester.stagger");
+		add(exporter, ModSounds.SINGER_HUM, "singer/hum", 3, "subtitles.thesift.singer.hum");
+		add(exporter, ModSounds.SINGER_SING, "singer/sing", 3, "subtitles.thesift.singer.sing");
+		add(exporter, ModSounds.SINGER_SONG, "singer/song", 1, "subtitles.thesift.singer.song");
+		add(exporter, ModSounds.SINGER_FADE, "singer/fade", 1, "subtitles.thesift.singer.fade");
+		add(exporter, ModSounds.SINGER_HURT, "singer/hurt", 2, "subtitles.thesift.singer.hurt");
+		add(exporter, ModSounds.CHORUS_STONE_FILL, "singer/chorus_fill", 1, "subtitles.thesift.chorus_stone.fill");
+		add(exporter, ModSounds.GROVE_HEART_CONDENSE, "singer/condense", 1, "subtitles.thesift.grove_heart.condense");
+		add(exporter, ModSounds.SINGERS_HORN_SONG, "singer/horn", 3, "subtitles.thesift.singers_horn.song");
+		add(exporter, ModSounds.NESTER_LULLED, "nester/lulled", 1, "subtitles.thesift.nester.lulled");
 		add(exporter, ModSounds.RIFT_HUM, "rift/hum", 1, "subtitles.thesift.rift.hum");
 		add(exporter, ModSounds.RIFT_OPEN, "rift/open", 1, "subtitles.thesift.rift.open");
 		add(exporter, ModSounds.RIFT_CLOSE, "rift/close", 1, "subtitles.thesift.rift.close");

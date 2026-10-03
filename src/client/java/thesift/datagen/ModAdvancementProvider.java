@@ -97,6 +97,14 @@ final class ModAdvancementProvider extends FabricAdvancementProvider {
 				.addCriterion(SiftAdvancements.AWARDED, CriteriaTriggers.IMPOSSIBLE.createCriterion(new ImpossibleTrigger.TriggerInstance()))
 				.build(SiftAdvancements.HEARD_YOU);
 		out.accept(heardYou);
+		out.accept(Advancement.Builder.advancement()
+				.parent(enter)
+				.display(ModItems.SINGERS_HORN,
+						Component.translatable("advancements.thesift.the_singers_gift.title"),
+						Component.translatable("advancements.thesift.the_singers_gift.description"),
+						AdvancementType.GOAL, true, true, false)
+				.addCriterion("has_horn", InventoryChangeTrigger.TriggerInstance.hasItems(ModItems.SINGERS_HORN))
+				.build(SiftAdvancements.THE_SINGERS_GIFT));
 		// Living in the Sift (survival_sift.md §6).
 		AdvancementHolder throughTheRift = Advancement.Builder.advancement()
 				.parent(enter)

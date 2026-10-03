@@ -64,6 +64,18 @@ The M2 plants (block_flora_ii.md, D-027): tidewrack and the Endure bloom are pic
 | Cobbled hymnstone | hardness 2.0, as cobblestone; hymnstone 1.5, as stone | cobblestone, stone | Stone's ladder |
 | Wild tide roots | 3 tries of 16 per chunk, where sand meets ichor | — | A first crop to find |
 
+## The Singer (WP-090, D-036; items.md §1.1-1.2)
+| Number | Value | Vanilla analogs | Why |
+|---|---|---|---|
+| Singer health | 40, can't die (fades until the next Thrive) | iron golem 100, wandering trader 20 | Hurting it costs its song for a Tide cycle; killing it gains nothing |
+| Grove rarity | about 1 per 48 Meadow chunks | ancient city, trail ruins (rare) | "Several per world" |
+| Soul block from XP | 5 levels at a grove heart | — | Three stones cost 15 levels: real but reachable |
+| Soul block from outposts | 50 % per outpost chest | — | The canon's "stolen soul blocks": the fight option |
+| Song charges | 3 per player, kept on death | — | A few songs, not a spam button |
+| Recharge | 1 charge per half Thrive (Thrive 2×, Flow 1×, Endure 0) | — | The Tides set the rhythm (D-016) |
+| Song reach | 12 blocks: grows sculk, lulls Nesters 10 s | goat horn heard 256 blocks | A local calm that still calls hunters from farther away |
+| Horn outside the Sift | goat horn's 7 s cooldown, no charge | goat horn | An instrument |
+
 ## Rework 4 (D-029, 2026-10-03)
 | Number | Value | Vanilla analogs | Why |
 |---|---|---|---|

@@ -2,6 +2,15 @@
 
 Step-by-step checklists the owner can run in-game. Produced at every gate.
 
+## `v0.1.11-alpha` (2026-10-03): the Singer
+The canon Singer and the gift of song (D-036). In a **new world**, in Singer's Meadow:
+- **Find a grove:** a round clearing of healthy sculk ringed by chime bells. At its centre is a **grove heart**, with three dark **chorus stones** around it and a tall, shaggy, mint-green **Singer**, drawn after the Dungeons II ad. Play a note block near it and it hums a broken phrase. (`/locate` can't find groves; `/summon thesift:singer` shows one.)
+- **Soul blocks:** right-click the grove heart with 5 levels to condense one. Pillager outposts' chests also hold "stolen" soul blocks.
+- **Restore the grove:** use a soul block on each chorus stone. Each lights and chimes, and the Singer hums a little more. With all three lit, play a note block (by hand) or a goat horn near the Singer outside Endure. It sings the whole song, the grove blooms, and everyone nearby gets a **Singer's horn**.
+- **The horn:** right-click to sing. In the Sift each song uses one of your 3 charges, which come back during Thrive and Flow. It grows healthy sculk around you and **lulls Nesters** for 10 seconds. Outside the Sift it plays like a goat horn.
+- **The Singer can't die:** hurt it and it flees and goes silent for a full Tide cycle. "Kill" it and it fades away, returning at the next Thrive.
+- Advancement: **The Singer's Gift**.
+
 ## `v0.1.10-alpha` (2026-10-03): two canon biomes: the Carapace and Lullaby Hills
 Following what Dungeons II shows (D-035). In a **new world**:
 - **The Carapace:** flat, dry plains of pale **Sift dust** over **dark blue carapace stone**, with **red and yellow grass** in patches, as in Dungeons II's screenshot.

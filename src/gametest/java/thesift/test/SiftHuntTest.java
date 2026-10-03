@@ -112,7 +112,7 @@ public final class SiftHuntTest {
 	}
 
 	/** §4: at its moment in falling Flow it digs into the soil and is gone. */
-	@GameTest(dimension = SIFT, structure = SiftBasinTest.BIG, maxTicks = 200, environment = DAWN) // past every moment (27 000-28 999)
+	@GameTest(dimension = SIFT, structure = SiftBasinTest.BIG, maxTicks = 400, environment = DAWN) // past every moment (27 000-28 999); a check, a walk, a 60-tick dig
 	public void nestersBurrowAtDawn(GameTestHelper helper) {
 		floor(helper);
 		wildNester(helper, 8.5, 8.5);

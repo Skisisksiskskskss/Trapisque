@@ -901,6 +901,76 @@ def rifts(rng: np.random.Generator) -> None:
     write("rift/fork_strike", reverb(tone, 1.2, 0.25, rng), ["block/note_block/bell.ogg", "block/amethyst/resonate1.ogg"])
 
 
+def singer(rng: np.random.Generator) -> None:
+    """The Singer (items.md §1.1): a warm, low, breathy voice that only sings, in a pentatonic mode; the
+    grove's chimes; the horn it gives (a voice in a horn's body)."""
+    scale = [196.0, 220.0, 261.6, 293.7, 329.6, 392.0, 440.0, 523.3]  # G pentatonic, two octaves
+
+    def note(f, vowel, d, gain=1.0, bend=1.0):
+        return gain * voice([f, f * bend], [(0, "m"), (0.25, vowel), (1, vowel)], d, rng, 0.85, 1.9, 0.12, 0.004, 0.05) * ar(n_of(d), 0.08, d * 0.5)
+
+    def phrase(notes, vowel, gap=0.32, hold=0.55, choir=False):
+        total = gap * (len(notes) - 1) + hold + 0.6
+        out = np.zeros(n_of(total))
+        for k, f in enumerate(notes):
+            place(out, note(f, vowel, hold + 0.3), k * gap, 0.6)
+            if choir:
+                place(out, note(f * 1.5, "o", hold + 0.3), k * gap, 0.22)
+                place(out, note(f / 2, "u", hold + 0.3), k * gap, 0.25)
+        return out
+
+    for i in range(1, 4):  # hum: one broken phrase, two or three notes trailing off
+        notes = [scale[j] for j in rng.choice(range(2, 6), size=2 + (i % 2), replace=False)]
+        write(f"singer/hum{i}", reverb(phrase(notes, "u", 0.38, 0.5), 2.0, 0.45, rng), ["mob/allay/idle_with_item1.ogg", "mob/allay/idle_without_item1.ogg"])
+    for i in range(1, 4):  # sing: a phrase of four or five notes
+        start = int(rng.integers(0, 3))
+        notes = [scale[start + j] for j in (0, 2, 1, 3, 2)][: 4 + (i % 2)]
+        write(f"singer/sing{i}", reverb(phrase(notes, "o", 0.34, 0.55), 2.4, 0.5, rng), ["mob/allay/idle_with_item1.ogg", "mob/allay/idle_without_item1.ogg"])
+    # The whole song: ten notes with a choir under them and a bell at each phrase's end.
+    melody = [scale[j] for j in (2, 4, 5, 4, 3, 5, 6, 5, 4, 2)]
+    song = phrase(melody, "a", 0.5, 0.8, choir=True)
+    for at in (1.5, 3.5, 5.0):
+        place(song, modal(scale[6] * 2, HANDBELL, 1.5, rng, 1.0, 1.0, 0.2), at, 0.25)
+    write("singer/song", reverb(song, 3.2, 0.5, rng), ["block/beacon/activate.ogg"])
+    # Fade: the voice sliding down into a whisper of souls.
+    d = 2.2
+    n = n_of(d)
+    slide = voice(list(np.geomspace(330, 140, 8)), [(0, "a"), (1, "u")], d, rng, 0.85, 1.9, 0.3, 0.004, 0.05, False) * ar(n, 0.1, 1.2)
+    souls = bp(noise(n, rng), 2500, 6000) * swell(n, 1.0) * 0.08
+    write("singer/fade", reverb(0.6 * slide + souls, 2.4, 0.5, rng), ["mob/allay/death1.ogg"])
+    for i in range(1, 3):  # hurt: a short broken cry
+        write(f"singer/hurt{i}", voice([300 + 30 * i, 250], [(0, "a"), (1, "e")], 0.35, rng, 0.9, 1.6, 0.1),
+              ["mob/allay/hurt1.ogg", "mob/allay/hurt2.ogg"])
+    # A chorus stone fills: a bell, a shimmer of glass, the souls settling.
+    d = 2.0
+    n = n_of(d)
+    chime = np.zeros(n)
+    place(chime, modal(scale[5] * 2, HANDBELL, 1.8, rng, 1.0, 1.0, 0.25), 0.0, 0.6)
+    place(chime, modal(scale[7] * 2, GLASS, 1.4, rng, 1.2, 1.5, 0.08, 0.7), 0.12, 0.25)
+    write("singer/chorus_fill", reverb(chime + 0.05 * bp(noise(n, rng), 3000, 7000) * expdecay(n, 0.4), 1.8, 0.4, rng),
+          ["block/amethyst/resonate1.ogg", "block/bell/bell_use01.ogg"])
+    # Souls condensing at the grove heart: a rising swirl into a soft low chime.
+    d = 1.6
+    n = n_of(d)
+    u = np.linspace(0, 1, n)
+    swirl = sweep(noise(n, rng), 400 + 2600 * u ** 1.5, 3.0) * ar(n, 0.8, 0.4)
+    low = np.zeros(n)
+    place(low, modal(scale[0], HANDBELL, 1.0, rng, 1.0, 1.0, 0.2), 0.7, 0.5)
+    write("singer/condense", reverb(0.5 * swirl + low, 1.6, 0.4, rng), ["block/respawn_anchor/charge1.ogg"])
+    for i in range(1, 4):  # the horn: a voice in a horn's body, three rising notes held
+        f = [scale[1 + i], scale[3 + i] if 3 + i < len(scale) else scale[-1]]
+        d = 2.4
+        n = n_of(d)
+        horn = voice([f[0], f[0], f[1], f[1]], [(0, "o"), (0.4, "a"), (1, "o")], d, rng, 0.75, 1.1, 0.06, 0.003, 0.04, False)
+        body = horn + 0.4 * voice([f[0] / 2, f[1] / 2], [(0, "o"), (1, "o")], d, rng, 0.75, 1.3, 0.04, 0.003, 0.04, False)
+        write(f"singer/horn{i}", reverb(body * ar(n, 0.15, 0.8), 2.4, 0.4, rng), ["item/goat_horn/call0.ogg", "item/goat_horn/call1.ogg"])
+    # A lulled Nester: a soft falling coo and a shimmer.
+    d = 0.9
+    n = n_of(d)
+    coo = voice([520, 330], [(0, "u"), (1, "m")], d, rng, 1.2, 1.8, 0.1)
+    write("nester/lulled", reverb(0.7 * coo + 0.05 * bp(noise(n, rng), 3000, 7000) * expdecay(n, 0.3), 1.4, 0.4, rng), ["mob/allay/idle_without_item1.ogg"])
+
+
 def main() -> None:
     # One seed per family, so changing one family leaves the others' files byte-identical.
     entry(np.random.default_rng(20261001))
@@ -912,6 +982,7 @@ def main() -> None:
     flora(np.random.default_rng(20261003))
     nester(np.random.default_rng(20261051))
     rifts(np.random.default_rng(20261061))
+    singer(np.random.default_rng(20261071))
     log = REPO / "docs" / "DESIGN" / "audio_levels.md"
     log.write_text("# Audio levels\n\nGenerated by `tools/audio/synth.py` (procedural foley, D-029): each sound's peak / RMS (dBFS, audible part) after matching the RMS to the listed vanilla sounds' mean; the vanilla levels are measured from the game's own files, which are never copied. Mono 44.1 kHz Ogg Vorbis.\n\n| Sound | Length | Peak / RMS | Vanilla reference | Reference peak, RMS |\n|---|---|---|---|---|\n" + "\n".join(LOG) + "\n")
     print(f"{len(LOG)} sounds written")

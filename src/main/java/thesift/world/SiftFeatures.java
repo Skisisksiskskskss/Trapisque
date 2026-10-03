@@ -96,6 +96,9 @@ public final class SiftFeatures {
 	public static final ResourceKey<Feature> TIDE_ROOTS_PATCH = feature("tide_roots");
 	public static final ResourceKey<PlacedFeature> TIDE_ROOTS_SHORES = placed("tide_roots_shores");
 
+	// Singer's groves in the Meadow (items.md §1.1).
+	public static final ResourceKey<Feature> SINGER_GROVE = feature("singer_grove");
+	public static final ResourceKey<PlacedFeature> SINGER_GROVES_MEADOW = placed("singer_groves_singers_meadow");
 	// The Carapace and Lullaby Hills (D-035).
 	public static final ResourceKey<Feature> HUSK_FOSSIL = feature("husk_fossil");
 	public static final ResourceKey<PlacedFeature> HUSK_FOSSILS_CARAPACE = placed("husk_fossils_carapace");

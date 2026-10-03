@@ -11,6 +11,8 @@ import thesift.entry.FrameCues;
 import thesift.entry.FrameMusic;
 import thesift.entry.Offering;
 import thesift.entry.Rifts;
+import thesift.item.SongCharges;
+import thesift.loot.SoulBlockLoot;
 import thesift.registry.ModAttachments;
 import thesift.registry.ModAttributes;
 import thesift.registry.ModBlockEntities;
@@ -63,6 +65,8 @@ public final class TheSift implements ModInitializer {
 		BlubCrossing.init();
 		Hunt.init();
 		Rifts.init();
+		SongCharges.init();
+		SoulBlockLoot.init();
 		LOGGER.info("The Sift initialized (unofficial fan project)");
 	}
 

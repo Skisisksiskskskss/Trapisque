@@ -27,6 +27,7 @@ import net.minecraft.world.level.block.Block;
 
 import thesift.TheSift;
 import thesift.block.ChimeBellFlowerBlock;
+import thesift.block.ChorusStoneBlock;
 import thesift.block.TideFloraBlock;
 import thesift.block.TideRootsBlock;
 import thesift.block.TidewrackBlock;
@@ -60,6 +61,17 @@ final class ModModelProvider extends FabricModelProvider {
 		g.createTrivialCube(ModBlocks.CRACKED_HYMNSTONE_BRICKS);
 		g.createTrivialCube(ModBlocks.CHISELED_HYMNSTONE_BRICKS);
 		hymnstoneCuts(g);
+		// The Singer's grove (items.md §1.1): a soul block; a chorus stone, dark or lit; the grove heart.
+		g.createTrivialCube(ModBlocks.SOUL_BLOCK);
+		g.createTrivialBlock(ModBlocks.GROVE_HEART, TexturedModel.COLUMN);
+		Identifier stoneEmpty = TexturedModel.COLUMN.create(ModBlocks.CHORUS_STONE, g.modelOutput);
+		Identifier stoneFilled = ModelTemplates.CUBE_COLUMN.createWithSuffix(ModBlocks.CHORUS_STONE, "_filled", new TextureMapping()
+				.put(TextureSlot.SIDE, TextureMapping.getBlockTexture(ModBlocks.CHORUS_STONE, "_side_filled"))
+				.put(TextureSlot.END, TextureMapping.getBlockTexture(ModBlocks.CHORUS_STONE, "_top_filled")), g.modelOutput);
+		g.blockStateOutput.accept(MultiVariantGenerator.dispatch(ModBlocks.CHORUS_STONE).with(PropertyDispatch.initial(ChorusStoneBlock.FILLED)
+				.select(false, BlockModelGenerators.plainVariant(stoneEmpty))
+				.select(true, BlockModelGenerators.plainVariant(stoneFilled))));
+		g.registerSimpleItemModel(ModBlocks.CHORUS_STONE, stoneEmpty);
 		// The Carapace (D-035).
 		g.createTrivialCube(ModBlocks.CARAPACE_STONE);
 		g.createTrivialCube(ModBlocks.SIFT_DUST);
@@ -217,6 +229,8 @@ final class ModModelProvider extends FabricModelProvider {
 		}
 		g.generateFlatItem(ModItems.NESTER_SPAWN_EGG, ModelTemplates.FLAT_ITEM);
 		g.generateFlatItem(ModItems.RIFT_FORK, ModelTemplates.FLAT_HANDHELD_ITEM);
+		g.generateFlatItem(ModItems.SINGERS_HORN, ModelTemplates.FLAT_ITEM);
+		g.generateFlatItem(ModItems.SINGER_SPAWN_EGG, ModelTemplates.FLAT_ITEM);
 		g.generateFlatItem(ModItems.TIDEWRACK_FROND, ModelTemplates.FLAT_ITEM);
 		g.generateFlatItem(ModItems.ENDURE_PETAL, ModelTemplates.FLAT_ITEM);
 	}

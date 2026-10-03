@@ -39,8 +39,10 @@ import net.minecraft.world.level.storage.loot.providers.number.ints.ContextIntPr
 import thesift.TheSift;
 import thesift.block.CarapaceGrassBlock;
 import thesift.block.ChimeBellFlowerBlock;
+import thesift.block.ChorusStoneBlock;
 import thesift.block.EndureBloomBlock;
 import thesift.block.GlowcapBlock;
+import thesift.block.GroveHeartBlock;
 import thesift.block.HealthySculkBlock;
 import thesift.block.HealthySculkGrassBlock;
 import thesift.block.IchorLilyBlock;
@@ -102,6 +104,16 @@ public final class ModBlocks {
 			BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_LIGHT_BLUE).instrument(NoteBlockInstrument.SNARE).strength(0.5F).sound(SoundType.SAND));
 	public static final Block HUSK_BONE_BLOCK = register("husk_bone_block", RotatedPillarBlock::new, BlockBehaviour.Properties.of()
 			.mapColor(MapColor.SAND).instrument(NoteBlockInstrument.XYLOPHONE).requiresCorrectToolForDrops().strength(2.0F).sound(SoundType.BONE_BLOCK));
+
+	// The Singer's grove (items.md §1.1, world.md §3; canon: soul blocks, "Lost Harmonies: Find the stolen soul blocks").
+	/** A soul block: condensed souls, pale and glowing (as in Dungeons II's ad, at the Singer's feet). */
+	public static final Block SOUL_BLOCK = register("soul_block", Block::new, BlockBehaviour.Properties.of()
+			.mapColor(MapColor.COLOR_LIGHT_BLUE).strength(1.5F).lightLevel(s -> 10).sound(SoundType.AMETHYST));
+	public static final Block CHORUS_STONE = register("chorus_stone", ChorusStoneBlock::new, BlockBehaviour.Properties.of()
+			.mapColor(MapColor.TERRACOTTA_RED).strength(-1.0F, 3_600_000.0F).noLootTable().sound(SoundType.CALCITE)
+			.lightLevel(s -> s.getValue(ChorusStoneBlock.FILLED) ? 10 : 0));
+	public static final Block GROVE_HEART = register("grove_heart", GroveHeartBlock::new, BlockBehaviour.Properties.of()
+			.mapColor(MapColor.COLOR_PINK).strength(-1.0F, 3_600_000.0F).noLootTable().sound(SoundType.SCULK).lightLevel(s -> 6));
 
 	/** The Sift's grass (owner rework: the teaser's pink-coral ground), over Sift soil as grass over dirt. */
 	public static final Block HEALTHY_SCULK = register("healthy_sculk", HealthySculkBlock::new, BlockBehaviour.Properties.of()

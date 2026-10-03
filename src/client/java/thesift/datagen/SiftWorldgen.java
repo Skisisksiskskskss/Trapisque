@@ -113,6 +113,7 @@ import thesift.world.feature.HymnstoneSpireFeature;
 import thesift.world.feature.IchorFlatsFeature;
 import thesift.world.feature.LumenBloomFeature;
 import thesift.world.feature.EndureBloomsFeature;
+import thesift.world.feature.SingerGroveFeature;
 import thesift.world.feature.TideBasinFeature;
 import thesift.world.feature.TideRootsShoreFeature;
 
@@ -384,6 +385,7 @@ final class SiftWorldgen {
 		generation.addFeature(GenerationStep.Decoration.LAKES, SiftFeatures.PONDS_MEADOW);
 		generation.addFeature(GenerationStep.Decoration.LAKES, SiftFeatures.TIDE_BASINS_MEADOW);
 		generation.addFeature(GenerationStep.Decoration.SURFACE_STRUCTURES, SiftFeatures.SPIRES_MEADOW);
+		generation.addFeature(GenerationStep.Decoration.SURFACE_STRUCTURES, SiftFeatures.SINGER_GROVES_MEADOW);
 		generation.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.TREES_MEADOW);
 		generation.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.LONE_TREES_MEADOW);
 		generation.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.LUMEN_MEADOW);
@@ -571,6 +573,7 @@ final class SiftWorldgen {
 		context.register(SiftFeatures.TIDE_ROOTS_PATCH, TideRootsShoreFeature.INSTANCE);
 		// The Carapace (D-035): husk fossils, and red and yellow grass in patches.
 		context.register(SiftFeatures.HUSK_FOSSIL, HuskFossilFeature.INSTANCE);
+		context.register(SiftFeatures.SINGER_GROVE, SingerGroveFeature.INSTANCE);
 		context.register(SiftFeatures.CARAPACE_GRASS, new SimpleBlockFeature(new WeightedStateProvider(
 				WeightedList.<BlockState>builder()
 						.add(ModBlocks.RED_CARAPACE_GRASS.defaultBlockState(), 3)
@@ -638,6 +641,12 @@ final class SiftWorldgen {
 
 	static void placedFeatures(BootstrapContext<PlacedFeature> context) {
 		placedOres(context);
+		// Singer's groves (items.md §1.1): rare, about one in 48 Meadow chunks, so several in a world.
+		PlacementUtils.register(context, SiftFeatures.SINGER_GROVES_MEADOW, context.lookup(Registries.FEATURE).getOrThrow(SiftFeatures.SINGER_GROVE),
+				RarityFilter.onAverageOnceEvery(48),
+				InSquarePlacement.spread(),
+				PlacementUtils.HEIGHTMAP_WORLD_SURFACE,
+				BiomeFilter.biome());
 		// The Carapace (D-035): a husk fossil every ten chunks or so; grass in patches on the dust.
 		PlacementUtils.register(context, SiftFeatures.HUSK_FOSSILS_CARAPACE, context.lookup(Registries.FEATURE).getOrThrow(SiftFeatures.HUSK_FOSSIL),
 				RarityFilter.onAverageOnceEvery(10),

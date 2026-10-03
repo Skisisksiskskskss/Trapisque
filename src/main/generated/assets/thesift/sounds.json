@@ -48,6 +48,12 @@
     ],
     "subtitle": "subtitles.thesift.chime_bell.ring"
   },
+  "block.chorus_stone.fill": {
+    "sounds": [
+      "thesift:singer/chorus_fill"
+    ],
+    "subtitle": "subtitles.thesift.chorus_stone.fill"
+  },
   "block.endure_bloom.close": {
     "sounds": [
       "thesift:flora/endure_bloom_close1",
@@ -69,6 +75,12 @@
       "thesift:flora/pick3"
     ],
     "subtitle": "subtitles.thesift.flora.pick"
+  },
+  "block.grove_heart.condense": {
+    "sounds": [
+      "thesift:singer/condense"
+    ],
+    "subtitle": "subtitles.thesift.grove_heart.condense"
   },
   "block.ichor.ambient": {
     "sounds": [
@@ -340,6 +352,12 @@
     ],
     "subtitle": "subtitles.thesift.nester.hurt"
   },
+  "entity.nester.lulled": {
+    "sounds": [
+      "thesift:nester/lulled"
+    ],
+    "subtitle": "subtitles.thesift.nester.lulled"
+  },
   "entity.nester.sniff": {
     "sounds": [
       "thesift:nester/sniff1",
@@ -382,6 +400,41 @@
     ],
     "subtitle": "subtitles.thesift.rift.open"
   },
+  "entity.singer.fade": {
+    "sounds": [
+      "thesift:singer/fade"
+    ],
+    "subtitle": "subtitles.thesift.singer.fade"
+  },
+  "entity.singer.hum": {
+    "sounds": [
+      "thesift:singer/hum1",
+      "thesift:singer/hum2",
+      "thesift:singer/hum3"
+    ],
+    "subtitle": "subtitles.thesift.singer.hum"
+  },
+  "entity.singer.hurt": {
+    "sounds": [
+      "thesift:singer/hurt1",
+      "thesift:singer/hurt2"
+    ],
+    "subtitle": "subtitles.thesift.singer.hurt"
+  },
+  "entity.singer.sing": {
+    "sounds": [
+      "thesift:singer/sing1",
+      "thesift:singer/sing2",
+      "thesift:singer/sing3"
+    ],
+    "subtitle": "subtitles.thesift.singer.sing"
+  },
+  "entity.singer.song": {
+    "sounds": [
+      "thesift:singer/song"
+    ],
+    "subtitle": "subtitles.thesift.singer.song"
+  },
   "item.bucket.empty_ichor": {
     "sounds": [
       "thesift:ichor/bucket_empty1",
@@ -401,5 +454,13 @@
       "thesift:rift/fork_strike"
     ],
     "subtitle": "subtitles.thesift.rift_fork.strike"
+  },
+  "item.singers_horn.song": {
+    "sounds": [
+      "thesift:singer/horn1",
+      "thesift:singer/horn2",
+      "thesift:singer/horn3"
+    ],
+    "subtitle": "subtitles.thesift.singers_horn.song"
   }
 }

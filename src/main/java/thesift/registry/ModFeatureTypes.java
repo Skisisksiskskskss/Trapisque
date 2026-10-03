@@ -10,6 +10,7 @@ import thesift.world.feature.HymnstoneSpireFeature;
 import thesift.world.feature.EndureBloomsFeature;
 import thesift.world.feature.IchorFlatsFeature;
 import thesift.world.feature.LumenBloomFeature;
+import thesift.world.feature.SingerGroveFeature;
 import thesift.world.feature.TideBasinFeature;
 import thesift.world.feature.TideRootsShoreFeature;
 
@@ -23,6 +24,7 @@ public final class ModFeatureTypes {
 		Registry.register(BuiltInRegistries.FEATURE_TYPE, TheSift.id("lumen_bloom"), LumenBloomFeature.CODEC);
 		Registry.register(BuiltInRegistries.FEATURE_TYPE, TheSift.id("tide_roots_shore"), TideRootsShoreFeature.CODEC);
 		Registry.register(BuiltInRegistries.FEATURE_TYPE, TheSift.id("husk_fossil"), HuskFossilFeature.CODEC);
+		Registry.register(BuiltInRegistries.FEATURE_TYPE, TheSift.id("singer_grove"), SingerGroveFeature.CODEC);
 	}
 
 	private ModFeatureTypes() {

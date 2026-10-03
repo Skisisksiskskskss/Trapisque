@@ -36,6 +36,7 @@ final class ModLootProvider extends FabricBlockLootSubProvider {
 	public void generate() {
 		add(ModBlocks.HYMNSTONE, b -> createSingleItemTableWithSilkTouch(b, ModBlocks.COBBLED_HYMNSTONE));
 		dropSelf(ModBlocks.CARAPACE_STONE);
+		dropSelf(ModBlocks.SOUL_BLOCK);
 		dropSelf(ModBlocks.SIFT_DUST);
 		dropSelf(ModBlocks.HUSK_BONE_BLOCK);
 		add(ModBlocks.RED_CARAPACE_GRASS, this::createShearsOnlyDrop);

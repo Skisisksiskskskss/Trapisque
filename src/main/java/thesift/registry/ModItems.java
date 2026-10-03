@@ -33,6 +33,7 @@ import net.minecraft.world.level.storage.loot.providers.number.ints.ContextIntPr
 import thesift.TheSift;
 import thesift.item.IchorBucketItem;
 import thesift.item.RiftForkItem;
+import thesift.item.SingersHornItem;
 
 /** Items (D-019). Block items are registered together with their blocks, in creative-tab order. */
 public final class ModItems {
@@ -46,6 +47,11 @@ public final class ModItems {
 	/** Picked from open tidewrack in Thrive (block_flora_ii.md §1); its uses come in WP-065. */
 	public static final Item TIDEWRACK_FROND = other(register(key("tidewrack_frond"), Item::new,
 			new Item.Properties().compostable(ContextIntProviders.COMPOSTABLE_LOW)));
+	public static final Item SINGER_SPAWN_EGG = other(register(key("singer_spawn_egg"), SpawnEggItem::new,
+			new Item.Properties().spawnEgg(ModEntities.SINGER)));
+	/** The gift of song (items.md §1.2): granted by a Singer when its grove is restored. */
+	public static final Item SINGERS_HORN = other(register(key("singers_horn"), SingersHornItem::new,
+			new Item.Properties().stacksTo(1).rarity(Rarity.RARE)));
 	/** Opens a rift for a minute, 8 times (survival_sift.md §2.4). */
 	public static final Item RIFT_FORK = other(register(key("rift_fork"), RiftForkItem::new,
 			new Item.Properties().durability(8).rarity(Rarity.UNCOMMON)));

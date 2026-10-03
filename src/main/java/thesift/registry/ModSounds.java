@@ -63,6 +63,16 @@ public final class ModSounds {
 	public static final SoundEvent FLORA_PICK = register("block.flora.pick");
 	public static final SoundEvent CHIME_BELL_RING = register("block.chime_bell_flower.ring");
 	public static final SoundEvent CHIME_BELL_HUM = register("block.chime_bell_flower.hum");
+	// The Singer and its grove (items.md §1.1-1.2): phrases, the whole song, the fade; the stones and the heart; the horn.
+	public static final SoundEvent SINGER_HUM = register("entity.singer.hum");
+	public static final SoundEvent SINGER_SING = register("entity.singer.sing");
+	public static final SoundEvent SINGER_SONG = register("entity.singer.song");
+	public static final SoundEvent SINGER_FADE = register("entity.singer.fade");
+	public static final SoundEvent SINGER_HURT = register("entity.singer.hurt");
+	public static final SoundEvent CHORUS_STONE_FILL = register("block.chorus_stone.fill");
+	public static final SoundEvent GROVE_HEART_CONDENSE = register("block.grove_heart.condense");
+	public static final SoundEvent SINGERS_HORN_SONG = register("item.singers_horn.song");
+	public static final SoundEvent NESTER_LULLED = register("entity.nester.lulled");
 	// Rifts (survival_sift.md §2): a hum heard 32 blocks off, opening heard 64, closing; the fork's struck note.
 	public static final SoundEvent RIFT_HUM = register("entity.rift.hum");
 	public static final SoundEvent RIFT_OPEN = register("entity.rift.open");

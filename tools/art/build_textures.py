@@ -1708,6 +1708,196 @@ def carapace_grass(ramp: str, seed: int, coral: bool) -> Image.Image:
     return im
 
 
+# ---------------------------------------------------------------- the Singer and its grove (items.md §1.1)
+# Model boxes (SingerModel): head 6x14x5 at (0, 0), antler plane 0x8x6 at (22, 0), body 8x12x6 at
+# (0, 19), arm 4x14x4 at (28, 19), leg 3x5x3 at (44, 19).
+_SINGER_HEAD, _SINGER_ANTLER = (0, 0, 6, 14, 5), (22, 0, 0, 8, 6)
+_SINGER_BODY, _SINGER_ARM, _SINGER_LEG = (0, 19, 8, 12, 6), (28, 19, 4, 14, 4), (44, 19, 3, 5, 3)
+
+
+def singer_texture() -> Image.Image:
+    """64 x 64 for SingerModel, after Dungeons II's ad (RESEARCH.md S-I8): pale mint shag in overlapping
+    rows, as the ad's layered fur, lit at the top of each face; a tiny face high on the neck with a
+    pale beard; a cream star on the chest; cream feathery antlers."""
+    im = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
+    px = im.load()
+    n = len(RAMPS["singer_fur"])
+
+    def shag(rect, top, bottom):
+        x0, y0, w, h = rect
+        for y in range(y0, y0 + h):
+            k = (y - y0) / max(1, h - 1)
+            base = top + (bottom - top) * k
+            row = (y - y0) // 3
+            for x in range(x0, x0 + w):
+                i = base
+                if (y - y0) % 3 == 2:
+                    i -= 1.2 if (x + row * 2) % 4 else -0.6  # the lower edge of a row of locks; their tips catch light
+                px[x, y] = rgba("singer_fur", max(0, min(n - 1, int(round(i)))))
+
+    for spec, top, bottom in ((_SINGER_HEAD, 5.0, 3.5), (_SINGER_BODY, 4.6, 3.0), (_SINGER_ARM, 4.2, 2.6), (_SINGER_LEG, 3.0, 1.6)):
+        for name, rect in box_faces(*spec).items():
+            if rect[2] > 0 and rect[3] > 0:
+                shag(rect, top + (0.6 if name == "top" else 0.0), bottom if name != "bottom" else bottom - 0.5)
+    # The tiny face at the top of the neck: a pale brow, two dark eyes, and a beard of pale strands.
+    fx, fy, fw, fh = box_faces(*_SINGER_HEAD)["front"]
+    for x in range(fx, fx + fw):
+        px[x, fy + 1] = rgba("singer_fur", 6)
+    for ex in (fx + 1, fx + fw - 2):
+        px[ex, fy + 2] = rgba("singer_face", 1)
+        px[ex, fy + 3] = rgba("singer_face", 0)
+    for x in range(fx + 1, fx + fw - 1):
+        for y in range(fy + 4, fy + 9):
+            if (x + y) % 2 == 0 or y < fy + 6:
+                px[x, y] = rgba("singer_fur", 6 if (x + y) % 3 else 5)
+    # The cream star on the chest.
+    bx, by, bw, bh = box_faces(*_SINGER_BODY)["front"]
+    cx, cy = bx + bw // 2, by + 3
+    for dx, dy, c in ((0, 0, 3), (-1, 0, 2), (1, 0, 2), (0, -1, 2), (0, 1, 2), (-2, -1, 1), (2, -1, 1), (-2, 1, 1), (2, 1, 1),
+                      (0, -2, 1), (0, 2, 0)):
+        if bx <= cx + dx < bx + bw:
+            px[cx + dx, cy + dy] = rgba("singer_gold", c)
+    # Antlers: a cream stalk with feathered barbs swept up and out, transparent around.
+    for name in ("left", "right"):
+        x0, y0, w, h = box_faces(*_SINGER_ANTLER)[name]
+        for y in range(y0, y0 + h):
+            for x in range(x0, x0 + w):
+                px[x, y] = (0, 0, 0, 0)
+        mid = x0 + w // 2
+        for y in range(y0 + 1, y0 + h):
+            px[mid, y] = rgba("singer_antler", 1 if y > y0 + h - 3 else 2)
+        for i, y in enumerate(range(y0 + 1, y0 + h - 2, 2)):
+            for side in (-1, 1):
+                px[mid + side, y] = rgba("singer_antler", 3)
+                if mid + 2 * side in range(x0, x0 + w):
+                    px[mid + 2 * side, y - 1] = rgba("singer_antler", 4)
+    return im
+
+
+def singer_spawn_egg() -> Image.Image:
+    rows = [
+        "................",
+        "......4554......",
+        ".....455654.....",
+        "....45565654....",
+        "....4e5555e4....",
+        "...4455565544...",
+        "...4555g5555....",
+        "...445ggg554....",
+        "...4455g5544....",
+        "...44555554.....",
+        "....4445544.....",
+        "....3444443.....",
+        ".....33333......",
+        "......222.......",
+        "................",
+        "................",
+    ]
+    c = {str(i): rgba("singer_fur", i) for i in range(7)}
+    c["e"] = rgba("singer_face", 1)
+    c["g"] = rgba("singer_gold", 2)
+    im = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    for y, row in enumerate(rows):
+        for x, ch in enumerate(row):
+            if ch != ".":
+                put(im, [(x, y)], c[ch])
+    return im
+
+
+def soul_block() -> Image.Image:
+    """A soul block (canon; pale and glowing as at the Singer's feet in the ad): pale cyan souls drifting
+    in slow clouds inside a brighter rim."""
+    v = tile_noise(W, H, 3, 3, 601, ((1.0, 1), (0.5, 2)))
+    b = by_rank(v, [0.2, 0.35, 0.3, 0.15], soft=False)
+    im = Image.new("RGBA", (W, H))
+    px = im.load()
+    for y in range(H):
+        for x in range(W):
+            i = 1 + b[y][x]
+            if x in (0, W - 1) or y in (0, H - 1):
+                i = 4
+            px[x, y] = rgba("soul", min(4, i))
+    return im
+
+
+def chorus_stone(top: bool, filled: bool) -> Image.Image:
+    """A chorus stone: hymnstone carved with three upright grooves, like a chime's tubes (dark while
+    empty; lit with soul light once filled); its top a ring around a hollow (dark, or glowing)."""
+    v = grain(611 if top else 613, clumps=0.38, cells=4, fine=8, jitter=0.4)
+    im = paint("hymnstone", by_rank(v, [0.15, 0.35, 0.35, 0.15]), 3)
+    px = im.load()
+    lit = [rgba("soul", i) for i in range(5)]
+    for x in range(W):
+        px[x, 0] = rgba("hymnstone", 7)
+        px[x, H - 1] = rgba("hymnstone", 2)
+    if top:
+        for y in range(H):
+            for x in range(W):
+                d = math.hypot(x - 7.5, y - 7.5)
+                if d < 3.2:
+                    px[x, y] = lit[4 if d < 1.6 else 3] if filled else rgba("hymnstone", 0 if d < 2 else 1)
+                elif d < 4.2:
+                    px[x, y] = rgba("hymnstone", 6)
+    else:
+        for gx in (4, 8, 12):
+            for y in range(3, H - 3):
+                px[gx - 1, y] = lit[3 if filled else 0] if filled else rgba("hymnstone", 1)
+                px[gx, y] = lit[4 if (y // 2) % 2 else 3] if filled else rgba("hymnstone", 0)
+                px[gx + 1, y] = rgba("hymnstone", 6)
+    return im
+
+
+def grove_heart(top: bool) -> Image.Image:
+    """The grove heart: healthy sculk's coral grown over a hymnstone core, a seam of soul light; from
+    above, petals around a glowing eye."""
+    v = grain(621 if top else 623, clumps=0.4, cells=4, fine=8, jitter=0.4)
+    im = paint("healthy_sculk", by_rank(v, [0.15, 0.3, 0.3, 0.25]), 2)
+    px = im.load()
+    if top:
+        for y in range(H):
+            for x in range(W):
+                d = math.hypot(x - 7.5, y - 7.5)
+                a = math.atan2(y - 7.5, x - 7.5)
+                if d < 2.2:
+                    px[x, y] = rgba("soul", 4 if d < 1.2 else 3)
+                elif d < 6.5 and math.cos(a * 5) > 0.3:
+                    px[x, y] = rgba("healthy_sculk", 7 if d < 4.5 else 6)
+    else:
+        for x in range(W):
+            for y in range(H - 5, H):
+                px[x, y] = rgba("hymnstone", 3 + ((x + y) % 3 == 0))
+        for y in range(2, H - 2):
+            px[7, y] = rgba("soul", 3 if y % 3 else 4)
+            px[8, y] = rgba("soul", 2)
+    return im
+
+
+def singers_horn() -> Image.Image:
+    """The Singer's horn: a curved horn of the Singer's cream antler, bound with gold bands, its bell
+    open to the right."""
+    im = _blank()
+    pts = []
+    for i in range(12):
+        t = i / 11
+        x = 2 + t * 11
+        y = 12 - 7 * math.sin(t * math.pi * 0.85)
+        pts.append((x, y, 1 + t * 2.2))
+    for x, y, r in pts:
+        for dy in range(-int(r), int(r) + 1):
+            for dx in (0, 1):
+                xx, yy = int(round(x)) + dx, int(round(y + dy))
+                shade = 4 if dy < 0 else 3 if dy == 0 else 2
+                _set(im, xx, yy, rgba("singer_antler", shade))
+    for t in (0.3, 0.6):
+        x, y, r = pts[int(t * 11)]
+        for dy in range(-int(r), int(r) + 1):
+            _set(im, int(round(x)), int(round(y + dy)), rgba("singer_gold", 1 if dy > 0 else 2))
+    x, y, r = pts[-1]
+    for dy in range(-int(r) - 1, int(r) + 2):
+        _set(im, int(round(x)) + 1, int(round(y + dy)), rgba("singer_antler", 1))
+    return im
+
+
 def main() -> None:
     save(hymnstone_pattern(), "block/hymnstone.png")
     save(hymnstone_pattern(seed=4), "block/hymnstone_2.png")
@@ -1729,6 +1919,15 @@ def main() -> None:
     save(songfruit(), "item/songfruit.png")
     save(glowcap_stew(), "item/glowcap_stew.png")
     save(strip(rift_frames()), "entity/rift/rift.png")
+    save(singer_texture(), "entity/singer/singer.png")
+    save(singer_spawn_egg(), "item/singer_spawn_egg.png")
+    save(soul_block(), "block/soul_block.png")
+    for top in (False, True):
+        for filled in (False, True):
+            save(chorus_stone(top, filled), f"block/chorus_stone_{'top' if top else 'side'}{'_filled' if filled else ''}.png")
+    save(grove_heart(False), "block/grove_heart_side.png")
+    save(grove_heart(True), "block/grove_heart_top.png")
+    save(singers_horn(), "item/singers_horn.png")
     save(carapace_stone(), "block/carapace_stone.png")
     save(sift_dust(), "block/sift_dust.png")
     save(husk_bone_side(), "block/husk_bone_block_side.png")

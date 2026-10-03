@@ -83,7 +83,7 @@ final class NesterHuntGoal extends Goal {
 				this.bumpCheck = reducedTickDelay(5);
 				// The bump: a player within 2 blocks of a roaming listener.
 				Player player = this.nester.level().getNearestPlayer(this.nester, 2.0);
-				if (player != null && Nester.isPrey(player) && !Hunt.inLumen(this.level(), player.position())) {
+				if (player != null && Nester.isPrey(player) && !Hunt.inLumen(this.level(), player.position()) && !this.nester.lulledAgainst(player)) {
 					this.nester.setTarget(player);
 					this.nester.setState(NesterState.GALLOP);
 					return true;
@@ -283,7 +283,7 @@ final class NesterHuntGoal extends Goal {
 		this.nester.getLookControl().setLookAt(sound.getX() + 0.5 + sweep, sound.getY(), sound.getZ() + 0.5 - sweep);
 		Vec3 spot = Vec3.atCenterOf(sound);
 		LivingEntity found = this.nester.level().getEntitiesOfClass(LivingEntity.class, new AABB(sound).inflate(6.0),
-				e -> Nester.isPrey(e) && e.distanceToSqr(spot) <= 36.0 && this.nester.hasLineOfSight(e)
+				e -> Nester.isPrey(e) && !this.nester.lulledAgainst(e) && e.distanceToSqr(spot) <= 36.0 && this.nester.hasLineOfSight(e)
 						&& (!e.isSteppingCarefully() || e.distanceToSqr(this.nester) <= 4.0) && !Hunt.inLumen(this.level(), e.position()))
 				.stream().min(Comparator.comparingDouble(e -> e.distanceToSqr(this.nester))).orElse(null);
 		if (found != null) {

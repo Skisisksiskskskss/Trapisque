@@ -56,6 +56,7 @@ Only one WP is IN PROGRESS at a time.
 | WP-081 | Survival materials: hymnstone as stone, hymnstone ores, echo ore, foods, tide roots, string | 4 | L | DONE (D-033, v0.1.7-alpha) |
 | WP-082 | Rifts, the rift fork, the Sift start | 4 | L | DONE (v0.1.10-alpha) |
 | WP-083 | Biomes: the Carapace, Lullaby Hills (D-035) | 4 | M | DONE (v0.1.10-alpha) |
+| WP-090 | The Singer, its grove, soul blocks, the Singer's horn (D-036; M4 core pulled forward) | 4 | L | DONE (v0.1.11-alpha) |
 | WP-066 | The hearing rule and hunter retreat; lumen repelling hunters | 4 | L | IN PROGRESS (in code, D-030; Quiet Waters and the cost measurement remain) |
 | WP-067 | Nester: art, audio, AI, tests | 4 | L | IN PROGRESS (in code, D-030; speed/reach tests, perf, corridor back-off remain) |
 | WP-068 | Bloombud: art, audio, AI, tests | 4 | L | TODO |

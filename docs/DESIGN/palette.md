@@ -74,6 +74,11 @@ below allows.
 | `carapace_red` | `#5e1838` `#86224f` `#ad3367` `#d14f86` `#e874a3` | Its red grass: crimson to coral pink |
 | `carapace_yellow` | `#6f7022` `#949330` `#b9b444` `#dbd462` `#efe98c` | Its yellow grass |
 | `husk_bone` | `#9fa69b` `#b9bfb2` `#d2d6c8` `#e8eadf` | Husk fossils' bone: ivory with a cool cast |
+| `singer_fur` | `#3f7563` `#4f8a76` `#5f9f88` `#74b59c` `#8acaaf` `#a3dcc2` `#c0ecd6` | The Singer's shag (canon "pale green bodies, shaggy fur"; the ad's mint, RESEARCH.md S-I8) |
+| `singer_face` | `#2e4a40` `#1d2f29` | Its tiny eyes |
+| `singer_antler` | `#b7a67c` `#c9b98f` `#dccfa6` `#eee4c4` `#fbf6e4` | Its pale antlers, and the horn it gives |
+| `singer_gold` | `#c99a3a` `#e0b85a` `#f2d68a` `#fbefc4` | The star on its chest, the horn's bands |
+| `soul` | `#7fd8e0` `#a6ebef` `#c8f7f7` `#e4fdfc` `#ffffff` | Soul blocks and soul light: pale glowing cyan (the ad's cube at the Singer's feet) |
 
 ## Texture → allowed ramps
 
@@ -166,6 +171,16 @@ below allows.
 | `block/husk_bone_block_top.png` | husk_bone |
 | `block/red_carapace_grass.png` | carapace_red |
 | `block/yellow_carapace_grass.png` | carapace_yellow |
+| `entity/singer/singer.png` | singer_fur, singer_face, singer_antler, singer_gold |
+| `item/singer_spawn_egg.png` | singer_fur, singer_face, singer_gold |
+| `block/soul_block.png` | soul |
+| `block/chorus_stone_side.png` | hymnstone |
+| `block/chorus_stone_top.png` | hymnstone |
+| `block/chorus_stone_side_filled.png` | hymnstone, soul |
+| `block/chorus_stone_top_filled.png` | hymnstone, soul |
+| `block/grove_heart_side.png` | healthy_sculk, hymnstone, soul |
+| `block/grove_heart_top.png` | healthy_sculk, soul |
+| `item/singers_horn.png` | singer_antler, singer_gold |
 | `entity/blub/blub.png` | blub_fur, blub_eye, blub_mouth, blub_blush |
 | `entity/blub/blub_glow.png` | membrane |
 | `entity/nester/nester.png` | nester, nester_jaw, nester_mouth, nester_tooth, nester_eye |
