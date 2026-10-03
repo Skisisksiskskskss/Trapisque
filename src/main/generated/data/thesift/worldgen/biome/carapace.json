@@ -1,0 +1,69 @@
+{
+  "attributes": {
+    "minecraft:audio/ambient_sounds": {
+      "additions": {
+        "sound": "thesift:ambient.singers_meadow.mood",
+        "tick_chance": 3.0E-4
+      }
+    },
+    "minecraft:gameplay/natural_mob_spawns": {
+      "argument": {
+        "spawn_costs": {},
+        "spawns_by_category": {
+          "monster": [
+            {
+              "type": "thesift:nester",
+              "count": {
+                "type": "minecraft:uniform",
+                "max_inclusive": 2,
+                "min_inclusive": 1
+              },
+              "weight": 40
+            }
+          ]
+        }
+      },
+      "modifier": "overlay"
+    }
+  },
+  "carvers": [],
+  "downfall": 0.0,
+  "effects": {
+    "water_color": "#3fb8c8"
+  },
+  "features": [
+    [],
+    [
+      "thesift:ichor_pools_underground"
+    ],
+    [],
+    [],
+    [
+      "thesift:husk_fossils_carapace"
+    ],
+    [],
+    [
+      "thesift:ore_hymnstone_coal_upper",
+      "thesift:ore_hymnstone_coal_lower",
+      "thesift:ore_hymnstone_iron_upper",
+      "thesift:ore_hymnstone_iron_middle",
+      "thesift:ore_hymnstone_iron_small",
+      "thesift:ore_hymnstone_gold",
+      "thesift:ore_hymnstone_redstone",
+      "thesift:ore_hymnstone_redstone_lower",
+      "thesift:ore_hymnstone_diamond",
+      "thesift:ore_hymnstone_diamond_large",
+      "thesift:ore_hymnstone_diamond_buried",
+      "thesift:ore_hymnstone_lapis",
+      "thesift:ore_hymnstone_lapis_buried",
+      "thesift:ore_hymnstone_copper"
+    ],
+    [],
+    [],
+    [
+      "thesift:carapace_grass_patches"
+    ]
+  ],
+  "has_precipitation": false,
+  "temperature": 1.0
+}

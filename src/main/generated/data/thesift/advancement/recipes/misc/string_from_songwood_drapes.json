@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_songwood_drapes": {
+      "conditions": {
+        "items": [
+          {
+            "items": "thesift:songwood_drapes"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipes": "thesift:string_from_songwood_drapes"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_songwood_drapes"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "thesift:string_from_songwood_drapes"
+    ]
+  }
+}

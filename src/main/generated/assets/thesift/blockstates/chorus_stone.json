@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "filled=false": {
+      "model": "thesift:block/chorus_stone"
+    },
+    "filled=true": {
+      "model": "thesift:block/chorus_stone_filled"
+    }
+  }
+}

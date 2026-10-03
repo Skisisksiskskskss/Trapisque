@@ -1,0 +1,190 @@
+# The Sift palette (WP-041)
+
+The colour source of truth for every Sift texture. The generators in `tools/art/` read the ramps from this file, and
+`tools/art/check_palette.py` fails the build of art if any texture uses a colour that is not in the ramps its row
+below allows.
+
+**Rules.**
+- **Each texture draws only from its material ramps** (the table at the end). A new colour means a new ramp entry here first.
+- Ramps run dark → light. Light comes from the top-left: highlights take the right end of a ramp, shadows the left.
+- A texture uses roughly 6–12 of these colours, as vanilla does (animated liquids: per frame). Owner playtest 2 (D-026): vanilla's
+  look is per-pixel grain in many close shades with small clumps, not flat bands of three or four tones.
+- Alpha is free for fully transparent pixels (cutout plants, leaves, particles) and for the two translucent strips
+  (membrane 176–224, ichor 200–230, its overlay 150); every visible pixel's RGB must still come from a ramp.
+- Hue shifts along a ramp on purpose: shadows lean cooler, highlights warmer, as vanilla ramps do.
+- **Tiling:** every block texture tiles seamlessly and avoids features the eye can follow from block to block (no lines or tufts on a grid). Ground blocks ship variants (`_2`, `_3`), and healthy sculk's top also takes random rotations, as vanilla grass does.
+
+## Ramps
+
+| Ramp | Colours (dark → light) | Notes |
+|---|---|---|
+| `hymnstone` | `#3f2030` `#50293a` `#623244` `#743d4f` `#87495b` `#9a5768` `#ad6776` `#c07b86` `#d39498` | Rose-mauve stone of the teasers' spires and canyon walls; nine shades for vanilla-stone grain (owner playtest 2) |
+| `gatestone` | `#1d0c14` `#2c1520` `#3f1d2a` | Darker-than-hymnstone body for the unbreakable gate frame |
+| `glyph` | `#2f7f8c` `#5fd3d6` `#b8fbf1` | Pale-cyan inlay: groove, fill, glint |
+| `healthy_sculk` | `#9c384d` `#b9475a` `#cd5263` `#de5f6b` `#ea6d79` `#f37e8a` `#f9929d` `#ffaab4` | The teaser's pink-coral grass, sampled from the vanilla first look; eight shades for vanilla grass's per-pixel speckle (owner playtest 2) |
+| `songwood_bark` | `#141c20` `#1b262a` `#223035` `#2b3b40` `#35474c` `#42565b` `#52676b` `#657b7e` | Dark charcoal-teal trunks of the teasers' trees; the first entry is a flute hole's bore |
+| `flute` | `#8fa3d6` `#c4d4f2` `#eef4ff` | The pale lips of the flute holes |
+| `songwood_planks` | `#2f4246` `#3a5054` `#4b6266` `#5d767a` `#708a8e` `#86a0a3` | Teal-grey planks cut from the dark trunks |
+| `songwood_leaves` | `#3f5361` `#50677a` `#66808f` `#7f99a6` `#99b2bd` `#b3c9d2` `#cddde4` `#e6f0f3` | Pale icy grey-blue canopy of the teasers' trees, with blue shade inside the clumps so it reads as leaves (owner playtest 2; untinted) |
+| `tide_sand` | `#5f5873` `#6e6680` `#857d98` `#9b94ac` `#afa9bf` `#c3bed1` `#d6d2e1` | Pale grey-violet silt |
+| `ichor` | `#1f7a92` `#23879d` `#2f96aa` `#3fa7b6` `#56b9c0` `#72c8c3` `#93d4bf` `#b6dcae` `#d4dd9f` `#ecd79a` `#f2c7a2` `#f1b4b5` `#e8a7c8` `#d7a3dc` `#bea5ea` `#a3aaf0` `#889fe4` `#6d97d2` `#5590c3` `#3a86ae` `#155a73` `#e8f8f6` | Ichor, the Sift's water (D-024) with a soap bubble's sheen (owner playtest 2, D-026): the first twenty run once round the film's colour cycle (turquoise, mint, gold, rose, lilac, periwinkle and back), so neighbouring entries are close and the sheen flows without hard edges; then a deep shade and a highlight. Not dark → light. The fluid renderer (`thesift.client.IchorSheen`) lays the film cycle across the world in broad bands, blended corner to corner; the bucket and the vents draw from the ramp directly |
+| `ichor_sheen` | `#b4c8ce` `#c3d5da` `#d0dfe3` `#dce8ea` `#e6eff0` `#eff5f4` `#f7faf8` | Ichor's shimmer: the pale, nearly grey still, flowing and overlay textures that the tint colours, as vanilla's water textures are grey under the biome's tint. Translucent (alpha 150–230) |
+| `membrane` | `#0b3f55` `#13687e` `#2598a8` `#55c8cc` `#a3eee8` `#e0fffa` | The Sift membrane's cyan shimmer (translucent) |
+| `pail` | `#2b2b33` `#4b4b56` `#6d6d7a` `#9696a2` `#c2c2cb` `#e6e6ec` | Bucket metal |
+| `blub` | `#3f6a8e` `#4f81a8` `#5f95ba` `#7aabc8` `#9cc2d6` `#c4dde8` | The Blub's blue, sampled from the first look (owner rework): the only blue mob in the Sift |
+| `blub_eye` | `#24204a` `#3d3570` `#eaf4ff` | The Blub's dark violet eyes (first look), and their catch-light (D-029) |
+| `blub_fur` | `#3f6a8e` `#4a789c` `#5486aa` `#5f95ba` `#6da0c1` `#7aabc8` `#8bb7cf` `#9cc2d6` `#b0d0df` `#c4dde8` | The Blub's coat drawn as vanilla's mobs are (D-029, owner playtest 3: "less cell shaded"): the `blub` ramp with a shade between each pair, for soft gradients |
+| `blub_mouth` | `#2a2246` `#4a3a68` | Its small mouth, always visible (D-029) |
+| `blub_blush` | `#a7a3d9` | Its cheeks |
+| `nester` | `#2a6470` `#357987` `#3f8796` `#4b9bac` `#4fa5b7` `#66b8c6` | The Nester's hide (D-034): Dungeons II's teal |
+| `nester_jaw` | `#7f6648` `#9b805d` `#b8976d` `#d3b081` `#e6caa0` | Its lower jaw and feet: tan, speckled darker |
+| `nester_mouth` | `#5a2420` `#8a3b2a` `#c4683a` `#e39a4a` | Inside its mouth: dark at the back, warm at the lips |
+| `nester_tooth` | `#cfc8b0` `#f2eedc` | Its teeth |
+| `nester_eye` | `#2e3d5f` `#1c2440` `#f2f4f6` | Its eyes: navy, darker at the corner, a white glint |
+| `nester_soul` | `#2f9fb5` `#47c4d8` `#56e6f3` `#7cf8fa` `#a7f9fa` `#d9fffd` | The enduring Nester: pale glowing cyan, as Dungeons II's soul corrupted Nester |
+| `soil` | `#34222a` `#432d33` `#533a3f` `#64454a` `#765155` `#8a5e60` `#9f6d6d` `#b5807c` | Sift soil: the maroon earth under the teaser's grass hill, eight shades as vanilla dirt (owner playtest 2) |
+| `tidewrack` | `#2c3317` `#3d4620` `#535e29` `#6b7832` `#85903b` `#a2a548` `#c0b65a` `#d8c878` | Tidewrack's ribbons (block_flora_ii.md §1): olive at the root to ochre at the tips; warm, never blight's teal |
+| `tidewrack_underside` | `#3b6a52` `#538a69` `#73a985` | The sea-green undersides an open frond shows |
+| `endure_leaf` | `#2f3e35` `#435549` `#5a6e5f` `#738a78` | The Endure bloom's grey-green rosette and sepals |
+| `endure_petal` | `#48619a` `#5c78b3` `#7690c9` `#93a9db` `#b2c4ea` `#d3e0f6` `#eef4fd` | Its petals: periwinkle to pale blue, cool (no pink, no warm white: those are the Bloombud's) |
+| `glowcap` | `#4f7d6c` `#6c9f8a` `#8fc2aa` `#b5dfc8` `#dcf6e6` | Glowcap caps: pale seafoam green |
+| `glowcap_stem` | `#34433d` `#4a5c54` `#63786d` | Glowcap gills and stems |
+| `chime_bell` | `#557aa0` `#7398bc` `#97b8d6` `#bdd6ec` `#e2f0fb` | Chime bells: pale ice blue (canon's "pale-blue flowers") |
+| `chime_stem` | `#2a3f2e` `#34503a` `#47664b` `#5f805f` | The chime bell's arched stem, and the dark of a bell's mouth |
+| `lumen` | `#6276a3` `#8597c2` `#a9bbde` `#cddcf2` `#ecf3fd` `#ffffff` | The lumen bloom: cool white to moonlit blue, a white core |
+| `ichor_lily` | `#1b4a55` `#22606a` `#2c7a7c` `#3c928a` `#56a99a` `#78c0aa` | The ichor lily's pad (D-029): deep teal to sea-green, cooler than the Meadow's coral and darker than the ichor it floats on |
+| `ichor_lily_bud` | `#b77fcf` `#cf9fe0` `#e4c3ee` `#f5e3f8` `#fffaff` | Its glowing bud and the glimmers it lets go: lilac to white |
+| `particle` | `#f0cf8c` `#f9e6b0` `#fff4d6` `#fffdf5` `#ffd9d2` | Glow cores, trill motes |
+| `ore_coal` | `#1b191d` `#2d2a30` `#45414a` | Ores (survival_sift.md §2): vanilla's ore colours, so each reads at a glance as the ore it is; the clusters are drawn anew on hymnstone |
+| `ore_copper` | `#7c3f22` `#a5562b` `#c9733a` `#e39a5a` `#4f9a7c` `#72c3a0` | Copper with a verdigris fleck |
+| `ore_iron` | `#8a6a52` `#b38e6d` `#d8af8a` `#efd2b2` | |
+| `ore_gold` | `#a86e14` `#dca01f` `#fcd23b` `#fff09a` | |
+| `ore_redstone` | `#6e0b0b` `#a51414` `#dc2a20` `#ff5a48` | |
+| `ore_lapis` | `#1a2f7a` `#2546a8` `#3a6ad6` `#6c98ee` | |
+| `ore_diamond` | `#1d7a7a` `#2fb5b0` `#5fe0d6` `#b8fff4` | |
+| `ore_emerald` | `#0d6b2a` `#17a040` `#3fd56a` `#9cf5b4` | |
+| `echo` | `#0a2a33` `#0f414d` `#166a72` `#2ea39e` `#8fe6d8` | Echo ore (an invention, survival_sift.md §2): the echo shard's deep teal, pulsing |
+| `tide_root` | `#5a3f70` `#7a5a94` `#9c7cb6` `#bf9fd4` `#dcc3ec` | The tide root (survival_sift.md §1): a lilac root, ichor-fed |
+| `tide_root_baked` | `#6a3c3e` `#8e544c` `#b2725c` `#cf9672` `#e8bb8f` | Baked, the root browns |
+| `songfruit` | `#3d3480` `#5648a6` `#7464c6` `#9c8de4` `#cbc2fa` | Songfruit: indigo to pale lavender, the songwood's fruit |
+| `bowl` | `#4a2c18` `#6b4226` `#8c5a34` `#ad7646` | A wooden bowl's browns (the glowcap stew) |
+| `rift_gold` | `#7a4a12` `#b07a1c` `#e0b23a` `#fbe27a` | The rift fork's gold stem (survival_sift.md §2.4) |
+| `carapace_stone` | `#1d3f55` `#24506a` `#2c6280` `#3a7896` `#4d8eab` `#64a3be` | The Carapace's "dark blue stone" (D-035): dusty blue, after the official screenshot |
+| `sift_dust` | `#8fb9bf` `#a3cacd` `#b8d8d9` `#cbe4e3` `#dcefed` | Its dust fields: pale blue-white |
+| `carapace_red` | `#5e1838` `#86224f` `#ad3367` `#d14f86` `#e874a3` | Its red grass: crimson to coral pink |
+| `carapace_yellow` | `#6f7022` `#949330` `#b9b444` `#dbd462` `#efe98c` | Its yellow grass |
+| `husk_bone` | `#9fa69b` `#b9bfb2` `#d2d6c8` `#e8eadf` | Husk fossils' bone: ivory with a cool cast |
+| `singer_fur` | `#3f7563` `#4f8a76` `#5f9f88` `#74b59c` `#8acaaf` `#a3dcc2` `#c0ecd6` | The Singer's shag (canon "pale green bodies, shaggy fur"; the ad's mint, RESEARCH.md S-I8) |
+| `singer_face` | `#2e4a40` `#1d2f29` | Its tiny eyes |
+| `singer_antler` | `#b7a67c` `#c9b98f` `#dccfa6` `#eee4c4` `#fbf6e4` | Its pale antlers, and the horn it gives |
+| `singer_gold` | `#c99a3a` `#e0b85a` `#f2d68a` `#fbefc4` | The star on its chest, the horn's bands |
+| `soul` | `#7fd8e0` `#a6ebef` `#c8f7f7` `#e4fdfc` `#ffffff` | Soul blocks and soul light: pale glowing cyan (the ad's cube at the Singer's feet) |
+
+## Texture → allowed ramps
+
+| Texture (under `assets/thesift/textures/`) | Ramps |
+|---|---|
+| `block/hymnstone.png` | hymnstone |
+| `block/hymnstone_2.png` | hymnstone |
+| `block/hymnstone_3.png` | hymnstone |
+| `block/hymnstone_bricks.png` | hymnstone |
+| `block/healthy_sculk_top.png` | healthy_sculk |
+| `block/healthy_sculk_top_2.png` | healthy_sculk |
+| `block/healthy_sculk_top_3.png` | healthy_sculk |
+| `block/healthy_sculk_side.png` | healthy_sculk, soil |
+| `block/healthy_sculk_grass.png` | healthy_sculk |
+| `block/tall_healthy_sculk_grass_bottom.png` | healthy_sculk |
+| `block/tall_healthy_sculk_grass_top.png` | healthy_sculk |
+| `block/songwood_log.png` | songwood_bark, flute |
+| `block/songwood_log_2.png` | songwood_bark, flute |
+| `block/songwood_log_top.png` | songwood_bark, songwood_planks, flute |
+| `block/songwood_planks.png` | songwood_planks |
+| `block/songwood_leaves.png` | songwood_leaves |
+| `block/songwood_leaves_2.png` | songwood_leaves |
+| `block/songwood_sapling.png` | songwood_bark, songwood_leaves, flute |
+| `block/songwood_drapes.png` | songwood_leaves |
+| `block/songwood_drapes_tip.png` | songwood_leaves |
+| `block/sift_soil.png` | soil |
+| `block/tide_sand.png` | tide_sand |
+| `block/tide_sand_2.png` | tide_sand |
+| `block/tide_sand_3.png` | tide_sand |
+| `block/tide_vent_top.png` | hymnstone, ichor |
+| `block/tide_vent_side.png` | hymnstone, ichor |
+| `block/gatestone.png` | gatestone, hymnstone, glyph |
+| `block/gatestone_top.png` | gatestone, hymnstone, glyph |
+| `block/sift_membrane.png` | membrane |
+| `block/ichor_still.png` | ichor_sheen |
+| `block/ichor_flow.png` | ichor_sheen |
+| `block/ichor_film.png` | ichor, ichor_sheen |
+| `block/ichor_overlay.png` | ichor_sheen |
+| `block/tidewrack.png` | tidewrack, tidewrack_underside |
+| `block/tidewrack_closed.png` | tidewrack |
+| `block/tidewrack_knot.png` | tidewrack |
+| `block/tidewrack_picked.png` | tidewrack |
+| `block/endure_bloom.png` | endure_leaf, endure_petal |
+| `block/endure_bloom_emissive.png` | endure_petal |
+| `block/endure_bloom_closed.png` | endure_leaf |
+| `block/endure_bloom_picked.png` | endure_leaf |
+| `block/glowcap.png` | glowcap, glowcap_stem |
+| `block/chime_bell_flower.png` | chime_bell, chime_stem |
+| `block/chime_bell_flower_ringing.png` | chime_bell, chime_stem |
+| `block/lumen_bloom.png` | lumen |
+| `block/lumen_bloom_core.png` | lumen |
+| `item/tidewrack_frond.png` | tidewrack, tidewrack_underside |
+| `item/endure_petal.png` | endure_petal |
+| `block/lumen_lantern.png` | hymnstone, lumen |
+| `block/ichor_lily.png` | ichor_lily |
+| `block/ichor_lily_bud.png` | ichor_lily_bud, ichor_lily |
+| `item/ichor_lily.png` | ichor_lily, ichor_lily_bud |
+| `particle/glimmer.png` | ichor_lily_bud |
+| `item/lumen_lantern.png` | hymnstone, lumen |
+| `item/ichor_bucket.png` | pail, ichor |
+| `particle/glow_petal.png` | healthy_sculk, particle |
+| `particle/trill.png` | particle |
+| `block/cobbled_hymnstone.png` | hymnstone |
+| `block/smooth_hymnstone.png` | hymnstone |
+| `block/polished_hymnstone.png` | hymnstone |
+| `block/cracked_hymnstone_bricks.png` | hymnstone |
+| `block/chiseled_hymnstone_bricks.png` | hymnstone |
+| `block/hymnstone_coal_ore.png` | hymnstone, ore_coal |
+| `block/hymnstone_copper_ore.png` | hymnstone, ore_copper |
+| `block/hymnstone_iron_ore.png` | hymnstone, ore_iron |
+| `block/hymnstone_gold_ore.png` | hymnstone, ore_gold |
+| `block/hymnstone_redstone_ore.png` | hymnstone, ore_redstone |
+| `block/hymnstone_lapis_ore.png` | hymnstone, ore_lapis |
+| `block/hymnstone_diamond_ore.png` | hymnstone, ore_diamond |
+| `block/hymnstone_emerald_ore.png` | hymnstone, ore_emerald |
+| `block/echo_ore.png` | hymnstone, echo |
+| `block/tide_roots_stage0.png` | tidewrack_underside, tide_root |
+| `block/tide_roots_stage1.png` | tidewrack_underside, tide_root |
+| `block/tide_roots_stage2.png` | tidewrack_underside, tide_root |
+| `block/tide_roots_stage3.png` | tidewrack_underside, tide_root |
+| `item/tide_root.png` | tidewrack_underside, tide_root |
+| `item/baked_tide_root.png` | tide_root_baked |
+| `item/songfruit.png` | songfruit, songwood_bark, songwood_leaves |
+| `item/glowcap_stew.png` | bowl, glowcap, glowcap_stem |
+| `entity/rift/rift.png` | ichor, membrane |
+| `item/rift_fork.png` | rift_gold, echo |
+| `block/carapace_stone.png` | carapace_stone, sift_dust |
+| `block/sift_dust.png` | sift_dust, carapace_stone |
+| `block/husk_bone_block_side.png` | husk_bone |
+| `block/husk_bone_block_top.png` | husk_bone |
+| `block/red_carapace_grass.png` | carapace_red |
+| `block/yellow_carapace_grass.png` | carapace_yellow |
+| `entity/singer/singer.png` | singer_fur, singer_face, singer_antler, singer_gold |
+| `item/singer_spawn_egg.png` | singer_fur, singer_face, singer_gold |
+| `block/soul_block.png` | soul |
+| `block/chorus_stone_side.png` | hymnstone |
+| `block/chorus_stone_top.png` | hymnstone |
+| `block/chorus_stone_side_filled.png` | hymnstone, soul |
+| `block/chorus_stone_top_filled.png` | hymnstone, soul |
+| `block/grove_heart_side.png` | healthy_sculk, hymnstone, soul |
+| `block/grove_heart_top.png` | healthy_sculk, soul |
+| `item/singers_horn.png` | singer_antler, singer_gold |
+| `entity/blub/blub.png` | blub_fur, blub_eye, blub_mouth, blub_blush |
+| `entity/blub/blub_glow.png` | membrane |
+| `entity/nester/nester.png` | nester, nester_jaw, nester_mouth, nester_tooth, nester_eye |
+| `entity/nester/nester_soul.png` | nester_soul, nester_mouth, nester_tooth, nester_eye |
+| `entity/nester/nester_glow.png` | nester_soul |
+| `item/nester_spawn_egg.png` | nester, nester_jaw, nester_mouth, nester_tooth, nester_eye |
+| `item/blub_spawn_egg.png` | blub, songwood_bark |

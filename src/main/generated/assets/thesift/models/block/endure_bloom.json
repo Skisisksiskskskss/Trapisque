@@ -1,0 +1,7 @@
+{
+  "parent": "thesift:block/template_flat_plant_emissive",
+  "textures": {
+    "plant": "thesift:block/endure_bloom",
+    "plant_emissive": "thesift:block/endure_bloom_emissive"
+  }
+}

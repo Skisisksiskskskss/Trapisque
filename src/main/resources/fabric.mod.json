@@ -1,0 +1,36 @@
+{
+	"schemaVersion": 1,
+	"id": "thesift",
+	"version": "${version}",
+	"name": "The Sift",
+	"description": "A fan-made interpretation of the Sift, the dimension from Minecraft Dungeons II. Unofficial fan project, not affiliated with or endorsed by Mojang Studios or Microsoft.",
+	"authors": [
+		"The Sift contributors"
+	],
+	"license": [
+		"MIT",
+		"LicenseRef-ARR-Assets"
+	],
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"thesift.TheSift"
+		],
+		"client": [
+			"thesift.client.TheSiftClient"
+		],
+		"fabric-datagen": [
+			"thesift.datagen.TheSiftDataGenerator"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.3",
+		"java": ">=25",
+		"fabric-api": ">=0.161.0"
+	},
+	"mixins": [
+		"thesift.mixins.json"
+	],
+	"accessWidener": "thesift.classtweaker"
+}

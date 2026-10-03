@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_endure_petal": {
+      "conditions": {
+        "items": [
+          {
+            "items": "thesift:endure_petal"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipes": "thesift:lumen_lantern"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_endure_petal"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "thesift:lumen_lantern"
+    ]
+  }
+}

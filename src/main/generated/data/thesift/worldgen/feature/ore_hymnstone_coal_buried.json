@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:ore",
+  "discard_chance_on_air_exposure": 0.5,
+  "size": 17,
+  "targets": [
+    {
+      "state": "thesift:hymnstone_coal_ore",
+      "target": {
+        "block": "thesift:hymnstone",
+        "predicate_type": "minecraft:block_match"
+      }
+    }
+  ]
+}

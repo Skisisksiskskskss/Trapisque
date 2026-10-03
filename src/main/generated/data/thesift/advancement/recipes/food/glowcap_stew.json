@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_glowcap": {
+      "conditions": {
+        "items": [
+          {
+            "items": "thesift:glowcap"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipes": "thesift:glowcap_stew"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_glowcap"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "thesift:glowcap_stew"
+    ]
+  }
+}

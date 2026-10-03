@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "end": "thesift:block/tide_vent_top",
+    "side": "thesift:block/tide_vent_side"
+  }
+}
