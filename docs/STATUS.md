@@ -1,7 +1,7 @@
 # STATUS (session 1, 2026-10-02)
 - **Phase / Milestone:** M1 done; the owner's playtest reworks (`v0.1.1-alpha` to `v0.1.4-alpha`) done; M2 under way (flora, materials and items in code; the hunt next).
-- **Autonomy:** **full-auto** (D-014). **The build to try:** https://github.com/Skisisksiskskskss/Trapisque/releases/tag/v0.1.10-alpha: rifts both ways, the rift fork, the `start_in_sift` gamerule (D-032), and the canon biomes the Carapace and Lullaby Hills (D-035), on top of v0.1.8's Nester and v0.1.7's ores, food and hymnstone family; steps in `docs/PLAYTEST.md` (top sections).
-- **Current WP:** the owner's survival request (D-032) is built: WP-081..083 done. Next, canon-first: the Singer (bible M4: Singer's grove, Singer's horn), then sculkers in the Carapace. WP-066/067 leftovers (Quiet Waters, cost measurements) wait behind them.
+- **Autonomy:** **full-auto** (D-014). **The build to try:** https://github.com/Skisisksiskskskss/Trapisque/releases/tag/v0.1.11-alpha: the Singer, its groves, soul blocks and the Singer's horn (D-036), on top of v0.1.10's rifts, Sift start and canon biomes (D-032, D-035), v0.1.8's Nester and v0.1.7's ores and food; steps in `docs/PLAYTEST.md` (top sections).
+- **Current WP:** waiting on the owner's playtest of v0.1.7-v0.1.11. Canon-first next: sculkers in the Carapace, echo golems in Lullaby Hills, the other Sifters (baby, bearded, tall). WP-066/067 leftovers (Quiet Waters, cost measurements) wait behind them.
 - **Done this session:**
   - Phases 0–3 and M1 (WP-040..053).
   - The owner's playtest rework:
@@ -21,7 +21,7 @@
   2. WP-064: the M2 blocks' design doc and critique (the "Sift has no buds" constraint binds its flora).
   3. The M2 code: WP-063 (Hollows, glowcap pools), WP-066 (the hunt system), WP-067/068 (Nester, Bloombud).
 - **Build:** ✅ `./gradlew build` (with GameTests) · datagen no-diff ✅ · `check_bible.py` ✅ · `check_palette.py` ✅ (86 textures) · `check_lang.py` ✅
-- **Tests:** 98/98 server GameTests. The client GameTest walks the entry, the Tides, a basin and the blubs, and its landscape shots (`look_*`) compare the land with the teasers.
+- **Tests:** 105 server GameTests on CI (rifts, survival materials, biomes). The client GameTest walks the entry, the Tides, a basin and the blubs, and takes the landscape shots (`look_*`).
 - **Server boot:** ✅ (the GameTest dedicated server on every build).
 - **Blockers:** none. The Netlify site `magnificent-gelato-563c55` fails on every PR because of its own configuration (owner-side; see the PR comment).
 - **Awaiting owner:** nothing (full-auto). The playtest questions are in `docs/PLAYTEST.md`.
