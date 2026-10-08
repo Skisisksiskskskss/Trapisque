@@ -28,7 +28,7 @@ local function resolve(colors, c: any): Color3
 	return colors[c] or colors.ink
 end
 
-local function opts(op, extra)
+local function opts(op, extra: any?)
 	local o = {}
 	if op.t then
 		o.t = op.t
@@ -83,7 +83,20 @@ local function transformOp(op, rot: number, s: number, dx: number, dy: number, f
 	local tp = makeTransform(rot, s, dx, dy, fx)
 	local out = table.clone(op)
 	local kind = op[1]
-	if kind == "line" then
+	if kind == "group" then
+		-- nested group: apply its own transform first, then ours, and pass its colour down
+		local flat = {}
+		for i, child in op.ops do
+			local inner = transformOp(child, op.rot or 0, op.s or 1, op.dx or 0, op.dy or 0, op.fx == true)
+			if op.c and inner.c == nil then
+				inner.c = op.c
+			end
+			flat[i] = transformOp(inner, rot, s, dx, dy, fx)
+		end
+		out.ops = flat
+		out.rot, out.s, out.dx, out.dy, out.fx, out.c = nil, nil, nil, nil, nil, nil
+		return out
+	elseif kind == "line" then
 		out[2], out[3] = tp(op[2], op[3])
 		out[4], out[5] = tp(op[4], op[5])
 		out[6] = op[6] * s
@@ -98,7 +111,7 @@ local function transformOp(op, rot: number, s: number, dx: number, dy: number, f
 		if kind == "taper" then
 			out[4] = op[4] * s
 		end
-	elseif kind ~= "group" then
+	else
 		out[2], out[3] = tp(op[2], op[3])
 		for _, i in SIZE_ARGS[kind] or {} do
 			out[i] = op[i] * s
@@ -129,6 +142,9 @@ function Icons.draw(canvas: Instance, ops: { any }, colors)
 			local sub = {}
 			for i, child in op.ops do
 				sub[i] = transformOp(child, op.rot or 0, op.s or 1, op.dx or 0, op.dy or 0, op.fx == true)
+				if op.c and sub[i].c == nil then
+					sub[i].c = op.c
+				end
 			end
 			Icons.draw(canvas, sub, colors)
 		elseif kind == "rect" then
@@ -208,15 +224,13 @@ function Icons.make(parent: Instance, id: string, colors, props: { [string]: any
 	return canvas
 end
 
--- Carved look: light highlight under a dark engraving, on wood of color `wood`.
+-- Burned-in look: the symbol in dark wood on wood of color `wood` (one flat layer).
 function Icons.engraved(parent: Instance, id: string, wood: Color3, props: { [string]: any }?, accent: Color3?): Frame
 	local ops = IconData[id] or {}
 	local holder = Util.frame(parent, props)
 	holder.Name = "Engraved_" .. id
-	local hiColors = { ink = Util.shade(wood, 0.45), bg = wood, acc = Util.shade(wood, 0.45), acc2 = Util.shade(wood, 0.45), hi = wood }
-	local inkColors = { ink = Util.shade(wood, -0.62), bg = wood, acc = accent or Util.shade(wood, -0.62), acc2 = accent or Util.shade(wood, -0.62), hi = Util.shade(wood, 0.25) }
-	local hi = Shapes.canvas(holder, { Name = "Highlight", Position = UDim2.new(0.5, 0, 0.53, 0), ZIndex = 1 })
-	Icons.draw(hi, ops, hiColors)
+	local burn = Util.shade(wood, -0.62)
+	local inkColors = { ink = burn, bg = wood, acc = accent or burn, acc2 = accent or burn, hi = wood }
 	local dark = Shapes.canvas(holder, { Name = "Ink", ZIndex = 2 })
 	Icons.draw(dark, ops, inkColors)
 	return holder

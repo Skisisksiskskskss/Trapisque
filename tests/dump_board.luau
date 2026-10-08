@@ -7,6 +7,8 @@ local Bot = requireModule("Shared/Game/Bot")
 local BoardLayout = requireModule("Client/UI/Match/BoardLayout")
 local IconData = requireModule("Client/UI/IconData")
 local DecorData = requireModule("Client/UI/DecorData")
+local PawnPatterns = requireModule("Client/UI/PawnPatterns")
+local Cosmetics = requireModule("Shared/Meta/Cosmetics")
 
 local function enc(v)
 	local t = type(v)
@@ -70,4 +72,26 @@ for i, def in Maps.list do
 	end
 	table.insert(scenes, { layout = layout, snapshot = g:snapshot(1) })
 end
-print('{"scenes":' .. enc(scenes) .. ',"icons":' .. enc(IconData) .. ',"decor":' .. enc(DecorData) .. "}")
+-- pawn skins used in the preview (seat -> skin), plus everything needed to draw them
+local skins = { "pawn_classic", "pawn_ocean", "pawn_bee", "pawn_galaxy" }
+local looks = {}
+for _, id in skins do
+	looks[id] = Cosmetics.get(id).look
+end
+local patterns = {}
+for k, v in pairs(PawnPatterns) do
+	if k ~= "pips" then
+		patterns[k] = v
+	end
+end
+local slots = {}
+for n, layout in BoardLayout.PawnSlots do
+	local list = {}
+	for i, p in ipairs(layout) do
+		list[i] = p
+	end
+	slots[n] = { scale = layout.scale, at = list }
+end
+print('{"scenes":' .. enc(scenes) .. ',"icons":' .. enc(IconData) .. ',"decor":' .. enc(DecorData)
+	.. ',"skins":' .. enc(skins) .. ',"looks":' .. enc(looks) .. ',"patterns":' .. enc(patterns)
+	.. ',"slots":' .. enc(slots) .. "}")

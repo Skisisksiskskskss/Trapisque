@@ -9,21 +9,33 @@ local CardStyle = {}
 CardStyle.aspect = 0.72 -- width / height
 CardStyle.corner = 0.09 -- corner radius, fraction of width
 
--- painted category band across the top
-CardStyle.band = { y = 0.045, h = 0.13, inset = 0.06 }
--- carved icon in the middle
-CardStyle.icon = { cx = 0.5, cy = 0.47, size = 0.6 }
--- paper name strip near the bottom
-CardStyle.plate = { x = 0.09, y = 0.77, w = 0.82, h = 0.15 }
+-- Everything sits inside the carved frame with the same margin all round:
+-- frame inset 0.045 of the width, content inset 0.08 of the width (0.0576 of the height).
+CardStyle.frameInset = 0.045
+-- painted category band across the top (fractions of width / height)
+CardStyle.band = { y = 0.0576, h = 0.13, inset = 0.08 }
+-- burned-in symbol, centred between the band and the name strip
+CardStyle.icon = { cx = 0.5, cy = 0.4925, size = 0.6 }
+-- paper name strip along the bottom
+CardStyle.plate = { x = 0.08, y = 0.7974, w = 0.84, h = 0.145 }
 
--- Wood grain strokes (normalized card space: x across, y down)
+-- Wood grain: one long stroke in the open strip above the symbol and one below it
+-- (normalized card space: x across, y down), so no grain runs under anything.
 CardStyle.grain = {
-	{ { 0.14, 0.24 }, { 0.3, 0.27 }, { 0.5, 0.25 }, { 0.7, 0.28 }, { 0.86, 0.26 } },
-	{ { 0.1, 0.36 }, { 0.32, 0.34 }, { 0.46, 0.37 }, { 0.66, 0.35 }, { 0.9, 0.37 } },
-	{ { 0.1, 0.6 }, { 0.26, 0.62 }, { 0.48, 0.6 }, { 0.68, 0.63 }, { 0.9, 0.61 } },
-	{ { 0.14, 0.7 }, { 0.36, 0.69 }, { 0.58, 0.71 }, { 0.86, 0.69 } },
+	{ { 0.12, 0.236 }, { 0.32, 0.226 }, { 0.52, 0.24 }, { 0.72, 0.228 }, { 0.88, 0.236 } },
+	{ { 0.12, 0.752 }, { 0.3, 0.762 }, { 0.5, 0.748 }, { 0.7, 0.76 }, { 0.88, 0.752 } },
 }
-CardStyle.knot = { cx = 0.78, cy = 0.66, w = 0.12, h = 0.05 }
+
+-- Text sizes as a fraction of the card's width: the same on every card, stepping
+-- down only when a line doesn't fit (Cards.lua cardText)
+CardStyle.text = {
+	plate = 0.12,
+	title = 0.15,
+	tag = 0.06,
+	header = 0.06,
+	body = 0.078,
+	footer = 0.056,
+}
 
 -- How each kind of card is played (shown on the back)
 CardStyle.useText = {

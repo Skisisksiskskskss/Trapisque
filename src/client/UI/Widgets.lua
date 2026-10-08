@@ -17,13 +17,13 @@ local hex = Theme.hex
 local Widgets = {}
 
 Widgets.ButtonStyles = {
-	wood = { face = C.wood, light = C.woodLight, dark = C.woodDark, stroke = C.woodDeep, text = C.engrave, hi = C.engraveLight, engraved = true },
-	brass = { face = C.brass, light = C.brassLight, dark = C.brassDark, stroke = hex("6E4F12"), text = hex("4A3008"), hi = hex("FFF1C2"), engraved = true },
+	wood = { face = C.wood, light = C.woodLight, dark = C.woodDark, stroke = C.woodDeep, text = C.engrave, engraved = true },
+	brass = { face = C.brass, light = C.brassLight, dark = C.brassDark, stroke = hex("6E4F12"), text = hex("4A3008"), engraved = true },
 	red = { face = hex("C2513B"), light = hex("DD735D"), dark = hex("8A3122"), stroke = hex("5A1D12"), text = C.white, outline = hex("5A1D12") },
 	green = { face = hex("5E9A3C"), light = hex("80BB5C"), dark = hex("3D6B24"), stroke = hex("284616"), text = C.white, outline = hex("284616") },
 	blue = { face = hex("4C80B8"), light = hex("6FA0D4"), dark = hex("33597F"), stroke = hex("1F3A55"), text = C.white, outline = hex("1F3A55") },
 	purple = { face = hex("7A61A8"), light = hex("9A83C8"), dark = hex("554279"), stroke = hex("362A4E"), text = C.white, outline = hex("362A4E") },
-	parchment = { face = C.parchment, light = hex("FFF7E2"), dark = C.parchmentDark, stroke = C.parchmentEdge, text = C.ink, hi = C.white, engraved = true },
+	parchment = { face = C.parchment, light = hex("FFF7E2"), dark = C.parchmentDark, stroke = C.parchmentEdge, text = C.ink, engraved = true },
 	dark = { face = hex("3A281B"), light = hex("4D3726"), dark = hex("221710"), stroke = hex("120B07"), text = C.parchment, outline = hex("120B07") },
 }
 
@@ -79,23 +79,11 @@ function Widgets.label(parent: Instance?, o: { [string]: any }): TextLabel
 	return label
 end
 
--- Carved text: dark letters with a light edge underneath.
+-- Burned-in text on wood: dark letters, one flat layer.
 function Widgets.carved(parent: Instance, o: { [string]: any }): TextLabel
-	local hiOpts = table.clone(o)
-	hiOpts.color = o.hi or C.engraveLight
-	hiOpts.name = "CarveHighlight"
-	local hiLabel = Widgets.label(parent, hiOpts)
-	hiLabel.Position = (o.position or UDim2.new()) + UDim2.fromOffset(0, 1.5)
-	hiLabel.TextTransparency = 0.25
-	local main = Widgets.label(parent, o)
-	main.ZIndex = (o.z or 1) + 1
-	main:GetPropertyChangedSignal("Text"):Connect(function()
-		hiLabel.Text = main.Text
-	end)
-	main:GetPropertyChangedSignal("Visible"):Connect(function()
-		hiLabel.Visible = main.Visible
-	end)
-	return main
+	local opts = table.clone(o)
+	opts.color = o.color or C.engrave
+	return Widgets.label(parent, opts)
 end
 
 ---------------------------------------------------------------------------
@@ -181,7 +169,6 @@ function Widgets.button(parent: Instance?, o: { [string]: any })
 	end
 
 	local label
-	local hiLabel
 	if o.text then
 		local textHolder = Util.frame(content, {
 			Name = "TextHolder",
@@ -201,23 +188,8 @@ function Widgets.button(parent: Instance?, o: { [string]: any })
 			outline = style.outline,
 			outlineThickness = 2,
 		}
-		if style.engraved then
-			-- carved letters: a light edge just below the dark text
-			local hiOpts = table.clone(textOpts)
-			hiOpts.color = style.hi
-			hiOpts.z = 5
-			hiLabel = Widgets.label(textHolder, hiOpts)
-			hiLabel.AutomaticSize = Enum.AutomaticSize.X
-			hiLabel.Position = UDim2.fromOffset(0, 1.5)
-			hiLabel.TextTransparency = 0.3
-		end
 		label = Widgets.label(textHolder, textOpts)
 		label.AutomaticSize = Enum.AutomaticSize.X
-		if hiLabel then
-			label:GetPropertyChangedSignal("Text"):Connect(function()
-				hiLabel.Text = label.Text
-			end)
-		end
 	end
 
 	local btn = { root = root, label = label, face = face, enabled = o.disabled ~= true, hovering = false }
@@ -412,7 +384,7 @@ function Widgets.panel(parent: Instance?, o: { [string]: any }): (Frame, Frame)
 	if o.shadow ~= false then
 		task.defer(function()
 			if root.Parent then
-				Util.shadow(root, { offset = 6, blur = 14, transparency = 0.55 })
+				Util.shadow(root, { offset = 6, transparency = 0.6 })
 			end
 		end)
 	end
@@ -430,6 +402,7 @@ end
 
 -- Title ribbon (scroll banner) centred on the top edge of `parent`.
 function Widgets.ribbon(parent: Instance, text: string, o: { [string]: any }?)
+	-- a title cartouche: a paper plaque with a double inked border (like the map's frame)
 	local opts = o or {}
 	local holder = Util.frame(parent, {
 		Name = "Ribbon",
@@ -438,21 +411,6 @@ function Widgets.ribbon(parent: Instance, text: string, o: { [string]: any }?)
 		Size = UDim2.fromOffset(opts.width or 280, 44),
 		ZIndex = 20,
 	})
-	local tailColor = Util.shade(opts.color or C.parchmentDark, -0.1)
-	for _, side in { -1, 1 } do
-		local tail = Util.new("Frame", {
-			Name = "Tail",
-			BackgroundColor3 = tailColor,
-			BorderSizePixel = 0,
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.new(0.5 + side * 0.5, side * 6, 0.62, 0),
-			Size = UDim2.fromOffset(40, 30),
-			ZIndex = 20,
-			Parent = holder,
-		})
-		Util.corner(tail, 4)
-		Util.stroke(tail, C.ink, 2, 0.2)
-	end
 	local band = Util.new("Frame", {
 		Name = "Band",
 		BackgroundColor3 = opts.color or C.parchmentMid,
@@ -463,13 +421,25 @@ function Widgets.ribbon(parent: Instance, text: string, o: { [string]: any }?)
 	})
 	Util.corner(band, 8)
 	Util.stroke(band, C.ink, 2, 0.1)
+	local inner = Util.new("Frame", {
+		Name = "Inner",
+		BackgroundTransparency = 1,
+		Position = UDim2.fromOffset(5, 5),
+		Size = UDim2.new(1, -10, 1, -10),
+		ZIndex = 22,
+		Parent = band,
+	})
+	Util.corner(inner, 5)
+	Util.stroke(inner, C.ink, 1, 0.45)
 	Widgets.label(band, {
 		text = text,
 		font = "display",
 		size = 28,
 		color = C.ink,
 		align = "center",
-		sizeUDim = UDim2.fromScale(1, 1),
+		sizeUDim = UDim2.new(1, -16, 1, -8),
+		anchor = Vector2.new(0.5, 0.5),
+		position = UDim2.fromScale(0.5, 0.5),
 		scaled = true,
 		z = 23,
 	})

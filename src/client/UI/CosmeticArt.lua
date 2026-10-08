@@ -35,7 +35,7 @@ local RAINBOW = Util.seq({
 })
 CosmeticArt.RAINBOW = RAINBOW
 
--- Keeps a UIGradient slowly rotating (used for "spin" skins and mythic glows).
+-- Keeps a UIGradient slowly rotating (used for "spin" skins and rainbow titles).
 local spinning = {}
 RunService.RenderStepped:Connect(function(dt)
 	for g, speed in spinning do
@@ -82,29 +82,11 @@ function CosmeticArt.pawn(parent: Instance?, skinId: string?, seatColor: Color3,
 		end
 	end
 
-	-- soft shadow
-	Shapes.pill(root, 0.5, 0.92, 0.8, 0.2, Theme.C.black, { t = 0.65, name = "Shadow" })
+	-- chip edge: the same size as the face plus its rim, peeking out below it
+	-- (the rim is a UIStroke, which sits outside the face: 0.78 + 2 x 0.09 x 0.78 = 0.92)
+	Shapes.circle(root, 0.5, 0.54, 0.92, Util.shade(seatColor, -0.45), { name = "Side" })
 
-	if look.glow then
-		local glow = Shapes.circle(root, 0.5, 0.5, 1.1, hex(look.glow, accent), { t = 0.72, name = "Glow" })
-		local s = Util.scaler(glow)
-		task.spawn(function()
-			while glow.Parent do
-				Util.tween(s, 0.9, { Scale = 1.08 }, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
-				task.wait(0.9)
-				if not glow.Parent then
-					break
-				end
-				Util.tween(s, 0.9, { Scale = 0.96 }, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
-				task.wait(0.9)
-			end
-		end)
-	end
-
-	-- chip edge (gives the pawn some thickness, like a real game piece)
-	Shapes.circle(root, 0.5, 0.57, 0.88, Util.shade(seatColor, -0.45), { name = "Side" })
-
-	local face = Shapes.circle(root, 0.5, 0.5, 0.88, fill, { name = "Face" })
+	local face = Shapes.circle(root, 0.5, 0.47, 0.78, fill, { name = "Face" })
 	if look.gradient then
 		-- only skins whose whole idea is a colour blend get one
 		local g = Util.grad(face, if look.fill == "rainbow" then RAINBOW else Util.seq({ fill, fill2 }), 60)
@@ -142,7 +124,6 @@ function CosmeticArt.dieLook(skinId: string?)
 		face2 = hex(look.face2, Theme.C.parchmentMid),
 		pip = hex(look.pip, Theme.C.ink),
 		edge = hex(look.edge, Theme.C.inkSoft),
-		glow = if look.glow then hex(look.glow, Theme.C.white) else nil,
 		spin = look.spin == true,
 		gradient = look.gradient == true,
 	}
@@ -164,12 +145,9 @@ function CosmeticArt.die(parent: Instance?, skinId: string?, value: number, prop
 			(root :: any)[k] = v
 		end
 	end
-	if look.glow then
-		local glow = Shapes.rect(root, 0.5, 0.5, 1.1, 1.1, look.glow, { r = 0.24, t = 0.6, name = "Glow" })
-		glow.ZIndex = 1
-	end
-	Shapes.rect(root, 0.5, 0.56, 0.92, 0.92, Util.shade(look.face2, -0.35), { r = 0.22, name = "Side" })
-	local face = Shapes.rect(root, 0.5, 0.5, 0.92, 0.92, look.face, { r = 0.22, name = "Face" })
+	-- side peeking out below the face and its edge stroke (0.84 + 2 x 0.05 x 0.84 = 0.924)
+	Shapes.rect(root, 0.5, 0.538, 0.924, 0.924, Util.shade(look.face2, -0.35), { r = 0.24, name = "Side" })
+	local face = Shapes.rect(root, 0.5, 0.462, 0.84, 0.84, look.face, { r = 0.22, name = "Face" })
 	if look.gradient then
 		local g = Util.grad(face, { look.face, look.face2 }, 70)
 		if look.spin then
@@ -254,7 +232,6 @@ function CosmeticArt.trailBurst(layer: Instance, trailId: string?, pos: Vector2,
 		elseif kind == "bubble" then
 			particle(layer, p, size, function(c)
 				Shapes.ring(c, 0.5, 0.5, 1, 0.14, pick, { px = size })
-				Shapes.circle(c, 0.35, 0.35, 0.2, Theme.C.white, { t = 0.3 })
 			end, life, drift)
 		elseif kind == "leaf" then
 			particle(layer, p, size, function(c)

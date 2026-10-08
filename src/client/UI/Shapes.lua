@@ -309,15 +309,4 @@ function Shapes.text(parent: Instance, cx: number, cy: number, w: number, h: num
 	return t
 end
 
--- Draws `draw(canvas, color)` twice for a carved-into-wood look: a light highlight
--- just below, the dark engraving on top.
-function Shapes.engraved(parent: Instance, draw: (Frame, Color3) -> (), ink: Color3, highlight: Color3, props: { [string]: any }?): Frame
-	local holder = Util.frame(parent, props)
-	local hi = Shapes.canvas(holder, { Name = "Highlight", Position = UDim2.new(0.5, 0, 0.5, 2), ZIndex = 1 })
-	draw(hi, highlight)
-	local dark = Shapes.canvas(holder, { Name = "Ink", ZIndex = 2 })
-	draw(dark, ink)
-	return holder
-end
-
 return Shapes

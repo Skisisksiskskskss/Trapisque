@@ -17,9 +17,25 @@ BoardLayout.Style = {
 	tileDepth = 0.16, -- height of the wooden side under each tile
 	margin = 2.1,
 	titleSpace = 1.3,
-	decorClear = 1.7, -- doodles keep this far from tile centers
-	decorSpacing = 2.0,
-	compassSize = 2.5,
+	coast = 1.29, -- radius of the pale land around each tile centre (BoardView draws it)
+	washInset = 0.55, -- where the sea / stone / swamp wash starts inside the paper
+	gap = 0.22, -- clear space between any two drawn things
+	decorReach = 0.6, -- a doodle's ink stays within this x its size from its centre
+	decorMin = 1.0,
+	decorMax = 2.1,
+	compassSize = 2.4,
+	compassReach = 0.62, -- compass rose + its "N"
+}
+
+-- Where pawns sit when several share a tile (offsets in hex units from the tile centre)
+-- and how much they shrink so they sit side by side instead of piling up.
+BoardLayout.PawnSlots = {
+	{ scale = 1, { 0, -0.3 } },
+	{ scale = 0.76, { -0.34, -0.24 }, { 0.34, -0.24 } },
+	{ scale = 0.68, { -0.33, -0.36 }, { 0.33, -0.36 }, { 0, 0.16 } },
+	{ scale = 0.64, { -0.3, -0.4 }, { 0.3, -0.4 }, { -0.3, 0.18 }, { 0.3, 0.18 } },
+	{ scale = 0.54, { -0.5, -0.34 }, { 0, -0.34 }, { 0.5, -0.34 }, { -0.26, 0.16 }, { 0.26, 0.16 } },
+	{ scale = 0.54, { -0.5, -0.34 }, { 0, -0.34 }, { 0.5, -0.34 }, { -0.5, 0.16 }, { 0, 0.16 }, { 0.5, 0.16 } },
 }
 
 local function dist(ax, ay, bx, by)
@@ -78,41 +94,65 @@ function BoardLayout.build(board, mapDef, Rng)
 		end
 	end
 
-	-- title banner: top centre unless tiles crowd it
+	-- title banner: top centre, in the strip reserved above the tiles
 	local titleY = y0 + S.titleSpace * 0.62
 	layout.title = { x = (x0 + x1) / 2, y = titleY, w = math.min(9, layout.w * 0.6), h = 1.25 }
+	local tb = layout.title
+	local titleHalfW, titleHalfH = tb.w / 2 + S.gap, tb.h / 2 + S.gap
 
-	-- compass rose: the emptiest corner
-	local rng = Rng.new(#mapDef.id * 7919 + board.count * 31)
-	local corners = {
-		{ x0 + S.compassSize * 0.75, y1 - S.compassSize * 0.75 },
-		{ x1 - S.compassSize * 0.75, y1 - S.compassSize * 0.75 },
-		{ x1 - S.compassSize * 0.75, y0 + S.compassSize * 0.75 + S.titleSpace * 0.4 },
-		{ x0 + S.compassSize * 0.75, y0 + S.compassSize * 0.75 + S.titleSpace * 0.4 },
-	}
-	local bestCorner, bestClear = corners[1], -1
-	for _, c in corners do
-		local clear = nearestTile(c[1], c[2])
-		if clear > bestClear then
-			bestCorner, bestClear = c, clear
+	-- Largest square (side) centred at (x, y) that stays inside the wash and clear of the title.
+	local innerX0, innerX1 = x0 + S.washInset + S.gap, x1 - S.washInset - S.gap
+	local innerY0, innerY1 = y0 + S.washInset + S.gap, y1 - S.washInset - S.gap
+	local function roomInFrame(x, y)
+		local side = 2 * math.min(x - innerX0, innerX1 - x, y - innerY0, innerY1 - y)
+		local ox = math.abs(x - tb.x) - titleHalfW
+		local oy = math.abs(y - tb.y) - titleHalfH
+		if ox < 0 and oy < 0 then
+			return 0
 		end
+		return math.min(side, 2 * math.max(ox, oy))
 	end
-	local compassSize = math.min(S.compassSize, math.max(1.4, (bestClear - 0.9) * 2))
-	layout.compass = { x = bestCorner[1], y = bestCorner[2], size = compassSize }
+	-- Largest size whose ink (reach x size) stays off the land around the path.
+	local function roomFromPath(x, y, reach)
+		return (nearestTile(x, y) - S.coast - S.gap) / reach
+	end
 
-	-- doodles in the empty spaces
+	local rng = Rng.new(#mapDef.id * 7919 + board.count * 31)
+
+	-- compass rose: the roomiest spot, leaning towards the corners
+	local best, bestScore = nil, -math.huge
+	local cy = innerY0 + 0.5
+	while cy < innerY1 - 0.5 do
+		local cx = innerX0 + 0.5
+		while cx < innerX1 - 0.5 do
+			local size = math.min(S.compassSize, roomFromPath(cx, cy, S.compassReach), roomInFrame(cx, cy) / (2 * S.compassReach))
+			if size >= 1.3 then
+				local corner = math.min(dist(cx, cy, x0, y0), dist(cx, cy, x1, y0), dist(cx, cy, x0, y1), dist(cx, cy, x1, y1))
+				local score = size - corner * 0.12
+				if score > bestScore then
+					best, bestScore = { x = cx, y = cy, size = size }, score
+				end
+			end
+			cx += 0.25
+		end
+		cy += 0.25
+	end
+	layout.compass = best
+
+	-- doodles in the empty spaces, none touching the path, the title, the compass or each other
 	local theme = DecorData.themes[mapDef.theme] or DecorData.themes.water
 	local candidates = {}
-	local step = 0.8
-	local y = y0 + 0.9
-	while y < y1 - 0.9 do
-		local x = x0 + 0.9
-		while x < x1 - 0.9 do
-			local clear = nearestTile(x, y)
-			local inTitle = math.abs(y - layout.title.y) < 1.1 and math.abs(x - layout.title.x) < layout.title.w / 2 + 0.6
-			local nearCompass = dist(x, y, layout.compass.x, layout.compass.y) < layout.compass.size * 0.75 + 1
-			if clear >= S.decorClear and not inTitle and not nearCompass then
-				table.insert(candidates, { x = x, y = y, clear = clear })
+	local step = 0.4
+	local y = innerY0 + S.decorMin / 2
+	while y <= innerY1 - S.decorMin / 2 do
+		local x = innerX0 + S.decorMin / 2
+		while x <= innerX1 - S.decorMin / 2 do
+			local room = math.min(S.decorMax, roomFromPath(x, y, S.decorReach), roomInFrame(x, y))
+			if best then
+				room = math.min(room, (dist(x, y, best.x, best.y) - best.size * S.compassReach - S.gap) / S.decorReach)
+			end
+			if room >= S.decorMin then
+				table.insert(candidates, { x = x, y = y, room = room })
 			end
 			x += step
 		end
@@ -121,14 +161,12 @@ function BoardLayout.build(board, mapDef, Rng)
 	rng:shuffle(candidates)
 	local used = {}
 	for _, c in candidates do
-		local ok = true
+		local room = c.room
 		for _, d in layout.decor do
-			if dist(c.x, c.y, d.x, d.y) < S.decorSpacing then
-				ok = false
-				break
-			end
+			-- keep a wider gap between doodles so the sea doesn't look cluttered
+			room = math.min(room, (dist(c.x, c.y, d.x, d.y) - d.size * S.decorReach - 0.6) / S.decorReach)
 		end
-		if ok then
+		if room >= S.decorMin then
 			local kind
 			for _ = 1, 6 do
 				kind = rng:weighted(theme)
@@ -139,13 +177,12 @@ function BoardLayout.build(board, mapDef, Rng)
 			end
 			if kind then
 				used[kind] = true
-				local size = math.min(2.2, 1.05 + rng:float() * 0.9, (c.clear - 0.75) * 1.5)
 				table.insert(layout.decor, {
 					kind = kind,
 					x = c.x,
 					y = c.y,
-					size = size,
-					rot = (rng:float() - 0.5) * 16,
+					size = math.min(room, 1.1 + rng:float() * 0.8),
+					rot = (rng:float() - 0.5) * 12,
 					flip = rng:float() < 0.5,
 				})
 			end

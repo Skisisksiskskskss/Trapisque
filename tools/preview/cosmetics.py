@@ -70,16 +70,31 @@ def disc(layer_img, cx, cy, d, fill_img=None, color=None, alpha=255):
     return Image.alpha_composite(layer_img, out)
 
 
+def aa_rrect(img, box, radius, fill=None, outline=None, width=0, ss=4):
+    """Anti-aliased rounded rectangle; `outline` is drawn outside the box like a UIStroke."""
+    x0, y0, x1, y1 = box
+    m = width + 2
+    W, H = int((x1 - x0 + 2 * m) * ss), int((y1 - y0 + 2 * m) * ss)
+    lay = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(lay)
+    if outline and width:
+        d.rounded_rectangle([(m - width) * ss, (m - width) * ss, W - (m - width) * ss, H - (m - width) * ss],
+                            radius=(radius + width) * ss, fill=outline)
+    if fill:
+        d.rounded_rectangle([m * ss, m * ss, W - m * ss, H - m * ss], radius=radius * ss, fill=fill)
+    out = lay.resize((W // ss, H // ss), Image.LANCZOS)
+    img.alpha_composite(out, (int(x0 - m), int(y0 - m)))
+
+
 def draw_pawn(img, x, y, size, item, data, seat="#4E8FDB"):
-    """Draw a pawn whose bounding square is (x, y, size)."""
+    """CosmeticArt.pawn in a square (x, y, size): flat face (blend only for gradient skins),
+    seat-coloured rim outside the face, and the chip edge peeking out below."""
     ss = 4
     S = int(size * ss)
-    pad = int(S * 0.15)
+    pad = int(S * 0.1)
     W = S + 2 * pad
-    lay = Image.new("RGBA", (W, W), (0, 0, 0, 0))
+    lay = Layer(W // ss, W // ss, ss=ss)
     look = item["look"]
-    c0 = pad + S / 2
-    U = lambda v: v * S  # noqa: E731
     seat_c = rgb(seat)
     if look.get("fill") == "seat":
         fill, fill2 = seat_c, shade(seat, -0.22)
@@ -89,75 +104,51 @@ def draw_pawn(img, x, y, size, item, data, seat="#4E8FDB"):
         fill = rgb(look["fill"])
         fill2 = rgb(look.get("fill2", to_hex(shade(look["fill"], -0.2))))
     accent = rgb(look.get("accent", "#FFFFFF"))
-    # shadow
-    sh = Image.new("RGBA", (W, W), (0, 0, 0, 0))
-    ImageDraw.Draw(sh).ellipse([c0 - U(0.4), c0 + U(0.42) - U(0.1), c0 + U(0.4), c0 + U(0.42) + U(0.1)], fill=(0, 0, 0, 90))
-    lay = Image.alpha_composite(lay, sh.filter(ImageFilter.GaussianBlur(U(0.03))))
-    if look.get("glow"):
-        g = rgb(look["glow"])
-        gl = Image.new("RGBA", (W, W), (0, 0, 0, 0))
-        ImageDraw.Draw(gl).ellipse([c0 - U(0.56), c0 - U(0.56), c0 + U(0.56), c0 + U(0.56)], fill=g + (120,))
-        lay = Image.alpha_composite(lay, gl.filter(ImageFilter.GaussianBlur(U(0.05))))
+    o = pad / ss
+    cv = Canvas(lay, o, o, size, {})
     side = mix(seat_c, (0, 0, 0), 0.45)
-    lay = disc(lay, c0, c0 + U(0.07), U(0.88) + U(0.0792) * 2, color=side)
-    # seat ring (outer stroke) then gradient face
-    lay = disc(lay, c0, c0, U(0.88) + U(0.0792) * 2, color=seat_c)
-    if look.get("fill") == "rainbow":
-        stops = [rgb(h) for h in RAINBOW]
+    cv.circle(0.5, 0.54, 0.92, to_hex(side))
+    cv.circle(0.5, 0.47, 0.78 + 2 * 0.09 * 0.78, seat)
+    if look.get("gradient"):
+        stops = [rgb(h) for h in RAINBOW] if look.get("fill") == "rainbow" else [fill, fill2]
+        grad = gradient_img(int(0.78 * S) + 2, stops, 60)
+        lay.img = disc(lay.img, pad + 0.5 * S, pad + 0.47 * S, 0.78 * S, fill_img=grad)
     else:
-        stops = [mix(fill, (255, 255, 255), 0.12), fill, fill2]
-    grad = gradient_img(int(U(0.88)) + 2, stops, 60)
-    lay = disc(lay, c0, c0, U(0.88), fill_img=grad)
-    # pattern
+        cv.circle(0.5, 0.47, 0.78, to_hex(fill))
     pat = data["patterns"].get(look.get("pattern", "ring"))
     if pat:
-        sub = Layer(W // ss, W // ss, ss=ss)
-        sub.img = lay
         colors = {"ink": accent + (255,), "acc": accent + (255,), "acc2": fill2 + (255,), "bg": fill + (255,), "hi": fill + (255,)}
-        cv = Canvas(sub, (c0 - U(0.44)) / ss, (c0 - U(0.44)) / ss, U(0.88) / ss, colors)
-        draw_ops(cv, pat)
-        lay = sub.img
-    # shine
-    shine = Image.new("RGBA", (W, W), (0, 0, 0, 0))
-    sx, sy = c0 + (0.33 - 0.5) * U(0.88), c0 + (0.27 - 0.5) * U(0.88)
-    ImageDraw.Draw(shine).rounded_rectangle([sx - U(0.15), sy - U(0.057), sx + U(0.15), sy + U(0.057)], radius=U(0.057),
-                                            fill=(255, 255, 255, 165 if look.get("shine") else 95))
-    shine = shine.rotate(35, resample=Image.BICUBIC, center=(sx, sy))
-    lay = Image.alpha_composite(lay, shine)
-    out = lay.resize((W // ss, W // ss), Image.LANCZOS)
-    img.alpha_composite(out, (int(x - pad / ss), int(y - pad / ss)))
+        face = Canvas(lay, o + (0.5 - 0.39) * size, o + (0.47 - 0.39) * size, 0.78 * size, colors)
+        draw_ops(face, pat)
+    img.alpha_composite(lay.final(), (int(x - o), int(y - o)))
 
 
 def draw_die(img, x, y, size, item, data, value=5):
+    """CosmeticArt.die: flat face (blend only for gradient skins), edge stroke, side below."""
     ss = 4
     S = int(size * ss)
-    pad = int(S * 0.15)
+    pad = int(S * 0.1)
     W = S + 2 * pad
-    lay = Image.new("RGBA", (W, W), (0, 0, 0, 0))
+    lay = Layer(W // ss, W // ss, ss=ss)
     look = item["look"]
-    U = lambda v: v * S  # noqa: E731
-    c0 = pad + S / 2
-    face, face2, pip, edge = rgb(look["face"]), rgb(look["face2"]), rgb(look["pip"]), rgb(look["edge"])
-    d = ImageDraw.Draw(lay)
-    if look.get("glow"):
-        gl = Image.new("RGBA", (W, W), (0, 0, 0, 0))
-        ImageDraw.Draw(gl).rounded_rectangle([c0 - U(0.55), c0 - U(0.55), c0 + U(0.55), c0 + U(0.55)], radius=U(0.24), fill=rgb(look["glow"]) + (110,))
-        lay = Image.alpha_composite(lay, gl.filter(ImageFilter.GaussianBlur(U(0.05))))
-        d = ImageDraw.Draw(lay)
+    face, face2, pip, edge = rgb(look["face"]), rgb(look["face2"]), look["pip"], look["edge"]
+    o = pad / ss
+    cv = Canvas(lay, o, o, size, {})
     side = mix(face2, (0, 0, 0), 0.35)
-    d.rounded_rectangle([c0 - U(0.46), c0 - U(0.46) + U(0.06), c0 + U(0.46), c0 + U(0.46) + U(0.06)], radius=U(0.2), fill=side + (255,))
-    grad = gradient_img(int(U(0.92)), [mix(face, (255, 255, 255), 0.1), face, face2], 70)
-    mask = Image.new("L", grad.size, 0)
-    ImageDraw.Draw(mask).rounded_rectangle([0, 0, grad.width - 1, grad.height - 1], radius=U(0.2), fill=255)
-    lay.paste(grad, (int(c0 - U(0.46)), int(c0 - U(0.46))), mask)
-    d = ImageDraw.Draw(lay)
-    d.rounded_rectangle([c0 - U(0.46), c0 - U(0.46), c0 + U(0.46), c0 + U(0.46)], radius=U(0.2), outline=edge + (255,), width=max(1, int(U(0.046))))
+    cv.rect(0.5, 0.538, 0.924, 0.924, to_hex(side), r=0.24)
+    outer = 0.84 + 2 * 0.05 * 0.84
+    cv.rect(0.5, 0.462, outer, outer, edge, r=(0.22 * 0.84 + 0.042) / outer)
+    if look.get("gradient"):
+        grad = gradient_img(int(0.84 * S), [face, face2], 70)
+        mask = Image.new("L", grad.size, 0)
+        ImageDraw.Draw(mask).rounded_rectangle([0, 0, grad.width - 1, grad.height - 1], radius=0.22 * grad.width, fill=255)
+        lay.img.paste(grad, (int(pad + (0.5 - 0.42) * S), int(pad + (0.462 - 0.42) * S)), mask)
+    else:
+        cv.rect(0.5, 0.462, 0.84, 0.84, to_hex(face), r=0.22)
+    fc = Canvas(lay, o + 0.08 * size, o + 0.042 * size, 0.84 * size, {})
     for p in data["pips"][value - 1]:
-        px, py = c0 - U(0.46) + p[0] * U(0.92), c0 - U(0.46) + p[1] * U(0.92)
-        r = U(0.19) * 0.92 / 2
-        d.ellipse([px - r, py - r, px + r, py + r], fill=pip + (255,))
-    out = lay.resize((W // ss, W // ss), Image.LANCZOS)
-    img.alpha_composite(out, (int(x - pad / ss), int(y - pad / ss)))
+        fc.circle(p[0], p[1], 0.19, pip)
+    img.alpha_composite(lay.final(), (int(x - o), int(y - o)))
 
 
 def draw_trail(img, x, y, size, item, data):
@@ -201,19 +192,10 @@ def rgb_to_hex(c):
     return "#%02X%02X%02X" % c
 
 
-def card(img, x, y, w, h, rarity_color, glow):
-    d = ImageDraw.Draw(img)
-    lay = Image.new("RGBA", img.size, (0, 0, 0, 0))
-    ImageDraw.Draw(lay).rounded_rectangle([x + 3, y + 6, x + w + 3, y + h + 6], radius=14, fill=(0, 0, 0, 110))
-    img.alpha_composite(lay.filter(ImageFilter.GaussianBlur(5)))
-    d = ImageDraw.Draw(img)
-    d.rounded_rectangle([x, y, x + w, y + h], radius=14, fill=(59, 42, 30, 255))
-    gl = Image.new("RGBA", img.size, (0, 0, 0, 0))
-    ImageDraw.Draw(gl).ellipse([x + w * 0.1, y + h * 0.05, x + w * 0.9, y + h * 0.75], fill=rgb(glow) + (70,))
-    img.alpha_composite(gl.filter(ImageFilter.GaussianBlur(14)))
-    d = ImageDraw.Draw(img)
-    d.rounded_rectangle([x, y, x + w, y + h], radius=14, outline=rgb(rarity_color) + (255,), width=4)
-    d.rounded_rectangle([x + 6, y + h - 46, x + w - 6, y + h - 6], radius=10, fill=(42, 29, 20, 255))
+def card(img, x, y, w, h, rarity_color):
+    """Locker tile: flat dark panel, rarity-coloured rim, name strip along the bottom."""
+    aa_rrect(img, (x, y, x + w, y + h), 14, fill=(59, 42, 30, 255), outline=rgb(rarity_color) + (255,), width=4)
+    aa_rrect(img, (x + 6, y + h - 46, x + w - 6, y + h - 6), 10, fill=(42, 29, 20, 255))
 
 
 def main():
@@ -249,7 +231,7 @@ def main():
             x0 = gap + col * (cw + gap)
             y0 = y + row * (ch + gap)
             r = rar[it["rarity"]]
-            card(img, x0, y0, cw, ch, r["color"], r["glow"])
+            card(img, x0, y0, cw, ch, r["color"])
             seat = SEATS[k % 6]
             if cat == "pawn":
                 draw_pawn(img, x0 + 25, y0 + 18, 100, it, data, seat=seat)
@@ -267,8 +249,8 @@ def main():
                     f = font("chunky", 22 * (cw - 44) / (bb[2] - bb[0]))
                     bb = d.textbbox((0, 0), txt, font=f)
                 bx, by = x0 + cw / 2 - tw / 2, y0 + 50
-                d.rounded_rectangle([bx, by, bx + tw, by + 40], radius=12, fill=hex_rgba("#F3E4C1"), outline=hex_rgba(it["look"]["color"]), width=3)
-                d.polygon([(bx + tw * 0.3, by + 38), (bx + tw * 0.3 + 14, by + 38), (bx + tw * 0.3 + 2, by + 52)], fill=hex_rgba("#F3E4C1"))
+                aa_rrect(img, (bx, by, bx + tw, by + 40), 12, fill=hex_rgba("#F3E4C1"), outline=hex_rgba(it["look"]["color"]), width=3)
+                d = ImageDraw.Draw(img)
                 d.text((x0 + cw / 2 - (bb[2] - bb[0]) / 2 - bb[0], by + 20 - (bb[3] - bb[1]) / 2 - bb[1]), txt, font=f, fill=hex_rgba("#3A2414"))
             elif cat == "title":
                 d = ImageDraw.Draw(img)

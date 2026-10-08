@@ -300,6 +300,15 @@ def _transform(op, rot, s, dx, dy, fx=False):
         return rx + dx, ry + dy
 
     a = list(args)
+    if kind == "group":
+        # nested group: its own transform first, then ours; its colour passes down
+        flat = []
+        for child in opts.get("ops", []):
+            inner = _transform(child, opts.get("rot", 0), opts.get("s", 1), opts.get("dx", 0), opts.get("dy", 0), opts.get("fx", False))
+            if opts.get("c") is not None:
+                inner = _with_color(inner, opts["c"])
+            flat.append(_transform(inner, rot, s, dx, dy, fx))
+        return {"__args": a, "ops": flat}
     if kind == "line":
         a[1], a[2] = tp(a[1], a[2])
         a[3], a[4] = tp(a[3], a[4])
@@ -311,8 +320,6 @@ def _transform(op, rot, s, dx, dy, fx=False):
         a[1] = [list(tp(p[0], p[1])) for p in a[1]]
         a[2] *= s
         a[3] *= s
-    elif kind == "group":
-        pass
     else:
         a[1], a[2] = tp(a[1], a[2])
         sizes = {"rect": [3, 4], "circle": [3], "pill": [3, 4], "tri": [3], "half": [3], "ring": [3, 4], "oring": [3, 4, 5],
@@ -337,6 +344,16 @@ def _transform(op, rot, s, dx, dy, fx=False):
     return a
 
 
+def _with_color(op, c):
+    """Give an op colour `c` unless it already has one."""
+    if isinstance(op, dict):
+        if op.get("c") is None:
+            op = dict(op)
+            op["c"] = c
+        return op
+    return {"__args": list(op), "c": c}
+
+
 def draw_ops(cv, ops):
     for op in ops:
         if isinstance(op, dict):
@@ -351,6 +368,8 @@ def draw_ops(cv, ops):
                 _transform(x, o.get("rot", 0), o.get("s", 1), o.get("dx", 0), o.get("dy", 0), o.get("fx", False))
                 for x in o["ops"]
             ]
+            if c is not None:
+                sub = [_with_color(x, c) for x in sub]
             draw_ops(cv, sub)
         elif kind == "rect":
             cv.rect(args[1], args[2], args[3], args[4], c, r=o.get("r", 0), rot=o.get("rot", 0), t=o.get("t", 0))

@@ -12,17 +12,6 @@ local Util = {}
 ---------------------------------------------------------------------------
 Util.has = {}
 do
-	local g = Instance.new("UIGradient")
-	Util.has.radial = pcall(function()
-		(g :: any).Type = (Enum :: any).GradientType.Radial
-	end)
-	Util.has.conic = pcall(function()
-		(g :: any).Type = (Enum :: any).GradientType.Conical
-	end)
-	g:Destroy()
-	Util.has.shadow = pcall(function()
-		Instance.new("UIShadow"):Destroy()
-	end)
 	local s = Instance.new("UIStroke")
 	Util.has.scaledStroke = pcall(function()
 		(s :: any).StrokeSizingMode = (Enum :: any).StrokeSizingMode.ScaledSize
@@ -181,37 +170,27 @@ function Util.grad(inst: Instance, colors: any, rotation: number?, transparency:
 	return g
 end
 
--- Radial gradient where supported; otherwise a soft vertical linear gradient.
-function Util.radial(inst: Instance, colors: any, transparency: any?): UIGradient
-	local g = Util.grad(inst, colors, 90, transparency)
-	if Util.has.radial then
-		pcall(function()
-			(g :: any).Type = (Enum :: any).GradientType.Radial
-		end)
+-- Product of every UIScale above `inst` (the stage scales the whole UI); with
+-- includeSelf, also the UIScales directly inside `inst`.
+function Util.inheritedScale(inst: Instance, includeSelf: boolean?): number
+	local s = 1
+	local node: Instance? = if includeSelf then inst else inst.Parent
+	while node do
+		for _, child in node:GetChildren() do
+			if child:IsA("UIScale") then
+				s *= child.Scale
+			end
+		end
+		node = node.Parent
 	end
-	return g
+	return s
 end
 
--- Soft drop shadow (UIShadow where supported, an offset dark frame otherwise).
+-- Hard drop shadow: a flat dark copy of the frame's shape, offset straight down.
 function Util.shadow(inst: GuiObject, opts: { [string]: any }?)
 	local o = opts or {}
 	local offset = o.offset or 4
-	local blur = o.blur or 10
 	local transparency = o.transparency or 0.55
-	if Util.has.shadow then
-		local ok = pcall(function()
-			Util.new("UIShadow", {
-				Color = o.color or Color3.new(0, 0, 0),
-				Transparency = transparency,
-				Offset = UDim2.fromOffset(0, offset),
-				BlurRadius = UDim.new(0, blur),
-				Parent = inst,
-			})
-		end)
-		if ok then
-			return
-		end
-	end
 	local parent = inst.Parent
 	if not parent then
 		return
@@ -219,7 +198,7 @@ function Util.shadow(inst: GuiObject, opts: { [string]: any }?)
 	local sh = Util.new("Frame", {
 		Name = "Shadow",
 		BackgroundColor3 = o.color or Color3.new(0, 0, 0),
-		BackgroundTransparency = math.min(0.95, transparency + 0.15),
+		BackgroundTransparency = transparency,
 		BorderSizePixel = 0,
 		AnchorPoint = inst.AnchorPoint,
 		Position = inst.Position + UDim2.fromOffset(0, offset),

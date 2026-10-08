@@ -100,14 +100,6 @@ function PlayersPanel:_makeCard(list: Frame, info)
 		Position = UDim2.fromScale(0.5, 0.5),
 		Size = UDim2.fromScale(1, 1),
 	})
-	if info.character then
-		CosmeticArt.characterBadge(pawnHolder, info.character, {
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.fromScale(0.86, 0.86),
-			Size = UDim2.fromScale(0.46, 0.46),
-			ZIndex = 5,
-		})
-	end
 
 	local name = Widgets.label(card, {
 		name = "Name",
@@ -120,14 +112,24 @@ function PlayersPanel:_makeCard(list: Frame, info)
 	})
 	name.TextTruncate = Enum.TextTruncate.AtEnd
 	local charDef = Characters.get(info.character or "")
+	-- character: a small badge in front of its name
+	local textX = 72
+	if info.character then
+		CosmeticArt.characterBadge(card, info.character, {
+			AnchorPoint = Vector2.new(0, 0),
+			Position = UDim2.fromOffset(72, 25),
+			Size = UDim2.fromOffset(18, 18),
+		})
+		textX = 94
+	end
 	local sub = Widgets.label(card, {
 		name = "Character",
 		text = (charDef and charDef.name or "") .. (if info.isBot then "  ·  BOT" else ""),
 		font = "body",
 		size = 13,
 		color = Theme.Character[info.character] or C.inkSoft,
-		sizeUDim = UDim2.new(1, -150, 0, 16),
-		position = UDim2.fromOffset(72, 26),
+		sizeUDim = UDim2.new(1, -150 - (textX - 72), 0, 16),
+		position = UDim2.fromOffset(textX, 26),
 	})
 	sub.TextTruncate = Enum.TextTruncate.AtEnd
 
@@ -249,11 +251,12 @@ function PlayersPanel:update(snap)
 				end
 			end
 			e.treasures = p.treasures
-			if e.coins.Text ~= tostring(p.coins) then
-				e.coins.Text = tostring(p.coins)
-				Util.bump(e.coins, 0.3)
+			local coinsLabel = e.coins :: TextLabel
+			if coinsLabel.Text ~= tostring(p.coins) then
+				coinsLabel.Text = tostring(p.coins)
+				Util.bump(coinsLabel, 0.3)
 			end
-			e.cards.Text = tostring(p.handCount)
+			(e.cards :: TextLabel).Text = tostring(p.handCount)
 			e.status.burning.Visible = p.burning
 			e.status.frozen.Visible = p.frozen
 			e.status.boots.Visible = p.boots

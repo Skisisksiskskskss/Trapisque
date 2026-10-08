@@ -40,7 +40,8 @@ Cosmetics.EmoteSlots = 6
 local defs = {
 	-------------------------------------------------------------------------
 	-- Pawns: the token that walks the board for you
-	-- look: fill, fill2 (gradient), pattern, accent, glow, spin (animated)
+	-- look: fill, fill2 (second colour), pattern, accent,
+	-- gradient (blend fill -> fill2; only where the blend is the point), spin (animated blend)
 	-------------------------------------------------------------------------
 	{ id = "pawn_classic", category = "pawn", name = "Classic", rarity = "common", source = "default",
 		look = { fill = "seat", pattern = "ring", accent = "#FFFFFF" } },
@@ -49,15 +50,15 @@ local defs = {
 	{ id = "pawn_mint", category = "pawn", name = "Mint Swirl", rarity = "common",
 		look = { fill = "#7FE0C4", fill2 = "#E9FFF8", pattern = "stripes", accent = "#FFFFFF" } },
 	{ id = "pawn_sunset", category = "pawn", name = "Sunset", rarity = "common",
-		look = { gradient = true, fill = "#FF9F59", fill2 = "#FF5E8A", pattern = "split", accent = "#FFE0B8" } },
+		look = { gradient = true, fill = "#FF9F59", fill2 = "#FF5E8A", pattern = "sunset", accent = "#FFE9C7" } },
 	{ id = "pawn_ocean", category = "pawn", name = "Ocean", rarity = "common",
 		look = { fill = "#2E86DE", fill2 = "#48DBFB", pattern = "wave", accent = "#D6F4FF" } },
 	{ id = "pawn_moss", category = "pawn", name = "Mossy", rarity = "common",
 		look = { fill = "#6A994E", fill2 = "#A7C957", pattern = "leaf", accent = "#F2E8CF" } },
 	{ id = "pawn_ruby", category = "pawn", name = "Ruby", rarity = "rare",
-		look = { fill = "#E63946", fill2 = "#8D0801", pattern = "gem", accent = "#FFB3BA", shine = true } },
+		look = { fill = "#E63946", fill2 = "#8D0801", pattern = "gem", accent = "#FFB3BA" } },
 	{ id = "pawn_emerald", category = "pawn", name = "Emerald", rarity = "rare",
-		look = { fill = "#2DC653", fill2 = "#036666", pattern = "gem", accent = "#B7FFD0", shine = true } },
+		look = { fill = "#2DC653", fill2 = "#036666", pattern = "gem", accent = "#B7FFD0" } },
 	{ id = "pawn_checker", category = "pawn", name = "Checkmate", rarity = "rare",
 		look = { fill = "#F5F5F5", fill2 = "#F5F5F5", pattern = "checker", accent = "#1B1B1E" } },
 	{ id = "pawn_candy", category = "pawn", name = "Candy Cane", rarity = "rare",
@@ -67,27 +68,27 @@ local defs = {
 	{ id = "pawn_galaxy", category = "pawn", name = "Galaxy", rarity = "epic",
 		look = { gradient = true, fill = "#3A0CA3", fill2 = "#0B0033", pattern = "stars", accent = "#F1E9FF", spin = true } },
 	{ id = "pawn_lava", category = "pawn", name = "Lava Core", rarity = "epic",
-		look = { gradient = true, fill = "#FF4800", fill2 = "#6A040F", pattern = "flame", accent = "#FFD166", spin = true, glow = "#FF7B00" } },
+		look = { gradient = true, fill = "#FF4800", fill2 = "#6A040F", pattern = "flame", accent = "#FFD166", spin = true } },
 	{ id = "pawn_frost", category = "pawn", name = "Frostbite", rarity = "epic",
-		look = { fill = "#CAF0F8", fill2 = "#48CAE4", pattern = "snow", accent = "#FFFFFF", glow = "#90E0EF" } },
+		look = { fill = "#CAF0F8", fill2 = "#48CAE4", pattern = "snow", accent = "#FFFFFF" } },
 	{ id = "pawn_toxic", category = "pawn", name = "Toxic Slime", rarity = "epic",
-		look = { fill = "#9EF01A", fill2 = "#38B000", pattern = "drip", accent = "#E9FFC2", glow = "#70E000" } },
+		look = { fill = "#9EF01A", fill2 = "#38B000", pattern = "drip", accent = "#E9FFC2" } },
 	{ id = "pawn_gold", category = "pawn", name = "Solid Gold", rarity = "legendary",
-		look = { fill = "#FFE066", fill2 = "#C9930C", pattern = "star", accent = "#FFF8D6", shine = true, glow = "#FFD43B" } },
+		look = { fill = "#FFE066", fill2 = "#C9930C", pattern = "star", accent = "#FFF8D6" } },
 	{ id = "pawn_phoenix", category = "pawn", name = "Phoenix", rarity = "legendary",
-		look = { gradient = true, fill = "#FFBE0B", fill2 = "#FB5607", pattern = "wings", accent = "#FFF3B0", spin = true, glow = "#FF8800" } },
+		look = { gradient = true, fill = "#FFBE0B", fill2 = "#FB5607", pattern = "wings", accent = "#FFF3B0", spin = true } },
 	{ id = "pawn_void", category = "pawn", name = "Void Eye", rarity = "legendary",
-		look = { fill = "#14001F", fill2 = "#3C096C", pattern = "eye", accent = "#E0AAFF", glow = "#9D4EDD" } },
+		look = { fill = "#14001F", fill2 = "#3C096C", pattern = "eye", accent = "#E0AAFF" } },
 	{ id = "pawn_prism", category = "pawn", name = "Prismatic", rarity = "mythic",
-		look = { gradient = true, fill = "rainbow", pattern = "diamond", accent = "#FFFFFF", spin = true, glow = "#FFFFFF" } },
+		look = { gradient = true, fill = "rainbow", pattern = "diamond", accent = "#FFFFFF", spin = true } },
 	{ id = "pawn_crest", category = "pawn", name = "Trapisque Crest", rarity = "mythic",
-		look = { fill = "#1B263B", fill2 = "#0D1321", pattern = "chest", accent = "#FFC300", glow = "#FFC300", shine = true } },
+		look = { fill = "#1B263B", fill2 = "#0D1321", pattern = "chest", accent = "#FFC300" } },
 	{ id = "pawn_crown", category = "pawn", name = "Royal Crown", rarity = "legendary", source = "vip",
-		look = { fill = "#7B2CBF", fill2 = "#3C096C", pattern = "crown", accent = "#FFD60A", glow = "#C77DFF", shine = true } },
+		look = { fill = "#7B2CBF", fill2 = "#3C096C", pattern = "crown", accent = "#FFD60A" } },
 
 	-------------------------------------------------------------------------
 	-- Dice: how your die looks when you roll
-	-- look: face, face2, pip, edge, glow, spin
+	-- look: face, face2, pip, edge, gradient, spin
 	-------------------------------------------------------------------------
 	{ id = "dice_ivory", category = "dice", name = "Ivory", rarity = "common", source = "default",
 		look = { face = "#FFFDF5", face2 = "#EDE6D3", pip = "#22223B", edge = "#C9BFA5" } },
@@ -104,13 +105,13 @@ local defs = {
 	{ id = "dice_bone", category = "dice", name = "Old Bone", rarity = "rare",
 		look = { face = "#EDE0D4", face2 = "#B08968", pip = "#3E2723", edge = "#7F5539" } },
 	{ id = "dice_neon", category = "dice", name = "Neon", rarity = "epic",
-		look = { face = "#0B0B12", face2 = "#1A1A2E", pip = "#39FF14", edge = "#39FF14", glow = "#39FF14" } },
+		look = { face = "#0B0B12", face2 = "#1A1A2E", pip = "#39FF14", edge = "#39FF14" } },
 	{ id = "dice_frost", category = "dice", name = "Frost", rarity = "epic",
-		look = { face = "#E0FBFC", face2 = "#98C1D9", pip = "#3D5A80", edge = "#FFFFFF", glow = "#CAF0F8" } },
+		look = { face = "#E0FBFC", face2 = "#98C1D9", pip = "#3D5A80", edge = "#FFFFFF" } },
 	{ id = "dice_gold", category = "dice", name = "Golden", rarity = "legendary",
-		look = { face = "#FFE066", face2 = "#D4A017", pip = "#5C3D00", edge = "#FFF3B0", glow = "#FFD43B" } },
+		look = { face = "#FFE066", face2 = "#D4A017", pip = "#5C3D00", edge = "#FFF3B0" } },
 	{ id = "dice_cosmic", category = "dice", name = "Cosmic", rarity = "mythic",
-		look = { gradient = true, face = "#240046", face2 = "#7B2CBF", pip = "#FFFFFF", edge = "#E0AAFF", glow = "#C77DFF", spin = true } },
+		look = { gradient = true, face = "#240046", face2 = "#7B2CBF", pip = "#FFFFFF", edge = "#E0AAFF", spin = true } },
 
 	-------------------------------------------------------------------------
 	-- Trails: little particles that follow your pawn as it hops

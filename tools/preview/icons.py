@@ -14,10 +14,15 @@ from PIL import Image, ImageDraw  # noqa: E402
 
 PARCH = "#F3E4C1"
 WOOD = "#B57D46"
-WOOD_LIGHT = "#D4A06A"
-ENGRAVE = "#4E2E14"
-ENGRAVE_HI = "#F0CB98"
 INK = "#4A3020"
+BRASS = "#E3B04B"
+BRASS_LIGHT = "#FFE39A"
+
+
+def burn(h):
+    """Util.shade(wood, -0.62): the burned-in colour on wood."""
+    r, g, b, _ = hex_rgba(h)
+    return "#%02X%02X%02X" % (int(r * 0.38), int(g * 0.38), int(b * 0.38))
 
 GROUPS = [
     ("Trap cards", ["spike", "fire", "ice", "mudslide", "mud", "wall", "snare", "grog"]),
@@ -62,19 +67,23 @@ def draw_icon(img, icons, name, x, y, size, style):
     m = int(size * 0.15)
     box = int(size + 2 * m)
     layer = Layer(box, box, ss=4)
-    acc = POTION_COLORS.get(name, "#E3B04B")
     if style == "ink":
         colors = {"ink": hex_rgba(INK), "bg": hex_rgba(PARCH), "acc": hex_rgba(INK), "hi": hex_rgba(PARCH)}
         draw_ops(Canvas(layer, m, m, size, colors), icons[name])
     elif style == "engrave":
-        hi = {"ink": hex_rgba(ENGRAVE_HI), "bg": hex_rgba(WOOD), "acc": hex_rgba(ENGRAVE_HI), "hi": hex_rgba(WOOD)}
-        dk = {"ink": hex_rgba(ENGRAVE), "bg": hex_rgba(WOOD), "acc": hex_rgba(acc), "hi": hex_rgba(WOOD_LIGHT)}
-        draw_ops(Canvas(layer, m, m + size * 0.03, size, hi), icons[name])
+        # Icons.engraved: one flat burned-in layer
+        ink = burn(WOOD)
+        acc_c = POTION_COLORS.get(name, ink)
+        dk = {"ink": hex_rgba(ink), "bg": hex_rgba(WOOD), "acc": hex_rgba(acc_c), "acc2": hex_rgba(acc_c), "hi": hex_rgba(WOOD)}
         draw_ops(Canvas(layer, m, m, size, dk), icons[name])
-    else:  # medallion
+    else:  # Icons.medallion: flat disc, brass rim outside it, white glyph at 0.64 of the disc
         cat = CATEGORY.get(CAT_OF.get(name, ""), "#8A6A48")
-        colors = {"ink": hex_rgba("#FFFFFF"), "bg": hex_rgba(cat), "acc": hex_rgba(acc), "hi": hex_rgba(cat)}
-        draw_ops(Canvas(layer, m, m, size, colors), icons[name])
+        cv = Canvas(layer, m, m, size, {"ink": hex_rgba(BRASS)})
+        cv.circle(0.5, 0.5, 1.0, BRASS)  # disc d plus a rim of 0.08 d each side = 1.16 d
+        cv.circle(0.5, 0.5, 1.0 / 1.16, cat)
+        g = size / 1.16 * 0.64
+        colors = {"ink": hex_rgba("#FFFFFF"), "bg": hex_rgba(cat), "acc": hex_rgba(BRASS_LIGHT), "acc2": hex_rgba(BRASS_LIGHT), "hi": hex_rgba(cat)}
+        draw_ops(Canvas(layer, m + (size - g) / 2, m + (size - g) / 2, g, colors), icons[name])
     img.alpha_composite(layer.final(), (int(x - m), int(y - m)))
 
 
@@ -90,7 +99,7 @@ def main():
     H = rows * (cell + 26) + 60
     img = Image.new("RGBA", (W, H), hex_rgba("#2A1C13"))
     d = ImageDraw.Draw(img)
-    d.text((pad, 14), "Trapisque icon set  -  ink on parchment / carved wood / token medallion", font=font("display", 28), fill=hex_rgba("#FFE39A"))
+    d.text((pad, 14), "Trapisque icon set  -  ink on parchment / burned into wood / token medallion", font=font("display", 28), fill=hex_rgba("#FFE39A"))
     y = 60
     for title, names in GROUPS:
         d = ImageDraw.Draw(img)
@@ -106,11 +115,9 @@ def main():
             d = ImageDraw.Draw(img)
             d.rounded_rectangle([x, y, x + cell - 4, y + cell - 4], radius=10, fill=hex_rgba(PARCH))
             d.rounded_rectangle([x + cell, y, x + 2 * cell - 4, y + cell - 4], radius=10, fill=hex_rgba(WOOD))
-            cat = CATEGORY.get(CAT_OF.get(name, ""), "#8A6A48")
-            d.ellipse([x + 2 * cell + 4, y + 4, x + 3 * cell - 8, y + cell - 8], fill=hex_rgba(cat), outline=hex_rgba("#E3B04B"), width=4)
             draw_icon(img, icons, name, x + 12, y + 12, cell - 28, "ink")
             draw_icon(img, icons, name, x + cell + 12, y + 12, cell - 28, "engrave")
-            draw_icon(img, icons, name, x + 2 * cell + 22, y + 22, cell - 48, "medallion")
+            draw_icon(img, icons, name, x + 2 * cell + 8, y + 8, cell - 20, "medallion")
             d = ImageDraw.Draw(img)
             d.text((x + 4, y + cell - 2), name, font=font("body", 15), fill=hex_rgba("#F3E4C1"))
         y += cell + 30

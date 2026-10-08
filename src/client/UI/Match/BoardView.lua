@@ -28,7 +28,6 @@ local Util = require(UI.Util)
 local Theme = require(UI.Theme)
 local Shapes = require(UI.Shapes)
 local Icons = require(UI.Icons)
-local IconData = require(UI.IconData)
 local DecorData = require(UI.DecorData)
 local CosmeticArt = require(UI.CosmeticArt)
 local Widgets = require(UI.Widgets)
@@ -42,9 +41,9 @@ local U = 46 -- world pixels per hex unit
 local S = BoardLayout.Style
 
 local THEMES = {
-	water = { paper = hex("F2E2BD"), wash = hex("93C6C4"), washA = 0.55, ink = hex("3C6E8F"), acc = hex("E6D3A3"), acc2 = hex("C2513B"), rock = hex("8FA7A8") },
-	dungeon = { paper = hex("EBDDBE"), wash = hex("A39B8E"), washA = 0.5, ink = hex("5A4A3A"), acc = hex("CDBFA6"), acc2 = hex("E0732C") },
-	swamp = { paper = hex("EEE4BC"), wash = hex("9DB271"), washA = 0.55, ink = hex("4E6B34"), acc = hex("B9C98B"), acc2 = hex("9C4A2E") },
+	water = { paper = hex("F2E2BD"), wash = hex("93C6C4"), washA = 0.55, ink = hex("3C6E8F"), acc = hex("E6D3A3"), acc2 = hex("C2513B") },
+	dungeon = { paper = hex("EBDDBE"), wash = hex("A39B8E"), washA = 0.5, ink = hex("5A4A3A"), acc = hex("A99E8A"), acc2 = hex("E0732C") },
+	swamp = { paper = hex("EEE4BC"), wash = hex("9DB271"), washA = 0.55, ink = hex("4E6B34"), acc = hex("93AA62"), acc2 = hex("9C4A2E") },
 }
 
 local TILE_COLORS = {
@@ -58,6 +57,8 @@ local TILE_COLORS = {
 	slime = { hex("7DB843"), hex("97CE57") },
 }
 local NATURAL_ICON = { river = "river_trap", gate = "lock", slime = "slime_trap" }
+-- the mark a conveyor belt paints where a tile's number would be (points right at 0 degrees)
+local BELT_CHEVRON = { { "chevron", 0.3, 0.5, 0.6, 0.2, dir = 90 }, { "chevron", 0.66, 0.5, 0.6, 0.2, dir = 90 } }
 local TOKEN_ICON = { trap = "token_trap", assist = "token_assist", neutral = "token_neutral", potion = "token_potion" }
 
 local BoardView = {}
@@ -95,7 +96,10 @@ function BoardView.new(parent: Frame, mapId: string)
 		self.layers[name] = Util.frame(self.world, { Name = name, ZIndex = i })
 	end
 
-	self.tileParts = {} -- [tile] = { root, top, inner, label, icon }
+	self.tileParts = {} -- [tile] = { root, side, top, label, icon, hasIcon, belt }
+	self.cover = {} -- [tile] = pawns resting on it
+	self.belt = {} -- [tile] = direction (degrees) of the conveyor belt over it
+	self.beltOf = {} -- [conveyor origin tile] = the tiles it covers
 	self.tokens = {} -- [tile] = frame
 	self.placed = {} -- [tile] = frame
 	self.natural = {} -- [tile] = kind
@@ -134,19 +138,7 @@ local function px(v: Vector2): UDim2
 	return UDim2.fromOffset(v.X, v.Y)
 end
 
--- Product of every UIScale above `inst` (the stage scales the whole UI).
-local function inheritedScale(inst: Instance): number
-	local s = 1
-	local node = inst.Parent
-	while node do
-		local u = node:FindFirstChildOfClass("UIScale")
-		if u then
-			s *= u.Scale
-		end
-		node = node.Parent
-	end
-	return s
-end
+local inheritedScale = Util.inheritedScale
 
 -- fit the world into the container (times the player's zoom), clamped panning
 function BoardView:_fit()
@@ -237,7 +229,7 @@ function BoardView:_buildPaper()
 	Util.stroke(paper, hex("6B4423"), 3)
 	task.defer(function()
 		if paper.Parent then
-			Util.shadow(paper, { offset = 10, blur = 22, transparency = 0.45 })
+			Util.shadow(paper, { offset = 8, transparency = 0.5 })
 		end
 	end)
 	-- sea / stone / swamp wash inside the frame
@@ -311,24 +303,22 @@ function BoardView:_buildDecor()
 			Rotation = d.rot,
 		})
 		local c = Shapes.canvas(holder)
-		local cl = colors
-		if d.kind == "rocks" and T.rock then
-			cl = table.clone(colors)
-			cl.acc = T.rock
-		end
-		Icons.draw(c, { { "group", fx = d.flip, ops = DecorData[d.kind] } }, cl)
+		Icons.draw(c, { { "group", fx = d.flip, ops = DecorData[d.kind] } }, colors)
 	end
-	-- compass rose
+	-- compass rose (left out when no corner has room for it)
 	local cp = L.compass
-	local size = cp.size * U
-	local holder = Util.frame(layer, {
-		Name = "Compass",
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromOffset((cp.x - L.x0) * U, (cp.y - L.y0) * U),
-		Size = UDim2.fromOffset(size, size),
-	})
-	Icons.draw(Shapes.canvas(holder), DecorData.compass_rose, { ink = hex("6B4A2E"), bg = T.paper, acc2 = C.inkRed, acc = hex("6B4A2E"), hi = T.paper })
-	self.compass = holder
+	if cp then
+		local size = cp.size * U
+		local holder = Util.frame(layer, {
+			Name = "Compass",
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromOffset((cp.x - L.x0) * U, (cp.y - L.y0) * U),
+			Size = UDim2.fromOffset(size, size),
+		})
+		local ink = hex("6B4A2E")
+		Icons.draw(Shapes.canvas(holder), DecorData.compass_rose, { ink = ink, bg = colors.bg, acc2 = C.inkRed, acc = ink, hi = colors.bg })
+		self.compass = holder
+	end
 	-- title ribbon
 	local title = L.title
 	local ribbonHolder = Util.frame(layer, {
@@ -425,7 +415,6 @@ function BoardView:_buildTiles()
 		end
 		local side = hexagon(root, local0 + Vector2.new(0, S.tileDepth * U), S.tileScale * U, Util.shade(colors[1], -0.38), 1, "Side")
 		local top = hexagon(root, local0, S.tileScale * U, colors[1], 2, "Top")
-		local inner = {}
 		local label = Widgets.label(root, {
 			text = tostring(t.id),
 			font = "chunky",
@@ -438,7 +427,7 @@ function BoardView:_buildTiles()
 			z = 4,
 		})
 		label.TextTransparency = 0.3
-		local parts = { root = root, side = side, top = top, inner = inner, label = label, icon = nil }
+		local parts = { root = root, side = side, top = top, label = label, icon = nil, hasIcon = false }
 		self.tileParts[t.id] = parts
 		self:_paintTile(t)
 	end
@@ -449,11 +438,29 @@ function BoardView:_paintTile(t)
 	local parts = self.tileParts[t.id]
 	local kind = self:_tileKind(t)
 	local colors = TILE_COLORS[kind] or TILE_COLORS.normal
-	setHexColor(parts.side, Util.shade(colors[1], -0.38))
-	setHexColor(parts.top, colors[1])
+	local beltAngle = self.belt[t.id]
+	local top = if beltAngle then Util.mix(colors[1], Theme.Category.neutral, 0.3) else colors[1]
+	setHexColor(parts.side, Util.shade(top, -0.38))
+	setHexColor(parts.top, top)
 	if parts.icon then
 		parts.icon:Destroy()
 		parts.icon = nil
+	end
+	if parts.belt then
+		parts.belt:Destroy()
+		parts.belt = nil
+	end
+	if beltAngle then
+		local mark = Util.frame(parts.root, {
+			Name = "Belt",
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromOffset(U, U + 0.52 * U),
+			Size = UDim2.fromOffset(0.4 * U, 0.4 * U),
+			Rotation = beltAngle,
+			ZIndex = 5,
+		})
+		Icons.draw(Shapes.canvas(mark), BELT_CHEVRON, { ink = Theme.Category.neutral })
+		parts.belt = mark
 	end
 	local iconId, iconColor, size = nil, nil, 0.85
 	if kind == "start" then
@@ -465,7 +472,8 @@ function BoardView:_paintTile(t)
 	elseif NATURAL_ICON[kind] then
 		iconId, iconColor = NATURAL_ICON[kind], C.white
 	end
-	parts.label.Visible = iconId == nil
+	parts.hasIcon = iconId ~= nil
+	parts.label.Visible = iconId == nil and beltAngle == nil and (self.cover[t.id] or 0) < 3
 	if iconId then
 		local holder = Util.frame(parts.root, {
 			Name = "TileIcon",
@@ -474,7 +482,8 @@ function BoardView:_paintTile(t)
 			Size = UDim2.fromOffset(size * U, size * U),
 			ZIndex = 5,
 		})
-		Icons.make(holder, iconId, Icons.flatColors(iconColor, colors[1], iconColor))
+		Icons.make(holder, iconId, Icons.flatColors(iconColor, top, iconColor))
+		holder.Visible = (self.cover[t.id] or 0) == 0
 		parts.icon = holder
 	end
 end
@@ -509,8 +518,13 @@ function BoardView:_makeToken(tile: number, kind: string)
 		Position = px(center),
 		Size = UDim2.fromOffset(0.8 * U, 0.8 * U),
 	})
-	Shapes.circle(holder, 0.5, 0.6, 0.98, C.black, { t = 0.7, name = "Shadow" })
-	Icons.medallion(holder, TOKEN_ICON[kind] or "info", Theme.Category[kind] or C.inkSoft, { Size = UDim2.fromScale(1, 1), ZIndex = 2 })
+	-- coin edge peeking out below the medallion (0.78 + its brass rim 2 x 0.08 x 0.78 = 0.905)
+	Shapes.circle(holder, 0.5, 0.54, 0.905, C.brassDark, { name = "Edge" })
+	Icons.medallion(holder, TOKEN_ICON[kind] or "info", Theme.Category[kind] or C.inkSoft, {
+		Position = UDim2.fromScale(0.5, 0.47),
+		Size = UDim2.fromScale(0.78, 0.78),
+		ZIndex = 2,
+	})
 	-- slow idle bob so the board feels alive
 	local phase = tile * 0.7
 	local base = center
@@ -538,15 +552,17 @@ function BoardView:_makePlaced(entry)
 		Position = px(center),
 		Size = UDim2.fromOffset(0.6 * U, 0.6 * U),
 	})
-	local shadow = Util.new("Frame", {
-		BackgroundColor3 = C.black,
-		BackgroundTransparency = 0.6,
+	-- the plaque's darker wooden side, the same outline as the rimmed face
+	local side = Util.new("Frame", {
+		Name = "Side",
+		BackgroundColor3 = C.woodDeep,
 		BorderSizePixel = 0,
-		Position = UDim2.fromOffset(0, 3),
+		Position = UDim2.fromScale(0, 0.14),
 		Size = UDim2.fromScale(1, 1),
 		Parent = holder,
 	})
-	Util.corner(shadow, 0.18)
+	Util.corner(side, 0.18)
+	Util.stroke(side, C.woodDeep, 3)
 	local plaque = Util.new("Frame", {
 		Name = "Plaque",
 		BackgroundColor3 = C.wood,
@@ -556,49 +572,22 @@ function BoardView:_makePlaced(entry)
 		Parent = holder,
 	})
 	Util.corner(plaque, 0.18)
-	Util.stroke(plaque, Theme.Category[category], 3)
+	-- the rim is painted in the colour of whoever placed it
+	local rim = if entry.owner and entry.owner > 0 then Theme.Seat[((entry.owner - 1) % 6) + 1] or OWNER_FALLBACK else Theme.Category[category]
+	Util.stroke(plaque, rim, 3)
 	Icons.engraved(plaque, item, C.wood, {
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.5),
 		Size = UDim2.fromScale(0.8, 0.8),
 		ZIndex = 4,
 	})
-	if entry.owner and entry.owner > 0 then
-		local pip = Util.new("Frame", {
-			Name = "Owner",
-			BackgroundColor3 = Theme.Seat[((entry.owner - 1) % 6) + 1] or OWNER_FALLBACK,
-			BorderSizePixel = 0,
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.fromScale(0.92, 0.04),
-			Size = UDim2.fromScale(0.34, 0.34),
-			ZIndex = 6,
-			Parent = holder,
-		})
-		Util.corner(pip, 0.5)
-		Util.stroke(pip, C.white, 2)
-	end
-	-- conveyors show arrows along their 3 tiles
+	-- a conveyor tints the tiles it covers and marks which way the belt runs
 	if item == "conveyor" and entry.tiles then
-		for _, t in entry.tiles do
-			local p = self:tileWorld(t)
-			local nextTile = self.board.nextMain[t]
-			local dirVec = if nextTile then (self:tileWorld(nextTile) - p).Unit else Vector2.new(1, 0)
-			if entry.dir == "back" then
-				dirVec = -dirVec
-			end
-			local arrow = Util.frame(holder, {
-				Name = "BeltArrow",
-				AnchorPoint = Vector2.new(0.5, 0.5),
-				Position = UDim2.fromOffset(p.X - center.X + 0.3 * U, p.Y - center.Y + 0.42 * U),
-				Size = UDim2.fromOffset(0.5 * U, 0.5 * U),
-				Rotation = math.deg(math.atan2(dirVec.Y, dirVec.X)) + 90,
-				ZIndex = 7,
-			})
-			Icons.make(arrow, "up", Icons.flatColors(Theme.Category.neutral, C.white))
-		end
+		self:_setBelt(tile, entry.tiles, entry.dir)
 	end
 	if item == "teleporter" then
-		local ring = Shapes.ring(holder, 0.5, 0.5, 1.6, 0.1, Theme.Category.neutral, { px = 30 })
+		-- an open ring around the plaque that keeps turning (the gap shows it spinning)
+		local ring = Shapes.ring(holder, 0.5, 0.5, 1.6, 0.1, Theme.Category.neutral, { px = 30, cut = { 0, 0.78 } })
 		ring.ZIndex = 1
 		task.spawn(function()
 			while ring.Parent do
@@ -609,6 +598,23 @@ function BoardView:_makePlaced(entry)
 	end
 	Util.popIn(holder, 0.35, 0.3)
 	return holder
+end
+
+function BoardView:_setBelt(origin: number, tiles: { number }?, dir: string?)
+	for _, t in self.beltOf[origin] or {} do
+		self.belt[t] = nil
+		self:_paintTile(self.board.tiles[t])
+	end
+	self.beltOf[origin] = tiles
+	for i, t in tiles or {} do
+		local from, to = t, (tiles :: { number })[i + 1]
+		if not to then
+			from, to = (tiles :: { number })[i - 1] or t, t
+		end
+		local v = self:tileWorld(to) - self:tileWorld(from)
+		self.belt[t] = math.deg(math.atan2(v.Y, v.X)) + (if dir == "back" then 180 else 0)
+		self:_paintTile(self.board.tiles[t])
+	end
 end
 
 function BoardView:applySnapshot(snap)
@@ -649,6 +655,9 @@ function BoardView:applySnapshot(snap)
 		if not existing or existing:GetAttribute("Item") ~= e.item then
 			if existing then
 				existing:Destroy()
+				if self.beltOf[tile] then
+					self:_setBelt(tile, nil, nil)
+				end
 			end
 			local f = self:_makePlaced(e)
 			f:SetAttribute("Item", e.item)
@@ -686,6 +695,9 @@ function BoardView:_removePlacedVisual(tile: number)
 		return
 	end
 	self.placed[tile] = nil
+	if self.beltOf[tile] then
+		self:_setBelt(tile, nil, nil)
+	end
 	Util.tween(Util.scaler(f), 0.25, { Scale = 0 }, Enum.EasingStyle.Back, Enum.EasingDirection.In)
 	task.delay(0.26, function()
 		f:Destroy()
@@ -704,19 +716,12 @@ function BoardView:addPawn(seat: number, info, tile: number)
 		Size = UDim2.fromOffset(0.86 * U, 0.86 * U),
 		ZIndex = seat,
 	})
+	local share = Util.new("UIScale", { Name = "ShareScale", Parent = root })
 	local lift = Util.frame(root, { Name = "Lift" })
 	CosmeticArt.pawn(lift, info.look and info.look.pawn, seatColor, {
 		Position = UDim2.fromScale(0.5, 0.5),
 		Size = UDim2.fromScale(1, 1),
 	})
-	if info.character then
-		CosmeticArt.characterBadge(lift, info.character, {
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.fromScale(0.86, 0.8),
-			Size = UDim2.fromScale(0.42, 0.42),
-			ZIndex = 8,
-		})
-	end
 	local ring = Util.new("Frame", {
 		Name = "TurnRing",
 		BackgroundTransparency = 1,
@@ -729,42 +734,53 @@ function BoardView:addPawn(seat: number, info, tile: number)
 	})
 	Util.corner(ring, 0.5)
 	local st = Util.stroke(ring, C.brassLight, 3)
-	self.pawns[seat] = { frame = root, lift = lift, tile = tile, ring = ring, ringStroke = st, seat = seat, info = info }
+	self.pawns[seat] = { frame = root, lift = lift, share = share, tile = tile, ring = ring, ringStroke = st, seat = seat, info = info }
 	self.seatInfo[seat] = info
 	self:_arrange(true)
 	return root
 end
 
--- Where pawn `seat` rests on its tile (spread out when tiles are shared).
-function BoardView:_restPosition(seat: number): Vector2
+local SLOTS = BoardLayout.PawnSlots
+
+-- Where pawn `seat` rests on its tile, and its scale there.
+function BoardView:_restPosition(seat: number): (Vector2, number)
 	local pawn = self.pawns[seat]
 	local here = {}
 	for s, p in self.pawns do
-		if p.tile == pawn.tile then
+		if p.tile == pawn.tile and (not p.moving or s == seat) then
 			table.insert(here, s)
 		end
 	end
 	table.sort(here)
-	local n = #here
-	local i = table.find(here, seat) or 1
-	local base = self:tileWorld(pawn.tile) - Vector2.new(0, 0.3 * U)
-	if n <= 1 then
-		return base
-	end
-	local a = math.rad(-90 + 360 * (i - 1) / n)
-	local r = if n == 2 then 0.3 * U else 0.38 * U
-	return base + Vector2.new(math.cos(a) * r, math.sin(a) * r * 0.85)
+	local layout = SLOTS[math.clamp(#here, 1, #SLOTS)]
+	local slot = layout[table.find(here, seat) or 1] or layout[1]
+	return self:tileWorld(pawn.tile) + Vector2.new(slot[1], slot[2]) * U, layout.scale
 end
 
 function BoardView:_arrange(instant: boolean?)
+	local count = {}
 	for seat, pawn in self.pawns do
 		if not pawn.moving then
-			local target = px(self:_restPosition(seat))
+			count[pawn.tile] = (count[pawn.tile] or 0) + 1
+			local pos, scale = self:_restPosition(seat)
 			if instant then
-				pawn.frame.Position = target
+				pawn.frame.Position = px(pos)
+				pawn.share.Scale = scale
 			else
-				Util.tween(pawn.frame, 0.25, { Position = target }, Enum.EasingStyle.Quad)
+				Util.tween(pawn.frame, 0.25, { Position = px(pos) }, Enum.EasingStyle.Quad)
+				Util.tween(pawn.share, 0.25, { Scale = scale }, Enum.EasingStyle.Quad)
 			end
+		end
+	end
+	-- a tile's own icon hides under pawns, and its number once a crowd covers it
+	for tile, parts in self.tileParts do
+		local n = count[tile] or 0
+		if (self.cover[tile] or 0) ~= n then
+			self.cover[tile] = n
+			if parts.icon then
+				parts.icon.Visible = n == 0
+			end
+			parts.label.Visible = not parts.hasIcon and parts.belt == nil and n < 3
 		end
 	end
 end
@@ -856,6 +872,8 @@ function BoardView:hop(seat: number, path: { number }, kind: string, trailId: st
 		return
 	end
 	pawn.moving = true
+	self:_arrange()
+	Util.tween(pawn.share, 0.15, { Scale = 1 }, Enum.EasingStyle.Quad)
 	local step = Config.Timing.StepTime
 	if Pacing.walkKinds[kind] then
 		for _, tile in path do
@@ -882,7 +900,8 @@ function BoardView:hop(seat: number, path: { number }, kind: string, trailId: st
 		Util.tween(s, 0.25, { Scale = 0 }, Enum.EasingStyle.Back, Enum.EasingDirection.In)
 		task.wait(0.27)
 		pawn.tile = tile
-		pawn.frame.Position = px(self:_restPosition(seat))
+		local restPos = self:_restPosition(seat)
+		;(pawn.frame :: Frame).Position = px(restPos)
 		self:puff(self:tileWorld(tile), hex("FFFFFF"))
 		Util.tween(s, 0.3, { Scale = 1 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 		task.wait(0.3)
@@ -1067,12 +1086,12 @@ function BoardView:buildIntro(duration: number)
 		self.layers[layerName].Visible = false
 	end
 	for _, t in tiles do
-		local root = self.tileParts[t.id].root
+		local root = self.tileParts[t.id].root :: Frame
 		root.Visible = false
 	end
 	task.spawn(function()
 		for i, t in tiles do
-			local root = self.tileParts[t.id].root
+			local root = self.tileParts[t.id].root :: Frame
 			local base = root.Position
 			root.Position = base - UDim2.fromOffset(0, 0.9 * U)
 			root.Visible = true
