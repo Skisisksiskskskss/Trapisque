@@ -6,3 +6,5 @@ __pycache__/
 *.rbxlx.lock
 /build/
 sourcemap.json
+/.luau/
+tools/preview/fonts/

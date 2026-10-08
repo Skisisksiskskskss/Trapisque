@@ -9,7 +9,8 @@ import math
 import os
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
-FONT_DIR = os.environ.get("TRAPISQUE_FONTS", "/tmp/claude-0/fonts")
+# Luckiest Guy, Fondamento and Nunito (Google Fonts); set TRAPISQUE_FONTS to use another folder
+FONT_DIR = os.environ.get("TRAPISQUE_FONTS", os.path.join(os.path.dirname(os.path.abspath(__file__)), "fonts"))
 
 
 def hex_rgba(h, a=255):
