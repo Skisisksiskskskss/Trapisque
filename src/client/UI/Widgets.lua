@@ -391,10 +391,13 @@ function Widgets.panel(parent: Instance?, o: { [string]: any }): (Frame, Frame)
 
 	local content = Util.frame(root, { Name = "Content", ZIndex = 2 })
 	local pad = o.padding or 18
-	Util.pad(content, pad, (o.title and pad + 22) or pad, pad, pad)
+	Util.pad(content, pad, (o.title and pad + 54) or pad, pad, pad)
 
 	if o.title then
-		Widgets.ribbon(root, o.title, { width = o.titleWidth, color = o.titleColor })
+		-- the title plate sits inside the panel, centred under its top edge
+		local plate = Widgets.ribbon(root, o.title, { width = o.titleWidth, color = o.titleColor })
+		plate.AnchorPoint = Vector2.new(0.5, 0)
+		plate.Position = UDim2.new(0.5, 0, 0, 14)
 	end
 	root.Parent = parent
 	return content, root
@@ -521,6 +524,82 @@ function Widgets.toggle(parent: Instance, o: { [string]: any })
 	end)
 	t.root = root
 	return t
+end
+
+--[[
+	A row of options where one is picked (map, length, bots...).
+		local c = Widgets.choice(parent, { options = { { text = "Quick", value = "quick" }, ... },
+			value = "quick", onChange = fn, size = UDim2, position, layoutOrder, textSize })
+		c:set(value)  c.value  c:setEnabled(bool)
+]]
+function Widgets.choice(parent: Instance, o: { [string]: any })
+	local root = Util.frame(parent, {
+		Name = o.name or "Choice",
+		Size = o.size or UDim2.fromOffset(360, 40),
+		Position = o.position or UDim2.new(),
+		AnchorPoint = o.anchor or Vector2.zero,
+		LayoutOrder = o.layoutOrder or 0,
+	})
+	local layout = Util.list(root, "x", 6, o.align or "Left", "Center")
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	local c = { root = root, value = o.value, enabled = true }
+	local buttons = {}
+	local function paint()
+		for _, b in buttons do
+			local on = b.value == c.value
+			b.frame.BackgroundColor3 = if on then C.brass else C.parchment
+			b.stroke.Color = if on then C.brassDark else C.parchmentEdge
+			b.label.TextColor3 = if on then C.ink else C.inkSoft
+			b.frame.BackgroundTransparency = if c.enabled or on then 0 else 0.4
+		end
+	end
+	local n = #o.options
+	for i, opt in o.options do
+		local f = Util.new("TextButton", {
+			Name = "Option" .. i,
+			Text = "",
+			AutoButtonColor = false,
+			BorderSizePixel = 0,
+			Size = UDim2.new(1 / n, -6 * (n - 1) / n, 1, 0),
+			LayoutOrder = i,
+			Parent = root,
+		})
+		Util.corner(f, 8)
+		local stroke = Util.stroke(f, C.parchmentEdge, 2)
+		local label = Widgets.label(f, {
+			text = opt.text,
+			font = "chunky",
+			size = o.textSize or 17,
+			align = "center",
+			sizeUDim = UDim2.new(1, -8, 1, 0),
+			position = UDim2.fromOffset(4, 0),
+			scaled = true,
+		})
+		local b = { frame = f, stroke = stroke, label = label, value = opt.value }
+		table.insert(buttons, b)
+		f.Activated:Connect(function()
+			if not c.enabled or c.value == opt.value then
+				return
+			end
+			Sound.play("click")
+			c.value = opt.value
+			paint()
+			Util.bump(f, 0.06)
+			if o.onChange then
+				task.spawn(o.onChange, opt.value)
+			end
+		end)
+	end
+	function c.set(_self, value: any)
+		c.value = value
+		paint()
+	end
+	function c.setEnabled(_self, on: boolean)
+		c.enabled = on
+		paint()
+	end
+	paint()
+	return c
 end
 
 -- Horizontal progress bar (XP, timers).

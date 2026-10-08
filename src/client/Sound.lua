@@ -35,6 +35,10 @@ local LIBRARY = {
 local cache = {}
 local enabled = true
 
+function Sound.isEnabled(): boolean
+	return enabled
+end
+
 function Sound.setEnabled(on: boolean)
 	enabled = on
 end

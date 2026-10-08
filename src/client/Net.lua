@@ -1,7 +1,7 @@
 --[[
 	Net (client)
 	Net.request(action, payload) -> ok, dataOrError   (yields)
-	Net.on(kind, fn)                                  server pushes
+	Net.on(kind, fn) -> disconnect()                  server pushes
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -31,7 +31,7 @@ function Net.request(action: string, payload: { [string]: any }?): (boolean, any
 	return false, result.err or "That didn't work."
 end
 
-function Net.on(kind: string, fn: (any) -> ())
+function Net.on(kind: string, fn: (any) -> ()): () -> ()
 	listeners[kind] = listeners[kind] or {}
 	table.insert(listeners[kind], fn)
 	-- deliver anything that arrived before the listener existed
@@ -40,6 +40,13 @@ function Net.on(kind: string, fn: (any) -> ())
 		backlog[kind] = nil
 		for _, data in queued do
 			task.spawn(fn, data)
+		end
+	end
+	return function()
+		local list = listeners[kind]
+		local i = list and table.find(list, fn)
+		if i then
+			table.remove(list, i)
 		end
 	end
 end

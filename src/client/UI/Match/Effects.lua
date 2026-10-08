@@ -131,8 +131,8 @@ function Effects.trap(view, item: string, tile: number)
 				ZIndex = 54,
 			})
 			local c = Shapes.canvas(spike, { Size = UDim2.fromScale(1, 1), SizeConstraint = Enum.SizeConstraint.RelativeXY })
-			Shapes.rect(c, 0.5, 0.65, 0.4, 0.7, hex("8A8F96"))
-			Shapes.tri(c, 0.5, 0.3, 0.8, hex("C9CED6"))
+			-- a tapering steel spike, the same shape as the Spike card
+			Shapes.taper(c, { { 0.5, 0.98 }, { 0.5, 0.04 } }, 0.62, 0.08, hex("9AA0A8"), { steps = 12 })
 			task.delay((i - 1) * 0.05, function()
 				Util.tween(spike, 0.18, { Size = UDim2.fromScale(0.22, if i == 2 then 0.7 else 0.5) }, Enum.EasingStyle.Back)
 			end)

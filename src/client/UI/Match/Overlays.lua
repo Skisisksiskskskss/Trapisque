@@ -314,22 +314,28 @@ function Overlays.turnBanner(layer: Frame, text: string, seatColor: Color3, mine
 	})
 	Util.corner(banner, 14)
 	Util.stroke(banner, C.ink, 3)
-	local stripe = Util.new("Frame", {
+	-- the player's seat colour as a pawn-like dot, inset from the edge
+	local dotSize = if mine then 26 else 22
+	local dot = Util.new("Frame", {
+		Name = "SeatDot",
 		BackgroundColor3 = seatColor,
 		BorderSizePixel = 0,
-		Size = UDim2.new(0, 14, 1, 0),
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.new(0, 16, 0.5, 0),
+		Size = UDim2.fromOffset(dotSize, dotSize),
 		ZIndex = 86,
 		Parent = banner,
 	})
-	Util.corner(stripe, 10)
+	Util.corner(dot, 0.5)
+	Util.stroke(dot, C.ink, 2)
 	Widgets.label(banner, {
 		text = text,
 		font = "chunky",
 		size = if mine then 32 else 26,
 		color = C.ink,
 		align = "center",
-		sizeUDim = UDim2.new(1, -24, 1, 0),
-		position = UDim2.fromOffset(18, 0),
+		sizeUDim = UDim2.new(1, -(dotSize + 40), 1, -10),
+		position = UDim2.new(0, dotSize + 24, 0, 5),
 		scaled = true,
 		z = 87,
 	})
