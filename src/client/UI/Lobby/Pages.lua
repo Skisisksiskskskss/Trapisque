@@ -190,7 +190,7 @@ local RULES = {
 	{
 		icon = "token_trap",
 		title = "Tokens",
-		text = "Land on a token to spin its wheel. Red Trap tokens give trap cards, green Assist tokens give helpful cards and purple Neutral tokens give tricky ones. A wheel can also land on a coin. The orange Potion Seller sells potions for coins.",
+		text = "Land on a token to spin its wheel. Red Trap tokens give trap cards, green Assist tokens give helpful cards and purple Neutral tokens give tricky ones. A wheel can also land on a coin. The orange Potion Seller sells potions for coins. Once used, a token jumps to a new spot. Landing counts however you get there: a roll, a push from a trap, a Nudge, Telepathy or a swap.",
 	},
 	{
 		icon = "spike",

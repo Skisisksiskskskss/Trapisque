@@ -32,7 +32,8 @@ To stop a match from running forever, it ends on score after 50 / 75 / 120 round
    Seller. Spots come every 3 tiles on Blissful Tricks and every 5 on Junction Dungeon
    and Slimy Snares. The mix is weighted (Trap 34, Assist 30, Neutral 22,
    Potion Seller 14), and every board has at least one Potion Seller. **(digital)**
-   Tokens stay put for the whole match.
+   Once a token has been used it jumps to a random free tile, so the board keeps
+   changing. **(digital)**
 4. **Junction Dungeon** starts with two Spikes already set.
 5. **Coins.** Everyone starts with 1 coin, so the Potion Seller is useful early.
    **(digital)**
@@ -60,6 +61,13 @@ Before your main action you may also take any number of **free actions**:
 **Landing on a token.** On a Trap, Assist or Neutral token you spin that token's wheel
 and get the card it lands on. Every wheel also has a coin slot. On a Potion Seller
 token the shop opens.
+
+**Every way of arriving counts.** It doesn't matter how you get onto a tile: a roll,
+a trap pushing you back, a Nudge, Telepathy, a swap, a Conveyor Belt, Shifting Sands,
+Double Jeopardy or a Time Travel recall all trigger whatever is there, so you can
+push someone onto a Spike or nudge a friend onto a token. A Potion Seller only opens
+for the player whose turn it is; anyone else just passes by. If your own free action
+(a Nudge or Warp) lands you on one, your turn carries on after shopping. **(digital)**
 
 **Your hand.** You can hold at most 8 cards **(digital)**, and at most 5 copies of any
 one card.
@@ -135,7 +143,7 @@ through all of them.
 | Map | Hazard | Without the counter |
 | --- | --- | --- |
 | Blissful Tricks | River (counter: Bridge) | You fall in and your move ends at the river. **(digital)** |
-| Junction Dungeon | Locked gate and gated shortcuts (counter: Key) | You stop at the gate and are stuck until you roll 4 or more on a later turn. **(digital)** A gated shortcut only opens with a Key. |
+| Junction Dungeon | Locked gate and gated shortcuts (counter: Key) | You stop at the gate and are stuck until you roll 4 or more on a later turn. Being pushed onto a gate holds you the same way. **(digital)** A gated shortcut only opens with a Key. |
 | Slimy Snares | Slime (counter: Boots) | Moving through it halves your move (odd moves lose 1). |
 
 ## Characters
@@ -191,6 +199,10 @@ in practice matches.
 11. **Timers and leavers.** Turns are timed, players who are away get a bot until they
     return, and leavers are replaced by bots.
 12. **Teleporter distance** uses the rulebook's 8 tiles (the first description said 10).
+13. **Moving tokens.** A used token jumps to a random free tile instead of staying on
+    its spot.
+14. **Shops on your turn only.** Being pushed onto a Potion Seller during someone
+    else's turn doesn't open the shop.
 
 Values that are listed in the code as **rulebook v1** (Trapper's 2 starting traps, the
 Fire Starter's 2 Fire cards, abilities recharging every 2 cycles) follow the original

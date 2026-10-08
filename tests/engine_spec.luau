@@ -588,6 +588,146 @@ test("double jeopardy swaps hands and moves both players", function()
 	eq(g.players[1].tile, 7)
 end)
 
+test("nudges, pushes, swaps and potions all count as landing", function()
+	-- a Nudge onto a token spins its wheel
+	local g = newGame({ characters = { "mage", "overseer" } })
+	setTile(g, 1, 6)
+	g.tokens[7] = "assist"
+	g.rng:push(5) -- assist wheel: Shield
+	local ok, err, events = g:command(2, { type = "ability", target = 1, option = "fwd" })
+	truthy(ok, err)
+	eq(g.players[1].tile, 7)
+	eq(g.players[1].hand[1], "shield", "the nudge landed on the token")
+	truthy(findEvent(events, "spin"))
+
+	-- Telepathy can push someone onto a trap
+	g = newGame()
+	setTile(g, 2, 10)
+	g:_addPlaced(8, "spike", 1)
+	g.players[1].hand = { "telepathy_potion" }
+	ok, err = g:command(1, { type = "use", item = "telepathy_potion", target = 2, steps = -2 })
+	truthy(ok, err)
+	eq(g.players[2].tile, g.board.start, "pushed onto the spike")
+
+	-- Mud pushes you back onto a token
+	g = newGame()
+	g:_addPlaced(6, "mud", 2)
+	g.tokens[5] = "trap"
+	g.rng:push(5, 1) -- roll 5 onto the mud, then the trap wheel lands on Spike
+	g:command(1, { type = "roll" })
+	eq(g.players[1].tile, 5)
+	eq(g.players[1].hand[1], "spike", "landed on the token after the push")
+
+	-- a Warp swap lands both players
+	g = newGame({ characters = { "warper", "mage" } })
+	setTile(g, 2, 9 + 1)
+	g.tokens[10] = "neutral"
+	g.rng:push(1) -- neutral wheel: Teleporter
+	ok, err = g:command(1, { type = "ability", target = 2 })
+	truthy(ok, err)
+	eq(g.players[1].tile, 10)
+	eq(g.players[1].hand[1], "teleporter")
+
+	-- Double Jeopardy: the jumper lands too
+	g = newGame()
+	setTile(g, 2, 15)
+	g.tokens[7] = "assist"
+	g.players[1].hand = { "jeopardy_potion" }
+	g.rng:push(6) -- assist wheel: Moonwalk
+	ok, err = g:command(1, { type = "use", item = "jeopardy_potion", target = 2 })
+	truthy(ok, err)
+	eq(g.players[1].tile, 7)
+	eq(g.players[1].hand[1], "moonwalk", "player 1 jumped onto the token and spun it")
+end)
+
+test("only the player whose turn it is opens the shop", function()
+	-- pushed onto a Potion Seller on someone else's turn: nothing happens
+	local g = newGame()
+	setTile(g, 2, 10)
+	g.tokens[8] = "potion"
+	g.players[1].hand = { "telepathy_potion" }
+	local ok, err = g:command(1, { type = "use", item = "telepathy_potion", target = 2, steps = -2 })
+	truthy(ok, err)
+	eq(g.phase, "action")
+	eq(g.current, 2, "the turn passed")
+	eq(g.tokens[8], "potion", "an unused Potion Seller stays put")
+
+	-- nudging yourself onto one opens the shop, and your turn carries on afterwards
+	g = newGame({ characters = { "overseer", "mage" } })
+	eq(g.current, 1)
+	setTile(g, 1, 4)
+	g.tokens[5] = "potion"
+	ok, err = g:command(1, { type = "ability", target = 1, option = "fwd" })
+	truthy(ok, err)
+	eq(g.phase, "shop")
+	ok, err = g:command(1, { type = "shopDone" })
+	truthy(ok, err)
+	eq(g.phase, "action")
+	eq(g.current, 1, "still your turn: the nudge was a free action")
+	eq(g.tokens[5], nil, "the Potion Seller moved on after the visit")
+	roll(g, 1, 1)
+	eq(g.current, 2)
+end)
+
+test("being put onto a locked gate holds you unless you carry a Key", function()
+	local g = newGame({ map = "junction", characters = { "overseer", "mage" } })
+	local gate = nil
+	for tile, kind in g.natural do
+		if kind == "gate" and (gate == nil or tile < gate) then
+			gate = tile
+		end
+	end
+	truthy(gate, "junction has a gate")
+	local before = g.board.prevMain[gate]
+	setTile(g, 2, before)
+	local ok, err = g:command(1, { type = "ability", target = 2, option = "fwd" })
+	truthy(ok, err)
+	eq(g.players[2].tile, gate)
+	truthy(g.players[2].status.held, "held at the gate")
+
+	g = newGame({ map = "junction", characters = { "overseer", "mage" } })
+	setTile(g, 2, before)
+	g.players[2].hand = { "key" }
+	g:command(1, { type = "ability", target = 2, option = "fwd" })
+	falsy(g.players[2].status.held, "the key opened it")
+	eq(#g.players[2].hand, 0)
+end)
+
+test("a used token jumps to a free tile", function()
+	local g = newGame()
+	g.tokens[5] = "assist"
+	g.rng:push(4, 5) -- move 4, Shield
+	local ok, err, events = g:command(1, { type = "roll" })
+	truthy(ok, err)
+	eq(g.tokens[5], nil, "the token left")
+	local moved = findEvent(events, "tokenMove")
+	truthy(moved, "tokenMove event")
+	eq(moved.from, 5)
+	eq(g.tokens[moved.to], "assist")
+
+	-- with a real RNG: never onto special tiles, players, placed or natural traps or another token
+	local Rng = requireModule("Shared/Game/Rng")
+	g = newGame({ keepTokens = true })
+	g.rng = Rng.new(11)
+	g:_addPlaced(12, "spike", 1)
+	setTile(g, 2, 20)
+	for _ = 1, 200 do
+		local from = nil
+		for tile in g.tokens do
+			if from == nil or tile < from then
+				from = tile
+			end
+		end
+		g:_relocateToken(from)
+		for tile in g.tokens do
+			falsy(g.board:isSpecial(tile), "token on start/treasure")
+			eq(g.placed[tile], nil, "token on a placed card")
+			eq(g.natural[tile], nil, "token on a natural trap")
+			truthy(tile ~= 1 and tile ~= 20, "token under a player")
+		end
+	end
+end)
+
 test("the potion seller sells for coins", function()
 	local g = newGame()
 	g.tokens[5] = "potion"

@@ -824,7 +824,8 @@ function Engine:_walk(p, m: number): string
 	return result
 end
 
--- Forced movement (traps, potions, abilities). Ignores traps, tokens and natural traps.
+-- Forced movement (traps, potions, abilities). Nothing on the way counts; callers
+-- then resolve the tile it ends on with _land(p, true).
 function Engine:_shiftForward(p, n: number, kind: string)
 	local board = self.board
 	local path = {}
@@ -912,12 +913,23 @@ end
 -- landing
 ---------------------------------------------------------------------------
 
-function Engine:_land(p)
+-- One action can chain landings (pushed onto Mud, back onto a Conveyor...). Placed
+-- traps wear out so chains end on their own; this is only a safety net.
+local MAX_LANDINGS = 12
+
+-- Resolves the tile `p` ended up on. Every way of arriving counts: a dice walk, a
+-- trap pushing you, a Nudge, Telepathy, a swap, a conveyor ride... `forced` is true
+-- for anything but a walk (a walk already dealt with the gates it went through).
+function Engine:_land(p, forced: boolean?)
 	if self.phase == "over" then
 		return
 	end
+	self.landings = (self.landings or 0) + 1
+	if self.landings > MAX_LANDINGS then
+		return
+	end
 	local tile = p.tile
-	if tile == self.board.start then
+	if tile == self.board.start or tile == self.board.treasure then
 		return
 	end
 	local origin = self.cover[tile]
@@ -938,15 +950,65 @@ function Engine:_land(p)
 			end
 		end
 	end
+	-- (digital) put onto a locked gate: it holds you unless you carry a Key
+	if forced and self.natural[tile] == "gate" and p.character ~= "naturalist" and not p.status.held then
+		if removeCard(p, "key") then
+			self:_emit({ t = "useCard", p = p.index, item = "key", tile = tile })
+		else
+			p.status.held = true
+			self:_emit({ t = "natural", p = p.index, kind = "gate", tile = tile })
+		end
+	end
 	local token = self.tokens[tile]
 	if token then
 		if token == "potion" then
-			self.phase = "shop"
-			self:_emit({ t = "shop", p = p.index, tile = tile })
+			-- the shop opens for whoever's turn it is (anyone else just passes by)
+			if p.index == self.current and self.turn then
+				self.phase = "shop"
+				self.turn.shopTile = tile
+				self.turn.shopResume = self.freeAction == true
+				self:_emit({ t = "shop", p = p.index, tile = tile })
+			end
 		else
 			self:_spin(p, token)
+			self:_relocateToken(tile)
 		end
 	end
+end
+
+-- (digital) A used token jumps to a random free tile, so the board keeps changing.
+function Engine:_relocateToken(tile: number)
+	local kind = self.tokens[tile]
+	if not kind then
+		return
+	end
+	local board = self.board
+	local occupied = {}
+	for _, other in self.players do
+		occupied[other.tile] = true
+	end
+	local candidates = {}
+	for id = 1, board.count do
+		if
+			id ~= tile
+			and not board:isSpecial(id)
+			and self.tokens[id] == nil
+			and self.placed[id] == nil
+			and self.cover[id] == nil
+			and self.natural[id] == nil
+			and board.tiles[id].kind ~= "shortcutGate"
+			and not occupied[id]
+		then
+			table.insert(candidates, id)
+		end
+	end
+	if #candidates == 0 then
+		return
+	end
+	local dest = self.rng:pick(candidates)
+	self.tokens[tile] = nil
+	self.tokens[dest] = kind
+	self:_emit({ t = "tokenMove", from = tile, to = dest, token = kind })
 end
 
 function Engine:_rideConveyor(p, origin: number)
@@ -969,6 +1031,7 @@ function Engine:_rideConveyor(p, origin: number)
 		self:_usePlaced(origin)
 		self:_shiftBack(p, steps, "conveyor")
 	end
+	self:_land(p, true)
 end
 
 function Engine:_trigger(p, tile: number, entry)
@@ -991,8 +1054,10 @@ function Engine:_trigger(p, tile: number, entry)
 			self:_setStatus(p, "frozen", "ice")
 		elseif item == "mudslide" then
 			self:_shiftBack(p, Rules.MudslideBack * mult, "mudslide")
+			self:_land(p, true)
 		elseif item == "mud" then
 			self:_shiftBack(p, Rules.MudBack * mult, "mud")
+			self:_land(p, true)
 		elseif item == "snare" then
 			p.status.skip += 1
 			self:_emit({ t = "snared", p = p.index })
@@ -1022,6 +1087,8 @@ function Engine:_trigger(p, tile: number, entry)
 			local other = self:_nearestOther(p)
 			if other then
 				self:_swap(p, other, "spore")
+				self:_land(p, true)
+				self:_land(other, true)
 			else
 				self:_emit({ t = "fizzle", p = p.index, item = item, tile = tile })
 			end
@@ -1037,6 +1104,7 @@ function Engine:_trigger(p, tile: number, entry)
 			else
 				self:_shiftBack(p, k, "sands")
 			end
+			self:_land(p, true)
 		end
 	end
 end
@@ -1065,6 +1133,7 @@ function Engine:command(seat: number, cmd)
 	local p = self.players[seat]
 	local kind = cmd.type
 	local ok, err
+	self.landings = 0
 	if self.phase == "shop" then
 		if kind == "buy" then
 			ok, err = self:_cmdBuy(p, cmd)
@@ -1254,7 +1323,7 @@ function Engine:_cmdUse(p, cmd)
 		p.stats.used += 1
 		self:_emit({ t = "useCard", p = p.index, item = item, steps = steps })
 		self:_shiftBack(p, steps, "moonwalk")
-		self:_land(p)
+		self:_land(p, true)
 		if self.phase == "action" then
 			self:_finishTurn()
 		end
@@ -1272,7 +1341,10 @@ function Engine:_cmdUse(p, cmd)
 		p.stats.used += 1
 		self:_emit({ t = "useCard", p = p.index, item = item, target = t.index, steps = steps })
 		self:_shift(t, steps, "telepathy")
-		self:_finishTurn()
+		self:_land(t, true)
+		if self.phase == "action" then
+			self:_finishTurn()
+		end
 		return true
 	elseif use == "jeopardy" then
 		local t, why = self:_validTarget(p, cmd.target, false)
@@ -1285,8 +1357,12 @@ function Engine:_cmdUse(p, cmd)
 		self:_emit({ t = "useCard", p = p.index, item = item, target = t.index })
 		self:_emit({ t = "handSwap", a = p.index, b = t.index })
 		self:_shiftBack(t, Rules.JeopardySteps, "jeopardy")
+		self:_land(t, true)
 		self:_shiftForward(p, Rules.JeopardySteps, "jeopardy")
-		self:_finishTurn()
+		self:_land(p, true)
+		if self.phase == "action" then
+			self:_finishTurn()
+		end
 		return true
 	elseif use == "regen" then
 		local cdef = Characters.get(p.character)
@@ -1327,7 +1403,10 @@ function Engine:_cmdRecall(p)
 	p.anchor = nil
 	self:_emit({ t = "recall", p = p.index, tile = anchor.tile })
 	self:_warpTo(p, anchor.tile, "recall", anchor.trail)
-	self:_finishTurn()
+	self:_land(p, true)
+	if self.phase == "action" then
+		self:_finishTurn()
+	end
 	return true
 end
 
@@ -1384,6 +1463,16 @@ end
 function Engine:_cmdShopDone(p)
 	self:_emit({ t = "shopClose", p = p.index })
 	self.phase = "action"
+	local turn = self.turn
+	if turn and turn.shopTile then
+		self:_relocateToken(turn.shopTile)
+		turn.shopTile = nil
+	end
+	if turn and turn.shopResume then
+		-- the shop opened during a free action (your own Nudge or Warp): carry on
+		turn.shopResume = nil
+		return true
+	end
 	self:_finishTurn()
 	return true
 end
@@ -1434,6 +1523,7 @@ function Engine:_cmdAbility(p, cmd)
 		p.ability.progress = 0
 	end
 	self:_emit({ t = "ability", p = p.index, ability = id, target = target and target.index, option = option })
+	self.freeAction = true
 	if id == "hex" then
 		self:_setStatus(target, if option == "freeze" then "frozen" else "burning", "hex")
 	elseif id == "scavenge" then
@@ -1442,9 +1532,13 @@ function Engine:_cmdAbility(p, cmd)
 		self:_setStatus(target, "burning", "ignite")
 	elseif id == "warp" then
 		self:_swap(p, target, "warp")
+		self:_land(p, true)
+		self:_land(target, true)
 	elseif id == "nudge" then
 		self:_shift(target, if option == "fwd" then 1 else -1, "nudge")
+		self:_land(target, true)
 	end
+	self.freeAction = false
 	return true
 end
 
