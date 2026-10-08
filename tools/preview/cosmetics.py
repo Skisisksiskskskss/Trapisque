@@ -253,15 +253,19 @@ def main():
                 d = ImageDraw.Draw(img)
                 d.text((x0 + cw / 2 - (bb[2] - bb[0]) / 2 - bb[0], by + 20 - (bb[3] - bb[1]) / 2 - bb[1]), txt, font=f, fill=hex_rgba("#3A2414"))
             elif cat == "title":
-                d = ImageDraw.Draw(img)
-                txt = it["look"]["text"] or "(none)"
-                f = font("body", 22)
-                bb = d.textbbox((0, 0), txt, font=f)
-                if bb[2] - bb[0] > cw - 20:
-                    f = font("body", 22 * (cw - 20) / (bb[2] - bb[0]))
+                # CosmeticArt.title: the text on a dark nameplate filling 90% x 30% of the preview
+                txt = it["look"]["text"]
+                if txt:
+                    px0, py0, pw_, ph_ = x0 + 10, y0 + 45, cw - 20, 38
+                    aa_rrect(img, (px0, py0, px0 + pw_, py0 + ph_), 6, fill=hex_rgba("#4E2E14"))
+                    d = ImageDraw.Draw(img)
+                    f = font("body", 20)
                     bb = d.textbbox((0, 0), txt, font=f)
-                col_t = hex_rgba(it["look"]["color"]) if it["look"]["text"] else hex_rgba("#7B5B3E")
-                d.text((x0 + cw / 2 - (bb[2] - bb[0]) / 2 - bb[0], y0 + 64 - (bb[3] - bb[1]) / 2 - bb[1]), txt, font=f, fill=col_t)
+                    if bb[2] - bb[0] > pw_ - 16:
+                        f = font("body", 20 * (pw_ - 16) / (bb[2] - bb[0]))
+                        bb = d.textbbox((0, 0), txt, font=f)
+                    d.text((x0 + cw / 2 - (bb[2] - bb[0]) / 2 - bb[0], py0 + ph_ / 2 - (bb[3] - bb[1]) / 2 - bb[1]), txt, font=f,
+                           fill=hex_rgba(it["look"]["color"]))
             d = ImageDraw.Draw(img)
             f = font("body", 16)
             nm = it["name"]

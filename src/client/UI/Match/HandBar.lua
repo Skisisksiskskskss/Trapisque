@@ -142,7 +142,7 @@ function HandBar:_buildCharacter(content: Frame)
 		size = 22,
 		color = C.parchment,
 		sizeUDim = UDim2.new(1, 0, 0, 26),
-		position = UDim2.fromOffset(0, 18),
+		position = UDim2.fromOffset(0, 8),
 	})
 	local ability = def and def.ability
 	if ability then
@@ -152,8 +152,8 @@ function HandBar:_buildCharacter(content: Frame)
 			text = string.upper(ability.name),
 			style = ABILITY_STYLE[self.character] or "wood",
 			textSize = 20,
-			size = UDim2.new(1, -6, 0, 48),
-			position = UDim2.fromOffset(0, 48),
+			size = UDim2.new(1, -6, 0, 44),
+			position = UDim2.fromOffset(0, 38),
 			onClick = function()
 				if self.onAbility then
 					self.onAbility()
@@ -163,7 +163,7 @@ function HandBar:_buildCharacter(content: Frame)
 		-- recharge pips under the button
 		local pips = Util.frame(right, {
 			Name = "Pips",
-			Position = UDim2.fromOffset(0, 104),
+			Position = UDim2.fromOffset(0, 88),
 			Size = UDim2.new(1, -6, 0, 14),
 		})
 		Util.list(pips, "x", 5, "Center", "Center")
@@ -176,7 +176,7 @@ function HandBar:_buildCharacter(content: Frame)
 			color = C.woodPale,
 			align = "center",
 			sizeUDim = UDim2.new(1, -6, 0, 16),
-			position = UDim2.fromOffset(0, 120),
+			position = UDim2.fromOffset(0, 106),
 		})
 	else
 		Widgets.label(right, {
@@ -187,7 +187,7 @@ function HandBar:_buildCharacter(content: Frame)
 			color = C.woodPale,
 			wrap = true,
 			sizeUDim = UDim2.new(1, -6, 0, 60),
-			position = UDim2.fromOffset(0, 50),
+			position = UDim2.fromOffset(0, 40),
 			valign = "top",
 		})
 	end
@@ -223,8 +223,9 @@ function HandBar:setAbility(ready: boolean, progress: number, used: boolean, myT
 			Util.corner(pip, 0.5)
 			Util.stroke(pip, C.brassDark, 1.5)
 		end
-		local unit = if ab.recharge == "rounds" then "rounds" else "treasure runs"
-		note = if ready then "Charged!" else ("Recharges in " .. math.max(0, amount - progress) .. " " .. unit)
+		local left = math.max(1, amount - progress)
+		local unit = if ab.recharge == "rounds" then "round" else "treasure run"
+		note = if ready then "Charged!" else ("Recharges in " .. left .. " " .. unit .. (if left == 1 then "" else "s"))
 	end
 	self.pipNote.Text = note
 end
@@ -247,8 +248,8 @@ function HandBar:_buildActions(content: Frame)
 		style = "brass",
 		textSize = 32,
 		depth = 7,
-		size = UDim2.new(1, 0, 0, 74),
-		position = UDim2.fromOffset(0, 8),
+		size = UDim2.new(1, 0, 0, 70),
+		position = UDim2.fromOffset(0, 4),
 		onClick = function()
 			if self.onRoll then
 				self.onRoll()
@@ -261,8 +262,8 @@ function HandBar:_buildActions(content: Frame)
 		icon = "time_potion",
 		style = "purple",
 		textSize = 18,
-		size = UDim2.new(1, 0, 0, 42),
-		position = UDim2.fromOffset(0, 92),
+		size = UDim2.new(1, 0, 0, 40),
+		position = UDim2.fromOffset(0, 82),
 		onClick = function()
 			if self.onRecall then
 				self.onRecall()
@@ -279,7 +280,7 @@ function HandBar:_buildActions(content: Frame)
 		align = "center",
 		wrap = true,
 		sizeUDim = UDim2.new(1, 0, 0, 40),
-		position = UDim2.fromOffset(0, 96),
+		position = UDim2.fromOffset(0, 82),
 	})
 end
 

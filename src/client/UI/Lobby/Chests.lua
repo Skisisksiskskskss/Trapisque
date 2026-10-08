@@ -47,18 +47,20 @@ function Chests.art(parent: Instance, look, props: { [string]: any }?)
 	root.Name = "Chest"
 	local body, trim, band, gem = hex(string.sub(look.body, 2)), hex(string.sub(look.trim, 2)), hex(string.sub(look.band, 2)), hex(string.sub(look.gem, 2))
 
+	-- lid and box share one width; only the lid's top corners are rounded
 	local base = Shapes.canvas(root, { Name = "Base", ZIndex = 1 })
-	Shapes.rect(base, 0.5, 0.68, 0.8, 0.4, body, { r = 0.06 })
-	Shapes.rect(base, 0.27, 0.68, 0.09, 0.4, trim)
-	Shapes.rect(base, 0.73, 0.68, 0.09, 0.4, trim)
-	Shapes.rect(base, 0.5, 0.57, 0.17, 0.15, trim, { r = 0.2 })
-	Shapes.circle(base, 0.5, 0.57, 0.075, gem)
+	Shapes.rect(base, 0.5, 0.6825, 0.8, 0.395, body)
+	Shapes.rect(base, 0.27, 0.6825, 0.09, 0.395, trim)
+	Shapes.rect(base, 0.73, 0.6825, 0.09, 0.395, trim)
+	Shapes.rect(base, 0.5, 0.58, 0.17, 0.15, trim, { r = 0.2 })
+	Shapes.circle(base, 0.5, 0.58, 0.075, gem)
 
 	local lid = Shapes.canvas(root, { Name = "Lid", ZIndex = 2 })
-	Shapes.rect(lid, 0.5, 0.375, 0.84, 0.22, body, { r = 0.4 })
+	Shapes.rect(lid, 0.5, 0.375, 0.8, 0.22, body, { r = 0.4 })
+	Shapes.rect(lid, 0.5, 0.43, 0.8, 0.11, body)
 	Shapes.rect(lid, 0.27, 0.375, 0.09, 0.22, trim)
 	Shapes.rect(lid, 0.73, 0.375, 0.09, 0.22, trim)
-	Shapes.rect(lid, 0.5, 0.475, 0.84, 0.035, band)
+	Shapes.rect(lid, 0.5, 0.4675, 0.8, 0.035, band)
 	return { root = root, lid = lid, base = base }
 end
 
@@ -104,6 +106,69 @@ local function rays(parent: Instance, color: Color3, size: number, z: number): F
 		end
 	end)
 	return holder
+end
+
+local function pct(v: number): string
+	if math.abs(v - math.floor(v + 0.5)) < 0.05 then
+		return string.format("%d%%", math.floor(v + 0.5))
+	end
+	return string.format("%.1f%%", v)
+end
+
+-- The drop rates as a row of coloured segments with a legend underneath. Legend
+-- entries wrap whole, so a line never ends on a stray separator.
+local function oddsStrip(parent: Instance, chest, y: number)
+	local odds = Gacha.odds(chest, false)
+	local strip = Util.frame(parent, {
+		Name = "Odds",
+		Position = UDim2.new(0, 20, 0, y),
+		Size = UDim2.new(1, -40, 0, 50),
+	})
+	local bar = Util.frame(strip, { Name = "Bar", Size = UDim2.new(1, 0, 0, 12) })
+	Util.list(bar, "x", 3, "Left", "Center")
+	local legend = Util.frame(strip, { Name = "Legend", Position = UDim2.fromOffset(0, 18), Size = UDim2.new(1, 0, 0, 32) })
+	local flow = Util.list(legend, "x", 12, "Center", "Top")
+	pcall(function()
+		(flow :: any).Wraps = true
+	end)
+	local n = 0
+	for _, rarity in RARITY_ORDER do
+		local v = odds[rarity]
+		if v and v > 0 then
+			n += 1
+			local seg = Util.new("Frame", {
+				Name = rarity,
+				BackgroundColor3 = rarityColor(rarity),
+				BorderSizePixel = 0,
+				Size = UDim2.new(v / 100, -3, 1, 0),
+				LayoutOrder = n,
+				Parent = bar,
+			})
+			Util.corner(seg, 0.5)
+			Util.new("UISizeConstraint", { MinSize = Vector2.new(6, 0), Parent = seg })
+
+			local entry = Util.frame(legend, { Name = rarity, Size = UDim2.fromOffset(0, 16), LayoutOrder = n })
+			entry.AutomaticSize = Enum.AutomaticSize.X
+			Util.list(entry, "x", 4, "Left", "Center")
+			local dot = Util.new("Frame", {
+				BackgroundColor3 = rarityColor(rarity),
+				BorderSizePixel = 0,
+				Size = UDim2.fromOffset(8, 8),
+				LayoutOrder = 1,
+				Parent = entry,
+			})
+			Util.corner(dot, 0.5)
+			local text = Widgets.label(entry, {
+				text = rarityName(rarity) .. " " .. pct(v),
+				font = "heavy",
+				size = 12,
+				color = C.inkSoft,
+				sizeUDim = UDim2.fromOffset(0, 16),
+				layoutOrder = 2,
+			})
+			text.AutomaticSize = Enum.AutomaticSize.X
+		end
+	end
 end
 
 local function pityText(chest, pity): string
@@ -231,6 +296,7 @@ function Chests.open(layer: Instance): () -> ()
 			sizeUDim = UDim2.new(1, -30, 0, 18),
 			position = UDim2.fromOffset(15, 246),
 		})
+		oddsStrip(card, chest, 278)
 		local buttons = Util.frame(card, {
 			AnchorPoint = Vector2.new(0.5, 1),
 			Position = UDim2.new(0.5, 0, 1, -50),
@@ -285,9 +351,11 @@ function Chests.open(layer: Instance): () -> ()
 				if free > 0 then
 					one:setText("OPEN FREE")
 					one:setStyle("green")
+					one:setIcon("chest")
 				else
 					one:setText(tostring(chest.price))
 					one:setStyle("brass")
+					one:setIcon("gem")
 				end
 				pity.Text = pityText(chest, profile and profile.pity and profile.pity[chest.id])
 			end,

@@ -17,7 +17,11 @@ def hex_rgba(h, a=255):
     return (int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16), a)
 
 
+_WEIGHTS = {"body": "Bold", "heavy": "ExtraBold", "regular": "SemiBold"}
+
+
 def font(kind, size):
+    """Theme.Font: chunky = Luckiest Guy, display = Fondamento, body/heavy/regular = Nunito."""
     files = {
         "chunky": "LuckiestGuy-Regular.ttf",
         "display": "Fondamento-Regular.ttf",
@@ -26,9 +30,9 @@ def font(kind, size):
     path = os.path.join(FONT_DIR, files.get(kind, files["body"]))
     try:
         f = ImageFont.truetype(path, max(1, int(size)))
-        if kind in ("body", None):
+        if kind not in ("chunky", "display"):
             try:
-                f.set_variation_by_name("Bold")
+                f.set_variation_by_name(_WEIGHTS.get(kind, "Bold"))
             except Exception:
                 pass
         return f

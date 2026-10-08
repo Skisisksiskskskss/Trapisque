@@ -55,8 +55,8 @@ MatchScreen.__index = MatchScreen
 local active = nil
 
 local SIDE_W = 270
-local HAND_H = 178
-local TOP_H = 46
+local HAND_H = 150
+local TOP_H = 40
 local GAP = 10
 
 local DEATH_TEXT = {
@@ -274,13 +274,13 @@ function MatchScreen:_buildTopBar(bar: Frame)
 		Name = "Plate",
 		BackgroundColor3 = C.parchment,
 		BorderSizePixel = 0,
-		Size = UDim2.new(0, 360, 1, 0),
+		Size = UDim2.new(0, 400, 1, 0),
 		Parent = bar,
 	})
 	Util.corner(plate, 10)
 	Util.stroke(plate, C.burn, 2)
 	local lengthName = ({ quick = "Quick", standard = "Standard", classic = "Classic" })[self.length or ""] or ""
-	local modeName = if self.mode then self.mode.name else ""
+	local modeName = if self.mode then self.mode.short else ""
 	self.roundLabel = Widgets.label(plate, {
 		text = "",
 		font = "chunky",
@@ -290,11 +290,11 @@ function MatchScreen:_buildTopBar(bar: Frame)
 		position = UDim2.fromOffset(12, 0),
 	})
 	Widgets.label(plate, {
-		text = modeName .. (if lengthName ~= "" then "  ·  " .. lengthName else "") .. "  ·  First to " .. tostring(self.target),
+		text = modeName .. (if lengthName ~= "" then ("  ·  " .. lengthName) else "") .. "  ·  First to " .. tostring(self.target),
 		font = "heavy",
 		size = 15,
 		color = C.inkSoft,
-		sizeUDim = UDim2.new(1, -130, 1, 0),
+		sizeUDim = UDim2.new(1, -132, 1, 0),
 		position = UDim2.fromOffset(122, 0),
 	}).TextTruncate = Enum.TextTruncate.AtEnd
 
@@ -308,7 +308,7 @@ function MatchScreen:_buildTopBar(bar: Frame)
 		Widgets.iconButton(buttons, {
 			icon = icon,
 			style = style,
-			size = UDim2.fromOffset(44, 44),
+			size = UDim2.fromOffset(42, 40),
 			layoutOrder = order,
 			onClick = onClick,
 		})

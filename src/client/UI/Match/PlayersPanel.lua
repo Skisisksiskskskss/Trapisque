@@ -21,6 +21,14 @@ local hex = Theme.hex
 local PlayersPanel = {}
 PlayersPanel.__index = PlayersPanel
 
+local CARD_H = 88
+-- Row 3 room for treasure pips: the card's 250 wide, the pips start at 70 and the
+-- counters take the last 80. Rims are drawn outside each pip, so leave a gap for them.
+local PIPS_W = 92
+local PIP_GAP = 7
+local STATUS_W = 60
+local STATUS_GAP = 6
+
 local STATUS = {
 	{ key = "burning", icon = "fire", color = hex("E2622B"), tip = "Burning" },
 	{ key = "frozen", icon = "ice", color = hex("5DADE2"), tip = "Frozen" },
@@ -63,20 +71,12 @@ function PlayersPanel:_makeCard(list: Frame, info)
 		AutoButtonColor = false,
 		BackgroundColor3 = Color3.fromHex("FBF3DD"),
 		BorderSizePixel = 0,
-		Size = UDim2.new(1, 0, 0, 82),
+		Size = UDim2.new(1, 0, 0, CARD_H),
 		LayoutOrder = info.seat,
 		Parent = list,
 	})
 	Util.corner(card, 12)
 	local stroke = Util.stroke(card, C.parchmentEdge, 2)
-	local stripe = Util.new("Frame", {
-		Name = "SeatStripe",
-		BackgroundColor3 = seatColor,
-		BorderSizePixel = 0,
-		Size = UDim2.new(0, 8, 1, 0),
-		Parent = card,
-	})
-	Util.corner(stripe, 6)
 	if self.isTeam then
 		local teamColor = Theme.Team[info.team] or seatColor
 		local tag = Widgets.badge(card, {
@@ -93,7 +93,7 @@ function PlayersPanel:_makeCard(list: Frame, info)
 
 	local pawnHolder = Util.frame(card, {
 		Name = "PawnHolder",
-		Position = UDim2.fromOffset(14, 6),
+		Position = UDim2.fromOffset(10, 6),
 		Size = UDim2.fromOffset(50, 50),
 	})
 	CosmeticArt.pawn(pawnHolder, info.look and info.look.pawn, seatColor, {
@@ -101,26 +101,28 @@ function PlayersPanel:_makeCard(list: Frame, info)
 		Size = UDim2.fromScale(1, 1),
 	})
 
+	-- row 1: name (leaves room for the team tag)
+	local nameRight = if self.isTeam then 112 else 78
 	local name = Widgets.label(card, {
 		name = "Name",
 		text = info.name .. (if info.seat == self.mySeat then "  (you)" else ""),
 		font = "heavy",
 		size = 17,
 		color = C.textDark,
-		sizeUDim = UDim2.new(1, -150, 0, 20),
-		position = UDim2.fromOffset(72, 6),
+		sizeUDim = UDim2.new(1, -nameRight, 0, 20),
+		position = UDim2.fromOffset(70, 6),
 	})
 	name.TextTruncate = Enum.TextTruncate.AtEnd
+	-- row 2: character, with a small badge in front of its name
 	local charDef = Characters.get(info.character or "")
-	-- character: a small badge in front of its name
-	local textX = 72
+	local textX = 70
 	if info.character then
 		CosmeticArt.characterBadge(card, info.character, {
 			AnchorPoint = Vector2.new(0, 0),
-			Position = UDim2.fromOffset(72, 25),
-			Size = UDim2.fromOffset(18, 18),
+			Position = UDim2.fromOffset(70, 29),
+			Size = UDim2.fromOffset(16, 16),
 		})
-		textX = 94
+		textX = 92
 	end
 	local sub = Widgets.label(card, {
 		name = "Character",
@@ -128,25 +130,27 @@ function PlayersPanel:_makeCard(list: Frame, info)
 		font = "body",
 		size = 13,
 		color = Theme.Character[info.character] or C.inkSoft,
-		sizeUDim = UDim2.new(1, -150 - (textX - 72), 0, 16),
-		position = UDim2.fromOffset(textX, 26),
+		sizeUDim = UDim2.new(1, -(textX + 8), 0, 16),
+		position = UDim2.fromOffset(textX, 29),
 	})
 	sub.TextTruncate = Enum.TextTruncate.AtEnd
 
-	-- treasures: one slot per treasure needed
+	-- row 3: treasures on the left, coins and cards on the right (pips shrink in
+	-- longer games so five still fit)
 	local slots = Util.frame(card, {
 		Name = "Treasures",
-		Position = UDim2.fromOffset(72, 46),
-		Size = UDim2.fromOffset(130, 24),
+		Position = UDim2.fromOffset(70, 54),
+		Size = UDim2.fromOffset(PIPS_W, 20),
 	})
-	Util.list(slots, "x", 3, "Left", "Center")
+	Util.list(slots, "x", PIP_GAP, "Left", "Center")
+	local pip = math.min(18, math.floor((PIPS_W - (self.target - 1) * PIP_GAP) / self.target))
 	local slotFrames = {}
 	for i = 1, self.target do
 		local slot = Util.new("Frame", {
 			Name = "Slot" .. i,
 			BackgroundColor3 = C.parchmentDark,
 			BorderSizePixel = 0,
-			Size = UDim2.fromOffset(20, 20),
+			Size = UDim2.fromOffset(pip, pip),
 			LayoutOrder = i,
 			Parent = slots,
 		})
@@ -155,12 +159,11 @@ function PlayersPanel:_makeCard(list: Frame, info)
 		slotFrames[i] = slot
 	end
 
-	-- coins and cards
 	local counters = Util.frame(card, {
 		Name = "Counters",
 		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, -8, 0, 24),
-		Size = UDim2.fromOffset(70, 22),
+		Position = UDim2.new(1, -8, 0, 53),
+		Size = UDim2.fromOffset(76, 22),
 	})
 	Util.list(counters, "x", 4, "Right", "Center")
 	local function counter(icon: string, color: Color3, order: number)
@@ -180,17 +183,16 @@ function PlayersPanel:_makeCard(list: Frame, info)
 	local coins = counter("coin", C.brassDark, 1)
 	local cardsN = counter("book", C.woodDark, 2)
 
-	-- statuses
+	-- statuses, tucked under the pawn
 	local statusRow = Util.frame(card, {
 		Name = "Status",
-		AnchorPoint = Vector2.new(1, 1),
-		Position = UDim2.new(1, -8, 1, -6),
-		Size = UDim2.fromOffset(130, 20),
+		Position = UDim2.fromOffset(6, 60),
+		Size = UDim2.fromOffset(STATUS_W, 16),
 	})
-	Util.list(statusRow, "x", 3, "Right", "Center")
+	Util.list(statusRow, "x", STATUS_GAP, "Center", "Center")
 	local statusIcons = {}
 	for i, s in STATUS do
-		local holder = Util.frame(statusRow, { Name = s.key, Size = UDim2.fromOffset(20, 20), LayoutOrder = i, Visible = false })
+		local holder = Util.frame(statusRow, { Name = s.key, Size = UDim2.fromOffset(16, 16), LayoutOrder = i, Visible = false })
 		Icons.medallion(holder, s.icon, s.color, { Size = UDim2.fromScale(1, 1) })
 		statusIcons[s.key] = holder
 	end
@@ -208,8 +210,8 @@ function PlayersPanel:_makeCard(list: Frame, info)
 	local glowStroke = Util.stroke(glow, C.brass, 4)
 	local timer = Widgets.progress(card, {
 		name = "Timer",
-		size = UDim2.new(1, -20, 0, 5),
-		position = UDim2.new(0, 12, 1, -4),
+		size = UDim2.new(1, -24, 0, 4),
+		position = UDim2.new(0, 12, 1, -8),
 		value = 1,
 		color = C.brass,
 		z = 6,
@@ -263,6 +265,17 @@ function PlayersPanel:update(snap)
 			e.status.held.Visible = p.held
 			e.status.skip.Visible = p.skip > 0
 			e.status.anchor.Visible = (p.anchor or 0) > 0
+			-- three fit at full size; more than that and they all shrink to fit
+			local shown = 0
+			for _, holder in e.status do
+				if holder.Visible then
+					shown += 1
+				end
+			end
+			local size = math.min(16, math.floor((STATUS_W - math.max(0, shown - 1) * STATUS_GAP) / math.max(1, shown)))
+			for _, holder in e.status do
+				holder.Size = UDim2.fromOffset(size, size)
+			end
 			if p.finished then
 				e.sub.Text = "FINISHED  ·  helping the team"
 			end

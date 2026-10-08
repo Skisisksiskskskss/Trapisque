@@ -123,7 +123,7 @@ function Widgets.button(parent: Instance?, o: { [string]: any })
 		Parent = root,
 	})
 	Util.corner(side, o.corner or 12)
-	Util.stroke(side, style.stroke, 2)
+	local sideStroke = Util.stroke(side, style.stroke, 2)
 
 	local face = Util.new("Frame", {
 		Name = "Face",
@@ -150,22 +150,37 @@ function Widgets.button(parent: Instance?, o: { [string]: any })
 	local list = Util.list(content, "x", 8, "Center", "Center")
 	list.Parent = content
 
-	local iconHolder
+	local iconHolder: Frame? = nil
+	local iconId = o.icon
+	local function drawIcon()
+		if not iconHolder then
+			return
+		end
+		for _, child in iconHolder:GetChildren() do
+			if child:IsA("GuiObject") then
+				child:Destroy()
+			end
+		end
+		if not iconId then
+			return
+		end
+		if style.engraved then
+			Icons.engraved(iconHolder, iconId, style.face, { Size = UDim2.fromScale(1, 1) })
+		else
+			Icons.make(iconHolder, iconId, Icons.flatColors(style.text, style.face, style.text))
+		end
+	end
 	if o.icon then
-		iconHolder = Util.frame(content, {
+		local holder = Util.frame(content, {
 			Name = "IconHolder",
-			Size = UDim2.new(0, 0, 0.62, 0),
+			Size = UDim2.fromScale(0.62, 0.62),
 			SizeConstraint = Enum.SizeConstraint.RelativeYY,
 			LayoutOrder = 1,
 			ZIndex = 5,
 		})
-		Util.ratio(iconHolder, 1)
-		iconHolder.Size = UDim2.fromScale(0.62, 0.62)
-		if style.engraved then
-			Icons.engraved(iconHolder, o.icon, style.face, { Size = UDim2.fromScale(1, 1) })
-		else
-			Icons.make(iconHolder, o.icon, Icons.flatColors(style.text, style.face, style.text))
-		end
+		Util.ratio(holder, 1)
+		iconHolder = holder
+		drawIcon()
 	end
 
 	local label
@@ -197,11 +212,22 @@ function Widgets.button(parent: Instance?, o: { [string]: any })
 	local function restyle(s)
 		style = s
 		side.BackgroundColor3 = s.dark
+		sideStroke.Color = s.stroke
 		face.BackgroundColor3 = s.face
 		faceStroke.Color = s.stroke
 		if label then
 			label.TextColor3 = s.text
+			local outline = label:FindFirstChildOfClass("UIStroke")
+			if s.outline then
+				if not outline then
+					outline = Util.new("UIStroke", { Thickness = 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual, Parent = label })
+				end
+				(outline :: UIStroke).Color = s.outline
+			elseif outline then
+				outline:Destroy()
+			end
 		end
+		drawIcon()
 	end
 
 	local function visualEnabled(on: boolean)
@@ -226,7 +252,18 @@ function Widgets.button(parent: Instance?, o: { [string]: any })
 	end
 
 	function btn.setStyle(_self, name: string)
-		restyle(Widgets.ButtonStyles[name] or style)
+		local s = Widgets.ButtonStyles[name] or style
+		if s ~= style then
+			restyle(s)
+		end
+	end
+
+	-- swap the icon (only on buttons created with one)
+	function btn.setIcon(_self, id: string)
+		if id ~= iconId then
+			iconId = id
+			drawIcon()
+		end
 	end
 
 	-- gentle breathing glow to draw the eye (e.g. ROLL on your turn)
@@ -795,12 +832,13 @@ function Widgets.modal(layer: Instance, o: { [string]: any })
 		end
 	end
 	if not o.noClose then
+		-- close button tucked inside the top-right corner
 		local x = Widgets.iconButton(panel, {
 			icon = "close",
 			style = "red",
 			size = UDim2.fromOffset(40, 42),
-			anchor = Vector2.new(0.5, 0.5),
-			position = UDim2.new(1, -6, 0, 6),
+			anchor = Vector2.new(1, 0),
+			position = UDim2.new(1, -14, 0, 14),
 			onClick = close,
 			z = 120,
 		})

@@ -266,30 +266,54 @@ end
 -- Titles & emotes
 ---------------------------------------------------------------------------
 
-function CosmeticArt.title(parent: Instance, titleId: string?, props: { [string]: any }?): TextLabel?
+-- A title is its text on a small dark nameplate, so every title colour reads the
+-- same on parchment and on dark tiles. With `textSize` the plate hugs the text
+-- (left-aligned in its parent); without it the plate fills the parent and the
+-- text scales to fit.
+function CosmeticArt.title(parent: Instance, titleId: string?, props: { [string]: any }?, textSize: number?): Frame?
 	local def = Cosmetics.get(titleId or "")
 	if not def or def.look.text == "" then
 		return nil
 	end
-	local label = Util.new("TextLabel", {
+	local plate = Util.new("Frame", {
 		Name = "Title",
+		BackgroundColor3 = Theme.C.engrave,
+		BorderSizePixel = 0,
+		Size = UDim2.fromScale(1, 1),
+	})
+	Util.corner(plate, 6)
+	local label = Util.new("TextLabel", {
+		Name = "Text",
 		BackgroundTransparency = 1,
 		Text = def.look.text,
 		TextColor3 = if def.look.rainbow then Theme.C.white else Color3.fromHex(string.sub(def.look.color, 2)),
 		FontFace = Theme.Font.BodyHeavy,
-		TextScaled = true,
-		Size = UDim2.fromScale(1, 1),
+		Parent = plate,
 	})
+	if textSize then
+		plate.AutomaticSize = Enum.AutomaticSize.X
+		plate.Size = UDim2.fromScale(0, 1)
+		Util.pad(plate, 8, 0, 8, 0)
+		label.AutomaticSize = Enum.AutomaticSize.X
+		label.Size = UDim2.fromScale(0, 1)
+		label.TextSize = textSize
+	else
+		-- one size for every title; only long ones shrink to fit
+		label.TextScaled = true
+		label.Size = UDim2.new(1, -16, 1, -8)
+		label.Position = UDim2.fromOffset(8, 4)
+		Util.new("UITextSizeConstraint", { MaxTextSize = 20, Parent = label })
+	end
 	if props then
 		for k, v in props do
-			(label :: any)[k] = v
+			(plate :: any)[k] = v
 		end
 	end
 	if def.look.rainbow then
 		CosmeticArt.spin(Util.grad(label, RAINBOW, 0), 80)
 	end
-	label.Parent = parent
-	return label
+	plate.Parent = parent
+	return plate
 end
 
 function CosmeticArt.emoteBubble(parent: Instance, emoteId: string, props: { [string]: any }?): Frame?

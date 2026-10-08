@@ -3,7 +3,7 @@
 	Everything players can collect from Treasure Chests. Purely visual: nothing here
 	changes how a match plays.
 
-	Every cosmetic is drawn in code from UI shapes (see client/UI/Art.lua), so the
+	Every cosmetic is drawn in code from UI shapes (see client/UI/CosmeticArt.lua), so the
 	`look` tables below are drawing instructions, not image ids. Colors are hex strings
 	so this module stays plain data.
 
@@ -164,16 +164,16 @@ local defs = {
 	-- Titles: shown under your name
 	-------------------------------------------------------------------------
 	{ id = "title_none", category = "title", name = "No Title", rarity = "common", source = "default", look = { text = "", color = "#FFFFFF" } },
-	{ id = "title_rookie", category = "title", name = "Rookie Explorer", rarity = "common", look = { text = "Rookie Explorer", color = "#CBD5E1" } },
-	{ id = "title_hopper", category = "title", name = "Tile Hopper", rarity = "common", look = { text = "Tile Hopper", color = "#A5F3FC" } },
-	{ id = "title_setter", category = "title", name = "Trap Setter", rarity = "common", look = { text = "Trap Setter", color = "#FCA5A5" } },
-	{ id = "title_lucky", category = "title", name = "Lucky Roller", rarity = "rare", look = { text = "Lucky Roller", color = "#86EFAC" } },
-	{ id = "title_sneaky", category = "title", name = "Sneaky Sneak", rarity = "rare", look = { text = "Sneaky Sneak", color = "#C4B5FD" } },
-	{ id = "title_tamer", category = "title", name = "Grog Tamer", rarity = "epic", look = { text = "Grog Tamer", color = "#4ADE80" } },
-	{ id = "title_warlord", category = "title", name = "Warlord", rarity = "epic", look = { text = "Warlord", color = "#F97316" } },
-	{ id = "title_legend", category = "title", name = "Living Legend", rarity = "legendary", look = { text = "Living Legend", color = "#FACC15" } },
-	{ id = "title_royalty", category = "title", name = "Treasure Royalty", rarity = "mythic", look = { text = "Treasure Royalty", color = "#F472B6", rainbow = true } },
-	{ id = "title_vip", category = "title", name = "VIP", rarity = "legendary", source = "vip", look = { text = "VIP", color = "#C77DFF" } },
+	{ id = "title_rookie", category = "title", name = "Rookie Explorer", rarity = "common", look = { text = "Rookie Explorer", color = "#E8D9B5" } },
+	{ id = "title_hopper", category = "title", name = "Tile Hopper", rarity = "common", look = { text = "Tile Hopper", color = "#8CCFE3" } },
+	{ id = "title_setter", category = "title", name = "Trap Setter", rarity = "common", look = { text = "Trap Setter", color = "#EE9C7C" } },
+	{ id = "title_lucky", category = "title", name = "Lucky Roller", rarity = "rare", look = { text = "Lucky Roller", color = "#A3D67F" } },
+	{ id = "title_sneaky", category = "title", name = "Sneaky Sneak", rarity = "rare", look = { text = "Sneaky Sneak", color = "#BBA7EE" } },
+	{ id = "title_tamer", category = "title", name = "Grog Tamer", rarity = "epic", look = { text = "Grog Tamer", color = "#7CC65F" } },
+	{ id = "title_warlord", category = "title", name = "Warlord", rarity = "epic", look = { text = "Warlord", color = "#EF8240" } },
+	{ id = "title_legend", category = "title", name = "Living Legend", rarity = "legendary", look = { text = "Living Legend", color = "#F2C445" } },
+	{ id = "title_royalty", category = "title", name = "Treasure Royalty", rarity = "mythic", look = { text = "Treasure Royalty", color = "#F07CB0", rainbow = true } },
+	{ id = "title_vip", category = "title", name = "VIP", rarity = "legendary", source = "vip", look = { text = "VIP", color = "#D3A2F7" } },
 }
 
 Cosmetics.byId = {}

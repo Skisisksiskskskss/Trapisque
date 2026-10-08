@@ -108,6 +108,38 @@ function PlayPanel.new(parent: Instance, popups: Instance)
 			self:_private()
 		end,
 	})
+	-- while searching, the Practice / Private row shows how the search is going
+	local status = Util.frame(row, {
+		Name = "Searching",
+		Position = UDim2.new(0, 0, 1, -48),
+		Size = UDim2.new(1, 0, 0, 48),
+		Visible = false,
+	})
+	local compass = Util.frame(status, {
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.new(0, 6, 0.5, 0),
+		Size = UDim2.fromOffset(34, 34),
+	})
+	Icons.make(compass, "compass", Icons.flatColors(C.ink, C.parchment))
+	self.statusText = Widgets.label(status, {
+		text = "",
+		font = "heavy",
+		size = 18,
+		color = C.textDark,
+		sizeUDim = UDim2.new(1, -50, 1, 0),
+		position = UDim2.fromOffset(48, 0),
+	})
+	self.statusText.TextTruncate = Enum.TextTruncate.AtEnd
+	self.status = status
+	task.spawn(function()
+		while root.Parent do
+			if status.Visible then
+				compass.Rotation = (compass.Rotation + 6) % 360
+				self:_updateStatus()
+			end
+			task.wait(0.1)
+		end
+	end)
 
 	self.maid:add(State.watch("party", function()
 		self:refresh()
@@ -191,14 +223,34 @@ function PlayPanel:refresh()
 	if searching then
 		self.findButton:setText("CANCEL SEARCH")
 		self.findButton:setStyle("red")
+		self.findButton:setIcon("close")
 		self.findButton:setEnabled(true)
+		if not self.status.Visible then
+			self.searchStart = os.clock() - (queue.elapsed or 0)
+		end
 	else
 		self.findButton:setText("FIND A MATCH")
 		self.findButton:setStyle("green")
+		self.findButton:setIcon("play")
 		self.findButton:setEnabled(isLeader)
 	end
-	self.practiceButton:setEnabled(not searching and (party == nil or #party.members <= 1))
-	self.privateButton:setEnabled(not searching and party ~= nil and isLeader)
+	self.status.Visible = searching
+	self.practiceButton.root.Visible = not searching
+	self.privateButton.root.Visible = not searching
+	self.practiceButton:setEnabled(party == nil or #party.members <= 1)
+	self.privateButton:setEnabled(party ~= nil and isLeader)
+	self:_updateStatus()
+end
+
+function PlayPanel:_updateStatus()
+	local queue = State.get("queue")
+	if not queue or queue.state ~= "searching" then
+		return
+	end
+	local mode = Modes.get(queue.mode or self.mode)
+	local secs = math.floor(os.clock() - (self.searchStart or os.clock()))
+	local others = if (queue.searching or 0) > 1 then ("  ·  " .. queue.searching .. " searching") else ""
+	self.statusText.Text = "Finding a " .. (if mode then mode.short else "") .. " match  " .. string.format("%d:%02d", secs // 60, secs % 60) .. others
 end
 
 function PlayPanel:_find()

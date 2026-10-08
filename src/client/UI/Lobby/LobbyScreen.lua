@@ -9,9 +9,6 @@
 ]]
 
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-local Modes = require(ReplicatedStorage.Shared.Game.Modes)
 
 local UI = script.Parent.Parent
 local Util = require(UI.Util)
@@ -48,53 +45,54 @@ local function profileChip(parent: Instance, maid)
 		BackgroundColor3 = C.parchment,
 		BorderSizePixel = 0,
 		AnchorPoint = Vector2.new(1, 0),
-		Size = UDim2.fromOffset(400, 70),
+		Size = UDim2.fromOffset(400, 74),
 		Parent = parent,
 	})
 	Util.corner(chip, 14)
 	Util.stroke(chip, C.burn, 3)
-	local pawnHolder = Util.frame(chip, { Position = UDim2.fromOffset(10, 10), Size = UDim2.fromOffset(50, 50) })
+	local pawnHolder = Util.frame(chip, { Position = UDim2.fromOffset(10, 12), Size = UDim2.fromOffset(50, 50) })
+	-- middle column: name, title, then level beside its XP bar
 	local name = Widgets.label(chip, {
 		text = player.DisplayName,
 		font = "heavy",
 		size = 18,
 		color = C.textDark,
-		sizeUDim = UDim2.new(1, -220, 0, 22),
-		position = UDim2.fromOffset(70, 8),
+		sizeUDim = UDim2.new(1, -220, 0, 20),
+		position = UDim2.fromOffset(70, 9),
 	})
 	name.TextTruncate = Enum.TextTruncate.AtEnd
-	local titleHolder = Util.frame(chip, { Position = UDim2.fromOffset(70, 30), Size = UDim2.new(1, -220, 0, 16) })
-	local xp = Widgets.progress(chip, {
-		size = UDim2.new(1, -220, 0, 10),
-		position = UDim2.fromOffset(70, 50),
-		color = C.info,
-	})
-	-- level + gems on the right
-	local level = Widgets.badge(chip, {
+	local titleHolder = Util.frame(chip, { Position = UDim2.fromOffset(70, 32), Size = UDim2.new(1, -220, 0, 18) })
+	local level = Widgets.label(chip, {
 		text = "LV 1",
-		color = C.info,
-		height = 26,
-		textSize = 16,
-		anchor = Vector2.new(1, 0),
-		position = UDim2.new(1, -12, 0, 8),
+		font = "chunky",
+		size = 14,
+		color = C.inkBlue,
+		sizeUDim = UDim2.fromOffset(40, 16),
+		position = UDim2.fromOffset(70, 53),
 	})
+	local xp = Widgets.progress(chip, {
+		size = UDim2.new(1, -264, 0, 8),
+		position = UDim2.fromOffset(114, 57),
+		color = C.info,
+	})
+	-- gems on the right
 	local gemRow = Util.frame(chip, {
-		AnchorPoint = Vector2.new(1, 1),
-		Position = UDim2.new(1, -12, 1, -6),
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(1, -16, 0.5, 0),
 		Size = UDim2.fromOffset(130, 28),
 	})
 	Util.list(gemRow, "x", 6, "Right", "Center")
 	local gems = Widgets.label(gemRow, {
 		text = "0",
 		font = "chunky",
-		size = 22,
+		size = 24,
 		color = C.ink,
 		align = "right",
 		sizeUDim = UDim2.fromOffset(0, 28),
 		layoutOrder = 1,
 	})
 	gems.AutomaticSize = Enum.AutomaticSize.X
-	local gemIcon = Util.frame(gemRow, { Size = UDim2.fromOffset(26, 26), LayoutOrder = 2 })
+	local gemIcon = Util.frame(gemRow, { Size = UDim2.fromOffset(24, 24), LayoutOrder = 2 })
 	Icons.medallion(gemIcon, "gem", C.neutral, { Size = UDim2.fromScale(1, 1) })
 
 	local lastPawn, lastTitle, lastGems = nil, nil, nil
@@ -114,7 +112,7 @@ local function profileChip(parent: Instance, maid)
 		if eq.title ~= lastTitle then
 			lastTitle = eq.title
 			Util.clear(titleHolder)
-			local t = CosmeticArt.title(titleHolder, eq.title, { TextXAlignment = Enum.TextXAlignment.Left })
+			local t = CosmeticArt.title(titleHolder, eq.title, nil, 12)
 			if not t then
 				Widgets.label(titleHolder, {
 					text = "No title yet",
@@ -125,10 +123,7 @@ local function profileChip(parent: Instance, maid)
 				})
 			end
 		end
-		local lv = level:FindFirstChildWhichIsA("TextLabel", true)
-		if lv then
-			lv.Text = "LV " .. tostring(p.level or 1)
-		end
+		level.Text = "LV " .. tostring(p.level or 1)
 		xp:set((p.xp or 0) / math.max(1, p.xpNext or 100))
 		if lastGems and p.gems ~= lastGems then
 			Util.bump(gemRow, 0.12)
@@ -140,82 +135,6 @@ local function profileChip(parent: Instance, maid)
 		gems.Text = Util.commas(p.gems or 0)
 	end, true))
 	return chip
-end
-
----------------------------------------------------------------------------
--- matchmaking banner
----------------------------------------------------------------------------
-
-local function queueBanner(parent: Instance, maid)
-	local banner = Util.new("Frame", {
-		Name = "Queue",
-		BackgroundColor3 = C.parchment,
-		BorderSizePixel = 0,
-		AnchorPoint = Vector2.new(0.5, 0),
-		Size = UDim2.fromOffset(560, 56),
-		Visible = false,
-		ZIndex = 40,
-		Parent = parent,
-	})
-	Util.corner(banner, 14)
-	Util.stroke(banner, C.brassDark, 3)
-	local compass = Util.frame(banner, { Position = UDim2.fromOffset(12, 8), Size = UDim2.fromOffset(40, 40), ZIndex = 41 })
-	Icons.make(compass, "compass", Icons.flatColors(C.ink, C.parchment))
-	local text = Widgets.label(banner, {
-		text = "",
-		font = "heavy",
-		size = 18,
-		color = C.textDark,
-		sizeUDim = UDim2.new(1, -200, 1, 0),
-		position = UDim2.fromOffset(62, 0),
-		z = 41,
-	})
-	text.TextTruncate = Enum.TextTruncate.AtEnd
-	Widgets.button(banner, {
-		text = "CANCEL",
-		style = "red",
-		textSize = 17,
-		size = UDim2.fromOffset(120, 40),
-		anchor = Vector2.new(1, 0.5),
-		position = UDim2.new(1, -10, 0.5, -2),
-		z = 42,
-		onClick = function()
-			local ok, err = Net.request("mm.cancel")
-			if not ok then
-				Widgets.toast(tostring(err), "error")
-			end
-		end,
-	})
-	local startedAt = os.clock()
-	local modeName = ""
-	maid:add(State.watch("queue", function(q)
-		local searching = q ~= nil and q.state == "searching"
-		if searching and not banner.Visible then
-			startedAt = os.clock() - (q.elapsed or 0)
-			Util.popIn(banner, 0.3, 0.7)
-		end
-		banner.Visible = searching
-		if q and q.mode then
-			local m = Modes.get(q.mode)
-			modeName = if m then m.name else q.mode
-		end
-		if q and q.message then
-			Widgets.toast(q.message, "info")
-		end
-	end, true))
-	task.spawn(function()
-		while banner.Parent do
-			if banner.Visible then
-				local q = State.get("queue")
-				local secs = math.floor(os.clock() - startedAt)
-				local others = q and q.searching and q.searching > 1 and ("  ·  " .. q.searching .. " searching") or ""
-				text.Text = "Finding a " .. modeName .. " match  " .. string.format("%d:%02d", secs // 60, secs % 60) .. others
-				compass.Rotation = (compass.Rotation + 6) % 360
-			end
-			task.wait(0.1)
-		end
-	end)
-	return banner
 end
 
 ---------------------------------------------------------------------------
@@ -260,8 +179,12 @@ function LobbyScreen.show()
 		title.Name = "Title"
 		local chip = profileChip(root, maid)
 		chip.Position = UDim2.new(1, -24, 0, top)
-		local banner = queueBanner(root, maid)
-		banner.Position = UDim2.new(0.5, 0, 0, top + 6)
+		-- matchmaking messages ("X left, so the search was cancelled")
+		maid:add(State.watch("queue", function(q)
+			if q and q.message then
+				Widgets.toast(q.message, "info")
+			end
+		end))
 
 		-- the two main panels
 		local body = Util.frame(root, {
