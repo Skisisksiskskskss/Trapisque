@@ -56,7 +56,7 @@ local function row(list: Frame, i: number, r, mine: boolean, isTeam: boolean)
 		text = who,
 		font = "heavy",
 		size = 18,
-		color = C.textDark,
+		color = Theme.nameColor(r.look),
 		sizeUDim = UDim2.new(1, -330, 0, 22),
 		position = UDim2.fromOffset(102, 6),
 	})

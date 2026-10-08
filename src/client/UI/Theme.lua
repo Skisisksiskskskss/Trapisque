@@ -77,6 +77,7 @@ Theme.C = {
 	textDark = hex("3A2414"),
 	textLight = hex("FFF5DE"),
 	dim = hex("0B0704"),
+	vip = hex("8C6414"), -- VIP names: a deep gold that still reads on parchment
 }
 
 -- Seat colors identify each player on the board (ring around their pawn).
@@ -141,5 +142,10 @@ Theme.Font = {
 -- Virtual resolution the UI is designed for (scaled to fit any screen).
 Theme.VirtualHeight = 720
 Theme.MinVirtualWidth = 1180
+
+-- Colour for a player's name on parchment: VIPs get gold.
+function Theme.nameColor(look: { [string]: any }?): Color3
+	return if look and look.vip then Theme.C.vip else Theme.C.textDark
+end
 
 return Theme

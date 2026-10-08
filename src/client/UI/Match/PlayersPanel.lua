@@ -108,7 +108,7 @@ function PlayersPanel:_makeCard(list: Frame, info)
 		text = info.name .. (if info.seat == self.mySeat then "  (you)" else ""),
 		font = "heavy",
 		size = 17,
-		color = C.textDark,
+		color = Theme.nameColor(info.look),
 		sizeUDim = UDim2.new(1, -nameRight, 0, 20),
 		position = UDim2.fromOffset(70, 6),
 	})

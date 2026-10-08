@@ -593,40 +593,23 @@ end
 
 function Engine:_reachTreasure(p)
 	p.laps += 1
-	local scorer = p
 	if p.finished then
-		-- (digital) "Treasure carry": a finished teammate's treasure goes to the teammate
-		-- who needs it most, so one unlucky player can't drag a team match on forever.
-		scorer = nil
-		if self.mode.isTeam then
-			for _, mate in self.players do
-				if mate.team == p.team and not mate.finished then
-					if scorer == nil or mate.treasures < scorer.treasures then
-						scorer = mate
-					end
-				end
-			end
-		end
-	end
-	if scorer then
-		scorer.treasures += 1
-		p.coins += Rules.CoinsPerTreasure
-		self:_emit({
-			t = "treasure",
-			p = scorer.index,
-			by = if scorer ~= p then p.index else nil,
-			treasures = scorer.treasures,
-			coins = p.coins,
-		})
-	else
+		-- (rulebook) a finished player keeps playing to help their team, but their laps
+		-- don't count towards anyone's treasures and earn nothing
 		self:_emit({ t = "lap", p = p.index })
+		self:_onCycleComplete(p)
+		self:_sendToStart(p, "home")
+		return
 	end
+	p.treasures += 1
+	p.coins += Rules.CoinsPerTreasure
+	self:_emit({ t = "treasure", p = p.index, treasures = p.treasures, coins = p.coins })
 	self:_onCycleComplete(p)
 	self:_sendToStart(p, "home")
-	if scorer and not scorer.finished and scorer.treasures >= self.target then
-		scorer.finished = true
-		self:_emit({ t = "finished", p = scorer.index })
-		self:_checkWin(scorer)
+	if p.treasures >= self.target then
+		p.finished = true
+		self:_emit({ t = "finished", p = p.index })
+		self:_checkWin(p)
 	end
 end
 
@@ -811,8 +794,8 @@ function Engine:_walk(p, m: number): string
 					flush()
 					self:_emit({ t = "useCard", p = p.index, item = "bridge", tile = nxt })
 				else
-					-- (digital) falling in ends your move; the rulebook's extra lost turn
-					-- made Blissful Tricks drag on Roblox
+					-- (digital) the rulebook only says a Bridge gets you across; without one
+					-- you fall in and your move ends at the river
 					flush()
 					self:_emit({ t = "natural", p = p.index, kind = "river", tile = nxt })
 					result = "stopped"

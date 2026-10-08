@@ -656,20 +656,16 @@ function MatchScreen:_play(e)
 		Effects.phoenix(board, e.p)
 		log:add(self:_tag(e.p) .. " rose from the ashes! (Phoenix Potion)", C.gold)
 	elseif t == "treasure" then
-		Effects.treasure(board, self.board.board.treasure, e.by or e.p)
+		Effects.treasure(board, self.board.board.treasure, e.p)
 		Sound.play("treasure")
 		local who = self:_name(e.p)
 		local sub = tostring(e.treasures) .. " / " .. tostring(self.target)
 		Overlays.shout(self.fx, if e.p == self.mySeat then "TREASURE!" else (who .. " found a treasure!"), C.gold, speed, sub)
-		if e.by then
-			log:add(self:_tag(e.by) .. " carried a treasure home for " .. self:_tag(e.p), C.gold)
-		else
-			log:add(self:_tag(e.p) .. " found a treasure! (" .. sub .. ")", C.gold)
-		end
+		log:add(self:_tag(e.p) .. " found a treasure! (" .. sub .. ")", C.gold)
 		self:_patch(e.p, "treasures", e.treasures)
 		self.players:flash(e.p, C.gold)
 	elseif t == "lap" then
-		log:add(self:_tag(e.p) .. " made it round again")
+		log:add(self:_tag(e.p) .. " made it round again (finished, so it doesn't count)")
 	elseif t == "finished" then
 		Overlays.shout(self.fx, if e.p == self.mySeat then "ALL YOUR TREASURES!" else (self:_name(e.p) .. " has every treasure!"), C.gold, speed)
 		log:add(self:_tag(e.p) .. " has every treasure!", C.gold)

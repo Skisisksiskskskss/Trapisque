@@ -677,17 +677,19 @@ test("team modes: a team wins when every teammate is finished", function()
 	eq(g.winnerTeam, 1)
 end)
 
-test("finished players carry treasure to a teammate", function()
+test("a finished player's laps don't count for anyone", function()
 	local g = newGame({ mode = "assist", characters = { "mage", "trapper", "warper", "naturalist" }, target = 2 })
 	g.players[1].finished = true
 	g.players[1].treasures = 2
+	local coins = g.players[1].coins
 	setTile(g, 1, g.board.treasure - 1)
 	local events = roll(g, 1, 1)
 	eq(g.players[1].treasures, 2, "finished count stays put")
-	eq(g.players[2].treasures, 1, "teammate got the carried treasure")
-	truthy(findEvent(events, "treasure", function(e)
-		return e.p == 2 and e.by == 1
-	end))
+	eq(g.players[2].treasures, 0, "teammate gets nothing either")
+	eq(g.players[1].coins, coins, "no coins for a finished lap")
+	truthy(findEvent(events, "lap"))
+	falsy(findEvent(events, "treasure"))
+	eq(g.players[1].tile, g.board.start, "back to the start for another lap")
 end)
 
 test("round limit ends the game on score", function()

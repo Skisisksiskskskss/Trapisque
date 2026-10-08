@@ -205,7 +205,7 @@ local RULES = {
 	{
 		icon = "people",
 		title = "Modes",
-		text = "",
+		text = "In team modes, once you have all your treasures you keep playing to help your team: give them cards and use your ability on the other team. Your laps don't count any more.",
 		modes = true,
 	},
 	{
@@ -231,7 +231,7 @@ function Pages.rules(layer: Instance): () -> ()
 			for _, m in Modes.list do
 				table.insert(lines, m.name .. ": " .. m.blurb)
 			end
-			text = table.concat(lines, "\n")
+			text = table.concat(lines, "\n") .. "\n\n" .. section.text
 		elseif section.characters then
 			local lines = {}
 			for _, ch in Characters.list do

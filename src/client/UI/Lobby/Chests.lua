@@ -116,9 +116,10 @@ local function pct(v: number): string
 end
 
 -- The drop rates as a row of coloured segments with a legend underneath. Legend
--- entries wrap whole, so a line never ends on a stray separator.
-local function oddsStrip(parent: Instance, chest, y: number)
-	local odds = Gacha.odds(chest, false)
+-- entries wrap whole, so a line never ends on a stray separator. `lucky` shows the
+-- Lucky Charm odds.
+local function oddsStrip(parent: Instance, chest, y: number, lucky: boolean): Frame
+	local odds = Gacha.odds(chest, lucky)
 	local strip = Util.frame(parent, {
 		Name = "Odds",
 		Position = UDim2.new(0, 20, 0, y),
@@ -169,6 +170,12 @@ local function oddsStrip(parent: Instance, chest, y: number)
 			text.AutomaticSize = Enum.AutomaticSize.X
 		end
 	end
+	return strip
+end
+
+-- Lucky Charm only counts where paid random items are allowed (as on the server).
+local function isLucky(profile): boolean
+	return profile ~= nil and table.find(profile.passes or {}, "LuckyCharm") ~= nil and not profile.restricted
 end
 
 local function pityText(chest, pity): string
@@ -296,7 +303,8 @@ function Chests.open(layer: Instance): () -> ()
 			sizeUDim = UDim2.new(1, -30, 0, 18),
 			position = UDim2.fromOffset(15, 246),
 		})
-		oddsStrip(card, chest, 278)
+		local stripLucky = isLucky(State.get("profile"))
+		local strip = oddsStrip(card, chest, 278, stripLucky)
 		local buttons = Util.frame(card, {
 			AnchorPoint = Vector2.new(0.5, 1),
 			Position = UDim2.new(0.5, 0, 1, -50),
@@ -358,6 +366,12 @@ function Chests.open(layer: Instance): () -> ()
 					one:setIcon("gem")
 				end
 				pity.Text = pityText(chest, profile and profile.pity and profile.pity[chest.id])
+				-- bought the Lucky Charm with this screen open: show the boosted odds
+				if isLucky(profile) ~= stripLucky then
+					stripLucky = isLucky(profile)
+					strip:Destroy()
+					strip = oddsStrip(card, chest, 278, stripLucky)
+				end
 			end,
 		})
 	end

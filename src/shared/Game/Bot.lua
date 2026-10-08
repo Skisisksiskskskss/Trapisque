@@ -237,7 +237,7 @@ local function placeCommand(game, p)
 		eagerness += 0.2
 	end
 	if p.finished then
-		eagerness += 0.15 -- finished teammates still carry treasure, but love to make trouble
+		eagerness += 0.3 -- finished players only help now, so they love to make trouble
 	end
 	if #p.hand >= Rules.HandLimit - 1 then
 		eagerness += 0.2

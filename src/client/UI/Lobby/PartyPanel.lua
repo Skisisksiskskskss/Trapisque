@@ -311,7 +311,7 @@ function PartyPanel:_member(list: Instance, i: number, m, isLeader: boolean, par
 		text = m.name .. (if m.userId == player.UserId then "  (you)" else ""),
 		font = "heavy",
 		size = 17,
-		color = C.textDark,
+		color = Theme.nameColor(m.look),
 		sizeUDim = UDim2.new(1, -(nameX + 100), 1, 0),
 		position = UDim2.fromOffset(nameX, 0),
 	})
