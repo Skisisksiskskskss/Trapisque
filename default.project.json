@@ -1,0 +1,43 @@
+{
+  "name": "Trapisque",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "Shared": {
+        "$path": "src/shared"
+      }
+    },
+    "ServerScriptService": {
+      "Server": {
+        "$path": "src/server"
+      }
+    },
+    "StarterPlayer": {
+      "StarterPlayerScripts": {
+        "Client": {
+          "$path": "src/client"
+        }
+      }
+    },
+    "Players": {
+      "$properties": {
+        "CharacterAutoLoads": false
+      }
+    },
+    "TextChatService": {
+      "$properties": {
+        "ChatVersion": "TextChatService"
+      }
+    },
+    "Workspace": {
+      "$properties": {
+        "FilteringEnabled": true
+      }
+    },
+    "SoundService": {
+      "$properties": {
+        "RespectFilteringEnabled": true
+      }
+    }
+  }
+}
