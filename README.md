@@ -3,17 +3,21 @@
 Trapisque is a race to the treasure across a trap-filled treasure map, for 2 to 6
 players. It started as a board game, and this repository is its Roblox version: a
 purely top-down 2D game that uses the Roblox engine but doesn't look like a Roblox
-game. There are no avatars and no 3D. Everything you see is drawn from plain UI
-frames, with no images and no uploaded assets.
+game. There is no 3D world. Apart from players' own Roblox avatar headshots, everything
+you see is drawn from plain UI frames, with no uploaded images.
 
-![Match screen](docs/previews/07-match-screen.png)
+![Match screen on a PC](docs/previews/07-match-pc.png)
+
+| Phone held sideways | Phone held upright |
+| --- | --- |
+| ![Match on a phone held sideways](docs/previews/07-match-phone-landscape.png) | ![Match on a phone held upright](docs/previews/07-match-phone-portrait.png) |
 
 | Lobby | Treasure chests |
 | --- | --- |
-| ![Lobby](docs/previews/08-lobby.png) | ![Treasure chests](docs/previews/09-treasure-chests.png) |
+| ![Lobby](docs/previews/08-lobby-pc.png) | ![Treasure chests](docs/previews/09-treasure-chests.png) |
 
 More previews are in [`docs/previews`](docs/previews): the icon set, the three maps,
-the wooden cards and the collectibles.
+the wooden cards, the collectibles, the lobby on phones and every tile skin.
 
 ## What's in the game
 
@@ -34,6 +38,14 @@ the wooden cards and the collectibles.
 - **Treasure Chests.** A cosmetic-only collection: pawn skins, dice, trails, emotes and
   titles. You open chests with Gems, which you earn by playing.
 - **Gamepasses** that never touch gameplay (see below).
+- **Top Players.** All-time leaderboards for wins, treasures found and level, with
+  avatars and @usernames.
+- **Any screen.** The layout follows the device: the board fills the screen on a PC,
+  phones held sideways keep the cards under your left thumb and ROLL under your right,
+  and phones held upright stand the board up. Nothing sits over Roblox's own buttons,
+  notches or the home bar.
+- **Sound.** Dice on felt, wooden steps, card swishes and a tavern / board-game score,
+  all from Roblox's free audio library (Music and Sound effects can each be turned off).
 
 ## Project layout
 
@@ -151,7 +163,10 @@ boards, cards, collectibles and full screens) as PNGs, so the look can be review
 without opening Studio. It needs Python 3 with Pillow, and the Luckiest Guy,
 Fondamento and Nunito fonts from Google Fonts in `tools/preview/fonts` (or in a folder
 named by `TRAPISQUE_FONTS`). Each script's header explains its inputs. The data comes
-from `tests/dump_*.luau`, run through the bundler.
+from `tests/dump_*.luau`, run through the bundler (bundle `tests/preview_skins.luau`
+first for the board and screen dumps: it records the tile skins from the game's own
+`TileSkins` code). `tools/preview/hud.py` draws the match screen and lobby at real
+device sizes from the game's `Layout` module.
 
 ### Art rules
 
@@ -164,5 +179,6 @@ drawn by `Icons` and `Shapes`. The style is deliberately flat:
 - nothing overlapping or sticking out of its shape
 - text sized so it fits rather than shrinking at random
 
-The fonts (Fondamento, Luckiest Guy, Nunito) and sounds are built into Roblox, so the
+The fonts (Fondamento, Luckiest Guy, Nunito) are built into Roblox, and the sounds and
+music are free Roblox audio library assets (listed in `src/client/Sound.lua`), so the
 game needs no uploads.

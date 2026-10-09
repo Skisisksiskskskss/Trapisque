@@ -2,8 +2,10 @@
 """Render mid-game previews of each Trapisque board (developer preview tool).
 
 Mirrors the drawing in src/client/UI/Match/BoardView.lua: flat paper and wash, a
-coastline of overlapping discs around the route, doodles placed by BoardLayout,
-hex tiles with a wooden side, coin tokens, rimmed plaques and pawns.
+coastline of overlapping discs around the route, doodles placed by BoardLayout, hex
+tiles with a dark rim and a wooden side, tiles reskinned by whatever is on them (the
+skin ops are recorded from the game's own TileSkins code), round card plaques, bold
+token inlays and big pawns showing each player's avatar (bots show their character).
 UIStrokes are drawn outside their frame, as Roblox does.
 
 Usage: python3 tools/preview/board.py board.json outdir
@@ -20,15 +22,17 @@ from PIL import Image, ImageDraw  # noqa: E402
 
 UNIT = 46  # world pixels per hex unit in the game (BoardView U)
 
-THEME = {
-    "water": {"paper": "#F2E2BD", "wash": "#93C6C4", "washA": 0.55, "ink": "#3C6E8F", "acc": "#E6D3A3", "acc2": "#C2513B"},
-    "dungeon": {"paper": "#EBDDBE", "wash": "#A39B8E", "washA": 0.5, "ink": "#5A4A3A", "acc": "#A99E8A", "acc2": "#E0732C"},
-    "swamp": {"paper": "#EEE4BC", "wash": "#9DB271", "washA": 0.55, "ink": "#4E6B34", "acc": "#93AA62", "acc2": "#9C4A2E"},
+THEME = {  # BoardView THEMES
+    "water": {"paper": "#F2E2BD", "wash": "#6FB1B6", "washA": 0.62, "ink": "#2F5F7A", "acc": "#E6D3A3", "acc2": "#C2513B"},
+    "dungeon": {"paper": "#EBDDBE", "wash": "#8C8478", "washA": 0.58, "ink": "#4A3C2E", "acc": "#A99E8A", "acc2": "#E0732C"},
+    "swamp": {"paper": "#EEE4BC", "wash": "#86A15A", "washA": 0.62, "ink": "#3F5A2A", "acc": "#93AA62", "acc2": "#9C4A2E"},
 }
-TILE_COLORS = {
-    "normal": "#CB955C", "branch": "#B7A48A", "start": "#E4DCCB", "treasure": "#E9B53A",
-    "shortcutGate": "#7E858D", "river": "#6FA8CF", "gate": "#79818A", "slime": "#7DB843",
-}
+TILE_COLORS = {"normal": "#E9BE84", "branch": "#CDBB9C", "start": "#F4EFE3", "treasure": "#F7C948", "shortcutGate": "#8F969E"}
+RIM = "#4A2C14"
+TILE_R = 0.88  # BoardLayout.Style.tileScale
+TILE_DEPTH = 0.16
+PAWN = 1.3
+CHAR = {"mage": "#5876D6", "trapper": "#A86B39", "fire_starter": "#E2622B", "naturalist": "#4E9A47", "warper": "#8B57CC", "overseer": "#CDA42A"}
 NATURAL_ICON = {"river": "river_trap", "gate": "lock", "slime": "slime_trap"}
 TOKEN_ICON = {"trap": "token_trap", "assist": "token_assist", "neutral": "token_neutral", "potion": "token_potion"}
 SEAT = ["#E35D5D", "#4E8FDB", "#5DB866", "#EDBB36", "#A56CDB", "#F0883A"]
@@ -65,8 +69,10 @@ def shade(h, amt):
     return mix(h, "#FFFFFF", amt) if amt >= 0 else mix(h, "#000000", -amt)
 
 
-def hexagon(cx, cy, r):
-    return [(cx + r * math.cos(math.radians(60 * i + 30)), cy + r * math.sin(math.radians(60 * i + 30))) for i in range(6)]
+def hexagon(cx, cy, r, flat=False):
+    """Pointy-top hexagon of circumradius r (flat-topped on rotated boards)."""
+    base = 0 if flat else 30
+    return [(cx + r * math.cos(math.radians(60 * i + base)), cy + r * math.sin(math.radians(60 * i + base))) for i in range(6)]
 
 
 class Scene:
@@ -76,6 +82,7 @@ class Scene:
         self.decor = data["decor"]
         self.L = scene["layout"]
         self.snap = scene["snapshot"]
+        self.skins = scene.get("skins") or {}
         self.k = (width - 2 * pad) / self.L["w"]
         self.pad = pad
         self.W = width
@@ -166,7 +173,7 @@ class Scene:
 
     def land(self):
         T = self.theme
-        coast = mix(T["ink"], T["wash"], 0.35)
+        coast = mix(T["ink"], T["wash"], 0.25)
         for color, r in ((coast, 1.29), (T["paper"], 1.22)):
             for t in self.L["tiles"]:
                 cx, cy, rr = self.X(t["x"]), self.Y(t["y"]), self.U(r)
@@ -204,126 +211,97 @@ class Scene:
         self.d.text((cx - (bb[2] - bb[0]) / 2 - bb[0], cy - (bb[3] - bb[1]) / 2 - bb[1]), txt, font=f, fill=hex_rgba(INK))
 
     def links(self):
+        """Dashes between neighbouring tiles (0.32 x 0.12 units, red for shortcuts)."""
         for ln in self.L["links"]:
             mx, my = (ln["x1"] + ln["x2"]) / 2, (ln["y1"] + ln["y2"]) / 2
             ang = math.atan2(ln["y2"] - ln["y1"], ln["x2"] - ln["x1"])
             ux, uy = math.cos(ang), math.sin(ang)
-            col = INK_RED if ln["shortcut"] else FRAME_INK
-            half = 0.17 - 0.05
+            col = INK_RED if ln["shortcut"] else INK
+            half = (0.32 - 0.12) / 2
             a = (self.X(mx - ux * half), self.Y(my - uy * half))
             b = (self.X(mx + ux * half), self.Y(my + uy * half))
-            th = self.U(0.1)
+            th = self.U(0.12)
             self.d.line([a, b], fill=hex_rgba(col), width=int(th))
             for p in (a, b):
                 self.d.ellipse([p[0] - th / 2, p[1] - th / 2, p[0] + th / 2, p[1] + th / 2], fill=hex_rgba(col))
 
-    def tile_kind(self, t, natural):
-        if t["kind"] != "normal":
-            return t["kind"]
-        if t["id"] in natural:
-            return natural[t["id"]]
-        if t.get("branch"):
-            return "branch"
-        return "normal"
+    def poly(self, pts, color):
+        self.d.polygon([(self.X(px), self.Y(py)) for px, py in pts], fill=hex_rgba(color))
 
-    def belts(self):
-        """BoardView:_setBelt: direction of the conveyor over each covered tile."""
-        belt = {}
-        for p in self.snap["placed"]:
-            tiles = p.get("tiles")
-            if p["item"] != "conveyor" or not tiles:
-                continue
-            for i, t in enumerate(tiles):
-                a, b = (t, tiles[i + 1]) if i + 1 < len(tiles) else (tiles[i - 1] if i > 0 else t, t)
-                ta, tb = self.L["tiles"][a - 1], self.L["tiles"][b - 1]
-                ang = math.degrees(math.atan2(tb["y"] - ta["y"], tb["x"] - ta["x"]))
-                belt[t] = ang + (180 if p.get("dir") == "back" else 0)
-        return belt
-
-    def tiles(self, cover):
-        natural = {n["tile"]: n["kind"] for n in self.snap["natural"]}
-        belt = self.belts()
-        for t in self.L["tiles"]:
-            x, y = t["x"], t["y"]
-            kind = self.tile_kind(t, natural)
-            top = TILE_COLORS.get(kind, TILE_COLORS["normal"])
-            if kind == "normal" and t.get("branch"):
-                top = TILE_COLORS["branch"]
-            if t["id"] in belt:
-                top = mix(top, CAT["neutral"], 0.3)
-            self.d.polygon([(self.X(px), self.Y(py)) for px, py in hexagon(x, y + 0.16, 0.86)], fill=hex_rgba(shade(top, -0.38)))
-            self.d.polygon([(self.X(px), self.Y(py)) for px, py in hexagon(x, y, 0.86)], fill=hex_rgba(top))
-            icon, icol, size = None, None, 0.85
-            if kind == "start":
-                icon, icol = "flag", INK_RED
-            elif kind == "treasure":
-                icon, icol, size = "x_mark", INK_RED, 1.05
-            elif kind == "shortcutGate":
-                icon, icol = "gate_trap", "#3A3F45"
-            elif kind in NATURAL_ICON:
-                icon, icol = NATURAL_ICON[kind], "#FFFFFF"
-            n = cover.get(t["id"], 0)
-            if icon and n == 0:
-                colors = {"ink": hex_rgba(icol), "bg": hex_rgba(top), "acc": hex_rgba(icol), "acc2": hex_rgba(icol), "hi": hex_rgba(top)}
-                self.ops_at(self.icons[icon], x, y - 0.02, size, colors)
-            if t["id"] in belt:
-                self.ops_at(BELT_CHEVRON, x, y + 0.52, 0.4, {"ink": hex_rgba(CAT["neutral"])}, rot=belt[t["id"]])
-            elif not icon and n < 3:
-                f = font("chunky", self.U(0.3))
-                s = str(t["id"])
-                bb = self.d.textbbox((0, 0), s, font=f)
-                self.patch(lambda dd, s=s, f=f, bb=bb: dd.text(
-                    (self.X(x) - (bb[2] - bb[0]) / 2 - bb[0], self.Y(y + 0.55) - (bb[3] - bb[1]) / 2 - bb[1]), s, font=f,
-                    fill=hex_rgba("#8A5A2E", int(255 * 0.7))))
-
-    def medallion(self, icon, cx, cy, d, color):
-        """Icons.medallion: disc of diameter d (world units), brass rim outside, white glyph."""
-        rr = d / 2 * 1.16
-        self.d.ellipse([self.X(cx - rr), self.Y(cy - rr), self.X(cx + rr), self.Y(cy + rr)], fill=hex_rgba(BRASS))
+    def disc(self, cx, cy, d, color, stroke=None, stroke_w=0.0):
+        """A circle of diameter d (units) with a UIStroke of stroke_w units outside it."""
+        if stroke and stroke_w > 0:
+            r = d / 2 + stroke_w
+            self.d.ellipse([self.X(cx - r), self.Y(cy - r), self.X(cx + r), self.Y(cy + r)], fill=hex_rgba(stroke))
         r = d / 2
         self.d.ellipse([self.X(cx - r), self.Y(cy - r), self.X(cx + r), self.Y(cy + r)], fill=hex_rgba(color))
-        colors = {"ink": hex_rgba("#FFFFFF"), "bg": hex_rgba(color), "acc": hex_rgba(BRASS_LIGHT), "acc2": hex_rgba(BRASS_LIGHT), "hi": hex_rgba(color)}
-        self.ops_at(self.icons[icon], cx, cy, d * 0.64, colors)
 
-    def tokens(self, cover):
-        for tk in self.snap["tokens"]:
-            t = self.L["tiles"][tk["tile"] - 1]
-            s = 0.8  # holder size
-            hx, hy = t["x"], t["y"] - 0.14
-            # coin edge below, then the medallion
-            er = s * 0.905 / 2
-            ex, ey = hx, hy + (0.54 - 0.5) * s
-            self.d.ellipse([self.X(ex - er), self.Y(ey - er), self.X(ex + er), self.Y(ey + er)], fill=hex_rgba(BRASS_DARK))
-            self.medallion(TOKEN_ICON[tk["kind"]], hx, hy + (0.47 - 0.5) * s, 0.78 * s, CAT[tk["kind"]])
+    def icon(self, name, cx, cy, size, ink, bg, acc=None):
+        a = acc or ink
+        colors = {"ink": hex_rgba(ink), "bg": hex_rgba(bg), "acc": hex_rgba(a), "acc2": hex_rgba(a), "hi": hex_rgba(bg)}
+        self.ops_at(self.icons[name], cx, cy, size, colors)
 
-    def placed(self):
-        for p in self.snap["placed"]:
-            t = self.L["tiles"][p["tile"] - 1]
-            s = 0.6
-            cx, cy = t["x"], t["y"] - 0.14
-            rim_px = self.px(3)
-            rad = self.U(0.18 * s)
-            x0, y0, x1, y1 = self.X(cx - s / 2), self.Y(cy - s / 2), self.X(cx + s / 2), self.Y(cy + s / 2)
-            off = self.U(0.14 * s)
-            self.framed((x0, y0 + off, x1, y1 + off), rad, WOOD_DEEP, WOOD_DEEP, rim_px)
-            owner = p.get("owner") or 0
-            rim = SEAT[(owner - 1) % 6] if owner > 0 else CAT["neutral" if p["item"] in NEUTRAL_ITEMS else "trap"]
-            self.framed((x0, y0, x1, y1), rad, WOOD, rim, rim_px)
-            burn = shade(WOOD, -0.62)
-            colors = {"ink": hex_rgba(burn), "bg": hex_rgba(WOOD), "acc": hex_rgba(burn), "acc2": hex_rgba(burn), "hi": hex_rgba(WOOD)}
-            self.ops_at(self.icons[p["item"]], cx, cy, s * 0.8, colors)
+    def medallion(self, icon, cx, cy, d, color):
+        """Icons.medallion: disc of diameter d (units), brass rim outside, white glyph."""
+        self.disc(cx, cy, d, color, BRASS, d * 0.08)
+        self.icon(icon, cx, cy, d * 0.64, "#FFFFFF", color, BRASS_LIGHT)
 
-    def teleport_rings(self):
-        # open ring behind each teleporter plaque (it spins in game)
-        for p in self.snap["placed"]:
-            if p["item"] != "teleporter":
-                continue
-            t = self.L["tiles"][p["tile"] - 1]
-            cx, cy = t["x"], t["y"] - 0.14
-            r = 0.6 * 1.6 / 2
-            th = self.U(0.6 * 0.1)
-            box = [self.X(cx - r), self.Y(cy - r), self.X(cx + r), self.Y(cy + r)]
-            self.d.arc(box, start=-60, end=200, fill=hex_rgba(CAT["neutral"]), width=int(th))
+    def tiles(self, cover):
+        """BoardView:_buildTiles + _paintTile: side, rim and top hexes, then whatever the
+        tile shows (skin, card plaque, natural icon, token inlay or start/treasure mark)."""
+        flat = bool(self.L.get("rotated"))
+        placed = {p["tile"]: p for p in self.snap["placed"]}
+        natural = {n["tile"]: n["kind"] for n in self.snap["natural"]}
+        tokens = {t["tile"]: t["kind"] for t in self.snap["tokens"]}
+        for t in sorted(self.L["tiles"], key=lambda q: q["y"]):
+            tid, x, y, kind = t["id"], t["x"], t["y"], t["kind"]
+            top = TILE_COLORS.get(kind) or (TILE_COLORS["branch"] if t.get("branch") else TILE_COLORS["normal"])
+            skin = self.skins.get(str(tid))
+            if skin and skin.get("top"):
+                top = skin["top"]
+            self.poly(hexagon(x, y + TILE_DEPTH, TILE_R + 0.05, flat), shade(top, -0.5))
+            self.poly(hexagon(x, y, TILE_R + 0.05, flat), RIM)
+            self.poly(hexagon(x, y, TILE_R, flat), top)
+            busy = False
+            if skin:
+                self.ops_at(skin["ops"], x, y, 2.0, {"ink": hex_rgba(INK)})
+                busy = True
+            entry = placed.get(tid)
+            if entry:
+                # a little card rimmed in its owner's colour
+                owner = entry.get("owner") or 0
+                rim = SEAT[(owner - 1) % 6] if owner > 0 else "#7B5B3E"
+                w, h, sw = 0.6, 0.8, 0.07
+                self.d.rounded_rectangle([self.X(x - w / 2 - sw), self.Y(y - h / 2 - sw), self.X(x + w / 2 + sw), self.Y(y + h / 2 + sw)],
+                                         radius=self.U(0.12 + sw), fill=hex_rgba(rim))
+                self.d.rounded_rectangle([self.X(x - w / 2), self.Y(y - h / 2), self.X(x + w / 2), self.Y(y + h / 2)],
+                                         radius=self.U(0.12), fill=hex_rgba("#2A1C13"))
+                self.icon(entry["item"], x, y, 0.48, "#FFFFFF", "#2A1C13")
+                busy = True
+            elif tid in natural and natural[tid] in NATURAL_ICON:
+                self.icon(NATURAL_ICON[natural[tid]], x, y, 0.72, "#FFFFFF", top)
+                busy = True
+            elif tid in tokens:
+                # a coloured hexagon set into the tile
+                col = CAT.get(tokens[tid], "#7B5B3E")
+                self.poly(hexagon(x, y, 0.66, flat), "#FFFFFF")
+                self.poly(hexagon(x, y, 0.58, flat), col)
+                self.icon(TOKEN_ICON.get(tokens[tid], "info"), x, y, 0.66, "#FFFFFF", col)
+                busy = True
+            elif kind in ("start", "treasure", "shortcutGate"):
+                icon, col, size = "flag", INK_RED, 0.86
+                if kind == "treasure":
+                    icon, size = "x_mark", 1.05
+                elif kind == "shortcutGate":
+                    icon, col = "gate_trap", "#3A3F45"
+                self.icon(icon, x, y, size, col, top)
+                busy = True
+            if not busy and cover.get(tid, 0) == 0:
+                f = font("chunky", self.U(0.3))
+                txt = str(tid)
+                bb = self.d.textbbox((0, 0), txt, font=f)
+                self.d.text((self.X(x) - (bb[2] - bb[0]) / 2 - bb[0], self.Y(y + 0.5) - (bb[3] - bb[1]) / 2 - bb[1]), txt,
+                            font=f, fill=hex_rgba("#9A6A3C"))
 
     def resting(self):
         """Pawns per tile and their slot (BoardLayout.PawnSlots)."""
@@ -335,23 +313,48 @@ class Scene:
             ps.sort(key=lambda q: q["seat"])
             layout = self.data["slots"][min(len(ps), len(self.data["slots"])) - 1]
             for i, p in enumerate(ps):
-                at = layout["at"][i]
-                out.append((p, tile, at, layout["scale"]))
+                out.append((p, tile, layout["at"][i], layout["scale"]))
         return groups, out
 
+    def avatar(self, p, cx, cy, d, seat_col):
+        """Avatars.portrait: a headshot on a soft backing (here a stand-in face, since the
+        real ones come from Roblox), or the character's medallion for bots."""
+        if p.get("isBot"):
+            self.medallion(p.get("character") or "info", cx, cy, d, CHAR.get(p.get("character"), "#7B5B3E"))
+        else:
+            self.disc(cx, cy, d, shade(seat_col, 0.45))
+            # stand-in headshot: a plain round head with two eyes and a smile
+            self.disc(cx, cy + d * 0.08, d * 0.62, "#F5CD30")
+            for ex in (-0.11, 0.11):
+                self.disc(cx + ex * d, cy + d * 0.02, d * 0.07, "#2B2B2B")
+            r = d * 0.16
+            box = [self.X(cx - r), self.Y(cy + d * 0.1 - r * 0.6), self.X(cx + r), self.Y(cy + d * 0.1 + r * 1.0)]
+            self.d.arc(box, start=20, end=160, fill=hex_rgba("#2B2B2B"), width=max(1, int(self.U(d * 0.035))))
+        r = d / 2
+        w = max(1, int(round(self.px(2))))
+        self.d.ellipse([self.X(cx - r) - w, self.Y(cy - r) - w, self.X(cx + r) + w, self.Y(cy + r) + w],
+                       outline=hex_rgba("#FFFFFF"), width=w)
+
     def pawns(self, placed_pawns):
+        """BoardView:addPawn: shadow, the pawn chip, the player's face in the middle, and
+        a brass ring around whoever's turn it is."""
         skins = self.data["skins"]
-        order = sorted(placed_pawns, key=lambda e: (e[0]["seat"] == self.snap["current"], e[0]["seat"]))
+        current = self.snap.get("current")
+        order = sorted(placed_pawns, key=lambda e: (e[0]["seat"] == current, e[0]["seat"]))
         for p, tile, at, scale in order:
             t = self.L["tiles"][tile - 1]
+            size = PAWN * scale
             cx, cy = t["x"] + at[0], t["y"] + at[1]
-            size = 0.86 * scale
             seat = SEAT[(p["seat"] - 1) % 6]
-            if p["seat"] == self.snap["current"]:
-                # TurnRing: 1.3 x the pawn, brass stroke outside it
-                rr = size * 1.3 / 2
-                w = self.px(3)
-                self.d.ellipse([self.X(cx - rr) - w, self.Y(cy - rr) - w, self.X(cx + rr) + w, self.Y(cy + rr) + w],
+            sr = size * 0.94 / 2
+            sx, sy = cx + size * 0.04, cy + size * 0.1
+            self.patch(lambda dd, sx=sx, sy=sy, sr=sr: dd.ellipse([self.X(sx - sr), self.Y(sy - sr), self.X(sx + sr), self.Y(sy + sr)],
+                                                              fill=(26, 18, 12, 115)))
+            if p["seat"] == current:
+                rr = size * 1.2 / 2
+                w = self.px(4)
+                ry = cy - size * 0.03
+                self.d.ellipse([self.X(cx - rr) - w, self.Y(ry - rr) - w, self.X(cx + rr) + w, self.Y(ry + rr) + w],
                                outline=hex_rgba(BRASS_LIGHT), width=int(round(w)))
             skin = skins[(p["seat"] - 1) % len(skins)]
             item = {"look": self.data["looks"][skin]}
@@ -359,8 +362,13 @@ class Scene:
             pawn = Image.new("RGBA", (side * 2, side * 2), (0, 0, 0, 0))
             draw_pawn(pawn, side / 2, side / 2, side, item, {"patterns": self.data["patterns"]}, seat=seat)
             self.img.alpha_composite(pawn, (int(self.X(cx) - side), int(self.Y(cy) - side)))
+            self.avatar(p, cx, cy - size * 0.03, size * 0.5, seat)
+            if p.get("burning"):
+                self.icon("fire", cx, cy - size * 0.52, size * 0.5, "#FF7B2E", "#FFD166", "#FFD166")
+            if p.get("frozen"):
+                self.medallion("ice", cx + size * 0.36, cy - size * 0.34, size * 0.34, "#5DADE2")
 
-    def render(self, out):
+    def render(self, out=None):
         groups, placed_pawns = self.resting()
         cover = {tile: len(ps) for tile, ps in groups.items()}
         self.table()
@@ -370,12 +378,10 @@ class Scene:
         self.title()
         self.links()
         self.tiles(cover)
-        self.tokens(cover)
-        self.teleport_rings()
-        self.placed()
         self.pawns(placed_pawns)
         final = self.img.resize((self.W, self.H), Image.LANCZOS)
-        final.convert("RGB").save(out)
+        if out:
+            final.convert("RGB").save(out)
         return final
 
 

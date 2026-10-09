@@ -1,4 +1,5 @@
--- Dumps a mid-game board scene per map as JSON (used by tools/preview/board.py)
+-- Dumps a mid-game board scene per map as JSON (used by tools/preview/board.py).
+-- Bundle after tests/preview_skins.luau (it records the tile skins).
 local Maps = requireModule("Shared/Game/Maps")
 local Board = requireModule("Shared/Game/Board")
 local Rng = requireModule("Shared/Game/Rng")
@@ -70,7 +71,38 @@ for i, def in Maps.list do
 			break
 		end
 	end
-	table.insert(scenes, { layout = layout, snapshot = g:snapshot(1) })
+	local snap = g:snapshot(1)
+	-- what each tile is reskinned as (recorded from the game's TileSkins)
+	local pos, belt, skins = {}, {}, {}
+	for _, t in layout.tiles do
+		pos[t.id] = { t.x, t.y }
+	end
+	for _, e in snap.placed do
+		if e.item == "conveyor" and e.tiles then
+			for k, t in e.tiles do
+				local from, to = t, e.tiles[k + 1]
+				if not to then
+					from, to = e.tiles[k - 1] or t, t
+				end
+				belt[t] = math.deg(math.atan2(pos[to][2] - pos[from][2], pos[to][1] - pos[from][1])) + (if e.dir == "back" then 180 else 0)
+			end
+		end
+	end
+	local function addSkin(tile, kind)
+		skins[tostring(tile)] = { kind = kind, top = SkinTop(kind), ops = RecordSkin(kind, false, BoardLayout.Style.tileScale / 2, belt[tile]) }
+	end
+	for _, e in snap.placed do
+		if e.item ~= "conveyor" then
+			addSkin(e.tile, e.item)
+		end
+	end
+	for t in belt do
+		addSkin(t, "conveyor")
+	end
+	for _, n in snap.natural do
+		addSkin(n.tile, n.kind)
+	end
+	table.insert(scenes, { layout = layout, snapshot = snap, skins = skins })
 end
 -- pawn skins used in the preview (seat -> skin), plus everything needed to draw them
 local skins = { "pawn_classic", "pawn_ocean", "pawn_bee", "pawn_galaxy" }

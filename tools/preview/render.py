@@ -109,11 +109,11 @@ class Canvas:
     def pill(self, cx, cy, w, h, color, rot=0):
         self.rect(cx, cy, w, h, color, r=0.5, rot=rot)
 
-    def line(self, x1, y1, x2, y2, th, color, square=False):
+    def line(self, x1, y1, x2, y2, th, color, square=False, t=0):
         dx, dy = x2 - x1, y2 - y1
         ln = math.hypot(dx, dy)
         rot = math.degrees(math.atan2(dy, dx))
-        self.rect((x1 + x2) / 2, (y1 + y2) / 2, ln + (0 if square else th), th, color, r=0 if square else 0.5, rot=rot)
+        self.rect((x1 + x2) / 2, (y1 + y2) / 2, ln + (0 if square else th), th, color, r=0 if square else 0.5, rot=rot, t=t)
 
     def path(self, pts, th, color, closed=False):
         seq = list(pts) + ([pts[0]] if closed else [])
@@ -167,8 +167,8 @@ class Canvas:
             img.putalpha(Image.composite(img.getchannel("A"), Image.new("L", img.size, 0), mask))
         self.layer.paste_shape(img)
 
-    def arc(self, cx, cy, dd, th, color, dir=0, keep=0.5):
-        self.ring(cx, cy, dd, th, color, keep_dir=dir, keep=keep)
+    def arc(self, cx, cy, dd, th, color, dir=0, keep=0.5, t=0):
+        self.ring(cx, cy, dd, th, color, keep_dir=dir, keep=keep, t=t)
 
     def drop(self, cx, cy, r, color, dir=0):
         self.circle(cx, cy, 2 * r, color)
@@ -377,13 +377,13 @@ def draw_ops(cv, ops):
                 sub = [_with_color(x, c) for x in sub]
             draw_ops(cv, sub)
         elif kind == "rect":
-            cv.rect(args[1], args[2], args[3], args[4], c, r=o.get("r", 0), rot=o.get("rot", 0), t=o.get("t", 0))
+            cv.rect(args[1], args[2], args[3], args[4], c, r=o.get("r", 0) or 0, rot=o.get("rot", 0) or 0, t=o.get("t", 0) or 0)
         elif kind == "circle":
-            cv.circle(args[1], args[2], args[3], c, t=o.get("t", 0))
+            cv.circle(args[1], args[2], args[3], c, t=o.get("t", 0) or 0)
         elif kind == "pill":
             cv.pill(args[1], args[2], args[3], args[4], c, rot=o.get("rot", 0))
         elif kind == "line":
-            cv.line(args[1], args[2], args[3], args[4], args[5], c, square=o.get("square", False))
+            cv.line(args[1], args[2], args[3], args[4], args[5], c, square=o.get("square", False), t=o.get("t", 0) or 0)
         elif kind == "path":
             cv.path(args[1], args[2], c, closed=o.get("closed", False))
         elif kind == "taper":
@@ -395,9 +395,9 @@ def draw_ops(cv, ops):
         elif kind == "half":
             cv.half(args[1], args[2], args[3], c, dir=o.get("dir", 0))
         elif kind == "ring":
-            cv.ring(args[1], args[2], args[3], args[4], c, t=o.get("t", 0))
+            cv.ring(args[1], args[2], args[3], args[4], c, t=o.get("t", 0) or 0)
         elif kind == "arc":
-            cv.arc(args[1], args[2], args[3], args[4], c, dir=o.get("dir", 0), keep=o.get("keep", 0.5))
+            cv.arc(args[1], args[2], args[3], args[4], c, dir=o.get("dir", 0), keep=o.get("keep", 0.5), t=o.get("t", 0) or 0)
         elif kind == "drop":
             cv.drop(args[1], args[2], args[3], c, dir=o.get("dir", 0))
         elif kind == "hex":

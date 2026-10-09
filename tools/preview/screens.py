@@ -1,15 +1,10 @@
 #!/usr/bin/env python3
-"""Full-screen mockups of the match screen, the lobby and the Treasure Chests page.
+"""Drawing helpers for the full-screen previews (tools/preview/hud.py draws the screens).
 
-Lays the screens out with the same sizes and positions as the Lua UI at the 1280x720
-virtual resolution (MatchScreen, HandBar, PlayersPanel, LobbyScreen, PlayPanel,
-PartyPanel, Chests) and draws them with the same preview primitives as the other
-sheets, so the layout and style can be judged without opening Roblox.
-
-Usage: python3 tools/preview/screens.py <dir with icons/board/cosmetics/cards .json> <outdir>
+Screen draws widgets at a stage resolution the way Widgets builds them (buttons, panels,
+title cartouches, toggles, progress bars, badges); draw_chests draws the Treasure Chests
+page (Chests.lua) on top of a screen.
 """
-import json
-import math
 import os
 import random
 import sys
@@ -18,8 +13,6 @@ import textwrap
 sys.path.insert(0, os.path.dirname(__file__))
 from render import Layer, Canvas, draw_ops, hex_rgba, font  # noqa: E402
 from cosmetics import draw_pawn  # noqa: E402
-from cards import CardPainter  # noqa: E402
-import board as boardmod  # noqa: E402
 from PIL import Image, ImageDraw  # noqa: E402
 
 S = 2  # supersampling of the 1280x720 virtual stage
@@ -44,6 +37,7 @@ STYLES = {
     "blue": {"face": "#4C80B8", "dark": "#33597F", "stroke": "#1F3A55", "text": WHITE, "outline": "#1F3A55"},
     "purple": {"face": "#7A61A8", "dark": "#554279", "stroke": "#362A4E", "text": WHITE, "outline": "#362A4E"},
     "parchment": {"face": PARCH, "dark": PARCH_DARK, "stroke": PARCH_EDGE, "text": INK, "engraved": True},
+    "dark": {"face": "#3A281B", "dark": "#221710", "stroke": "#120B07", "text": PARCH, "outline": "#120B07"},
 }
 
 
@@ -270,145 +264,7 @@ class Screen:
         print("wrote", path, out.size)
 
 
-# ------------------------------------------------------------------------- match
-class QuietScene(boardmod.Scene):
-    """The board renderer without its own table background."""
-
-    def table(self):
-        pass
-
-
-def match_screen(data, out):
-    sc = Screen(data)
-    sc.table()
-    top, GAP, SIDE_W, TOP_H, HAND_H = 56, 10, 270, 40, 150
-    W, H = sc.w, sc.h
-    left_w = W - (SIDE_W + 3 * GAP)
-
-    # board (BoardView fits the world into the area * 0.98)
-    bx, by, bw, bh = GAP, top + TOP_H + 6, left_w, H - (top + TOP_H + 6 + HAND_H + 2 * GAP)
-    scene_data = json.loads(json.dumps(data["board"]))
-    scene = scene_data["scenes"][0]
-    scene["snapshot"]["current"] = 1
-    L = scene["layout"]
-    k = min(bw / L["w"], bh / L["h"]) * 0.98
-    world_w = L["w"] * k
-    pad = 6
-    bs = QuietScene(scene_data, scene, width=int((world_w + 2 * pad) * S), pad=pad * S)
-    bimg = bs.render("/tmp/claude-0/build/prev/_board_tmp.png")
-    bimg = bimg.convert("RGBA")
-    px = int((bx + bw / 2) * S - bimg.width / 2)
-    py = int((by + bh / 2) * S - bimg.height / 2)
-    # the board image has a dark table fill outside the paper; mask it to the paper's shape
-    mask = Image.new("L", bimg.size, 0)
-    ImageDraw.Draw(mask).rounded_rectangle([pad * S - 6 * S, pad * S - 6 * S, bimg.width - pad * S + 6 * S, bimg.height - pad * S + 14 * S],
-                                           radius=int(0.35 * k * S) + 8, fill=255)
-    sc.img.paste(bimg, (px, py), mask)
-
-    # top bar
-    sc.frame(GAP, top, 400, TOP_H, 10, PARCH, BURN, 2)
-    sc.text(GAP + 12, top, 110, TOP_H, "Round 3", "chunky", 20, INK)
-    sc.text(GAP + 122, top, 400 - 132, TOP_H, "Chaos  ·  Quick  ·  First to 2", "heavy", 15, INK_SOFT)
-    bxr = GAP + left_w
-    for icon, style in [("gear", "wood"), ("smile", "brass"), ("plus", "parchment"), ("minus", "parchment")]:
-        bxr -= 42
-        sc.button(bxr, top, 42, 40, icon=icon, style=style, depth=4, icon_scale=0.66)
-        bxr -= 8
-
-    # event log (bottom-left of the board area)
-    lines = [
-        ([("Pip", SEAT[1]), (" rolled a 4", PARCH)]),
-        ([("Nib", SEAT[2]), (" hit ", PARCH), ("your", SEAT[0]), (" Spike!", PARCH)]),
-        ([("Nib", SEAT[2]), (" was spiked!", "#E8A39E")]),
-    ]
-    ly = by + bh - 10
-    for parts in reversed(lines):
-        full = "".join(t for t, _ in parts)
-        tw = sc.text_width(full, "heavy", 15)
-        ly -= 26
-        sc.rect(GAP + 10, ly, tw + 16, 23, 8, DIM, 0.65)
-        cx = GAP + 18
-        for t, col in parts:
-            w = sc.text_width(t, "heavy", 15)
-            sc.text(cx, ly, w + 2, 23, t, "heavy", 15, col)
-            cx += w
-        ly -= 3
-
-    # players column
-    sx = W - GAP - SIDE_W
-    cx, cy, cw, ch = sc.panel(sx, top, SIDE_W, H - top - GAP, pad=10)
-    players = [
-        (1, "Rowan", "mage", "pawn_classic", 1, 2, 3, True),
-        (2, "Bot Pip", "trapper", "pawn_ocean", 0, 1, 4, False),
-        (3, "Bot Nib", "fire_starter", "pawn_bee", 1, 0, 2, False),
-        (4, "Bot Rusty", "warper", "pawn_galaxy", 0, 3, 5, False),
-    ]
-    names = {"mage": "Mage", "trapper": "Trapper", "fire_starter": "Fire Starter", "warper": "Warper"}
-    yy = cy
-    CARD_H = 88
-    statuses = {3: [("fire", "#E2622B")], 4: [("time_potion", "#8E6CEF")]}
-    for seat, name, char, skin, treasures, coins, cards_n, current in players:
-        bg = "#FFF6D6" if current else "#FBF3DD"
-        if current:
-            sc.outline(cx, yy, cw, CARD_H, 12, BRASS, 4)
-        sc.frame(cx, yy, cw, CARD_H, 12, bg, PARCH_EDGE, 2)
-        sc.pawn(skin, cx + 10 + 25, yy + 6 + 25, 50, SEAT[seat - 1])
-        sc.text(cx + 70, yy + 6, cw - 78, 20, name + ("  (you)" if seat == 1 else ""), "heavy", 17, TEXT_DARK)
-        sc.medallion(char, cx + 70 + 8, yy + 29 + 8, 16, CHAR[char])
-        sc.text(cx + 92, yy + 29, cw - 100, 16, names[char] + ("" if seat == 1 else "  ·  BOT"), "body", 13, CHAR[char])
-        target = 2
-        pip = min(18, (92 - (target - 1) * 7) // target)
-        for i in range(target):
-            filled = i < treasures
-            sc.frame(cx + 70 + i * (pip + 7), yy + 54 + (20 - pip) / 2, pip, pip, pip / 2, GOLD if filled else PARCH_DARK,
-                     BRASS_DARK, 2)
-        rx = cx + cw - 8 - 72
-        sc.icon("coin", rx, yy + 53 + 3, 16, BRASS_DARK, PARCH)
-        sc.text(rx + 17, yy + 53, 18, 22, str(coins), "chunky", 16, TEXT_DARK)
-        sc.icon("book", rx + 38, yy + 53 + 3, 16, WOOD_DARK, PARCH)
-        sc.text(rx + 38 + 17, yy + 53, 18, 22, str(cards_n), "chunky", 16, TEXT_DARK)
-        for j, (icon, col) in enumerate(statuses.get(seat, [])):
-            sc.medallion(icon, cx + 6 + 30 + j * 22, yy + 60 + 8, 16, col)
-        if current:
-            sc.progress(cx + 12, yy + CARD_H - 8, cw - 24, 4, 0.7, BRASS)
-        yy += CARD_H + 8
-
-    # hand bar
-    hx, hy = GAP, H - GAP - HAND_H
-    ccx, ccy, ccw, cch = sc.panel(hx, hy, left_w, HAND_H, style="board", pad=10)
-    # character
-    sc.medallion("mage", ccx + 4 + 42, ccy + cch / 2, 84, CHAR["mage"])
-    sc.text(ccx + 100, ccy + 8, 110, 26, "Mage", "chunky", 22, PARCH)
-    sc.button(ccx + 100, ccy + 38, 214 - 106, 44, text="HEX", style="blue", size=20)
-    for i in range(2):
-        sc.frame(ccx + 100 + 33 + i * 17, ccy + 88 + 1, 12, 12, 6, BRASS, BRASS_DARK, 1.5)
-    sc.text(ccx + 100, ccy + 106, 108, 16, "Charged!", "heavy", 13, WOOD_PALE, align="center", scaled=True)
-    # actions
-    ax = ccx + ccw - 176
-    sc.button(ax, ccy + 4, 176, 70, text="ROLL", icon="dice", style="brass", depth=7, size=32)
-    sc.text(ax, ccy + 82, 176, 40, "Your turn: roll or play a card", "heavy", 15, WOOD_PALE, align="center", wrap=True)
-    # cards
-    hand = ["spike", "speed_boost", "shield", "teleporter", "phoenix_potion"]
-    armed = {"speed_boost"}
-    area_x, area_w = ccx + 214 + 10, ccw - (214 + 176 + 20)
-    n = len(hand)
-    cwid = min(86, (area_w - (n - 1) * 8) / n, (cch - 18) * 0.72)
-    chei = cwid / 0.72
-    start = area_x + (area_w - (n * cwid + (n - 1) * 8)) / 2
-    painter = CardPainter(data["cards"])
-    for i, item in enumerate(hand):
-        x = start + i * (cwid + 8)
-        y = ccy + (cch - chei) / 2 - (14 if item in armed else 0)
-        if item in armed:
-            sc.outline(x, y, cwid, chei, cwid * 0.09, BRASS_LIGHT, 4)
-        layer = Image.new("RGBA", (int((cwid + 20) * S), int((chei + 20) * S)), (0, 0, 0, 0))
-        painter.item_front(layer, 10 * S, 10 * S, cwid * S, item)
-        sc.img.alpha_composite(layer, (int((x - 10) * S), int((y - 10) * S)))
-
-    sc.save(out)
-
-
-# ------------------------------------------------------------------------- lobby
+# ------------------------------------------------------------------------- chests
 def chest_art(sc, look, x, y, size):
     """Chests.art: base (body, trim bands, lock) and lid (top, bands, rim)."""
     body, trim, band, gem = look["body"], look["trim"], look["band"], look["gem"]
@@ -427,105 +283,8 @@ def chest_art(sc, look, x, y, size):
     r(0.5, 0.4675, 0.8, 0.035, band)
 
 
-def lobby_base(data, searching=True):
-    sc = Screen(data)
-    sc.table()
-    top = 56
-    W, H = sc.w, sc.h
-    sc.text(28, top - 6, 420, 70, "Trapisque", "display", 60, PARCH, outline=INK, ow=3)
-    # profile chip
-    px, py, pw, ph = W - 24 - 400, top, 400, 74
-    sc.frame(px, py, pw, ph, 14, PARCH, BURN, 3)
-    sc.pawn("pawn_ocean", px + 10 + 25, py + 12 + 25, 50, SEAT[1])
-    sc.text(px + 70, py + 9, pw - 220, 20, "Rowan", "heavy", 18, TEXT_DARK)
-    title = next(i for i in data["cosmetics"]["items"] if i["id"] == "title_hopper")["look"]
-    tw = sc.text_width(title["text"], "heavy", 12)
-    sc.rect(px + 70, py + 32, tw + 16, 18, 6, "#4E2E14")
-    sc.text(px + 78, py + 32, tw + 2, 18, title["text"], "heavy", 12, title["color"])
-    sc.text(px + 70, py + 53, 40, 16, "LV 7", "chunky", 14, "#3C6E8F")
-    sc.progress(px + 114, py + 57, pw - 264, 8, 0.6, INFO)
-    sc.medallion("gem", px + pw - 16 - 12, py + ph / 2, 24, NEUTRAL)
-    gw = sc.text_width("1,240", "chunky", 24)
-    sc.text(px + pw - 16 - 24 - 6 - gw, py + ph / 2 - 14, gw + 2, 28, "1,240", "chunky", 24, INK)
-
-    bx, by, bw, bh = 24, top + 96, W - 48, H - (top + 96 + 112)
-    lw = bw * 0.55 - 12
-    rw = bw * 0.45 - 12
-    # play panel
-    cx, cy, cw, ch = sc.panel(bx, by, lw, bh, title="Play", title_w=200)
-    grid_h = ch - 128
-    tw_, th_ = (cw - 12) / 2, (grid_h - 12) / 2
-    modes = [
-        ("chaos", "Chaos Trapisque", "2-6 players", "Free-for-all. First to 5 treasures wins.", "bolt"),
-        ("assist", "Assist Trapisque", "4 players", "2 vs 2. A team wins when both teammates have 5 treasures.", "people"),
-        ("factions", "Factions", "6 players", "Three teams of 2. Both teammates need 5 treasures.", "people"),
-        ("ww4", "World War Four", "6 players", "3 vs 3. Every teammate needs 4 treasures.", "people"),
-    ]
-    for i, (mid, name, count, blurb, icon) in enumerate(modes):
-        tx = cx + (i % 2) * (tw_ + 12)
-        ty = cy + (i // 2) * (th_ + 12)
-        on = mid == "chaos"
-        sc.frame(tx, ty, tw_, th_, 12, "#FFF1C4" if on else PARCH_MID, BRASS_DARK if on else PARCH_EDGE, 3 if on else 2)
-        sc.icon(icon, tx + 12, ty + 12, 34, INK, PARCH_MID)
-        sc.text(tx + 54, ty + 10, tw_ - 66, 24, name, "chunky", 20, INK, scaled=True)
-        sc.text(tx + 54, ty + 34, tw_ - 66, 16, count, "heavy", 13, INK_SOFT)
-        sc.text(tx + 12, ty + 58, tw_ - 24, th_ - 64, blurb, "body", 15, TEXT_DARK, wrap=True, valign="top")
-    by2 = cy + ch - 116
-    if searching:
-        sc.button(cx, by2, cw, 58, text="CANCEL SEARCH", icon="close", style="red", depth=6, size=26)
-        sc.icon("compass", cx + 6, by2 + 68 + 7, 34, INK, PARCH)
-        sc.text(cx + 48, by2 + 68, cw - 50, 48, "Finding a Chaos match  0:23  ·  3 searching", "heavy", 18, TEXT_DARK)
-    else:
-        sc.button(cx, by2, cw, 58, text="FIND A MATCH", icon="play", style="green", depth=6, size=26)
-        sc.button(cx, by2 + 68, cw / 2 - 6, 48, text="PRACTICE", icon="dice", style="wood", size=19)
-        sc.button(cx + cw / 2 + 6, by2 + 68, cw / 2 - 6, 48, text="PRIVATE MATCH", icon="people", style="blue", size=19)
-
-    # party panel
-    rx = bx + bw - rw
-    cx, cy, cw, ch = sc.panel(rx, by, rw, bh, title="Party", title_w=200)
-    sc.frame(cx, cy, cw, 64, 10, PARCH_MID, PARCH_EDGE, 2)
-    sc.text(cx + 12, cy + 6, cw * 0.55, 18, "PARTY CODE", "heavy", 13, INK_SOFT)
-    sc.text(cx + 12, cy + 24, cw * 0.55, 34, "K7QX4M", "chunky", 30, INK)
-    sc.choice(cx + cw * 0.58, cy + 13, cw * 0.42 - 10, 38, [("Code", "code"), ("Invite only", "invite")], "code", size=15)
-    members = [("Rowan", "pawn_ocean", True), ("Mika", "pawn_mint", False), ("Jojo", "pawn_lava", False)]
-    my = cy + 74 + 2
-    for i, (name, skin, leader) in enumerate(members):
-        mw = cw - 10 - 4
-        mx = cx + 2
-        sc.frame(mx, my, mw, 44, 10, "#FFF1C4" if i == 0 else "#FBF3DD", PARCH_EDGE, 1.5)
-        sc.pawn(skin, mx + 6 + 18, my + 4 + 18, 36, SEAT[i])
-        nx = mx + 50
-        if leader:
-            sc.icon("crown", mx + 50, my + 11, 22, BRASS_DARK, PARCH)
-            nx = mx + 78
-        sc.text(nx, my, mw - (nx - mx) - 100, 44, name + ("  (you)" if i == 0 else ""), "heavy", 17, TEXT_DARK)
-        if i > 0:
-            sc.button(mx + mw - 6 - 82, my + 5, 38, 34, icon="crown", style="brass", depth=4, icon_scale=0.66)
-            sc.button(mx + mw - 6 - 38, my + 5, 38, 34, icon="close", style="red", depth=4, icon_scale=0.66)
-        my += 50
-    sc.text(cx, my + 4, cw, 20, "3 more can join", "body", 14, INK_FAINT, align="center")
-    sc.button(cx, cy + ch - 48, cw * 0.62 - 6, 48, text="INVITE", icon="plus", style="blue", size=18)
-    sc.button(cx + cw * 0.62 + 6, cy + ch - 48, cw * 0.38 - 6, 48, text="LEAVE", icon="exit", style="red", size=18)
-
-    # nav
-    nav = [("FREE CHEST!", "chest", "green"), ("LOCKER", "hanger", "wood"), ("SHOP", "bag", "wood"), ("HOW TO PLAY", "book", "wood"),
-           ("SETTINGS", "gear", "wood")]
-    nw = bw * 0.2 - 12
-    total = 5 * nw + 4 * 14
-    nx = bx + (bw - total) / 2
-    for text, icon, style in nav:
-        sc.button(nx, H - 22 - 66, nw, 66, text=text, icon=icon, style=style, size=19)
-        nx += nw + 14
-    return sc
-
-
-def lobby_screen(data, out):
-    sc = lobby_base(data, searching=True)
-    sc.save(out)
-
-
-def chests_screen(data, out):
-    sc = lobby_base(data, searching=False)
+def draw_chests(sc, data):
+    """The Treasure Chests page over whatever `sc` shows (the lobby)."""
     sc.dim(0.55)
     W, H = sc.w, sc.h
     mw, mh = 900, 580
@@ -587,21 +346,3 @@ def chests_screen(data, out):
             sc.button(x + 15, by, bw, 52, text=str(chest["price"]), icon="gem", style="brass", size=20)
         sc.button(x + 15 + bw + 12, by, bw, 52, text="x10  " + format(chest["price"] * 9, ","), icon="gem", style="purple", size=18)
         sc.button(x + card_w / 2 - 70, y + hh - 8 - 36, 140, 36, text="SEE ODDS", style="parchment", size=15)
-    sc.save(out)
-
-
-def main():
-    src, outdir = sys.argv[1], sys.argv[2]
-    data = {}
-    for name in ("icons", "board", "cosmetics", "cards"):
-        data[name] = json.load(open(os.path.join(src, name + ".json")))
-    data["icons"] = data["icons"]
-    data["looks"] = {i["id"]: i["look"] for i in data["cosmetics"]["items"]}
-    data["patterns"] = data["cosmetics"]["patterns"]
-    match_screen(data, os.path.join(outdir, "07-match-screen.png"))
-    lobby_screen(data, os.path.join(outdir, "08-lobby.png"))
-    chests_screen(data, os.path.join(outdir, "09-treasure-chests.png"))
-
-
-if __name__ == "__main__":
-    main()
