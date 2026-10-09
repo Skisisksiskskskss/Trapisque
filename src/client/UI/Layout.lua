@@ -310,6 +310,103 @@ function Layout.matchHud(L): { [string]: Rect }
 end
 
 ---------------------------------------------------------------------------
+-- lobby
+---------------------------------------------------------------------------
+
+--[[
+	Layout.lobby(m) -> {
+		form
+		title     rect or nil (the big "Trapisque")
+		profile   { rect, kind = "full" | "compact" }  your avatar, level, gems
+		tabs      rect or nil   upright phones switch between Play / Party / Top
+		play, party, leaders    panel rects (on upright phones all three share one;
+		                        leaders is nil when the leaderboard opens from the menu)
+		compact   true when the panels must use their compact layouts
+		nav       { rect, kind = "full" | "short" | "icon" }   the menu buttons
+		invites   rect          where party invites stack up
+	}
+	PC: title and profile on top, Play | Party | Top across the middle (Top moves to the
+	menu when there isn't room), the menu along the bottom. Phones held sideways: the
+	profile sits in the free middle of Roblox's top bar and everything else is compact.
+	Phones held upright: one panel at a time under tabs, icon menu at the bottom.
+]]
+function Layout.lobby(m)
+	local form = m.form
+	local safe = Layout.safeRect(m, 0)
+	local top = math.max(m.topbar.y1, safe.y)
+	local out: { [string]: any } = { form = form }
+
+	if form == "wide" then
+		local M = 24
+		local x0, x1 = safe.x + M, safe.x + safe.w - M
+		local y0 = top + 8
+		local navH = 66
+		local nav = rect(x0, safe.y + safe.h - 22 - navH, x1 - x0, navH)
+		local profile = rect(x1 - 400, y0, 400, 74)
+		out.profile = { rect = profile, kind = "full" }
+		out.title = rect(x0, y0 - 6, math.min(420, profile.x - 16 - x0), 70)
+		local body = rect(x0, y0 + 96, x1 - x0, nav.y - 14 - (y0 + 96))
+		if body.w >= 1180 then
+			local G = 16
+			local playW = math.floor((body.w - 2 * G) * 0.46)
+			local partyW = math.floor((body.w - 2 * G) * 0.30)
+			out.play = rect(body.x, body.y, playW, body.h)
+			out.party = rect(body.x + playW + G, body.y, partyW, body.h)
+			out.leaders = rect(body.x + playW + partyW + 2 * G, body.y, body.w - playW - partyW - 2 * G, body.h)
+		else
+			local G = 24
+			local playW = math.floor((body.w - G) * 0.55)
+			out.play = rect(body.x, body.y, playW, body.h)
+			out.party = rect(body.x + playW + G, body.y, body.w - playW - G, body.h)
+		end
+		out.compact = false
+		out.nav = { rect = nav, kind = "full" }
+		out.invites = rect(x1 - 380, body.y, 380, nav.y - 12 - body.y)
+	elseif form == "short" then
+		local M = 10
+		local x0, x1 = safe.x + M, safe.x + safe.w - M
+		-- the profile chip rides in the free middle of Roblox's top bar
+		local band = Layout.bandRect(m, 10)
+		local chipW = math.min(340, band.w)
+		out.profile = { rect = rect(band.x + band.w - chipW, band.y, chipW, band.h), kind = "compact" }
+		if band.w - chipW >= 190 then
+			out.title = rect(band.x, band.y, math.min(240, band.w - chipW - 16), band.h)
+		end
+		local navH = math.max(46, math.ceil(44 / m.scale))
+		local nav = rect(x0, safe.y + safe.h - 8 - navH, x1 - x0, navH)
+		local y0 = top + 6
+		local body = rect(x0, y0, x1 - x0, nav.y - 8 - y0)
+		local G = 10
+		local playW = math.floor((body.w - G) * 0.56)
+		out.play = rect(body.x, body.y, playW, body.h)
+		out.party = rect(body.x + playW + G, body.y, body.w - playW - G, body.h)
+		out.compact = true
+		out.nav = { rect = nav, kind = "short" }
+		out.invites = rect(x1 - 340, body.y, 340, body.h)
+	else
+		local M = 10
+		local x0, x1 = safe.x + M, safe.x + safe.w - M
+		local y = top + 6
+		out.title = rect(x0, y, x1 - x0, 46)
+		y += 46 + 6
+		out.profile = { rect = rect(x0, y, x1 - x0, 64), kind = "full" }
+		y += 64 + 10
+		out.tabs = rect(x0, y, x1 - x0, 44)
+		y += 44 + 8
+		local navH = 62
+		local nav = rect(x0, safe.y + safe.h - 8 - navH, x1 - x0, navH)
+		local body = rect(x0, y, x1 - x0, nav.y - 10 - y)
+		out.play = body
+		out.party = body
+		out.leaders = body
+		out.compact = false
+		out.nav = { rect = nav, kind = "icon" }
+		out.invites = rect(x0, body.y, x1 - x0, body.h)
+	end
+	return out
+end
+
+---------------------------------------------------------------------------
 -- modals
 ---------------------------------------------------------------------------
 

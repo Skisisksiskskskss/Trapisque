@@ -19,6 +19,7 @@ local Cosmetics = require(Shared.Meta.Cosmetics)
 
 local Net = require(script.Parent.Net)
 local DataService = require(script.Parent.DataService)
+local LeaderboardService = require(script.Parent.LeaderboardService)
 
 local T = Config.Timing
 
@@ -488,6 +489,7 @@ function Match:_finish()
 					deaths = p.stats.deaths,
 					placed = p.stats.placed,
 				})
+				LeaderboardService.submit(player, DataService.get(player))
 				Net.push(player, "match.end", {
 					id = self.id,
 					ranking = engine.ranking,

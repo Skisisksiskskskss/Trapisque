@@ -5,6 +5,7 @@
 		Pages.shop(popupLayer)
 		Pages.rules(popupLayer)
 		Pages.settings(popupLayer)
+		Pages.leaderboard(popupLayer)
 ]]
 
 local MarketplaceService = game:GetService("MarketplaceService")
@@ -21,6 +22,7 @@ local Util = require(UI.Util)
 local Theme = require(UI.Theme)
 local Icons = require(UI.Icons)
 local Widgets = require(UI.Widgets)
+local LeaderboardPanel = require(script.Parent.LeaderboardPanel)
 
 local Client = UI.Parent
 local Net = require(Client.Net)
@@ -329,6 +331,28 @@ function Pages.settings(layer: Instance): () -> ()
 		sizeUDim = UDim2.new(1, 0, 0, 20),
 		layoutOrder = 9,
 	})
+	return close
+end
+
+---------------------------------------------------------------------------
+-- Leaderboard (screens without room for the Top Players column)
+---------------------------------------------------------------------------
+
+function Pages.leaderboard(layer: Instance): () -> ()
+	local panel = nil
+	local content, close = Widgets.modal(layer, {
+		title = "Top Players",
+		titleWidth = 240,
+		width = 520,
+		height = 600,
+		onClose = function()
+			-- the modal takes the panel with it; just stop any load still on its way
+			if panel then
+				panel.alive = false
+			end
+		end,
+	})
+	panel = LeaderboardPanel.new(content, { title = false })
 	return close
 end
 

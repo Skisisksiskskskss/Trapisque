@@ -3,8 +3,10 @@
 	The left half of the lobby: pick a mode, then Find a Match (public matchmaking),
 	Practice against bots, or start a Private Match with your party.
 
-		local panel = PlayPanel.new(parent, popupLayer)
+		local panel = PlayPanel.new(parent, popupLayer, { compact = bool })
 		panel:refresh()   -- party / queue changed
+
+	Compact (phones held sideways): no title, the four modes in one row, smaller buttons.
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -31,6 +33,9 @@ PlayPanel.__index = PlayPanel
 
 local player = Players.LocalPlayer
 
+-- the mode you picked survives the lobby being rebuilt (e.g. turning your phone)
+local lastMode = "chaos"
+
 local function playerRange(mode): string
 	if mode.minPlayers == mode.maxPlayers then
 		return mode.maxPlayers .. " players"
@@ -38,25 +43,31 @@ local function playerRange(mode): string
 	return mode.minPlayers .. "-" .. mode.maxPlayers .. " players"
 end
 
-function PlayPanel.new(parent: Instance, popups: Instance)
+function PlayPanel.new(parent: Instance, popups: Instance, opts: { [string]: any }?)
 	local self = setmetatable({}, PlayPanel)
 	self.popups = popups
-	self.mode = "chaos"
+	self.mode = lastMode
 	self.maid = Util.maid()
 	self.tiles = {}
+	local compact = opts ~= nil and opts.compact == true
+	self.compact = compact
 
 	local content, root = Widgets.panel(parent, {
 		name = "PlayPanel",
-		title = "Play",
+		title = if compact then nil else "Play",
 		titleWidth = 200,
+		padding = if compact then 12 else 18,
 		size = UDim2.fromScale(1, 1),
 	})
 	self.root = root
 
-	-- mode tiles (2 x 2)
-	local grid = Util.frame(content, { Name = "Modes", Size = UDim2.new(1, 0, 1, -128) })
+	-- mode tiles: 2 x 2, or one row when compact
+	local findH = if compact then 50 else 58
+	local smallH = if compact then 42 else 48
+	local buttonsH = findH + 8 + smallH
+	local grid = Util.frame(content, { Name = "Modes", Size = UDim2.new(1, 0, 1, -(buttonsH + 12)) })
 	Util.new("UIGridLayout", {
-		CellSize = UDim2.new(0.5, -6, 0.5, -6),
+		CellSize = if compact then UDim2.new(0.25, -9, 1, 0) else UDim2.new(0.5, -6, 0.5, -6),
 		CellPadding = UDim2.fromOffset(12, 12),
 		SortOrder = Enum.SortOrder.LayoutOrder,
 		Parent = grid,
@@ -70,16 +81,16 @@ function PlayPanel.new(parent: Instance, popups: Instance)
 		Name = "Buttons",
 		AnchorPoint = Vector2.new(0, 1),
 		Position = UDim2.fromScale(0, 1),
-		Size = UDim2.new(1, 0, 0, 116),
+		Size = UDim2.new(1, 0, 0, buttonsH),
 	})
 	self.findButton = Widgets.button(row, {
 		name = "Find",
 		text = "FIND A MATCH",
 		icon = "play",
 		style = "green",
-		textSize = 26,
+		textSize = if compact then 22 else 26,
 		depth = 6,
-		size = UDim2.new(1, 0, 0, 58),
+		size = UDim2.new(1, 0, 0, findH),
 		onClick = function()
 			self:_find()
 		end,
@@ -89,21 +100,21 @@ function PlayPanel.new(parent: Instance, popups: Instance)
 		text = "PRACTICE",
 		icon = "dice",
 		style = "wood",
-		textSize = 19,
-		size = UDim2.new(0.5, -6, 0, 48),
-		position = UDim2.new(0, 0, 1, -48),
+		textSize = if compact then 16 else 19,
+		size = UDim2.new(0.5, -6, 0, smallH),
+		position = UDim2.new(0, 0, 1, -smallH),
 		onClick = function()
 			self:_practice()
 		end,
 	})
 	self.privateButton = Widgets.button(row, {
 		name = "Private",
-		text = "PRIVATE MATCH",
+		text = if compact then "PRIVATE" else "PRIVATE MATCH",
 		icon = "people",
 		style = "blue",
-		textSize = 19,
-		size = UDim2.new(0.5, -6, 0, 48),
-		position = UDim2.new(0.5, 6, 1, -48),
+		textSize = if compact then 16 else 19,
+		size = UDim2.new(0.5, -6, 0, smallH),
+		position = UDim2.new(0.5, 6, 1, -smallH),
 		onClick = function()
 			self:_private()
 		end,
@@ -111,8 +122,8 @@ function PlayPanel.new(parent: Instance, popups: Instance)
 	-- while searching, the Practice / Private row shows how the search is going
 	local status = Util.frame(row, {
 		Name = "Searching",
-		Position = UDim2.new(0, 0, 1, -48),
-		Size = UDim2.new(1, 0, 0, 48),
+		Position = UDim2.new(0, 0, 1, -smallH),
+		Size = UDim2.new(1, 0, 0, smallH),
 		Visible = false,
 	})
 	local compass = Util.frame(status, {
@@ -167,41 +178,49 @@ function PlayPanel:_modeTile(grid: Frame, mode, order: number)
 	})
 	Util.corner(tile, 12)
 	local stroke = Util.stroke(tile, C.parchmentEdge, 2)
+	local compact = self.compact
+	local pad = if compact then 8 else 12
+	local iconSize = if compact then 24 else 34
 	local icon = Util.frame(tile, {
-		Position = UDim2.fromOffset(12, 12),
-		Size = UDim2.fromOffset(34, 34),
+		Position = UDim2.fromOffset(pad, pad),
+		Size = UDim2.fromOffset(iconSize, iconSize),
 	})
 	Icons.make(icon, if mode.isTeam then "people" else "bolt", Icons.flatColors(C.ink, C.parchmentMid))
+	local textX = pad + iconSize + 8
 	Widgets.label(tile, {
-		text = mode.name,
+		text = if compact then mode.short else mode.name,
 		font = "chunky",
-		size = 20,
+		size = if compact then 17 else 20,
 		color = C.ink,
-		sizeUDim = UDim2.new(1, -66, 0, 24),
-		position = UDim2.fromOffset(54, 10),
+		sizeUDim = UDim2.new(1, -(textX + pad), 0, if compact then 20 else 24),
+		position = UDim2.fromOffset(textX, if compact then 6 else 10),
 		scaled = true,
 	})
 	Widgets.label(tile, {
 		text = playerRange(mode),
 		font = "heavy",
-		size = 13,
+		size = if compact then 11 else 13,
 		color = C.inkSoft,
-		sizeUDim = UDim2.new(1, -66, 0, 16),
-		position = UDim2.fromOffset(54, 34),
+		sizeUDim = UDim2.new(1, -(textX + pad), 0, 16),
+		position = UDim2.fromOffset(textX, if compact then 26 else 34),
 	})
+	local top = if compact then 44 else 58
 	Widgets.label(tile, {
 		text = mode.blurb,
 		font = "body",
-		size = 15,
+		size = if compact then 13 else 15,
+		minSize = 9,
 		color = C.textDark,
 		wrap = true,
 		valign = "top",
-		sizeUDim = UDim2.new(1, -24, 1, -64),
-		position = UDim2.fromOffset(12, 58),
+		sizeUDim = UDim2.new(1, -2 * pad, 1, -(top + pad)),
+		position = UDim2.fromOffset(pad, top),
+		scaled = compact,
 	})
 	tile.Activated:Connect(function()
 		if self.mode ~= mode.id then
 			self.mode = mode.id
+			lastMode = mode.id
 			Util.bump(tile, 0.04)
 			self:refresh()
 		end

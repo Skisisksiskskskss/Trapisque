@@ -131,3 +131,55 @@ test("modals fit every screen", function()
 		end
 	end
 end)
+
+test("the lobby fits every screen without overlaps", function()
+	for _, d in DEVICES do
+		local m = metricsFor(d)
+		local L = Layout.lobby(m)
+		local safe = Layout.safeRect(m, 0)
+		local parts = {
+			profile = L.profile.rect,
+			nav = L.nav.rect,
+			play = L.play,
+			party = L.party,
+		}
+		if L.title then
+			parts.title = L.title
+		end
+		if L.tabs then
+			parts.tabs = L.tabs
+		end
+		if L.leaders and L.leaders ~= L.play then
+			parts.leaders = L.leaders
+		end
+		local names = {}
+		for name in parts do
+			table.insert(names, name)
+		end
+		table.sort(names)
+		for i, a in names do
+			local r = parts[a]
+			truthy(r.w > 0 and r.h > 0, d.name .. ": lobby " .. a .. " is empty " .. fmt(r))
+			truthy(Layout.inside(r, safe), string.format("%s: lobby %s %s leaves the safe area %s", d.name, a, fmt(r), fmt(safe)))
+			-- the compact profile chip is allowed into the middle of the top bar, never onto its buttons
+			for _, core in Layout.coreRects(m) do
+				falsy(Layout.overlaps(r, core), string.format("%s: lobby %s %s covers Roblox's buttons %s", d.name, a, fmt(r), fmt(core)))
+			end
+			for j = i + 1, #names do
+				local b = names[j]
+				-- upright phones show one panel at a time in the same place
+				local shared = (a == "party" and b == "play") or (a == "play" and b == "party")
+				if not shared then
+					falsy(Layout.overlaps(r, parts[b]), string.format("%s: lobby %s %s overlaps %s %s", d.name, a, fmt(r), b, fmt(parts[b])))
+				end
+			end
+		end
+		-- panels need room for their contents
+		local minH = if L.compact then 230 else 400
+		truthy(L.play.h >= minH, string.format("%s: Play panel too short (%.0f)", d.name, L.play.h))
+		truthy(L.party.w >= (if L.compact then 300 else 330), string.format("%s: Party panel too narrow (%.0f)", d.name, L.party.w))
+		truthy(L.play.w >= (if L.compact then 380 else 390), string.format("%s: Play panel too narrow (%.0f)", d.name, L.play.w))
+		-- buttons in the menu stay big enough to tap
+		truthy(L.nav.rect.h * m.scale >= 40, d.name .. ": menu buttons too small to tap")
+	end
+end)
