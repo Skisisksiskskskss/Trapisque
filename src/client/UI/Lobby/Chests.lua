@@ -197,11 +197,13 @@ end
 
 function Chests.open(layer: Instance): () -> ()
 	local maid = Util.maid()
+	-- side by side on wide screens; stacked in a scrolling list on an upright phone
+	local roomW, roomH, narrow = Widgets.room()
 	local content, close = Widgets.modal(layer, {
 		title = "Treasure Chests",
-		titleWidth = 320,
-		width = 900,
-		height = 580,
+		titleWidth = math.min(320, roomW - 60),
+		width = if narrow then roomW else 900,
+		height = if narrow then math.min(720, roomH) else 580,
 		onClose = function()
 			maid:clean()
 		end,
@@ -219,22 +221,38 @@ function Chests.open(layer: Instance): () -> ()
 		sizeUDim = UDim2.new(0, 200, 1, 0),
 		position = UDim2.fromOffset(44, 0),
 	})
-	Widgets.label(purse, {
+	local note = Widgets.label(purse, {
 		text = "Gems come from playing matches. Duplicates turn back into Gems.",
 		font = "heavy",
-		size = 15,
+		size = if narrow then 12 else 15,
 		color = C.inkSoft,
 		align = "right",
-		sizeUDim = UDim2.new(1, -250, 1, 0),
-		position = UDim2.fromOffset(250, 0),
+		wrap = narrow,
+		sizeUDim = UDim2.new(1, -150, 1, 0),
+		position = UDim2.fromOffset(150, 0),
 	})
+	if not narrow then
+		note.Size = UDim2.new(1, -250, 1, 0)
+		note.Position = UDim2.fromOffset(250, 0)
+	end
 
-	local row = Util.frame(content, {
-		Name = "Chests",
-		Position = UDim2.fromOffset(0, 50),
-		Size = UDim2.new(1, 0, 1, -50),
-	})
-	Util.list(row, "x", 20, "Center", "Top")
+	local row
+	if narrow then
+		row = Widgets.scroll(content, {
+			name = "Chests",
+			position = UDim2.fromOffset(0, 50),
+			size = UDim2.new(1, 0, 1, -50),
+			gap = 14,
+			padding = 4,
+		})
+	else
+		row = Util.frame(content, {
+			Name = "Chests",
+			Position = UDim2.fromOffset(0, 50),
+			Size = UDim2.new(1, 0, 1, -50),
+		})
+		Util.list(row, "x", 20, "Center", "Top")
+	end
 
 	local cards = {}
 	local opening = false
@@ -251,7 +269,7 @@ function Chests.open(layer: Instance): () -> ()
 			Name = chest.id,
 			BackgroundColor3 = C.parchmentMid,
 			BorderSizePixel = 0,
-			Size = UDim2.new(0.5, -10, 1, 0),
+			Size = if narrow then UDim2.new(1, -14, 0, 460) else UDim2.new(0.5, -10, 1, 0),
 			LayoutOrder = i,
 			Parent = row,
 		})

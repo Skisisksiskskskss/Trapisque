@@ -890,6 +890,20 @@ function Widgets.setToastLayer(layer: Instance)
 	placeToasts()
 end
 
+--[[
+	How big a modal can be on this screen at full size (stage pixels), and whether that's
+	narrow enough (an upright phone) that a page should stack its columns instead of
+	shrinking them.
+]]
+function Widgets.room(): (number, number, boolean)
+	local m = Widgets.metrics
+	if not m then
+		return 1000, 700, false
+	end
+	local w, h = Layout.modalRoom(m)
+	return w, h, w < 760
+end
+
 -- Root calls this whenever the screen changes size or shape.
 function Widgets.setMetrics(m)
 	Widgets.metrics = m

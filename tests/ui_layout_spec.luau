@@ -183,3 +183,21 @@ test("the lobby fits every screen without overlaps", function()
 		truthy(L.nav.rect.h * m.scale >= 40, d.name .. ": menu buttons too small to tap")
 	end
 end)
+
+test("on PC the feed sits off the board without covering the HUD", function()
+	for _, d in DEVICES do
+		local m = metricsFor(d)
+		if m.form == "wide" then
+			for n = 2, 6 do
+				local L = Layout.match(m, n)
+				local f = L.feed.rect
+				for name, r in Layout.matchHud(L) do
+					falsy(Layout.overlaps(f, r), string.format("%s n=%d: feed %s covers %s %s", d.name, n, fmt(f), name, fmt(r)))
+				end
+				if L.feed.align == "left" then
+					falsy(Layout.overlaps(f, L.focus), d.name .. ": feed covers the board")
+				end
+			end
+		end
+	end
+end)

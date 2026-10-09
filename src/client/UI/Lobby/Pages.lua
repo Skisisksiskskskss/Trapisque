@@ -42,11 +42,12 @@ local player = Players.LocalPlayer
 
 function Pages.shop(layer: Instance): () -> ()
 	local maid = Util.maid()
+	local roomW, roomH, narrow = Widgets.room()
 	local content, close = Widgets.modal(layer, {
 		title = "Shop",
 		titleWidth = 200,
-		width = 960,
-		height = 560,
+		width = math.min(960, roomW),
+		height = math.min(560, roomH),
 		onClose = function()
 			maid:clean()
 		end,
@@ -55,16 +56,31 @@ function Pages.shop(layer: Instance): () -> ()
 	Widgets.label(content, {
 		text = "Passes never change how a match plays: they're cosmetics and faster collecting.",
 		font = "heavy",
-		size = 16,
+		size = if narrow then 13 else 16,
 		color = C.inkSoft,
 		align = "center",
-		sizeUDim = UDim2.new(1, 0, 0, 24),
+		wrap = true,
+		sizeUDim = UDim2.new(1, 0, 0, if narrow then 34 else 24),
 	})
-	local row = Util.frame(content, {
-		Position = UDim2.fromOffset(0, 34),
-		Size = UDim2.new(1, 0, 1, -34),
-	})
-	Util.list(row, "x", 14, "Center", "Top")
+	-- four across on a wide screen; on an upright phone they scroll, one or two per row
+	local top = if narrow then 42 else 34
+	local row
+	if narrow then
+		local cols = if roomW >= 560 then 2 else 1
+		row = Widgets.scroll(content, {
+			position = UDim2.fromOffset(0, top),
+			size = UDim2.new(1, 0, 1, -top),
+			grid = UDim2.new(1 / cols, -14 * (cols - 1) / cols - 4, 0, 400),
+			gap = 14,
+			padding = 4,
+		})
+	else
+		row = Util.frame(content, {
+			Position = UDim2.fromOffset(0, top),
+			Size = UDim2.new(1, 0, 1, -top),
+		})
+		Util.list(row, "x", 14, "Center", "Top")
+	end
 
 	local cards = {}
 	local function render()
@@ -190,6 +206,16 @@ local RULES = {
 		text = "Roll the die and move, OR play one card instead of rolling. Some cards are free and can be used before you roll: Boosts (Speed Boost, Bounce Pad, Speed Potion), Regeneration and the Time Potion's anchor. Your character's ability is free too, once per turn.",
 	},
 	{
+		icon = "map",
+		title = "Reading the board",
+		text = "Players are the round pieces showing their avatar (bots show their character). Tokens are the coloured hexagons set into the tiles. A card placed on a tile shows as a little card rimmed in its owner's colour, and the tile itself changes to match: slime turns it green and gooey, fire chars it, ice frosts it over, a wall bricks it up.",
+	},
+	{
+		icon = "info",
+		title = "Controls",
+		text = "PC: Space or R rolls, 1 to 9 pick your cards, E uses your ability, Esc cancels, Enter confirms, + and - zoom, F shows the whole board and Tab shows the scores. Drag to look around the board and scroll to zoom.\n\nPhone or tablet: tap a card to see what it does, tap a glowing tile then PLACE to put a card down. Drag to look around, pinch to zoom, and the map button shows the whole board.",
+	},
+	{
 		icon = "token_trap",
 		title = "Tokens",
 		text = "Land on a token to spin its wheel. Red Trap tokens give trap cards, green Assist tokens give helpful cards and purple Neutral tokens give tricky ones. A wheel can also land on a coin. The orange Potion Seller sells potions for coins. Once used, a token jumps to a new spot. Landing counts however you get there: a roll, a push from a trap, a Nudge, Telepathy or a swap.",
@@ -219,11 +245,12 @@ local RULES = {
 }
 
 function Pages.rules(layer: Instance): () -> ()
+	local roomW, roomH = Widgets.room()
 	local content, close = Widgets.modal(layer, {
 		title = "How to Play",
 		titleWidth = 280,
-		width = 860,
-		height = 600,
+		width = math.min(860, roomW),
+		height = math.min(600, roomH),
 	})
 	local scroll = Widgets.scroll(content, { gap = 12, hAlign = "Left" })
 	for i, section in RULES do
@@ -340,11 +367,12 @@ end
 
 function Pages.leaderboard(layer: Instance): () -> ()
 	local panel = nil
+	local roomW, roomH = Widgets.room()
 	local content, close = Widgets.modal(layer, {
 		title = "Top Players",
 		titleWidth = 240,
-		width = 520,
-		height = 600,
+		width = math.min(520, roomW),
+		height = math.min(600, roomH),
 		onClose = function()
 			-- the modal takes the panel with it; just stop any load still on its way
 			if panel then

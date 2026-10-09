@@ -116,6 +116,21 @@ DRAW.slime = function(c, x)
 	Shapes.circle(c, 0.34, 0.66, 0.04, dark)
 end
 
+DRAW.spike = function(c, x)
+	local steel = hex("D7DCE2")
+	local rivet = hex("4B5058")
+	-- steel spikes poking out from under the card towards every corner
+	for k = 0, 5 do
+		local a = math.rad((if x.flat then 0 else -90) + 60 * k)
+		local ca, sa = math.cos(a), math.sin(a)
+		Shapes.taper(c, { { 0.5 + ca * 0.2, 0.5 + sa * 0.2 }, { 0.5 + ca * x.r * 0.84, 0.5 + sa * x.r * 0.84 } }, 0.08, 0.012, steel, { steps = 3 })
+	end
+	-- rivets between them
+	for _, p in edges(x.flat, x.r * 0.6) do
+		Shapes.circle(c, p[1], p[2], 0.036, rivet)
+	end
+end
+
 DRAW.fire = function(c, x)
 	local ember = hex("E2622B")
 	local glow = hex("FFB547")
@@ -166,13 +181,14 @@ end
 
 DRAW.mudslide = function(c, x)
 	local dark = hex("4E321D")
-	-- streaks of mud sliding across
-	for i = -2, 2 do
-		local off = i * 0.1
-		Shapes.line(c, 0.32 + off, 0.24, 0.24 + off, 0.76, 0.03, dark)
+	local wet = hex("8C6240")
+	-- streaks of mud sliding down either side of the card (inside the tile's edges)
+	for _, side in { -1, 1 } do
+		Shapes.line(c, 0.5 + side * 0.19, 0.3, 0.5 + side * 0.25, 0.7, 0.034, dark)
+		Shapes.line(c, 0.5 + side * 0.29, 0.37, 0.5 + side * 0.32, 0.63, 0.026, dark)
 	end
-	Shapes.circle(c, 0.28, 0.72, 0.08, dark)
-	Shapes.circle(c, 0.72, 0.3, 0.07, dark)
+	Shapes.pill(c, 0.5, 0.79, 0.16, 0.045, wet)
+	Shapes.pill(c, 0.5, 0.21, 0.12, 0.04, wet)
 end
 
 DRAW.wall = function(c, x)
@@ -208,9 +224,10 @@ DRAW.grog = function(c, x)
 	-- a dark pit in the middle, and the Grog's eyes peering out of it
 	local parts = Shapes.hex(c, 0.5, 0.52, x.r * 1.45, pit, { rot = if x.flat then 90 else 0 })
 	local _ = parts
-	for _, ex in { 0.4, 0.6 } do
-		Shapes.circle(c, ex, 0.32, 0.09, hex("F2F0E6"))
-		Shapes.circle(c, ex + 0.012, 0.325, 0.045, hex("1E2410"))
+	-- (above the card, so they peek out from the pit)
+	for _, ex in { 0.42, 0.58 } do
+		Shapes.circle(c, ex, 0.235, 0.085, hex("F2F0E6"))
+		Shapes.circle(c, ex + 0.012, 0.24, 0.042, hex("1E2410"))
 	end
 end
 

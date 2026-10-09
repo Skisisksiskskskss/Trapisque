@@ -177,7 +177,7 @@ function ActionDock:_buildAbility(r, form: string)
 			align = "center",
 			sizeUDim = UDim2.fromOffset(r.w - 16, 14),
 			position = UDim2.new(0, 8, 1, -20),
-		}).Visible = r.h >= 120
+		}).Visible = r.h >= 150
 	elseif form == "short" then
 		local ps = math.min(40, r.h - 30)
 		portrait(ps, 0, 2)

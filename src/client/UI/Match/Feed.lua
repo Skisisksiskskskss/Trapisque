@@ -1,11 +1,11 @@
 --[[
 	Feed
 	The running commentary of the match: short lines with a small icon, newest at the
-	top, each fading away after a few seconds. It lives in a corner of the board the
-	layout picks (top-right on PC, top-centre on phones) and keeps only a few lines.
+	top, each fading away after a few seconds. It lives where the layout puts it (under
+	the players on PC, top-centre on phones) and keeps only a few lines.
 
 		local feed = Feed.new(parent)
-		feed:layout(L.feed)                 -- { rect, lines, align = "right"|"center" }
+		feed:layout(L.feed)                 -- { rect, lines, align = "left"|"right"|"center" }
 		feed:add(text, color?, icon?)       -- text may use <font color> rich text
 ]]
 
@@ -44,7 +44,10 @@ function Feed:layout(spec)
 	self.root.Size = UDim2.fromOffset(r.w, r.h + 40)
 	self.max = spec.lines or 4
 	self.align = spec.align or "right"
-	self.listLayout.HorizontalAlignment = if self.align == "center" then Enum.HorizontalAlignment.Center else Enum.HorizontalAlignment.Right
+	self.listLayout.HorizontalAlignment = if self.align == "center"
+		then Enum.HorizontalAlignment.Center
+		elseif self.align == "left" then Enum.HorizontalAlignment.Left
+		else Enum.HorizontalAlignment.Right
 	self.maxW = r.w
 	self.textSize = if r.w < 340 then 13 else 15
 	while #self.lines > self.max do

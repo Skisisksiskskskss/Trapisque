@@ -41,11 +41,12 @@ end
 
 function Locker.open(layer: Instance, startCategory: string?): () -> ()
 	local maid = Util.maid()
+	local roomW, roomH, narrow = Widgets.room()
 	local content, close = Widgets.modal(layer, {
 		title = "Locker",
 		titleWidth = 220,
-		width = 940,
-		height = 600,
+		width = math.min(940, roomW),
+		height = math.min(600, roomH),
 		onClose = function()
 			maid:clean()
 		end,
@@ -56,11 +57,13 @@ function Locker.open(layer: Instance, startCategory: string?): () -> ()
 	for _, c in Cosmetics.categories do
 		table.insert(tabs, { text = c.name, value = c.id })
 	end
+	-- the category tabs take the whole row on narrow screens (the count goes under them)
+	content:SetAttribute("Narrow", narrow)
 	Widgets.choice(content, {
 		options = tabs,
 		value = category,
-		size = UDim2.new(1, -200, 0, 44),
-		textSize = 18,
+		size = if narrow then UDim2.new(1, 0, 0, 40) else UDim2.new(1, -200, 0, 44),
+		textSize = if narrow then 15 else 18,
 		onChange = function(v)
 			category = v
 			Locker._fill(maid, content, category)
@@ -112,22 +115,24 @@ function Locker._fill(_maid, content: Frame, category: string)
 			have += 1
 		end
 	end
+	local narrow = content:GetAttribute("Narrow") == true
 	Widgets.label(content, {
 		name = "Count",
 		text = have .. " / " .. #items .. " found",
 		font = "chunky",
-		size = 20,
+		size = if narrow then 16 else 20,
 		color = C.inkSoft,
 		align = "right",
-		sizeUDim = UDim2.new(0, 190, 0, 44),
+		sizeUDim = if narrow then UDim2.new(1, 0, 0, 24) else UDim2.new(0, 190, 0, 44),
 		anchor = Vector2.new(1, 0),
-		position = UDim2.fromScale(1, 0),
+		position = if narrow then UDim2.new(1, 0, 0, 46) else UDim2.fromScale(1, 0),
 	})
 
+	local top = if narrow then 76 else 56
 	local grid = Widgets.scroll(content, {
 		name = "Grid",
-		size = UDim2.new(1, 0, 1, -56),
-		position = UDim2.fromOffset(0, 56),
+		size = UDim2.new(1, 0, 1, -top),
+		position = UDim2.fromOffset(0, top),
 		grid = UDim2.fromOffset(TILE.X, TILE.Y),
 		gap = 12,
 	})

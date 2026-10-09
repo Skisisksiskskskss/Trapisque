@@ -363,8 +363,9 @@ local function build(frame: Frame, maid, L, popups: Instance)
 		place(f, r)
 		return f
 	end
-	local play = PlayPanel.new(host("Play", L.play), popups, { compact = L.compact })
-	local party = PartyPanel.new(host("Party", L.party), popups, { compact = L.compact })
+	local tabbed = L.tabs ~= nil
+	local play = PlayPanel.new(host("Play", L.play), popups, { compact = L.compact, untitled = tabbed })
+	local party = PartyPanel.new(host("Party", L.party), popups, { compact = L.compact, untitled = tabbed })
 	panels.play = play
 	panels.party = party
 	maid:add(function()
@@ -381,7 +382,7 @@ local function build(frame: Frame, maid, L, popups: Instance)
 		local function show(id: string)
 			tab = id
 			if id == "leaders" and not panels.leaders then
-				panels.leaders = LeaderboardPanel.new(host("Leaders", L.leaders), {})
+				panels.leaders = LeaderboardPanel.new(host("Leaders", L.leaders), { untitled = true })
 				frames.leaders = panels.leaders.root.Parent
 			end
 			for key, f in frames do

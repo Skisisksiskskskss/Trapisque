@@ -188,8 +188,17 @@ function Layout.match(m, players: number)
 			gap = chipGap,
 		}
 		L.focus = rect(handX, top, x1 - handX, dockY - G - top)
-		local feedW = math.min(380, L.focus.w * 0.4)
-		L.feed = { rect = rect(x1 - feedW, top, feedW, 4 * 30), lines = 4, align = "right" }
+		-- the feed lives in the players' column under the chips (off the board); with a
+		-- full table there's little room left, so it falls back to the board's corner
+		local feedTop = colTop + L.players.rect.h + 14
+		local feedRoom = dockY - G - feedTop
+		if feedRoom >= 2 * 30 then
+			local lines = math.min(6, math.floor(feedRoom / 30))
+			L.feed = { rect = rect(x0, feedTop, colW, lines * 30), lines = lines, align = "left" }
+		else
+			local feedW = math.min(380, L.focus.w * 0.4)
+			L.feed = { rect = rect(x1 - feedW, top, feedW, 3 * 30), lines = 3, align = "right" }
+		end
 		L.hint = rect(L.focus.x + (L.focus.w - math.min(560, L.focus.w - 20)) / 2, top, math.min(560, L.focus.w - 20), 52)
 		return L
 	end
@@ -223,7 +232,8 @@ function Layout.match(m, players: number)
 				chip = { w = chipW, h = chipH, kind = "band" },
 				gap = chipGap,
 			}
-			local handW = cardW + 8
+			-- room on the right for an armed card to slide out towards the board
+			local handW = cardW + 18
 			L.hand = { rect = rect(x0, top, handW, yBottom - top), dir = "y", card = { w = cardW, h = cardH }, gap = 6 }
 			local fx = x0 + handW + G
 			L.focus = rect(fx, top, dockX - G - fx, yBottom - top)
@@ -242,8 +252,18 @@ function Layout.match(m, players: number)
 			L.hand = { rect = rect(leftX, yBottom - handH, dockX - G - leftX, handH), dir = "x", card = { w = cardW, h = cardH }, gap = 6 }
 			L.focus = rect(leftX, top, dockX - G - leftX, L.hand.rect.y - G - top)
 		end
-		local feedW = math.min(320, L.focus.w * 0.6)
-		L.feed = { rect = rect(L.focus.x + (L.focus.w - feedW) / 2, top, feedW, 2 * 24), lines = 2, align = "center" }
+		-- the feed fills the gap in the right dock (between the round and the ability),
+		-- so it never covers the board; only if that gap is too small does it float on top
+		local gapTop = L.info.y + L.info.h + G
+		local gapH = L.ability.y - G - gapTop
+		if gapH >= 48 then
+			-- a narrow column: an entry may wrap onto two lines
+			local lines = math.clamp(math.floor((gapH + 4) / 44), 1, 3)
+			L.feed = { rect = rect(dockX, gapTop, dockW, gapH), lines = lines, align = "right" }
+		else
+			local feedW = math.min(320, L.focus.w * 0.6)
+			L.feed = { rect = rect(L.focus.x + (L.focus.w - feedW) / 2, top, feedW, 24), lines = 1, align = "center" }
+		end
 		L.hint = rect(L.focus.x + 4, top, L.focus.w - 8, 44)
 		return L
 	end
@@ -291,7 +311,8 @@ function Layout.match(m, players: number)
 	L.hand = { rect = rect(x0, bottomY, actionX - G - x0, bottomH), dir = "x", card = { w = cardW, h = cardH }, gap = 6 }
 	local focusTop = top + chipH + G
 	L.focus = rect(x0, focusTop, rowW, bottomY - G - focusTop)
-	L.feed = { rect = rect(x0, focusTop, rowW, 2 * 24), lines = 2, align = "center" }
+	-- no spare room on an upright phone: the newest line only, briefly, over the board's top
+	L.feed = { rect = rect(x0, focusTop, rowW, 24), lines = 1, align = "center" }
 	L.hint = rect(x0, focusTop, rowW, 48)
 	return L
 end
@@ -348,8 +369,8 @@ function Layout.lobby(m)
 		local body = rect(x0, y0 + 96, x1 - x0, nav.y - 14 - (y0 + 96))
 		if body.w >= 1180 then
 			local G = 16
-			local playW = math.floor((body.w - 2 * G) * 0.46)
-			local partyW = math.floor((body.w - 2 * G) * 0.30)
+			local playW = math.floor((body.w - 2 * G) * 0.42)
+			local partyW = math.floor((body.w - 2 * G) * 0.29)
 			out.play = rect(body.x, body.y, playW, body.h)
 			out.party = rect(body.x + playW + G, body.y, partyW, body.h)
 			out.leaders = rect(body.x + playW + partyW + 2 * G, body.y, body.w - playW - partyW - 2 * G, body.h)
@@ -410,13 +431,17 @@ end
 -- modals
 ---------------------------------------------------------------------------
 
+-- The room a modal has at full size: inside the safe area and below Roblox's top bar.
+function Layout.modalRoom(m): (number, number)
+	local safe = Layout.safeRect(m, if m.form == "wide" then 16 else 6)
+	local top = math.max(m.topbar.y1 + 4, safe.y)
+	return safe.w, safe.y + safe.h - top
+end
+
 -- Fits a modal designed at w x h into the safe area. Returns the size to build at and
 -- the UIScale to apply (shrinks only when it must, never below `minScale`).
 function Layout.modal(m, w: number, h: number, minScale: number?): (number, number, number)
-	local safe = Layout.safeRect(m, if m.form == "wide" then 16 else 6)
-	local top = math.max(m.topbar.y1 + 4, safe.y)
-	local availW = safe.w
-	local availH = safe.y + safe.h - top
+	local availW, availH = Layout.modalRoom(m)
 	local scale = math.min(1, availW / w, availH / h)
 	scale = math.max(scale, minScale or 0.5)
 	-- if even the minimum scale doesn't fit, build it narrower/shorter instead

@@ -4,9 +4,10 @@
 	shows the player's avatar, display name and @username; your own row is gold, and
 	the footer says where you stand even when you're not in the top 50.
 
-		local panel = LeaderboardPanel.new(parent, { title = bool })
+		local panel = LeaderboardPanel.new(parent, { title = bool, untitled = bool })
 		panel:destroy()
-	Without a title it fills `parent` plainly (inside a modal or a tab).
+	title = false fills `parent` plainly (inside a modal); untitled keeps the parchment
+	panel without its title (under the lobby's tabs).
 ]]
 
 local Players = game:GetService("Players")
@@ -14,7 +15,6 @@ local Players = game:GetService("Players")
 local UI = script.Parent.Parent
 local Util = require(UI.Util)
 local Theme = require(UI.Theme)
-local Icons = require(UI.Icons)
 local Widgets = require(UI.Widgets)
 local Avatars = require(UI.Avatars)
 
@@ -30,9 +30,9 @@ LeaderboardPanel.__index = LeaderboardPanel
 local player = Players.LocalPlayer
 
 local BOARDS = {
-	{ id = "wins", text = "Wins", icon = "crown", color = C.brassDark, unit = "win", units = "wins" },
-	{ id = "treasures", text = "Treasures", icon = "x_mark", color = C.inkRed, unit = "treasure", units = "treasures" },
-	{ id = "level", text = "Level", icon = "star", color = C.info, unit = "", units = "" },
+	{ id = "wins", text = "Wins", unit = "win", units = "wins" },
+	{ id = "treasures", text = "Treasures", unit = "treasure", units = "treasures" },
+	{ id = "level", text = "Level", unit = "", units = "" },
 }
 local MEDALS = { hex("E2B53C"), hex("B8C0C8"), hex("C98A4B") }
 local CACHE_TIME = 30
@@ -65,7 +65,7 @@ function LeaderboardPanel.new(parent: Instance, opts)
 	if o.title ~= false then
 		content, root = Widgets.panel(parent, {
 			name = "LeaderboardPanel",
-			title = "Top Players",
+			title = if o.untitled then nil else "Top Players",
 			titleWidth = 220,
 			size = UDim2.fromScale(1, 1),
 		})
@@ -196,7 +196,7 @@ function LeaderboardPanel:_row(i: number, e, def)
 		BorderSizePixel = 0,
 		AnchorPoint = Vector2.new(0, 0.5),
 		Position = UDim2.new(0, 6, 0.5, 0),
-		Size = UDim2.fromOffset(30, 30),
+		Size = UDim2.fromOffset(28, 28),
 		Parent = row,
 	})
 	Util.corner(rank, 0.5)
@@ -213,16 +213,19 @@ function LeaderboardPanel:_row(i: number, e, def)
 	})
 	Avatars.portrait(row, { userId = e.userId, name = e.name }, {
 		AnchorPoint = Vector2.new(0, 0.5),
-		Position = UDim2.new(0, 42, 0.5, 0),
-		Size = UDim2.fromOffset(36, 36),
+		Position = UDim2.new(0, 40, 0.5, 0),
+		Size = UDim2.fromOffset(34, 34),
 	}, { ring = if mine then C.brass else C.parchmentEdge, ringPx = 2 })
+	-- the score on the right (the tab already says what it counts), names get the rest
+	local SCORE_W = 58
+	local textX = 82
 	local name = Widgets.label(row, {
 		text = e.name .. (if mine then " (you)" else ""),
 		font = "heavy",
 		size = 15,
 		color = C.textDark,
-		sizeUDim = UDim2.new(1, -170, 0, 20),
-		position = UDim2.fromOffset(86, 4),
+		sizeUDim = UDim2.new(1, -(textX + SCORE_W + 12), 0, 20),
+		position = UDim2.fromOffset(textX, 4),
 	})
 	name.TextTruncate = Enum.TextTruncate.AtEnd
 	if e.username then
@@ -231,31 +234,22 @@ function LeaderboardPanel:_row(i: number, e, def)
 			font = "body",
 			size = 12,
 			color = C.inkSoft,
-			sizeUDim = UDim2.new(1, -170, 0, 16),
-			position = UDim2.fromOffset(86, 25),
+			sizeUDim = UDim2.new(1, -(textX + SCORE_W + 12), 0, 16),
+			position = UDim2.fromOffset(textX, 25),
 		})
 		user.TextTruncate = Enum.TextTruncate.AtEnd
 	end
-	local score = Util.frame(row, {
-		Name = "Score",
-		AnchorPoint = Vector2.new(1, 0.5),
-		Position = UDim2.new(1, -8, 0.5, 0),
-		Size = UDim2.fromOffset(80, 30),
-	})
-	Util.list(score, "x", 5, "Right", "Center")
-	Widgets.label(score, {
+	Widgets.label(row, {
+		name = "Score",
 		text = valueText(def, e.value),
 		font = "chunky",
 		size = 18,
-		color = C.ink,
+		color = if MEDALS[e.rank] then Util.shade(MEDALS[e.rank], -0.45) else C.ink,
 		align = "right",
-		sizeUDim = UDim2.fromOffset(0, 26),
-		layoutOrder = 1,
-	}).AutomaticSize = Enum.AutomaticSize.X
-	if def.id ~= "level" then
-		local icon = Util.frame(score, { Size = UDim2.fromOffset(22, 22), LayoutOrder = 2 })
-		Icons.medallion(icon, def.icon, def.color, { Size = UDim2.fromScale(1, 1) })
-	end
+		sizeUDim = UDim2.fromOffset(SCORE_W, 26),
+		anchor = Vector2.new(1, 0.5),
+		position = UDim2.new(1, -10, 0.5, 0),
+	})
 end
 
 return LeaderboardPanel

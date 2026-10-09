@@ -2,8 +2,8 @@
 	HandView
 	Your cards, as a row (PC, upright phones) or a column (landscape phones). Cards are
 	added and removed one at a time, the moment their animation lands, so the hand never
-	lags behind what you just saw. Too many cards to fit? They shrink a little, then the
-	hand scrolls.
+	lags behind what you just saw. Too many cards to fit? They shrink a little (to 70%),
+	then the hand scrolls.
 
 		local hand = HandView.new(parent, { touch = bool })
 		hand:layout(L.hand)                 -- { rect, dir = "x"|"y", card = { w, h }, gap }
@@ -84,7 +84,7 @@ function HandView:layout(spec)
 	local pad = scroll:FindFirstChildOfClass("UIPadding") or Util.pad(scroll, 0)
 	pad.PaddingTop = UDim.new(0, if vertical then 4 else 8)
 	pad.PaddingLeft = UDim.new(0, if vertical then 4 else 6)
-	pad.PaddingRight = UDim.new(0, if vertical then 4 else 6)
+	pad.PaddingRight = UDim.new(0, if vertical then 14 else 6)
 	self.empty.TextSize = if r.w < 200 then 12 else 15
 	local ids = {}
 	for _, e in self.list do
@@ -98,7 +98,7 @@ function HandView:layout(spec)
 	self:_refresh()
 end
 
--- card size: as big as the layout asks, shrinking (down to 80%) before it scrolls
+-- card size: as big as the layout asks, shrinking (down to 70%) before it scrolls
 function HandView:_cardSize(): (number, number)
 	local spec = self.spec
 	local n = math.max(1, #self.list)
@@ -107,11 +107,11 @@ function HandView:_cardSize(): (number, number)
 	local r = spec.rect
 	if spec.dir == "y" then
 		local fit = (r.h - 8 - (n - 1) * gap) / n
-		h = math.clamp(fit, h * 0.8, h)
+		h = math.clamp(fit, h * 0.7, h)
 		w = h * CardStyle.aspect
 	else
 		local fit = (r.w - 12 - (n - 1) * gap) / n
-		w = math.clamp(fit, w * 0.8, w)
+		w = math.clamp(fit, w * 0.7, w)
 		h = w / CardStyle.aspect
 	end
 	return w, h
@@ -211,7 +211,8 @@ function HandView:_refresh()
 		end
 		local lift = if on then -10 else 0
 		if self.spec and self.spec.dir == "y" then
-			Util.tween(root, 0.2, { Position = UDim2.new(0.5, lift, 0.5, 0) }, Enum.EasingStyle.Back)
+			-- a column of cards: armed ones slide out towards the board
+			Util.tween(root, 0.2, { Position = UDim2.new(0.5, -lift, 0.5, 0) }, Enum.EasingStyle.Back)
 		else
 			Util.tween(root, 0.2, { Position = UDim2.new(0.5, 0, 0.5, lift) }, Enum.EasingStyle.Back)
 		end

@@ -77,9 +77,11 @@ function PartyPanel.new(parent: Instance, popups: Instance, opts: { [string]: an
 	self.popups = popups
 	self.maid = Util.maid()
 	self.compact = opts ~= nil and opts.compact == true
+	-- under the lobby's tabs (upright phones) the tab already says "Party"
+	local titled = not self.compact and not (opts ~= nil and opts.untitled == true)
 	local content, root = Widgets.panel(parent, {
 		name = "PartyPanel",
-		title = if self.compact then nil else "Party",
+		title = if titled then "Party" else nil,
 		titleWidth = 200,
 		padding = if self.compact then 12 else 18,
 		size = UDim2.fromScale(1, 1),
@@ -305,11 +307,14 @@ function PartyPanel:_renderParty(party)
 end
 
 function PartyPanel:_member(list: Instance, i: number, m, isLeader: boolean, party)
+	-- compact rows are a little shorter so a party of three fits a phone held sideways
+	local h = if self.compact then 38 else 44
+	local avatar = h - 8
 	local row = Util.new("Frame", {
 		Name = "Member" .. i,
 		BackgroundColor3 = if m.userId == player.UserId then Color3.fromHex("FFF1C4") else Color3.fromHex("FBF3DD"),
 		BorderSizePixel = 0,
-		Size = UDim2.new(1, -10, 0, 44),
+		Size = UDim2.new(1, -10, 0, h),
 		LayoutOrder = i,
 		Parent = list,
 	})
@@ -318,45 +323,46 @@ function PartyPanel:_member(list: Instance, i: number, m, isLeader: boolean, par
 	Avatars.portrait(row, { userId = m.userId, name = m.name }, {
 		AnchorPoint = Vector2.new(0, 0.5),
 		Position = UDim2.new(0, 5, 0.5, 0),
-		Size = UDim2.fromOffset(36, 36),
+		Size = UDim2.fromOffset(avatar, avatar),
 	}, { ring = Theme.Seat[((i - 1) % 6) + 1], ringPx = 2 })
-	local nameX = 50
+	local nameX = avatar + 14
 	if m.leader then
-		local crown = Util.frame(row, { Position = UDim2.fromOffset(50, 11), Size = UDim2.fromOffset(22, 22) })
+		local crown = Util.frame(row, { Position = UDim2.fromOffset(nameX, (h - 22) / 2), Size = UDim2.fromOffset(22, 22) })
 		Icons.make(crown, "crown", Icons.flatColors(C.brassDark, C.parchment))
-		nameX = 78
+		nameX += 28
 	end
 	local name = Widgets.label(row, {
 		text = m.name .. (if m.userId == player.UserId then "  (you)" else ""),
 		font = "heavy",
-		size = 16,
+		size = if self.compact then 15 else 16,
 		color = Theme.nameColor(m.look),
-		sizeUDim = UDim2.new(1, -(nameX + 100), 0, 20),
-		position = UDim2.fromOffset(nameX, 3),
+		sizeUDim = UDim2.new(1, -(nameX + 100), 0, 18),
+		position = UDim2.fromOffset(nameX, if self.compact then 2 else 4),
 	})
 	name.TextTruncate = Enum.TextTruncate.AtEnd
 	if m.username then
 		local user = Widgets.label(row, {
 			text = "@" .. m.username,
 			font = "body",
-			size = 12,
+			size = if self.compact then 11 else 12,
 			color = C.inkSoft,
-			sizeUDim = UDim2.new(1, -(nameX + 100), 0, 16),
-			position = UDim2.fromOffset(nameX, 24),
+			sizeUDim = UDim2.new(1, -(nameX + 100), 0, 15),
+			position = UDim2.fromOffset(nameX, if self.compact then 20 else 24),
 		})
 		user.TextTruncate = Enum.TextTruncate.AtEnd
 	end
 	if isLeader and m.userId ~= player.UserId and party.state == "idle" then
+		local bh = h - 10
 		local tools = Util.frame(row, {
 			AnchorPoint = Vector2.new(1, 0.5),
 			Position = UDim2.new(1, -6, 0.5, 0),
-			Size = UDim2.fromOffset(90, 34),
+			Size = UDim2.fromOffset(90, bh),
 		})
 		Util.list(tools, "x", 6, "Right", "Center")
 		Widgets.iconButton(tools, {
 			icon = "crown",
 			style = "brass",
-			size = UDim2.fromOffset(38, 34),
+			size = UDim2.fromOffset(38, bh),
 			layoutOrder = 1,
 			onClick = function()
 				request("party.promote", { userId = m.userId })
@@ -365,7 +371,7 @@ function PartyPanel:_member(list: Instance, i: number, m, isLeader: boolean, par
 		Widgets.iconButton(tools, {
 			icon = "close",
 			style = "red",
-			size = UDim2.fromOffset(38, 34),
+			size = UDim2.fromOffset(38, bh),
 			layoutOrder = 2,
 			onClick = function()
 				request("party.kick", { userId = m.userId })
@@ -376,10 +382,11 @@ end
 
 -- Invite people on this server, or Roblox friends anywhere.
 function PartyPanel:_invitePicker()
+	local roomW = Widgets.room()
 	local content, close = Widgets.modal(self.popups, {
 		title = "Invite",
 		titleWidth = 200,
-		width = 520,
+		width = math.min(520, roomW),
 		height = 470,
 	})
 	Widgets.button(content, {

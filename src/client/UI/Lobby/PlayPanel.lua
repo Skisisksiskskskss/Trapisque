@@ -51,10 +51,12 @@ function PlayPanel.new(parent: Instance, popups: Instance, opts: { [string]: any
 	self.tiles = {}
 	local compact = opts ~= nil and opts.compact == true
 	self.compact = compact
+	-- under the lobby's tabs (upright phones) the tab already says "Play"
+	local titled = not compact and not (opts ~= nil and opts.untitled == true)
 
 	local content, root = Widgets.panel(parent, {
 		name = "PlayPanel",
-		title = if compact then nil else "Play",
+		title = if titled then "Play" else nil,
 		titleWidth = 200,
 		padding = if compact then 12 else 18,
 		size = UDim2.fromScale(1, 1),
@@ -192,19 +194,20 @@ function PlayPanel:_modeTile(grid: Frame, mode, order: number)
 		font = "chunky",
 		size = if compact then 17 else 20,
 		color = C.ink,
-		sizeUDim = UDim2.new(1, -(textX + pad), 0, if compact then 20 else 24),
-		position = UDim2.fromOffset(textX, if compact then 6 else 10),
+		sizeUDim = UDim2.new(1, -(textX + pad), 0, if compact then 22 else 24),
+		position = UDim2.fromOffset(textX, if compact then 8 else 10),
 		scaled = true,
 	})
+	-- compact tiles are narrow: the player count gets its own line under the name
 	Widgets.label(tile, {
 		text = playerRange(mode),
 		font = "heavy",
-		size = if compact then 11 else 13,
+		size = if compact then 12 else 13,
 		color = C.inkSoft,
-		sizeUDim = UDim2.new(1, -(textX + pad), 0, 16),
-		position = UDim2.fromOffset(textX, if compact then 26 else 34),
+		sizeUDim = if compact then UDim2.new(1, -2 * pad, 0, 16) else UDim2.new(1, -(textX + pad), 0, 16),
+		position = UDim2.fromOffset(if compact then pad else textX, if compact then 36 else 34),
 	})
-	local top = if compact then 44 else 58
+	local top = if compact then 56 else 58
 	Widgets.label(tile, {
 		text = mode.blurb,
 		font = "body",
@@ -297,16 +300,20 @@ for _, l in Modes.lengths do
 	table.insert(LENGTH_OPTIONS, { text = l.name, value = l.id })
 end
 
+-- A label and its choices side by side, or the label on top on narrow screens.
 local function settingRow(parent: Instance, order: number, label: string, build: (Frame) -> ())
-	local row = Util.frame(parent, { Name = label, Size = UDim2.new(1, 0, 0, 40), LayoutOrder = order })
+	local _, _, narrow = Widgets.room()
+	local row = Util.frame(parent, { Name = label, Size = UDim2.new(1, 0, 0, if narrow then 66 else 40), LayoutOrder = order })
 	Widgets.label(row, {
 		text = label,
 		font = "chunky",
 		size = 18,
 		color = C.ink,
-		sizeUDim = UDim2.new(0, 110, 1, 0),
+		sizeUDim = if narrow then UDim2.new(1, 0, 0, 22) else UDim2.new(0, 110, 1, 0),
 	})
-	local holder = Util.frame(row, { Position = UDim2.fromOffset(116, 0), Size = UDim2.new(1, -116, 1, 0) })
+	local holder = if narrow
+		then Util.frame(row, { Position = UDim2.fromOffset(0, 26), Size = UDim2.new(1, 0, 0, 40) })
+		else Util.frame(row, { Position = UDim2.fromOffset(116, 0), Size = UDim2.new(1, -116, 1, 0) })
 	build(holder)
 	return row
 end
@@ -314,11 +321,12 @@ end
 function PlayPanel:_practice()
 	local mode = Modes.get(self.mode)
 	local settings = { map = "random", length = "quick", bots = 3 }
+	local roomW, _, narrow = Widgets.room()
 	local content, close = Widgets.modal(self.popups, {
 		title = "Practice",
 		titleWidth = 220,
-		width = 620,
-		height = 380,
+		width = math.min(620, roomW),
+		height = if narrow then 470 else 380,
 	})
 	local list = Util.frame(content, { Size = UDim2.new(1, 0, 1, -64) })
 	Util.list(list, "y", 10, "Left", "Top")
@@ -382,11 +390,12 @@ function PlayPanel:_private()
 		return
 	end
 	local s = table.clone(party.settings or {})
+	local roomW, _, narrow = Widgets.room()
 	local content, close = Widgets.modal(self.popups, {
 		title = "Private Match",
 		titleWidth = 280,
-		width = 640,
-		height = 430,
+		width = math.min(640, roomW),
+		height = if narrow then 560 else 430,
 	})
 	local list = Util.frame(content, { Size = UDim2.new(1, 0, 1, -64) })
 	Util.list(list, "y", 10, "Left", "Top")

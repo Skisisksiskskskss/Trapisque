@@ -663,17 +663,30 @@ function BoardView:_paintTile(tile: number)
 		end
 	end
 
-	-- the card on the tile: a round plaque rimmed in its owner's colour
+	--[[
+		One shape per kind of thing, so they never get mixed up: players are round
+		standing pieces, tokens are hexagons set into the tile, and a placed card shows
+		as a little card (rimmed in its owner's colour) on the reskinned tile.
+	]]
 	if entry then
-		local plaque = holder("Plaque", 0.74, 6)
+		local plaque = Util.new("Frame", {
+			Name = "Plaque",
+			BackgroundColor3 = hex("2A1C13"),
+			BorderSizePixel = 0,
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromOffset(U, U),
+			Size = UDim2.fromOffset(0.6 * U, 0.8 * U),
+			ZIndex = 6,
+			Parent = root,
+		})
+		Util.corner(plaque, 0.12 * U)
 		local rimColor = if entry.owner and entry.owner > 0 then Theme.Seat[((entry.owner - 1) % 6) + 1] else C.inkSoft
-		local disc = Shapes.circle(plaque, 0.5, 0.5, 1, hex("2A1C13"))
-		Util.scaledStroke(disc, rimColor, 0.1, 3)
+		Util.stroke(plaque, rimColor, 0.07 * U)
 		Icons.make(plaque, entry.item, Icons.flatColors(C.white, hex("2A1C13"), C.white), {
 			AnchorPoint = Vector2.new(0.5, 0.5),
 			Position = UDim2.fromScale(0.5, 0.5),
-			Size = UDim2.fromScale(0.66, 0.66),
-			ZIndex = 3,
+			Size = UDim2.fromOffset(0.48 * U, 0.48 * U),
+			ZIndex = 7,
 		})
 		parts.plaque = plaque
 	elseif natural and NATURAL_ICON[natural] then
@@ -681,15 +694,16 @@ function BoardView:_paintTile(tile: number)
 		Icons.make(icon, NATURAL_ICON[natural], Icons.flatColors(C.white, topColor, C.white))
 		parts.icon = icon
 	elseif token then
-		-- tokens are bold coloured inlays you can spot across the board
-		local inlay = holder("Token", 1.18, 5)
+		-- tokens are bold coloured hexagons set into the tile, easy to spot across the board
+		local inlay = holder("Token", 2, 5)
 		local color = Theme.Category[token] or C.inkSoft
-		local disc = Shapes.circle(inlay, 0.5, 0.5, 1, color)
-		Util.scaledStroke(disc, C.white, 0.07, 3)
+		local mid = Vector2.new(U, U)
+		hexagon(inlay, mid, 0.66 * U, C.white, 1, "TokenRim", self.flat)
+		hexagon(inlay, mid, 0.58 * U, color, 2, "TokenFace", self.flat)
 		Icons.make(inlay, TOKEN_ICON[token] or "info", Icons.flatColors(C.white, color, C.white), {
 			AnchorPoint = Vector2.new(0.5, 0.5),
 			Position = UDim2.fromScale(0.5, 0.5),
-			Size = UDim2.fromScale(0.64, 0.64),
+			Size = UDim2.fromOffset(0.66 * U, 0.66 * U),
 			ZIndex = 3,
 		})
 		parts.inlay = inlay
