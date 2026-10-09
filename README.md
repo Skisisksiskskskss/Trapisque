@@ -4,7 +4,9 @@ Trapisque is a race to the treasure across a trap-filled treasure map, for 2 to 
 players. It started as a board game, and this repository is its Roblox version: a
 purely top-down 2D game that uses the Roblox engine but doesn't look like a Roblox
 game. There is no 3D world. Apart from players' own Roblox avatar headshots, everything
-you see is drawn from plain UI frames, with no uploaded images.
+you see is drawn from plain UI frames, with no uploaded images: a treasure map spread
+on a dark wooden table at night, dark walnut panels with brass inlay, carved wooden
+cards.
 
 ![Match screen on a PC](docs/previews/07-match-pc.png)
 
@@ -15,6 +17,12 @@ you see is drawn from plain UI frames, with no uploaded images.
 | Lobby | Treasure chests |
 | --- | --- |
 | ![Lobby](docs/previews/08-lobby-pc.png) | ![Treasure chests](docs/previews/09-treasure-chests.png) |
+
+| Hover a card to read it | Placing it |
+| --- | --- |
+| ![Hovering a card](docs/previews/11-card-hover-pc.png) | ![Placing a card](docs/previews/12-placing-pc.png) |
+
+![A card slapped onto its tile](docs/previews/13-placing-slam.gif)
 
 More previews are in [`docs/previews`](docs/previews): the icon set, the three maps,
 the wooden cards, the collectibles, the lobby on phones and every tile skin.
@@ -35,6 +43,16 @@ the wooden cards, the collectibles, the lobby on phones and every tile skin.
 - **Practice and private matches.** Pick the mode, map, length and number of bots.
 - **Bots.** They play every character and card, and step in for anyone who goes away
   or leaves.
+- **Turn timer.** Practice games have none. Elsewhere you get 45 seconds, with a
+  countdown on ROLL. If it runs out, your roll is made for you. Only someone who
+  touches nothing for two turns in a row counts as away. A bot then plays for them
+  (after a few seconds' grace), and any tap or click hands control back. Every screen
+  keeps pace with the server, so your turn never shows up late.
+- **Cards you can feel.** Hover a card to lift it out of your hand with its rules
+  beside it. Click it to play it, or drag it onto the board. A trap rides on the
+  pointer over the glowing tiles, and the tile under it shows what it'll become. Let go
+  and it's slapped onto the tile with a thud, a ring of dust and a jolt. On a phone,
+  tap a card to read it and use its buttons, or drag it.
 - **Treasure Chests.** A cosmetic-only collection: pawn skins, dice, trails, emotes and
   titles. You open chests with Gems, which you earn by playing.
 - **Gamepasses** that never touch gameplay (see below).

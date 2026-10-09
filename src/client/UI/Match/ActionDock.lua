@@ -9,6 +9,7 @@
 		dock:layout(L.ability, L.roll, form)
 		dock:setTurn({ mine, phase, waitingFor, anchor, busy })
 		dock:setAbility(ready, progress, usedThisTurn, myTurn)
+		dock:setClock(secondsLeft?)  -- your turn's countdown on the ROLL button
 		dock.onRoll(), dock.onAbility(), dock.onRecall(), dock.onPortrait()
 ]]
 
@@ -22,6 +23,8 @@ local Util = require(UI.Util)
 local Theme = require(UI.Theme)
 local Icons = require(UI.Icons)
 local Widgets = require(UI.Widgets)
+
+local Sound = require(UI.Parent.Sound)
 
 local C = Theme.C
 local hex = Theme.hex
@@ -320,6 +323,32 @@ function ActionDock:_buildRoll(r, form: string)
 		end,
 	})
 	self.recallButton.root.Visible = false
+	-- your turn's countdown: a little clock badge inside ROLL's top corner (inside, so
+	-- it never touches the ability button above it on an upright phone)
+	local badge = Util.new("Frame", {
+		Name = "Clock",
+		BackgroundColor3 = C.panelDeep,
+		BorderSizePixel = 0,
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, -8, 0, 8),
+		Size = UDim2.fromOffset(if form == "wide" then 64 else 54, if form == "wide" then 26 else 22),
+		ZIndex = 30,
+		Visible = false,
+		Parent = box,
+	})
+	Util.corner(badge, 0.5)
+	Util.stroke(badge, C.brass, 1.5)
+	self.clockLabel = Widgets.label(badge, {
+		text = "",
+		font = "chunky",
+		size = if form == "wide" then 17 else 15,
+		color = C.text,
+		align = "center",
+		sizeUDim = UDim2.fromScale(1, 1),
+		z = 31,
+	})
+	self.clockBadge = badge
+	self.clockShown = nil
 	if form == "wide" then
 		self.waitLabel = Widgets.label(box, {
 			name = "Status",
@@ -368,6 +397,37 @@ function ActionDock:_arrangeRoll(showRecall: boolean)
 		roll.Position = UDim2.fromOffset(0, 0)
 	end
 	recall.Visible = showRecall
+end
+
+--[[
+	Your turn's countdown (nil hides it). Shown when the game has a timer; turns red
+	and ticks in the last seconds, before the turn is played for you.
+]]
+function ActionDock:setClock(left: number?)
+	local badge = self.clockBadge
+	if not badge then
+		return
+	end
+	if left == nil then
+		badge.Visible = false
+		self.clockShown = nil
+		return
+	end
+	local secs = math.max(0, math.ceil(left))
+	badge.Visible = true
+	if secs == self.clockShown then
+		return
+	end
+	self.clockShown = secs
+	self.clockLabel.Text = string.format("%d:%02d", secs // 60, secs % 60)
+	local urgent = secs <= 10
+	badge.BackgroundColor3 = if urgent then C.bad else C.panelDeep
+	if urgent and secs > 0 then
+		Util.bump(badge, 0.12)
+		if secs <= 5 then
+			Sound.play("tick", 1.15)
+		end
+	end
 end
 
 --[[

@@ -102,7 +102,7 @@ function LeaderboardPanel.new(parent: Instance, opts)
 		text = "",
 		font = "heavy",
 		size = 15,
-		color = C.inkSoft,
+		color = C.textSoft,
 		align = "center",
 		sizeUDim = UDim2.new(1, 0, 0, 32),
 		anchor = Vector2.new(0, 1),
@@ -124,7 +124,7 @@ function LeaderboardPanel:_note(text: string)
 		text = text,
 		font = "heavy",
 		size = 15,
-		color = C.inkSoft,
+		color = C.textSoft,
 		align = "center",
 		wrap = true,
 		sizeUDim = UDim2.new(1, -8, 0, 60),
@@ -180,18 +180,18 @@ function LeaderboardPanel:_row(i: number, e, def)
 	local mine = e.userId == player.UserId
 	local row = Util.new("Frame", {
 		Name = "Row" .. i,
-		BackgroundColor3 = if mine then hex("FFF1C4") else hex("FBF3DD"),
+		BackgroundColor3 = if mine then C.mine else C.panelRaised,
 		BorderSizePixel = 0,
 		Size = UDim2.new(1, -10, 0, 46),
 		LayoutOrder = i,
 		Parent = self.list,
 	})
 	Util.corner(row, 10)
-	Util.stroke(row, if mine then C.brass else C.parchmentEdge, if mine then 2 else 1.5)
+	Util.stroke(row, if mine then C.brass else C.panelEdge, if mine then 2 else 1.5)
 	-- rank: medals for the top three
 	local rank = Util.new("Frame", {
 		Name = "Rank",
-		BackgroundColor3 = MEDALS[e.rank] or C.parchmentMid,
+		BackgroundColor3 = MEDALS[e.rank] or C.panelDeep,
 		BackgroundTransparency = if MEDALS[e.rank] then 0 else 1,
 		BorderSizePixel = 0,
 		AnchorPoint = Vector2.new(0, 0.5),
@@ -207,7 +207,7 @@ function LeaderboardPanel:_row(i: number, e, def)
 		text = tostring(e.rank),
 		font = "chunky",
 		size = if e.rank >= 10 then 14 else 17,
-		color = if MEDALS[e.rank] then C.ink else C.inkSoft,
+		color = if MEDALS[e.rank] then C.textOnLight else C.textSoft,
 		align = "center",
 		sizeUDim = UDim2.fromScale(1, 1),
 	})
@@ -215,7 +215,7 @@ function LeaderboardPanel:_row(i: number, e, def)
 		AnchorPoint = Vector2.new(0, 0.5),
 		Position = UDim2.new(0, 40, 0.5, 0),
 		Size = UDim2.fromOffset(34, 34),
-	}, { ring = if mine then C.brass else C.parchmentEdge, ringPx = 2 })
+	}, { ring = if mine then C.brass else C.panelEdge, ringPx = 2 })
 	-- the score on the right (the tab already says what it counts), names get the rest
 	local SCORE_W = 58
 	local textX = 82
@@ -223,7 +223,7 @@ function LeaderboardPanel:_row(i: number, e, def)
 		text = e.name .. (if mine then " (you)" else ""),
 		font = "heavy",
 		size = 15,
-		color = C.textDark,
+		color = C.text,
 		sizeUDim = UDim2.new(1, -(textX + SCORE_W + 12), 0, 20),
 		position = UDim2.fromOffset(textX, 4),
 	})
@@ -233,7 +233,7 @@ function LeaderboardPanel:_row(i: number, e, def)
 			text = "@" .. e.username,
 			font = "body",
 			size = 12,
-			color = C.inkSoft,
+			color = C.textSoft,
 			sizeUDim = UDim2.new(1, -(textX + SCORE_W + 12), 0, 16),
 			position = UDim2.fromOffset(textX, 25),
 		})
@@ -244,7 +244,7 @@ function LeaderboardPanel:_row(i: number, e, def)
 		text = valueText(def, e.value),
 		font = "chunky",
 		size = 18,
-		color = if MEDALS[e.rank] then Util.shade(MEDALS[e.rank], -0.45) else C.ink,
+		color = MEDALS[e.rank] or C.text,
 		align = "right",
 		sizeUDim = UDim2.fromOffset(SCORE_W, 26),
 		anchor = Vector2.new(1, 0.5),

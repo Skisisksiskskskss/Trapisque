@@ -55,7 +55,7 @@ local function newProfile()
 		freeChests = { explorer = Config.Rewards.StartingFreeChests },
 		chestsOpened = 0,
 		lastDaily = 0,
-		settings = { sfx = true, music = true, autoRoll = false, fastAnim = false },
+		settings = { sfx = true, music = true, sfxVolume = 1, musicVolume = 0.7, autoRoll = false, fastAnim = false },
 	}
 end
 
@@ -381,9 +381,13 @@ function DataService.saveSettings(player: Player, settings)
 	if not data or type(settings) ~= "table" then
 		return false
 	end
-	for k in data.settings do
-		if type(settings[k]) == "boolean" then
-			data.settings[k] = settings[k]
+	for k, current in data.settings do
+		local v = settings[k]
+		if type(current) == "boolean" and type(v) == "boolean" then
+			data.settings[k] = v
+		elseif type(current) == "number" and type(v) == "number" and v == v then
+			-- volumes (0..1)
+			data.settings[k] = math.clamp(v, 0, 1)
 		end
 	end
 	return true

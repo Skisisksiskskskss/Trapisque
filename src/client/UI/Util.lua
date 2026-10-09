@@ -172,6 +172,18 @@ end
 
 -- Product of every UIScale above `inst` (the stage scales the whole UI); with
 -- includeSelf, also the UIScales directly inside `inst`.
+--[[
+	Where an input is, in the pixels AbsolutePosition uses in our full-screen
+	(IgnoreGuiInset) ScreenGui. InputObject.Position starts below Roblox's top bar, so
+	the bar's height is added back.
+]]
+function Util.inputPos(input: InputObject | Vector3 | Vector2): Vector2
+	local GuiService = game:GetService("GuiService")
+	local inset = GuiService:GetGuiInset()
+	local p = if typeof(input) == "Instance" then (input :: InputObject).Position else input
+	return Vector2.new((p :: any).X, (p :: any).Y) + inset
+end
+
 function Util.inheritedScale(inst: Instance, includeSelf: boolean?): number
 	local s = 1
 	local node: Instance? = if includeSelf then inst else inst.Parent

@@ -1,7 +1,12 @@
 --[[
 	Theme
-	Trapisque's look: an old treasure map spread on a wooden table, with carved wooden
-	cards and brass fittings. Every color and font in the game comes from here.
+	Trapisque's look: an old treasure map spread on a dark wooden table at night, lit
+	by lanterns. Panels are dark walnut with brass inlay, text is warm cream, cards are
+	carved wood. Every color and font in the game comes from here.
+
+	UI code uses the semantic colours (bg, panel..., text...). The material colours
+	(parchment, ink, wood...) are for things that really are paper, ink or wood: the
+	map, the cards, the dice.
 ]]
 
 local Theme = {}
@@ -12,11 +17,28 @@ end
 Theme.hex = hex
 
 Theme.C = {
+	-- the dark UI: surfaces from deepest to highest, then text on them
+	bg = hex("140F0B"), -- behind everything
+	panel = hex("2A2119"), -- panels and dialogs (dark walnut)
+	panelDeep = hex("1C1612"), -- wells, plates, inputs: set into a panel
+	panelRaised = hex("372B21"), -- rows and tiles sitting on a panel
+	panelHi = hex("46372A"), -- hovered or picked rows
+	panelEdge = hex("5C4736"), -- borders between surfaces
+	panelLine = hex("3E3026"), -- quiet dividers
+	text = hex("F3E8D2"), -- warm cream
+	textSoft = hex("C9B89C"),
+	textFaint = hex("8F7F69"),
+	textOnLight = hex("3A2414"), -- on brass, parchment, light wood
+	infoSoft = hex("8DBDEB"), -- levels, links: blue that reads on a dark panel
+	goodSoft = hex("8CD07A"),
+	badSoft = hex("F08A80"),
+	mine = hex("3A2F1B"), -- your own row (with a brass edge)
+
 	-- table & background
-	table = hex("2A1C13"),
-	tableLight = hex("3A281B"),
-	tablePlank = hex("221710"),
-	shadow = hex("120B07"),
+	table = hex("1A130E"),
+	tableLight = hex("241A13"),
+	tablePlank = hex("120D0A"),
+	shadow = hex("080504"),
 
 	-- parchment (maps, panels, card backs)
 	parchment = hex("F3E4C1"),
@@ -124,12 +146,6 @@ Theme.Character = {
 	overseer = hex("CDA42A"),
 }
 
-Theme.Map = {
-	blissful = { paper = hex("F3E4C1"), wash = hex("9CCBC8"), washDark = hex("6EA7A6"), accent = hex("3C6E8F") },
-	junction = { paper = hex("EBDDBE"), wash = hex("A9A196"), washDark = hex("7E766B"), accent = hex("5A4A3A") },
-	slimy = { paper = hex("ECE3BC"), wash = hex("A7B97A"), washDark = hex("7E9455"), accent = hex("4E7A3A") },
-}
-
 local nunito = Font.fromEnum(Enum.Font.Nunito)
 Theme.Font = {
 	Display = Font.fromEnum(Enum.Font.Fondamento), -- map labels, titles: old-map lettering
@@ -139,9 +155,9 @@ Theme.Font = {
 	BodyRegular = Font.new(nunito.Family, Enum.FontWeight.SemiBold),
 }
 
--- Colour for a player's name on parchment: VIPs get gold.
+-- Colour for a player's name on a panel: VIPs get gold.
 function Theme.nameColor(look: { [string]: any }?): Color3
-	return if look and look.vip then Theme.C.vip else Theme.C.textDark
+	return if look and look.vip then Theme.C.gold else Theme.C.text
 end
 
 return Theme

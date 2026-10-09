@@ -22,12 +22,12 @@ local Util = require(UI.Util)
 local Theme = require(UI.Theme)
 local Icons = require(UI.Icons)
 local Widgets = require(UI.Widgets)
+local VolumeRows = require(UI.VolumeRows)
 local LeaderboardPanel = require(script.Parent.LeaderboardPanel)
 
 local Client = UI.Parent
 local Net = require(Client.Net)
 local State = require(Client.State)
-local Sound = require(Client.Sound)
 
 local C = Theme.C
 local hex = Theme.hex
@@ -57,7 +57,7 @@ function Pages.shop(layer: Instance): () -> ()
 		text = "Passes never change how a match plays: they're cosmetics and faster collecting.",
 		font = "heavy",
 		size = if narrow then 13 else 16,
-		color = C.inkSoft,
+		color = C.textSoft,
 		align = "center",
 		wrap = true,
 		sizeUDim = UDim2.new(1, 0, 0, if narrow then 34 else 24),
@@ -97,7 +97,7 @@ function Pages.shop(layer: Instance): () -> ()
 		local color = hex(string.sub(pass.color, 2))
 		local card = Util.new("Frame", {
 			Name = pass.key,
-			BackgroundColor3 = C.parchmentMid,
+			BackgroundColor3 = C.panelRaised,
 			BorderSizePixel = 0,
 			Size = UDim2.new(0.25, -12, 1, 0),
 			LayoutOrder = i,
@@ -115,7 +115,7 @@ function Pages.shop(layer: Instance): () -> ()
 			text = pass.name,
 			font = "chunky",
 			size = 26,
-			color = C.ink,
+			color = C.text,
 			align = "center",
 			sizeUDim = UDim2.new(1, 0, 0, 32),
 			position = UDim2.fromOffset(0, 108),
@@ -128,12 +128,12 @@ function Pages.shop(layer: Instance): () -> ()
 		for j, perk in pass.perks do
 			local line = Util.frame(perks, { Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, LayoutOrder = j })
 			local tick = Util.frame(line, { Size = UDim2.fromOffset(18, 18), Position = UDim2.fromOffset(0, 2) })
-			Icons.make(tick, "check", Icons.flatColors(C.good, C.parchmentMid))
+			Icons.make(tick, "check", Icons.flatColors(C.goodSoft, C.panelRaised))
 			local text = Widgets.label(line, {
 				text = perk,
 				font = "body",
 				size = 15,
-				color = C.textDark,
+				color = C.text,
 				wrap = true,
 				sizeUDim = UDim2.new(1, -26, 0, 0),
 				position = UDim2.fromOffset(26, 0),
@@ -271,7 +271,7 @@ function Pages.rules(layer: Instance): () -> ()
 		end
 		local block = Util.new("Frame", {
 			Name = "Section" .. i,
-			BackgroundColor3 = C.parchmentMid,
+			BackgroundColor3 = C.panelRaised,
 			BorderSizePixel = 0,
 			AutomaticSize = Enum.AutomaticSize.Y,
 			Size = UDim2.new(1, -16, 0, 0),
@@ -279,15 +279,15 @@ function Pages.rules(layer: Instance): () -> ()
 			Parent = scroll,
 		})
 		Util.corner(block, 12)
-		Util.stroke(block, C.parchmentEdge, 2)
+		Util.stroke(block, C.panelEdge, 2)
 		Util.pad(block, 14, 12, 14, 14)
 		local icon = Util.frame(block, { Size = UDim2.fromOffset(52, 52) })
-		Icons.medallion(icon, section.icon, C.woodDark, { Size = UDim2.fromScale(1, 1) })
+		Icons.medallion(icon, section.icon, C.brassDark, { Size = UDim2.fromScale(1, 1) })
 		Widgets.label(block, {
 			text = section.title,
 			font = "chunky",
 			size = 24,
-			color = C.ink,
+			color = C.brassLight,
 			sizeUDim = UDim2.new(1, -66, 0, 28),
 			position = UDim2.fromOffset(66, 0),
 		})
@@ -295,7 +295,7 @@ function Pages.rules(layer: Instance): () -> ()
 			text = text,
 			font = "body",
 			size = 17,
-			color = C.textDark,
+			color = C.text,
 			wrap = true,
 			valign = "top",
 			sizeUDim = UDim2.new(1, -66, 0, 0),
@@ -317,43 +317,14 @@ function Pages.settings(layer: Instance): () -> ()
 		width = 520,
 		height = 350,
 	})
-	local profile = State.get("profile")
-	local settings = table.clone(profile and profile.settings or { sfx = true, music = true })
 	local list = Util.frame(content, {})
 	Util.list(list, "y", 14, "Center", "Top")
-	local function row(order: number, label: string, key: string, apply: ((boolean) -> ())?)
-		local r = Util.frame(list, { Size = UDim2.new(1, 0, 0, 40), LayoutOrder = order })
-		Widgets.label(r, {
-			text = label,
-			font = "heavy",
-			size = 19,
-			color = C.textDark,
-			sizeUDim = UDim2.new(1, -90, 1, 0),
-		})
-		Widgets.toggle(r, {
-			value = settings[key] ~= false,
-			anchor = Vector2.new(1, 0.5),
-			position = UDim2.new(1, 0, 0.5, 0),
-			onChange = function(v)
-				settings[key] = v
-				if apply then
-					apply(v)
-				end
-				Net.request("settings.save", { settings = settings })
-			end,
-		})
-	end
-	row(1, "Sound effects", "sfx", function(v)
-		Sound.setEnabled(v)
-	end)
-	row(2, "Music", "music", function(v)
-		Sound.setMusicEnabled(v)
-	end)
+	VolumeRows.build(list, 1)
 	Widgets.label(list, {
 		text = "Trapisque v" .. tostring(State.get("version") or "1.0"),
 		font = "body",
 		size = 14,
-		color = C.inkFaint,
+		color = C.textFaint,
 		align = "center",
 		sizeUDim = UDim2.new(1, 0, 0, 20),
 		layoutOrder = 9,

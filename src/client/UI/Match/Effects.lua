@@ -133,6 +133,23 @@ Effects.popIcon = popIcon
 -- traps and neutral cards
 ---------------------------------------------------------------------------
 
+-- A card slapped down onto a tile: a thud, a ring of dust, a jolt and the card's own
+-- sound (slime squelches, fire whooshes, ice crackles...).
+function Effects.place(view, item: string, tile: number, color: Color3?)
+	local U = view.UNIT
+	local at = view:tileWorld(tile)
+	Sound.play("place", 0.92 + math.random() * 0.08)
+	local sound = TRAP_SOUND[item]
+	if sound and sound[1] ~= "place" then
+		task.delay(0.07, function()
+			Sound.play(sound[1], sound[2])
+		end)
+	end
+	view:shake(0.07, 0.2)
+	ring(view, at, color or C.brass, 0.7, 2.4, 0.45, 5)
+	burst(view, at + Vector2.new(0, 0.25 * U), hex("CDB894"), 9, 1.05, 0.15, 0.42)
+end
+
 function Effects.trap(view, item: string, tile: number)
 	local U = view.UNIT
 	local at = view:tileWorld(tile)

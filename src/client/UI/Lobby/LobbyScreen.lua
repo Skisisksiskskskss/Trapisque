@@ -73,7 +73,7 @@ local function gemCounter(parent: Instance, size: number, maid): Frame
 		text = "0",
 		font = "chunky",
 		size = size,
-		color = C.ink,
+		color = C.text,
 		align = "right",
 		sizeUDim = UDim2.fromOffset(0, size + 4),
 		layoutOrder = 1,
@@ -102,13 +102,13 @@ end
 local function profileChip(parent: Instance, maid, r): Frame
 	local chip = Util.new("Frame", {
 		Name = "Profile",
-		BackgroundColor3 = C.parchment,
+		BackgroundColor3 = C.panel,
 		BorderSizePixel = 0,
 		Parent = parent,
 	})
 	place(chip, r)
 	Util.corner(chip, 14)
-	Util.stroke(chip, C.burn, 3)
+	Util.stroke(chip, C.brassDark, 2)
 	local h = r.h
 	local avatar = h - 20
 	Avatars.portrait(chip, { userId = player.UserId, name = player.DisplayName }, {
@@ -121,7 +121,7 @@ local function profileChip(parent: Instance, maid, r): Frame
 		text = player.DisplayName,
 		font = "heavy",
 		size = 18,
-		color = C.textDark,
+		color = C.text,
 		sizeUDim = UDim2.new(1, -(x + 150), 0, 20),
 		position = UDim2.fromOffset(x, h / 2 - 27),
 	})
@@ -131,7 +131,7 @@ local function profileChip(parent: Instance, maid, r): Frame
 		text = "LV 1",
 		font = "chunky",
 		size = 14,
-		color = C.inkBlue,
+		color = C.infoSoft,
 		sizeUDim = UDim2.fromOffset(40, 16),
 		position = UDim2.fromOffset(x, h / 2 + 13),
 	})
@@ -158,7 +158,7 @@ local function profileChip(parent: Instance, maid, r): Frame
 					text = "@" .. player.Name,
 					font = "body",
 					size = 13,
-					color = C.inkSoft,
+					color = C.textSoft,
 					sizeUDim = UDim2.fromScale(1, 1),
 				})
 			end
@@ -173,13 +173,13 @@ end
 local function compactChip(parent: Instance, maid, r): Frame
 	local chip = Util.new("Frame", {
 		Name = "Profile",
-		BackgroundColor3 = C.parchment,
+		BackgroundColor3 = C.panel,
 		BorderSizePixel = 0,
 		Parent = parent,
 	})
 	place(chip, r)
 	Util.corner(chip, r.h / 2)
-	Util.stroke(chip, C.burn, 2)
+	Util.stroke(chip, C.brassDark, 2)
 	local avatar = r.h - 8
 	Avatars.portrait(chip, { userId = player.UserId, name = player.DisplayName }, {
 		AnchorPoint = Vector2.new(0, 0.5),
@@ -191,7 +191,7 @@ local function compactChip(parent: Instance, maid, r): Frame
 		text = player.DisplayName,
 		font = "heavy",
 		size = 15,
-		color = C.textDark,
+		color = C.text,
 		sizeUDim = UDim2.new(1, -(x + 170), 1, 0),
 		position = UDim2.fromOffset(x, 0),
 	})
@@ -200,7 +200,7 @@ local function compactChip(parent: Instance, maid, r): Frame
 		text = "LV 1",
 		font = "chunky",
 		size = 14,
-		color = C.inkBlue,
+		color = C.infoSoft,
 		align = "right",
 		anchor = Vector2.new(1, 0.5),
 		sizeUDim = UDim2.fromOffset(52, 20),
@@ -249,7 +249,8 @@ end
 --[[
 	The menu: wide buttons with words (PC), shorter words (phones sideways), or icons
 	with a small caption under each (phones upright). The Chests button turns green
-	while a free chest is waiting.
+	with a count while a free chest is waiting. Nothing here loops: a menu that keeps
+	moving gets tiring, so a chest that becomes free just hops once.
 ]]
 local function buildNav(parent: Instance, maid, spec, popups: Instance, withLeaders: boolean)
 	local nav = Util.frame(parent, { Name = "Nav" })
@@ -288,12 +289,12 @@ local function buildNav(parent: Instance, maid, spec, popups: Instance, withLead
 				text = item.short,
 				font = "heavy",
 				size = 11,
-				color = C.parchment,
+				color = C.text,
 				align = "center",
 				sizeUDim = UDim2.new(1, 0, 0, 14),
 				anchor = Vector2.new(0, 1),
 				position = UDim2.fromScale(0, 1),
-				outline = C.ink,
+				outline = C.bg,
 			})
 			if item.id == "chests" then
 				chest = { button = b, icon = true }
@@ -314,16 +315,22 @@ local function buildNav(parent: Instance, maid, spec, popups: Instance, withLead
 			end
 		end
 	end
+	local wasFree: boolean? = nil
 	maid:add(State.watch("profile", function(p)
 		if not chest or not p then
 			return
 		end
-		local free = freeChests(p) > 0
+		local count = freeChests(p)
+		local free = count > 0
 		chest.button:setStyle(if free then "green" else "brass")
 		if not chest.icon then
-			chest.button:setText(if free then "FREE CHEST!" else (if spec.kind == "full" then "CHESTS" else "CHESTS"))
+			chest.button:setText(if free then "FREE CHEST!" else "CHESTS")
 		end
-		chest.button:pulse(free)
+		chest.button:setBadge(if free then tostring(count) else nil)
+		if free and wasFree == false then
+			Util.bump(chest.button.root, 0.12)
+		end
+		wasFree = free
 	end, true))
 	return nav
 end
@@ -342,9 +349,9 @@ local function build(frame: Frame, maid, L, popups: Instance)
 			text = "Trapisque",
 			font = "display",
 			size = math.floor(math.min(60, r.h * 0.86)),
-			color = C.parchment,
+			color = C.brassLight,
 			align = if L.form == "tall" then "center" else "left",
-			outline = C.ink,
+			outline = C.bg,
 			outlineThickness = if r.h >= 60 then 3 else 2,
 		})
 		place(title, r)
@@ -497,7 +504,7 @@ function LobbyScreen.invite(data)
 	end
 	local card = Util.new("Frame", {
 		Name = "Invite",
-		BackgroundColor3 = C.parchment,
+		BackgroundColor3 = C.panel,
 		BorderSizePixel = 0,
 		Size = UDim2.new(1, 0, 0, 118),
 		ZIndex = 91,
@@ -514,7 +521,7 @@ function LobbyScreen.invite(data)
 		text = (data.from or "Someone") .. " invited you to their party",
 		font = "heavy",
 		size = 17,
-		color = C.textDark,
+		color = C.text,
 		wrap = true,
 		sizeUDim = UDim2.new(1, -76, 0, 44),
 		position = UDim2.fromOffset(66, 10),

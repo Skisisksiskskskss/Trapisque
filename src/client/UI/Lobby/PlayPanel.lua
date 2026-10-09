@@ -133,12 +133,12 @@ function PlayPanel.new(parent: Instance, popups: Instance, opts: { [string]: any
 		Position = UDim2.new(0, 6, 0.5, 0),
 		Size = UDim2.fromOffset(34, 34),
 	})
-	Icons.make(compass, "compass", Icons.flatColors(C.ink, C.parchment))
+	Icons.make(compass, "compass", Icons.flatColors(C.brass, C.panel))
 	self.statusText = Widgets.label(status, {
 		text = "",
 		font = "heavy",
 		size = 18,
-		color = C.textDark,
+		color = C.text,
 		sizeUDim = UDim2.new(1, -50, 1, 0),
 		position = UDim2.fromOffset(48, 0),
 	})
@@ -173,13 +173,13 @@ function PlayPanel:_modeTile(grid: Frame, mode, order: number)
 		Name = mode.id,
 		Text = "",
 		AutoButtonColor = false,
-		BackgroundColor3 = C.parchmentMid,
+		BackgroundColor3 = C.panelRaised,
 		BorderSizePixel = 0,
 		LayoutOrder = order,
 		Parent = grid,
 	})
 	Util.corner(tile, 12)
-	local stroke = Util.stroke(tile, C.parchmentEdge, 2)
+	local stroke = Util.stroke(tile, C.panelEdge, 2)
 	local compact = self.compact
 	local pad = if compact then 8 else 12
 	local iconSize = if compact then 24 else 34
@@ -187,13 +187,13 @@ function PlayPanel:_modeTile(grid: Frame, mode, order: number)
 		Position = UDim2.fromOffset(pad, pad),
 		Size = UDim2.fromOffset(iconSize, iconSize),
 	})
-	Icons.make(icon, if mode.isTeam then "people" else "bolt", Icons.flatColors(C.ink, C.parchmentMid))
+	Icons.make(icon, if mode.isTeam then "people" else "bolt", Icons.flatColors(C.brass, C.panelRaised))
 	local textX = pad + iconSize + 8
 	Widgets.label(tile, {
 		text = if compact then mode.short else mode.name,
 		font = "chunky",
 		size = if compact then 17 else 20,
-		color = C.ink,
+		color = C.text,
 		sizeUDim = UDim2.new(1, -(textX + pad), 0, if compact then 22 else 24),
 		position = UDim2.fromOffset(textX, if compact then 8 else 10),
 		scaled = true,
@@ -203,7 +203,7 @@ function PlayPanel:_modeTile(grid: Frame, mode, order: number)
 		text = playerRange(mode),
 		font = "heavy",
 		size = if compact then 12 else 13,
-		color = C.inkSoft,
+		color = C.textSoft,
 		sizeUDim = if compact then UDim2.new(1, -2 * pad, 0, 16) else UDim2.new(1, -(textX + pad), 0, 16),
 		position = UDim2.fromOffset(if compact then pad else textX, if compact then 36 else 34),
 	})
@@ -213,7 +213,7 @@ function PlayPanel:_modeTile(grid: Frame, mode, order: number)
 		font = "body",
 		size = if compact then 13 else 15,
 		minSize = 9,
-		color = C.textDark,
+		color = C.text,
 		wrap = true,
 		valign = "top",
 		sizeUDim = UDim2.new(1, -2 * pad, 1, -(top + pad)),
@@ -234,8 +234,8 @@ end
 function PlayPanel:refresh()
 	for id, t in self.tiles do
 		local on = id == self.mode
-		t.frame.BackgroundColor3 = if on then Color3.fromHex("FFF1C4") else C.parchmentMid
-		t.stroke.Color = if on then C.brassDark else C.parchmentEdge
+		t.frame.BackgroundColor3 = if on then C.mine else C.panelRaised
+		t.stroke.Color = if on then C.brass else C.panelEdge
 		t.stroke.Thickness = if on then 3 else 2
 	end
 	local party = State.get("party")
@@ -308,7 +308,7 @@ local function settingRow(parent: Instance, order: number, label: string, build:
 		text = label,
 		font = "chunky",
 		size = 18,
-		color = C.ink,
+		color = C.text,
 		sizeUDim = if narrow then UDim2.new(1, 0, 0, 22) else UDim2.new(0, 110, 1, 0),
 	})
 	local holder = if narrow
@@ -334,7 +334,7 @@ function PlayPanel:_practice()
 		text = mode.name .. " against bots. Rewards are halved, so it's the place to learn the ropes.",
 		font = "heavy",
 		size = 16,
-		color = C.inkSoft,
+		color = C.textSoft,
 		wrap = true,
 		sizeUDim = UDim2.new(1, 0, 0, 40),
 		layoutOrder = 0,
@@ -445,7 +445,7 @@ function PlayPanel:_private()
 		text = "Team modes fill empty seats with bots automatically.",
 		font = "body",
 		size = 14,
-		color = C.inkSoft,
+		color = C.textSoft,
 		sizeUDim = UDim2.new(1, 0, 0, 20),
 		layoutOrder = 5,
 	})

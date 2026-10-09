@@ -45,7 +45,7 @@ function Avatars.portrait(parent: Instance?, info, props: { [string]: any }?, op
 	if image and not (info and info.isBot) then
 		local back = Util.new("Frame", {
 			Name = "Back",
-			BackgroundColor3 = o.back or Theme.C.parchmentMid,
+			BackgroundColor3 = o.back or Theme.C.panelHi,
 			BorderSizePixel = 0,
 			Size = UDim2.fromScale(1, 1),
 			ZIndex = 1,
@@ -64,7 +64,7 @@ function Avatars.portrait(parent: Instance?, info, props: { [string]: any }?, op
 		Util.corner(img, 0.5)
 	else
 		local character = info and info.character or "info"
-		local color = Theme.Character[character] or C.inkSoft
+		local color = Theme.Character[character] or C.textFaint
 		Icons.medallion(root, character, color, { Size = UDim2.fromScale(1, 1), ZIndex = 2 })
 	end
 	if o.ring then

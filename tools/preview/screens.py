@@ -17,7 +17,12 @@ from PIL import Image, ImageDraw  # noqa: E402
 
 S = 2  # supersampling of the 1280x720 virtual stage
 
-TABLE, PLANK, TABLE_LIGHT = "#2A1C13", "#221710", "#3A281B"
+TABLE, PLANK, TABLE_LIGHT = "#1A130E", "#120D0A", "#241A13"
+# the dark UI (Theme.C): surfaces from deepest to highest, then text on them
+BG, PANEL, PANEL_DEEP, PANEL_RAISED, PANEL_HI = "#140F0B", "#2A2119", "#1C1612", "#372B21", "#46372A"
+PANEL_EDGE, PANEL_LINE, MINE = "#5C4736", "#3E3026", "#3A2F1B"
+TEXT, TEXT_SOFT, TEXT_FAINT, TEXT_ON_LIGHT = "#F3E8D2", "#C9B89C", "#8F7F69", "#3A2414"
+INFO_SOFT, GOOD_SOFT = "#8DBDEB", "#8CD07A"
 PARCH, PARCH_MID, PARCH_DARK, PARCH_EDGE, BURN = "#F3E4C1", "#E8D2A2", "#D2B27A", "#A97C45", "#6B4423"
 INK, INK_SOFT, INK_FAINT, INK_RED = "#4A3020", "#7B5B3E", "#A88B66", "#B5372B"
 WOOD, WOOD_PALE, WOOD_DARK, WOOD_DEEP = "#B57D46", "#E6C18F", "#80522A", "#5C3818"
@@ -30,15 +35,16 @@ CAT = {"trap": "#C2513B", "assist": "#5E9A3C", "neutral": "#7A61A8", "potion": "
 
 # Widgets.ButtonStyles
 STYLES = {
-    "wood": {"face": WOOD, "dark": WOOD_DARK, "stroke": WOOD_DEEP, "text": "#4E2E14", "engraved": True},
-    "brass": {"face": BRASS, "dark": BRASS_DARK, "stroke": "#6E4F12", "text": "#4A3008", "engraved": True},
-    "red": {"face": "#C2513B", "dark": "#8A3122", "stroke": "#5A1D12", "text": WHITE, "outline": "#5A1D12"},
-    "green": {"face": "#5E9A3C", "dark": "#3D6B24", "stroke": "#284616", "text": WHITE, "outline": "#284616"},
-    "blue": {"face": "#4C80B8", "dark": "#33597F", "stroke": "#1F3A55", "text": WHITE, "outline": "#1F3A55"},
-    "purple": {"face": "#7A61A8", "dark": "#554279", "stroke": "#362A4E", "text": WHITE, "outline": "#362A4E"},
-    "parchment": {"face": PARCH, "dark": PARCH_DARK, "stroke": PARCH_EDGE, "text": INK, "engraved": True},
-    "dark": {"face": "#3A281B", "dark": "#221710", "stroke": "#120B07", "text": PARCH, "outline": "#120B07"},
+    "wood": {"face": "#6A4A31", "dark": "#3F2B1B", "stroke": "#1E140C", "text": TEXT, "outline": "#2A1C11"},
+    "brass": {"face": BRASS, "dark": BRASS_DARK, "stroke": "#5E430F", "text": "#3F2906", "engraved": True},
+    "red": {"face": "#B9493A", "dark": "#7D2D21", "stroke": "#4A170E", "text": WHITE, "outline": "#4A170E"},
+    "green": {"face": "#4F9135", "dark": "#33621F", "stroke": "#1F3D12", "text": WHITE, "outline": "#1F3D12"},
+    "blue": {"face": "#4577AD", "dark": "#2D5277", "stroke": "#18314A", "text": WHITE, "outline": "#18314A"},
+    "purple": {"face": "#715AA0", "dark": "#4C3A6E", "stroke": "#2C2142", "text": WHITE, "outline": "#2C2142"},
+    "panel": {"face": PANEL_RAISED, "dark": PANEL_DEEP, "stroke": "#120D0A", "text": TEXT, "outline": "#120D0A"},
+    "dark": {"face": "#2C231B", "dark": "#15100C", "stroke": "#0A0705", "text": TEXT, "outline": "#0A0705"},
 }
+STYLES["parchment"] = STYLES["panel"]
 
 
 def mix(a, b, t):
@@ -208,32 +214,34 @@ class Screen:
                       ow=2 if st.get("outline") else 0, alpha=1.0 if enabled else 0.6)
 
     def cartouche(self, cx, top, w, text, h=44):
+        """Widgets.ribbon: a dark plaque, a double brass border, gold display lettering."""
         x = cx - w / 2
-        self.frame(x, top, w, h, 8, PARCH_MID, INK, 2, salpha=0.9)
-        self.outline(x + 5, top + 5, w - 10, h - 10, 5, INK, 1, 0.55)
-        self.text(x + 8, top + 4, w - 16, h - 8, text, "display", 28, INK, align="center", scaled=True)
+        self.frame(x, top, w, h, 8, PANEL_DEEP, BRASS_DARK, 2, salpha=0.95)
+        self.outline(x + 5, top + 5, w - 10, h - 10, 5, BRASS, 1, 0.45)
+        self.text(x + 8, top + 4, w - 16, h - 8, text, "display", 28, BRASS_LIGHT, align="center", scaled=True)
 
-    def panel(self, x, y, w, h, style="parchment", title=None, title_w=280, pad=18, shadow=True):
+    def panel(self, x, y, w, h, style="walnut", title=None, title_w=280, pad=18, shadow=True):
         if shadow:
-            self.rect(x, y + 6, w, h, 14, "#000000", 0.4)
-        if style == "parchment":
-            self.frame(x, y, w, h, 14, PARCH, BURN, 3)
-            self.outline(x + 7, y + 7, w - 14, h - 14, 8, INK_FAINT, 1.5, 0.7)
+            self.rect(x, y + 6, w, h, 14, "#000000", 0.5)
+        if style in ("walnut", "parchment"):
+            # dark walnut with a brass inlay line just inside the edge
+            self.frame(x, y, w, h, 14, PANEL, "#0E0A07", 3)
+            self.outline(x + 7, y + 7, w - 14, h - 14, 8, BRASS_DARK, 1.5, 0.55)
         else:
-            fill = WOOD_DARK if style == "board" else WOOD
-            self.frame(x, y, w, h, 14, fill, WOOD_DEEP, 3)
+            fill = "#3A2618" if style == "board" else "#4E3320"
+            self.frame(x, y, w, h, 14, fill, "#1A110A", 3)
             rnd = random.Random(int(x * 7 + y))
             for i in range(6):
                 yy = y + ((i + 0.5) / 6 + (rnd.random() - 0.5) * 0.06) * h
                 ww = (0.75 + rnd.random() * 0.2) * w
-                self.rect(x + (w - ww) / 2, yy, ww, 2, 1, WOOD_DEEP, 0.25)
+                self.rect(x + (w - ww) / 2, yy, ww, 2, 1, "#24170D", 0.25)
         if title:
             self.cartouche(x + w / 2, y + 14, title_w, title)
         top = pad + (54 if title else 0)
         return (x + pad, y + top, w - 2 * pad, h - top - pad)
 
     def progress(self, x, y, w, h, value, color):
-        self.frame(x, y, w, h, h / 2, WOOD_DEEP, WOOD_DEEP, 2)
+        self.frame(x, y, w, h, h / 2, PANEL_DEEP, "#0E0A07", 2)
         if value > 0:
             self.rect(x, y, max(h, w * value), h, h / 2, color)
 
@@ -252,8 +260,8 @@ class Screen:
         for i, (label, v) in enumerate(options):
             on = v == value
             bx = x + i * (bw + 6)
-            self.frame(bx, y, bw, h, 8, BRASS if on else PARCH, BRASS_DARK if on else PARCH_EDGE, 2)
-            self.text(bx + 4, y, bw - 8, h, label, "chunky", size, INK if on else INK_SOFT, align="center", scaled=True)
+            self.frame(bx, y, bw, h, 8, BRASS if on else PANEL_RAISED, BRASS_DARK if on else PANEL_EDGE, 2)
+            self.text(bx + 4, y, bw - 8, h, label, "chunky", size, TEXT_ON_LIGHT if on else TEXT_SOFT, align="center", scaled=True)
 
     def dim(self, alpha=0.55):
         self.rect(0, 0, self.w, self.h, 0, DIM, alpha)
@@ -292,8 +300,8 @@ def draw_chests(sc, data):
     cx, cy, cw, ch = sc.panel(mx, my, mw, mh, title="Treasure Chests", title_w=320)
     sc.button(mx + mw - 14 - 40, my + 14, 40, 42, icon="close", style="red", depth=4, icon_scale=0.66)
     sc.medallion("gem", cx + 18, cy + 20, 36, NEUTRAL)
-    sc.text(cx + 44, cy, 200, 40, "1,240", "chunky", 28, INK)
-    sc.text(cx + 250, cy, cw - 250, 40, "Gems come from playing matches. Duplicates turn back into Gems.", "heavy", 15, INK_SOFT,
+    sc.text(cx + 44, cy, 200, 40, "1,240", "chunky", 28, TEXT)
+    sc.text(cx + 250, cy, cw - 250, 40, "Gems come from playing matches. Duplicates turn back into Gems.", "heavy", 15, TEXT_SOFT,
             align="right")
     chests = data["cosmetics"]["chests"]
     pity = ["Epic or better within 7 chests", "Legendary or better within 14 chests"]
@@ -302,12 +310,12 @@ def draw_chests(sc, data):
         x = cx + i * (card_w + 20)
         y = cy + 50
         hh = ch - 50
-        sc.frame(x, y, card_w, hh, 14, PARCH_MID, PARCH_EDGE, 2)
+        sc.frame(x, y, card_w, hh, 14, PANEL_RAISED, PANEL_EDGE, 2)
         chest_art(sc, chest["look"], x + card_w / 2 - 85, y + 6, 170)
-        sc.text(x, y + 176, card_w, 30, chest["name"], "chunky", 26, INK, align="center")
+        sc.text(x, y + 176, card_w, 30, chest["name"], "chunky", 26, TEXT, align="center")
         blurb = ["Everything can drop. Great for starting a collection.", "No commons. Much better shot at Legendary and Mythic."][i]
-        sc.text(x + 15, y + 206, card_w - 30, 38, blurb, "heavy", 15, INK_SOFT, align="center", wrap=True)
-        sc.text(x + 15, y + 246, card_w - 30, 18, pity[i], "heavy", 14, NEUTRAL, align="center")
+        sc.text(x + 15, y + 206, card_w - 30, 38, blurb, "heavy", 15, TEXT_SOFT, align="center", wrap=True)
+        sc.text(x + 15, y + 246, card_w - 30, 18, pity[i], "heavy", 14, "#B9A4E6", align="center")
         odds = chest["odds"]
         order = ["common", "rare", "epic", "legendary", "mythic"]
         colors = {r["id"]: r["color"] for r in data["cosmetics"]["rarities"]}
@@ -336,7 +344,7 @@ def draw_chests(sc, data):
             ey = y + 278 + 18 + li * 16
             for col, label, ew in line:
                 sc.circle(ex + 4, ey + 8, 8, col)
-                sc.text(ex + 12, ey, ew - 12 + 2, 16, label, "heavy", 12, INK_SOFT)
+                sc.text(ex + 12, ey, ew - 12 + 2, 16, label, "heavy", 12, TEXT_SOFT)
                 ex += ew + 12
         bw = (card_w - 30) / 2 - 6
         by = y + hh - 50 - 52

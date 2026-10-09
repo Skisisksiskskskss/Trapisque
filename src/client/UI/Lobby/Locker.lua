@@ -121,7 +121,7 @@ function Locker._fill(_maid, content: Frame, category: string)
 		text = have .. " / " .. #items .. " found",
 		font = "chunky",
 		size = if narrow then 16 else 20,
-		color = C.inkSoft,
+		color = C.textSoft,
 		align = "right",
 		sizeUDim = if narrow then UDim2.new(1, 0, 0, 24) else UDim2.new(0, 190, 0, 44),
 		anchor = Vector2.new(1, 0),
@@ -148,7 +148,7 @@ function Locker._fill(_maid, content: Frame, category: string)
 		local isOwned = owned[def.id] == true
 		local isEquipped = if category == "emote" then emoteSlots[def.id] ~= nil else equipped[category] == def.id
 		local rarity = Cosmetics.rarityById[def.rarity]
-		local rimColor = if rarity then hex(string.sub(rarity.color, 2)) else C.inkSoft
+		local rimColor = if rarity then hex(string.sub(rarity.color, 2)) else C.textFaint
 		local tile = Util.new("TextButton", {
 			Name = def.id,
 			Text = "",
@@ -203,7 +203,7 @@ function Locker._fill(_maid, content: Frame, category: string)
 			text = status,
 			font = "chunky",
 			size = 13,
-			color = if isEquipped then C.good elseif isOwned then rimColor else C.inkFaint,
+			color = if isEquipped then C.good elseif isOwned then rimColor else C.textFaint,
 			align = "center",
 			sizeUDim = UDim2.new(1, -8, 0, 16),
 			position = UDim2.fromOffset(4, 24),

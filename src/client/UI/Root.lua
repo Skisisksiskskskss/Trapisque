@@ -315,7 +315,7 @@ function Root.curtain(message: string?)
 		text = message,
 		font = "display",
 		size = 34,
-		color = C.parchment,
+		color = C.text,
 		align = "center",
 		sizeUDim = UDim2.new(1, 0, 0, 50),
 		anchor = Vector2.new(0.5, 0),

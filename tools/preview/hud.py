@@ -25,7 +25,9 @@ from cards import CardPainter  # noqa: E402
 import board as boardmod  # noqa: E402
 from screens import (Screen, S, shade, PARCH, PARCH_MID, PARCH_EDGE, BURN, INK, INK_SOFT,  # noqa: E402
                      INK_FAINT, INK_RED, WOOD_PALE, BRASS, BRASS_LIGHT, BRASS_DARK, GOLD,
-                     INFO, WHITE, TEXT_DARK, NEUTRAL, SEAT, CHAR, CAT, draw_chests)
+                     INFO, WHITE, TEXT_DARK, NEUTRAL, SEAT, CHAR, CAT, draw_chests,
+                     BG, PANEL, PANEL_DEEP, PANEL_RAISED, PANEL_HI, PANEL_EDGE, MINE, TEXT, TEXT_SOFT, TEXT_FAINT,
+                     TEXT_ON_LIGHT, INFO_SOFT, GOOD_SOFT)
 from PIL import Image, ImageDraw  # noqa: E402
 
 UNIT = 46
@@ -175,7 +177,9 @@ def player_chips(sc, scr, spec, target, my_seat):
             sc.progress(x + 8, y + h - 4, w - 16, 3, 0.62, BRASS)
 
 
-def hand(sc, data, spec, items, armed, touch):
+def hand(sc, data, spec, items, armed, touch, held=None, raised=None):
+    """HandView. `held` = index of a card picked up (an empty, brass-rimmed spot);
+    `raised` = index of the hovered card (sits 6 px higher). Returns the card rects."""
     spec = dict(spec)
     spec.setdefault("dir", "x")
     r = spec["rect"]
@@ -198,9 +202,20 @@ def hand(sc, data, spec, items, armed, touch):
     else:
         total = n * cw + (n - 1) * gap
         x0, y0 = r["x"] + max(6, (r["w"] - total) / 2), r["y"] + (r["h"] - ch) / 2
+    rects = []
     for i, item in enumerate(items):
         x = x0 + (0 if spec["dir"] == "y" else i * (cw + gap))
         y = y0 + (i * (ch + gap) if spec["dir"] == "y" else 0)
+        rects.append((x, y, cw, ch))
+        if held is not None and i == held:
+            gx, gy, gw, gh = x + cw * 0.04, y + ch * 0.03, cw * 0.92, ch * 0.94
+            sc.frame(gx, gy, gw, gh, gw * 0.09, PANEL_DEEP, BRASS, 2, falpha=0.55, salpha=0.65)
+            continue
+        if raised is not None and i == raised:
+            if spec["dir"] == "y":
+                x += 6
+            else:
+                y -= 6
         if item in armed:
             if spec["dir"] == "y":
                 x += 10
@@ -220,6 +235,7 @@ def hand(sc, data, spec, items, armed, touch):
     cards = sc.img
     cards.putalpha(Image.composite(cards.getchannel("A"), Image.new("L", base.size, 0), mask))
     sc.img = Image.alpha_composite(base, cards)
+    return rects
 
 
 def ability(sc, scr, rect, form, character):
@@ -254,13 +270,17 @@ def ability(sc, scr, rect, form, character):
         sc.button(x, y, w, h, text=name + "  " + "●" * amount, style=style, size=14)
 
 
-def roll(sc, rect, form, touch):
+def roll(sc, rect, form, touch, clock="0:38"):
     x, y, w, h = R(rect)
     status_h = 40 if form == "wide" else 0
     sc.button(x, y, w, h - status_h, text="ROLL", icon="dice", style="brass", depth=7 if form == "wide" else 5,
               size=32 if form == "wide" else (24 if form == "short" else 22))
     # the button pulses on your turn: a soft brass glow
     sc.outline(x - 2, y - 2, w + 4, h - status_h + 4, 14, BRASS_LIGHT, 3, 0.6)
+    # your turn's countdown (ActionDock:setClock): a clock badge inside ROLL's top corner
+    bw, bh = (64, 26) if form == "wide" else (54, 22)
+    sc.frame(x + w - 8 - bw, y + 8, bw, bh, bh / 2, PANEL_DEEP, BRASS, 1.5)
+    sc.text(x + w - 8 - bw, y + 8, bw, bh, clock, "chunky", 17 if form == "wide" else 15, TEXT, align="center")
     if form == "wide":
         sc.text(x, y + h - 36, w, 36, "Your turn  ·  Space to roll", "heavy", 14, PARCH, align="center", outline=INK, ow=1.5)
 
@@ -355,7 +375,9 @@ def roblox_chrome(sc, m):
         sc.rect(vw / 2 - vw * 0.17, vh - safe["b"] * 0.55, vw * 0.34, 5, 2.5, "#FFFFFF", 0.85)
 
 
-def match_screen(data, scr, dev, out):
+def match_screen(data, scr, dev, out, save=True, held=None, raised=None, overlay=None):
+    """The match HUD around the board. `overlay(sc, ctx)` draws over the board before the
+    HUD (glows, a tile preview); held / raised go to the hand. Returns (sc, ctx)."""
     m, L = dev["m"], dev["match"]
     sc = Screen(data, w=int(round(m["vw"])), h=int(round(m["vh"])))
     sc.table()
@@ -370,9 +392,12 @@ def match_screen(data, scr, dev, out):
     at = slot["at"][group.index(me["seat"])]
     sx, sy = to_stage(t["x"] + at[0], t["y"] + at[1] - 1.3 * 0.62 * slot["scale"])
     name_tag(sc, sx, sy - 4, "You", SEAT[0])
+    ctx = {"to_stage": to_stage, "ppu": ppu, "layout": layout, "L": L, "m": m}
+    if overlay:
+        overlay(sc, ctx)
 
     player_chips(sc, scr, L["players"], snap.get("target", 3) or 3, 1)
-    hand(sc, data, L["hand"], snap["hand"], set(snap.get("armed") or []), m["touch"])
+    ctx["hand"] = hand(sc, data, L["hand"], snap["hand"], set(snap.get("armed") or []), m["touch"], held=held, raised=raised)
     ability(sc, scr, L["ability"], form, "mage")
     roll(sc, L["roll"], form, m["touch"])
     feed(sc, L["feed"], [
@@ -382,37 +407,39 @@ def match_screen(data, scr, dev, out):
     ])
     top_bar(sc, L, "Round 6  ·  Chaos  ·  Quick  ·  First to 3")
     roblox_chrome(sc, m)
-    sc.save(out, out_w=dev["w"] * (2 if dev["w"] < 1000 else 1))
+    if save:
+        sc.save(out, out_w=dev["w"] * (2 if dev["w"] < 1000 else 1))
+    return sc, ctx
 
 
 # ----------------------------------------------------------------------------- lobby
 def profile_full(sc, r):
     x, y, w, h = R(r)
-    sc.frame(x, y, w, h, 14, PARCH, BURN, 3)
+    sc.frame(x, y, w, h, 14, PANEL, BRASS_DARK, 2)
     av = h - 20
-    portrait(sc, {"isBot": False}, x + 10 + av / 2, y + h / 2, av, ring=BRASS, ring_px=3, face_back="#9FC2E8")
+    portrait(sc, {"isBot": False}, x + 10 + av / 2, y + h / 2, av, ring=BRASS, ring_px=3, face_back=PANEL_HI)
     tx = x + av + 20
-    sc.text(tx, y + h / 2 - 27, w - (tx - x) - 150, 20, "Explorer", "heavy", 18, TEXT_DARK)
+    sc.text(tx, y + h / 2 - 27, w - (tx - x) - 150, 20, "Explorer", "heavy", 18, TEXT)
     tw = sc.text_width("Trap Master", "heavy", 12)
     sc.rect(tx, y + h / 2 - 6, tw + 16, 18, 6, "#4E2E14")
     sc.text(tx + 8, y + h / 2 - 6, tw + 2, 18, "Trap Master", "heavy", 12, "#F2C445")
-    sc.text(tx, y + h / 2 + 13, 40, 16, "LV 7", "chunky", 14, "#3C6E8F")
+    sc.text(tx, y + h / 2 + 13, 40, 16, "LV 7", "chunky", 14, INFO_SOFT)
     sc.progress(tx + 44, y + h / 2 + 17, w - (tx - x) - 44 - 150, 8, 0.6, INFO)
     sc.medallion("gem", x + w - 16 - 12, y + h / 2, 24 / 1.16, NEUTRAL)
     gw = sc.text_width("1,240", "chunky", 24)
-    sc.text(x + w - 16 - 24 - 6 - gw, y + h / 2 - 14, gw + 2, 28, "1,240", "chunky", 24, INK)
+    sc.text(x + w - 16 - 24 - 6 - gw, y + h / 2 - 14, gw + 2, 28, "1,240", "chunky", 24, TEXT)
 
 
 def profile_compact(sc, r):
     x, y, w, h = R(r)
-    sc.frame(x, y, w, h, h / 2, PARCH, BURN, 2)
+    sc.frame(x, y, w, h, h / 2, PANEL, BRASS_DARK, 2)
     av = h - 8
-    portrait(sc, {"isBot": False}, x + 4 + av / 2, y + h / 2, av, ring=BRASS, ring_px=2, face_back="#9FC2E8")
-    sc.text(x + av + 12, y, w - av - 12 - 170, h, "Explorer", "heavy", 15, TEXT_DARK)
-    sc.text(x + w - 108 - 52, y + h / 2 - 10, 52, 20, "LV 7", "chunky", 14, "#3C6E8F", align="right")
+    portrait(sc, {"isBot": False}, x + 4 + av / 2, y + h / 2, av, ring=BRASS, ring_px=2, face_back=PANEL_HI)
+    sc.text(x + av + 12, y, w - av - 12 - 170, h, "Explorer", "heavy", 15, TEXT)
+    sc.text(x + w - 108 - 52, y + h / 2 - 10, 52, 20, "LV 7", "chunky", 14, INFO_SOFT, align="right")
     sc.medallion("gem", x + w - 12 - 9, y + h / 2, 18 / 1.16, NEUTRAL)
     gw = sc.text_width("1,240", "chunky", 18)
-    sc.text(x + w - 12 - 18 - 6 - gw, y + h / 2 - 11, gw + 2, 22, "1,240", "chunky", 18, INK)
+    sc.text(x + w - 12 - 18 - 6 - gw, y + h / 2 - 11, gw + 2, 22, "1,240", "chunky", 18, TEXT)
 
 
 MODES = [
@@ -434,19 +461,19 @@ def play_panel(sc, r, compact, titled=True):
     for i, (mid, name, short, count, blurb, icon) in enumerate(MODES):
         tx, ty = cx + (i % cols) * (tw + 12), cy + (i // cols) * (th + 12)
         on = mid == "chaos"
-        sc.frame(tx, ty, tw, th, 12, "#FFF1C4" if on else PARCH_MID, BRASS_DARK if on else PARCH_EDGE, 3 if on else 2)
+        sc.frame(tx, ty, tw, th, 12, MINE if on else PANEL_RAISED, BRASS if on else PANEL_EDGE, 3 if on else 2)
         pad = 8 if compact else 12
         isz = 24 if compact else 34
-        sc.icon(icon, tx + pad, ty + pad, isz, INK, PARCH_MID)
+        sc.icon(icon, tx + pad, ty + pad, isz, BRASS, PANEL_RAISED)
         tx2 = pad + isz + 8
         sc.text(tx + tx2, ty + (8 if compact else 10), tw - tx2 - pad, 22 if compact else 24, short if compact else name, "chunky",
-                17 if compact else 20, INK, scaled=True)
+                17 if compact else 20, TEXT, scaled=True)
         if compact:
-            sc.text(tx + pad, ty + 36, tw - 2 * pad, 16, count, "heavy", 12, INK_SOFT)
+            sc.text(tx + pad, ty + 36, tw - 2 * pad, 16, count, "heavy", 12, TEXT_SOFT)
         else:
-            sc.text(tx + tx2, ty + 34, tw - tx2 - pad, 16, count, "heavy", 13, INK_SOFT)
+            sc.text(tx + tx2, ty + 34, tw - tx2 - pad, 16, count, "heavy", 13, TEXT_SOFT)
         top = 56 if compact else 58
-        sc.text(tx + pad, ty + top, tw - 2 * pad, th - top - pad, blurb, "body", 13 if compact else 15, TEXT_DARK, wrap=True,
+        sc.text(tx + pad, ty + top, tw - 2 * pad, th - top - pad, blurb, "body", 13 if compact else 15, TEXT, wrap=True,
                 valign="top", scaled=compact)
     by = cy + ch - buttons_h
     sc.button(cx, by, cw, find_h, text="FIND A MATCH", icon="play", style="green", depth=6, size=22 if compact else 26)
@@ -459,9 +486,9 @@ def party_panel(sc, r, compact, titled=True):
     x, y, w, h = R(r)
     cx, cy, cw, ch = sc.panel(x, y, w, h, title="Party" if (titled and not compact) else None, title_w=200, pad=12 if compact else 18)
     code_h, buttons_h = (54, 42) if compact else (64, 48)
-    sc.frame(cx, cy, cw, code_h, 10, PARCH_MID, PARCH_EDGE, 2)
-    sc.text(cx + 12, cy + (4 if compact else 6), cw * 0.55, 16, "PARTY CODE", "heavy", 11 if compact else 13, INK_SOFT)
-    sc.text(cx + 12, cy + (20 if compact else 24), cw * 0.55, 30 if compact else 34, "K7QX4M", "chunky", 26 if compact else 30, INK)
+    sc.frame(cx, cy, cw, code_h, 10, PANEL_DEEP, PANEL_EDGE, 2)
+    sc.text(cx + 12, cy + (4 if compact else 6), cw * 0.55, 16, "PARTY CODE", "heavy", 11 if compact else 13, TEXT_SOFT)
+    sc.text(cx + 12, cy + (20 if compact else 24), cw * 0.55, 30 if compact else 34, "K7QX4M", "chunky", 26 if compact else 30, BRASS_LIGHT)
     sc.choice(cx + cw * 0.58, cy + (code_h - 38) / 2, cw * 0.42 - 10, 38, [("Code", "code"), ("Invite only", "invite")], "code",
               size=15)
     members = [("Explorer", "explorer_42", True, "#9FC2E8"), ("Mika", "mika_plays", False, "#E8B39F"), ("Jojo", "jojo_rbx", False, "#B6D99A")]
@@ -474,21 +501,21 @@ def party_panel(sc, r, compact, titled=True):
     my = list_top + 2
     for i, (name, user, leader, back) in enumerate(members):
         mw, mx = cw - 10 - 4, cx + 2
-        sc.frame(mx, my, mw, rh, 10, "#FFF1C4" if i == 0 else "#FBF3DD", PARCH_EDGE, 1.5)
+        sc.frame(mx, my, mw, rh, 10, MINE if i == 0 else PANEL_RAISED, BRASS_DARK if i == 0 else PANEL_EDGE, 1.5)
         portrait(sc, {"isBot": False}, mx + 5 + av / 2, my + rh / 2, av, ring=SEAT[i], ring_px=2, face_back=back)
         nx = mx + av + 14
         if leader:
-            sc.icon("crown", nx, my + (rh - 22) / 2, 22, BRASS_DARK, PARCH)
+            sc.icon("crown", nx, my + (rh - 22) / 2, 22, BRASS, PANEL)
             nx += 28
         sc.text(nx, my + (2 if compact else 4), mw - (nx - mx) - 100, 18, name + ("  (you)" if i == 0 else ""), "heavy",
-                15 if compact else 16, TEXT_DARK)
-        sc.text(nx, my + (20 if compact else 24), mw - (nx - mx) - 100, 15, "@" + user, "body", 11 if compact else 12, INK_SOFT)
+                15 if compact else 16, TEXT)
+        sc.text(nx, my + (20 if compact else 24), mw - (nx - mx) - 100, 15, "@" + user, "body", 11 if compact else 12, TEXT_SOFT)
         if i > 0:
             bh = rh - 10
             sc.button(mx + mw - 6 - 82, my + 5, 38, bh, icon="crown", style="brass", depth=4, icon_scale=0.66)
             sc.button(mx + mw - 6 - 38, my + 5, 38, bh, icon="close", style="red", depth=4, icon_scale=0.66)
         my += rh + 6
-    sc.text(cx, my, cw, 20, "3 more can join", "body", 14, INK_FAINT, align="center")
+    sc.text(cx, my, cw, 20, "3 more can join", "body", 14, TEXT_FAINT, align="center")
     mask = Image.new("L", base.size, 0)
     ImageDraw.Draw(mask).rectangle([cx * S, list_top * S, (cx + cw) * S, list_bottom * S], fill=255)
     rows = sc.img
@@ -515,19 +542,19 @@ def leaderboard(sc, r, titled=True):
             break
         mine = name == "Explorer"
         rw, rx = cw - 10 - 4, cx + 2
-        sc.frame(rx, ry, rw, 46, 10, "#FFF1C4" if mine else "#FBF3DD", BRASS if mine else PARCH_EDGE, 2 if mine else 1.5)
+        sc.frame(rx, ry, rw, 46, 10, MINE if mine else PANEL_RAISED, BRASS if mine else PANEL_EDGE, 2 if mine else 1.5)
         if i < 3:
             sc.frame(rx + 6, ry + 9, 28, 28, 14, MEDALS[i], shade(MEDALS[i], -0.35), 2)
-        sc.text(rx + 6, ry + 9, 28, 28, str(i + 1), "chunky", 17, INK if i < 3 else INK_SOFT, align="center")
-        portrait(sc, {"isBot": False}, rx + 40 + 17, ry + 23, 34, ring=BRASS if mine else PARCH_EDGE, ring_px=2,
+        sc.text(rx + 6, ry + 9, 28, 28, str(i + 1), "chunky", 17, TEXT_ON_LIGHT if i < 3 else TEXT_SOFT, align="center")
+        portrait(sc, {"isBot": False}, rx + 40 + 17, ry + 23, 34, ring=BRASS if mine else PANEL_EDGE, ring_px=2,
                  face_back=["#9FC2E8", "#E8B39F", "#B6D99A", "#E8D59F", "#C9A9E8", "#9FE0D9"][i % 6])
         name_w = rw - (82 + 58 + 12)
-        sc.text(rx + 82, ry + 4, name_w, 20, name + (" (you)" if mine else ""), "heavy", 15, TEXT_DARK)
-        sc.text(rx + 82, ry + 25, name_w, 16, "@" + user, "body", 12, INK_SOFT)
-        sc.text(rx + rw - 10 - 58, ry + 10, 58, 26, format(value, ","), "chunky", 18, shade(MEDALS[i], -0.45) if i < 3 else INK,
+        sc.text(rx + 82, ry + 4, name_w, 20, name + (" (you)" if mine else ""), "heavy", 15, TEXT)
+        sc.text(rx + 82, ry + 25, name_w, 16, "@" + user, "body", 12, TEXT_SOFT)
+        sc.text(rx + rw - 10 - 58, ry + 10, 58, 26, format(value, ","), "chunky", 18, MEDALS[i] if i < 3 else TEXT,
                 align="right")
         ry += 51
-    sc.text(cx, cy + ch - 32, cw, 32, "You're #6 with 121 wins", "heavy", 15, INK_SOFT, align="center")
+    sc.text(cx, cy + ch - 32, cw, 32, "You're #6 with 121 wins", "heavy", 15, TEXT_SOFT, align="center")
 
 
 NAV = [("chests", "FREE CHEST!", "CHESTS", "chest", "green"), ("locker", "LOCKER", "LOCKER", "hanger", "wood"),
@@ -546,10 +573,15 @@ def nav(sc, spec, with_leaders):
         if spec["kind"] == "icon":
             size = h - 18
             sc.button(bx + (bw - size) / 2, y, size, size, icon=icon, style=style, depth=4, icon_scale=0.66)
-            sc.text(bx, y + h - 14, bw, 14, short, "heavy", 11, PARCH, align="center", outline=INK, ow=1)
+            sc.text(bx, y + h - 14, bw, 14, short, "heavy", 11, TEXT, align="center", outline=BG, ow=1)
+            if nid == "chests":
+                sc.badge(bx + (bw + size) / 2 + 6, y - 8, "1", "#D9534F", h=22, size=14, anchor_right=True)
         else:
             sc.button(bx, y, bw, h, text=text if spec["kind"] == "full" else short, icon=icon, style=style,
                       size=19 if spec["kind"] == "full" else 15)
+            if nid == "chests":
+                # the free chest's count (Widgets button:setBadge) instead of a looping pulse
+                sc.badge(bx + bw + 6, y - 8, "1", "#D9534F", h=22, size=14, anchor_right=True)
 
 
 def lobby_screen(data, dev, out, tab="play", save=True):
@@ -559,8 +591,8 @@ def lobby_screen(data, dev, out, tab="play", save=True):
     if L.get("title"):
         t = L["title"]
         size = int(min(60, t["h"] * 0.86))
-        sc.text(t["x"], t["y"], t["w"], t["h"], "Trapisque", "display", size, PARCH, align="center" if L["form"] == "tall" else "left",
-                outline=INK, ow=3 if t["h"] >= 60 else 2)
+        sc.text(t["x"], t["y"], t["w"], t["h"], "Trapisque", "display", size, BRASS_LIGHT, align="center" if L["form"] == "tall" else "left",
+                outline=BG, ow=3 if t["h"] >= 60 else 2)
     if L["profile"]["kind"] == "compact":
         profile_compact(sc, L["profile"]["rect"])
     else:

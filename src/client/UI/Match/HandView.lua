@@ -5,13 +5,24 @@
 	lags behind what you just saw. Too many cards to fit? They shrink a little (to 70%),
 	then the hand scrolls.
 
+	Hovering a card raises it (and the match screen shows its rules); pressing and
+	dragging it out of the hand picks it up to play on the board; a plain click or tap
+	is a click.
+
 		local hand = HandView.new(parent, { touch = bool })
 		hand:layout(L.hand)                 -- { rect, dir = "x"|"y", card = { w, h }, gap }
 		hand:setHand(ids, armed)            -- reconcile with the server's hand
 		hand:add(id) ; hand:remove(id)      -- one card in / out, animated
 		hand:slotCenter(index?) -> Vector2  -- absolute screen position (nil: where the next card goes)
-		hand.onCard(id, index)
+		hand:slotRect(index) -> (pos, size) -- absolute screen rect of a card
+		hand.onCard(id, index)              -- clicked / tapped
+		hand.onHover(id?, index?)           -- the pointer is over a card (nil: over none)
+		hand.onDragStart(id, index, pos) -> boolean  -- picked up (return false to refuse)
+		hand.onDragMove(pos) ; hand.onDragEnd(pos)   -- screen pixels (Util.inputPos)
+		hand:setHeld(index?)                -- dims the card that's being held
 ]]
+
+local UserInputService = game:GetService("UserInputService")
 
 local UI = script.Parent.Parent
 local Util = require(UI.Util)
@@ -19,6 +30,10 @@ local Theme = require(UI.Theme)
 local Widgets = require(UI.Widgets)
 local Cards = require(UI.Cards)
 local CardStyle = require(UI.CardStyle)
+local Sound = require(UI.Parent.Sound)
+
+-- how far a press has to move before it picks the card up (stage-ish pixels)
+local DRAG_START = 14
 
 local C = Theme.C
 local hex = Theme.hex
@@ -52,13 +67,93 @@ function HandView.new(parent: Instance, opts)
 		text = "No cards yet. Land on tokens to spin for some!",
 		font = "heavy",
 		size = 15,
-		color = C.parchment,
+		color = C.text,
 		align = "center",
 		wrap = true,
 		sizeUDim = UDim2.fromScale(1, 1),
-		outline = C.ink,
+		outline = C.bg,
 	})
+	self.hovered = nil
+	self.press = nil
+	self:_bindPointer()
 	return self
+end
+
+-- Press, drag and release, tracked for the whole screen (the pointer leaves the card).
+function HandView:_bindPointer()
+	self.maid:add(UserInputService.InputChanged:Connect(function(input)
+		local p = self.press
+		if not p then
+			return
+		end
+		local t = input.UserInputType
+		local isMouse = p.input.UserInputType == Enum.UserInputType.MouseButton1
+		if not ((isMouse and t == Enum.UserInputType.MouseMovement) or input == p.input) then
+			return
+		end
+		local pos = Util.inputPos(input)
+		if not p.dragging and (pos - p.start).Magnitude > DRAG_START then
+			local i = table.find(self.list, p.entry)
+			p.dragging = i ~= nil and self.onDragStart ~= nil and self.onDragStart(p.entry.id, i, pos) == true
+			if not p.dragging then
+				-- not playable by dragging: forget the press (it isn't a click either)
+				self.press = nil
+				return
+			end
+			self:_setHover(nil)
+		end
+		if p.dragging and self.onDragMove then
+			self.onDragMove(pos)
+		end
+	end))
+	self.maid:add(UserInputService.InputEnded:Connect(function(input)
+		local p = self.press
+		if not p then
+			return
+		end
+		local isMouse = p.input.UserInputType == Enum.UserInputType.MouseButton1
+		if not ((isMouse and input.UserInputType == Enum.UserInputType.MouseButton1) or input == p.input) then
+			return
+		end
+		self.press = nil
+		local pos = Util.inputPos(input)
+		if p.dragging then
+			if self.onDragEnd then
+				self.onDragEnd(pos)
+			end
+			return
+		end
+		-- a click / tap on the card
+		local i = table.find(self.list, p.entry)
+		if i then
+			Util.bump(p.entry.card.root, 0.06)
+			if self.onCard then
+				task.spawn(self.onCard, p.entry.id, i)
+			end
+		end
+	end))
+end
+
+-- The card under the pointer (nil: none). Raised a little; the screen shows its rules.
+function HandView:_setHover(entry)
+	if self.hovered == entry then
+		return
+	end
+	local old = self.hovered
+	self.hovered = entry
+	if old and old.slot.Parent then
+		old.hover = false
+		self:_place(old)
+	end
+	if entry then
+		entry.hover = true
+		self:_place(entry)
+		Sound.play("hover")
+	end
+	if self.onHover then
+		local i = if entry then table.find(self.list, entry) else nil
+		self.onHover(if entry then entry.id else nil, i)
+	end
 end
 
 function HandView:destroy()
@@ -80,6 +175,8 @@ function HandView:layout(spec)
 	scroll.ScrollingDirection = if vertical then Enum.ScrollingDirection.Y else Enum.ScrollingDirection.X
 	scroll.AutomaticCanvasSize = if vertical then Enum.AutomaticSize.Y else Enum.AutomaticSize.X
 	-- room for armed cards to stand up out of the row
+	self:_setHover(nil)
+	self.press = nil
 	Util.clear(scroll, true)
 	local pad = scroll:FindFirstChildOfClass("UIPadding") or Util.pad(scroll, 0)
 	pad.PaddingTop = UDim.new(0, if vertical then 4 else 8)
@@ -139,11 +236,31 @@ function HandView:_make(id: string, animate: boolean)
 		Position = UDim2.fromScale(0.5, 0.5),
 		Size = UDim2.fromScale(1, 1),
 	})
-	local entry = { id = id, slot = slot, card = card }
-	Cards.interactive(card, function()
-		local i = table.find(self.list, entry)
-		if self.onCard and i then
-			self.onCard(id, i)
+	local entry = { id = id, slot = slot, card = card, hover = false }
+	local hit = Util.new("TextButton", {
+		Name = "Hit",
+		Text = "",
+		BackgroundTransparency = 1,
+		Size = UDim2.fromScale(1, 1),
+		ZIndex = 50,
+		Parent = card.root,
+	})
+	if not self.touch then
+		hit.MouseEnter:Connect(function()
+			if not self.press then
+				self:_setHover(entry)
+			end
+		end)
+		hit.MouseLeave:Connect(function()
+			if self.hovered == entry then
+				self:_setHover(nil)
+			end
+		end)
+	end
+	hit.InputBegan:Connect(function(input)
+		local t = input.UserInputType
+		if (t == Enum.UserInputType.MouseButton1 or t == Enum.UserInputType.Touch) and not self.press then
+			self.press = { entry = entry, input = input, start = Util.inputPos(input), dragging = false }
 		end
 	end)
 	table.insert(self.list, entry)
@@ -209,15 +326,55 @@ function HandView:_refresh()
 		elseif not on and rim then
 			rim:Destroy()
 		end
-		local lift = if on then -10 else 0
-		if self.spec and self.spec.dir == "y" then
-			-- a column of cards: armed ones slide out towards the board
-			Util.tween(root, 0.2, { Position = UDim2.new(0.5, -lift, 0.5, 0) }, Enum.EasingStyle.Back)
-		else
-			Util.tween(root, 0.2, { Position = UDim2.new(0.5, 0, 0.5, lift) }, Enum.EasingStyle.Back)
-		end
+		self:_place(e)
 	end
 	self.empty.Visible = #self.list == 0
+end
+
+-- Where a card sits in its slot: armed boosts stand up a little, the hovered card too.
+function HandView:_place(e)
+	local root = e.card.root
+	local lift = (if self.armed[e.id] then -10 else 0) + (if e.hover then -6 else 0)
+	if self.spec and self.spec.dir == "y" then
+		-- a column of cards: they slide out towards the board
+		Util.tween(root, 0.18, { Position = UDim2.new(0.5, -lift, 0.5, 0) }, Enum.EasingStyle.Back)
+	else
+		Util.tween(root, 0.18, { Position = UDim2.new(0.5, 0, 0.5, lift) }, Enum.EasingStyle.Back)
+	end
+end
+
+-- The card being held over the board leaves an empty, brass-rimmed spot in the hand.
+function HandView:setHeld(index: number?)
+	for i, e in self.list do
+		local held = i == index
+		e.card.root.Visible = not held
+		local ghost = e.slot:FindFirstChild("Ghost")
+		if held and not ghost then
+			local g = Util.new("Frame", {
+				Name = "Ghost",
+				BackgroundColor3 = C.panelDeep,
+				BackgroundTransparency = 0.45,
+				BorderSizePixel = 0,
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				Position = UDim2.fromScale(0.5, 0.5),
+				Size = UDim2.fromScale(0.92, 0.94),
+				Parent = e.slot,
+			})
+			Util.corner(g, CardStyle.corner)
+			Util.stroke(g, C.brass, 2, 0.35)
+		elseif not held and ghost then
+			ghost:Destroy()
+		end
+	end
+end
+
+-- Absolute screen rect of card `index` (position, size).
+function HandView:slotRect(index: number): (Vector2?, Vector2?)
+	local e = self.list[index]
+	if not e then
+		return nil, nil
+	end
+	return e.slot.AbsolutePosition, e.slot.AbsoluteSize
 end
 
 -- Reconcile with an authoritative hand (keeps cards that are already there).
@@ -237,6 +394,8 @@ function HandView:setHand(ids: { string }, armed: { [string]: boolean }?)
 		end
 	end
 	if not same then
+		self:_setHover(nil)
+		self.press = nil
 		for _, e in self.list do
 			e.slot:Destroy()
 		end
@@ -274,6 +433,9 @@ end
 function HandView:remove(id: string)
 	for i, e in self.list do
 		if e.id == id then
+			if self.hovered == e then
+				self:_setHover(nil)
+			end
 			table.remove(self.list, i)
 			local s = Util.scaler(e.card.root)
 			Util.tween(s, 0.18, { Scale = 0 }, Enum.EasingStyle.Back, Enum.EasingDirection.In)

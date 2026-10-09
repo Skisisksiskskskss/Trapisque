@@ -1,7 +1,8 @@
 --[[
 	Widgets
-	Buttons, panels, labels and other reusable pieces in Trapisque's tabletop style:
-	wooden planks, brass, parchment and ink. Every widget animates on hover and press.
+	Buttons, panels, labels and other reusable pieces in Trapisque's night-table style:
+	dark walnut with brass inlay, cream lettering, carved wooden buttons. Every widget
+	animates on hover and press.
 ]]
 
 local UserInputService = game:GetService("UserInputService")
@@ -21,15 +22,19 @@ local Widgets = {}
 Widgets.metrics = Layout.metrics(1280, 720)
 
 Widgets.ButtonStyles = {
-	wood = { face = C.wood, light = C.woodLight, dark = C.woodDark, stroke = C.woodDeep, text = C.engrave, engraved = true },
-	brass = { face = C.brass, light = C.brassLight, dark = C.brassDark, stroke = hex("6E4F12"), text = hex("4A3008"), engraved = true },
-	red = { face = hex("C2513B"), light = hex("DD735D"), dark = hex("8A3122"), stroke = hex("5A1D12"), text = C.white, outline = hex("5A1D12") },
-	green = { face = hex("5E9A3C"), light = hex("80BB5C"), dark = hex("3D6B24"), stroke = hex("284616"), text = C.white, outline = hex("284616") },
-	blue = { face = hex("4C80B8"), light = hex("6FA0D4"), dark = hex("33597F"), stroke = hex("1F3A55"), text = C.white, outline = hex("1F3A55") },
-	purple = { face = hex("7A61A8"), light = hex("9A83C8"), dark = hex("554279"), stroke = hex("362A4E"), text = C.white, outline = hex("362A4E") },
-	parchment = { face = C.parchment, light = hex("FFF7E2"), dark = C.parchmentDark, stroke = C.parchmentEdge, text = C.ink, engraved = true },
-	dark = { face = hex("3A281B"), light = hex("4D3726"), dark = hex("221710"), stroke = hex("120B07"), text = C.parchment, outline = hex("120B07") },
+	-- stained walnut with cream lettering: the everyday button
+	wood = { face = hex("6A4A31"), light = hex("80603F"), dark = hex("3F2B1B"), stroke = hex("1E140C"), text = C.text, outline = hex("2A1C11") },
+	-- polished brass: the button that matters most on a screen
+	brass = { face = C.brass, light = C.brassLight, dark = C.brassDark, stroke = hex("5E430F"), text = hex("3F2906"), engraved = true },
+	red = { face = hex("B9493A"), light = hex("D4685A"), dark = hex("7D2D21"), stroke = hex("4A170E"), text = C.white, outline = hex("4A170E") },
+	green = { face = hex("4F9135"), light = hex("6FB352"), dark = hex("33621F"), stroke = hex("1F3D12"), text = C.white, outline = hex("1F3D12") },
+	blue = { face = hex("4577AD"), light = hex("6696CB"), dark = hex("2D5277"), stroke = hex("18314A"), text = C.white, outline = hex("18314A") },
+	purple = { face = hex("715AA0"), light = hex("907AC0"), dark = hex("4C3A6E"), stroke = hex("2C2142"), text = C.white, outline = hex("2C2142") },
+	-- a quiet button that sits flush with a panel
+	panel = { face = C.panelRaised, light = C.panelHi, dark = C.panelDeep, stroke = hex("120D0A"), text = C.text, outline = hex("120D0A") },
+	dark = { face = hex("2C231B"), light = hex("3D3127"), dark = hex("15100C"), stroke = hex("0A0705"), text = C.text, outline = hex("0A0705") },
 }
+Widgets.ButtonStyles.parchment = Widgets.ButtonStyles.panel
 
 ---------------------------------------------------------------------------
 -- Text
@@ -56,7 +61,7 @@ function Widgets.label(parent: Instance?, o: { [string]: any }): TextLabel
 		BackgroundTransparency = 1,
 		Text = o.text or "",
 		FontFace = FONT[o.font or "body"] or Theme.Font.Body,
-		TextColor3 = o.color or C.textDark,
+		TextColor3 = o.color or C.text,
 		TextSize = o.size or 18,
 		TextWrapped = o.wrap == true,
 		RichText = o.rich == true,
@@ -270,7 +275,7 @@ function Widgets.button(parent: Instance?, o: { [string]: any })
 		end
 	end
 
-	-- gentle breathing glow to draw the eye (e.g. ROLL on your turn)
+	-- a slow, soft brightening to draw the eye (ROLL on your turn); the button doesn't move
 	local pulsing = false
 	function btn.pulse(_self, on: boolean)
 		if pulsing == on then
@@ -280,16 +285,43 @@ function Widgets.button(parent: Instance?, o: { [string]: any })
 		if on then
 			task.spawn(function()
 				while pulsing and root.Parent do
-					Util.tween(scale, 0.55, { Scale = 1.05 }, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
-					task.wait(0.55)
+					if not btn.hovering then
+						Util.tween(hover, 1.1, { BackgroundTransparency = 0.9 }, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+					end
+					task.wait(1.1)
 					if not pulsing then
 						break
 					end
-					Util.tween(scale, 0.55, { Scale = 1 }, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
-					task.wait(0.55)
+					if not btn.hovering then
+						Util.tween(hover, 1.1, { BackgroundTransparency = 1 }, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+					end
+					task.wait(1.1)
 				end
-				Util.tween(scale, 0.2, { Scale = 1 })
+				if not btn.hovering then
+					Util.tween(hover, 0.2, { BackgroundTransparency = 1 })
+				end
 			end)
+		end
+	end
+
+	-- a small tag on the corner ("2", "NEW"); nil removes it
+	local badge: Frame? = nil
+	function btn.setBadge(_self, text: string?)
+		if badge then
+			badge:Destroy()
+			badge = nil
+		end
+		if text then
+			badge = Widgets.badge(root, {
+				name = "Badge",
+				text = text,
+				color = C.bad,
+				height = 22,
+				textSize = 14,
+				anchor = Vector2.new(1, 0),
+				position = UDim2.new(1, 6, 0, -8),
+				z = 30,
+			})
 		end
 	end
 
@@ -307,16 +339,12 @@ function Widgets.button(parent: Instance?, o: { [string]: any })
 		end
 		btn.hovering = true
 		Util.tween(hover, 0.12, { BackgroundTransparency = 0.88 })
-		if not pulsing then
-			Util.tween(scale, 0.15, { Scale = 1.04 }, Enum.EasingStyle.Back)
-		end
+		Util.tween(scale, 0.15, { Scale = 1.04 }, Enum.EasingStyle.Back)
 	end)
 	root.MouseLeave:Connect(function()
 		btn.hovering = false
 		Util.tween(hover, 0.15, { BackgroundTransparency = 1 })
-		if not pulsing then
-			Util.tween(scale, 0.15, { Scale = 1 })
-		end
+		Util.tween(scale, 0.15, { Scale = 1 })
 		face.Position = UDim2.new()
 	end)
 	root.MouseButton1Down:Connect(function()
@@ -387,12 +415,16 @@ Widgets.grain = grain
 
 --[[
 	Widgets.panel(parent, {
-		style = "parchment" | "wood" | "dark" | "board", title, size, position, anchor,
+		style = "walnut" | "wood" | "dark" | "board", title, size, position, anchor,
 		padding = 18, name, z
 	}) -> content frame, root frame
+	"walnut" (the default) is a dark panel with a brass inlay line just inside its edge.
 ]]
 function Widgets.panel(parent: Instance?, o: { [string]: any }): (Frame, Frame)
-	local style = o.style or "parchment"
+	local style = o.style or "walnut"
+	if style == "parchment" then
+		style = "walnut"
+	end
 	local root = Util.new("Frame", {
 		Name = o.name or "Panel",
 		BorderSizePixel = 0,
@@ -404,9 +436,9 @@ function Widgets.panel(parent: Instance?, o: { [string]: any }): (Frame, Frame)
 	})
 	local corner = o.corner or 14
 	Util.corner(root, corner)
-	if style == "parchment" then
-		root.BackgroundColor3 = C.parchment
-		Util.stroke(root, C.burn, 3)
+	if style == "walnut" then
+		root.BackgroundColor3 = C.panel
+		Util.stroke(root, hex("0E0A07"), 3)
 		local neat = Util.new("Frame", {
 			Name = "Neatline",
 			BackgroundTransparency = 1,
@@ -415,14 +447,15 @@ function Widgets.panel(parent: Instance?, o: { [string]: any }): (Frame, Frame)
 			Parent = root,
 		})
 		Util.corner(neat, math.max(4, corner - 6))
-		Util.stroke(neat, C.inkFaint, 1.5, 0.3)
+		Util.stroke(neat, C.brassDark, 1.5, 0.45)
 	elseif style == "wood" or style == "board" then
-		root.BackgroundColor3 = if style == "board" then C.woodDark else C.wood
-		Util.stroke(root, C.woodDeep, 3)
-		grain(root, C.woodDeep, 6)
+		-- a dark-stained wooden board (the Potion Seller's stall)
+		root.BackgroundColor3 = if style == "board" then hex("3A2618") else hex("4E3320")
+		Util.stroke(root, hex("1A110A"), 3)
+		grain(root, hex("24170D"), 6)
 	elseif style == "dark" then
-		root.BackgroundColor3 = hex("1F150E")
-		root.BackgroundTransparency = 0.12
+		root.BackgroundColor3 = C.panelDeep
+		root.BackgroundTransparency = 0.08
 		Util.stroke(root, C.brassDark, 2, 0.2)
 	end
 	if o.shadow ~= false then
@@ -449,7 +482,7 @@ end
 
 -- Title ribbon (scroll banner) centred on the top edge of `parent`.
 function Widgets.ribbon(parent: Instance, text: string, o: { [string]: any }?)
-	-- a title cartouche: a paper plaque with a double inked border (like the map's frame)
+	-- a title cartouche: a dark plaque with a double brass border and gold lettering
 	local opts = o or {}
 	local holder = Util.frame(parent, {
 		Name = "Ribbon",
@@ -460,14 +493,14 @@ function Widgets.ribbon(parent: Instance, text: string, o: { [string]: any }?)
 	})
 	local band = Util.new("Frame", {
 		Name = "Band",
-		BackgroundColor3 = opts.color or C.parchmentMid,
+		BackgroundColor3 = opts.color or C.panelDeep,
 		BorderSizePixel = 0,
 		Size = UDim2.fromScale(1, 1),
 		ZIndex = 22,
 		Parent = holder,
 	})
 	Util.corner(band, 8)
-	Util.stroke(band, C.ink, 2, 0.1)
+	Util.stroke(band, C.brassDark, 2, 0.05)
 	local inner = Util.new("Frame", {
 		Name = "Inner",
 		BackgroundTransparency = 1,
@@ -477,12 +510,12 @@ function Widgets.ribbon(parent: Instance, text: string, o: { [string]: any }?)
 		Parent = band,
 	})
 	Util.corner(inner, 5)
-	Util.stroke(inner, C.ink, 1, 0.45)
+	Util.stroke(inner, C.brass, 1, 0.55)
 	Widgets.label(band, {
 		text = text,
 		font = "display",
 		size = 28,
-		color = C.ink,
+		color = C.brassLight,
 		align = "center",
 		sizeUDim = UDim2.new(1, -16, 1, -8),
 		anchor = Vector2.new(0.5, 0.5),
@@ -500,8 +533,8 @@ end
 function Widgets.divider(parent: Instance, layoutOrder: number?)
 	local f = Util.new("Frame", {
 		Name = "Divider",
-		BackgroundColor3 = C.inkFaint,
-		BackgroundTransparency = 0.3,
+		BackgroundColor3 = C.panelEdge,
+		BackgroundTransparency = 0.2,
 		BorderSizePixel = 0,
 		Size = UDim2.new(0.9, 0, 0, 2),
 		LayoutOrder = layoutOrder or 0,
@@ -518,7 +551,7 @@ function Widgets.toggle(parent: Instance, o: { [string]: any })
 		Name = o.name or "Toggle",
 		Text = "",
 		AutoButtonColor = false,
-		BackgroundColor3 = C.woodDeep,
+		BackgroundColor3 = C.panelDeep,
 		BorderSizePixel = 0,
 		Size = o.size or UDim2.fromOffset(74, 36),
 		Position = o.position or UDim2.new(),
@@ -527,7 +560,7 @@ function Widgets.toggle(parent: Instance, o: { [string]: any })
 		Parent = parent,
 	})
 	Util.corner(root, 0.5)
-	Util.stroke(root, C.woodDeep, 2)
+	Util.stroke(root, C.panelEdge, 2)
 	local fill = Util.new("Frame", {
 		BackgroundColor3 = C.good,
 		BorderSizePixel = 0,
@@ -538,7 +571,7 @@ function Widgets.toggle(parent: Instance, o: { [string]: any })
 	Util.corner(fill, 0.5)
 	local knob = Util.new("Frame", {
 		Name = "Knob",
-		BackgroundColor3 = C.parchment,
+		BackgroundColor3 = C.text,
 		BorderSizePixel = 0,
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Size = UDim2.new(0, 0, 0.8, 0),
@@ -549,7 +582,7 @@ function Widgets.toggle(parent: Instance, o: { [string]: any })
 	})
 	knob.Size = UDim2.fromScale(0.8, 0.8)
 	Util.corner(knob, 0.5)
-	Util.stroke(knob, C.woodDeep, 2)
+	Util.stroke(knob, hex("120D0A"), 2)
 	local t = {}
 	function t.set(_self, v: boolean, silent: boolean?)
 		value = v
@@ -568,6 +601,118 @@ function Widgets.toggle(parent: Instance, o: { [string]: any })
 	end)
 	t.root = root
 	return t
+end
+
+--[[
+	A volume slider: a brass fill on a dark track, with a knob to drag (or tap anywhere
+	on it). Moves in 5% steps.
+		local s = Widgets.slider(parent, { value = 0.7, onChange = fn(v), onRelease = fn(v),
+			size, position, anchor, layoutOrder, name })
+		s:set(v) ; s.root
+]]
+function Widgets.slider(parent: Instance, o: { [string]: any })
+	local root = Util.new("TextButton", {
+		Name = o.name or "Slider",
+		Text = "",
+		AutoButtonColor = false,
+		BackgroundTransparency = 1,
+		Size = o.size or UDim2.fromOffset(220, 36),
+		Position = o.position or UDim2.new(),
+		AnchorPoint = o.anchor or Vector2.zero,
+		LayoutOrder = o.layoutOrder or 0,
+		Parent = parent,
+	})
+	local track = Util.new("Frame", {
+		Name = "Track",
+		BackgroundColor3 = C.panelDeep,
+		BorderSizePixel = 0,
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.new(0, 12, 0.5, 0),
+		Size = UDim2.new(1, -24, 0, 10),
+		Parent = root,
+	})
+	Util.corner(track, 0.5)
+	Util.stroke(track, hex("0E0A07"), 2)
+	local value = math.clamp(o.value or 0, 0, 1)
+	local fill = Util.new("Frame", {
+		Name = "Fill",
+		BackgroundColor3 = C.brass,
+		BorderSizePixel = 0,
+		Size = UDim2.fromScale(value, 1),
+		ZIndex = 2,
+		Parent = track,
+	})
+	Util.corner(fill, 0.5)
+	local knob = Util.new("Frame", {
+		Name = "Knob",
+		BackgroundColor3 = C.text,
+		BorderSizePixel = 0,
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(value, 0.5),
+		Size = UDim2.fromOffset(24, 24),
+		ZIndex = 3,
+		Parent = track,
+	})
+	Util.corner(knob, 0.5)
+	Util.stroke(knob, C.brassDark, 2)
+	local s = { root = root }
+	local function show(v: number)
+		fill.Size = UDim2.fromScale(v, 1)
+		knob.Position = UDim2.fromScale(v, 0.5)
+	end
+	function s.set(_self, v: number)
+		value = math.clamp(v, 0, 1)
+		show(value)
+	end
+	local held: InputObject? = nil
+	local function pick(input: InputObject)
+		local p = Util.inputPos(input)
+		local x0, w = track.AbsolutePosition.X, math.max(1, track.AbsoluteSize.X)
+		local v = math.floor(math.clamp((p.X - x0) / w, 0, 1) * 20 + 0.5) / 20
+		if v ~= value then
+			value = v
+			show(v)
+			if o.onChange then
+				o.onChange(v)
+			end
+		end
+	end
+	root.InputBegan:Connect(function(input)
+		local t = input.UserInputType
+		if t == Enum.UserInputType.MouseButton1 or t == Enum.UserInputType.Touch then
+			held = input
+			Util.tween(Util.scaler(knob), 0.1, { Scale = 1.2 }, Enum.EasingStyle.Back)
+			pick(input)
+		end
+	end)
+	local moved = UserInputService.InputChanged:Connect(function(input)
+		local h = held
+		if not h then
+			return
+		end
+		if input == h or (h.UserInputType == Enum.UserInputType.MouseButton1 and input.UserInputType == Enum.UserInputType.MouseMovement) then
+			pick(input)
+		end
+	end)
+	local ended = UserInputService.InputEnded:Connect(function(input)
+		local h = held
+		if not h then
+			return
+		end
+		if input == h or (h.UserInputType == Enum.UserInputType.MouseButton1 and input.UserInputType == Enum.UserInputType.MouseButton1) then
+			held = nil
+			Util.tween(Util.scaler(knob), 0.12, { Scale = 1 })
+			Sound.play("click")
+			if o.onRelease then
+				task.spawn(o.onRelease, value)
+			end
+		end
+	end)
+	root.Destroying:Connect(function()
+		moved:Disconnect()
+		ended:Disconnect()
+	end)
+	return s
 end
 
 --[[
@@ -591,9 +736,9 @@ function Widgets.choice(parent: Instance, o: { [string]: any })
 	local function paint()
 		for _, b in buttons do
 			local on = b.value == c.value
-			b.frame.BackgroundColor3 = if on then C.brass else C.parchment
-			b.stroke.Color = if on then C.brassDark else C.parchmentEdge
-			b.label.TextColor3 = if on then C.ink else C.inkSoft
+			b.frame.BackgroundColor3 = if on then C.brass else C.panelRaised
+			b.stroke.Color = if on then C.brassDark else C.panelEdge
+			b.label.TextColor3 = if on then C.textOnLight else C.textSoft
 			b.frame.BackgroundTransparency = if c.enabled or on then 0 else 0.4
 		end
 	end
@@ -609,7 +754,7 @@ function Widgets.choice(parent: Instance, o: { [string]: any })
 			Parent = root,
 		})
 		Util.corner(f, 8)
-		local stroke = Util.stroke(f, C.parchmentEdge, 2)
+		local stroke = Util.stroke(f, C.panelEdge, 2)
 		local label = Widgets.label(f, {
 			text = opt.text,
 			font = "chunky",
@@ -650,7 +795,7 @@ end
 function Widgets.progress(parent: Instance, o: { [string]: any })
 	local root = Util.new("Frame", {
 		Name = o.name or "Progress",
-		BackgroundColor3 = o.track or C.woodDeep,
+		BackgroundColor3 = o.track or C.panelDeep,
 		BorderSizePixel = 0,
 		Size = o.size or UDim2.fromOffset(200, 14),
 		Position = o.position or UDim2.new(),
@@ -660,7 +805,7 @@ function Widgets.progress(parent: Instance, o: { [string]: any })
 		Parent = parent,
 	})
 	Util.corner(root, 0.5)
-	Util.stroke(root, C.woodDeep, 2)
+	Util.stroke(root, hex("0E0A07"), 2)
 	local fill = Util.new("Frame", {
 		Name = "Fill",
 		BackgroundColor3 = o.color or C.brass,
@@ -682,16 +827,16 @@ function Widgets.progress(parent: Instance, o: { [string]: any })
 	return p
 end
 
--- Parchment text input.
+-- Text input, set into the panel.
 function Widgets.textBox(parent: Instance, o: { [string]: any }): TextBox
 	local box = Util.new("TextBox", {
 		Name = o.name or "TextBox",
-		BackgroundColor3 = C.parchment,
+		BackgroundColor3 = C.panelDeep,
 		BorderSizePixel = 0,
 		Text = o.text or "",
 		PlaceholderText = o.placeholder or "",
-		PlaceholderColor3 = C.inkFaint,
-		TextColor3 = C.ink,
+		PlaceholderColor3 = C.textFaint,
+		TextColor3 = C.text,
 		FontFace = if o.font == "chunky" then Theme.Font.Chunky else Theme.Font.BodyHeavy,
 		TextSize = o.textSize or 22,
 		ClearTextOnFocus = false,
@@ -702,12 +847,12 @@ function Widgets.textBox(parent: Instance, o: { [string]: any }): TextBox
 		Parent = parent,
 	})
 	Util.corner(box, 10)
-	local stroke = Util.stroke(box, C.parchmentEdge, 2)
+	local stroke = Util.stroke(box, C.panelEdge, 2)
 	box.Focused:Connect(function()
-		Util.tween(stroke, 0.15, { Color = C.brassDark, Thickness = 3 })
+		Util.tween(stroke, 0.15, { Color = C.brass, Thickness = 3 })
 	end)
 	box.FocusLost:Connect(function(enter)
-		Util.tween(stroke, 0.15, { Color = C.parchmentEdge, Thickness = 2 })
+		Util.tween(stroke, 0.15, { Color = C.panelEdge, Thickness = 2 })
 		if enter and o.onSubmit then
 			task.spawn(o.onSubmit, box.Text)
 		end
@@ -742,7 +887,7 @@ function Widgets.scroll(parent: Instance, o: { [string]: any }): ScrollingFrame
 		AutomaticCanvasSize = if o.horizontal then Enum.AutomaticSize.X else Enum.AutomaticSize.Y,
 		ScrollingDirection = if o.horizontal then Enum.ScrollingDirection.X else Enum.ScrollingDirection.Y,
 		ScrollBarThickness = 8,
-		ScrollBarImageColor3 = C.woodDark,
+		ScrollBarImageColor3 = C.panelEdge,
 		ScrollBarImageTransparency = 0.2,
 		LayoutOrder = o.layoutOrder or 0,
 		Parent = parent,
@@ -822,7 +967,7 @@ function Widgets.modal(layer: Instance, o: { [string]: any })
 		anchor = Vector2.new(0.5, 0.5),
 		position = UDim2.fromOffset(cx, cy),
 		z = 101,
-		style = o.style or "parchment",
+		style = o.style or "walnut",
 	})
 	if fit < 0.999 then
 		Util.new("UIScale", { Name = "Fit", Scale = fit, Parent = panel })
@@ -926,7 +1071,7 @@ function Widgets.toast(text: string, kind: string?)
 	local color = TOAST_COLORS[kind or "info"] or C.info
 	local note = Util.new("Frame", {
 		Name = "Toast",
-		BackgroundColor3 = C.parchment,
+		BackgroundColor3 = C.panel,
 		BorderSizePixel = 0,
 		AutomaticSize = Enum.AutomaticSize.XY,
 		Size = UDim2.fromOffset(0, 0),
@@ -942,7 +1087,7 @@ function Widgets.toast(text: string, kind: string?)
 		text = text,
 		font = "heavy",
 		size = 19,
-		color = C.textDark,
+		color = C.text,
 		wrap = true,
 		align = "center",
 		z = 202,

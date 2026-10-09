@@ -219,9 +219,23 @@ for _, c in Characters.list do
 	}
 end
 local itemNames = {}
+local itemInfo = {}
 for _, id in snap.hand do
-	itemNames[id] = Items.get(id).name
+	local def = Items.get(id)
+	itemNames[id] = def.name
+	itemInfo[id] = { name = def.name, text = def.text, use = def.use, category = def.category, price = def.price }
 end
+
+-- where a Spike could go right now (the tiles that light up while placing one)
+local layersNow = Engine.layersFromSnapshot(board, snap)
+local validSpike = {}
+for id in board.tiles do
+	if Engine.checkPlacement(board, layersNow, "spike", id, "fwd") then
+		table.insert(validSpike, id)
+	end
+end
+table.sort(validSpike)
+local CardStyle = requireModule("Client/UI/CardStyle")
 local skins = { "pawn_classic", "pawn_ocean", "pawn_bee", "pawn_galaxy" }
 local looks = {}
 for _, id in skins do
@@ -235,6 +249,9 @@ print(PreviewJson({
 	seats = seats,
 	characters = charInfo,
 	itemNames = itemNames,
+	itemInfo = itemInfo,
+	useText = CardStyle.useText,
+	valid = { spike = validSpike },
 	sheet = sheet,
 	map = { name = def.name, theme = def.theme },
 	style = { tileScale = S.tileScale, tileDepth = S.tileDepth, pawn = S.pawn, pawnDisc = S.pawnDisc, coast = S.coast },

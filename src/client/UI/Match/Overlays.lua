@@ -8,6 +8,7 @@
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local Shared = ReplicatedStorage.Shared
 local Items = require(Shared.Game.Items)
@@ -21,6 +22,7 @@ local Shapes = require(UI.Shapes)
 local Icons = require(UI.Icons)
 local Widgets = require(UI.Widgets)
 local Cards = require(UI.Cards)
+local CardStyle = require(UI.CardStyle)
 local CosmeticArt = require(UI.CosmeticArt)
 local Sound = require(UI.Parent.Sound)
 
@@ -292,14 +294,16 @@ end
 --[[
 	A card flies from one stage spot to another and shrinks into its target, calling
 	onLand() as it arrives (that's when the hand or the board shows it). Doesn't yield.
+	opts.slam: it arcs over and is slapped down onto the target (a card being placed).
 ]]
-function Overlays.flyCard(layer: Frame, itemId: string, from: Vector2, to: Vector2, speed: number, onLand: (() -> ())?)
+function Overlays.flyCard(layer: Frame, itemId: string, from: Vector2, to: Vector2, speed: number, onLand: (() -> ())?, opts: { [string]: any }?)
 	if not Items.get(itemId) then
 		if onLand then
 			onLand()
 		end
 		return
 	end
+	local slam = opts ~= nil and opts.slam == true
 	local w = math.clamp(stageSize(layer).X * 0.14, 76, 110)
 	local card = Cards.item(layer, itemId, {
 		Position = UDim2.fromOffset(from.X, from.Y),
@@ -311,19 +315,174 @@ function Overlays.flyCard(layer: Frame, itemId: string, from: Vector2, to: Vecto
 	s.Scale = 0.3
 	Sound.play("card")
 	Util.tween(s, 0.25 * speed, { Scale = 1.15 }, Enum.EasingStyle.Back)
+	local function landed()
+		root:Destroy()
+		if onLand then
+			onLand()
+		end
+	end
 	task.delay(0.35 * speed, function()
 		if not root.Parent then
-			return
-		end
-		Util.tween(root, 0.4 * speed, { Position = UDim2.fromOffset(to.X, to.Y), Rotation = (math.random() - 0.5) * 20 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-		Util.tween(s, 0.4 * speed, { Scale = 0.35 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-		task.delay(0.4 * speed, function()
-			root:Destroy()
+			-- the layer went away mid-flight: still land, so nothing waits forever
 			if onLand then
 				onLand()
 			end
+			return
+		end
+		if not slam then
+			Util.tween(root, 0.4 * speed, { Position = UDim2.fromOffset(to.X, to.Y), Rotation = (math.random() - 0.5) * 20 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+			Util.tween(s, 0.4 * speed, { Scale = 0.35 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+			task.delay(0.4 * speed, landed)
+			return
+		end
+		-- over the top in an arc, turning upright, then slapped down onto the tile
+		local dur = 0.42 * speed
+		local mid = (from + to) / 2
+		local lift = math.clamp((to - from).Magnitude * 0.35, 40, 160)
+		local ctrl = mid - Vector2.new(0, lift)
+		local spin = if to.X >= from.X then 1 else -1
+		local alpha = Instance.new("NumberValue")
+		alpha.Changed:Connect(function(t)
+			if not root.Parent then
+				return
+			end
+			local a = from:Lerp(ctrl, t)
+			local b = ctrl:Lerp(to, t)
+			local p = a:Lerp(b, t)
+			root.Position = UDim2.fromOffset(p.X, p.Y)
+			root.Rotation = spin * 18 * (1 - t)
+		end)
+		Util.tween(alpha, dur, { Value = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
+		Util.tween(s, dur * 0.7, { Scale = 1.25 }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+		task.delay(dur * 0.7, function()
+			Util.tween(s, dur * 0.3, { Scale = 0.42 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		end)
+		task.delay(dur, function()
+			alpha:Destroy()
+			landed()
 		end)
 	end)
+end
+
+--[[
+	A card you've picked up to play. It follows the pointer (smoothly, leaning into the
+	way it's moving) and shrinks to tile size over a spot where it can go.
+
+		local held = Overlays.heldCard(layer, itemId, from, width)
+		held:moveTo(stagePos) ; held:over(onATile) ; held:glow(on) ; held:hoverAt(stagePos)
+		held:drop(at, onDone?)   -- stamped onto the board
+		held:use(at, onDone?)    -- played (it flares and fades)
+		held:back(to, onDone?)   -- returned to the hand
+]]
+function Overlays.heldCard(layer: Frame, itemId: string, from: Vector2, width: number)
+	local w = math.clamp(width, 70, 120)
+	local card = Cards.item(layer, itemId, {
+		Position = UDim2.fromOffset(from.X, from.Y),
+		Size = UDim2.fromOffset(w, w / CardStyle.aspect),
+		ZIndex = 92,
+	})
+	local root = card.root
+	local s = Util.scaler(root)
+	Util.tween(s, 0.16, { Scale = 1.18 }, Enum.EasingStyle.Back)
+	-- a brass outline that lights up when letting go would play it
+	local rim = Util.new("Frame", {
+		Name = "Glow",
+		BackgroundTransparency = 1,
+		Size = UDim2.fromScale(1, 1),
+		ZIndex = 60,
+		Parent = root,
+	})
+	Util.corner(rim, CardStyle.corner)
+	local rimStroke = Util.stroke(rim, C.brassLight, 4, 1)
+
+	local pos = from
+	local target = from
+	local offset = Vector2.zero
+	local following = true
+	local overTile = false
+	local conn: RBXScriptConnection
+	conn = RunService.RenderStepped:Connect(function(dt)
+		if not root.Parent then
+			conn:Disconnect()
+			return
+		end
+		if not following then
+			return
+		end
+		local k = 1 - math.exp(-dt * 20)
+		local nextPos = pos + (target + offset - pos) * k
+		local vx = (nextPos.X - pos.X) / math.max(dt, 1 / 240)
+		pos = nextPos
+		root.Position = UDim2.fromOffset(pos.X, pos.Y)
+		local lean = math.clamp(vx * 0.018, -16, 16)
+		root.Rotation += (lean - root.Rotation) * math.min(1, dt * 14)
+	end)
+	local held = {}
+	local function stop()
+		following = false
+		conn:Disconnect()
+	end
+	function held.moveTo(_self, p: Vector2)
+		target = p
+	end
+	function held.over(_self, on: boolean)
+		if on == overTile then
+			return
+		end
+		overTile = on
+		-- over a tile it can go on, the card shrinks and lifts off beside the pointer, so
+		-- the tile underneath can show what it's about to become
+		offset = if on then Vector2.new(w * 0.42, -w * 0.62) else Vector2.zero
+		Util.tween(s, 0.14, { Scale = if on then 0.66 else 1.18 }, Enum.EasingStyle.Back)
+	end
+	function held.glow(_self, on: boolean)
+		Util.tween(rimStroke, 0.12, { Transparency = if on then 0 else 1 })
+	end
+	function held.hoverAt(_self, p: Vector2)
+		target = p
+		held:over(true)
+	end
+	function held.drop(_self, at: Vector2, onDone: (() -> ())?)
+		stop()
+		Util.tween(root, 0.09, { Position = UDim2.fromOffset(at.X, at.Y - 14), Rotation = 0 }, Enum.EasingStyle.Quad)
+		Util.tween(s, 0.09, { Scale = 0.9 }, Enum.EasingStyle.Quad)
+		task.delay(0.09, function()
+			Util.tween(root, 0.07, { Position = UDim2.fromOffset(at.X, at.Y) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+			Util.tween(s, 0.07, { Scale = 0.45 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+			task.delay(0.07, function()
+				root:Destroy()
+				if onDone then
+					onDone()
+				end
+			end)
+		end)
+	end
+	function held.use(_self, at: Vector2, onDone: (() -> ())?)
+		stop()
+		Util.tween(root, 0.12, { Position = UDim2.fromOffset(at.X, at.Y - 20), Rotation = 0 }, Enum.EasingStyle.Quad)
+		Util.tween(s, 0.12, { Scale = 1.35 }, Enum.EasingStyle.Back)
+		task.delay(0.14, function()
+			Util.tween(s, 0.16, { Scale = 0.2 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+			task.delay(0.16, function()
+				root:Destroy()
+				if onDone then
+					onDone()
+				end
+			end)
+		end)
+	end
+	function held.back(_self, to: Vector2, onDone: (() -> ())?)
+		stop()
+		Util.tween(root, 0.2, { Position = UDim2.fromOffset(to.X, to.Y), Rotation = 0 }, Enum.EasingStyle.Quad)
+		Util.tween(s, 0.2, { Scale = 1 }, Enum.EasingStyle.Quad)
+		task.delay(0.2, function()
+			root:Destroy()
+			if onDone then
+				onDone()
+			end
+		end)
+	end
+	return held
 end
 
 -- A coin (or any medallion) flies across the screen; onLand() as it arrives. Doesn't yield.
@@ -354,7 +513,7 @@ end
 function Overlays.turnBanner(layer: Frame, text: string, seatColor: Color3, mine: boolean, speed: number)
 	local banner = Util.new("Frame", {
 		Name = "TurnBanner",
-		BackgroundColor3 = if mine then C.brass else C.parchmentMid,
+		BackgroundColor3 = if mine then C.brass else C.panel,
 		BorderSizePixel = 0,
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.new(-0.3, 0, 0.12, 0),
@@ -363,7 +522,7 @@ function Overlays.turnBanner(layer: Frame, text: string, seatColor: Color3, mine
 		Parent = layer,
 	})
 	Util.corner(banner, 14)
-	Util.stroke(banner, C.ink, 3)
+	Util.stroke(banner, if mine then hex("5E430F") else C.brassDark, 3)
 	local k = fitScale(layer, if mine then 380 else 320, if mine then 62 else 50)
 	if k < 1 then
 		Util.new("UIScale", { Name = "Fit", Scale = k, Parent = banner })
@@ -386,7 +545,7 @@ function Overlays.turnBanner(layer: Frame, text: string, seatColor: Color3, mine
 		text = text,
 		font = "chunky",
 		size = if mine then 32 else 26,
-		color = C.ink,
+		color = if mine then C.textOnLight else C.text,
 		align = "center",
 		sizeUDim = UDim2.new(1, -(dotSize + 40), 1, -10),
 		position = UDim2.new(0, dotSize + 24, 0, 5),
@@ -533,7 +692,7 @@ function Overlays.reveal(layer: Frame, seats, duration: number)
 			text = info.name,
 			font = "heavy",
 			size = 17,
-			color = C.parchment,
+			color = C.text,
 			align = "center",
 			sizeUDim = UDim2.new(1, 0, 0, 22),
 			position = UDim2.new(0, 0, 1, -24),

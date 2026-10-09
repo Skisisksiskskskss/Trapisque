@@ -11,10 +11,10 @@ local TweenService = game:GetService("TweenService")
 
 local player = Players.LocalPlayer
 
-local TABLE = Color3.fromHex("2A1C13")
-local PLANK = Color3.fromHex("221710")
-local PARCHMENT = Color3.fromHex("F3E4C1")
-local INK = Color3.fromHex("4A3020")
+local TABLE = Color3.fromHex("1A130E")
+local PLANK = Color3.fromHex("120D0A")
+local PARCHMENT = Color3.fromHex("F3E8D2")
+local GOLD = Color3.fromHex("FFE39A")
 local BRASS = Color3.fromHex("E3B04B")
 local RED = Color3.fromHex("B5372B")
 
@@ -51,10 +51,10 @@ title.Size = UDim2.fromScale(0.6, 0.14)
 title.Font = Enum.Font.Fondamento
 title.Text = "Trapisque"
 title.TextScaled = true
-title.TextColor3 = PARCHMENT
+title.TextColor3 = GOLD
 title.Parent = bg
 local outline = Instance.new("UIStroke")
-outline.Color = INK
+outline.Color = TABLE
 outline.Thickness = 3
 outline.Parent = title
 

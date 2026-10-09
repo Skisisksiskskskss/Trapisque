@@ -31,19 +31,19 @@ local function row(list: Frame, i: number, r, mine: boolean, isTeam: boolean, na
 	local seatColor = Theme.Seat[((r.seat - 1) % 6) + 1]
 	local f = Util.new("Frame", {
 		Name = "Row" .. i,
-		BackgroundColor3 = if mine then Color3.fromHex("FFF1C4") else Color3.fromHex("FBF3DD"),
+		BackgroundColor3 = if mine then C.mine else C.panelRaised,
 		BorderSizePixel = 0,
 		Size = UDim2.new(1, 0, 0, 52),
 		LayoutOrder = i,
 		Parent = list,
 	})
 	Util.corner(f, 10)
-	Util.stroke(f, if r.won then C.brass else C.parchmentEdge, 2)
+	Util.stroke(f, if r.won then C.brass else C.panelEdge, 2)
 	Widgets.label(f, {
 		text = PLACE[i] or tostring(i),
 		font = "chunky",
 		size = 22,
-		color = if r.won then C.brassDark else C.inkSoft,
+		color = if r.won then C.brass else C.textSoft,
 		align = "center",
 		sizeUDim = UDim2.fromOffset(52, 52),
 	})
@@ -74,7 +74,7 @@ local function row(list: Frame, i: number, r, mine: boolean, isTeam: boolean, na
 		text = sub,
 		font = "body",
 		size = if narrow then 12 else 14,
-		color = C.inkSoft,
+		color = C.textSoft,
 		sizeUDim = UDim2.new(1, -(102 + right), 0, 18),
 		position = UDim2.fromOffset(102, 28),
 	})
@@ -87,12 +87,12 @@ local function row(list: Frame, i: number, r, mine: boolean, isTeam: boolean, na
 	})
 	Util.list(chest, "x", 6, "Right", "Center")
 	local icon = Util.frame(chest, { Size = UDim2.fromOffset(26, 26), LayoutOrder = 1 })
-	Icons.make(icon, "chest", Icons.flatColors(C.brassDark, C.parchment))
+	Icons.make(icon, "chest", Icons.flatColors(C.brass, C.panel))
 	Widgets.label(chest, {
 		text = "x" .. tostring(r.treasures),
 		font = "chunky",
 		size = 22,
-		color = C.textDark,
+		color = C.text,
 		sizeUDim = UDim2.fromOffset(46, 30),
 		layoutOrder = 2,
 	})
@@ -101,7 +101,7 @@ local function row(list: Frame, i: number, r, mine: boolean, isTeam: boolean, na
 			text = "WINNER",
 			color = C.brass,
 			stroke = C.brassDark,
-			textColor = C.ink,
+			textColor = C.textOnLight,
 			height = 26,
 			textSize = 15,
 			anchor = Vector2.new(1, 0.5),
@@ -154,7 +154,7 @@ function Results.show(layer: Instance, data, mySeat: number, isTeam: boolean, on
 		text = reason,
 		font = "heavy",
 		size = if narrow then 15 else 18,
-		color = C.inkSoft,
+		color = C.textSoft,
 		align = "center",
 		wrap = true,
 		sizeUDim = UDim2.new(1, 0, 0, if narrow then 40 else 26),
@@ -205,7 +205,7 @@ function Results.show(layer: Instance, data, mySeat: number, isTeam: boolean, on
 				text = text,
 				font = "chunky",
 				size = 22,
-				color = C.textDark,
+				color = C.text,
 				sizeUDim = UDim2.fromOffset(0, 34),
 				layoutOrder = 2,
 			})

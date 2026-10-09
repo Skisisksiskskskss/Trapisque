@@ -8,8 +8,9 @@
 			{ text = "Wait for your turn", disabled = true },
 		})
 		Inspector.character(layer, characterId, actions?)
-		Inspector.choose(layer, title, subtitle, options, onPick)
+		Inspector.choose(layer, title, subtitle, options, onPick, onCancel?)
 			options = { { text, value, style?, disabled? } }
+			onCancel runs if it's closed without a pick
 
 	Each returns a close function. Everything sizes itself to the screen: cards get a
 	little smaller on phones and pickers wrap onto more rows instead of shrinking.
@@ -82,7 +83,7 @@ local function actionRow(content: Frame, actions, close: () -> (), avail: number
 				text = a.text,
 				font = "heavy",
 				size = 18,
-				color = C.inkSoft,
+				color = C.textSoft,
 				align = "center",
 				sizeUDim = UDim2.fromOffset(math.floor(360 * shrink), 44),
 				layoutOrder = i,
@@ -151,7 +152,7 @@ end
 
 -- A small picker: "How far?" 1 / 2 / 3, "Which way?" Forward / Back... Options that
 -- don't fit across the screen wrap onto more rows.
-function Inspector.choose(layer: Instance, title: string, subtitle: string?, options: { any }, onPick: (any) -> ()): () -> ()
+function Inspector.choose(layer: Instance, title: string, subtitle: string?, options: { any }, onPick: (any) -> (), onCancel: (() -> ())?): () -> ()
 	local GAP = 10
 	local optW = 0
 	for _, opt in options do
@@ -160,18 +161,24 @@ function Inspector.choose(layer: Instance, title: string, subtitle: string?, opt
 	local width = math.min(math.max(360, #options * (optW + GAP) + 70), screenWidth())
 	local perRow = math.max(1, math.floor((width - 2 * PAD - 16 + GAP) / (optW + GAP)))
 	local rows = math.ceil(#options / perRow)
+	local chosen = false
 	local content, close = Widgets.modal(layer, {
 		title = title,
 		titleWidth = math.min(width - 60, 320),
 		width = width,
 		height = (if subtitle then 210 else 170) + (rows - 1) * (52 + GAP),
+		onClose = function()
+			if not chosen and onCancel then
+				onCancel()
+			end
+		end,
 	})
 	if subtitle then
 		Widgets.label(content, {
 			text = subtitle,
 			font = "heavy",
 			size = 17,
-			color = C.inkSoft,
+			color = C.textSoft,
 			align = "center",
 			wrap = true,
 			sizeUDim = UDim2.new(1, 0, 0, 44),
@@ -202,6 +209,7 @@ function Inspector.choose(layer: Instance, title: string, subtitle: string?, opt
 			size = UDim2.fromOffset(opt.width or 108, 52),
 			layoutOrder = i,
 			onClick = function()
+				chosen = true
 				close()
 				task.spawn(onPick, opt.value)
 			end,

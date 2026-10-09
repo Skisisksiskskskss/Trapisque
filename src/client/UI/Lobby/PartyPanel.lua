@@ -118,14 +118,14 @@ function PartyPanel:_renderEmpty()
 			Position = UDim2.new(0.5, 0, 0, 4),
 			Size = UDim2.fromOffset(84, 84),
 		})
-		Icons.make(art, "people", Icons.flatColors(C.ink, C.parchment))
+		Icons.make(art, "people", Icons.flatColors(C.textFaint, C.panel))
 		y = 94
 	end
 	Widgets.label(c, {
 		text = "Team up with friends, then find a match together or start a private one.",
 		font = "heavy",
 		size = if compact then 15 else 17,
-		color = C.inkSoft,
+		color = C.textSoft,
 		align = "center",
 		wrap = true,
 		sizeUDim = UDim2.new(1, 0, 0, 46),
@@ -164,7 +164,7 @@ function PartyPanel:_renderEmpty()
 		text = "Got a party code?",
 		font = "chunky",
 		size = if compact then 16 else 18,
-		color = C.ink,
+		color = C.text,
 		sizeUDim = UDim2.new(1, 0, 0, 24),
 		position = UDim2.fromOffset(0, y),
 	})
@@ -211,19 +211,19 @@ function PartyPanel:_renderParty(party)
 	local buttonsH = if compact then 42 else 48
 	local codeBox = Util.new("Frame", {
 		Name = "Code",
-		BackgroundColor3 = C.parchmentMid,
+		BackgroundColor3 = C.panelDeep,
 		BorderSizePixel = 0,
 		Size = UDim2.new(1, 0, 0, codeH),
 		Parent = c,
 	})
 	Util.corner(codeBox, 10)
-	Util.stroke(codeBox, C.parchmentEdge, 2)
+	Util.stroke(codeBox, C.panelEdge, 2)
 	local inviteOnly = party.privacy == "invite"
 	Widgets.label(codeBox, {
 		text = if inviteOnly then "INVITE ONLY" else "PARTY CODE",
 		font = "heavy",
 		size = if compact then 11 else 13,
-		color = C.inkSoft,
+		color = C.textSoft,
 		sizeUDim = UDim2.new(0.55, 0, 0, 16),
 		position = UDim2.fromOffset(12, if compact then 4 else 6),
 	})
@@ -231,7 +231,7 @@ function PartyPanel:_renderParty(party)
 		text = if inviteOnly then "Friends join by invite" else (party.code or "------"),
 		font = "chunky",
 		size = if inviteOnly then (if compact then 15 else 18) else (if compact then 26 else 30),
-		color = C.ink,
+		color = C.brassLight,
 		sizeUDim = UDim2.new(0.55, 0, 0, if compact then 30 else 34),
 		position = UDim2.fromOffset(12, if compact then 20 else 24),
 	})
@@ -264,7 +264,7 @@ function PartyPanel:_renderParty(party)
 			text = (party.max or 6) - #party.members .. " more can join",
 			font = "body",
 			size = 14,
-			color = C.inkFaint,
+			color = C.textFaint,
 			align = "center",
 			sizeUDim = UDim2.new(1, 0, 0, 20),
 			layoutOrder = 99,
@@ -312,14 +312,14 @@ function PartyPanel:_member(list: Instance, i: number, m, isLeader: boolean, par
 	local avatar = h - 8
 	local row = Util.new("Frame", {
 		Name = "Member" .. i,
-		BackgroundColor3 = if m.userId == player.UserId then Color3.fromHex("FFF1C4") else Color3.fromHex("FBF3DD"),
+		BackgroundColor3 = if m.userId == player.UserId then C.mine else C.panelRaised,
 		BorderSizePixel = 0,
 		Size = UDim2.new(1, -10, 0, h),
 		LayoutOrder = i,
 		Parent = list,
 	})
 	Util.corner(row, 10)
-	Util.stroke(row, C.parchmentEdge, 1.5)
+	Util.stroke(row, if m.userId == player.UserId then C.brassDark else C.panelEdge, 1.5)
 	Avatars.portrait(row, { userId = m.userId, name = m.name }, {
 		AnchorPoint = Vector2.new(0, 0.5),
 		Position = UDim2.new(0, 5, 0.5, 0),
@@ -328,7 +328,7 @@ function PartyPanel:_member(list: Instance, i: number, m, isLeader: boolean, par
 	local nameX = avatar + 14
 	if m.leader then
 		local crown = Util.frame(row, { Position = UDim2.fromOffset(nameX, (h - 22) / 2), Size = UDim2.fromOffset(22, 22) })
-		Icons.make(crown, "crown", Icons.flatColors(C.brassDark, C.parchment))
+		Icons.make(crown, "crown", Icons.flatColors(C.brass, C.panel))
 		nameX += 28
 	end
 	local name = Widgets.label(row, {
@@ -345,7 +345,7 @@ function PartyPanel:_member(list: Instance, i: number, m, isLeader: boolean, par
 			text = "@" .. m.username,
 			font = "body",
 			size = if self.compact then 11 else 12,
-			color = C.inkSoft,
+			color = C.textSoft,
 			sizeUDim = UDim2.new(1, -(nameX + 100), 0, 15),
 			position = UDim2.fromOffset(nameX, if self.compact then 20 else 24),
 		})
@@ -404,7 +404,7 @@ function PartyPanel:_invitePicker()
 		text = "Players on this server",
 		font = "chunky",
 		size = 18,
-		color = C.ink,
+		color = C.text,
 		sizeUDim = UDim2.new(1, 0, 0, 24),
 		position = UDim2.fromOffset(0, 58),
 	})
@@ -417,7 +417,7 @@ function PartyPanel:_invitePicker()
 		text = "Looking around...",
 		font = "heavy",
 		size = 16,
-		color = C.inkSoft,
+		color = C.textSoft,
 		align = "center",
 		sizeUDim = UDim2.new(1, 0, 0, 30),
 	})
@@ -429,7 +429,7 @@ function PartyPanel:_invitePicker()
 				text = "Nobody else is here right now. Invite Roblox friends instead!",
 				font = "heavy",
 				size = 16,
-				color = C.inkSoft,
+				color = C.textSoft,
 				align = "center",
 				wrap = true,
 				sizeUDim = UDim2.new(1, 0, 0, 50),
@@ -438,24 +438,24 @@ function PartyPanel:_invitePicker()
 		end
 		for i, p in list do
 			local row = Util.new("Frame", {
-				BackgroundColor3 = Color3.fromHex("FBF3DD"),
+				BackgroundColor3 = C.panelRaised,
 				BorderSizePixel = 0,
 				Size = UDim2.new(1, -8, 0, 46),
 				LayoutOrder = i,
 				Parent = scroll,
 			})
 			Util.corner(row, 10)
-			Util.stroke(row, C.parchmentEdge, 1.5)
+			Util.stroke(row, C.panelEdge, 1.5)
 			Avatars.portrait(row, { userId = p.userId, name = p.name }, {
 				AnchorPoint = Vector2.new(0, 0.5),
 				Position = UDim2.new(0, 6, 0.5, 0),
 				Size = UDim2.fromOffset(36, 36),
-			}, { ring = C.parchmentEdge, ringPx = 2 })
+			}, { ring = C.panelEdge, ringPx = 2 })
 			Widgets.label(row, {
 				text = p.name,
 				font = "heavy",
 				size = 16,
-				color = C.textDark,
+				color = C.text,
 				sizeUDim = UDim2.new(1, -190, 0, 20),
 				position = UDim2.fromOffset(50, 4),
 			}).TextTruncate = Enum.TextTruncate.AtEnd
@@ -464,7 +464,7 @@ function PartyPanel:_invitePicker()
 					text = "@" .. p.username,
 					font = "body",
 					size = 12,
-					color = C.inkSoft,
+					color = C.textSoft,
 					sizeUDim = UDim2.new(1, -190, 0, 16),
 					position = UDim2.fromOffset(50, 25),
 				}).TextTruncate = Enum.TextTruncate.AtEnd

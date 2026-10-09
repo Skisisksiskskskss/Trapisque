@@ -22,10 +22,10 @@ from PIL import Image, ImageDraw  # noqa: E402
 
 UNIT = 46  # world pixels per hex unit in the game (BoardView U)
 
-THEME = {  # BoardView THEMES
-    "water": {"paper": "#F2E2BD", "wash": "#6FB1B6", "washA": 0.62, "ink": "#2F5F7A", "acc": "#E6D3A3", "acc2": "#C2513B"},
-    "dungeon": {"paper": "#EBDDBE", "wash": "#8C8478", "washA": 0.58, "ink": "#4A3C2E", "acc": "#A99E8A", "acc2": "#E0732C"},
-    "swamp": {"paper": "#EEE4BC", "wash": "#86A15A", "washA": 0.62, "ink": "#3F5A2A", "acc": "#93AA62", "acc2": "#9C4A2E"},
+THEME = {  # BoardView THEMES: the maps at night
+    "water": {"paper": "#29251F", "wash": "#163A44", "washA": 0.88, "land": "#3B352B", "ink": "#8DB6B1", "acc": "#2F4C4C", "acc2": "#C2513B"},
+    "dungeon": {"paper": "#28251F", "wash": "#3A3630", "washA": 0.85, "land": "#48423A", "ink": "#B4A993", "acc": "#57514A", "acc2": "#E0732C"},
+    "swamp": {"paper": "#26251D", "wash": "#2C3F25", "washA": 0.88, "land": "#3B392B", "ink": "#A7BC85", "acc": "#465C33", "acc2": "#9C4A2E"},
 }
 TILE_COLORS = {"normal": "#E9BE84", "branch": "#CDBB9C", "start": "#F4EFE3", "treasure": "#F7C948", "shortcutGate": "#8F969E"}
 RIM = "#4A2C14"
@@ -88,7 +88,7 @@ class Scene:
         self.W = width
         self.H = int(self.L["h"] * self.k + 2 * pad)
         self.ss = 3
-        self.img = Image.new("RGBA", (self.W * self.ss, self.H * self.ss), hex_rgba("#2A1C13"))
+        self.img = Image.new("RGBA", (self.W * self.ss, self.H * self.ss), hex_rgba("#1A130E"))
         self.theme = THEME[self.L["theme"]]
         T = self.theme
         self.sea = mix(T["paper"], T["wash"], T["washA"])  # wash over paper
@@ -148,7 +148,7 @@ class Scene:
         step = self.img.height / 14
         for i in range(15):
             y = i * step
-            d.line([(0, y), (self.img.width, y)], fill=hex_rgba("#221710", 204), width=3 * self.ss)
+            d.line([(0, y), (self.img.width, y)], fill=hex_rgba("#120D0A", 204), width=3 * self.ss)
 
     def paper(self):
         L, T = self.L, self.theme
@@ -158,7 +158,7 @@ class Scene:
         # hard drop shadow (Util.shadow), then the paper with its edge stroke
         off = self.px(8)
         self.patch(lambda dd: dd.rounded_rectangle([x0, y0 + off, x1, y1 + off], radius=r, fill=(0, 0, 0, 128)))
-        self.framed((x0, y0, x1, y1), r, T["paper"], PAPER_EDGE, self.px(3))
+        self.framed((x0, y0, x1, y1), r, T["paper"], BRASS_DARK, self.px(3))
         # sea / stone / swamp wash
         i = self.U(0.55)
         self.d.rounded_rectangle([x0 + i, y0 + i, x1 - i, y1 - i], radius=self.U(0.3), fill=hex_rgba(self.sea))
@@ -169,12 +169,12 @@ class Scene:
             rad = self.U(0.25 - n * 0.03)
             self.patch(lambda dd, o=o, w=w, rad=rad, t=t: dd.rounded_rectangle(
                 [x0 + o - w, y0 + o - w, x1 - o + w, y1 - o + w], radius=rad + w,
-                outline=hex_rgba(FRAME_INK, int(255 * (1 - t))), width=max(1, int(round(w)))))
+                outline=hex_rgba(T["ink"], int(255 * (1 - t - 0.3))), width=max(1, int(round(w)))))
 
     def land(self):
         T = self.theme
         coast = mix(T["ink"], T["wash"], 0.25)
-        for color, r in ((coast, 1.29), (T["paper"], 1.22)):
+        for color, r in ((coast, 1.29), (T["land"], 1.22)):
             for t in self.L["tiles"]:
                 cx, cy, rr = self.X(t["x"]), self.Y(t["y"]), self.U(r)
                 self.d.ellipse([cx - rr, cy - rr, cx + rr, cy + rr], fill=hex_rgba(color))
@@ -182,24 +182,24 @@ class Scene:
     def doodles(self):
         T = self.theme
         colors = {"ink": hex_rgba(mix(T["ink"], T["wash"], 0.22)), "bg": hex_rgba(self.sea), "acc": hex_rgba(T["acc"]),
-                  "acc2": hex_rgba(T["acc2"]), "hi": hex_rgba(T["paper"])}
+                  "acc2": hex_rgba(T["acc2"]), "hi": hex_rgba(T["land"])}
         for dd in self.L["decor"]:
             self.ops_at(self.decor[dd["kind"]], dd["x"], dd["y"], dd["size"], colors, rot=dd["rot"], flip=dd["flip"])
         c = self.L.get("compass")
         if c:
-            cc = {"ink": hex_rgba(FRAME_INK), "bg": hex_rgba(self.sea), "acc": hex_rgba(FRAME_INK), "acc2": hex_rgba(INK_RED),
+            cc = {"ink": hex_rgba(T["ink"]), "bg": hex_rgba(self.sea), "acc": hex_rgba(T["ink"]), "acc2": hex_rgba(INK_RED),
                   "hi": hex_rgba(self.sea)}
             self.ops_at(self.decor["compass_rose"], c["x"], c["y"], c["size"], cc)
 
     def title(self):
-        # Widgets.ribbon: a paper cartouche with a double inked border
+        # Widgets.ribbon: a dark plaque with a double brass border and gold lettering
         t = self.L["title"]
         cx, cy, w, h = self.X(t["x"]), self.Y(t["y"]), self.U(t["w"]), self.U(t["h"])
         box = (cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2)
-        self.framed(box, self.px(8), PARCH_MID, INK, self.px(2), stroke_alpha=int(255 * 0.9))
+        self.framed(box, self.px(8), "#1C1612", BRASS_DARK, self.px(2), stroke_alpha=int(255 * 0.95))
         i, wi = self.px(5), self.px(1)
         self.patch(lambda dd: dd.rounded_rectangle([box[0] + i - wi, box[1] + i - wi, box[2] - i + wi, box[3] - i + wi],
-                                                   radius=self.px(5) + wi, outline=hex_rgba(INK, int(255 * 0.55)),
+                                                   radius=self.px(5) + wi, outline=hex_rgba(BRASS, int(255 * 0.45)),
                                                    width=max(1, int(round(wi)))))
         size = min(h * 0.62, (h - self.px(8)) * 0.8)
         f = font("display", size)
@@ -208,7 +208,7 @@ class Scene:
             size -= 2
             f = font("display", size)
         bb = self.d.textbbox((0, 0), txt, font=f)
-        self.d.text((cx - (bb[2] - bb[0]) / 2 - bb[0], cy - (bb[3] - bb[1]) / 2 - bb[1]), txt, font=f, fill=hex_rgba(INK))
+        self.d.text((cx - (bb[2] - bb[0]) / 2 - bb[0], cy - (bb[3] - bb[1]) / 2 - bb[1]), txt, font=f, fill=hex_rgba(BRASS_LIGHT))
 
     def links(self):
         """Dashes between neighbouring tiles (0.32 x 0.12 units, red for shortcuts)."""
@@ -216,7 +216,7 @@ class Scene:
             mx, my = (ln["x1"] + ln["x2"]) / 2, (ln["y1"] + ln["y2"]) / 2
             ang = math.atan2(ln["y2"] - ln["y1"], ln["x2"] - ln["x1"])
             ux, uy = math.cos(ang), math.sin(ang)
-            col = INK_RED if ln["shortcut"] else INK
+            col = INK_RED if ln["shortcut"] else mix(self.theme["ink"], self.theme["land"], 0.25)
             half = (0.32 - 0.12) / 2
             a = (self.X(mx - ux * half), self.Y(my - uy * half))
             b = (self.X(mx + ux * half), self.Y(my + uy * half))

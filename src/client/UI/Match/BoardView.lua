@@ -54,11 +54,17 @@ local U = 46 -- world pixels per hex unit
 local S = BoardLayout.Style
 local PAWN = S.pawn -- pawn diameter (hex units) when it has a tile to itself
 local MAX_ZOOM = 3
+local HIT = 1.55 -- a tile's click area: a square this many hex units wide
 
+--[[
+	The maps at night: dark paper, a deep wash (sea, stone, swamp), a lighter strip of
+	land under the path, and doodles in pale ink. The wooden tiles are the brightest
+	thing on the board, so the path always reads first.
+]]
 local THEMES = {
-	water = { paper = hex("F2E2BD"), wash = hex("6FB1B6"), washA = 0.62, ink = hex("2F5F7A"), acc = hex("E6D3A3"), acc2 = hex("C2513B") },
-	dungeon = { paper = hex("EBDDBE"), wash = hex("8C8478"), washA = 0.58, ink = hex("4A3C2E"), acc = hex("A99E8A"), acc2 = hex("E0732C") },
-	swamp = { paper = hex("EEE4BC"), wash = hex("86A15A"), washA = 0.62, ink = hex("3F5A2A"), acc = hex("93AA62"), acc2 = hex("9C4A2E") },
+	water = { paper = hex("29251F"), wash = hex("163A44"), washA = 0.88, land = hex("3B352B"), ink = hex("8DB6B1"), acc = hex("2F4C4C"), acc2 = hex("C2513B") },
+	dungeon = { paper = hex("28251F"), wash = hex("3A3630"), washA = 0.85, land = hex("48423A"), ink = hex("B4A993"), acc = hex("57514A"), acc2 = hex("E0732C") },
+	swamp = { paper = hex("26251D"), wash = hex("2C3F25"), washA = 0.88, land = hex("3B392B"), ink = hex("A7BC85"), acc = hex("465C33"), acc2 = hex("9C4A2E") },
 }
 
 -- tile tops; the side is the same colour, darker; every tile has a dark rim
@@ -219,8 +225,9 @@ end
 function BoardView:_applyCamera()
 	local s = self.fitScale * self.cam.zoom
 	local f = self.focus
+	local jolt = self.jolt or Vector2.zero
 	self.scale.Scale = s
-	self.world.Position = UDim2.fromOffset(f.x + f.w / 2 - self.cam.x * s, f.y + f.h / 2 - self.cam.y * s)
+	self.world.Position = UDim2.fromOffset(f.x + f.w / 2 - self.cam.x * s + jolt.X, f.y + f.h / 2 - self.cam.y * s + jolt.Y)
 end
 
 function BoardView:_stepCamera(dt: number)
@@ -303,12 +310,13 @@ function BoardView:_bindInput()
 	local touches = {}
 	local pinchStart = nil
 
-	local function insideBoard(pos: Vector3 | Vector2): boolean
+	-- positions here are screen pixels from Util.inputPos (top bar included)
+	local function insideBoard(pos: Vector2): boolean
 		local abs = self.container.AbsolutePosition
 		local size = self.container.AbsoluteSize
 		return pos.X >= abs.X and pos.Y >= abs.Y and pos.X <= abs.X + size.X and pos.Y <= abs.Y + size.Y
 	end
-	local function toStage(pos: Vector3 | Vector2): Vector2
+	local function toStage(pos: Vector2): Vector2
 		local abs = self.container.AbsolutePosition
 		local k = Util.inheritedScale(self.container, true)
 		return Vector2.new((pos.X - abs.X) / k, (pos.Y - abs.Y) / k)
@@ -319,19 +327,19 @@ function BoardView:_bindInput()
 		if t == Enum.UserInputType.Touch then
 			touches[input] = true
 		end
-		if processed or not insideBoard(input.Position) then
+		if processed or not insideBoard(Util.inputPos(input)) then
 			return
 		end
 		if t == Enum.UserInputType.MouseButton1 or t == Enum.UserInputType.MouseButton2 or t == Enum.UserInputType.MouseButton3 or t == Enum.UserInputType.Touch then
-			dragging = { input = input, last = toStage(input.Position), moved = 0 }
+			dragging = { input = input, last = toStage(Util.inputPos(input)), moved = 0 }
 		end
 	end))
 	self.maid:add(UserInputService.InputChanged:Connect(function(input, processed)
 		local t = input.UserInputType
 		if t == Enum.UserInputType.MouseWheel then
-			if not processed and insideBoard(input.Position) then
+			if not processed and insideBoard(Util.inputPos(input)) then
 				self.manualUntil = os.clock() + 6
-				self:zoomBy(if input.Position.Z > 0 then 1.18 else 1 / 1.18, toStage(input.Position))
+				self:zoomBy(if input.Position.Z > 0 then 1.18 else 1 / 1.18, toStage(Util.inputPos(input)))
 			end
 			return
 		end
@@ -352,7 +360,7 @@ function BoardView:_bindInput()
 		if count > 1 then
 			return
 		end
-		local now = toStage(input.Position)
+		local now = toStage(Util.inputPos(input))
 		local delta = now - d.last
 		d.last = now
 		d.moved += delta.Magnitude
@@ -386,7 +394,7 @@ function BoardView:_bindInput()
 			self.manualUntil = os.clock() + 6
 			local around = nil
 			if #positions >= 2 then
-				around = toStage((positions[1] + positions[2]) / 2)
+				around = toStage(Util.inputPos((positions[1] + positions[2]) / 2))
 			end
 			self:zoomBy((pinchStart * scale) / self.goal.zoom, around)
 		elseif state == Enum.UserInputState.End or state == Enum.UserInputState.Cancel then
@@ -409,7 +417,7 @@ function BoardView:_buildPaper()
 		Parent = self.layers.Paper,
 	})
 	Util.corner(paper, 0.35 * U)
-	Util.stroke(paper, hex("6B4423"), 3)
+	Util.stroke(paper, C.brassDark, 3)
 	-- sea / stone / swamp wash inside the frame
 	local inset = 0.55 * U
 	local wash = Util.new("Frame", {
@@ -435,13 +443,13 @@ function BoardView:_buildPaper()
 			Parent = paper,
 		})
 		Util.corner(line, (0.25 - i * 0.03) * U)
-		Util.stroke(line, hex("6B4A2E"), spec[2], spec[3])
+		Util.stroke(line, T.ink, spec[2], spec[3] + 0.3)
 	end
 	self.paper = paper
 end
 
--- Pale "land" under the path with an inked coastline: one ring of circles for the
--- coast, a slightly smaller ring of paper circles on top.
+-- "Land" under the path with an inked coastline: one ring of circles for the coast, a
+-- slightly smaller ring of land circles on top.
 function BoardView:_buildLand()
 	local T = self.theme
 	local coastColor = Util.mix(T.ink, T.wash, 0.25)
@@ -452,7 +460,7 @@ function BoardView:_buildLand()
 			local r = if pass == 1 then S.coast * U else (S.coast - 0.07) * U
 			local dot = Util.new("Frame", {
 				Name = if pass == 1 then "Coast" else "Shore",
-				BackgroundColor3 = if pass == 1 then coastColor else T.paper,
+				BackgroundColor3 = if pass == 1 then coastColor else T.land,
 				BorderSizePixel = 0,
 				AnchorPoint = Vector2.new(0.5, 0.5),
 				Position = px(p),
@@ -470,7 +478,7 @@ function BoardView:_buildDecor()
 	local layer = self.layers.Decor
 	local L = self.layout
 	local inkMix = Util.mix(T.ink, T.wash, 0.22)
-	local colors = { ink = inkMix, bg = Util.mix(T.paper, T.wash, T.washA), acc = T.acc, acc2 = T.acc2, hi = T.paper }
+	local colors = { ink = inkMix, bg = Util.mix(T.paper, T.wash, T.washA), acc = T.acc, acc2 = T.acc2, hi = T.land }
 	for _, d in L.decor do
 		local size = d.size * U
 		local holder = Util.frame(layer, {
@@ -493,7 +501,7 @@ function BoardView:_buildDecor()
 			Position = UDim2.fromOffset((cp.x - L.x0) * U, (cp.y - L.y0) * U),
 			Size = UDim2.fromOffset(size, size),
 		})
-		local ink = hex("6B4A2E")
+		local ink = T.ink
 		Icons.draw(Shapes.canvas(holder), DecorData.compass_rose, { ink = ink, bg = colors.bg, acc2 = C.inkRed, acc = ink, hi = colors.bg })
 		self.compass = holder
 	end
@@ -519,6 +527,7 @@ end
 
 function BoardView:_buildLinks()
 	local layer = self.layers.Links
+	local T = self.theme
 	for _, ln in self.layout.links do
 		local a = self:tileWorld(ln.from)
 		local b = self:tileWorld(ln.to)
@@ -526,7 +535,8 @@ function BoardView:_buildLinks()
 		local dir = (b - a).Unit
 		local dash = Util.new("Frame", {
 			Name = "Dash",
-			BackgroundColor3 = if ln.shortcut then C.inkRed else hex("4A3020"),
+			BackgroundColor3 = if ln.shortcut then C.inkRed else T.ink,
+			BackgroundTransparency = if ln.shortcut then 0 else 0.25,
 			BorderSizePixel = 0,
 			AnchorPoint = Vector2.new(0.5, 0.5),
 			Position = px(mid),
@@ -732,7 +742,7 @@ function BoardView:_buildHits()
 			BackgroundTransparency = 1,
 			AnchorPoint = Vector2.new(0.5, 0.5),
 			Position = px(self:tileWorld(t.id)),
-			Size = UDim2.fromOffset(1.55 * U, 1.55 * U),
+			Size = UDim2.fromOffset(HIT * U, HIT * U),
 			Visible = false,
 			Parent = self.layers.Hits,
 		})
@@ -814,8 +824,12 @@ function BoardView:setNatural(tile: number, kind: string?)
 	end
 end
 
--- A card placed on the board reskins its tile (or the conveyor's three tiles).
-function BoardView:placeItem(entry, animate: boolean?)
+--[[
+	A card placed on the board reskins its tile (or the conveyor's three tiles).
+	animate: true = the new look spreads out and the little card drops in; "settle" =
+	it was already shown (a preview), so just a small bump.
+]]
+function BoardView:placeItem(entry, animate: (boolean | string)?)
 	local tile = entry.tile
 	local existing = self.placed[tile]
 	if existing and existing.item == entry.item then
@@ -829,15 +843,30 @@ function BoardView:placeItem(entry, animate: boolean?)
 		self:_setBelt(tile, entry.tiles, entry.dir)
 	end
 	self:_paintTile(tile)
-	if animate then
+	if animate == "settle" then
 		local parts = self.tileParts[tile]
 		if parts then
-			for _, key in { "skin", "plaque" } do
-				if parts[key] then
-					Util.popIn(parts[key], 0.35, 0.3)
-				end
+			Util.bump(parts.root, 0.06)
+		end
+	elseif animate then
+		-- the new look spreads out from the middle, then the little card drops onto it
+		local parts = self.tileParts[tile]
+		if parts then
+			if parts.skin then
+				local s = Util.scaler(parts.skin)
+				s.Scale = 0.25
+				Util.tween(s, 0.42, { Scale = 1 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 			end
-			Util.bump(parts.root, 0.12)
+			local plaque = parts.plaque :: Frame?
+			if plaque then
+				local base = plaque.Position
+				plaque.Position = base - UDim2.fromOffset(0, 0.7 * U)
+				local s = Util.scaler(plaque)
+				s.Scale = 1.4
+				Util.tween(plaque, 0.3, { Position = base }, Enum.EasingStyle.Bounce, Enum.EasingDirection.Out, 0.08)
+				Util.tween(s, 0.3, { Scale = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out, 0.08)
+			end
+			Util.bump(parts.root, 0.14)
 		end
 	end
 end
@@ -1199,9 +1228,10 @@ end
 
 --[[
 	Animates pawn `seat` along `path` (tile ids). Walk-like kinds hop tile by tile;
-	the rest (respawn, teleport...) vanish and reappear. Yields until done.
+	the rest (respawn, teleport...) vanish and reappear. Yields until done; `speed`
+	below 1 hurries it (a screen catching up with the server).
 ]]
-function BoardView:hop(seat: number, path: { number }, kind: string, trailId: string?)
+function BoardView:hop(seat: number, path: { number }, kind: string, trailId: string?, speed: number?)
 	local pawn = self.pawns[seat]
 	if not pawn or #path == 0 then
 		return
@@ -1209,7 +1239,8 @@ function BoardView:hop(seat: number, path: { number }, kind: string, trailId: st
 	pawn.moving = true
 	self:_arrange()
 	Util.tween(pawn.share, 0.15, { Scale = 1 }, Enum.EasingStyle.Quad)
-	local step = Config.Timing.StepTime
+	local pace = math.clamp(speed or 1, 0.25, 1)
+	local step = Config.Timing.StepTime * pace
 	if Pacing.walkKinds[kind] then
 		for _, tile in path do
 			pawn.tile = tile
@@ -1232,14 +1263,14 @@ function BoardView:hop(seat: number, path: { number }, kind: string, trailId: st
 		local tile = path[#path]
 		local s = Util.scaler(pawn.lift)
 		self:puff(self:pawnWorld(seat), hex("FFFFFF"))
-		Util.tween(s, 0.25, { Scale = 0 }, Enum.EasingStyle.Back, Enum.EasingDirection.In)
-		task.wait(0.27)
+		Util.tween(s, 0.25 * pace, { Scale = 0 }, Enum.EasingStyle.Back, Enum.EasingDirection.In)
+		task.wait(0.27 * pace)
 		pawn.tile = tile
 		local restPos = self:_restPosition(seat)
 		;(pawn.frame :: Frame).Position = px(restPos)
 		self:puff(self:tileWorld(tile), hex("FFFFFF"))
-		Util.tween(s, 0.3, { Scale = 1 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-		task.wait(0.3)
+		Util.tween(s, 0.3 * pace, { Scale = 1 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+		task.wait(0.3 * pace)
 		self:follow(tile)
 	end
 	pawn.moving = false
@@ -1267,6 +1298,121 @@ end
 ---------------------------------------------------------------------------
 -- small world-space effects (bigger ones live in Effects.lua)
 ---------------------------------------------------------------------------
+
+-- A quick jolt of the whole board (a card slammed down, something heavy landed).
+function BoardView:shake(amount: number?, time: number?)
+	local strength = (amount or 0.08) * U
+	local length = time or 0.22
+	local token = {}
+	self.shaking = token
+	task.spawn(function()
+		local t0 = os.clock()
+		while self.shaking == token and os.clock() - t0 < length do
+			local k = 1 - (os.clock() - t0) / length
+			self.jolt = Vector2.new((math.random() - 0.5) * 2, (math.random() - 0.5) * 2) * strength * k
+			self:_applyCamera()
+			task.wait()
+		end
+		if self.shaking == token then
+			self.shaking = nil
+			self.jolt = nil
+			self:_applyCamera()
+		end
+	end)
+end
+
+-- The tile under a stage point (only among `tiles` when given), or nil. Uses the same
+-- square as the tile's click area, so pointing and clicking always agree.
+function BoardView:tileAt(stage: Vector2, tiles: { number }?): number?
+	local world = self:toWorld(stage)
+	local half = HIT / 2 * U
+	local best, bestD = nil, math.huge
+	local function try(id: number)
+		local d = self:tileWorld(id) - world
+		if math.abs(d.X) <= half and math.abs(d.Y) <= half and d.Magnitude < bestD then
+			best, bestD = id, d.Magnitude
+		end
+	end
+	if tiles then
+		for _, id in tiles do
+			try(id)
+		end
+	else
+		for id in self.pos do
+			try(id)
+		end
+	end
+	return best
+end
+
+--[[
+	What a card would look like on `tile`: its tile skin, see-through, with the little
+	card on top, lifted a touch. nil clears it. Used while choosing where to place.
+]]
+function BoardView:previewTile(tile: number?, item: string?, color: Color3?)
+	if self.ghostTile == tile and self.ghostItem == item then
+		return
+	end
+	if self.ghost then
+		local g = self.ghost
+		self.ghost = nil
+		Util.tween(g, 0.1, { GroupTransparency = 1 })
+		task.delay(0.11, function()
+			g:Destroy()
+		end)
+	end
+	self.ghostTile, self.ghostItem = tile, item
+	if not tile or not item then
+		return
+	end
+	local g = Util.new("CanvasGroup", {
+		Name = "Ghost",
+		BackgroundTransparency = 1,
+		GroupTransparency = 1,
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = px(self:tileWorld(tile)),
+		Size = UDim2.fromOffset(2 * U, 2 * U),
+		ZIndex = 36,
+		Parent = self.layers.Fx,
+	})
+	local mid = Vector2.new(U, U)
+	local top = TileSkins.top(item) or TILE_COLORS.normal
+	hexagon(g, mid, S.tileScale * U * 1.06, color or C.brass, 1, "GhostRim", self.flat)
+	hexagon(g, mid, S.tileScale * U, top, 2, "GhostTop", self.flat)
+	local skin = Util.frame(g, { Name = "Skin", ZIndex = 3 })
+	local dir = nil
+	if item == "conveyor" then
+		local span = self.board:span(tile, 3)
+		if span and span[2] then
+			local d = self:tileWorld(span[2]) - self:tileWorld(span[1])
+			dir = math.deg(math.atan2(d.Y, d.X))
+		end
+	end
+	TileSkins.draw(skin, item, { flat = self.flat, r = S.tileScale / 2, dir = dir })
+	local plaque = Util.new("Frame", {
+		Name = "Plaque",
+		BackgroundColor3 = hex("2A1C13"),
+		BorderSizePixel = 0,
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromOffset(U, U),
+		Size = UDim2.fromOffset(0.6 * U, 0.8 * U),
+		ZIndex = 6,
+		Parent = g,
+	})
+	Util.corner(plaque, 0.12 * U)
+	Util.stroke(plaque, color or C.brass, 0.07 * U)
+	Icons.make(plaque, item, Icons.flatColors(C.white, hex("2A1C13"), C.white), {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromOffset(0.48 * U, 0.48 * U),
+		ZIndex = 7,
+	})
+	self.ghost = g
+	Util.tween(g, 0.12, { GroupTransparency = 0.3 })
+	local s = Util.scaler(g)
+	s.Scale = 0.85
+	Util.tween(s, 0.18, { Scale = 1.04 }, Enum.EasingStyle.Back)
+end
 
 function BoardView:puff(at: Vector2, color: Color3)
 	for i = 1, 6 do
@@ -1354,7 +1500,8 @@ end
 	Lights up `tiles` and calls onPick(tile) when one is chosen. With opts.confirm
 	(touch screens), the first tap only selects a tile (onSelect(tile) lets the caller
 	show a "place here" button) and a second tap on it confirms. opts.preview = item id
-	shows what the tile will look like. Returns a cancel function.
+	shows the tile under the pointer as it will look (previewTile); opts.onHover(tile?)
+	hears about it too. Returns a cancel function.
 ]]
 function BoardView:highlight(tiles: { number }, color: Color3, onPick: (number) -> (), opts: { [string]: any }?)
 	self:clearHighlight()
@@ -1362,31 +1509,13 @@ function BoardView:highlight(tiles: { number }, color: Color3, onPick: (number) 
 	local marks = {}
 	local conns = {}
 	local selected: number? = nil
-	local preview: Frame? = nil
 	local function showPreview(tile: number?)
-		if preview then
-			preview:Destroy()
-			preview = nil
+		if o.preview then
+			self:previewTile(tile, o.preview, color)
 		end
-		if not tile or not o.preview then
-			return
+		if o.onHover then
+			o.onHover(tile)
 		end
-		local p = Util.frame(self.layers.Fx, {
-			Name = "Preview",
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = px(self:tileWorld(tile)),
-			Size = UDim2.fromOffset(0.9 * U, 0.9 * U),
-			ZIndex = 35,
-		})
-		local disc = Shapes.circle(p, 0.5, 0.5, 1, hex("2A1C13"), { t = 0.15 })
-		Util.scaledStroke(disc, color, 0.1, 3)
-		Icons.make(p, o.preview, Icons.flatColors(C.white, hex("2A1C13"), C.white), {
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.fromScale(0.5, 0.5),
-			Size = UDim2.fromScale(0.62, 0.62),
-			ZIndex = 3,
-		})
-		preview = p
 	end
 	for _, tile in tiles do
 		local center = self:tileWorld(tile)
@@ -1400,7 +1529,9 @@ function BoardView:highlight(tiles: { number }, color: Color3, onPick: (number) 
 		table.insert(conns, hit.MouseEnter:Connect(function()
 			if not o.confirm then
 				showPreview(tile)
-				Sound.play("hover")
+				if o.preview then
+					Sound.play("hover")
+				end
 			end
 		end))
 		table.insert(conns, hit.MouseLeave:Connect(function()
