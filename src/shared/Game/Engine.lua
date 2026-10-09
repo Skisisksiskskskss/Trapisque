@@ -1355,7 +1355,8 @@ function Engine:_cmdUse(p, cmd)
 		p.stats.used += 1
 		p.hand, t.hand = t.hand, p.hand
 		self:_emit({ t = "useCard", p = p.index, item = item, target = t.index })
-		self:_emit({ t = "handSwap", a = p.index, b = t.index })
+		-- both new hands ride along; the server only shows each player their own
+		self:_emit({ t = "handSwap", a = p.index, b = t.index, handA = copyList(p.hand), handB = copyList(t.hand) })
 		self:_shiftBack(t, Rules.JeopardySteps, "jeopardy")
 		self:_land(t, true)
 		self:_shiftForward(p, Rules.JeopardySteps, "jeopardy")

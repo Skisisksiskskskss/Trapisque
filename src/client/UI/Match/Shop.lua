@@ -8,6 +8,9 @@
 		})
 		shop:update(coins, stock, hand)
 		shop:close()
+
+	On narrow screens the potions wrap onto two rows (and the cards get a touch
+	smaller) instead of the whole stall shrinking.
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -23,6 +26,7 @@ local Icons = require(UI.Icons)
 local Widgets = require(UI.Widgets)
 local Cards = require(UI.Cards)
 local CardStyle = require(UI.CardStyle)
+local Layout = require(UI.Layout)
 local Sound = require(UI.Parent.Sound)
 
 local C = Theme.C
@@ -31,7 +35,10 @@ local Rules = Config.Rules
 local Shop = {}
 Shop.__index = Shop
 
-local CARD_W = 112
+local CARD_W = 112 -- largest potion card
+local MIN_CARD_W = 96
+local GAP = 18
+local SLOT_H = 250
 
 local function count(list, value): number
 	local n = 0
@@ -60,16 +67,30 @@ function Shop.open(layer: Instance, o)
 	self.root = dim
 	Util.tween(dim, 0.2, { BackgroundTransparency = 0.5 })
 
-	local width = #Items.potions * (CARD_W + 18) + 40
+	-- as many potions per row as fit, spread evenly over the rows
+	local n = #Items.potions
+	local m = Widgets.metrics
+	local availW = Layout.safeRect(m, if m.form == "wide" then 16 else 6).w
+	local inner = availW - 40 + GAP
+	local rows = math.ceil(n / math.max(1, math.floor(inner / (MIN_CARD_W + GAP))))
+	local perRow = math.ceil(n / rows)
+	local cardW = math.min(CARD_W, math.floor(inner / perRow) - GAP)
+	local width = math.max(360, perRow * (cardW + GAP) - GAP + 40)
+	local height = 196 + rows * SLOT_H + (rows - 1) * 12
+	local w, h, fit = Layout.modal(m, width, height, 0.6)
+	local cx, cy = Layout.modalCenter(m)
 	local content, panel = Widgets.panel(dim, {
 		title = "Potion Seller",
 		titleWidth = 300,
 		style = "wood",
-		size = UDim2.fromOffset(width, 440),
+		size = UDim2.fromOffset(w, h),
 		anchor = Vector2.new(0.5, 0.5),
-		position = UDim2.fromScale(0.5, 0.5),
+		position = UDim2.fromOffset(cx, cy),
 		z = 71,
 	})
+	if fit < 0.999 then
+		Util.new("UIScale", { Name = "Fit", Scale = fit, Parent = panel })
+	end
 	Util.popIn(panel, 0.35, 0.6)
 	Sound.play("open")
 
@@ -93,19 +114,25 @@ function Shop.open(layer: Instance, o)
 	})
 
 	-- one stall slot per potion
-	local row = Util.frame(content, {
+	local grid = Util.frame(content, {
 		Name = "Potions",
 		Position = UDim2.fromOffset(0, 44),
-		Size = UDim2.new(1, 0, 0, 250),
+		Size = UDim2.new(1, 0, 0, rows * SLOT_H + (rows - 1) * 12),
 	})
-	Util.list(row, "x", 18, "Center", "Top")
+	Util.list(grid, "y", 12, "Center", "Top")
+	local row: Frame? = nil
+	local cardH = cardW / CardStyle.aspect
 	for i, id in Items.potions do
 		local def = Items.get(id)
-		local slot = Util.frame(row, { Name = id, Size = UDim2.fromOffset(CARD_W, 250), LayoutOrder = i })
+		if (i - 1) % perRow == 0 then
+			row = Util.frame(grid, { Name = "Row", Size = UDim2.new(1, 0, 0, SLOT_H), LayoutOrder = i })
+			Util.list(row :: Frame, "x", GAP, "Center", "Top")
+		end
+		local slot = Util.frame(row, { Name = id, Size = UDim2.fromOffset(cardW, SLOT_H), LayoutOrder = i })
 		local card = Cards.item(slot, id, {
 			AnchorPoint = Vector2.new(0.5, 0),
 			Position = UDim2.new(0.5, 0, 0, 0),
-			Size = UDim2.fromOffset(CARD_W, CARD_W / CardStyle.aspect),
+			Size = UDim2.fromOffset(cardW, cardH),
 		})
 		Cards.interactive(card, function()
 			card:flip()
@@ -117,7 +144,7 @@ function Shop.open(layer: Instance, o)
 			color = C.woodPale,
 			align = "center",
 			sizeUDim = UDim2.new(1, 0, 0, 18),
-			position = UDim2.fromOffset(0, CARD_W / CardStyle.aspect + 4),
+			position = UDim2.fromOffset(0, cardH + 4),
 		})
 		local buy = Widgets.button(slot, {
 			text = def.price .. (if def.price == 1 then " COIN" else " COINS"),
@@ -125,7 +152,7 @@ function Shop.open(layer: Instance, o)
 			style = "brass",
 			textSize = 16,
 			size = UDim2.new(1, 0, 0, 40),
-			position = UDim2.fromOffset(0, CARD_W / CardStyle.aspect + 26),
+			position = UDim2.fromOffset(0, cardH + 26),
 			onClick = function()
 				if self.o.onBuy then
 					self.o.onBuy(id)

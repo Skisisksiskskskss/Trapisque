@@ -118,6 +118,7 @@ function Match.new(spec, hooks)
 				player = e.player,
 				userId = e.player.UserId,
 				name = e.player.DisplayName,
+				username = e.player.Name,
 				isBot = false,
 				team = e.team,
 				look = DataService.publicLook(e.player),
@@ -172,6 +173,7 @@ function Match:seatList()
 		table.insert(list, {
 			seat = seat,
 			name = info.name,
+			username = info.username,
 			userId = info.userId,
 			isBot = info.isBot,
 			team = p.team,
@@ -189,10 +191,33 @@ local function serverDeadline(clockDeadline: number): number
 	return workspace:GetServerTimeNow() + (clockDeadline - os.clock())
 end
 
+-- Events as `seat` may see them: hidden cards (other players' opening deals, the
+-- hands traded by Double Jeopardy) are replaced by counts.
+local function eventsFor(seat: number, events)
+	local out = table.create(#events)
+	for i, e in events do
+		if e.t == "deal" and e.p ~= seat then
+			out[i] = { t = "deal", p = e.p, count = #(e.items or {}) }
+		elseif e.t == "handSwap" then
+			out[i] = {
+				t = "handSwap",
+				a = e.a,
+				b = e.b,
+				countA = #(e.handA or {}),
+				countB = #(e.handB or {}),
+				hand = if seat == e.a then e.handA elseif seat == e.b then e.handB else nil,
+			}
+		else
+			out[i] = e
+		end
+	end
+	return out
+end
+
 function Match:_payloadFor(seat: number, events)
 	return {
 		id = self.id,
-		events = events,
+		events = eventsFor(seat, events),
 		snapshot = self.engine:snapshot(seat),
 		deadline = serverDeadline(self.deadline),
 		auto = self.auto[seat] == true,
@@ -439,6 +464,8 @@ function Match:_finish()
 		table.insert(results, {
 			seat = seat,
 			name = info.name,
+			username = info.username,
+			userId = info.userId,
 			isBot = info.isBot,
 			team = p.team,
 			character = p.character,

@@ -9,12 +9,16 @@ local UserInputService = game:GetService("UserInputService")
 local Util = require(script.Parent.Util)
 local Theme = require(script.Parent.Theme)
 local Icons = require(script.Parent.Icons)
+local Layout = require(script.Parent.Layout)
 local Sound = require(script.Parent.Parent.Sound)
 
 local C = Theme.C
 local hex = Theme.hex
 
 local Widgets = {}
+
+-- The screen the UI is on (Root keeps this current), so modals and toasts can fit it.
+Widgets.metrics = Layout.metrics(1280, 720)
 
 Widgets.ButtonStyles = {
 	wood = { face = C.wood, light = C.woodLight, dark = C.woodDark, stroke = C.woodDeep, text = C.engrave, engraved = true },
@@ -292,6 +296,9 @@ function Widgets.button(parent: Instance?, o: { [string]: any })
 	function btn.flash(_self)
 		hover.BackgroundTransparency = 0.4
 		Util.tween(hover, 0.4, { BackgroundTransparency = 1 })
+	end
+	function btn.setOnClick(_self, fn: (() -> ())?)
+		o.onClick = fn
 	end
 
 	root.MouseEnter:Connect(function()
@@ -804,15 +811,22 @@ function Widgets.modal(layer: Instance, o: { [string]: any })
 		Parent = layer,
 	})
 	Util.tween(dim, 0.2, { BackgroundTransparency = 0.45 })
+	-- fit the screen: shrink a little if needed, below Roblox's top bar and inside the safe area
+	local m = Widgets.metrics
+	local w, h, fit = Layout.modal(m, o.width or 560, o.height or 420, o.minScale)
+	local cx, cy = Layout.modalCenter(m)
 	local content, panel = Widgets.panel(dim, {
 		title = o.title,
 		titleWidth = o.titleWidth,
-		size = UDim2.fromOffset(o.width or 560, o.height or 420),
+		size = UDim2.fromOffset(w, h),
 		anchor = Vector2.new(0.5, 0.5),
-		position = UDim2.fromScale(0.5, 0.52),
+		position = UDim2.fromOffset(cx, cy),
 		z = 101,
 		style = o.style or "parchment",
 	})
+	if fit < 0.999 then
+		Util.new("UIScale", { Name = "Fit", Scale = fit, Parent = panel })
+	end
 	Util.popIn(panel, 0.35, 0.7)
 	Sound.play("open")
 	local closed = false
@@ -854,15 +868,32 @@ end
 
 local toastHolder: Frame? = nil
 
+local function placeToasts()
+	local holder = toastHolder
+	if not holder then
+		return
+	end
+	local m = Widgets.metrics
+	local safe = Layout.safeRect(m, 8)
+	local top = math.max(m.topbar.y1, safe.y) + 8
+	holder.Position = UDim2.fromOffset(safe.x + safe.w / 2, top)
+	holder.Size = UDim2.fromOffset(math.min(560, safe.w), safe.y + safe.h - top)
+end
+
 function Widgets.setToastLayer(layer: Instance)
 	toastHolder = Util.frame(layer, {
 		Name = "Toasts",
 		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, 70),
-		Size = UDim2.new(0, 560, 1, -80),
 		ZIndex = 200,
 	})
 	Util.list(toastHolder :: Frame, "y", 8, "Center", "Top")
+	placeToasts()
+end
+
+-- Root calls this whenever the screen changes size or shape.
+function Widgets.setMetrics(m)
+	Widgets.metrics = m
+	placeToasts()
 end
 
 local TOAST_COLORS = {
@@ -891,7 +922,8 @@ function Widgets.toast(text: string, kind: string?)
 	Util.corner(note, 10)
 	Util.stroke(note, color, 3)
 	Util.pad(note, 16, 10, 16, 10)
-	Util.new("UISizeConstraint", { MaxSize = Vector2.new(540, 200), Parent = note })
+	local maxW = math.min(540, Layout.safeRect(Widgets.metrics, 8).w)
+	Util.new("UISizeConstraint", { MaxSize = Vector2.new(maxW, 200), Parent = note })
 	local label = Widgets.label(note, {
 		text = text,
 		font = "heavy",
@@ -903,7 +935,7 @@ function Widgets.toast(text: string, kind: string?)
 	})
 	label.AutomaticSize = Enum.AutomaticSize.XY
 	label.Size = UDim2.fromOffset(0, 0)
-	Util.new("UISizeConstraint", { MaxSize = Vector2.new(508, 200), Parent = label })
+	Util.new("UISizeConstraint", { MaxSize = Vector2.new(maxW - 32, 200), Parent = label })
 	Util.popIn(note, 0.3, 0.6)
 	if kind == "error" then
 		Sound.play("error")
@@ -917,9 +949,9 @@ function Widgets.toast(text: string, kind: string?)
 	end)
 end
 
--- Is the user on a touch device? (bigger hit areas)
+-- Is the user on a touch device? (bigger hit areas, tap-then-confirm flows)
 function Widgets.isTouch(): boolean
-	return UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+	return Widgets.metrics.touch or (UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled)
 end
 
 return Widgets

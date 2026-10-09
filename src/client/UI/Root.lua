@@ -1,19 +1,25 @@
 --[[
 	Root
-	The single ScreenGui everything lives in. It hides Roblox's own UI, scales a
-	virtual 1280x720-ish stage to any screen, draws the wooden tabletop background and
-	switches between screens with animated transitions.
+	The single ScreenGui everything lives in. It hides Roblox's own UI, sizes a virtual
+	stage for the screen it's on (Layout.metrics: PC, landscape phone or upright phone),
+	measures the safe area and Roblox's top bar so nothing sits under them, draws the
+	wooden tabletop background and switches between screens with animated transitions.
 
 	Layers (bottom to top): Background, Screens, Overlay, Popups, Toasts
+
+		Root.metrics        the current Layout metrics (vw, vh, scale, form, touch, safe, topbar)
+		Root.onResize(fn)   fn(vw, vh, metrics) now and whenever the screen changes
 ]]
 
 local Players = game:GetService("Players")
 local GuiService = game:GetService("GuiService")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
 local Util = require(script.Parent.Util)
 local Theme = require(script.Parent.Theme)
 local Widgets = require(script.Parent.Widgets)
+local Layout = require(script.Parent.Layout)
 
 local C = Theme.C
 
@@ -23,6 +29,7 @@ local player = Players.LocalPlayer
 local current = nil -- { name, frame, destroy }
 local resizeCallbacks = {}
 
+Root.metrics = Layout.metrics(1280, 720)
 Root.vw = 1280
 Root.vh = 720
 Root.scale = 1
@@ -51,6 +58,26 @@ local function buildBackground(bg: Frame)
 	Widgets.grain(bg, C.tableLight, 22)
 end
 
+-- A full-screen frame in its own ScreenGui with the given insets, to read where the
+-- engine thinks the safe area is (works the same on every device and orientation).
+local function probe(playerGui: Instance, insets: string): Frame?
+	local ok, frame = pcall(function()
+		local g = Instance.new("ScreenGui")
+		g.Name = "InsetProbe_" .. insets
+		g.ResetOnSpawn = false
+		g.DisplayOrder = -100
+		g.IgnoreGuiInset = false
+		;(g :: any).ScreenInsets = (Enum.ScreenInsets :: any)[insets]
+		local f = Instance.new("Frame")
+		f.BackgroundTransparency = 1
+		f.Size = UDim2.fromScale(1, 1)
+		f.Parent = g
+		g.Parent = playerGui
+		return f
+	end)
+	return if ok then frame else nil
+end
+
 function Root.init()
 	local playerGui = player:WaitForChild("PlayerGui") :: PlayerGui
 	local gui = Util.new("ScreenGui", {
@@ -68,6 +95,8 @@ function Root.init()
 
 	Root.background = Util.frame(gui, { Name = "Background", ZIndex = 0 })
 	buildBackground(Root.background)
+	-- the whole screen, for measuring against the probes
+	local full = Util.frame(gui, { Name = "Full", ZIndex = 0 })
 
 	local stage = Util.frame(gui, { Name = "Stage", ZIndex = 1 })
 	Root.stage = stage
@@ -79,36 +108,87 @@ function Root.init()
 	Root.toasts = layer("Toasts", 4)
 	Widgets.setToastLayer(Root.toasts)
 
+	local deviceProbe = probe(playerGui, "DeviceSafeInsets")
 	local camera = workspace.CurrentCamera
+
 	local function resize()
-		local vp = camera.ViewportSize
+		local abs = full.AbsoluteSize
+		local vp = if abs.X > 2 and abs.Y > 2 then abs else camera.ViewportSize
 		if vp.X < 2 or vp.Y < 2 then
 			return
 		end
-		local targetH = if vp.Y < 520 then 600 else Theme.VirtualHeight
-		local scale = math.min(vp.Y / targetH, vp.X / Theme.MinVirtualWidth)
-		Root.scale = scale
-		Root.vw = vp.X / scale
-		Root.vh = vp.Y / scale
-		stage.Size = UDim2.fromOffset(Root.vw, Root.vh)
-		Root.uiScale.Scale = scale
+		-- device safe area (notch, home bar), measured against our full-screen frame
+		local safe = { l = 0, t = 0, r = 0, b = 0 }
+		if deviceProbe and deviceProbe.AbsoluteSize.X > 2 then
+			local fp, fs = full.AbsolutePosition, full.AbsoluteSize
+			local dp, ds = deviceProbe.AbsolutePosition, deviceProbe.AbsoluteSize
+			safe.l = math.max(0, dp.X - fp.X)
+			safe.t = math.max(0, dp.Y - fp.Y)
+			safe.r = math.max(0, (fp.X + fs.X) - (dp.X + ds.X))
+			safe.b = math.max(0, (fp.Y + fs.Y) - (dp.Y + ds.Y))
+		end
+		-- Roblox's top bar: its height and the free stretch between its buttons
+		local topbar = { y0 = 0, y1 = 58, l = 120, r = vp.X - 60 }
+		local okBar, bar = pcall(function()
+			return (GuiService :: any).TopbarInset
+		end)
+		if okBar and typeof(bar) == "Rect" and bar.Max.Y > 0 then
+			topbar = { y0 = bar.Min.Y, y1 = bar.Max.Y, l = bar.Min.X, r = if bar.Max.X > bar.Min.X then bar.Max.X else vp.X }
+		end
+		local insetTop = GuiService:GetGuiInset()
+		topbar.y1 = math.max(topbar.y1, insetTop.Y)
+		local touch = UserInputService.TouchEnabled and not UserInputService.MouseEnabled
+		local m = Layout.metrics(vp.X, vp.Y, { touch = touch, safe = safe, topbar = topbar })
+		Root.metrics = m
+		Root.scale = m.scale
+		Root.vw = m.vw
+		Root.vh = m.vh
+		stage.Size = UDim2.fromOffset(m.vw, m.vh)
+		Root.uiScale.Scale = m.scale
+		Widgets.setMetrics(m)
 		for _, fn in resizeCallbacks do
-			task.spawn(fn, Root.vw, Root.vh)
+			task.spawn(fn, m.vw, m.vh, m)
 		end
 	end
-	camera:GetPropertyChangedSignal("ViewportSize"):Connect(resize)
+	-- changes settle over a frame or two (rotation, window drags): coalesce them
+	local pending = false
+	local function schedule()
+		if pending then
+			return
+		end
+		pending = true
+		task.defer(function()
+			pending = false
+			resize()
+		end)
+	end
+	full:GetPropertyChangedSignal("AbsoluteSize"):Connect(schedule)
+	camera:GetPropertyChangedSignal("ViewportSize"):Connect(schedule)
+	if deviceProbe then
+		deviceProbe:GetPropertyChangedSignal("AbsoluteSize"):Connect(schedule)
+		deviceProbe:GetPropertyChangedSignal("AbsolutePosition"):Connect(schedule)
+	end
+	pcall(function()
+		GuiService:GetPropertyChangedSignal("TopbarInset"):Connect(schedule)
+	end)
+	UserInputService.LastInputTypeChanged:Connect(function()
+		local touch = UserInputService.TouchEnabled and not UserInputService.MouseEnabled
+		if touch ~= Root.metrics.touch then
+			schedule()
+		end
+	end)
 	resize()
 	-- the camera can be swapped out; keep listening
 	workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(function()
 		camera = workspace.CurrentCamera
-		camera:GetPropertyChangedSignal("ViewportSize"):Connect(resize)
-		resize()
+		camera:GetPropertyChangedSignal("ViewportSize"):Connect(schedule)
+		schedule()
 	end)
 end
 
-function Root.onResize(fn: (number, number) -> ()): () -> ()
+function Root.onResize(fn: (number, number, any) -> ()): () -> ()
 	table.insert(resizeCallbacks, fn)
-	task.spawn(fn, Root.vw, Root.vh)
+	task.spawn(fn, Root.vw, Root.vh, Root.metrics)
 	return function()
 		local i = table.find(resizeCallbacks, fn)
 		if i then
@@ -117,15 +197,10 @@ function Root.onResize(fn: (number, number) -> ()): () -> ()
 	end
 end
 
--- How much of the top of the screen Roblox's buttons cover (virtual pixels).
+-- Where content may start below Roblox's top bar (stage pixels).
 function Root.topInset(): number
-	local ok, inset = pcall(function()
-		return (GuiService :: any).TopbarInset
-	end)
-	if ok and typeof(inset) == "Rect" then
-		return math.max(48, inset.Max.Y / Root.scale + 6)
-	end
-	return 56
+	local m = Root.metrics
+	return math.max(m.topbar.y1, m.safe.t) + 8
 end
 
 --[[

@@ -139,10 +139,6 @@ Theme.Font = {
 	BodyRegular = Font.new(nunito.Family, Enum.FontWeight.SemiBold),
 }
 
--- Virtual resolution the UI is designed for (scaled to fit any screen).
-Theme.VirtualHeight = 720
-Theme.MinVirtualWidth = 1180
-
 -- Colour for a player's name on parchment: VIPs get gold.
 function Theme.nameColor(look: { [string]: any }?): Color3
 	return if look and look.vip then Theme.C.vip else Theme.C.textDark

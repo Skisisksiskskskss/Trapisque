@@ -1,8 +1,10 @@
 --[[
 	Overlays
-	The big animated moments of a match, drawn above the board:
-	dice rolls, the spinner wheel, turn/ability banners, the Potion Seller, the card
-	inspector, the character reveal and the event log.
+	The big animated moments of a match, drawn above the board: dice rolls, the spinner
+	wheel, turn and ability banners, shouts, flying cards and the character reveal.
+
+	Each one is designed at a fixed size and shrinks (never grows) to fit the layer it
+	plays in, so a portrait phone gets the same moments as a monitor.
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -28,6 +30,43 @@ local T = Config.Timing
 
 local Overlays = {}
 
+-- The layer's size in stage pixels (its on-screen size with the stage scale undone).
+local function stageSize(layer: GuiObject): Vector2
+	local k = Util.inheritedScale(layer, false)
+	return layer.AbsoluteSize / math.max(k, 0.01)
+end
+
+-- How much a w x h overlay must shrink to fit in `layer` with a margin.
+local function fitScale(layer: GuiObject, w: number, h: number, margin: number?): number
+	local size = stageSize(layer)
+	local m = margin or 12
+	if size.X <= 0 or size.Y <= 0 then
+		return 1
+	end
+	return math.clamp(math.min((size.X - 2 * m) / w, (size.Y - 2 * m) / h), 0.4, 1)
+end
+
+--[[
+	A w x h frame centred at (sx, sy) of `layer` (or of `parent`, which covers it),
+	shrunk to fit. The overlay builds inside it; its own pop and slide animations stay
+	on the inner frames.
+]]
+local function fitted(layer: GuiObject, name: string, w: number, h: number, sx: number, sy: number, z: number, parent: Instance?): Frame
+	local f = Util.frame(parent or layer, {
+		Name = name,
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(sx, sy),
+		Size = UDim2.fromOffset(w, h),
+		ZIndex = z,
+	})
+	local k = fitScale(layer, w, h)
+	if k < 1 then
+		Util.new("UIScale", { Name = "Fit", Scale = k, Parent = f })
+	end
+	return f
+end
+Overlays.fitScale = fitScale
+
 ---------------------------------------------------------------------------
 -- dice
 ---------------------------------------------------------------------------
@@ -43,13 +82,7 @@ local MOD_TEXT = {
 
 --[[ Rolls the die in `layer` (yields ~DiceTime). e = roll event. ]]
 function Overlays.dice(layer: Frame, e, diceSkin: string?, speed: number)
-	local box = Util.frame(layer, {
-		Name = "DiceRoll",
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.36),
-		Size = UDim2.fromOffset(300, 220),
-		ZIndex = 60,
-	})
+	local box = fitted(layer, "DiceRoll", 300, 220, 0.5, 0.4, 60)
 	local die, setValue = CosmeticArt.die(box, diceSkin, 1, {
 		Position = UDim2.new(0.5, 0, 0, 50),
 		Size = UDim2.fromOffset(96, 96),
@@ -151,11 +184,9 @@ function Overlays.spin(layer: Frame, wheel: string, segments: { string }, index:
 		Parent = layer,
 	})
 	Util.tween(dim, 0.2, { BackgroundTransparency = 0.5 })
-	local holder = Util.frame(dim, {
+	local fit = fitted(layer, "WheelFit", 330, 330, 0.5, 0.5, 71, dim)
+	local holder = Util.frame(fit, {
 		Name = "Wheel",
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.5),
-		Size = UDim2.fromOffset(330, 330),
 		ZIndex = 71,
 	})
 	Util.popIn(holder, 0.3, 0.5)
@@ -258,14 +289,21 @@ end
 -- flying cards and coins
 ---------------------------------------------------------------------------
 
--- A card flies from one screen spot to another and shrinks into its target.
-function Overlays.flyCard(layer: Frame, itemId: string, from: Vector2, to: Vector2, speed: number)
+--[[
+	A card flies from one stage spot to another and shrinks into its target, calling
+	onLand() as it arrives (that's when the hand or the board shows it). Doesn't yield.
+]]
+function Overlays.flyCard(layer: Frame, itemId: string, from: Vector2, to: Vector2, speed: number, onLand: (() -> ())?)
 	if not Items.get(itemId) then
+		if onLand then
+			onLand()
+		end
 		return
 	end
+	local w = math.clamp(stageSize(layer).X * 0.14, 76, 110)
 	local card = Cards.item(layer, itemId, {
 		Position = UDim2.fromOffset(from.X, from.Y),
-		Size = UDim2.fromOffset(110, 110 / 0.72),
+		Size = UDim2.fromOffset(w, w / 0.72),
 		ZIndex = 90,
 	})
 	local root = card.root
@@ -273,19 +311,28 @@ function Overlays.flyCard(layer: Frame, itemId: string, from: Vector2, to: Vecto
 	s.Scale = 0.3
 	Sound.play("card")
 	Util.tween(s, 0.25 * speed, { Scale = 1.15 }, Enum.EasingStyle.Back)
-	task.wait(0.35 * speed)
-	Util.tween(root, 0.4 * speed, { Position = UDim2.fromOffset(to.X, to.Y), Rotation = (math.random() - 0.5) * 20 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-	Util.tween(s, 0.4 * speed, { Scale = 0.35 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-	task.delay(0.42 * speed, function()
-		root:Destroy()
+	task.delay(0.35 * speed, function()
+		if not root.Parent then
+			return
+		end
+		Util.tween(root, 0.4 * speed, { Position = UDim2.fromOffset(to.X, to.Y), Rotation = (math.random() - 0.5) * 20 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		Util.tween(s, 0.4 * speed, { Scale = 0.35 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		task.delay(0.4 * speed, function()
+			root:Destroy()
+			if onLand then
+				onLand()
+			end
+		end)
 	end)
 end
 
-function Overlays.flyIcon(layer: Frame, iconId: string, color: Color3, from: Vector2, to: Vector2, speed: number)
+-- A coin (or any medallion) flies across the screen; onLand() as it arrives. Doesn't yield.
+function Overlays.flyIcon(layer: Frame, iconId: string, color: Color3, from: Vector2, to: Vector2, speed: number, onLand: (() -> ())?)
+	local size = math.clamp(stageSize(layer).X * 0.05, 34, 44)
 	local h = Util.frame(layer, {
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromOffset(from.X, from.Y),
-		Size = UDim2.fromOffset(44, 44),
+		Size = UDim2.fromOffset(size, size),
 		ZIndex = 90,
 	})
 	Icons.medallion(h, iconId, color, { Size = UDim2.fromScale(1, 1) })
@@ -293,6 +340,9 @@ function Overlays.flyIcon(layer: Frame, iconId: string, color: Color3, from: Vec
 	Util.tween(h, 0.5 * speed, { Position = UDim2.fromOffset(to.X, to.Y) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
 	task.delay(0.5 * speed, function()
 		h:Destroy()
+		if onLand then
+			onLand()
+		end
 	end)
 end
 
@@ -314,6 +364,10 @@ function Overlays.turnBanner(layer: Frame, text: string, seatColor: Color3, mine
 	})
 	Util.corner(banner, 14)
 	Util.stroke(banner, C.ink, 3)
+	local k = fitScale(layer, if mine then 380 else 320, if mine then 62 else 50)
+	if k < 1 then
+		Util.new("UIScale", { Name = "Fit", Scale = k, Parent = banner })
+	end
 	-- the player's seat colour as a pawn-like dot, inset from the edge
 	local dotSize = if mine then 26 else 22
 	local dot = Util.new("Frame", {
@@ -355,13 +409,8 @@ end
 -- Character card swoops in with the ability name.
 function Overlays.abilityBanner(layer: Frame, character: string, abilityName: string, playerName: string, speed: number)
 	local color = Theme.Character[character] or C.brass
-	local wrap = Util.frame(layer, {
-		Name = "AbilityBanner",
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.new(0.5, 0, 0.42, 0),
-		Size = UDim2.fromOffset(520, 180),
-		ZIndex = 88,
-	})
+	local outer = fitted(layer, "AbilityBanner", 520, 180, 0.5, 0.42, 88)
+	local wrap = Util.frame(outer, { Name = "Inner", ZIndex = 88 })
 	local band = Util.new("Frame", {
 		BackgroundColor3 = color,
 		BorderSizePixel = 0,
@@ -406,27 +455,22 @@ function Overlays.abilityBanner(layer: Frame, character: string, abilityName: st
 	})
 	local s = Util.scaler(wrap)
 	s.Scale = 0.4
-	wrap.Position = UDim2.new(-0.4, 0, 0.42, 0)
-	Util.tween(wrap, 0.3 * speed, { Position = UDim2.fromScale(0.5, 0.42) }, Enum.EasingStyle.Back)
+	outer.Position = UDim2.new(-0.4, 0, 0.42, 0)
+	Util.tween(outer, 0.3 * speed, { Position = UDim2.fromScale(0.5, 0.42) }, Enum.EasingStyle.Back)
 	Util.tween(s, 0.3 * speed, { Scale = 1 }, Enum.EasingStyle.Back)
-	Sound.play("magic", 0.9)
+	Sound.play("ability")
 	task.delay(1.1 * speed, function()
-		Util.tween(wrap, 0.25 * speed, { Position = UDim2.new(1.4, 0, 0.42, 0) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		Util.tween(outer, 0.25 * speed, { Position = UDim2.new(1.4, 0, 0.42, 0) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
 		task.delay(0.27 * speed, function()
-			wrap:Destroy()
+			outer:Destroy()
 		end)
 	end)
 end
 
 -- Big centred message ("Pip collected every treasure!", "Your turn!" etc.)
 function Overlays.shout(layer: Frame, text: string, color: Color3, speed: number, sub: string?)
-	local wrap = Util.frame(layer, {
-		Name = "Shout",
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.4),
-		Size = UDim2.fromOffset(700, 110),
-		ZIndex = 89,
-	})
+	local outer = fitted(layer, "Shout", 700, 110, 0.5, 0.4, 89)
+	local wrap = Util.frame(outer, { Name = "Inner", ZIndex = 89 })
 	Widgets.label(wrap, {
 		text = text,
 		font = "chunky",
@@ -463,73 +507,9 @@ function Overlays.shout(layer: Frame, text: string, color: Color3, speed: number
 			end
 		end
 		task.delay(0.27, function()
-			wrap:Destroy()
+			outer:Destroy()
 		end)
 	end)
-end
-
----------------------------------------------------------------------------
--- event log
----------------------------------------------------------------------------
-
-function Overlays.log(parent: Frame)
-	local box = Util.frame(parent, {
-		Name = "Log",
-		AnchorPoint = Vector2.new(0, 1),
-		Position = UDim2.new(0, 10, 1, -10),
-		Size = UDim2.fromOffset(360, 132),
-		ZIndex = 40,
-	})
-	local list = Util.list(box, "y", 3, "Left", "Bottom")
-	local lines = {}
-	local log = {}
-	function log.add(_self, text: string, color: Color3?)
-		local row = Util.new("Frame", {
-			BackgroundColor3 = C.dim,
-			BackgroundTransparency = 0.35,
-			BorderSizePixel = 0,
-			AutomaticSize = Enum.AutomaticSize.XY,
-			Size = UDim2.fromOffset(0, 0),
-			LayoutOrder = #lines + 1,
-			ZIndex = 41,
-			Parent = box,
-		})
-		Util.corner(row, 8)
-		Util.pad(row, 8, 3, 8, 3)
-		local label = Widgets.label(row, {
-			text = text,
-			font = "heavy",
-			size = 15,
-			color = color or C.parchment,
-			z = 42,
-			rich = true,
-		})
-		label.AutomaticSize = Enum.AutomaticSize.XY
-		label.Size = UDim2.fromOffset(0, 0)
-		Util.new("UISizeConstraint", { MaxSize = Vector2.new(344, 60), Parent = label })
-		label.TextWrapped = true
-		table.insert(lines, row)
-		if #lines > 5 then
-			local old = table.remove(lines, 1)
-			old:Destroy()
-		end
-		Util.popIn(row, 0.2, 0.7)
-		task.delay(9, function()
-			if row.Parent then
-				Util.tween(row, 0.5, { BackgroundTransparency = 1 })
-				Util.tween(label, 0.5, { TextTransparency = 1 })
-				task.delay(0.5, function()
-					local i = table.find(lines, row)
-					if i then
-						table.remove(lines, i)
-					end
-					row:Destroy()
-				end)
-			end
-		end)
-	end
-	local _ = list
-	return log
 end
 
 ---------------------------------------------------------------------------
@@ -538,13 +518,8 @@ end
 
 function Overlays.reveal(layer: Frame, seats, duration: number)
 	local n = #seats
-	local row = Util.frame(layer, {
-		Name = "Reveal",
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.48),
-		Size = UDim2.fromOffset(math.min(900, n * 150), 260),
-		ZIndex = 95,
-	})
+	local outer = fitted(layer, "Reveal", n * 144, 260, 0.5, 0.48, 95)
+	local row = Util.frame(outer, { Name = "Row", ZIndex = 95 })
 	Util.list(row, "x", 14, "Center", "Center")
 	local cards = {}
 	for i, info in seats do
@@ -586,9 +561,9 @@ function Overlays.reveal(layer: Frame, seats, duration: number)
 		Sound.play("reveal", 0.9 + math.random() * 0.2)
 	end
 	task.wait(0.9)
-	Util.tween(row, 0.3, { Position = UDim2.fromScale(0.5, 1.4) }, Enum.EasingStyle.Back, Enum.EasingDirection.In)
+	Util.tween(outer, 0.3, { Position = UDim2.fromScale(0.5, 1.4) }, Enum.EasingStyle.Back, Enum.EasingDirection.In)
 	task.delay(0.32, function()
-		row:Destroy()
+		outer:Destroy()
 	end)
 end
 

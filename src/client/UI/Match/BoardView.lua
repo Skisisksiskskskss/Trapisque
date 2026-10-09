@@ -2,19 +2,29 @@
 	BoardView
 	Draws a Trapisque board as a parchment treasure map and animates everything on it.
 
-	The whole map is built once in "world" pixels (U px per hex unit) inside a frame
-	that is scaled with a UIScale to fit the screen, so strokes and text scale together.
+	The map is built once in "world" pixels (U px per hex unit). A camera fits the tiles
+	into the part of the screen the HUD leaves free (setFocus) and lets players zoom
+	(wheel, pinch, buttons) and pan (drag); the parchment runs on under the HUD.
 
-	view = BoardView.new(parent, mapId)
-	view:applySnapshot(snap)            -- tokens, placed items, natural traps, pawns
-	view:hop(seat, path, kind)          -- animate a move (yields)
-	view:highlight(tiles, onPick)       -- let the player pick a tile
-	view:tileWorld(tile) -> Vector2     -- centre of a tile in world pixels
-	view:buildIntro()                   -- tiles snap into place one by one
+	Reading order, bottom to top, is deliberate: the map, then tiles (their colour
+	changes with whatever is on them: tokens are bold coloured inlays, traps and other
+	cards reskin the tile), then pawns, which are the biggest, brightest things on the
+	board and show each player's avatar.
+
+		view = BoardView.new(parent, mapId, { rotate = bool })
+		view:setFocus(rect)                 -- stage rect the tiles should fill
+		view:applySnapshot(snap)            -- tokens, placed items, natural traps, pawns
+		view:hop(seat, path, kind)          -- animate a move (yields)
+		view:moveToken(from, to)            -- a used token jumps to its new tile
+		view:highlight(tiles, color, onPick, opts) -- let the player pick a tile
+		view:tileWorld(tile) -> Vector2     -- centre of a tile in world pixels
+		view:toStage(world) -> Vector2      -- world pixels -> stage pixels (for overlays)
+		view:buildIntro()                   -- tiles snap into place one by one
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
 local Shared = ReplicatedStorage.Shared
 local Maps = require(Shared.Game.Maps)
@@ -22,6 +32,7 @@ local Board = require(Shared.Game.Board)
 local Rng = require(Shared.Game.Rng)
 local Config = require(Shared.Config)
 local Pacing = require(Shared.Game.Pacing)
+local Items = require(Shared.Game.Items)
 
 local UI = script.Parent.Parent
 local Util = require(UI.Util)
@@ -31,7 +42,9 @@ local Icons = require(UI.Icons)
 local DecorData = require(UI.DecorData)
 local CosmeticArt = require(UI.CosmeticArt)
 local Widgets = require(UI.Widgets)
+local Avatars = require(UI.Avatars)
 local BoardLayout = require(script.Parent.BoardLayout)
+local TileSkins = require(script.Parent.TileSkins)
 local Sound = require(UI.Parent.Sound)
 
 local C = Theme.C
@@ -39,72 +52,96 @@ local hex = Theme.hex
 
 local U = 46 -- world pixels per hex unit
 local S = BoardLayout.Style
+local PAWN = S.pawn -- pawn diameter (hex units) when it has a tile to itself
+local MAX_ZOOM = 3
 
 local THEMES = {
-	water = { paper = hex("F2E2BD"), wash = hex("93C6C4"), washA = 0.55, ink = hex("3C6E8F"), acc = hex("E6D3A3"), acc2 = hex("C2513B") },
-	dungeon = { paper = hex("EBDDBE"), wash = hex("A39B8E"), washA = 0.5, ink = hex("5A4A3A"), acc = hex("A99E8A"), acc2 = hex("E0732C") },
-	swamp = { paper = hex("EEE4BC"), wash = hex("9DB271"), washA = 0.55, ink = hex("4E6B34"), acc = hex("93AA62"), acc2 = hex("9C4A2E") },
+	water = { paper = hex("F2E2BD"), wash = hex("6FB1B6"), washA = 0.62, ink = hex("2F5F7A"), acc = hex("E6D3A3"), acc2 = hex("C2513B") },
+	dungeon = { paper = hex("EBDDBE"), wash = hex("8C8478"), washA = 0.58, ink = hex("4A3C2E"), acc = hex("A99E8A"), acc2 = hex("E0732C") },
+	swamp = { paper = hex("EEE4BC"), wash = hex("86A15A"), washA = 0.62, ink = hex("3F5A2A"), acc = hex("93AA62"), acc2 = hex("9C4A2E") },
 }
 
+-- tile tops; the side is the same colour, darker; every tile has a dark rim
 local TILE_COLORS = {
-	normal = { hex("CB955C"), hex("DBAA72") },
-	branch = { hex("B7A48A"), hex("C9B79C") },
-	start = { hex("E4DCCB"), hex("F3EEE2") },
-	treasure = { hex("E9B53A"), hex("F7CF5E") },
-	shortcutGate = { hex("7E858D"), hex("98A0A8") },
-	river = { hex("6FA8CF"), hex("8DBFE0") },
-	gate = { hex("79818A"), hex("959DA6") },
-	slime = { hex("7DB843"), hex("97CE57") },
+	normal = hex("E9BE84"),
+	branch = hex("CDBB9C"),
+	start = hex("F4EFE3"),
+	treasure = hex("F7C948"),
+	shortcutGate = hex("8F969E"),
 }
+local RIM = hex("4A2C14")
 local NATURAL_ICON = { river = "river_trap", gate = "lock", slime = "slime_trap" }
--- the mark a conveyor belt paints where a tile's number would be (points right at 0 degrees)
-local BELT_CHEVRON = { { "chevron", 0.3, 0.5, 0.6, 0.2, dir = 90 }, { "chevron", 0.66, 0.5, 0.6, 0.2, dir = 90 } }
 local TOKEN_ICON = { trap = "token_trap", assist = "token_assist", neutral = "token_neutral", potion = "token_potion" }
+local NEUTRAL_ITEMS = { teleporter = true, spore_warper = true, conveyor = true, shifting_sands = true }
 
 local BoardView = {}
 BoardView.__index = BoardView
+
+local function px(v: Vector2): UDim2
+	return UDim2.fromOffset(v.X, v.Y)
+end
 
 ---------------------------------------------------------------------------
 -- construction
 ---------------------------------------------------------------------------
 
-function BoardView.new(parent: Frame, mapId: string)
+function BoardView.new(parent: Frame, mapId: string, opts: { [string]: any }?)
 	local self = setmetatable({}, BoardView)
 	local def = Maps.get(mapId)
 	self.def = def
+	self.mapId = mapId
 	self.board = Board.get(def)
-	self.layout = BoardLayout.build(self.board, def, Rng)
+	self.layout = BoardLayout.build(self.board, def, Rng, { rotate = opts ~= nil and opts.rotate == true })
+	self.flat = self.layout.rotated == true
 	self.theme = THEMES[def.theme] or THEMES.water
 	self.maid = Util.maid()
-	self.zoom = 1
-	self.pan = Vector2.zero
 
 	local L = self.layout
 	self.worldW, self.worldH = L.w * U, L.h * U
+	self.pos = {}
+	for _, t in L.tiles do
+		self.pos[t.id] = Vector2.new((t.x - L.x0) * U, (t.y - L.y0) * U)
+	end
+	local tb = L.tileBounds
+	self.tileBox = {
+		x0 = (tb.x0 - L.x0) * U,
+		y0 = (tb.y0 - L.y0) * U,
+		x1 = (tb.x1 - L.x0) * U,
+		y1 = (tb.y1 - L.y0) * U,
+	}
 
-	self.container = Util.frame(parent, { Name = "Board", ClipsDescendants = true })
+	-- the container covers the whole screen; the camera moves the world inside it
+	self.container = Util.frame(parent, { Name = "Board" })
 	self.world = Util.frame(self.container, {
 		Name = "World",
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.5),
 		Size = UDim2.fromOffset(self.worldW, self.worldH),
 	})
 	self.scale = Util.new("UIScale", { Parent = self.world })
+	-- screen-space bits that follow world things (name tags) but stay readable
+	self.overlay = Util.frame(self.container, { Name = "Tags", ZIndex = 5 })
 
 	self.layers = {}
-	for i, name in { "Paper", "Land", "Decor", "Links", "Tiles", "Marks", "Pieces", "Pawns", "Fx", "Hits" } do
+	for i, name in { "Paper", "Land", "Decor", "Links", "Tiles", "Pieces", "Pawns", "Fx", "Hits" } do
 		self.layers[name] = Util.frame(self.world, { Name = name, ZIndex = i })
 	end
 
-	self.tileParts = {} -- [tile] = { root, side, top, label, icon, hasIcon, belt }
+	self.tileParts = {} -- [tile] = { root, side, rim, top, label, icon, skin, inlay, plaque }
 	self.cover = {} -- [tile] = pawns resting on it
 	self.belt = {} -- [tile] = direction (degrees) of the conveyor belt over it
 	self.beltOf = {} -- [conveyor origin tile] = the tiles it covers
-	self.tokens = {} -- [tile] = frame
-	self.placed = {} -- [tile] = frame
+	self.tokens = {} -- [tile] = kind
+	self.placed = {} -- [tile] = entry { item, owner, dir, tiles }
 	self.natural = {} -- [tile] = kind
-	self.pawns = {} -- [seat] = { frame, tile, lift }
+	self.pawns = {} -- [seat] = { frame, lift, share, tile, ring, seat, info }
 	self.seatInfo = {}
+
+	-- camera
+	self.focus = { x = 0, y = 0, w = 800, h = 600 }
+	self.fitScale = 1
+	local cx, cy = (self.tileBox.x0 + self.tileBox.x1) / 2, (self.tileBox.y0 + self.tileBox.y1) / 2
+	self.cam = { x = cx, y = cy, zoom = 1 }
+	self.goal = { x = cx, y = cy, zoom = 1 }
+	self.manualUntil = 0
 
 	self:_buildPaper()
 	self:_buildLand()
@@ -113,13 +150,11 @@ function BoardView.new(parent: Frame, mapId: string)
 	self:_buildTiles()
 	self:_buildHits()
 
-	self.maid:add(self.container:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
-		self:_fit()
+	self:_bindInput()
+	self.maid:add(RunService.RenderStepped:Connect(function(dt)
+		self:_stepCamera(dt)
+		self:_stepTags()
 	end))
-	self:_bindZoom()
-	task.defer(function()
-		self:_fit()
-	end)
 	return self
 end
 
@@ -129,87 +164,235 @@ function BoardView:destroy()
 end
 
 function BoardView:tileWorld(tile: number): Vector2
-	local t = self.board.tiles[tile]
-	local L = self.layout
-	return Vector2.new((t.x - L.x0) * U, (t.y - L.y0) * U)
+	return self.pos[tile] or Vector2.zero
 end
 
-local function px(v: Vector2): UDim2
-	return UDim2.fromOffset(v.X, v.Y)
+-- world pixels -> stage pixels (the container sits at the stage's origin)
+function BoardView:toStage(world: Vector2): Vector2
+	local s = self.fitScale * self.cam.zoom
+	local f = self.focus
+	return Vector2.new(f.x + f.w / 2 + (world.X - self.cam.x) * s, f.y + f.h / 2 + (world.Y - self.cam.y) * s)
 end
 
-local inheritedScale = Util.inheritedScale
+function BoardView:toWorld(stage: Vector2): Vector2
+	local s = self.fitScale * self.cam.zoom
+	local f = self.focus
+	return Vector2.new(self.cam.x + (stage.X - f.x - f.w / 2) / s, self.cam.y + (stage.Y - f.y - f.h / 2) / s)
+end
 
--- fit the world into the container (times the player's zoom), clamped panning
-function BoardView:_fit()
-	local abs = self.container.AbsoluteSize
-	local outer = inheritedScale(self.world)
-	self.outerScale = outer
-	local cw, ch = abs.X / outer, abs.Y / outer
-	local fitScale = math.min(cw / self.worldW, ch / self.worldH) * 0.98
-	self.fitScale = fitScale
-	local s = fitScale * self.zoom
+-- how many stage pixels one hex unit takes right now
+function BoardView:unitPixels(): number
+	return U * self.fitScale * self.cam.zoom
+end
+
+---------------------------------------------------------------------------
+-- camera
+---------------------------------------------------------------------------
+
+-- The tiles are fitted into `rect` (stage pixels); the rest of the map runs under the HUD.
+function BoardView:setFocus(rect, instant: boolean?)
+	self.focus = { x = rect.x, y = rect.y, w = math.max(10, rect.w), h = math.max(10, rect.h) }
+	local box = self.tileBox
+	self.fitScale = math.min(self.focus.w / (box.x1 - box.x0), self.focus.h / (box.y1 - box.y0))
+	self:_clampGoal()
+	if instant then
+		self.cam = table.clone(self.goal)
+		self:_applyCamera()
+	end
+end
+
+function BoardView:_clampGoal()
+	local g = self.goal
+	g.zoom = math.clamp(g.zoom, 1, MAX_ZOOM)
+	local box = self.tileBox
+	local s = self.fitScale * g.zoom
+	-- how far the centre can move while the tiles still cover the focus area
+	local halfW = self.focus.w / 2 / s
+	local halfH = self.focus.h / 2 / s
+	local minX, maxX = box.x0 + halfW, box.x1 - halfW
+	local minY, maxY = box.y0 + halfH, box.y1 - halfH
+	local mx, my = (box.x0 + box.x1) / 2, (box.y0 + box.y1) / 2
+	g.x = if minX > maxX then mx else math.clamp(g.x, minX, maxX)
+	g.y = if minY > maxY then my else math.clamp(g.y, minY, maxY)
+end
+
+function BoardView:_applyCamera()
+	local s = self.fitScale * self.cam.zoom
+	local f = self.focus
 	self.scale.Scale = s
-	-- clamp pan so the map can't be dragged off screen
-	local maxX = math.max(0, (self.worldW * s - cw) / 2)
-	local maxY = math.max(0, (self.worldH * s - ch) / 2)
-	self.pan = Vector2.new(math.clamp(self.pan.X, -maxX, maxX), math.clamp(self.pan.Y, -maxY, maxY))
-	self.world.Position = UDim2.new(0.5, self.pan.X, 0.5, self.pan.Y)
+	self.world.Position = UDim2.fromOffset(f.x + f.w / 2 - self.cam.x * s, f.y + f.h / 2 - self.cam.y * s)
 end
 
-function BoardView:_bindZoom()
-	local dragging = false
-	local last = nil
-	self.maid:add(self.container.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton2 or input.UserInputType == Enum.UserInputType.MouseButton3 then
-			dragging = true
-			last = input.Position
+function BoardView:_stepCamera(dt: number)
+	local c, g = self.cam, self.goal
+	local k = 1 - math.exp(-dt * 9)
+	if math.abs(c.x - g.x) + math.abs(c.y - g.y) + math.abs(c.zoom - g.zoom) * 100 < 0.05 then
+		if c.x ~= g.x or c.y ~= g.y or c.zoom ~= g.zoom then
+			self.cam = table.clone(g)
+			self:_applyCamera()
 		end
-	end))
-	self.maid:add(UserInputService.InputEnded:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton2 or input.UserInputType == Enum.UserInputType.MouseButton3 then
-			dragging = false
-		end
-	end))
-	self.maid:add(UserInputService.InputChanged:Connect(function(input)
-		if dragging and input.UserInputType == Enum.UserInputType.MouseMovement and last then
-			local delta = input.Position - last
-			last = input.Position
-			local outer = self.outerScale or 1
-			self.pan += Vector2.new(delta.X, delta.Y) / outer
-			self:_fit()
-		end
-	end))
-	self.maid:add(self.container.InputChanged:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseWheel then
-			self:setZoom(self.zoom * (if input.Position.Z > 0 then 1.15 else 1 / 1.15))
-		end
-	end))
-	self.maid:add(UserInputService.TouchPinch:Connect(function(_positions, scale, _velocity, state)
-		if state == Enum.UserInputState.Change then
-			self:setZoom(self.zoom * (1 + (scale - 1) * 0.05))
-		end
-	end))
+		return
+	end
+	c.x += (g.x - c.x) * k
+	c.y += (g.y - c.y) * k
+	c.zoom += (g.zoom - c.zoom) * k
+	self:_applyCamera()
+end
+
+-- Zoom by `factor`, keeping the stage point `around` (or the focus centre) where it is.
+function BoardView:zoomBy(factor: number, around: Vector2?)
+	local g = self.goal
+	local before = g.zoom
+	local after = math.clamp(before * factor, 1, MAX_ZOOM)
+	if after == before then
+		return
+	end
+	if around then
+		local f = self.focus
+		local s0 = self.fitScale * before
+		local s1 = self.fitScale * after
+		local ox, oy = around.X - f.x - f.w / 2, around.Y - f.y - f.h / 2
+		g.x += ox / s0 - ox / s1
+		g.y += oy / s0 - oy / s1
+	end
+	g.zoom = after
+	self:_clampGoal()
 end
 
 function BoardView:setZoom(z: number)
-	self.zoom = math.clamp(z, 1, 2.6)
-	if self.zoom == 1 then
-		self.pan = Vector2.zero
-	end
-	self:_fit()
+	self:zoomBy(z / self.goal.zoom)
 end
 
--- Keep the given tile on screen when zoomed in.
-function BoardView:follow(tile: number)
-	if self.zoom <= 1.01 then
+function BoardView:fit()
+	local box = self.tileBox
+	self.goal = { x = (box.x0 + box.x1) / 2, y = (box.y0 + box.y1) / 2, zoom = 1 }
+	self:_clampGoal()
+end
+
+function BoardView:isZoomed(): boolean
+	return self.goal.zoom > 1.05
+end
+
+-- Keep a world point in view: when zoomed in, slide so it sits in the middle area.
+function BoardView:followPoint(world: Vector2, force: boolean?)
+	if not force and os.clock() < self.manualUntil then
 		return
 	end
-	local p = self:tileWorld(tile)
-	local s = self.scale.Scale
-	local target = Vector2.new((self.worldW / 2 - p.X) * s, (self.worldH / 2 - p.Y) * s)
-	self.pan = target
-	self:_fit()
+	if self.goal.zoom <= 1.02 then
+		return
+	end
+	local s = self.fitScale * self.goal.zoom
+	local f = self.focus
+	local dx = (world.X - self.goal.x) * s
+	local dy = (world.Y - self.goal.y) * s
+	local mx, my = f.w * 0.3, f.h * 0.3
+	if force or math.abs(dx) > mx or math.abs(dy) > my then
+		self.goal.x = world.X
+		self.goal.y = world.Y
+		self:_clampGoal()
+	end
+end
+
+function BoardView:follow(tile: number, force: boolean?)
+	self:followPoint(self:tileWorld(tile), force)
+end
+
+function BoardView:_bindInput()
+	-- wheel to zoom, drag to pan (mouse or one finger), pinch to zoom
+	local dragging: { [string]: any }? = nil
+	local touches = {}
+	local pinchStart = nil
+
+	local function insideBoard(pos: Vector3 | Vector2): boolean
+		local abs = self.container.AbsolutePosition
+		local size = self.container.AbsoluteSize
+		return pos.X >= abs.X and pos.Y >= abs.Y and pos.X <= abs.X + size.X and pos.Y <= abs.Y + size.Y
+	end
+	local function toStage(pos: Vector3 | Vector2): Vector2
+		local abs = self.container.AbsolutePosition
+		local k = Util.inheritedScale(self.container, true)
+		return Vector2.new((pos.X - abs.X) / k, (pos.Y - abs.Y) / k)
+	end
+
+	self.maid:add(UserInputService.InputBegan:Connect(function(input, processed)
+		local t = input.UserInputType
+		if t == Enum.UserInputType.Touch then
+			touches[input] = true
+		end
+		if processed or not insideBoard(input.Position) then
+			return
+		end
+		if t == Enum.UserInputType.MouseButton1 or t == Enum.UserInputType.MouseButton2 or t == Enum.UserInputType.MouseButton3 or t == Enum.UserInputType.Touch then
+			dragging = { input = input, last = toStage(input.Position), moved = 0 }
+		end
+	end))
+	self.maid:add(UserInputService.InputChanged:Connect(function(input, processed)
+		local t = input.UserInputType
+		if t == Enum.UserInputType.MouseWheel then
+			if not processed and insideBoard(input.Position) then
+				self.manualUntil = os.clock() + 6
+				self:zoomBy(if input.Position.Z > 0 then 1.18 else 1 / 1.18, toStage(input.Position))
+			end
+			return
+		end
+		local d = dragging
+		if not d then
+			return
+		end
+		local moving = (t == Enum.UserInputType.MouseMovement and d.input.UserInputType ~= Enum.UserInputType.Touch)
+			or (input == d.input)
+		if not moving then
+			return
+		end
+		-- a second finger means a pinch, not a pan
+		local count = 0
+		for _ in touches do
+			count += 1
+		end
+		if count > 1 then
+			return
+		end
+		local now = toStage(input.Position)
+		local delta = now - d.last
+		d.last = now
+		d.moved += delta.Magnitude
+		if d.moved > 6 then
+			self.manualUntil = os.clock() + 6
+			self.dragMoved = true
+			local s = self.fitScale * self.goal.zoom
+			self.goal.x -= delta.X / s
+			self.goal.y -= delta.Y / s
+			self:_clampGoal()
+			-- follow the finger exactly while dragging
+			self.cam.x, self.cam.y = self.goal.x, self.goal.y
+			self:_applyCamera()
+		end
+	end))
+	self.maid:add(UserInputService.InputEnded:Connect(function(input)
+		touches[input] = nil
+		local d = dragging
+		if d and (input == d.input or input.UserInputType == d.input.UserInputType) then
+			dragging = nil
+			task.delay(0.05, function()
+				self.dragMoved = false
+			end)
+		end
+	end))
+	self.maid:add(UserInputService.TouchPinch:Connect(function(positions, scale, _velocity, state, processed)
+		if state == Enum.UserInputState.Begin then
+			pinchStart = if processed then nil else self.goal.zoom
+			dragging = nil
+		elseif state == Enum.UserInputState.Change and pinchStart then
+			self.manualUntil = os.clock() + 6
+			local around = nil
+			if #positions >= 2 then
+				around = toStage((positions[1] + positions[2]) / 2)
+			end
+			self:zoomBy((pinchStart * scale) / self.goal.zoom, around)
+		elseif state == Enum.UserInputState.End or state == Enum.UserInputState.Cancel then
+			pinchStart = nil
+		end
+	end))
 end
 
 ---------------------------------------------------------------------------
@@ -227,11 +410,6 @@ function BoardView:_buildPaper()
 	})
 	Util.corner(paper, 0.35 * U)
 	Util.stroke(paper, hex("6B4423"), 3)
-	task.defer(function()
-		if paper.Parent then
-			Util.shadow(paper, { offset = 8, transparency = 0.5 })
-		end
-	end)
 	-- sea / stone / swamp wash inside the frame
 	local inset = 0.55 * U
 	local wash = Util.new("Frame", {
@@ -266,12 +444,12 @@ end
 -- coast, a slightly smaller ring of paper circles on top.
 function BoardView:_buildLand()
 	local T = self.theme
-	local coastColor = Util.mix(T.ink, T.wash, 0.35)
+	local coastColor = Util.mix(T.ink, T.wash, 0.25)
 	local land = self.layers.Land
 	for pass = 1, 2 do
 		for _, t in self.layout.tiles do
 			local p = self:tileWorld(t.id)
-			local r = if pass == 1 then 1.29 * U else 1.22 * U
+			local r = if pass == 1 then S.coast * U else (S.coast - 0.07) * U
 			local dot = Util.new("Frame", {
 				Name = if pass == 1 then "Coast" else "Shore",
 				BackgroundColor3 = if pass == 1 then coastColor else T.paper,
@@ -348,11 +526,11 @@ function BoardView:_buildLinks()
 		local dir = (b - a).Unit
 		local dash = Util.new("Frame", {
 			Name = "Dash",
-			BackgroundColor3 = if ln.shortcut then C.inkRed else hex("6B4A2E"),
+			BackgroundColor3 = if ln.shortcut then C.inkRed else hex("4A3020"),
 			BorderSizePixel = 0,
 			AnchorPoint = Vector2.new(0.5, 0.5),
 			Position = px(mid),
-			Size = UDim2.fromOffset(0.34 * U, 0.1 * U),
+			Size = UDim2.fromOffset(0.32 * U, 0.12 * U),
 			Rotation = math.deg(math.atan2(dir.Y, dir.X)),
 			Parent = layer,
 		})
@@ -360,8 +538,10 @@ function BoardView:_buildLinks()
 	end
 end
 
-local function hexagon(parent: Instance, center: Vector2, radius: number, color: Color3, z: number, name: string): { Frame }
+-- A hexagon from three rotated rectangles (pointy-top, or flat-top when `flat`).
+local function hexagon(parent: Instance, center: Vector2, radius: number, color: Color3, z: number, name: string, flat: boolean): { Frame }
 	local parts = {}
+	local base = if flat then 90 else 0
 	for i, rot in { 0, 60, 120 } do
 		local f = Util.new("Frame", {
 			Name = name .. i,
@@ -370,7 +550,7 @@ local function hexagon(parent: Instance, center: Vector2, radius: number, color:
 			AnchorPoint = Vector2.new(0.5, 0.5),
 			Position = px(center),
 			Size = UDim2.fromOffset(math.sqrt(3) * radius, radius),
-			Rotation = rot,
+			Rotation = rot + base,
 			ZIndex = z,
 			Parent = parent,
 		})
@@ -385,107 +565,147 @@ local function setHexColor(parts: { Frame }, color: Color3)
 	end
 end
 
-function BoardView:_tileKind(t): string
-	if t.kind ~= "normal" then
-		return t.kind
-	end
-	if self.natural[t.id] then
-		return self.natural[t.id]
-	end
-	if t.branch then
-		return "branch"
-	end
-	return "normal"
-end
-
 function BoardView:_buildTiles()
 	local layer = self.layers.Tiles
+	-- tiles lower on the map draw over the ones above (their wooden sides hang down)
+	local order = {}
 	for _, t in self.layout.tiles do
+		table.insert(order, t)
+	end
+	table.sort(order, function(a, b)
+		return a.y < b.y
+	end)
+	for i, t in order do
 		local center = self:tileWorld(t.id)
 		local root = Util.frame(layer, {
 			Name = "Tile" .. t.id,
 			AnchorPoint = Vector2.new(0.5, 0.5),
 			Position = px(center),
 			Size = UDim2.fromOffset(2 * U, 2 * U),
+			ZIndex = i,
 		})
 		local local0 = Vector2.new(U, U)
-		local colors = TILE_COLORS[t.kind] or TILE_COLORS.normal
-		if t.branch then
-			colors = TILE_COLORS.branch
-		end
-		local side = hexagon(root, local0 + Vector2.new(0, S.tileDepth * U), S.tileScale * U, Util.shade(colors[1], -0.38), 1, "Side")
-		local top = hexagon(root, local0, S.tileScale * U, colors[1], 2, "Top")
+		local r = S.tileScale * U
+		local side = hexagon(root, local0 + Vector2.new(0, S.tileDepth * U), r + 0.05 * U, RIM, 1, "Side", self.flat)
+		local rim = hexagon(root, local0, r + 0.05 * U, RIM, 2, "Rim", self.flat)
+		local top = hexagon(root, local0, r, TILE_COLORS.normal, 3, "Top", self.flat)
 		local label = Widgets.label(root, {
 			text = tostring(t.id),
 			font = "chunky",
 			size = math.floor(0.3 * U),
-			color = hex("8A5A2E"),
+			color = hex("9A6A3C"),
 			align = "center",
 			sizeUDim = UDim2.fromOffset(U, 0.4 * U),
 			anchor = Vector2.new(0.5, 0.5),
-			position = UDim2.fromOffset(U, U + 0.55 * U),
-			z = 4,
+			position = UDim2.fromOffset(U, U + 0.5 * U),
+			z = 8,
 		})
-		label.TextTransparency = 0.3
-		local parts = { root = root, side = side, top = top, label = label, icon = nil, hasIcon = false }
+		local parts = { root = root, side = side, rim = rim, top = top, label = label, kind = t.kind, branch = t.branch }
 		self.tileParts[t.id] = parts
-		self:_paintTile(t)
+		self:_paintTile(t.id)
 	end
 end
 
--- (re)colours a tile and its built-in icon for its current kind
-function BoardView:_paintTile(t)
-	local parts = self.tileParts[t.id]
-	local kind = self:_tileKind(t)
-	local colors = TILE_COLORS[kind] or TILE_COLORS.normal
-	local beltAngle = self.belt[t.id]
-	local top = if beltAngle then Util.mix(colors[1], Theme.Category.neutral, 0.3) else colors[1]
-	setHexColor(parts.side, Util.shade(top, -0.38))
-	setHexColor(parts.top, top)
-	if parts.icon then
-		parts.icon:Destroy()
-		parts.icon = nil
+-- What a tile shows right now: natural hazard > belt > placed card > token > plain.
+function BoardView:_paintTile(tile: number)
+	local parts = self.tileParts[tile]
+	if not parts then
+		return
 	end
-	if parts.belt then
-		parts.belt:Destroy()
-		parts.belt = nil
+	for _, key in { "skin", "icon", "inlay", "plaque" } do
+		if parts[key] then
+			parts[key]:Destroy()
+			parts[key] = nil
+		end
 	end
-	if beltAngle then
-		local mark = Util.frame(parts.root, {
-			Name = "Belt",
+	local kind = parts.kind
+	local natural = self.natural[tile]
+	local beltAngle = self.belt[tile]
+	local entry = self.placed[tile]
+	local token = self.tokens[tile]
+	local topColor = TILE_COLORS[kind] or (if parts.branch then TILE_COLORS.branch else TILE_COLORS.normal)
+	local skinKind = nil
+	if natural then
+		skinKind = natural
+	elseif beltAngle then
+		skinKind = "conveyor"
+	elseif entry and entry.item ~= "conveyor" then
+		skinKind = entry.item
+	end
+	if skinKind and TileSkins.top(skinKind) then
+		topColor = TileSkins.top(skinKind) :: Color3
+	end
+	setHexColor(parts.top, topColor)
+	setHexColor(parts.side, Util.shade(topColor, -0.5))
+
+	local root = parts.root
+	local function holder(name: string, size: number, z: number, y: number?): Frame
+		return Util.frame(root, {
+			Name = name,
 			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.fromOffset(U, U + 0.52 * U),
-			Size = UDim2.fromOffset(0.4 * U, 0.4 * U),
-			Rotation = beltAngle,
-			ZIndex = 5,
-		})
-		Icons.draw(Shapes.canvas(mark), BELT_CHEVRON, { ink = Theme.Category.neutral })
-		parts.belt = mark
-	end
-	local iconId, iconColor, size = nil, nil, 0.85
-	if kind == "start" then
-		iconId, iconColor = "flag", C.inkRed
-	elseif kind == "treasure" then
-		iconId, iconColor, size = "x_mark", C.inkRed, 1.05
-	elseif kind == "shortcutGate" then
-		iconId, iconColor = "gate_trap", hex("3A3F45")
-	elseif NATURAL_ICON[kind] then
-		iconId, iconColor = NATURAL_ICON[kind], C.white
-	end
-	parts.hasIcon = iconId ~= nil
-	parts.label.Visible = iconId == nil and beltAngle == nil and (self.cover[t.id] or 0) < 3
-	if iconId then
-		local holder = Util.frame(parts.root, {
-			Name = "TileIcon",
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.fromOffset(U, U - 0.02 * U),
+			Position = UDim2.fromOffset(U, U + (y or 0) * U),
 			Size = UDim2.fromOffset(size * U, size * U),
-			ZIndex = 5,
+			ZIndex = z,
 		})
-		Icons.make(holder, iconId, Icons.flatColors(iconColor, top, iconColor))
-		holder.Visible = (self.cover[t.id] or 0) == 0
-		parts.icon = holder
 	end
+	if skinKind then
+		local h = holder("Skin", 2, 4)
+		parts.skin = h
+		TileSkins.draw(h, skinKind, { flat = self.flat, r = S.tileScale / 2, dir = beltAngle })
+		local spin = h:FindFirstChild("Spin", true)
+		if spin then
+			task.spawn(function()
+				while spin.Parent do
+					(spin :: Frame).Rotation = ((spin :: Frame).Rotation + 1.5) % 360
+					task.wait(1 / 30)
+				end
+			end)
+		end
+	end
+
+	-- the card on the tile: a round plaque rimmed in its owner's colour
+	if entry then
+		local plaque = holder("Plaque", 0.74, 6)
+		local rimColor = if entry.owner and entry.owner > 0 then Theme.Seat[((entry.owner - 1) % 6) + 1] else C.inkSoft
+		local disc = Shapes.circle(plaque, 0.5, 0.5, 1, hex("2A1C13"))
+		Util.scaledStroke(disc, rimColor, 0.1, 3)
+		Icons.make(plaque, entry.item, Icons.flatColors(C.white, hex("2A1C13"), C.white), {
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.5, 0.5),
+			Size = UDim2.fromScale(0.66, 0.66),
+			ZIndex = 3,
+		})
+		parts.plaque = plaque
+	elseif natural and NATURAL_ICON[natural] then
+		local icon = holder("Icon", 0.72, 6)
+		Icons.make(icon, NATURAL_ICON[natural], Icons.flatColors(C.white, topColor, C.white))
+		parts.icon = icon
+	elseif token then
+		-- tokens are bold coloured inlays you can spot across the board
+		local inlay = holder("Token", 1.18, 5)
+		local color = Theme.Category[token] or C.inkSoft
+		local disc = Shapes.circle(inlay, 0.5, 0.5, 1, color)
+		Util.scaledStroke(disc, C.white, 0.07, 3)
+		Icons.make(inlay, TOKEN_ICON[token] or "info", Icons.flatColors(C.white, color, C.white), {
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.5, 0.5),
+			Size = UDim2.fromScale(0.64, 0.64),
+			ZIndex = 3,
+		})
+		parts.inlay = inlay
+	elseif kind == "start" or kind == "treasure" or kind == "shortcutGate" then
+		local iconId, color, size = "flag", C.inkRed, 0.86
+		if kind == "treasure" then
+			iconId, color, size = "x_mark", C.inkRed, 1.05
+		elseif kind == "shortcutGate" then
+			iconId, color = "gate_trap", hex("3A3F45")
+		end
+		local icon = holder("Icon", size, 6)
+		Icons.make(icon, iconId, Icons.flatColors(color, topColor, color))
+		parts.icon = icon
+	end
+	local busy = parts.skin ~= nil or parts.icon ~= nil or parts.inlay ~= nil or parts.plaque ~= nil
+	parts.label.Visible = not busy and (self.cover[tile] or 0) == 0
 end
 
 -- Invisible square buttons for picking tiles (rotated frames don't take clicks well).
@@ -498,7 +718,7 @@ function BoardView:_buildHits()
 			BackgroundTransparency = 1,
 			AnchorPoint = Vector2.new(0.5, 0.5),
 			Position = px(self:tileWorld(t.id)),
-			Size = UDim2.fromOffset(1.5 * U, 1.5 * U),
+			Size = UDim2.fromOffset(1.55 * U, 1.55 * U),
 			Visible = false,
 			Parent = self.layers.Hits,
 		})
@@ -510,110 +730,145 @@ end
 -- dynamic things: tokens, placed items, natural traps
 ---------------------------------------------------------------------------
 
-function BoardView:_makeToken(tile: number, kind: string)
-	local center = self:tileWorld(tile) - Vector2.new(0, 0.14 * U)
-	local holder = Util.frame(self.layers.Marks, {
-		Name = "Token" .. tile,
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = px(center),
-		Size = UDim2.fromOffset(0.8 * U, 0.8 * U),
-	})
-	-- coin edge peeking out below the medallion (0.78 + its brass rim 2 x 0.08 x 0.78 = 0.905)
-	Shapes.circle(holder, 0.5, 0.54, 0.905, C.brassDark, { name = "Edge" })
-	Icons.medallion(holder, TOKEN_ICON[kind] or "info", Theme.Category[kind] or C.inkSoft, {
-		Position = UDim2.fromScale(0.5, 0.47),
-		Size = UDim2.fromScale(0.78, 0.78),
-		ZIndex = 2,
-	})
-	-- slow idle bob so the board feels alive
-	local phase = tile * 0.7
-	local base = center
-	task.spawn(function()
-		local t0 = os.clock()
-		while holder.Parent do
-			local t = os.clock() - t0 + phase
-			holder.Position = UDim2.fromOffset(base.X, base.Y + math.sin(t * 1.8) * 1.5)
-			task.wait(1 / 20)
-		end
-	end)
-	return holder
+function BoardView:setToken(tile: number, kind: string?)
+	if self.tokens[tile] == kind then
+		return
+	end
+	self.tokens[tile] = kind
+	self:_paintTile(tile)
+	local parts = self.tileParts[tile]
+	if kind and parts and parts.inlay then
+		Util.popIn(parts.inlay, 0.3, 0.3)
+	end
 end
 
-local OWNER_FALLBACK = C.inkSoft
-
-function BoardView:_makePlaced(entry)
-	local tile = entry.tile
-	local center = self:tileWorld(tile) - Vector2.new(0, 0.14 * U)
-	local item = entry.item
-	local category = if item == "teleporter" or item == "spore_warper" or item == "conveyor" or item == "shifting_sands" then "neutral" else "trap"
-	local holder = Util.frame(self.layers.Pieces, {
-		Name = "Placed" .. tile,
+-- A used token lifts off its tile and lands on its new one.
+function BoardView:moveToken(from: number, to: number, kind: string?)
+	local k = kind or self.tokens[from]
+	if not k then
+		return
+	end
+	self.tokens[from] = nil
+	self:_paintTile(from)
+	local a, b = self:tileWorld(from), self:tileWorld(to)
+	local flyer = Util.frame(self.layers.Fx, {
+		Name = "TokenFly",
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = px(center),
-		Size = UDim2.fromOffset(0.6 * U, 0.6 * U),
+		Position = px(a),
+		Size = UDim2.fromOffset(1.18 * U, 1.18 * U),
+		ZIndex = 45,
 	})
-	-- the plaque's darker wooden side, the same outline as the rimmed face
-	local side = Util.new("Frame", {
-		Name = "Side",
-		BackgroundColor3 = C.woodDeep,
-		BorderSizePixel = 0,
-		Position = UDim2.fromScale(0, 0.14),
-		Size = UDim2.fromScale(1, 1),
-		Parent = holder,
-	})
-	Util.corner(side, 0.18)
-	Util.stroke(side, C.woodDeep, 3)
-	local plaque = Util.new("Frame", {
-		Name = "Plaque",
-		BackgroundColor3 = C.wood,
-		BorderSizePixel = 0,
-		Size = UDim2.fromScale(1, 1),
-		ZIndex = 2,
-		Parent = holder,
-	})
-	Util.corner(plaque, 0.18)
-	-- the rim is painted in the colour of whoever placed it
-	local rim = if entry.owner and entry.owner > 0 then Theme.Seat[((entry.owner - 1) % 6) + 1] or OWNER_FALLBACK else Theme.Category[category]
-	Util.stroke(plaque, rim, 3)
-	Icons.engraved(plaque, item, C.wood, {
+	local color = Theme.Category[k] or C.inkSoft
+	local disc = Shapes.circle(flyer, 0.5, 0.5, 1, color)
+	Util.scaledStroke(disc, C.white, 0.07, 3)
+	Icons.make(flyer, TOKEN_ICON[k] or "info", Icons.flatColors(C.white, color, C.white), {
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.5),
-		Size = UDim2.fromScale(0.8, 0.8),
-		ZIndex = 4,
+		Size = UDim2.fromScale(0.64, 0.64),
+		ZIndex = 3,
 	})
-	-- a conveyor tints the tiles it covers and marks which way the belt runs
-	if item == "conveyor" and entry.tiles then
+	local s = Util.scaler(flyer)
+	local dist = (b - a).Magnitude
+	local t = math.clamp(dist / (U * 14), 0.35, 0.7)
+	Sound.play("whoosh", 1.1)
+	Util.tween(s, t * 0.5, { Scale = 1.35 }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	Util.tween(flyer, t, { Position = px(b) }, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
+	task.delay(t * 0.5, function()
+		Util.tween(s, t * 0.5, { Scale = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+	end)
+	task.delay(t, function()
+		flyer:Destroy()
+		self.tokens[to] = k
+		self:_paintTile(to)
+		local parts = self.tileParts[to]
+		if parts and parts.inlay then
+			Util.bump(parts.inlay, 0.25)
+		end
+		self:puff(b, color)
+	end)
+end
+
+function BoardView:setNatural(tile: number, kind: string?)
+	if self.natural[tile] == kind then
+		return
+	end
+	self.natural[tile] = kind
+	self:_paintTile(tile)
+	local parts = self.tileParts[tile]
+	if kind and parts and parts.skin then
+		Util.popIn(parts.skin, 0.35, 0.4)
+	end
+end
+
+-- A card placed on the board reskins its tile (or the conveyor's three tiles).
+function BoardView:placeItem(entry, animate: boolean?)
+	local tile = entry.tile
+	local existing = self.placed[tile]
+	if existing and existing.item == entry.item then
+		return
+	end
+	if existing then
+		self:_clearPlaced(tile)
+	end
+	self.placed[tile] = { tile = tile, item = entry.item, owner = entry.owner, dir = entry.dir, tiles = entry.tiles }
+	if entry.item == "conveyor" and entry.tiles then
 		self:_setBelt(tile, entry.tiles, entry.dir)
 	end
-	if item == "teleporter" then
-		-- an open ring around the plaque that keeps turning (the gap shows it spinning)
-		local ring = Shapes.ring(holder, 0.5, 0.5, 1.6, 0.1, Theme.Category.neutral, { px = 30, cut = { 0, 0.78 } })
-		ring.ZIndex = 1
-		task.spawn(function()
-			while ring.Parent do
-				ring.Rotation = (ring.Rotation + 2) % 360
-				task.wait(1 / 30)
+	self:_paintTile(tile)
+	if animate then
+		local parts = self.tileParts[tile]
+		if parts then
+			for _, key in { "skin", "plaque" } do
+				if parts[key] then
+					Util.popIn(parts[key], 0.35, 0.3)
+				end
 			end
+			Util.bump(parts.root, 0.12)
+		end
+	end
+end
+
+function BoardView:_clearPlaced(tile: number)
+	self.placed[tile] = nil
+	if self.beltOf[tile] then
+		self:_setBelt(tile, nil, nil)
+	end
+	self:_paintTile(tile)
+end
+
+function BoardView:removePlaced(tile: number)
+	local parts = self.tileParts[tile]
+	if not self.placed[tile] then
+		return
+	end
+	if parts and parts.plaque then
+		local plaque = parts.plaque
+		parts.plaque = nil
+		plaque.Parent = self.layers.Fx
+		plaque.Position = px(self:tileWorld(tile))
+		Util.tween(Util.scaler(plaque), 0.25, { Scale = 0 }, Enum.EasingStyle.Back, Enum.EasingDirection.In)
+		task.delay(0.26, function()
+			plaque:Destroy()
 		end)
 	end
-	Util.popIn(holder, 0.35, 0.3)
-	return holder
+	self:_clearPlaced(tile)
 end
 
 function BoardView:_setBelt(origin: number, tiles: { number }?, dir: string?)
 	for _, t in self.beltOf[origin] or {} do
 		self.belt[t] = nil
-		self:_paintTile(self.board.tiles[t])
+		self:_paintTile(t)
 	end
 	self.beltOf[origin] = tiles
 	for i, t in tiles or {} do
-		local from, to = t, (tiles :: { number })[i + 1]
+		local list = tiles :: { number }
+		local from, to = t, list[i + 1]
 		if not to then
-			from, to = (tiles :: { number })[i - 1] or t, t
+			from, to = list[i - 1] or t, t
 		end
 		local v = self:tileWorld(to) - self:tileWorld(from)
 		self.belt[t] = math.deg(math.atan2(v.Y, v.X)) + (if dir == "back" then 180 else 0)
-		self:_paintTile(self.board.tiles[t])
+		self:_paintTile(t)
 	end
 end
 
@@ -623,61 +878,44 @@ function BoardView:applySnapshot(snap)
 	for _, n in snap.natural do
 		natural[n.tile] = n.kind
 	end
-	for tile, kind in natural do
-		if self.natural[tile] ~= kind then
-			self.natural[tile] = kind
-			self:_paintTile(self.board.tiles[tile])
+	for tile in self.natural do
+		if not natural[tile] then
+			self:setNatural(tile, nil)
 		end
+	end
+	for tile, kind in natural do
+		self:setNatural(tile, kind)
 	end
 	-- tokens
 	local tokens = {}
 	for _, t in snap.tokens do
 		tokens[t.tile] = t.kind
 	end
-	for tile, kind in tokens do
-		if not self.tokens[tile] then
-			self.tokens[tile] = self:_makeToken(tile, kind)
+	for tile in self.tokens do
+		if not tokens[tile] then
+			self:setToken(tile, nil)
 		end
 	end
-	for tile, f in self.tokens do
-		if not tokens[tile] then
-			f:Destroy()
-			self.tokens[tile] = nil
-		end
+	for tile, kind in tokens do
+		self:setToken(tile, kind)
 	end
 	-- placed items
 	local placed = {}
 	for _, e in snap.placed do
 		placed[e.tile] = e
 	end
-	for tile, e in placed do
-		local existing = self.placed[tile]
-		if not existing or existing:GetAttribute("Item") ~= e.item then
-			if existing then
-				existing:Destroy()
-				if self.beltOf[tile] then
-					self:_setBelt(tile, nil, nil)
-				end
-			end
-			local f = self:_makePlaced(e)
-			f:SetAttribute("Item", e.item)
-			self.placed[tile] = f
+	for tile in self.placed do
+		if not placed[tile] then
+			self:removePlaced(tile)
 		end
 	end
-	for tile, f in self.placed do
-		if not placed[tile] then
-			self:_removePlacedVisual(tile)
-		end
+	for _, e in placed do
+		self:placeItem(e)
 	end
 	-- pawns
-	local occupancy = {}
-	for _, p in snap.players do
-		occupancy[p.tile] = occupancy[p.tile] or {}
-		table.insert(occupancy[p.tile], p.seat)
-	end
 	for _, p in snap.players do
 		local pawn = self.pawns[p.seat]
-		if pawn and pawn.tile ~= p.tile then
+		if pawn and not pawn.moving then
 			pawn.tile = p.tile
 		end
 		if pawn then
@@ -689,21 +927,6 @@ function BoardView:applySnapshot(snap)
 	self:_arrange()
 end
 
-function BoardView:_removePlacedVisual(tile: number)
-	local f = self.placed[tile]
-	if not f then
-		return
-	end
-	self.placed[tile] = nil
-	if self.beltOf[tile] then
-		self:_setBelt(tile, nil, nil)
-	end
-	Util.tween(Util.scaler(f), 0.25, { Scale = 0 }, Enum.EasingStyle.Back, Enum.EasingDirection.In)
-	task.delay(0.26, function()
-		f:Destroy()
-	end)
-end
-
 ---------------------------------------------------------------------------
 -- pawns
 ---------------------------------------------------------------------------
@@ -713,28 +936,59 @@ function BoardView:addPawn(seat: number, info, tile: number)
 	local root = Util.frame(self.layers.Pawns, {
 		Name = "Pawn" .. seat,
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		Size = UDim2.fromOffset(0.86 * U, 0.86 * U),
+		Size = UDim2.fromOffset(PAWN * U, PAWN * U),
 		ZIndex = seat,
 	})
 	local share = Util.new("UIScale", { Name = "ShareScale", Parent = root })
 	local lift = Util.frame(root, { Name = "Lift" })
+	-- a flat shadow on the tile so the pawn stands out from the board
+	local shadow = Util.new("Frame", {
+		Name = "Shadow",
+		BackgroundColor3 = hex("1A120C"),
+		BackgroundTransparency = 0.55,
+		BorderSizePixel = 0,
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.54, 0.6),
+		Size = UDim2.fromScale(0.94, 0.94),
+		ZIndex = 0,
+		Parent = root,
+	})
+	Util.corner(shadow, 0.5)
 	CosmeticArt.pawn(lift, info.look and info.look.pawn, seatColor, {
 		Position = UDim2.fromScale(0.5, 0.5),
 		Size = UDim2.fromScale(1, 1),
+		ZIndex = 1,
 	})
+	-- the player's own face in the middle: no mistaking a pawn for anything else
+	Avatars.portrait(lift, info, {
+		Position = UDim2.fromScale(0.5, 0.47),
+		Size = UDim2.fromScale(0.5, 0.5),
+		ZIndex = 4,
+	}, { ring = C.white, ringPx = 2, back = Util.shade(seatColor, 0.45) })
 	local ring = Util.new("Frame", {
 		Name = "TurnRing",
 		BackgroundTransparency = 1,
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.5),
-		Size = UDim2.fromScale(1.3, 1.3),
+		Position = UDim2.fromScale(0.5, 0.47),
+		Size = UDim2.fromScale(1.2, 1.2),
 		Visible = false,
 		ZIndex = 0,
 		Parent = lift,
 	})
 	Util.corner(ring, 0.5)
-	local st = Util.stroke(ring, C.brassLight, 3)
-	self.pawns[seat] = { frame = root, lift = lift, share = share, tile = tile, ring = ring, ringStroke = st, seat = seat, info = info }
+	local st = Util.stroke(ring, C.brassLight, 4)
+	self.pawns[seat] = {
+		frame = root,
+		lift = lift,
+		share = share,
+		shadow = shadow,
+		tile = tile,
+		ring = ring,
+		ringStroke = st,
+		seat = seat,
+		info = info,
+		color = seatColor,
+	}
 	self.seatInfo[seat] = info
 	self:_arrange(true)
 	return root
@@ -772,20 +1026,19 @@ function BoardView:_arrange(instant: boolean?)
 			end
 		end
 	end
-	-- a tile's own icon hides under pawns, and its number once a crowd covers it
+	-- a tile's number hides under pawns
 	for tile, parts in self.tileParts do
 		local n = count[tile] or 0
 		if (self.cover[tile] or 0) ~= n then
 			self.cover[tile] = n
-			if parts.icon then
-				parts.icon.Visible = n == 0
-			end
-			parts.label.Visible = not parts.hasIcon and parts.belt == nil and n < 3
+			local busy = parts.skin ~= nil or parts.icon ~= nil or parts.inlay ~= nil or parts.plaque ~= nil
+			parts.label.Visible = not busy and n == 0
 		end
 	end
 end
 
 function BoardView:setCurrent(seat: number?)
+	self.currentSeat = seat
 	for s, pawn in self.pawns do
 		local on = s == seat
 		pawn.ring.Visible = on
@@ -794,10 +1047,10 @@ function BoardView:setCurrent(seat: number?)
 			pawn.ringPulse = true
 			task.spawn(function()
 				while pawn.ring.Visible and pawn.ring.Parent do
-					Util.tween(pawn.ring, 0.6, { Size = UDim2.fromScale(1.45, 1.45) }, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
-					Util.tween(pawn.ringStroke, 0.6, { Transparency = 0.6 }, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+					Util.tween(pawn.ring, 0.6, { Size = UDim2.fromScale(1.32, 1.32) }, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+					Util.tween(pawn.ringStroke, 0.6, { Transparency = 0.55 }, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
 					task.wait(0.6)
-					Util.tween(pawn.ring, 0.6, { Size = UDim2.fromScale(1.25, 1.25) }, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+					Util.tween(pawn.ring, 0.6, { Size = UDim2.fromScale(1.14, 1.14) }, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
 					Util.tween(pawn.ringStroke, 0.6, { Transparency = 0 }, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
 					task.wait(0.6)
 				end
@@ -805,6 +1058,66 @@ function BoardView:setCurrent(seat: number?)
 			end)
 		end
 	end
+	self:_ensureTag()
+end
+
+-- The name tag that floats over the current player's pawn (screen space, always readable).
+function BoardView:_ensureTag()
+	local seat = self.currentSeat
+	local pawn = seat and self.pawns[seat]
+	if not pawn then
+		if self.tag then
+			self.tag.Visible = false
+		end
+		return
+	end
+	if not self.tag then
+		local tag = Util.new("Frame", {
+			Name = "NameTag",
+			BackgroundColor3 = hex("1F150E"),
+			BackgroundTransparency = 0.1,
+			BorderSizePixel = 0,
+			AnchorPoint = Vector2.new(0.5, 1),
+			AutomaticSize = Enum.AutomaticSize.X,
+			Size = UDim2.fromOffset(0, 24),
+			ZIndex = 6,
+			Parent = self.overlay,
+		})
+		Util.corner(tag, 0.5)
+		Util.pad(tag, 10, 0, 10, 0)
+		local label = Widgets.label(tag, {
+			text = "",
+			font = "heavy",
+			size = 15,
+			color = C.white,
+			sizeUDim = UDim2.fromOffset(0, 24),
+			z = 7,
+		})
+		label.AutomaticSize = Enum.AutomaticSize.X
+		self.tag = tag
+		self.tagLabel = label
+		self.tagStroke = Util.stroke(tag, C.white, 2)
+	end
+	local info = self.seatInfo[seat] or {}
+	self.tagLabel.Text = info.tagName or info.name or ""
+	self.tagStroke.Color = pawn.color
+	self.tag.Visible = true
+end
+
+function BoardView:_stepTags()
+	local tag = self.tag
+	if not tag or not tag.Visible then
+		return
+	end
+	local pawn = self.currentSeat and self.pawns[self.currentSeat]
+	if not pawn then
+		return
+	end
+	local pos = pawn.frame.Position
+	local lift = pawn.lift.Position
+	local top = Vector2.new(pos.X.Offset, pos.Y.Offset + lift.Y.Offset - PAWN * U * 0.62 * pawn.share.Scale)
+	local at = self:toStage(top)
+	tag.Position = UDim2.fromOffset(at.X, at.Y - 4)
 end
 
 -- Persistent status marks (burning / frozen) on a pawn.
@@ -826,16 +1139,16 @@ function BoardView:_statusMarks(seat: number)
 	mark("Burning", pawn.burning == true, function()
 		local holder = Util.frame(nil, {
 			AnchorPoint = Vector2.new(0.5, 1),
-			Position = UDim2.fromScale(0.5, 0.35),
-			Size = UDim2.fromScale(0.7, 0.7),
+			Position = UDim2.fromScale(0.5, 0.18),
+			Size = UDim2.fromScale(0.56, 0.56),
 			ZIndex = 9,
 		})
 		Icons.make(holder, "fire", Icons.flatColors(hex("FF7B2E"), hex("FFD166"), hex("FFD166")))
 		task.spawn(function()
 			while holder.Parent do
-				Util.tween(holder, 0.25, { Size = UDim2.fromScale(0.62, 0.78) }, Enum.EasingStyle.Sine)
+				Util.tween(holder, 0.25, { Size = UDim2.fromScale(0.5, 0.62) }, Enum.EasingStyle.Sine)
 				task.wait(0.25)
-				Util.tween(holder, 0.25, { Size = UDim2.fromScale(0.74, 0.66) }, Enum.EasingStyle.Sine)
+				Util.tween(holder, 0.25, { Size = UDim2.fromScale(0.6, 0.52) }, Enum.EasingStyle.Sine)
 				task.wait(0.25)
 			end
 		end)
@@ -844,13 +1157,21 @@ function BoardView:_statusMarks(seat: number)
 	mark("Frozen", pawn.frozen == true, function()
 		local holder = Util.frame(nil, {
 			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.fromScale(0.15, 0.2),
-			Size = UDim2.fromScale(0.5, 0.5),
+			Position = UDim2.fromScale(0.86, 0.16),
+			Size = UDim2.fromScale(0.4, 0.4),
 			ZIndex = 9,
 		})
 		Icons.medallion(holder, "ice", hex("5DADE2"), { Size = UDim2.fromScale(1, 1) })
 		return holder
 	end)
+end
+
+function BoardView:setStatus(seat: number, status: string, on: boolean)
+	local pawn = self.pawns[seat]
+	if pawn then
+		pawn[status] = on
+		self:_statusMarks(seat)
+	end
 end
 
 function BoardView:pawnWorld(seat: number): Vector2
@@ -878,17 +1199,17 @@ function BoardView:hop(seat: number, path: { number }, kind: string, trailId: st
 	if Pacing.walkKinds[kind] then
 		for _, tile in path do
 			pawn.tile = tile
-			local target = self:tileWorld(tile) - Vector2.new(0, 0.3 * U)
+			local target = self:tileWorld(tile) + Vector2.new(0, SLOTS[1][1][2] * U)
 			Util.tween(pawn.frame, step, { Position = px(target) }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 			-- arc up and back down
-			Util.tween(pawn.lift, step * 0.5, { Position = UDim2.fromOffset(0, -0.42 * U) }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+			Util.tween(pawn.lift, step * 0.5, { Position = UDim2.fromOffset(0, -0.5 * U) }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 			task.wait(step * 0.5)
 			Util.tween(pawn.lift, step * 0.5, { Position = UDim2.new() }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
 			task.wait(step * 0.5)
-			Sound.play("hop", 0.9 + math.random() * 0.2)
+			Sound.play("step", 0.92 + math.random() * 0.16)
 			-- squash on landing
 			local s = Util.scaler(pawn.lift)
-			s.Scale = 0.88
+			s.Scale = 0.9
 			Util.tween(s, 0.12, { Scale = 1 }, Enum.EasingStyle.Back)
 			CosmeticArt.trailBurst(self.layers.Fx, trailId, target + Vector2.new(0, 0.3 * U), U)
 			self:follow(tile)
@@ -948,7 +1269,7 @@ function BoardView:puff(at: Vector2, color: Color3)
 		})
 		Util.corner(dot, 0.5)
 		Util.tween(dot, 0.4, {
-			Position = px(at + Vector2.new(math.cos(a), math.sin(a)) * 0.6 * U),
+			Position = px(at + Vector2.new(math.cos(a), math.sin(a)) * 0.7 * U),
 			BackgroundTransparency = 1,
 			Size = UDim2.fromOffset(0.08 * U, 0.08 * U),
 		}, Enum.EasingStyle.Quad)
@@ -971,7 +1292,7 @@ function BoardView:swirl(at: Vector2, color: Color3)
 		Util.corner(ring, 0.5)
 		local st = Util.stroke(ring, color, 3)
 		task.delay((i - 1) * 0.12, function()
-			Util.tween(ring, 0.5, { Size = UDim2.fromOffset(1.6 * U, 1.6 * U) }, Enum.EasingStyle.Quad)
+			Util.tween(ring, 0.5, { Size = UDim2.fromOffset(1.8 * U, 1.8 * U) }, Enum.EasingStyle.Quad)
 			Util.tween(st, 0.5, { Transparency = 1 })
 			task.delay(0.52, function()
 				ring:Destroy()
@@ -980,22 +1301,25 @@ function BoardView:swirl(at: Vector2, color: Color3)
 	end
 end
 
+-- Pop-up text over the board. Sized in stage pixels (not world) so it stays readable
+-- however far the camera is zoomed out.
 function BoardView:floatText(at: Vector2, text: string, color: Color3, size: number?)
+	local k = math.max(0.4, self:unitPixels() / U)
 	local label = Widgets.label(self.layers.Fx, {
 		text = text,
 		font = "chunky",
-		size = size or math.floor(0.62 * U),
+		size = math.floor((size or 26) / k),
 		color = color,
 		align = "center",
-		sizeUDim = UDim2.fromOffset(6 * U, U),
+		sizeUDim = UDim2.fromOffset(8 * U, 1.4 * U),
 		anchor = Vector2.new(0.5, 0.5),
-		position = px(at),
+		position = px(at - Vector2.new(0, 0.5 * U)),
 		outline = C.ink,
-		outlineThickness = 3,
+		outlineThickness = 3 / k,
 		z = 60,
 	})
 	Util.popIn(label, 0.3, 0.4)
-	Util.tween(label, 1.2, { Position = px(at - Vector2.new(0, 1.1 * U)) }, Enum.EasingStyle.Quad)
+	Util.tween(label, 1.2, { Position = px(at - Vector2.new(0, 1.5 * U)) }, Enum.EasingStyle.Quad)
 	task.delay(0.9, function()
 		Util.tween(label, 0.35, { TextTransparency = 1 })
 		local st = label:FindFirstChildOfClass("UIStroke")
@@ -1012,49 +1336,118 @@ end
 -- picking tiles
 ---------------------------------------------------------------------------
 
--- Glows the given tiles and calls onPick(tile) when one is clicked. Returns a cancel fn.
-function BoardView:highlight(tiles: { number }, color: Color3, onPick: (number) -> ())
+--[[
+	Lights up `tiles` and calls onPick(tile) when one is chosen. With opts.confirm
+	(touch screens), the first tap only selects a tile (onSelect(tile) lets the caller
+	show a "place here" button) and a second tap on it confirms. opts.preview = item id
+	shows what the tile will look like. Returns a cancel function.
+]]
+function BoardView:highlight(tiles: { number }, color: Color3, onPick: (number) -> (), opts: { [string]: any }?)
 	self:clearHighlight()
+	local o = opts or {}
 	local marks = {}
 	local conns = {}
+	local selected: number? = nil
+	local preview: Frame? = nil
+	local function showPreview(tile: number?)
+		if preview then
+			preview:Destroy()
+			preview = nil
+		end
+		if not tile or not o.preview then
+			return
+		end
+		local p = Util.frame(self.layers.Fx, {
+			Name = "Preview",
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = px(self:tileWorld(tile)),
+			Size = UDim2.fromOffset(0.9 * U, 0.9 * U),
+			ZIndex = 35,
+		})
+		local disc = Shapes.circle(p, 0.5, 0.5, 1, hex("2A1C13"), { t = 0.15 })
+		Util.scaledStroke(disc, color, 0.1, 3)
+		Icons.make(p, o.preview, Icons.flatColors(C.white, hex("2A1C13"), C.white), {
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.5, 0.5),
+			Size = UDim2.fromScale(0.62, 0.62),
+			ZIndex = 3,
+		})
+		preview = p
+	end
 	for _, tile in tiles do
 		local center = self:tileWorld(tile)
-		local glow = hexagon(self.layers.Fx, center, S.tileScale * U * 1.06, color, 30, "Glow")
+		local glow = hexagon(self.layers.Fx, center, S.tileScale * U * 1.1, color, 30, "Glow", self.flat)
 		for _, f in glow do
-			f.BackgroundTransparency = 0.55
+			f.BackgroundTransparency = 0.5
 			table.insert(marks, f)
-			task.spawn(function()
-				while f.Parent do
-					Util.tween(f, 0.5, { BackgroundTransparency = 0.75 }, Enum.EasingStyle.Sine)
-					task.wait(0.5)
-					if not f.Parent then
-						break
-					end
-					Util.tween(f, 0.5, { BackgroundTransparency = 0.5 }, Enum.EasingStyle.Sine)
-					task.wait(0.5)
-				end
-			end)
 		end
 		local hit = self.hits[tile]
 		hit.Visible = true
 		table.insert(conns, hit.MouseEnter:Connect(function()
-			for _, part in self.tileParts[tile].top do
-				Util.tween(part, 0.1, { BackgroundColor3 = Util.shade(color, 0.3) })
+			if not o.confirm then
+				showPreview(tile)
+				Sound.play("hover")
 			end
-			Sound.play("hover")
 		end))
 		table.insert(conns, hit.MouseLeave:Connect(function()
-			self:_paintTile(self.board.tiles[tile])
+			if not o.confirm then
+				showPreview(nil)
+			end
 		end))
 		table.insert(conns, hit.Activated:Connect(function()
+			if self.dragMoved then
+				return -- that was a pan, not a tap
+			end
+			if o.confirm and selected ~= tile then
+				selected = tile
+				showPreview(tile)
+				Sound.play("click")
+				if o.onSelect then
+					o.onSelect(tile)
+				end
+				return
+			end
 			Sound.play("click")
 			onPick(tile)
 		end))
 	end
-	self._highlight = { marks = marks, conns = conns, tiles = tiles }
+	-- glow pulse
+	local alive = true
+	task.spawn(function()
+		while alive do
+			for _, f in marks do
+				Util.tween(f, 0.5, { BackgroundTransparency = 0.72 }, Enum.EasingStyle.Sine)
+			end
+			task.wait(0.5)
+			if not alive then
+				break
+			end
+			for _, f in marks do
+				Util.tween(f, 0.5, { BackgroundTransparency = 0.45 }, Enum.EasingStyle.Sine)
+			end
+			task.wait(0.5)
+		end
+	end)
+	self._highlight = {
+		marks = marks,
+		conns = conns,
+		tiles = tiles,
+		stop = function()
+			alive = false
+			showPreview(nil)
+		end,
+		selected = function()
+			return selected
+		end,
+	}
 	return function()
 		self:clearHighlight()
 	end
+end
+
+function BoardView:selectedTile(): number?
+	local h = self._highlight
+	return if h then h.selected() else nil
 end
 
 function BoardView:clearHighlight()
@@ -1063,6 +1456,7 @@ function BoardView:clearHighlight()
 		return
 	end
 	self._highlight = nil
+	h.stop()
 	for _, m in h.marks do
 		m:Destroy()
 	end
@@ -1071,7 +1465,6 @@ function BoardView:clearHighlight()
 	end
 	for _, tile in h.tiles do
 		self.hits[tile].Visible = false
-		self:_paintTile(self.board.tiles[tile])
 	end
 end
 
@@ -1082,9 +1475,7 @@ end
 function BoardView:buildIntro(duration: number)
 	local tiles = self.layout.tiles
 	local per = math.min(0.06, (duration * 0.6) / math.max(1, #tiles))
-	for _, layerName in { "Marks", "Pieces", "Pawns" } do
-		self.layers[layerName].Visible = false
-	end
+	self.layers.Pawns.Visible = false
 	for _, t in tiles do
 		local root = self.tileParts[t.id].root :: Frame
 		root.Visible = false
@@ -1104,16 +1495,7 @@ function BoardView:buildIntro(duration: number)
 			end
 			task.wait(per)
 		end
-		task.wait(0.15)
-		for _, layerName in { "Marks", "Pieces" } do
-			self.layers[layerName].Visible = true
-		end
-		for _, f in self.layers.Marks:GetChildren() do
-			if f:IsA("GuiObject") then
-				Util.popIn(f, 0.3, 0.2)
-			end
-		end
-		task.wait(0.25)
+		task.wait(0.3)
 		self.layers.Pawns.Visible = true
 		for _, pawn in self.pawns do
 			local s = Util.scaler(pawn.lift)
@@ -1122,8 +1504,13 @@ function BoardView:buildIntro(duration: number)
 			pawn.lift.Position = UDim2.fromOffset(0, -U)
 			Util.tween(pawn.lift, 0.35, { Position = UDim2.new() }, Enum.EasingStyle.Bounce)
 		end
-		Sound.play("hop")
+		Sound.play("step")
 	end)
+end
+
+-- Is this item one of the neutral cards? (for colouring)
+function BoardView.isNeutral(item: string): boolean
+	return NEUTRAL_ITEMS[item] == true or (Items.get(item) ~= nil and (Items.get(item) :: any).category == "neutral")
 end
 
 BoardView.UNIT = U

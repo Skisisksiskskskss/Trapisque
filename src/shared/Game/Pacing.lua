@@ -64,6 +64,7 @@ local fixed = {
 	shopClose = 0.2,
 	arm = 0.1,
 	left = 0.6,
+	tokenMove = 0.75, -- a used token flies to its new tile
 }
 
 function Pacing.duration(e): number

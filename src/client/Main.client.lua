@@ -51,7 +51,7 @@ Root.init()
 Net.on("profile", function(profile)
 	State.set("profile", profile)
 	if profile and profile.settings then
-		Sound.setEnabled(profile.settings.sfx ~= false)
+		Sound.applySettings(profile.settings)
 	end
 end)
 Net.on("party", function(party)
@@ -113,8 +113,9 @@ State.set("studio", data.studio)
 State.set("profile", data.profile)
 State.set("party", data.party)
 if data.profile and data.profile.settings then
-	Sound.setEnabled(data.profile.settings.sfx ~= false)
+	Sound.applySettings(data.profile.settings)
 end
+Sound.preload()
 
 if data.match then
 	-- rejoined (or arrived on a match server) while a match is running

@@ -286,10 +286,10 @@ function Pages.settings(layer: Instance): () -> ()
 		title = "Settings",
 		titleWidth = 240,
 		width = 520,
-		height = 300,
+		height = 350,
 	})
 	local profile = State.get("profile")
-	local settings = table.clone(profile and profile.settings or { sfx = true })
+	local settings = table.clone(profile and profile.settings or { sfx = true, music = true })
 	local list = Util.frame(content, {})
 	Util.list(list, "y", 14, "Center", "Top")
 	local function row(order: number, label: string, key: string, apply: ((boolean) -> ())?)
@@ -316,6 +316,9 @@ function Pages.settings(layer: Instance): () -> ()
 	end
 	row(1, "Sound effects", "sfx", function(v)
 		Sound.setEnabled(v)
+	end)
+	row(2, "Music", "music", function(v)
+		Sound.setMusicEnabled(v)
 	end)
 	Widgets.label(list, {
 		text = "Trapisque v" .. tostring(State.get("version") or "1.0"),

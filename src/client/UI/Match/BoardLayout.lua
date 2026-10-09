@@ -6,6 +6,11 @@
 	the offline previewer can draw it too.
 
 	Units: 1 = one hex circumradius.
+
+	BoardLayout.build(board, mapDef, Rng, { rotate = true }) stands the board up for
+	upright phones: every tile is turned 90 degrees around the centre (the route then runs
+	top to bottom) and hexes are drawn flat-topped. `layout.tileBounds` is the box the
+	tiles fill (the camera fits that, the parchment and its doodles run on around it).
 ]]
 
 local DecorData = require(script.Parent.Parent.DecorData)
@@ -13,7 +18,7 @@ local DecorData = require(script.Parent.Parent.DecorData)
 local BoardLayout = {}
 
 BoardLayout.Style = {
-	tileScale = 0.86, -- drawn hex radius (leaves a gap so the dashed route shows)
+	tileScale = 0.88, -- drawn hex radius (leaves a gap so the dashed route shows)
 	tileDepth = 0.16, -- height of the wooden side under each tile
 	margin = 2.1,
 	titleSpace = 1.3,
@@ -25,17 +30,19 @@ BoardLayout.Style = {
 	decorMax = 2.1,
 	compassSize = 2.4,
 	compassReach = 0.62, -- compass rose + its "N"
+	pawn = 1.3, -- pawn diameter on a tile of its own (bigger than the hex is wide: pawns stand out)
+	pawnDisc = 0.92, -- the visible chip is this much of the pawn's frame
 }
 
 -- Where pawns sit when several share a tile (offsets in hex units from the tile centre)
 -- and how much they shrink so they sit side by side instead of piling up.
 BoardLayout.PawnSlots = {
-	{ scale = 1, { 0, -0.3 } },
-	{ scale = 0.76, { -0.34, -0.24 }, { 0.34, -0.24 } },
-	{ scale = 0.68, { -0.33, -0.36 }, { 0.33, -0.36 }, { 0, 0.16 } },
-	{ scale = 0.64, { -0.3, -0.4 }, { 0.3, -0.4 }, { -0.3, 0.18 }, { 0.3, 0.18 } },
-	{ scale = 0.54, { -0.5, -0.34 }, { 0, -0.34 }, { 0.5, -0.34 }, { -0.26, 0.16 }, { 0.26, 0.16 } },
-	{ scale = 0.54, { -0.5, -0.34 }, { 0, -0.34 }, { 0.5, -0.34 }, { -0.5, 0.16 }, { 0, 0.16 }, { 0.5, 0.16 } },
+	{ scale = 1, { 0, -0.14 } },
+	{ scale = 0.62, { -0.38, -0.12 }, { 0.38, -0.12 } },
+	{ scale = 0.56, { -0.38, -0.3 }, { 0.38, -0.3 }, { 0, 0.3 } },
+	{ scale = 0.5, { -0.34, -0.32 }, { 0.34, -0.32 }, { -0.34, 0.3 }, { 0.34, 0.3 } },
+	{ scale = 0.42, { -0.505, -0.3 }, { 0, -0.3 }, { 0.505, -0.3 }, { -0.26, 0.16 }, { 0.26, 0.16 } },
+	{ scale = 0.42, { -0.505, -0.3 }, { 0, -0.3 }, { 0.505, -0.3 }, { -0.505, 0.22 }, { 0, 0.22 }, { 0.505, 0.22 } },
 }
 
 local function dist(ax, ay, bx, by)
@@ -43,21 +50,36 @@ local function dist(ax, ay, bx, by)
 	return math.sqrt(dx * dx + dy * dy)
 end
 
-function BoardLayout.build(board, mapDef, Rng)
+function BoardLayout.build(board, mapDef, Rng, opts: { [string]: any }?)
 	local S = BoardLayout.Style
-	local b = board.bounds
-	local x0 = b.minX - S.margin
-	local y0 = b.minY - S.margin - S.titleSpace
-	local x1 = b.maxX + S.margin
-	local y1 = b.maxY + S.margin
+	local rotate = opts ~= nil and opts.rotate == true
+	-- tile centres, turned a quarter clockwise for upright screens (left->right becomes top->bottom)
+	local pos = {}
+	local minX, minY, maxX, maxY = math.huge, math.huge, -math.huge, -math.huge
+	for _, t in board.tiles do
+		local x, y = t.x, t.y
+		if rotate then
+			x, y = -t.y, t.x
+		end
+		pos[t.id] = { x = x, y = y }
+		minX, maxX = math.min(minX, x), math.max(maxX, x)
+		minY, maxY = math.min(minY, y), math.max(maxY, y)
+	end
+	local x0 = minX - S.margin
+	local y0 = minY - S.margin - S.titleSpace
+	local x1 = maxX + S.margin
+	local y1 = maxY + S.margin
 	local layout = {
 		map = mapDef.id,
 		theme = mapDef.theme,
 		name = mapDef.name,
+		rotated = rotate,
 		x0 = x0,
 		y0 = y0,
 		w = x1 - x0,
 		h = y1 - y0,
+		-- what the camera fits: every tile with a little room around it
+		tileBounds = { x0 = minX - 1.15, y0 = minY - 1.15, x1 = maxX + 1.15, y1 = maxY + 1.15 },
 		tiles = {},
 		links = {},
 		decor = {},
@@ -65,8 +87,8 @@ function BoardLayout.build(board, mapDef, Rng)
 
 	local function nearestTile(x, y)
 		local best = math.huge
-		for _, t in board.tiles do
-			local d = dist(x, y, t.x, t.y)
+		for _, p in pos do
+			local d = dist(x, y, p.x, p.y)
 			if d < best then
 				best = d
 			end
@@ -75,20 +97,22 @@ function BoardLayout.build(board, mapDef, Rng)
 	end
 
 	for _, t in board.tiles do
-		table.insert(layout.tiles, { id = t.id, x = t.x, y = t.y, kind = t.kind, branch = t.branch })
+		local p = pos[t.id]
+		table.insert(layout.tiles, { id = t.id, x = p.x, y = p.y, kind = t.kind, branch = t.branch })
 	end
 
 	-- dashed route between consecutive tiles (and the gated shortcuts)
 	for id, list in board.forward do
 		for _, to in list do
 			local a, c = board.tiles[id], board.tiles[to]
+			local pa, pc = pos[id], pos[to]
 			table.insert(layout.links, {
 				from = id,
 				to = to,
-				x1 = a.x,
-				y1 = a.y,
-				x2 = c.x,
-				y2 = c.y,
+				x1 = pa.x,
+				y1 = pa.y,
+				x2 = pc.x,
+				y2 = pc.y,
 				shortcut = (a.branch ~= nil) or (c.branch ~= nil),
 			})
 		end

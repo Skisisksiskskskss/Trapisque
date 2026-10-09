@@ -17,6 +17,22 @@ local hex = Theme.hex
 
 local Effects = {}
 
+-- what each card sounds like when someone steps on it: { sound, pitch }
+local TRAP_SOUND = {
+	spike = { "trap", 1 },
+	fire = { "fire", 1 },
+	ice = { "ice", 1 },
+	mud = { "slime", 0.75 },
+	mudslide = { "slime", 0.65 },
+	wall = { "place", 0.8 },
+	snare = { "trap", 1.15 },
+	grog = { "trap", 0.7 },
+	teleporter = { "teleport", 1 },
+	spore_warper = { "teleport", 0.8 },
+	conveyor = { "whoosh", 0.9 },
+	shifting_sands = { "whoosh", 0.7 },
+}
+
 local function px(v: Vector2): UDim2
 	return UDim2.fromOffset(v.X, v.Y)
 end
@@ -120,7 +136,10 @@ Effects.popIcon = popIcon
 function Effects.trap(view, item: string, tile: number)
 	local U = view.UNIT
 	local at = view:tileWorld(tile)
-	Sound.play("trap")
+	local sound = TRAP_SOUND[item]
+	if sound then
+		Sound.play(sound[1], sound[2])
+	end
 	if item == "spike" then
 		local h = holder(view, at, 1.6 * U, 54)
 		for i, x in { 0.3, 0.5, 0.7 } do
@@ -188,7 +207,6 @@ function Effects.trap(view, item: string, tile: number)
 				ring(view, at, Theme.Category.neutral, 2, 0.2, 0.45, 5)
 			end)
 		end
-		Sound.play("magic")
 	elseif item == "spore_warper" then
 		burst(view, at, hex("B9A3E3"), 12, 1.3, 0.22, 0.7)
 		popIcon(view, at, "spore_warper", Icons.flatColors(Theme.Category.neutral, C.white), 1, 0.8)
@@ -208,7 +226,7 @@ function Effects.blocked(view, tile: number)
 	local at = view:tileWorld(tile)
 	popIcon(view, at, "wall", Icons.flatColors(hex("A0522D"), C.parchment), 1.1, 0.8)
 	view:floatText(at, "BLOCKED!", hex("FFD166"))
-	Sound.play("trap", 0.8)
+	Sound.play("place", 0.7)
 end
 
 function Effects.natural(view, kind: string, tile: number)
@@ -227,6 +245,7 @@ function Effects.natural(view, kind: string, tile: number)
 		popIcon(view, at, "gate_trap", Icons.flatColors(hex("3A3F45"), C.parchment), 1.2, 1)
 		view:floatText(at, "LOCKED IN!", hex("C9CED6"))
 	elseif kind == "slime" then
+		Sound.play("slime")
 		burst(view, at, C.slime, 12, 1, 0.2, 0.6)
 		view:floatText(at, "SLIMED!", C.slime)
 	end
@@ -291,9 +310,11 @@ end
 function Effects.status(view, seat: number, status: string)
 	local at = view:pawnWorld(seat)
 	if status == "burning" then
+		Sound.play("fire", 1.1)
 		popIcon(view, at, "fire", Icons.flatColors(hex("FF7B2E"), hex("FFD166"), hex("FFD166")), 1, 0.9)
 		view:floatText(at, "BURNING", hex("FF7B2E"))
 	elseif status == "frozen" then
+		Sound.play("ice")
 		popIcon(view, at, "ice", Icons.flatColors(hex("5DADE2"), C.white), 1, 0.9)
 		view:floatText(at, "FROZEN", hex("8FD3FF"))
 	end
@@ -324,7 +345,6 @@ function Effects.ability(view, ability: string, seat: number, target: number?)
 			burst(view, to, color, 10, 1.1, 0.14, 0.5)
 		end)
 	end
-	Sound.play("magic")
 end
 
 function Effects.grogRoll(view, tile: number, roll: number, survived: boolean)
