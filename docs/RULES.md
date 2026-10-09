@@ -72,9 +72,12 @@ for the player whose turn it is; anyone else just passes by. If your own free ac
 **Your hand.** You can hold at most 8 cards **(digital)**, and at most 5 copies of any
 one card.
 
-**Turn timer.** You have 35 seconds per turn (25 in the shop). **(digital)** If you time
-out twice in a row, a bot plays for you until you do anything yourself. If you leave a
-match, a bot takes your seat.
+**Turn timer.** You have 45 seconds per turn (30 in the shop), counted from when your
+turn shows up on your screen. Practice games have no timer. **(digital)** If time runs
+out, your roll is made for you (or the shop closes). If you touch nothing at all during
+two of your turns in a row, you count as away: a bot plays your turns, after waiting a
+few seconds each time in case you're back, until you tap, click or press anything. If
+you leave a match, a bot takes your seat.
 
 ## Trap cards
 
@@ -196,8 +199,8 @@ in practice matches.
    Sands 2 uses. Teleporters are permanent, and other traps go after one trigger.
 10. **Quick-game recharge.** In Quick games the Mage's and Trapper's abilities recharge
     every cycle.
-11. **Timers and leavers.** Turns are timed, players who are away get a bot until they
-    return, and leavers are replaced by bots.
+11. **Timers and leavers.** Turns are timed (except in practice), players who are away
+    get a bot until they return, and leavers are replaced by bots.
 12. **Teleporter distance** uses the rulebook's 8 tiles (the first description said 10).
 13. **Moving tokens.** A used token jumps to a random free tile instead of staying on
     its spot.

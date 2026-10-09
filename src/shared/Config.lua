@@ -63,8 +63,10 @@ Config.MinPotionSellers = 1
 -- Pacing (seconds). The server waits roughly this long for clients to animate.
 ---------------------------------------------------------------------------
 Config.Timing = {
-	TurnTime = 35, -- human decision time per turn
-	ShopTime = 25,
+	TurnTime = 45, -- human decision time per turn (practice games have no timer)
+	ShopTime = 30,
+	AwayAfter = 2, -- turns in a row with no input at all before a bot plays for someone
+	AwayGrace = 5, -- an away player's turn waits this long for them before the bot moves
 	BotThinkMin = 0.7,
 	BotThinkMax = 1.5,
 	StepTime = 0.22, -- per tile when walking

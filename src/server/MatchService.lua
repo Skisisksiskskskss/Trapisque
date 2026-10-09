@@ -404,6 +404,15 @@ function MatchService.init()
 		return match:emote(player, payload.emote)
 	end)
 
+	-- the screen saw a tap, click or key press: the player is here (takes over from a bot)
+	Net.handle("match.active", function(player)
+		local match = matchOf[player]
+		if not match then
+			return true
+		end
+		return match:active(player)
+	end)
+
 	Net.handle("match.sync", function(player)
 		local match = matchOf[player]
 		if not match then

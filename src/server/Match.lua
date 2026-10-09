@@ -1,7 +1,9 @@
 --[[
 	Match
 	Runs one Trapisque game on the server: wraps the rules Engine, drives bots, turn
-	timers and AFK handling, and streams events + snapshots to every player.
+	timers and away players (Shared/Game/TurnClock), and streams events + snapshots to
+	every player. Each batch says when it starts and ends on the server's clock, so a
+	screen that falls behind (lag, a slow device) speeds up instead of drifting.
 ]]
 
 local Players = game:GetService("Players")
@@ -15,6 +17,7 @@ local Bot = require(Shared.Game.Bot)
 local Modes = require(Shared.Game.Modes)
 local Maps = require(Shared.Game.Maps)
 local Pacing = require(Shared.Game.Pacing)
+local TurnClock = require(Shared.Game.TurnClock)
 local Cosmetics = require(Shared.Meta.Cosmetics)
 
 local Net = require(script.Parent.Net)
@@ -145,11 +148,10 @@ function Match.new(spec, hooks)
 		length = self.length,
 		teamsPreset = spec.teamsPreset == true,
 	})
-	self.auto = {} -- [seat] = true when a bot plays for an AFK human
-	self.timeouts = {}
+	-- practice games have no turn timer (nobody is waiting on you)
+	self.clock = TurnClock.new({ timed = self.kind ~= "practice" })
 	self.lastEmote = {}
 	self.busyUntil = 0
-	self.deadline = math.huge
 	self.lastTurn = -1
 	self.lastPhase = ""
 	self.botAt = nil
@@ -185,11 +187,12 @@ function Match:seatList()
 	return list
 end
 
-local function serverDeadline(clockDeadline: number): number
-	if clockDeadline == math.huge then
+-- os.clock() time -> the server time every client can read (0 for "never").
+local function serverTime(clockTime: number): number
+	if clockTime == math.huge then
 		return 0
 	end
-	return workspace:GetServerTimeNow() + (clockDeadline - os.clock())
+	return workspace:GetServerTimeNow() + (clockTime - os.clock())
 end
 
 -- Events as `seat` may see them: hidden cards (other players' opening deals, the
@@ -215,13 +218,16 @@ local function eventsFor(seat: number, events)
 	return out
 end
 
-function Match:_payloadFor(seat: number, events)
+-- `timing` = { startAt, endAt }: when this batch starts and stops playing, server time.
+function Match:_payloadFor(seat: number, events, timing)
 	return {
 		id = self.id,
 		events = eventsFor(seat, events),
 		snapshot = self.engine:snapshot(seat),
-		deadline = serverDeadline(self.deadline),
-		auto = self.auto[seat] == true,
+		deadline = serverTime(self.clock.deadline),
+		auto = self.clock:isAway(seat),
+		startAt = timing and timing.startAt,
+		endAt = timing and timing.endAt,
 	}
 end
 
@@ -229,14 +235,16 @@ function Match:start()
 	local events = self.engine:start()
 	self.phase = "playing"
 	local now = os.clock()
+	local engine = self.engine
 	self.busyUntil = now + T.IntroTime + Pacing.total(events)
-	self.lastTurn = self.engine.turnCount
-	self.lastPhase = self.engine.phase
-	self.deadline = self.busyUntil + T.TurnTime
+	self.lastTurn = engine.turnCount
+	self.lastPhase = engine.phase
+	self.clock:begin(engine.current, engine.phase, self.busyUntil, engine.turnCount)
+	local timing = { startAt = serverTime(now + T.IntroTime), endAt = serverTime(self.busyUntil) }
 	local seats = self:seatList()
 	for seat, info in self.seats do
 		if info.player then
-			local payload = self:_payloadFor(seat, events)
+			local payload = self:_payloadFor(seat, events, timing)
 			payload.seat = seat
 			payload.kind = self.kind
 			payload.mode = self.mode.id
@@ -278,20 +286,22 @@ function Match:_broadcast(events)
 	end
 	local engine = self.engine
 	local now = os.clock()
-	self.busyUntil = math.max(self.busyUntil, now) + Pacing.total(events)
+	local startsAt = math.max(self.busyUntil, now)
+	self.busyUntil = startsAt + Pacing.total(events)
 	if engine.turnCount ~= self.lastTurn or engine.phase ~= self.lastPhase then
 		self.lastTurn = engine.turnCount
 		self.lastPhase = engine.phase
-		local think = if engine.phase == "shop" then T.ShopTime else T.TurnTime
-		self.deadline = self.busyUntil + think
+		-- the next player's time starts once this batch has played out on screens
+		self.clock:begin(engine.current, engine.phase, self.busyUntil, engine.turnCount)
 		self.botAt = nil
 		self.botSteps = 0
 	else
-		self.deadline = math.max(self.deadline, self.busyUntil + 8)
+		self.clock:extend(self.busyUntil)
 	end
+	local timing = { startAt = serverTime(startsAt), endAt = serverTime(self.busyUntil) }
 	for seat, info in self.seats do
 		if info.player and info.player.Parent == Players then
-			Net.push(info.player, "match.events", self:_payloadFor(seat, events))
+			Net.push(info.player, "match.events", self:_payloadFor(seat, events, timing))
 		end
 	end
 	self:_botReactions(events)
@@ -345,15 +355,11 @@ function Match:command(player: Player, cmd)
 	if type(cmd) ~= "table" then
 		return false, "Bad command."
 	end
+	self:_active(seat)
 	local engine = self.engine
 	if seat ~= engine.current then
 		return false, "It's not your turn."
 	end
-	if self.auto[seat] then
-		self.auto[seat] = nil
-		Net.push(player, "toast", { text = "Welcome back! You're in control again.", kind = "info" })
-	end
-	self.timeouts[seat] = 0
 	-- only pass through known fields
 	local clean = {
 		type = cmd.type,
@@ -369,6 +375,30 @@ function Match:command(player: Player, cmd)
 		return false, err
 	end
 	self:_broadcast(events)
+	return true
+end
+
+-- Any input from a human (a command, or the screen telling us they tapped or clicked).
+function Match:_active(seat: number)
+	if self.clock:activity(seat, os.clock()) then
+		-- they were away: hand their seat back before the bot moves again
+		if self.engine.current == seat then
+			self.botAt = nil
+		end
+		local info = self.seats[seat]
+		if info.player then
+			Net.push(info.player, "match.auto", { id = self.id, on = false })
+			Net.push(info.player, "toast", { text = "Welcome back! You're in control again.", kind = "info" })
+		end
+	end
+end
+
+-- The screen reports that the player is there (they tapped, clicked or pressed a key).
+function Match:active(player: Player)
+	local seat = self.seatOf[player]
+	if seat and self.phase == "playing" then
+		self:_active(seat)
+	end
 	return true
 end
 
@@ -410,14 +440,12 @@ function Match:_botStep(seat: number)
 	end
 end
 
+-- Time's up: the turn is played for them (a roll, or leaving the shop).
 function Match:_timeout(seat: number)
 	local info = self.seats[seat]
-	self.timeouts[seat] = (self.timeouts[seat] or 0) + 1
-	if self.timeouts[seat] >= 2 and not self.auto[seat] then
-		self.auto[seat] = true
-		if info.player then
-			Net.push(info.player, "toast", { text = "Looks like you're away, so a bot is playing for you. Do anything to take over again.", kind = "info" })
-		end
+	if self.clock:expire() and info.player then
+		-- the batch below carries auto = true, which shows the "take over" bar
+		Net.push(info.player, "toast", { text = "You seem to be away, so a bot is playing your turns. Tap anywhere to take over.", kind = "info" })
 	end
 	local ok, _, events = self.engine:autoAct()
 	if ok then
@@ -433,19 +461,24 @@ function Match:_loop()
 		if now >= self.busyUntil then
 			local seat = engine.current
 			local info = self.seats[seat]
-			if info and (info.isBot or self.auto[seat]) then
+			if info and info.isBot then
 				if not self.botAt then
-					local think = T.BotThinkMin + random:NextNumber() * (T.BotThinkMax - T.BotThinkMin)
-					if not info.isBot then
-						think *= 0.5
-					end
-					self.botAt = now + think
+					self.botAt = now + T.BotThinkMin + random:NextNumber() * (T.BotThinkMax - T.BotThinkMin)
 				end
 				if now >= self.botAt then
 					self.botAt = nil
 					self:_botStep(seat)
 				end
-			elseif now >= self.deadline then
+			elseif info and self.clock:isAway(seat) then
+				-- a bot plays for them, after a few seconds in which they can take over
+				if not self.botAt then
+					self.botAt = math.max(now + T.BotThinkMin, self.clock:botMayActAt())
+				end
+				if now >= self.botAt then
+					self.botAt = nil
+					self:_botStep(seat)
+				end
+			elseif self.clock:expired(now) then
 				self:_timeout(seat)
 			end
 		end
