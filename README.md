@@ -62,8 +62,20 @@ the wooden cards, the collectibles, the lobby on phones and every tile skin.
   phones held sideways keep the cards under your left thumb and ROLL under your right,
   and phones held upright stand the board up. Nothing sits over Roblox's own buttons,
   notches or the home bar.
-- **Sound.** Dice on felt, wooden steps, card swishes and a tavern / board-game score,
-  all from Roblox's free audio library (Music and Sound effects can each be turned off).
+- **Sound.** Dice on felt, wooden steps, card swishes and a thud when a card hits the
+  board, all from Roblox's free audio library. Music and sound effects each have a
+  volume slider (in Settings and the match menu), saved to your profile.
+- **Music that follows the game.** Three moods, each a short playlist that's
+  shuffled so no track plays twice in a row. Each track crossfades into the next
+  just before its own ending, so nothing loops or cuts. The music steps back for a
+  moment when someone finds a treasure, turns tense when a player (or team) is one
+  treasure from winning, and bows out under the winner's fanfare.
+
+  | Mood | Tracks (APM, Roblox audio library) |
+  | --- | --- |
+  | Lobby | [Les Voyages de la Mappa Mundi](https://create.roblox.com/store/asset/1837137568), [Magic - The Harp](https://create.roblox.com/store/asset/1844347220), [Clair De Lune (harp)](https://create.roblox.com/store/asset/96767255237081) |
+  | Match | [Shards Shimmer](https://create.roblox.com/store/asset/9048197244), [Exploring Concepts (Underscore)](https://create.roblox.com/store/asset/9040054834), [Puzzles in Twilight (Alt)](https://create.roblox.com/store/asset/79301554757012), [Mystery Islands](https://create.roblox.com/store/asset/1844986119) |
+  | Endgame | [Mind Puzzle (b)](https://create.roblox.com/store/asset/1839856504), [Curious Crime (Pulse Only)](https://create.roblox.com/store/asset/129673998145182) |
 
 ## Project layout
 

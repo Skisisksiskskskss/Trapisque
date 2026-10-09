@@ -93,6 +93,15 @@ function HandView:_bindPointer()
 		end
 		local pos = Util.inputPos(input)
 		if not p.dragging and (pos - p.start).Magnitude > DRAG_START then
+			-- sliding along the hand scrolls it; only pulling a card out towards the board
+			-- (up out of a row, sideways out of a column) picks it up
+			local d = pos - p.start
+			local column = self.spec ~= nil and self.spec.dir == "y"
+			local outward = if column then math.abs(d.X) > math.abs(d.Y) else -d.Y > math.abs(d.X) * 0.8
+			if not outward then
+				self.press = nil
+				return
+			end
 			local i = table.find(self.list, p.entry)
 			p.dragging = i ~= nil and self.onDragStart ~= nil and self.onDragStart(p.entry.id, i, pos) == true
 			if not p.dragging then

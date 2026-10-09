@@ -2,9 +2,8 @@
 	Sound
 	Sound effects and background music.
 
-	Effects play through the "Effects" sound group and music through "Music" (with a
-	quiet "Ambience" bed under it), each with its own volume (Settings, or the match
-	menu). Effects that repeat quickly (pawn steps, wheel ticks, coins) get a little
+	Effects play through the "Effects" sound group and music through "Music", each with
+	its own volume (Settings, or the match menu). Effects that repeat quickly (pawn steps, wheel ticks, coins) get a little
 	random pitch so they don't sound like a machine gun, and the same effect never
 	stacks more than a few copies.
 
@@ -93,26 +92,35 @@ local LIBRARY: { [string]: Def } = {
 }
 
 --[[
-	Music moods. Each track: its volume (loudness-matched, so every track sits at the same
-	level under the effects), where its music starts (skipping silence) and where its
-	ending begins (the next track fades in from there).
+	Music moods: harps and mysteries by lantern light. Each track has its volume
+	(loudness-matched: every track sits at the same level under the effects, about
+	-27 LUFS in the lobby and -29 in a match at full music volume), where its music
+	starts (skipping silence) and where its ending begins (the next track fades in
+	from there). All from APM's library on Roblox, chosen by measuring them: steady
+	loudness, few busy hits, no vocals, nothing comedic.
 ]]
 type Track = { id: string, name: string, volume: number, start: number?, fadeAt: number? }
 
 local PLAYLISTS: { [string]: { Track } } = {
+	-- the map room at night: calm, a little magical
 	lobby = {
-		{ id = asset(129583940918501), name = "At The Tavern", volume = 0.21, fadeAt = 101 },
+		{ id = asset(1837137568), name = "Les Voyages de la Mappa Mundi", volume = 0.168, fadeAt = 134 },
+		{ id = asset(1844347220), name = "Magic - The Harp", volume = 0.237, start = 0.8, fadeAt = 221 },
+		{ id = asset(96767255237081), name = "Clair De Lune (harp)", volume = 0.245, fadeAt = 184 },
 	},
+	-- a match: steady thinking music that never fights the board for attention
 	match = {
-		{ id = asset(93749688703091), name = "Board Games", volume = 0.19, fadeAt = 71 },
+		{ id = asset(9048197244), name = "Shards Shimmer", volume = 0.188, fadeAt = 156 },
+		{ id = asset(9040054834), name = "Exploring Concepts (Underscore)", volume = 0.107, fadeAt = 141 },
+		{ id = asset(79301554757012), name = "Puzzles in Twilight (Alt)", volume = 0.193, fadeAt = 159 },
+		{ id = asset(1844986119), name = "Mystery Islands", volume = 0.385, start = 0.2, fadeAt = 198 },
 	},
+	-- someone is a treasure away from winning: a ticking, clockwork pulse
 	tension = {
-		{ id = asset(93749688703091), name = "Board Games", volume = 0.19, fadeAt = 71 },
+		{ id = asset(1839856504), name = "Mind Puzzle (b)", volume = 0.188, start = 0.3, fadeAt = 296 },
+		{ id = asset(129673998145182), name = "Curious Crime (Pulse Only)", volume = 0.176, fadeAt = 164 },
 	},
 }
-
--- A quiet night-time bed under the lobby music (nil: none).
-local AMBIENCE: { [string]: Track } = {}
 
 local CROSSFADE = 2.5 -- seconds a track takes to hand over to the next
 local MOOD_FADE = 1.6 -- seconds to switch moods (lobby -> match...)
@@ -173,7 +181,6 @@ local function applyVolumes()
 	group("Effects", 1).Volume = if enabled then sfxVolume else 0
 	local music = if musicEnabled then musicVolume else 0
 	group("Music", 1).Volume = music * duckLevel
-	group("Ambience", 1).Volume = music
 end
 
 function Sound.isEnabled(): boolean
@@ -281,9 +288,6 @@ local mood: string? = nil
 local current: { sound: Sound, track: Track }? = nil
 local bags: { [string]: { Track } } = {}
 local lastTrack: { [string]: Track } = {}
-local ambience: Sound? = nil
-local ambienceMood: string? = nil
-local switching = 0
 
 local function fadeOut(s: Sound, time: number)
 	local tw = TweenService:Create(s, TweenInfo.new(time, Enum.EasingStyle.Sine), { Volume = 0 })
@@ -353,31 +357,6 @@ advance = function()
 	end
 end
 
-local function setAmbience(name: string?)
-	local def = if name then AMBIENCE[name] else nil
-	local key = if def then name else nil
-	if key == ambienceMood then
-		return
-	end
-	ambienceMood = key
-	if ambience then
-		fadeOut(ambience, MOOD_FADE)
-		ambience = nil
-	end
-	if def then
-		local snd = Instance.new("Sound")
-		snd.Name = "Ambience_" .. def.name
-		snd.SoundId = def.id
-		snd.Looped = true
-		snd.Volume = 0
-		snd.SoundGroup = group("Ambience", 1)
-		snd.Parent = SoundService
-		snd:Play()
-		TweenService:Create(snd, TweenInfo.new(MOOD_FADE * 2), { Volume = def.volume }):Play()
-		ambience = snd
-	end
-end
-
 --[[
 	Switches the music to a mood ("lobby", "match", "tension"; nil: silence). The old
 	track fades out while the new one fades in.
@@ -387,13 +366,11 @@ function Sound.music(name: string?)
 		return
 	end
 	mood = name
-	switching += 1
 	local old = current
 	current = nil
 	if old then
 		fadeOut(old.sound, MOOD_FADE)
 	end
-	setAmbience(name)
 	local t = if name then nextTrack(name) else nil
 	if t then
 		start(t, MOOD_FADE)
@@ -441,5 +418,7 @@ task.spawn(function()
 		end
 	end
 end)
+
+applyVolumes()
 
 return Sound
