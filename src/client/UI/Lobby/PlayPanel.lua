@@ -1,12 +1,13 @@
 --[[
 	PlayPanel
-	The left half of the lobby: pick a mode, then Find a Match (public matchmaking),
-	Practice against bots, or start a Private Match with your party.
+	The left half of the lobby: the character you play (CHANGE opens the character
+	picker), this week's event, the classic modes, then Find a Match (public
+	matchmaking), Practice against bots, or start a Private Match with your party.
 
 		local panel = PlayPanel.new(parent, popupLayer, { compact = bool })
 		panel:refresh()   -- party / queue changed
 
-	Compact (phones held sideways): no title, the four modes in one row, smaller buttons.
+	Compact (phones held sideways): no title, every mode in one row, smaller buttons.
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -15,12 +16,14 @@ local Players = game:GetService("Players")
 local Shared = ReplicatedStorage.Shared
 local Modes = require(Shared.Game.Modes)
 local Maps = require(Shared.Game.Maps)
+local Progress = require(Shared.Meta.Progress)
 
 local UI = script.Parent.Parent
 local Util = require(UI.Util)
 local Theme = require(UI.Theme)
 local Icons = require(UI.Icons)
 local Widgets = require(UI.Widgets)
+local CharacterSelect = require(script.Parent.CharacterSelect)
 
 local Client = UI.Parent
 local Net = require(Client.Net)
@@ -63,19 +66,53 @@ function PlayPanel.new(parent: Instance, popups: Instance, opts: { [string]: any
 	})
 	self.root = root
 
-	-- mode tiles: 2 x 2, or one row when compact
 	local findH = if compact then 50 else 58
 	local smallH = if compact then 42 else 48
 	local buttonsH = findH + 8 + smallH
-	local grid = Util.frame(content, { Name = "Modes", Size = UDim2.new(1, 0, 1, -(buttonsH + 12)) })
+
+	-- your character
+	local stripH = if compact then 44 else 62
+	local stripHolder = Util.frame(content, { Name = "Character", Size = UDim2.new(1, 0, 0, stripH) })
+	local strip = CharacterSelect.strip(stripHolder, {
+		compact = compact,
+		onChange = function()
+			CharacterSelect.open(popups)
+		end,
+	})
+	self.maid:add(strip.destroy)
+	local top = stripH + (if compact then 8 else 12)
+
+	-- this week's event: a wide banner tile over the classic modes (one more tile in a
+	-- row when compact)
+	local event = Progress.currentEvent()
+	local classic = {}
+	local eventMode = nil
+	for _, mode in Modes.list do
+		if mode.isEvent then
+			eventMode = mode
+		else
+			table.insert(classic, mode)
+		end
+	end
+	if eventMode and not compact then
+		local bannerH = 66
+		local holder = Util.frame(content, { Name = "Event", Position = UDim2.fromOffset(0, top), Size = UDim2.new(1, 0, 0, bannerH) })
+		self.tiles[eventMode.id] = self:_eventTile(holder, eventMode, event)
+		top += bannerH + 12
+	end
+	local grid = Util.frame(content, { Name = "Modes", Position = UDim2.fromOffset(0, top), Size = UDim2.new(1, 0, 1, -(buttonsH + 12 + top)) })
+	local inRow = if compact then #classic + (if eventMode then 1 else 0) else 2
 	Util.new("UIGridLayout", {
-		CellSize = if compact then UDim2.new(0.25, -9, 1, 0) else UDim2.new(0.5, -6, 0.5, -6),
+		CellSize = if compact then UDim2.new(1 / inRow, -12 * (inRow - 1) / inRow, 1, 0) else UDim2.new(0.5, -6, 0.5, -6),
 		CellPadding = UDim2.fromOffset(12, 12),
 		SortOrder = Enum.SortOrder.LayoutOrder,
 		Parent = grid,
 	})
-	for i, mode in Modes.list do
+	for i, mode in classic do
 		self.tiles[mode.id] = self:_modeTile(grid, mode, i)
+	end
+	if eventMode and compact then
+		self.tiles[eventMode.id] = self:_modeTile(grid, eventMode, 0, event)
 	end
 
 	-- buttons
@@ -133,7 +170,7 @@ function PlayPanel.new(parent: Instance, popups: Instance, opts: { [string]: any
 		Position = UDim2.new(0, 6, 0.5, 0),
 		Size = UDim2.fromOffset(34, 34),
 	})
-	Icons.make(compass, "compass", Icons.flatColors(C.brass, C.panel))
+	Icons.make(compass, "compass", Icons.flatColors(C.sun, C.panel))
 	self.statusText = Widgets.label(status, {
 		text = "",
 		font = "heavy",
@@ -168,7 +205,64 @@ function PlayPanel:destroy()
 	self.maid:clean()
 end
 
-function PlayPanel:_modeTile(grid: Frame, mode, order: number)
+-- The weekly event as a wide tile: its name, its twist, in its own colour.
+function PlayPanel:_eventTile(holder: Frame, mode, event)
+	local color = Color3.fromHex(string.sub(event.color, 2))
+	local tile = Util.new("TextButton", {
+		Name = mode.id,
+		Text = "",
+		AutoButtonColor = false,
+		BackgroundColor3 = C.panelRaised,
+		BorderSizePixel = 0,
+		Size = UDim2.fromScale(1, 1),
+		Parent = holder,
+	})
+	Util.corner(tile, 12)
+	local stroke = Util.stroke(tile, C.line, 2.5)
+	-- a stripe of the event's colour down the left
+	local stripe = Util.new("Frame", {
+		Name = "Stripe",
+		BackgroundColor3 = color,
+		BorderSizePixel = 0,
+		Size = UDim2.new(0, 10, 1, 0),
+		Parent = tile,
+	})
+	Util.corner(stripe, 6)
+	local ic = Util.frame(tile, { AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 20, 0.5, 0), Size = UDim2.fromOffset(40, 40) })
+	Icons.medallion(ic, "star", color, { Size = UDim2.fromScale(1, 1) })
+	Widgets.label(tile, {
+		text = "WEEKLY EVENT: " .. string.upper(event.name),
+		font = "chunky",
+		size = 19,
+		color = color,
+		outline = C.line,
+		sizeUDim = UDim2.new(1, -80, 0, 22),
+		position = UDim2.fromOffset(70, 8),
+	}).TextTruncate = Enum.TextTruncate.AtEnd
+	Widgets.label(tile, {
+		text = event.blurb .. "  ·  " .. playerRange(mode),
+		font = "body",
+		size = 14,
+		minSize = 9,
+		color = C.text,
+		wrap = true,
+		valign = "top",
+		scaled = true,
+		sizeUDim = UDim2.new(1, -80, 1, -36),
+		position = UDim2.fromOffset(70, 32),
+	})
+	tile.Activated:Connect(function()
+		if self.mode ~= mode.id then
+			self.mode = mode.id
+			lastMode = mode.id
+			Util.bump(tile, 0.03)
+			self:refresh()
+		end
+	end)
+	return { frame = tile, stroke = stroke }
+end
+
+function PlayPanel:_modeTile(grid: Frame, mode, order: number, event: any?)
 	local tile = Util.new("TextButton", {
 		Name = mode.id,
 		Text = "",
@@ -179,7 +273,7 @@ function PlayPanel:_modeTile(grid: Frame, mode, order: number)
 		Parent = grid,
 	})
 	Util.corner(tile, 12)
-	local stroke = Util.stroke(tile, C.panelEdge, 2)
+	local stroke = Util.stroke(tile, C.line, 2.5)
 	local compact = self.compact
 	local pad = if compact then 8 else 12
 	local iconSize = if compact then 24 else 34
@@ -187,10 +281,10 @@ function PlayPanel:_modeTile(grid: Frame, mode, order: number)
 		Position = UDim2.fromOffset(pad, pad),
 		Size = UDim2.fromOffset(iconSize, iconSize),
 	})
-	Icons.make(icon, if mode.isTeam then "people" else "bolt", Icons.flatColors(C.brass, C.panelRaised))
+	Icons.medallion(icon, if mode.isEvent then "star" elseif mode.isTeam then "people" else "bolt", if mode.isEvent then C.pink else C.sun, { Size = UDim2.fromScale(1, 1) })
 	local textX = pad + iconSize + 8
 	Widgets.label(tile, {
-		text = if compact then mode.short else mode.name,
+		text = if event then (if compact then "Event" else event.name) elseif compact then mode.short else mode.name,
 		font = "chunky",
 		size = if compact then 17 else 20,
 		color = C.text,
@@ -208,8 +302,8 @@ function PlayPanel:_modeTile(grid: Frame, mode, order: number)
 		position = UDim2.fromOffset(if compact then pad else textX, if compact then 36 else 34),
 	})
 	local top = if compact then 56 else 58
-	Widgets.label(tile, {
-		text = mode.blurb,
+	local blurb = Widgets.label(tile, {
+		text = if event then event.blurb else mode.blurb,
 		font = "body",
 		size = if compact then 13 else 15,
 		minSize = 9,
@@ -220,6 +314,14 @@ function PlayPanel:_modeTile(grid: Frame, mode, order: number)
 		position = UDim2.fromOffset(pad, top),
 		scaled = compact,
 	})
+	-- a short tile (a small screen, or the lobby giving room to your character and the
+	-- event) shows just the name and player count
+	local function fit()
+		local k = math.max(0.01, Util.inheritedScale(tile, true))
+		blurb.Visible = tile.AbsoluteSize.Y / k >= top + pad + 30
+	end
+	tile:GetPropertyChangedSignal("AbsoluteSize"):Connect(fit)
+	task.defer(fit)
 	tile.Activated:Connect(function()
 		if self.mode ~= mode.id then
 			self.mode = mode.id
@@ -235,8 +337,8 @@ function PlayPanel:refresh()
 	for id, t in self.tiles do
 		local on = id == self.mode
 		t.frame.BackgroundColor3 = if on then C.mine else C.panelRaised
-		t.stroke.Color = if on then C.brass else C.panelEdge
-		t.stroke.Thickness = if on then 3 else 2
+		t.stroke.Color = if on then C.sun else C.line
+		t.stroke.Thickness = if on then 3.5 else 2.5
 	end
 	local party = State.get("party")
 	local queue = State.get("queue")

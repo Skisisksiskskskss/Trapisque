@@ -959,7 +959,7 @@ end
 --[[
 	Where a forward walk of `m` steps goes, without changing anything. Used for the
 	real walk, for previews on screen and by bots. `state` needs: board, natural,
-	placed, and the walker `p` (tile, trail, hand, character, status.boots).
+	placed, and the walker `p` (tile, hand, character).
 
 	Returns {
 		path = { tiles }, tile = landing tile,
@@ -1016,7 +1016,8 @@ function Engine.walkPlan(state, p, m: number)
 			plan.result = "treasure"
 			break
 		end
-		-- hazards stop you on them, unless you carry the card that gets you past
+		-- hazards stop you on them (slime only drags you back a few steps), unless you
+		-- carry the card that gets you past
 		local nat = state.natural[nxt]
 		if nat and not wild and left > 0 then
 			local counter = Items.naturalCounter[nat]
@@ -1030,6 +1031,9 @@ function Engine.walkPlan(state, p, m: number)
 					boots -= 1
 				end
 				table.insert(plan.uses, { item = counter, tile = nxt })
+			elseif nat == "slime" and (Rules.SlimeDrag or 0) > 0 and left > Rules.SlimeDrag then
+				left -= Rules.SlimeDrag
+				plan.slowed = nxt
 			else
 				plan.result = "stopped"
 				plan.hazard = nat
@@ -1084,6 +1088,11 @@ function Engine:_walk(p, m: number): string
 		table.insert(p.trail, tile)
 		table.insert(path, tile)
 		p.stats.tiles += 1
+		if tile == plan.slowed then
+			-- waded through slime: it cost a few steps
+			flush()
+			self:_emit({ t = "natural", p = p.index, kind = "slime", tile = tile, drag = Rules.SlimeDrag })
+		end
 	end
 	flush()
 	if plan.result == "blocked" then
@@ -2055,15 +2064,17 @@ function Engine:snapshot(forSeat: number?)
 			frozen = p.status.frozen,
 			burning = p.status.burning,
 			skip = p.status.skip,
-			boots = p.status.boots,
 			anchor = if p.anchor then p.anchor.tile else 0,
 			trailLength = #p.trail,
 			stats = table.clone(p.stats),
 		})
 	end
-	local tokens, placed, natural, traps = {}, {}, {}, {}
+	local tokens, placed, natural, traps, embers = {}, {}, {}, {}, {}
 	for tile, kind in self.tokens do
 		table.insert(tokens, { tile = tile, kind = kind })
+	end
+	for tile, ember in self.embers do
+		table.insert(embers, { tile = tile, owner = ember.owner })
 	end
 	for tile, e in self.placed do
 		table.insert(placed, { tile = tile, item = e.item, owner = e.owner, dir = e.dir, uses = e.uses, tiles = e.tiles })
@@ -2094,6 +2105,7 @@ function Engine:snapshot(forSeat: number?)
 		placed = placed,
 		natural = natural,
 		traps = traps,
+		embers = embers,
 		teleporters = copyList(self.teleporters),
 		stock = table.clone(self.stock),
 		winnerTeam = self.winnerTeam,
@@ -2108,6 +2120,7 @@ function Engine:snapshot(forSeat: number?)
 	if forSeat and self.players[forSeat] then
 		local me = self.players[forSeat]
 		snap.hand = copyList(me.hand)
+		snap.trail = copyList(me.trail)
 		if turn and turn.pick and forSeat == self.current then
 			snap.pick = copyList(turn.pick.options)
 		end

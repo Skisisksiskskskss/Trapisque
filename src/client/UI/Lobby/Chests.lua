@@ -639,7 +639,7 @@ function Chests._revealMany(layer: Instance, chest, results, done: () -> ())
 		local color = rarityColor(r.rarity)
 		local tile = Util.new("Frame", {
 			Name = "Result" .. i,
-			BackgroundColor3 = hex("3B2A1E"),
+			BackgroundColor3 = C.panelRaised,
 			BorderSizePixel = 0,
 			LayoutOrder = i,
 			ZIndex = 303,

@@ -40,16 +40,6 @@ local MIN_CARD_W = 96
 local GAP = 18
 local SLOT_H = 250
 
-local function count(list, value): number
-	local n = 0
-	for _, v in list do
-		if v == value then
-			n += 1
-		end
-	end
-	return n
-end
-
 function Shop.open(layer: Instance, o)
 	local self = setmetatable({}, Shop)
 	self.o = o
@@ -103,12 +93,12 @@ function Shop.open(layer: Instance, o)
 	})
 	Util.list(purse, "x", 8, "Center", "Center")
 	local coinIcon = Util.frame(purse, { Size = UDim2.fromOffset(30, 30), LayoutOrder = 1 })
-	Icons.medallion(coinIcon, "coin", C.brassDark, { Size = UDim2.fromScale(1, 1) })
+	Icons.medallion(coinIcon, "coin", C.sun, { Size = UDim2.fromScale(1, 1) })
 	self.coinsLabel = Widgets.label(purse, {
 		text = "",
 		font = "chunky",
 		size = 26,
-		color = C.parchment,
+		color = C.text,
 		sizeUDim = UDim2.fromOffset(160, 32),
 		layoutOrder = 2,
 	})
@@ -141,7 +131,7 @@ function Shop.open(layer: Instance, o)
 			text = "",
 			font = "heavy",
 			size = 14,
-			color = C.woodPale,
+			color = C.textSoft,
 			align = "center",
 			sizeUDim = UDim2.new(1, 0, 0, 18),
 			position = UDim2.fromOffset(0, cardH + 4),
@@ -191,7 +181,7 @@ function Shop:update(coins: number, stock: { [string]: number }, hand: { string 
 			reason = "sold out"
 		elseif coins < s.price then
 			reason = "coins"
-		elseif handFull or count(hand, id) >= Rules.PerItemLimit then
+		elseif handFull then
 			reason = "full"
 		end
 		s.buy:setEnabled(reason == nil)

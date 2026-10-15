@@ -1,8 +1,9 @@
 --[[
 	Loading
-	A Trapisque splash (the wooden table, the title and a turning compass) shown while
-	the game streams in, instead of Roblox's default loading screen. Plain frames only:
-	it runs from ReplicatedFirst before any of the game's modules exist.
+	A Trapisque splash (the night-purple table, the title in candy lettering and two
+	dice tumbling) shown while the game streams in, instead of Roblox's default loading
+	screen. Plain frames only: it runs from ReplicatedFirst before any of the game's
+	modules exist, so its few colours are copied from Theme.
 ]]
 
 local Players = game:GetService("Players")
@@ -11,12 +12,12 @@ local TweenService = game:GetService("TweenService")
 
 local player = Players.LocalPlayer
 
-local TABLE = Color3.fromHex("1A130E")
-local PLANK = Color3.fromHex("120D0A")
-local PARCHMENT = Color3.fromHex("F3E8D2")
-local GOLD = Color3.fromHex("FFE39A")
-local BRASS = Color3.fromHex("E3B04B")
-local RED = Color3.fromHex("B5372B")
+local TABLE = Color3.fromHex("1F1438") -- Theme bg
+local DOTS = Color3.fromHex("2B1D4D") -- Theme panel
+local LINE = Color3.fromHex("1B1030") -- the sticker outline
+local CREAM = Color3.fromHex("FFF4E2")
+local SUN = Color3.fromHex("FFD23F")
+local LAVENDER = Color3.fromHex("CBBDF0")
 
 local gui = Instance.new("ScreenGui")
 gui.Name = "TrapisqueLoading"
@@ -33,76 +34,84 @@ bg.BackgroundColor3 = TABLE
 bg.BorderSizePixel = 0
 bg.Size = UDim2.fromScale(1, 1)
 bg.Parent = gui
-for i = 0, 14 do
-	local plank = Instance.new("Frame")
-	plank.BackgroundColor3 = PLANK
-	plank.BackgroundTransparency = 0.2
-	plank.BorderSizePixel = 0
-	plank.Position = UDim2.fromScale(0, i / 14)
-	plank.Size = UDim2.new(1, 0, 0, 3)
-	plank.Parent = bg
+-- a scatter of soft dots on the table
+for i = 0, 23 do
+	local dot = Instance.new("Frame")
+	dot.BackgroundColor3 = DOTS
+	dot.BorderSizePixel = 0
+	dot.AnchorPoint = Vector2.new(0.5, 0.5)
+	dot.Position = UDim2.fromScale(((i * 37) % 100) / 100, ((i * 61 + 13) % 100) / 100)
+	dot.Size = UDim2.fromScale(0.05 + (i % 3) * 0.02, 0.05 + (i % 3) * 0.02)
+	dot.SizeConstraint = Enum.SizeConstraint.RelativeYY
+	dot.Parent = bg
+	Instance.new("UICorner", dot).CornerRadius = UDim.new(0.5, 0)
 end
 
 local title = Instance.new("TextLabel")
 title.BackgroundTransparency = 1
 title.AnchorPoint = Vector2.new(0.5, 0.5)
-title.Position = UDim2.fromScale(0.5, 0.36)
-title.Size = UDim2.fromScale(0.6, 0.14)
-title.Font = Enum.Font.Fondamento
-title.Text = "Trapisque"
+title.Position = UDim2.fromScale(0.5, 0.34)
+title.Size = UDim2.fromScale(0.6, 0.15)
+title.Font = Enum.Font.LuckiestGuy
+title.Text = "TRAPISQUE"
 title.TextScaled = true
-title.TextColor3 = GOLD
+title.TextColor3 = SUN
+title.Rotation = -3
 title.Parent = bg
 local outline = Instance.new("UIStroke")
-outline.Color = TABLE
-outline.Thickness = 3
+outline.Color = LINE
+outline.Thickness = 5
 outline.Parent = title
 
--- compass rose: a brass ring, four ink spokes and a red north needle
-local compass = Instance.new("Frame")
-compass.Name = "Compass"
-compass.BackgroundTransparency = 1
-compass.AnchorPoint = Vector2.new(0.5, 0.5)
-compass.Position = UDim2.fromScale(0.5, 0.58)
-compass.Size = UDim2.fromScale(0.1, 0.1)
-compass.SizeConstraint = Enum.SizeConstraint.RelativeYY
-compass.Parent = bg
-local ring = Instance.new("Frame")
-ring.BackgroundTransparency = 1
-ring.Size = UDim2.fromScale(1, 1)
-ring.Parent = compass
-Instance.new("UICorner", ring).CornerRadius = UDim.new(0.5, 0)
-local ringStroke = Instance.new("UIStroke")
-ringStroke.Color = BRASS
-ringStroke.Thickness = 4
-ringStroke.Parent = ring
-for _, rot in { 0, 90 } do
-	local spoke = Instance.new("Frame")
-	spoke.BackgroundColor3 = PARCHMENT
-	spoke.BorderSizePixel = 0
-	spoke.AnchorPoint = Vector2.new(0.5, 0.5)
-	spoke.Position = UDim2.fromScale(0.5, 0.5)
-	spoke.Size = UDim2.fromScale(0.08, 0.86)
-	spoke.Rotation = rot
-	spoke.Parent = compass
-	Instance.new("UICorner", spoke).CornerRadius = UDim.new(0.5, 0)
+-- two candy dice tumbling side by side
+local PIPS = {
+	{ { 0.5, 0.5 } },
+	{ { 0.28, 0.28 }, { 0.72, 0.72 } },
+	{ { 0.28, 0.28 }, { 0.5, 0.5 }, { 0.72, 0.72 } },
+	{ { 0.28, 0.28 }, { 0.72, 0.28 }, { 0.28, 0.72 }, { 0.72, 0.72 } },
+	{ { 0.28, 0.28 }, { 0.72, 0.28 }, { 0.5, 0.5 }, { 0.28, 0.72 }, { 0.72, 0.72 } },
+	{ { 0.28, 0.25 }, { 0.72, 0.25 }, { 0.28, 0.5 }, { 0.72, 0.5 }, { 0.28, 0.75 }, { 0.72, 0.75 } },
+}
+local dice = {}
+for i, x in { 0.44, 0.56 } do
+	local die = Instance.new("Frame")
+	die.Name = "Die" .. i
+	die.BackgroundColor3 = CREAM
+	die.BorderSizePixel = 0
+	die.AnchorPoint = Vector2.new(0.5, 0.5)
+	die.Position = UDim2.fromScale(x, 0.56)
+	die.Size = UDim2.fromScale(0.1, 0.1)
+	die.SizeConstraint = Enum.SizeConstraint.RelativeYY
+	die.Parent = bg
+	Instance.new("UICorner", die).CornerRadius = UDim.new(0.22, 0)
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = LINE
+	stroke.Thickness = 4
+	stroke.Parent = die
+	local pips = Instance.new("Frame")
+	pips.Name = "Pips"
+	pips.BackgroundTransparency = 1
+	pips.Size = UDim2.fromScale(1, 1)
+	pips.Parent = die
+	dice[i] = { frame = die, pips = pips }
 end
-local needle = Instance.new("Frame")
-needle.BackgroundColor3 = RED
-needle.BorderSizePixel = 0
-needle.AnchorPoint = Vector2.new(0.5, 1)
-needle.Position = UDim2.fromScale(0.5, 0.5)
-needle.Size = UDim2.fromScale(0.1, 0.42)
-needle.Parent = compass
-Instance.new("UICorner", needle).CornerRadius = UDim.new(0.5, 0)
-local hub = Instance.new("Frame")
-hub.BackgroundColor3 = BRASS
-hub.BorderSizePixel = 0
-hub.AnchorPoint = Vector2.new(0.5, 0.5)
-hub.Position = UDim2.fromScale(0.5, 0.5)
-hub.Size = UDim2.fromScale(0.2, 0.2)
-hub.Parent = compass
-Instance.new("UICorner", hub).CornerRadius = UDim.new(0.5, 0)
+local function showFace(d, n: number)
+	for _, child in d.pips:GetChildren() do
+		child:Destroy()
+	end
+	for _, at in PIPS[n] do
+		local pip = Instance.new("Frame")
+		pip.BackgroundColor3 = LINE
+		pip.BorderSizePixel = 0
+		pip.AnchorPoint = Vector2.new(0.5, 0.5)
+		pip.Position = UDim2.fromScale(at[1], at[2])
+		pip.Size = UDim2.fromScale(0.18, 0.18)
+		pip.Parent = d.pips
+		Instance.new("UICorner", pip).CornerRadius = UDim.new(0.5, 0)
+	end
+end
+showFace(dice[1], 5)
+showFace(dice[2], 2)
 
 local status = Instance.new("TextLabel")
 status.BackgroundTransparency = 1
@@ -110,10 +119,9 @@ status.AnchorPoint = Vector2.new(0.5, 0)
 status.Position = UDim2.fromScale(0.5, 0.68)
 status.Size = UDim2.fromScale(0.5, 0.04)
 status.Font = Enum.Font.Nunito
-status.Text = "Loading the treasure map..."
+status.Text = "Setting up the board..."
 status.TextScaled = true
-status.TextColor3 = PARCHMENT
-status.TextTransparency = 0.2
+status.TextColor3 = LAVENDER
 status.Parent = bg
 
 gui.Parent = player:WaitForChild("PlayerGui")
@@ -121,9 +129,19 @@ ReplicatedFirst:RemoveDefaultLoadingScreen()
 
 local spinning = true
 task.spawn(function()
+	-- the dice tumble, land, rest a moment, and roll again
 	while spinning do
-		compass.Rotation = (compass.Rotation + 3) % 360
-		task.wait()
+		for _ = 1, 8 do
+			for _, d in dice do
+				showFace(d, math.random(1, 6))
+				d.frame.Rotation = math.random(-25, 25)
+			end
+			task.wait(0.07)
+		end
+		for _, d in dice do
+			d.frame.Rotation = 0
+		end
+		task.wait(0.9)
 	end
 end)
 

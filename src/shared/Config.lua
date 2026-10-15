@@ -31,6 +31,7 @@ Config.Rules = {
 	ConveyorLength = 3, -- a conveyor covers 3 tiles
 	MudslideBack = 3,
 	BananaBack = 2,
+	SlimeDrag = 5, -- slime pools eat this many steps (with no more left than that, you're stuck in it)
 	TrampolineForward = 3,
 	TelepathyMax = 3,
 	JeopardySteps = 6,

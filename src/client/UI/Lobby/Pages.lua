@@ -16,6 +16,7 @@ local Shared = ReplicatedStorage.Shared
 local Passes = require(Shared.Meta.Passes)
 local Characters = require(Shared.Game.Characters)
 local Modes = require(Shared.Game.Modes)
+local Progress = require(Shared.Meta.Progress)
 
 local UI = script.Parent.Parent
 local Util = require(UI.Util)
@@ -196,44 +197,54 @@ end
 
 local RULES = {
 	{
-		icon = "x_mark",
+		icon = "chest",
 		title = "The goal",
-		text = "Race along the treasure map to the big X. Every time you reach it you bank a treasure and start a new run from the flag. The first player (or team) with every treasure they need wins: 2 in Quick games, 3 in Standard, 5 in Classic.",
+		text = "Race along the path to the treasure chest. Every time you reach it you bank a treasure (and 2 coins) and start a new run from the flag. First to 2 treasures wins a Quick game (3 in Standard, 4 in Classic). In team modes your team's treasures add up.",
 	},
 	{
 		icon = "dice",
 		title = "Your turn",
-		text = "Roll the die and move, OR play one card instead of rolling. Some cards are free and can be used before you roll: Boosts (Speed Boost, Bounce Pad, Speed Potion), Regeneration and the Time Potion's anchor. Your character's ability is free too, once per turn.",
+		text = "Your two dice are rolled for you. Pick one to move with: the OTHER die charges your Power bar. Rolled doubles? You can move the total instead.\n\nBefore you move you may play ONE card, and use your ability if your Power bar is full. Hover a die (tap it on a phone) to see exactly where it takes you and what happens there.",
 	},
 	{
-		icon = "map",
-		title = "Reading the board",
-		text = "Players are the round pieces showing their avatar (bots show their character). Tokens are the coloured hexagons set into the tiles. A card placed on a tile shows as a little card rimmed in its owner's colour, and the tile itself changes to match: slime turns it green and gooey, fire chars it, ice frosts it over, a wall bricks it up.",
+		icon = "bolt",
+		title = "Power",
+		text = "Every character has a Power bar as long as their ability costs. The die you don't move with fills it, a hidden trap of yours catching someone adds 2, and a Juice Box fills it up. When it's full, use your ability: then it starts again from empty. Frozen players charge no Power.",
 	},
 	{
-		icon = "info",
-		title = "Controls",
-		text = "PC: Space or R rolls, 1 to 9 pick your cards, E uses your ability, Esc cancels, Enter confirms, + and - zoom, F shows the whole board and Tab shows the scores. Drag to look around the board and scroll to zoom.\n\nPhone or tablet: tap a card to see what it does, tap a glowing tile then PLACE to put a card down. Drag to look around, pinch to zoom, and the map button shows the whole board.",
+		icon = "spike",
+		title = "Hidden traps",
+		text = "Trap cards are hidden: only your team can see them (and the Overseer). Hide one within 5 tiles of you, then think about where your rivals will land. When someone steps on it: GOTCHA! You get a coin and 2 Power. You can keep 3 out (the Trapper 4).\n\nSpike and Grog send them back to the start, Fire burns them and Ice freezes them for 2 turns, a Snare skips their turn, Mudslide and Banana Peel push them back. A Wall is out in the open: only moves of 5 or more get past it. A Shield in your hand blocks one trap or bonk.",
+	},
+	{
+		icon = "star",
+		title = "Bonks",
+		text = "Land on a rival with your own move: BOING! They fly back 2 tiles and you bounce 1 forward. The Fire Starter's bonks set rivals on fire too. No bonks on the Start or between teammates.",
 	},
 	{
 		icon = "token_trap",
 		title = "Tokens",
-		text = "Land on a token to spin its wheel. Red Trap tokens give trap cards, green Assist tokens give helpful cards and purple Neutral tokens give tricky ones. A wheel can also land on a coin. The orange Potion Seller sells potions for coins. Once used, a token jumps to a new spot. Landing counts however you get there: a roll, a push from a trap, a Nudge, Telepathy or a swap.",
-	},
-	{
-		icon = "spike",
-		title = "Traps",
-		text = "Place trap cards on tiles to catch whoever lands there. Spike sends them back to the start, Fire makes them burn, Ice freezes them, Mud and Mudslide push them back, a Wall blocks short moves, a Snare skips their next turn and a Grog eats anyone who can't roll a 4. A Shield in your hand blocks the next trap you trigger.",
+		text = "Land on a token to spin its wheel. Red Trap tokens give traps, green Assist tokens give helpful cards and purple Board Piece tokens give teleporters, trampolines and other pieces. A wheel can also land on a coin. The orange Potion Seller sells potions for coins. Once used, a token jumps to a new spot. You hold up to 5 cards.",
 	},
 	{
 		icon = "river_trap",
-		title = "Natural traps",
-		text = "Every map has its own hazard: rivers end your move on Blissful Tricks (a Bridge gets you across), locked gates hold you on Junction Dungeon (a Key opens them and the gated shortcuts) and slime slows you on Slimy Snares (Boots keep your feet clean).",
+		title = "Hazards",
+		text = "Every map has its own hazard. Rivers stop you on Blissful Tricks (a Bridge carries you across), locked gates stop you on Junction Dungeon (a Key opens them and the gated shortcuts), and slime pools eat 5 of your steps on Slimy Snares (Boots get you through).",
+	},
+	{
+		icon = "map",
+		title = "Reading the board",
+		text = "Each player is their character standing on their pawn. Tokens are the coloured discs. A board piece shows its picture on a disc in its owner's colour. Your team's hidden traps show see-through, rimmed in the owner's colour: rivals can't see them. Frozen players are in a block of ice, burning ones are on fire and snared ones are snoozing.",
+	},
+	{
+		icon = "info",
+		title = "Controls",
+		text = "PC: hover a die to see where it goes, click to move (or press Q, W, E). 1 to 5 play your cards, Space uses your ability, Esc cancels, Enter confirms, + and - zoom, F shows the whole board and Tab shows the scores. Drag to look around and scroll to zoom.\n\nPhone or tablet: tap a die to see where it goes, tap it again to move. Tap a card to read it and use its buttons, or drag it onto the board. Drag to look around and pinch to zoom.",
 	},
 	{
 		icon = "people",
 		title = "Modes",
-		text = "In team modes, once you have all your treasures you keep playing to help your team: give them cards and use your ability on the other team. Your laps don't count any more.",
+		text = "In team modes your treasures add up, your traps never catch teammates, you can't bonk them, and you can give a teammate a card (it's your card for the turn). The Weekly Event changes every Thursday.",
 		modes = true,
 	},
 	{
@@ -258,14 +269,19 @@ function Pages.rules(layer: Instance): () -> ()
 		if section.modes then
 			local lines = {}
 			for _, m in Modes.list do
-				table.insert(lines, m.name .. ": " .. m.blurb)
+				if m.isEvent then
+					local event = Progress.currentEvent()
+					table.insert(lines, m.name .. " (this week: " .. event.name .. "): " .. event.blurb)
+				else
+					table.insert(lines, m.name .. ": " .. m.blurb)
+				end
 			end
 			text = table.concat(lines, "\n") .. "\n\n" .. section.text
 		elseif section.characters then
 			local lines = {}
 			for _, ch in Characters.list do
-				local ab = if ch.ability then (" Ability, " .. ch.ability.name .. ": " .. ch.ability.text) else ""
-				table.insert(lines, ch.name .. ": " .. ch.passive .. ab)
+				local ab = if ch.ability then ("\n" .. ch.ability.name .. " (" .. ch.ability.cost .. " Power): " .. ch.ability.text) else ""
+				table.insert(lines, ch.name .. ". " .. (ch.passiveName or "Passive") .. ": " .. ch.passive .. ab)
 			end
 			text = table.concat(lines, "\n\n")
 		end
@@ -279,15 +295,16 @@ function Pages.rules(layer: Instance): () -> ()
 			Parent = scroll,
 		})
 		Util.corner(block, 12)
-		Util.stroke(block, C.panelEdge, 2)
+		Util.stroke(block, C.line, 2.5)
 		Util.pad(block, 14, 12, 14, 14)
 		local icon = Util.frame(block, { Size = UDim2.fromOffset(52, 52) })
-		Icons.medallion(icon, section.icon, C.brassDark, { Size = UDim2.fromScale(1, 1) })
+		Icons.medallion(icon, section.icon, C.sun, { Size = UDim2.fromScale(1, 1) })
 		Widgets.label(block, {
 			text = section.title,
 			font = "chunky",
 			size = 24,
-			color = C.brassLight,
+			color = C.sun,
+			outline = C.line,
 			sizeUDim = UDim2.new(1, -66, 0, 28),
 			position = UDim2.fromOffset(66, 0),
 		})

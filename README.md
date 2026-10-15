@@ -1,68 +1,63 @@
 # Trapisque
 
-Trapisque is a race to the treasure across a trap-filled treasure map, for 2 to 6
-players. It started as a board game, and this repository is its Roblox version: a
-purely top-down 2D game that uses the Roblox engine but doesn't look like a Roblox
-game. There is no 3D world. Apart from players' own Roblox avatar headshots, everything
-you see is drawn from plain UI frames, with no uploaded images: a treasure map spread
-on a dark wooden table at night, dark walnut panels with brass inlay, carved wooden
-cards.
+Trapisque is a race to the treasure across a trap-filled board, for 2 to 6 players. It
+started as a board game, and this repository is its Roblox version: a purely top-down
+2D game that uses the Roblox engine but doesn't look like a Roblox game. There is no 3D
+world. Apart from players' own Roblox avatar headshots, everything you see is drawn
+from plain UI frames, with no uploaded images, in one "candy-night sticker" style:
+bright flat colours with a thick dark outline on a night-purple table, and characters,
+traps and tokens with faces.
 
-![Match screen on a PC](docs/previews/07-match-pc.png)
-
-| Phone held sideways | Phone held upright |
-| --- | --- |
-| ![Match on a phone held sideways](docs/previews/07-match-phone-landscape.png) | ![Match on a phone held upright](docs/previews/07-match-phone-portrait.png) |
-
-| Lobby | Treasure chests |
-| --- | --- |
-| ![Lobby](docs/previews/08-lobby-pc.png) | ![Treasure chests](docs/previews/09-treasure-chests.png) |
-
-| Hover a card to read it | Placing it |
-| --- | --- |
-| ![Hovering a card](docs/previews/11-card-hover-pc.png) | ![Placing a card](docs/previews/12-placing-pc.png) |
-
-![A card slapped onto its tile](docs/previews/13-placing-slam.gif)
-
-More previews are in [`docs/previews`](docs/previews): the icon set, the three maps,
-the wooden cards, the collectibles, the lobby on phones and every tile skin.
+PREVIEW_IMAGES
 
 ## What's in the game
 
-- **The full board game.** Six characters, trap, assist and neutral cards, the Potion
-  Seller, natural traps, three maps (Blissful Tricks, Junction Dungeon, Slimy Snares)
-  and four modes (Chaos, Assist, Factions, World War Four). See
-  [docs/RULES.md](docs/RULES.md) for the rules as played, including every change made
-  for the online version.
-- **Match lengths.** Quick (2 treasures), Standard (3) and Classic (5, the rulebook).
+- **Turns you play, not watch.** Your two dice are rolled for you and you pick which
+  one to move with; the other one charges your Power bar. Hover a die and the board
+  shows exactly where it takes you and what happens there. Doubles can move the total.
+- **Hidden traps.** Trap cards hide near you where only your team can see them. Guess
+  where rivals will land; when one steps on yours: GOTCHA! (coins and Power for you).
+- **Bonks.** Land on a rival and they fly back 2 tiles. BOING.
+- **Six characters, all fair.** Mage, Trapper, Fire Starter, Naturalist, Warper and
+  Overseer, each with a passive and a Power ability, tuned with thousands of bot games
+  per map so each one wins about as often as the others (see
+  [docs/DESIGN.md](docs/DESIGN.md)).
+- **Cards you plan around.** One card per turn: traps, boosts that change which tiles
+  you can reach, board pieces (teleporters, trampolines, conveyor belts) and potions
+  from the Potion Seller.
+- **Three maps** (Blissful Tricks, Junction Dungeon, Slimy Snares), each with its own
+  hazard, and **five modes**: Chaos (free-for-all), Assist (2 vs 2), Factions (three
+  teams of 2), World War Four (3 vs 3) and a **Weekly Event** with a twist on the
+  rules (Trap Frenzy, Bonk Bonanza, Power Surge, Triple Dice). See
+  [docs/RULES.md](docs/RULES.md) for the rules as played.
+- **Reasons to come back.** Character mastery (levels, Gems and titles), three daily
+  quests (with a free swap and a bonus chest), a 7-day login streak, trophies and ranks
+  from Quick Play with a trophy leaderboard.
+- **Match lengths.** Quick (2 treasures), Standard (3) and Classic (4).
 - **Quick Play matchmaking.** Queue for any mode on your own or as a party. Queues are
   shared by every server, and bots fill empty seats if you wait long enough.
 - **Parties.** Create a party and invite friends with Roblox invites, or share its
   6-letter code. A party can be open to its code or invite-only. Joining a party on
   another server takes you to that server.
 - **Practice and private matches.** Pick the mode, map, length and number of bots.
-- **Bots.** They play every character and card, and step in for anyone who goes away
-  or leaves.
+- **Bots.** They play every character and card using only what their seat can see, and
+  step in for anyone who goes away or leaves.
 - **Turn timer.** Practice games have none. Elsewhere you get 45 seconds, with a
-  countdown on ROLL. If it runs out, your roll is made for you. Only someone who
-  touches nothing for two turns in a row counts as away. A bot then plays for them
-  (after a few seconds' grace), and any tap or click hands control back. Every screen
-  keeps pace with the server, so your turn never shows up late.
+  countdown on your dice. If it runs out, your highest die is moved for you. Only
+  someone who touches nothing for two turns in a row counts as away. A bot then plays
+  for them, and any tap or click hands control back. Every screen keeps pace with the
+  server, so your turn never shows up late.
 - **Cards you can feel.** Hover a card to lift it out of your hand with its rules
-  beside it. Click it to play it, or drag it onto the board. A trap rides on the
-  pointer over the glowing tiles, and the tile under it shows what it'll become. Let go
-  and it's slapped onto the tile with a thud, a ring of dust and a jolt. On a phone,
-  tap a card to read it and use its buttons, or drag it.
+  beside it. Click it to play it, or drag it onto the board: a trap rides on the
+  pointer over the tiles you may hide it on, and is slapped down with a thud.
 - **Treasure Chests.** A cosmetic-only collection: pawn skins, dice, trails, emotes and
   titles. You open chests with Gems, which you earn by playing.
 - **Gamepasses** that never touch gameplay (see below).
-- **Top Players.** All-time leaderboards for wins, treasures found and level, with
-  avatars and @usernames.
 - **Any screen.** The layout follows the device: the board fills the screen on a PC,
-  phones held sideways keep the cards under your left thumb and ROLL under your right,
-  and phones held upright stand the board up. Nothing sits over Roblox's own buttons,
-  notches or the home bar.
-- **Sound.** Dice on felt, wooden steps, card swishes and a thud when a card hits the
+  phones held sideways keep the cards under your left thumb and the dice under your
+  right, and phones held upright stand the board up. Nothing sits over Roblox's own
+  buttons, notches or the home bar.
+- **Sound.** Dice on felt, steps, card swishes, bonks and a thud when a card hits the
   board, all from Roblox's free audio library. Music and sound effects each have a
   volume slider (in Settings and the match menu), saved to your profile.
 - **Music that follows the game.** Three moods, each a short playlist that's
@@ -83,14 +78,14 @@ the wooden cards, the collectibles, the lobby on phones and every tile skin.
 src/shared/          ReplicatedStorage.Shared: code used by both server and client
   Config.lua         every tunable number (rules, timers, rewards, gamepass ids)
   Game/              the rules engine: Engine, Items, Characters, Maps, Modes, Bot...
-  Meta/              cosmetics, chests, gamepasses, matchmaking logic
+  Meta/              cosmetics, chests, gamepasses, matchmaking, progression (Progress)
 src/server/          ServerScriptService.Server: data, parties, matchmaking, matches
 src/client/          StarterPlayerScripts.Client: all screens and the art library
   UI/                Icons, Cards, Shapes, Widgets... plus Lobby/ and Match/ screens
 src/first/           ReplicatedFirst loading screen
 tests/               rules, simulation, meta and board-layout tests (plain Luau)
 tools/               test bundler, type-check script and the preview renderer
-docs/                rules and preview images
+docs/                rules, design notes (balance tables) and preview images
 trapisquebooklet.html  the original rulebook
 ```
 
@@ -154,7 +149,8 @@ collection.
 - Items you don't own yet are 3× as likely within a rarity, and duplicates turn back
   into Gems.
 - Gems can't be bought with Robux. They come from matches (finishing, treasures,
-  winning, levelling up), a daily reward and the starting gift.
+  winning, levelling up), character mastery levels, daily quests, the login streak and
+  the starting gift.
 
 The odds, prices and rewards are in `src/shared/Meta/Gacha.lua` and `Config.Rewards`.
 
@@ -167,9 +163,23 @@ standalone [Luau](https://github.com/luau-lang/luau/releases) CLI:
 
 ```sh
 python3 tools/bundle.py build/tests.luau tests/harness.luau tests/engine_spec.luau \
-  tests/sim_spec.luau tests/meta_spec.luau tests/layout_spec.luau tests/zz_run.luau
+  tests/sim_spec.luau tests/clock_spec.luau tests/meta_spec.luau tests/layout_spec.luau \
+  tests/ui_layout_spec.luau tests/zz_run.luau
 luau build/tests.luau
 ```
+
+### Balance report
+
+`tests/balance.luau` has bots play thousands of free-for-all games and prints how often
+each character wins on each map (fair is 1 / players). It takes a few minutes:
+
+```sh
+python3 tools/bundle.py build/balance.luau tests/balance.luau && luau build/balance.luau
+```
+
+Set `BALANCE_GAMES`, `BALANCE_SETUPS` or `BALANCE_MAPS` in a small script bundled
+before it to change the sample. The latest results are in
+[docs/DESIGN.md](docs/DESIGN.md).
 
 `tools/bundle.py` fakes just enough of Roblox's `script` tree for the shared modules to
 `require` each other outside Studio.
@@ -200,15 +210,17 @@ device sizes from the game's `Layout` module.
 
 ### Art rules
 
-Everything is built from Frames with `UICorner` and `UIStroke`. Icons, card art, board
-decorations and pawn patterns are data (`IconData`, `DecorData`, `PawnPatterns`)
-drawn by `Icons` and `Shapes`. The style is deliberately flat:
+Everything is built from Frames with `UICorner` and `UIStroke`. Card art, mascots,
+tokens, hazards and board decorations are data (`StickerArt`, `IconData`, `DecorData`,
+`PawnPatterns`) drawn by `Icons` and `Shapes`. The style has a few strict rules so
+every screen comes out of the same kit:
 
-- no gloss, shine, glows or blurred shadows, only hard offset shadows
+- one outline colour (`Theme.C.line`) around everything, drawn as a real outline pass
+- flat candy colours from `Theme` only; hard offset shadows, never blurred ones
+- faces on things (traps, tokens, hazards, the six character mascots), with moods
+- two fonts: Luckiest Guy for anything loud, Nunito for reading
+- the same sticker drawing wherever a thing appears (card, board, effects, menus)
 - gradients only on the few cosmetics that are meant to have them
-- nothing overlapping or sticking out of its shape
-- text sized so it fits rather than shrinking at random
 
-The fonts (Fondamento, Luckiest Guy, Nunito) are built into Roblox, and the sounds and
-music are free Roblox audio library assets (listed in `src/client/Sound.lua`), so the
-game needs no uploads.
+The fonts are built into Roblox, and the sounds and music are free Roblox audio
+library assets (listed in `src/client/Sound.lua`), so the game needs no uploads.

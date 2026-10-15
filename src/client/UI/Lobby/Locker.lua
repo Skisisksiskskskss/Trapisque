@@ -153,7 +153,7 @@ function Locker._fill(_maid, content: Frame, category: string)
 			Name = def.id,
 			Text = "",
 			AutoButtonColor = false,
-			BackgroundColor3 = hex("3B2A1E"),
+			BackgroundColor3 = C.panelRaised,
 			BorderSizePixel = 0,
 			LayoutOrder = i,
 			Parent = grid,
@@ -174,7 +174,7 @@ function Locker._fill(_maid, content: Frame, category: string)
 		end
 		-- name strip
 		local strip = Util.new("Frame", {
-			BackgroundColor3 = hex("2A1D14"),
+			BackgroundColor3 = C.panelDeep,
 			BorderSizePixel = 0,
 			AnchorPoint = Vector2.new(0.5, 1),
 			Position = UDim2.new(0.5, 0, 1, -6),

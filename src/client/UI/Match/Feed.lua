@@ -16,7 +16,6 @@ local Icons = require(UI.Icons)
 local Widgets = require(UI.Widgets)
 
 local C = Theme.C
-local hex = Theme.hex
 
 local Feed = {}
 Feed.__index = Feed
@@ -66,8 +65,8 @@ function Feed:add(text: string, color: Color3?, icon: string?, iconColor: Color3
 	self.n += 1
 	local row = Util.new("Frame", {
 		Name = "Line",
-		BackgroundColor3 = hex("1F150E"),
-		BackgroundTransparency = 0.12,
+		BackgroundColor3 = C.panel,
+		BackgroundTransparency = 0.06,
 		BorderSizePixel = 0,
 		AutomaticSize = Enum.AutomaticSize.XY,
 		Size = UDim2.fromOffset(0, 0),
@@ -76,17 +75,18 @@ function Feed:add(text: string, color: Color3?, icon: string?, iconColor: Color3
 		Parent = self.root,
 	})
 	Util.corner(row, 8)
+	Util.stroke(row, C.line, 2)
 	Util.pad(row, 8, 3, 10, 3)
 	Util.list(row, "x", 6, "Left", "Center")
 	if icon then
 		local ic = Util.frame(row, { Name = "Icon", Size = UDim2.fromOffset(self.textSize + 2, self.textSize + 2), LayoutOrder = 1, ZIndex = 42 })
-		Icons.medallion(ic, icon, iconColor or C.brassDark, { Size = UDim2.fromScale(1, 1) })
+		Icons.medallion(ic, icon, iconColor or C.sun, { Size = UDim2.fromScale(1, 1) })
 	end
 	local label = Widgets.label(row, {
 		text = text,
 		font = "heavy",
 		size = self.textSize or 15,
-		color = color or C.parchment,
+		color = color or C.text,
 		z = 42,
 		rich = true,
 		layoutOrder = 2,

@@ -1,7 +1,8 @@
 --[[
 	Overlays
-	The big animated moments of a match, drawn above the board: dice rolls, the spinner
-	wheel, turn and ability banners, shouts, flying cards and the character reveal.
+	The big animated moments of a match, drawn above the board: the spinner wheel, turn
+	and ability banners, shouts, flying cards, the Scavenge card pick and the character
+	reveal. (Dice roll in your dice tray: see ActionDock.)
 
 	Each one is designed at a fixed size and shrinks (never grows) to fit the layer it
 	plays in, so a portrait phone gets the same moments as a monitor.
@@ -23,11 +24,9 @@ local Icons = require(UI.Icons)
 local Widgets = require(UI.Widgets)
 local Cards = require(UI.Cards)
 local CardStyle = require(UI.CardStyle)
-local CosmeticArt = require(UI.CosmeticArt)
 local Sound = require(UI.Parent.Sound)
 
 local C = Theme.C
-local hex = Theme.hex
 local T = Config.Timing
 
 local Overlays = {}
@@ -70,101 +69,17 @@ end
 Overlays.fitScale = fitScale
 
 ---------------------------------------------------------------------------
--- dice
----------------------------------------------------------------------------
-
-local MOD_TEXT = {
-	frozen = { "FROZEN", hex("5DADE2") },
-	speed_boost = { "x2 SPEED", hex("5E9A3C") },
-	speed_potion = { "+1 POTION", hex("4FA3FF") },
-	bounce_pad = { "+2 BOUNCE", hex("5E9A3C") },
-	slime = { "SLIMED", hex("7DB843") },
-	boots = { "BOOTS ON", hex("8B6B3E") },
-}
-
---[[ Rolls the die in `layer` (yields ~DiceTime). e = roll event. ]]
-function Overlays.dice(layer: Frame, e, diceSkin: string?, speed: number)
-	local box = fitted(layer, "DiceRoll", 300, 220, 0.5, 0.4, 60)
-	local die, setValue = CosmeticArt.die(box, diceSkin, 1, {
-		Position = UDim2.new(0.5, 0, 0, 50),
-		Size = UDim2.fromOffset(96, 96),
-		ZIndex = 61,
-	})
-	local s = Util.scaler(die)
-	s.Scale = 0.2
-	Util.tween(s, 0.2, { Scale = 1 }, Enum.EasingStyle.Back)
-	Sound.play("dice")
-	local tumble = T.DiceTime * 0.55 * speed
-	local t0 = os.clock()
-	local n = 0
-	while os.clock() - t0 < tumble do
-		n += 1
-		setValue(math.random(1, 6))
-		die.Rotation = (math.random() - 0.5) * 50
-		die.Position = UDim2.new(0.5, (math.random() - 0.5) * 16, 0, 50 + (math.random() - 0.5) * 10)
-		task.wait(0.06)
-	end
-	setValue(e.die)
-	Util.tween(die, 0.25, { Rotation = 0, Position = UDim2.new(0.5, 0, 0, 50) }, Enum.EasingStyle.Back)
-	s.Scale = 1.3
-	Util.tween(s, 0.25, { Scale = 1 }, Enum.EasingStyle.Bounce)
-	Sound.play("diceLand")
-
-	-- modifiers and the final move
-	local info = Util.frame(box, {
-		Name = "Info",
-		Position = UDim2.fromOffset(0, 160),
-		Size = UDim2.new(1, 0, 0, 56),
-		ZIndex = 62,
-	})
-	Util.list(info, "x", 6, "Center", "Center")
-	if e.held then
-		Widgets.badge(info, { text = if e.die >= Config.Rules.GateEscapeMin then "BROKE FREE!" else "STILL STUCK", color = hex("6D747C"), height = 30, textSize = 18, z = 63 })
-	end
-	for i, m in e.mods or {} do
-		local spec = MOD_TEXT[m]
-		if spec then
-			task.delay(0.12 * i * speed, function()
-				local b = Widgets.badge(info, { text = spec[1], color = spec[2], height = 30, textSize = 18, z = 63, layoutOrder = i })
-				Util.popIn(b, 0.25, 0.5)
-			end)
-		end
-	end
-	local final = #(e.mods or {}) > 0 or e.move ~= e.die
-	if final and not e.held then
-		task.delay(0.12 * (#(e.mods or {}) + 1) * speed, function()
-			local b = Widgets.badge(info, { text = "MOVE " .. e.move, color = C.brassDark, height = 34, textSize = 22, z = 63, layoutOrder = 99 })
-			Util.popIn(b, 0.3, 0.4)
-		end)
-	end
-	task.wait(T.DiceTime * 0.45 * speed)
-	Util.tween(s, 0.18, { Scale = 0 }, Enum.EasingStyle.Back, Enum.EasingDirection.In)
-	for _, d in info:GetDescendants() do
-		if d:IsA("Frame") then
-			Util.tween(d, 0.18, { BackgroundTransparency = 1 })
-		elseif d:IsA("TextLabel") then
-			Util.tween(d, 0.18, { TextTransparency = 1 })
-		elseif d:IsA("UIStroke") then
-			Util.tween(d, 0.18, { Transparency = 1 })
-		end
-	end
-	task.delay(0.2, function()
-		box:Destroy()
-	end)
-end
-
----------------------------------------------------------------------------
 -- spinner wheel
 ---------------------------------------------------------------------------
 
 local WHEEL_COLOR = { trap = Theme.Category.trap, assist = Theme.Category.assist, neutral = Theme.Category.neutral }
 
--- What each segment of a wheel shows for this player on this map.
-function Overlays.wheelSegments(wheel: string, mapDef, character: string?): { string }
+-- What each segment of a wheel shows on this map ("bkb" is the map's Bridge / Key / Boots).
+function Overlays.wheelSegments(wheel: string, mapDef): { string }
 	local out = {}
 	for i, seg in Items.wheels[wheel] do
 		if seg == "bkb" then
-			out[i] = if character == "naturalist" then mapDef.naturalCard else mapDef.counterItem
+			out[i] = mapDef.counterItem
 		else
 			out[i] = seg
 		end
@@ -174,7 +89,7 @@ end
 
 --[[ Spins a wheel and lands on segment `index` (yields ~SpinTime). ]]
 function Overlays.spin(layer: Frame, wheel: string, segments: { string }, index: number, speed: number)
-	local color = WHEEL_COLOR[wheel] or C.brass
+	local color = WHEEL_COLOR[wheel] or C.sun
 	local n = #segments
 	local dim = Util.new("Frame", {
 		Name = "SpinDim",
@@ -192,11 +107,11 @@ function Overlays.spin(layer: Frame, wheel: string, segments: { string }, index:
 		ZIndex = 71,
 	})
 	Util.popIn(holder, 0.3, 0.5)
-	-- shadow, brass rim, wooden disc
+	-- hard shadow, outline, sun-yellow rim, then the disc
 	local canvas = Shapes.canvas(holder)
-	Shapes.circle(canvas, 0.5, 0.53, 1, C.black, { t = 0.6 })
-	Shapes.circle(canvas, 0.5, 0.5, 1, C.brassDark)
-	Shapes.circle(canvas, 0.5, 0.5, 0.95, C.brass)
+	Shapes.circle(canvas, 0.5, 0.535, 1, C.shadow)
+	Shapes.circle(canvas, 0.5, 0.5, 1, C.line)
+	Shapes.circle(canvas, 0.5, 0.5, 0.955, C.sun)
 	local spinFrame = Util.frame(holder, {
 		Name = "Spinner",
 		AnchorPoint = Vector2.new(0.5, 0.5),
@@ -205,19 +120,19 @@ function Overlays.spin(layer: Frame, wheel: string, segments: { string }, index:
 		ZIndex = 72,
 	})
 	local disc = Shapes.canvas(spinFrame)
-	Shapes.circle(disc, 0.5, 0.5, 1, C.woodLight)
-	Shapes.circle(disc, 0.5, 0.5, 0.94, C.wood)
+	Shapes.circle(disc, 0.5, 0.5, 1, C.line)
+	Shapes.circle(disc, 0.5, 0.5, 0.96, C.panel)
 	for i = 1, n do
 		-- spokes between segments
 		local a = math.rad((i - 0.5) * 360 / n - 90)
-		Shapes.line(disc, 0.5, 0.5, 0.5 + math.cos(a) * 0.47, 0.5 + math.sin(a) * 0.47, 0.012, C.woodDeep)
+		Shapes.line(disc, 0.5, 0.5, 0.5 + math.cos(a) * 0.47, 0.5 + math.sin(a) * 0.47, 0.016, C.line)
 		-- segment pocket with its prize
 		local b = math.rad((i - 1) * 360 / n - 90)
 		local px, py = 0.5 + math.cos(b) * 0.33, 0.5 + math.sin(b) * 0.33
 		local pocketColor = if i % 2 == 0 then color else Util.shade(color, -0.25)
 		local seg = segments[i]
 		if seg == "coin" then
-			pocketColor = C.brassDark
+			pocketColor = C.sun
 		end
 		local pocket = Util.frame(disc, {
 			Name = "Pocket" .. i,
@@ -230,8 +145,8 @@ function Overlays.spin(layer: Frame, wheel: string, segments: { string }, index:
 		})
 		Icons.medallion(pocket, seg, pocketColor, { Size = UDim2.fromScale(1, 1) })
 	end
-	Shapes.circle(disc, 0.5, 0.5, 0.2, C.brass)
-	Shapes.circle(disc, 0.5, 0.5, 0.12, C.brassDark)
+	Shapes.circle(disc, 0.5, 0.5, 0.2, C.line)
+	Shapes.circle(disc, 0.5, 0.5, 0.17, C.sun)
 	-- pointer at the top
 	local pointer = Util.frame(holder, {
 		Name = "Pointer",
@@ -241,8 +156,10 @@ function Overlays.spin(layer: Frame, wheel: string, segments: { string }, index:
 		ZIndex = 80,
 	})
 	local pc = Shapes.canvas(pointer)
-	Shapes.tri(pc, 0.5, 0.2, 0.9, C.inkRed, { dir = 180 })
-	Shapes.circle(pc, 0.5, 0.18, 0.32, C.brassLight)
+	Shapes.tri(pc, 0.5, 0.24, 1, C.line, { dir = 180 })
+	Shapes.tri(pc, 0.5, 0.2, 0.84, C.coral, { dir = 180 })
+	Shapes.circle(pc, 0.5, 0.18, 0.36, C.line)
+	Shapes.circle(pc, 0.5, 0.18, 0.3, C.sun)
 
 	-- spin: several turns, landing with segment `index` under the pointer
 	local turns = 4
@@ -522,7 +439,7 @@ function Overlays.turnBanner(layer: Frame, text: string, seatColor: Color3, mine
 		Parent = layer,
 	})
 	Util.corner(banner, 14)
-	Util.stroke(banner, if mine then hex("5E430F") else C.brassDark, 3)
+	Util.stroke(banner, C.line, 3)
 	local k = fitScale(layer, if mine then 380 else 320, if mine then 62 else 50)
 	if k < 1 then
 		Util.new("UIScale", { Name = "Fit", Scale = k, Parent = banner })
@@ -669,6 +586,93 @@ function Overlays.shout(layer: Frame, text: string, color: Color3, speed: number
 			outer:Destroy()
 		end)
 	end)
+end
+
+---------------------------------------------------------------------------
+-- pick a card (the Trapper's Scavenge)
+---------------------------------------------------------------------------
+
+--[[
+	Two (or more) cards face up over the board; click one to keep it. Returns close().
+	Doesn't yield. onPick(index) gets the card's position in `items`.
+]]
+function Overlays.pickCard(layer: Frame, title: string, items: { string }, onPick: (number) -> ()): () -> ()
+	local dim = Util.new("TextButton", {
+		Name = "PickDim",
+		Text = "",
+		AutoButtonColor = false,
+		BackgroundColor3 = C.dim,
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		Size = UDim2.fromScale(1, 1),
+		ZIndex = 90,
+		Parent = layer,
+	})
+	Util.tween(dim, 0.2, { BackgroundTransparency = 0.4 })
+	local n = #items
+	local cardW = 150
+	local w = n * cardW + (n - 1) * 24 + 40
+	local outer = fitted(layer, "Pick", w, 330, 0.5, 0.5, 91, dim)
+	local wrap = Util.frame(outer, { Name = "Inner", ZIndex = 91 })
+	Widgets.label(wrap, {
+		text = title,
+		font = "chunky",
+		size = 30,
+		color = C.sun,
+		align = "center",
+		outline = C.line,
+		outlineThickness = 3,
+		sizeUDim = UDim2.new(1, 0, 0, 36),
+		z = 92,
+	})
+	local row = Util.frame(wrap, {
+		Name = "Row",
+		Position = UDim2.fromOffset(0, 46),
+		Size = UDim2.new(1, 0, 1, -46),
+		ZIndex = 92,
+	})
+	Util.list(row, "x", 24, "Center", "Top")
+	local closed = false
+	local function close()
+		if closed then
+			return
+		end
+		closed = true
+		Util.tween(dim, 0.2, { BackgroundTransparency = 1 })
+		Util.tween(Util.scaler(wrap), 0.18, { Scale = 0.6 }, Enum.EasingStyle.Back, Enum.EasingDirection.In)
+		task.delay(0.2, function()
+			dim:Destroy()
+		end)
+	end
+	for i, id in items do
+		local slot = Util.frame(row, { Name = "Option" .. i, Size = UDim2.fromOffset(cardW, cardW / CardStyle.aspect + 56), LayoutOrder = i, ZIndex = 92 })
+		local card = Cards.item(slot, id, {
+			AnchorPoint = Vector2.new(0.5, 0),
+			Position = UDim2.new(0.5, 0, 0, 0),
+			Size = UDim2.fromOffset(cardW, cardW / CardStyle.aspect),
+			ZIndex = 93,
+		})
+		local _ = card
+		Widgets.button(slot, {
+			text = "TAKE IT",
+			style = "brass",
+			textSize = 18,
+			size = UDim2.new(1, 0, 0, 44),
+			anchor = Vector2.new(0.5, 1),
+			position = UDim2.new(0.5, 0, 1, 0),
+			z = 94,
+			onClick = function()
+				if closed then
+					return
+				end
+				close()
+				onPick(i)
+			end,
+		})
+		Util.popIn(slot, 0.3, 0.2 + i * 0.1)
+	end
+	Sound.play("reveal")
+	return close
 end
 
 ---------------------------------------------------------------------------

@@ -1,16 +1,30 @@
 --[[
 	ActionDock
-	Your two action areas: the big ROLL button (with RECALL beside it when you have a
-	Time Travel anchor) and your character's ability button with its recharge pips.
-	Both fill whatever rects the layout gives them, so the same pieces work on a PC,
-	a phone held sideways and a phone held upright.
+	Your two action areas.
+
+	The dice tray. Every turn starts with your dice already rolled: two of them (three in
+	the Triple Dice event, one while you're Frozen). You pick the one to move with and
+	the best of the others charges your Power; doubles can also move the TOTAL (no
+	Power). Hovering a die (or tapping it once on a touch screen) shows on the board
+	where it takes you; clicking it (or tapping it again) moves. On other players' turns
+	the tray shows their dice, so you can see what they chose. RECALL joins the tray when
+	you've dropped a time anchor.
+
+	The Power panel: your mascot, a Power bar as long as your ability costs, and the
+	ability button, which lights up when the bar is full.
 
 		local dock = ActionDock.new(parent, { character = "mage", touch = bool })
 		dock:layout(L.ability, L.roll, form)
-		dock:setTurn({ mine, phase, waitingFor, anchor, busy })
-		dock:setAbility(ready, progress, usedThisTurn, myTurn)
-		dock:setClock(secondsLeft?)  -- your turn's countdown on the ROLL button
-		dock.onRoll(), dock.onAbility(), dock.onRecall(), dock.onPortrait()
+		dock:setDice({ dice, mine, owner, frozen, chosen, enabled, power = { [key] = n }, hint })
+		dock:rollDice(dice, frozen, speed)               -- tumbles them in (yields)
+		dock:choose(key)                                 -- the chosen die pops
+		dock:setPower(power, cap, { usable, used, mine })
+		dock:setRecall(show, enabled)
+		dock:setClock(secondsLeft?)
+		dock:clearSelection()
+		dock.onDie(key), dock.onDieHover(key?), dock.onAbility(), dock.onRecall(), dock.onPortrait()
+
+	A die's key is its number in the roll (1, 2, 3) or "sum" for doubles' TOTAL.
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -23,11 +37,11 @@ local Util = require(UI.Util)
 local Theme = require(UI.Theme)
 local Icons = require(UI.Icons)
 local Widgets = require(UI.Widgets)
+local CosmeticArt = require(UI.CosmeticArt)
 
 local Sound = require(UI.Parent.Sound)
 
 local C = Theme.C
-local hex = Theme.hex
 
 local ActionDock = {}
 ActionDock.__index = ActionDock
@@ -35,11 +49,15 @@ ActionDock.__index = ActionDock
 -- Ability button colour per character (Widgets button styles)
 local ABILITY_STYLE = {
 	mage = "blue",
-	trapper = "wood",
+	trapper = "orange",
 	fire_starter = "red",
+	naturalist = "green",
 	warper = "purple",
 	overseer = "brass",
 }
+
+-- PC keys for the dice (shown under them)
+local DIE_KEYS = { "Q", "W", "E" }
 
 function ActionDock.new(parent: Instance, opts)
 	local self = setmetatable({}, ActionDock)
@@ -47,9 +65,12 @@ function ActionDock.new(parent: Instance, opts)
 	self.touch = opts.touch == true
 	self.def = Characters.get(self.character or "")
 	self.abilityRoot = Util.frame(parent, { Name = "Ability" })
-	self.rollRoot = Util.frame(parent, { Name = "RollDock" })
-	self.turn = { mine = false, phase = "action", busy = true, anchor = 0 }
-	self.ability = { ready = false, progress = 0, used = false, myTurn = false }
+	self.rollRoot = Util.frame(parent, { Name = "DiceTray" })
+	self.diceInfo = { dice = {}, mine = false, enabled = false, power = {} }
+	self.powerInfo = { power = 0, cap = 1, usable = false, used = false, mine = false }
+	self.recall = { show = false, enabled = false }
+	self.selected = nil
+	self.diceSkin = opts.diceSkin
 	return self
 end
 
@@ -63,32 +84,58 @@ local function place(f: Frame, r)
 	f.Size = UDim2.fromOffset(r.w, r.h)
 end
 
+-- A sticker panel: candy surface, the dark outline and a hard shadow under it.
+local function slab(parent: Instance, color: Color3, corner: number): Frame
+	local shadow = Util.new("Frame", {
+		Name = "Shadow",
+		BackgroundColor3 = C.shadow,
+		BorderSizePixel = 0,
+		Position = UDim2.fromOffset(0, 5),
+		Size = UDim2.fromScale(1, 1),
+		ZIndex = 0,
+		Parent = parent,
+	})
+	Util.corner(shadow, corner)
+	local face = Util.new("Frame", {
+		Name = "Slab",
+		BackgroundColor3 = color,
+		BorderSizePixel = 0,
+		Size = UDim2.fromScale(1, 1),
+		ZIndex = 0,
+		Parent = parent,
+	})
+	Util.corner(face, corner)
+	Util.stroke(face, C.line, 3)
+	return face
+end
+
 function ActionDock:layout(abilityRect, rollRect, form: string)
 	self.form = form
 	place(self.abilityRoot, abilityRect)
 	place(self.rollRoot, rollRect)
 	Util.clear(self.abilityRoot)
 	Util.clear(self.rollRoot)
-	self:_buildAbility(abilityRect, form)
-	self:_buildRoll(rollRect, form)
-	self:setTurn(self.turn)
-	local a = self.ability
-	self:setAbility(a.ready, a.progress, a.used, a.myTurn)
+	self:_buildPower(abilityRect, form)
+	self:_buildTray(rollRect, form)
+	self:setDice(self.diceInfo)
+	local pi = self.powerInfo
+	self:setPower(pi.power, pi.cap, pi)
+	self:setRecall(self.recall.show, self.recall.enabled)
 end
 
 ---------------------------------------------------------------------------
--- ability
+-- Power panel
 ---------------------------------------------------------------------------
 
-function ActionDock:_buildAbility(r, form: string)
+function ActionDock:_buildPower(r, form: string)
 	local def = self.def
-	local color = Theme.Character[self.character] or C.inkSoft
-	local box = self.abilityRoot
 	local ability = def and def.ability
+	local color = Theme.Character[self.character] or C.grape
+	local box = self.abilityRoot
 	self.abilityDef = ability
 	self.abilityButton = nil
-	self.pips = nil
-	self.pipNote = nil
+	self.bar = nil
+	self.powerLabel = nil
 
 	local function portrait(size: number, x: number, y: number)
 		local p = Util.new("TextButton", {
@@ -98,16 +145,17 @@ function ActionDock:_buildAbility(r, form: string)
 			BackgroundTransparency = 1,
 			Position = UDim2.fromOffset(x, y),
 			Size = UDim2.fromOffset(size, size),
+			ZIndex = 2,
 			Parent = box,
 		})
-		Icons.medallion(p, self.character or "info", color, { Size = UDim2.fromScale(1, 1) })
+		Icons.medallion(p, self.character or "info", color, { Size = UDim2.fromScale(1, 1), ZIndex = 2 })
 		p.Activated:Connect(function()
 			if self.onPortrait then
 				self.onPortrait()
 			end
 		end)
 		p.MouseEnter:Connect(function()
-			Util.tween(Util.scaler(p), 0.12, { Scale = 1.06 }, Enum.EasingStyle.Back)
+			Util.tween(Util.scaler(p), 0.12, { Scale = 1.08 }, Enum.EasingStyle.Back)
 		end)
 		p.MouseLeave:Connect(function()
 			Util.tween(Util.scaler(p), 0.12, { Scale = 1 })
@@ -123,6 +171,8 @@ function ActionDock:_buildAbility(r, form: string)
 			textSize = textSize,
 			size = UDim2.fromOffset(w, h),
 			position = UDim2.fromOffset(x, y),
+			depth = 4,
+			z = 3,
 			onClick = function()
 				if self.onAbility then
 					self.onAbility()
@@ -132,190 +182,255 @@ function ActionDock:_buildAbility(r, form: string)
 	end
 
 	if form == "wide" then
-		-- a dark card: portrait, character name, ability button, recharge pips
-		local bg = Util.new("Frame", {
-			Name = "Back",
-			BackgroundColor3 = hex("1F150E"),
-			BackgroundTransparency = 0.06,
-			BorderSizePixel = 0,
-			Size = UDim2.fromScale(1, 1),
-			ZIndex = 0,
-			Parent = box,
-		})
-		Util.corner(bg, 14)
-		Util.stroke(bg, Util.shade(color, -0.2), 2)
-		local ps = math.min(76, r.h - 40)
+		slab(box, C.panel, 16)
+		local ps = math.min(70, r.h - 50)
 		portrait(ps, 10, 10)
+		local tx = ps + 20
 		Widgets.label(box, {
 			name = "Name",
-			text = if def then def.name else "",
+			text = if def then string.upper(def.name) else "",
 			font = "chunky",
-			size = 20,
-			color = C.parchment,
-			sizeUDim = UDim2.fromOffset(r.w - ps - 26, 24),
-			position = UDim2.fromOffset(ps + 18, 10),
+			size = 19,
+			color = C.text,
+			outline = C.line,
+			sizeUDim = UDim2.fromOffset(r.w - tx - 10, 22),
+			position = UDim2.fromOffset(tx, 10),
+			z = 2,
 		})
+		self.powerLabel = Widgets.label(box, {
+			name = "PowerText",
+			text = "",
+			font = "heavy",
+			size = 13,
+			color = C.textSoft,
+			sizeUDim = UDim2.fromOffset(r.w - tx - 10, 16),
+			position = UDim2.fromOffset(tx, 32),
+			z = 2,
+		})
+		self.bar = self:_bar(box, tx, 52, r.w - tx - 12, 18)
 		if ability then
-			self.abilityButton = abilityButton(ps + 18, 38, r.w - ps - 28, 42, 18)
-			self:_pips(ps + 18, 86, r.w - ps - 28)
-		else
-			Widgets.label(box, {
-				text = "Your strength is always on.",
-				font = "heavy",
-				size = 13,
-				color = hex("BFA98A"),
-				wrap = true,
-				valign = "top",
-				sizeUDim = UDim2.fromOffset(r.w - ps - 28, 44),
-				position = UDim2.fromOffset(ps + 18, 40),
-			})
+			self.abilityButton = abilityButton(10, r.h - 50, r.w - 20, 42, 19)
 		end
-		-- the passive, under the portrait
-		Widgets.label(box, {
-			name = "Hint",
-			text = "Tap your portrait to read your card",
-			font = "body",
-			size = 11,
-			color = hex("8F7B60"),
-			align = "center",
-			sizeUDim = UDim2.fromOffset(r.w - 16, 14),
-			position = UDim2.new(0, 8, 1, -20),
-		}).Visible = r.h >= 150
 	elseif form == "short" then
-		local ps = math.min(40, r.h - 30)
-		portrait(ps, 0, 2)
+		local ps = math.min(38, r.h - 34)
+		portrait(ps, 0, 0)
+		self.bar = self:_bar(box, ps + 6, math.floor((ps - 14) / 2), r.w - ps - 6, 14)
 		if ability then
-			self.abilityButton = abilityButton(ps + 6, 0, r.w - ps - 6, math.max(38, r.h - 30), 15)
-			self:_pips(0, r.h - 24, r.w)
-		else
-			Widgets.label(box, {
-				text = if def then def.name else "",
-				font = "chunky",
-				size = 15,
-				color = C.parchment,
-				outline = C.ink,
-				sizeUDim = UDim2.fromOffset(r.w - ps - 6, ps),
-				position = UDim2.fromOffset(ps + 6, 2),
-			})
+			self.abilityButton = abilityButton(0, ps + 4, r.w, math.max(30, r.h - ps - 4), 15)
 		end
 	else
-		-- upright phone: one button; the pips ride inside it as text
+		-- upright phone: the button with the bar along its bottom edge
 		if ability then
-			self.abilityButton = abilityButton(0, 0, r.w, r.h, 14)
-		else
-			local ps = r.h
-			portrait(ps, 0, 0)
-			Widgets.label(box, {
-				text = if def then def.name else "",
-				font = "chunky",
-				size = 14,
-				color = C.parchment,
-				outline = C.ink,
-				sizeUDim = UDim2.fromOffset(r.w - ps - 6, r.h),
-				position = UDim2.fromOffset(ps + 6, 0),
-			})
+			self.abilityButton = abilityButton(0, 0, r.w, r.h - 10, 14)
 		end
+		self.bar = self:_bar(box, 4, r.h - 9, r.w - 8, 9)
 	end
 end
 
-function ActionDock:_pips(x: number, y: number, w: number)
-	local row = Util.frame(self.abilityRoot, {
-		Name = "Pips",
+--[[
+	The Power bar: one segment per point of Power the ability costs (up to 10; more
+	than that and it becomes one smooth bar), filled in the character's colour.
+]]
+function ActionDock:_bar(parent: Instance, x: number, y: number, w: number, h: number)
+	local track = Util.new("Frame", {
+		Name = "PowerBar",
+		BackgroundColor3 = C.panelDeep,
+		BorderSizePixel = 0,
 		Position = UDim2.fromOffset(x, y),
-		Size = UDim2.fromOffset(w, 18),
+		Size = UDim2.fromOffset(w, h),
+		ZIndex = 4,
+		Parent = parent,
 	})
-	Util.list(row, "x", 5, "Center", "Center")
-	self.pips = row
-	self.pipNote = Widgets.label(self.abilityRoot, {
-		name = "PipNote",
-		text = "",
-		font = "heavy",
-		size = 12,
-		color = C.woodPale,
-		align = "center",
-		sizeUDim = UDim2.fromOffset(w, 14),
-		position = UDim2.fromOffset(x, y + 18),
+	Util.corner(track, 0.5)
+	Util.stroke(track, C.line, if h >= 12 then 2.5 else 2)
+	local fill = Util.new("Frame", {
+		Name = "Fill",
+		BackgroundColor3 = Theme.Character[self.character] or C.sun,
+		BorderSizePixel = 0,
+		Size = UDim2.fromScale(0, 1),
+		ZIndex = 5,
+		Parent = track,
 	})
-	self.pipNote.Visible = self.form == "wide"
+	Util.corner(fill, 0.5)
+	local shine = Util.new("Frame", {
+		Name = "Shine",
+		BackgroundColor3 = C.white,
+		BackgroundTransparency = 0.65,
+		BorderSizePixel = 0,
+		Position = UDim2.new(0, 3, 0, 2),
+		Size = UDim2.new(1, -6, 0.3, 0),
+		ZIndex = 6,
+		Parent = fill,
+	})
+	Util.corner(shine, 0.5)
+	local ticks = Util.frame(track, { Name = "Ticks", ZIndex = 7 })
+	return { track = track, fill = fill, ticks = ticks, w = w, h = h, cap = 0 }
 end
 
--- ready: charged; progress: cycles/rounds counted so far; used: already used this turn
-function ActionDock:setAbility(ready: boolean, progress: number, used: boolean, myTurn: boolean)
-	self.ability = { ready = ready, progress = progress, used = used, myTurn = myTurn }
-	local ab = self.abilityDef
-	local btn = self.abilityButton
-	if not ab or not btn then
+function ActionDock:_drawTicks(cap: number)
+	local bar = self.bar
+	if not bar or bar.cap == cap then
 		return
 	end
-	local usable = ready and not used and myTurn
-	btn:setEnabled(usable)
-	btn:pulse(usable)
-	local note = ""
-	local dots = ""
-	if ab.recharge == "perTurn" then
-		note = if used then "Used this turn" else "Every turn"
-	elseif ab.recharge == "once" then
-		note = if ready then "Once per game" else "Used up"
-	else
-		local amount = ab.amount or 1
-		for i = 1, amount do
-			dots ..= if ready or i <= progress then "●" else "○"
+	bar.cap = cap
+	Util.clear(bar.ticks)
+	if cap <= 1 or cap > 10 then
+		return
+	end
+	for i = 1, cap - 1 do
+		local tick = Util.new("Frame", {
+			Name = "Tick" .. i,
+			BackgroundColor3 = C.line,
+			BackgroundTransparency = 0.25,
+			BorderSizePixel = 0,
+			AnchorPoint = Vector2.new(0.5, 0),
+			Position = UDim2.new(i / cap, 0, 0, 2),
+			Size = UDim2.new(0, 2, 1, -4),
+			ZIndex = 7,
+			Parent = bar.ticks,
+		})
+		local _ = tick
+	end
+end
+
+--[[
+	power / cap: the bar. o = { usable (the button works now), used (already used this
+	turn), mine (it's my turn) }.
+]]
+function ActionDock:setPower(power: number, cap: number, o)
+	local before = self.powerInfo.power
+	self.powerInfo = { power = power, cap = cap, usable = o.usable == true, used = o.used == true, mine = o.mine == true }
+	local full = cap > 0 and power >= cap
+	local bar = self.bar
+	if bar then
+		self:_drawTicks(cap)
+		local k = if cap > 0 then math.clamp(power / cap, 0, 1) else 0
+		Util.tween(bar.fill, 0.35, { Size = UDim2.fromScale(k, 1) }, Enum.EasingStyle.Back)
+		local fill = bar.fill :: Frame
+		fill.BackgroundColor3 = if full then C.sun else (Theme.Character[self.character] or C.sky)
+		if power > before then
+			Util.bump(bar.track, 0.08)
 		end
-		local left = math.max(1, amount - progress)
-		local unit = if ab.recharge == "rounds" then "round" else "treasure run"
-		note = if ready then "Charged!" else ("Recharges in " .. left .. " " .. unit .. (if left == 1 then "" else "s"))
-		if self.pips then
-			Util.clear(self.pips, true)
-			for i = 1, amount do
-				local filled = ready or i <= progress
-				local pip = Util.new("Frame", {
-					Name = "Pip" .. i,
-					BackgroundColor3 = if filled then C.brass else C.woodDeep,
-					BorderSizePixel = 0,
-					Size = UDim2.fromOffset(12, 12),
-					LayoutOrder = i,
-					Parent = self.pips,
-				})
-				Util.corner(pip, 0.5)
-				Util.stroke(pip, C.brassDark, 1.5)
-			end
+		if full and not self.fullPulse then
+			self.fullPulse = true
+			task.spawn(function()
+				local track = bar.track
+				while self.fullPulse and track.Parent do
+					Util.tween(bar.fill, 0.45, { BackgroundColor3 = C.sunLight }, Enum.EasingStyle.Sine)
+					task.wait(0.45)
+					Util.tween(bar.fill, 0.45, { BackgroundColor3 = C.sun }, Enum.EasingStyle.Sine)
+					task.wait(0.45)
+				end
+			end)
+		elseif not full then
+			self.fullPulse = false
 		end
 	end
-	if self.pipNote then
-		self.pipNote.Text = note
+	if self.powerLabel then
+		local ab = self.abilityDef
+		self.powerLabel.Text = if not ab then "" elseif full then "POWER FULL!" else string.format("Power %d / %d", power, cap)
+		self.powerLabel.TextColor3 = if full then C.sun else C.textSoft
 	end
-	if self.form == "tall" then
-		btn:setText(string.upper(ab.name) .. (if dots ~= "" then ("  " .. dots) else ""))
+	local btn = self.abilityButton
+	if btn then
+		local usable = self.powerInfo.usable
+		btn:setEnabled(usable)
+		btn:pulse(usable)
+		if self.form == "tall" and self.abilityDef then
+			btn:setText(string.upper(self.abilityDef.name) .. (if full then "!" else string.format(" %d/%d", power, cap)))
+		end
 	end
 end
 
 ---------------------------------------------------------------------------
--- roll / recall
+-- dice tray
 ---------------------------------------------------------------------------
 
-function ActionDock:_buildRoll(r, form: string)
+function ActionDock:_buildTray(r, form: string)
 	local box = self.rollRoot
-	self.rollButton = Widgets.button(box, {
-		name = "Roll",
-		text = "ROLL",
-		icon = "dice",
+	slab(box, C.panel, 16)
+	self.trayRect = r
+	local captionH = if form == "wide" then 20 else 0
+	local footH = if form == "wide" then 30 elseif form == "short" then 26 else 0
+	self.caption = nil
+	if captionH > 0 then
+		self.caption = Widgets.label(box, {
+			name = "Caption",
+			text = "",
+			font = "chunky",
+			size = 15,
+			color = C.text,
+			outline = C.line,
+			align = "center",
+			sizeUDim = UDim2.new(1, -16, 0, captionH),
+			position = UDim2.fromOffset(8, 6),
+			z = 3,
+		})
+		self.caption.TextTruncate = Enum.TextTruncate.AtEnd
+	end
+	-- where the dice sit
+	self.diceArea = Util.frame(box, {
+		Name = "Dice",
+		Position = UDim2.fromOffset(6, 6 + captionH),
+		Size = UDim2.new(1, -12, 1, -(12 + captionH + footH)),
+		ZIndex = 3,
+	})
+	-- the footer: TOTAL for doubles, RECALL, or a line of help
+	self.foot = Util.frame(box, {
+		Name = "Foot",
+		AnchorPoint = Vector2.new(0, 1),
+		Position = UDim2.new(0, 6, 1, -6),
+		Size = UDim2.new(1, -12, 0, math.max(footH, 0)),
+		ZIndex = 3,
+	})
+	self.footLabel = nil
+	if footH > 0 then
+		self.footLabel = Widgets.label(self.foot, {
+			name = "Help",
+			text = "",
+			font = "heavy",
+			size = if form == "wide" then 13 else 11,
+			color = C.textSoft,
+			align = "center",
+			wrap = true,
+			sizeUDim = UDim2.fromScale(1, 1),
+			z = 4,
+		})
+	end
+	self.sumButton = Widgets.button(if footH > 0 then self.foot else box, {
+		name = "Total",
+		text = "TOTAL",
 		style = "brass",
-		textSize = if form == "wide" then 32 elseif form == "short" then 24 else 22,
-		depth = if form == "wide" then 7 else 5,
-		size = UDim2.fromScale(1, 1),
+		textSize = if form == "wide" then 16 else 13,
+		depth = 3,
+		corner = 10,
+		size = if footH > 0 then UDim2.fromScale(1, 1) else UDim2.new(0.62, 0, 0, 24),
+		anchor = if footH > 0 then Vector2.zero else Vector2.new(0.5, 1),
+		position = if footH > 0 then UDim2.new() else UDim2.new(0.5, 0, 1, -2),
+		z = 8,
 		onClick = function()
-			if self.onRoll then
-				self.onRoll()
-			end
+			self:_dieClicked("sum")
 		end,
 	})
-	self.recallButton = Widgets.button(box, {
+	self.sumButton.root.Visible = false
+	self.sumButton.root.MouseEnter:Connect(function()
+		self:_hover("sum")
+	end)
+	self.sumButton.root.MouseLeave:Connect(function()
+		self:_hover(nil)
+	end)
+	self.recallButton = Widgets.button(if footH > 0 then self.foot else box, {
 		name = "Recall",
 		text = "RECALL",
 		icon = "time_potion",
 		style = "purple",
-		textSize = if form == "wide" then 18 else 14,
-		size = UDim2.fromScale(1, 1),
+		textSize = if form == "wide" then 15 else 12,
+		depth = 3,
+		corner = 10,
+		size = if footH > 0 then UDim2.fromScale(1, 1) else UDim2.new(0.7, 0, 0, 24),
+		anchor = if footH > 0 then Vector2.zero else Vector2.new(0.5, 0),
+		position = if footH > 0 then UDim2.new() else UDim2.new(0.5, 0, 0, 2),
+		z = 8,
 		onClick = function()
 			if self.onRecall then
 				self.onRecall()
@@ -323,25 +438,25 @@ function ActionDock:_buildRoll(r, form: string)
 		end,
 	})
 	self.recallButton.root.Visible = false
-	-- your turn's countdown: a little clock badge inside ROLL's top corner (inside, so
-	-- it never touches the ability button above it on an upright phone)
+
+	-- your turn's countdown: a clock badge on the tray's top corner
 	local badge = Util.new("Frame", {
 		Name = "Clock",
 		BackgroundColor3 = C.panelDeep,
 		BorderSizePixel = 0,
-		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, -8, 0, 8),
-		Size = UDim2.fromOffset(if form == "wide" then 64 else 54, if form == "wide" then 26 else 22),
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(1, -4, 0, 2),
+		Size = UDim2.fromOffset(if form == "wide" then 58 else 48, if form == "wide" then 24 else 20),
 		ZIndex = 30,
 		Visible = false,
 		Parent = box,
 	})
 	Util.corner(badge, 0.5)
-	Util.stroke(badge, C.brass, 1.5)
+	Util.stroke(badge, C.line, 2)
 	self.clockLabel = Widgets.label(badge, {
 		text = "",
 		font = "chunky",
-		size = if form == "wide" then 17 else 15,
+		size = if form == "wide" then 16 else 14,
 		color = C.text,
 		align = "center",
 		sizeUDim = UDim2.fromScale(1, 1),
@@ -349,54 +464,325 @@ function ActionDock:_buildRoll(r, form: string)
 	})
 	self.clockBadge = badge
 	self.clockShown = nil
-	if form == "wide" then
-		self.waitLabel = Widgets.label(box, {
-			name = "Status",
-			text = "",
-			font = "heavy",
-			size = 14,
-			color = C.parchment,
-			outline = C.ink,
-			align = "center",
-			wrap = true,
-			sizeUDim = UDim2.new(1, 0, 0, 36),
-			position = UDim2.new(0, 0, 1, -36),
-		})
-	else
-		self.waitLabel = nil
-	end
-	self.rollRect = r
+	self.dieWidgets = {}
+	self.dieCount = 0
 end
 
--- Splits the roll area between ROLL and RECALL when you have an anchor.
-function ActionDock:_arrangeRoll(showRecall: boolean)
-	local r = self.rollRect
-	if not r then
+-- Builds the die buttons for `n` dice.
+function ActionDock:_buildDice(n: number)
+	Util.clear(self.diceArea)
+	self.dieWidgets = {}
+	self.dieCount = n
+	if n == 0 then
 		return
 	end
-	local roll, recall = self.rollButton.root, self.recallButton.root
-	local hasStatus = self.waitLabel ~= nil
-	local statusH = if hasStatus then 40 else 0
-	if showRecall then
-		if self.form == "tall" then
-			-- side by side
-			local w = (r.w - 6) * 0.62
-			roll.Size = UDim2.fromOffset(w, r.h)
-			roll.Position = UDim2.fromOffset(0, 0)
-			recall.Size = UDim2.fromOffset(r.w - w - 6, r.h)
-			recall.Position = UDim2.fromOffset(w + 6, 0)
-		else
-			local h = (r.h - statusH - 6) * 0.62
-			roll.Size = UDim2.fromOffset(r.w, h)
-			roll.Position = UDim2.fromOffset(0, 0)
-			recall.Size = UDim2.fromOffset(r.w, r.h - statusH - h - 6)
-			recall.Position = UDim2.fromOffset(0, h + 6)
+	local areaFrame = self.diceArea :: Frame
+	local area = areaFrame.AbsoluteSize
+	local k = Util.inheritedScale(areaFrame, true)
+	local aw = if area.X > 0 then area.X / k else (self.trayRect.w - 12)
+	local ah = if area.Y > 0 then area.Y / k else (self.trayRect.h - 40)
+	local gap = if self.form == "wide" then 12 else 8
+	local size = math.floor(math.min(ah - 4, (aw - (n - 1) * gap) / n, 84))
+	local total = n * size + (n - 1) * gap
+	for i = 1, n do
+		local x = (aw - total) / 2 + (i - 1) * (size + gap)
+		local btn = Util.new("TextButton", {
+			Name = "Die" .. i,
+			Text = "",
+			AutoButtonColor = false,
+			BackgroundTransparency = 1,
+			Position = UDim2.fromOffset(x, (ah - size) / 2),
+			Size = UDim2.fromOffset(size, size),
+			ZIndex = 4,
+			Parent = self.diceArea,
+		})
+		local lift = Util.frame(btn, { Name = "Lift", ZIndex = 4 })
+		-- a glow ring behind the die: hovered or picked
+		local ring = Util.new("Frame", {
+			Name = "Ring",
+			BackgroundColor3 = C.sun,
+			BackgroundTransparency = 1,
+			BorderSizePixel = 0,
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.5, 0.5),
+			Size = UDim2.fromScale(1.16, 1.16),
+			ZIndex = 3,
+			Parent = lift,
+		})
+		Util.corner(ring, 0.3)
+		local die, setValue = CosmeticArt.die(lift, self.diceSkin, 1, {
+			Position = UDim2.fromScale(0.5, 0.5),
+			Size = UDim2.fromScale(1, 1),
+			ZIndex = 4,
+		})
+		-- dims a die that wasn't chosen
+		local dim = Util.new("Frame", {
+			Name = "Dim",
+			BackgroundColor3 = C.panel,
+			BackgroundTransparency = 0.35,
+			BorderSizePixel = 0,
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.5, 0.5),
+			Size = UDim2.fromScale(0.96, 0.96),
+			Visible = false,
+			ZIndex = 8,
+			Parent = lift,
+		})
+		Util.corner(dim, 0.24)
+		-- the Power this choice would charge (the other die), on a little tag
+		local tag = Widgets.badge(lift, {
+			name = "PowerTag",
+			text = "",
+			color = C.sun,
+			height = math.max(16, math.floor(size * 0.28)),
+			textSize = math.max(11, math.floor(size * 0.2)),
+			anchor = Vector2.new(0.5, 0.5),
+			position = UDim2.new(0.5, 0, 1, -2),
+			z = 9,
+		})
+		tag.Visible = false
+		local keyHint = nil
+		if not self.touch and self.form == "wide" then
+			keyHint = Widgets.label(lift, {
+				name = "Key",
+				text = DIE_KEYS[i] or "",
+				font = "chunky",
+				size = 11,
+				color = C.textFaint,
+				align = "center",
+				sizeUDim = UDim2.fromOffset(16, 14),
+				anchor = Vector2.new(0, 0),
+				position = UDim2.fromOffset(-2, -6),
+				z = 9,
+			})
 		end
-	else
-		roll.Size = UDim2.fromOffset(r.w, r.h - statusH)
-		roll.Position = UDim2.fromOffset(0, 0)
+		local w = { button = btn, lift = lift, ring = ring, die = die, dim = dim, setValue = setValue, tag = tag, key = keyHint, index = i, size = size }
+		self.dieWidgets[i] = w
+		btn.MouseEnter:Connect(function()
+			self:_hover(i)
+		end)
+		btn.MouseLeave:Connect(function()
+			self:_hover(nil)
+		end)
+		btn.Activated:Connect(function()
+			self:_dieClicked(i)
+		end)
 	end
-	recall.Visible = showRecall
+end
+
+function ActionDock:_canPick(): boolean
+	local d = self.diceInfo
+	return d.mine == true and d.enabled == true and d.chosen == nil
+end
+
+function ActionDock:_hover(key: any)
+	if not self:_canPick() then
+		return
+	end
+	if self.touch then
+		return -- touch screens select with a first tap instead
+	end
+	self:_showSelected(key)
+	if self.onDieHover then
+		self.onDieHover(key)
+	end
+end
+
+function ActionDock:_dieClicked(key: any)
+	if not self:_canPick() then
+		if self.diceInfo.mine and self.diceInfo.chosen == nil then
+			Sound.play("error")
+		end
+		return
+	end
+	if self.touch and self.selected ~= key then
+		-- first tap: show where it goes; tap again to move
+		self.selected = key
+		self:_showSelected(key)
+		Sound.play("hover")
+		if self.onDieHover then
+			self.onDieHover(key)
+		end
+		self:_updateFoot()
+		return
+	end
+	self.selected = nil
+	if self.onDie then
+		self.onDie(key)
+	end
+end
+
+function ActionDock:clearSelection()
+	self.selected = nil
+	self:_showSelected(nil)
+	self:_updateFoot()
+end
+
+-- Lifts the die (or TOTAL) under the pointer / picked on touch.
+function ActionDock:_showSelected(key: any)
+	for i, w in self.dieWidgets do
+		local on = key == i or (key == "sum" and self.diceInfo.sum)
+		Util.tween(w.lift, 0.12, { Position = UDim2.fromOffset(0, if on then -6 else 0) }, Enum.EasingStyle.Back)
+		Util.tween(w.ring, 0.12, { BackgroundTransparency = if on then 0.15 else 1 })
+	end
+end
+
+--[[
+	info = {
+		dice = { numbers },      -- the roll on the table
+		mine = boolean,          -- my dice (it's my turn)
+		owner = string?,         -- whose dice, when not mine
+		frozen = boolean,        -- one halved die
+		chosen = key?,           -- picked already (the move is happening)
+		enabled = boolean,       -- I may pick now
+		power = { [key] = n },   -- Power each choice would charge
+		hint = string?,          -- the footer's line when there's nothing else to show
+	}
+]]
+function ActionDock:setDice(info)
+	self.diceInfo = info
+	if not self.diceArea then
+		return
+	end
+	local dice = info.dice or {}
+	if #dice ~= self.dieCount then
+		self:_buildDice(#dice)
+	end
+	local sum = #dice == 2 and dice[1] == dice[2]
+	info.sum = sum
+	for i, w in self.dieWidgets do
+		w.setValue(dice[i] or 1)
+		local chosen = info.chosen
+		local picked = chosen == i or (chosen == "sum")
+		local faded = chosen ~= nil and not picked
+		w.die.Rotation = 0
+		w.dim.Visible = faded
+		local power = info.power and info.power[i]
+		local showTag = info.mine and chosen == nil and power ~= nil and power > 0 and info.enabled
+		w.tag.Visible = showTag == true
+		if showTag then
+			local label = w.tag:FindFirstChildWhichIsA("TextLabel", true)
+			if label then
+				label.Text = "+" .. tostring(power) .. " POWER"
+			end
+		end
+		if w.key then
+			w.key.Visible = info.mine == true and info.enabled == true and chosen == nil
+		end
+		w.button.Active = info.mine == true
+	end
+	if self.caption then
+		if #dice == 0 then
+			self.caption.Text = if info.mine then "YOUR DICE" else ""
+		elseif info.mine then
+			self.caption.Text = if info.frozen then "FROZEN! ONE DIE" else "PICK A DIE"
+		else
+			self.caption.Text = string.upper((info.owner or "") .. "'S DICE")
+		end
+		self.caption.TextColor3 = if info.mine then C.sun else C.textSoft
+	end
+	if info.chosen == nil and not self:_canPick() then
+		self.selected = nil
+	end
+	self:_showSelected(self.selected)
+	self:_updateFoot()
+end
+
+-- The footer: TOTAL (doubles), RECALL (an anchor down) or a line of help.
+function ActionDock:_updateFoot()
+	local info = self.diceInfo
+	local canPick = self:_canPick()
+	local showSum = canPick and info.sum == true
+	local showRecall = canPick and self.recall.show and not showSum
+	if self.sumButton then
+		self.sumButton.root.Visible = showSum
+		if showSum then
+			local dice = info.dice
+			self.sumButton:setText("TOTAL " .. tostring((dice[1] or 0) + (dice[2] or 0)) .. (if self.selected == "sum" then "  GO!" else ""))
+			self.sumButton:setEnabled(true)
+		end
+	end
+	if self.recallButton then
+		self.recallButton.root.Visible = showRecall
+		self.recallButton:setEnabled(self.recall.enabled)
+	end
+	if self.footLabel then
+		self.footLabel.Visible = not showSum and not showRecall
+		local text = info.hint or ""
+		if canPick then
+			if self.touch then
+				text = if self.selected ~= nil then "Tap it again to go!" else "Tap a die to see where it goes"
+			else
+				text = "Hover to see where it goes, click to go"
+			end
+		end
+		self.footLabel.Text = text
+	end
+end
+
+-- The tray's footer line, when nothing else is there ("Waiting for Bot Lily...").
+function ActionDock:setHint(text: string?)
+	self.diceInfo.hint = text
+	self:_updateFoot()
+end
+
+function ActionDock:setRecall(show: boolean, enabled: boolean)
+	self.recall = { show = show, enabled = enabled }
+	self:_updateFoot()
+end
+
+-- The dice tumble onto the tray (yields about half the roll's time).
+function ActionDock:rollDice(dice: { number }, frozen: boolean, speed: number)
+	if not self.diceArea then
+		return
+	end
+	if #dice ~= self.dieCount then
+		self:_buildDice(#dice)
+	end
+	Sound.play("dice")
+	local tumble = 0.55 * math.clamp(speed, 0.25, 1)
+	local t0 = os.clock()
+	for _, w in self.dieWidgets do
+		local s = Util.scaler(w.lift)
+		s.Scale = 0.3
+		Util.tween(s, 0.2, { Scale = 1 }, Enum.EasingStyle.Back)
+		w.tag.Visible = false
+	end
+	while os.clock() - t0 < tumble do
+		for _, w in self.dieWidgets do
+			w.setValue(math.random(1, 6))
+			w.die.Rotation = (math.random() - 0.5) * 40
+		end
+		task.wait(0.06)
+	end
+	for i, w in self.dieWidgets do
+		w.setValue(dice[i] or 1)
+		Util.tween(w.die, 0.22, { Rotation = 0 }, Enum.EasingStyle.Back)
+		local s = Util.scaler(w.lift)
+		s.Scale = 1.25
+		Util.tween(s, 0.25, { Scale = 1 }, Enum.EasingStyle.Bounce)
+	end
+	Sound.play("diceLand")
+	if frozen then
+		for _, w in self.dieWidgets do
+			Util.shake(w.lift, 4, 0.3)
+		end
+	elseif #dice == 2 and dice[1] == dice[2] then
+		-- doubles!
+		for _, w in self.dieWidgets do
+			Util.bump(w.lift, 0.2)
+		end
+		Sound.play("reveal")
+	end
+end
+
+-- The chosen die pops; the others fade back.
+function ActionDock:choose(key: any)
+	for i, w in self.dieWidgets do
+		if key == i or key == "sum" then
+			Util.bump(w.lift, 0.25)
+		end
+	end
 end
 
 --[[
@@ -426,44 +812,6 @@ function ActionDock:setClock(left: number?)
 		Util.bump(badge, 0.12)
 		if secs <= 5 then
 			Sound.play("tick", 1.15)
-		end
-	end
-end
-
---[[
-	info = {
-		mine = boolean,        -- it's my turn
-		phase = string,        -- engine phase ("action", "shop", "over")
-		waitingFor = string?,  -- whose turn it is (when not mine)
-		anchor = number,       -- my time anchor tile (0 = none)
-		busy = boolean,        -- animations still playing / a request in flight
-	}
-]]
-function ActionDock:setTurn(info)
-	self.turn = info
-	if not self.rollButton then
-		return
-	end
-	local canAct = info.mine and info.phase == "action" and not info.busy
-	self.rollButton:setEnabled(canAct)
-	self.rollButton:pulse(canAct)
-	if info.mine and info.phase == "shop" then
-		self.rollButton:setText("SHOPPING")
-	elseif info.mine then
-		self.rollButton:setText("ROLL")
-	else
-		self.rollButton:setText("WAIT")
-	end
-	local showRecall = info.mine and (info.anchor or 0) > 0 and info.phase == "action"
-	self.recallButton:setEnabled(canAct)
-	self:_arrangeRoll(showRecall)
-	if self.waitLabel then
-		if info.phase == "over" then
-			self.waitLabel.Text = "Game over!"
-		elseif info.mine then
-			self.waitLabel.Text = if info.phase == "shop" then "Pick some potions" elseif self.touch then "Your turn: roll or play a card" else "Your turn  ·  Space to roll"
-		else
-			self.waitLabel.Text = if info.waitingFor then (info.waitingFor .. " is playing...") else ""
 		end
 	end
 end

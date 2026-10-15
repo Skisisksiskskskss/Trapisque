@@ -1,16 +1,19 @@
 --[[
 	Results
-	End-of-match screen: who won, everyone's treasures, what you earned.
+	End-of-match screen: who won, everyone's treasures and best moments (bonks, gotchas),
+	and what you earned: Gems and XP, your character's mastery, daily quests that moved,
+	and trophies from ranked games.
 
 		local close = Results.show(layer, data, mySeat, isTeam, onLeave)
 	data is the server's "match.end" payload. On a narrow screen the rows drop the
-	WINNER badge for a gold rim and the rewards sit above the Lobby button.
+	WINNER badge for a sun rim and the rewards stack above the Lobby button.
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage.Shared
 local Characters = require(Shared.Game.Characters)
+local Progress = require(Shared.Meta.Progress)
 
 local UI = script.Parent.Parent
 local Util = require(UI.Util)
@@ -38,7 +41,7 @@ local function row(list: Frame, i: number, r, mine: boolean, isTeam: boolean, na
 		Parent = list,
 	})
 	Util.corner(f, 10)
-	Util.stroke(f, if r.won then C.brass else C.panelEdge, 2)
+	Util.stroke(f, if r.won then C.sun else C.line, 2.5)
 	Widgets.label(f, {
 		text = PLACE[i] or tostring(i),
 		font = "chunky",
@@ -56,7 +59,7 @@ local function row(list: Frame, i: number, r, mine: boolean, isTeam: boolean, na
 	local charDef = Characters.get(r.character or "")
 	local who = r.name .. (if mine then "  (you)" else "")
 	-- room on the right for the treasure count (and the WINNER badge when there's space)
-	local right = if narrow then 84 else 330
+	local right = if narrow then 84 else 360
 	local name = Widgets.label(f, {
 		text = who,
 		font = "heavy",
@@ -87,7 +90,7 @@ local function row(list: Frame, i: number, r, mine: boolean, isTeam: boolean, na
 	})
 	Util.list(chest, "x", 6, "Right", "Center")
 	local icon = Util.frame(chest, { Size = UDim2.fromOffset(26, 26), LayoutOrder = 1 })
-	Icons.make(icon, "chest", Icons.flatColors(C.brass, C.panel))
+	Icons.medallion(icon, "chest", C.sun, { Size = UDim2.fromScale(1, 1) })
 	Widgets.label(chest, {
 		text = "x" .. tostring(r.treasures),
 		font = "chunky",
@@ -96,11 +99,39 @@ local function row(list: Frame, i: number, r, mine: boolean, isTeam: boolean, na
 		sizeUDim = UDim2.fromOffset(46, 30),
 		layoutOrder = 2,
 	})
+	-- the match's best moments, on wide screens
+	local st = r.stats or {}
+	if not narrow and ((st.bonks or 0) + (st.gotchas or 0)) > 0 then
+		local moments = Util.frame(f, {
+			AnchorPoint = Vector2.new(1, 0.5),
+			Position = UDim2.new(1, -212, 0.5, 0),
+			Size = UDim2.fromOffset(110, 30),
+		})
+		Util.list(moments, "x", 6, "Right", "Center")
+		local function moment(iconId: string, color: Color3, n: number, order: number)
+			if n <= 0 then
+				return
+			end
+			local box = Util.frame(moments, { Size = UDim2.fromOffset(48, 26), LayoutOrder = order })
+			local ic = Util.frame(box, { Size = UDim2.fromOffset(24, 24), Position = UDim2.fromOffset(0, 1) })
+			Icons.medallion(ic, iconId, color, { Size = UDim2.fromScale(1, 1) })
+			Widgets.label(box, {
+				text = "x" .. n,
+				font = "chunky",
+				size = 16,
+				color = C.text,
+				sizeUDim = UDim2.fromOffset(24, 26),
+				position = UDim2.fromOffset(26, 0),
+			})
+		end
+		moment("star", C.sun, st.bonks or 0, 1)
+		moment("token_trap", C.coral, st.gotchas or 0, 2)
+	end
 	if r.won and not narrow then
 		Widgets.badge(f, {
 			text = "WINNER",
-			color = C.brass,
-			stroke = C.brassDark,
+			color = C.sun,
+			stroke = C.line,
 			textColor = C.textOnLight,
 			height = 26,
 			textSize = 15,
@@ -123,13 +154,16 @@ function Results.show(layer: Instance, data, mySeat: number, isTeam: boolean, on
 	local title = if won then "Victory!" elseif data.kind == "practice" then "Practice Over" else "Game Over"
 
 	local m = Widgets.metrics
-	local width = math.min(720, Layout.safeRect(m, if m.form == "wide" then 16 else 6).w)
+	local width = math.min(760, Layout.safeRect(m, if m.form == "wide" then 16 else 6).w)
 	local narrow = width < 600
+	local seats = #data.results
+	local reward = data.reward
+	local cardsH = if reward then (if narrow then 3 * 46 + 12 else 104) else 0
 	local content, close = Widgets.modal(layer, {
 		title = title,
 		titleWidth = math.min(300, width - 60),
 		width = width,
-		height = if narrow then 640 else 560,
+		height = (if narrow then 260 else 190) + seats * 58 + cardsH,
 		noClose = true,
 	})
 	-- (the win or lose jingle already played as the game ended)
@@ -164,7 +198,7 @@ function Results.show(layer: Instance, data, mySeat: number, isTeam: boolean, on
 	local list = Util.frame(content, {
 		Name = "Standings",
 		Position = UDim2.fromOffset(0, if narrow then 46 else 34),
-		Size = UDim2.new(1, 0, 0, 6 * 58),
+		Size = UDim2.new(1, 0, 0, seats * 58),
 	})
 	Util.list(list, "y", 6, "Center", "Top")
 	local bySeat = {}
@@ -182,8 +216,168 @@ function Results.show(layer: Instance, data, mySeat: number, isTeam: boolean, on
 		end
 	end)
 
+	-- what this match did for you: mastery, quests, trophies
+	if reward then
+		local cards = Util.frame(content, {
+			Name = "Progress",
+			Position = UDim2.fromOffset(0, (if narrow then 46 else 34) + seats * 58 + 8),
+			Size = UDim2.new(1, 0, 0, cardsH - 8),
+		})
+		Util.list(cards, if narrow then "y" else "x", 8, "Center", "Top")
+		local count = 0
+		local function card(order: number): Frame
+			count += 1
+			local f = Util.new("Frame", {
+				Name = "Card" .. order,
+				BackgroundColor3 = C.panelRaised,
+				BorderSizePixel = 0,
+				Size = if narrow then UDim2.new(1, 0, 0, 42) else UDim2.new(1 / 3, -6, 1, 0),
+				LayoutOrder = order,
+				Parent = cards,
+			})
+			Util.corner(f, 10)
+			Util.stroke(f, C.line, 2.5)
+			Util.popIn(f, 0.3, 0.4 + order * 0.15)
+			return f
+		end
+		-- character mastery
+		local mastery = reward.mastery
+		if mastery then
+			local f = card(1)
+			local cdef = Characters.get(mastery.character)
+			local ps = if narrow then 34 else 44
+			local ic = Util.frame(f, { Position = UDim2.fromOffset(6, if narrow then 4 else 8), Size = UDim2.fromOffset(ps, ps) })
+			Icons.medallion(ic, mastery.character, Theme.Character[mastery.character] or C.grape, { Size = UDim2.fromScale(1, 1) })
+			local up = (mastery.levelsGained or 0) > 0
+			Widgets.label(f, {
+				text = (if cdef then cdef.name else "") .. " Lv " .. tostring(mastery.level) .. (if up then "  LEVEL UP!" else ""),
+				font = "chunky",
+				size = if narrow then 15 else 17,
+				color = if up then C.sun else C.text,
+				sizeUDim = UDim2.new(1, -(ps + 16), 0, 20),
+				position = UDim2.fromOffset(ps + 12, if narrow then 2 else 8),
+			}).TextTruncate = Enum.TextTruncate.AtEnd
+			local bar = Widgets.progress(f, {
+				size = UDim2.new(1, -(ps + 70), 0, 12),
+				position = UDim2.fromOffset(ps + 12, if narrow then 26 else 34),
+				value = 0,
+				color = Theme.Character[mastery.character] or C.sky,
+			})
+			local frac = if mastery.need then (mastery.into / math.max(1, mastery.need)) else 1
+			task.delay(0.6, function()
+				bar:set(frac)
+			end)
+			Widgets.label(f, {
+				text = "+" .. tostring(mastery.xp),
+				font = "chunky",
+				size = 15,
+				color = C.textSoft,
+				align = "right",
+				sizeUDim = UDim2.fromOffset(52, 18),
+				anchor = Vector2.new(1, 0),
+				position = UDim2.new(1, -8, 0, if narrow then 22 else 30),
+			})
+			if not narrow then
+				local extra = {}
+				if (mastery.gems or 0) > 0 then
+					table.insert(extra, "+" .. mastery.gems .. " Gems")
+				end
+				for _, id in mastery.titles or {} do
+					table.insert(extra, "New title!")
+					local _ = id
+				end
+				Widgets.label(f, {
+					text = if #extra > 0 then table.concat(extra, "  ·  ") else "Character mastery",
+					font = "heavy",
+					size = 13,
+					color = if #extra > 0 then C.sun else C.textFaint,
+					sizeUDim = UDim2.new(1, -(ps + 16), 0, 16),
+					position = UDim2.fromOffset(ps + 12, 54),
+				})
+			end
+			if up then
+				task.delay(0.9, Sound.play, "levelUp")
+			end
+		end
+		-- daily quests that moved
+		local quests = reward.quests
+		do
+			local f = card(2)
+			local changed = quests and quests.changed or {}
+			local ic = Util.frame(f, { Position = UDim2.fromOffset(6, if narrow then 4 else 8), Size = UDim2.fromOffset(if narrow then 34 else 44, if narrow then 34 else 44) })
+			Icons.medallion(ic, "star", C.sun, { Size = UDim2.fromScale(1, 1) })
+			local tx = if narrow then 46 else 56
+			local lines = {}
+			for _, q in changed do
+				table.insert(lines, (if q.done then "DONE! " else "") .. q.text .. "  " .. tostring(q.progress) .. "/" .. tostring(q.goal) .. (if q.done then ("  +" .. q.gems) else ""))
+			end
+			if #lines == 0 then
+				table.insert(lines, "No quest progress this time")
+			end
+			if quests and quests.chest then
+				table.insert(lines, 1, "ALL QUESTS DONE: free Explorer Chest!")
+			end
+			Widgets.label(f, {
+				text = "DAILY QUESTS",
+				font = "chunky",
+				size = if narrow then 13 else 15,
+				color = C.text,
+				sizeUDim = UDim2.new(1, -(tx + 6), 0, 18),
+				position = UDim2.fromOffset(tx, if narrow then 2 else 8),
+			})
+			local l = Widgets.label(f, {
+				text = table.concat(lines, if narrow then "  ·  " else "\n"),
+				font = "heavy",
+				size = if narrow then 11 else 12,
+				color = if quests and (quests.gems or 0) > 0 then C.sun else C.textSoft,
+				wrap = true,
+				valign = "top",
+				sizeUDim = UDim2.new(1, -(tx + 6), 1, if narrow then -22 else -30),
+				position = UDim2.fromOffset(tx, if narrow then 20 else 28),
+			})
+			l.TextTruncate = Enum.TextTruncate.AtEnd
+		end
+		-- trophies (ranked Quick Play)
+		local trophies = reward.trophies
+		do
+			local f = card(3)
+			local ic = Util.frame(f, { Position = UDim2.fromOffset(6, if narrow then 4 else 8), Size = UDim2.fromOffset(if narrow then 34 else 44, if narrow then 34 else 44) })
+			local rankDef = if trophies then Progress.rank(trophies.total) else nil
+			local rankColor = if rankDef then Color3.fromHex(string.sub(rankDef.color, 2)) else C.steel
+			Icons.medallion(ic, "crown", rankColor, { Size = UDim2.fromScale(1, 1) })
+			local tx = if narrow then 46 else 56
+			local head, sub
+			if trophies then
+				local d = trophies.delta or 0
+				head = (if d >= 0 then "+" else "") .. tostring(d) .. " TROPHIES"
+				sub = tostring(trophies.total) .. "  ·  " .. (if rankDef then rankDef.name else "") .. (if trophies.rankUp then "  RANK UP!" else "")
+			else
+				head = "TROPHIES"
+				sub = if data.kind == "public" then "Team and event games aren't ranked" else "Only Quick Play counts"
+			end
+			Widgets.label(f, {
+				text = head,
+				font = "chunky",
+				size = if narrow then 14 else 17,
+				color = if trophies and (trophies.delta or 0) > 0 then C.sun elseif trophies and (trophies.delta or 0) < 0 then C.badSoft else C.text,
+				sizeUDim = UDim2.new(1, -(tx + 6), 0, 20),
+				position = UDim2.fromOffset(tx, if narrow then 2 else 8),
+			})
+			Widgets.label(f, {
+				text = sub,
+				font = "heavy",
+				size = if narrow then 11 else 13,
+				color = if trophies and trophies.rankUp then C.sun else C.textSoft,
+				wrap = true,
+				valign = "top",
+				sizeUDim = UDim2.new(1, -(tx + 6), 1, if narrow then -22 else -32),
+				position = UDim2.fromOffset(tx, if narrow then 22 else 32),
+			})
+		end
+		local _ = count
+	end
+
 	-- rewards
-	local reward = data.reward
 	local bottom = Util.frame(content, {
 		Name = "Rewards",
 		AnchorPoint = Vector2.new(0, 1),
@@ -211,10 +405,12 @@ function Results.show(layer: Instance, data, mySeat: number, isTeam: boolean, on
 			})
 			l.AutomaticSize = Enum.AutomaticSize.X
 		end
-		chip(1, "gem", C.neutral, "+" .. tostring(reward.gems))
+		local questGems = reward.quests and reward.quests.gems or 0
+		local masteryGems = reward.mastery and reward.mastery.gems or 0
+		chip(1, "gem", C.neutral, "+" .. tostring((reward.gems or 0) + questGems + masteryGems))
 		chip(2, "level", C.info, "+" .. tostring(reward.xp) .. " XP")
 		if (reward.levelsGained or 0) > 0 then
-			chip(3, "star", C.brassDark, "Level " .. tostring(reward.level) .. "!")
+			chip(3, "star", C.sun, "Level " .. tostring(reward.level) .. "!")
 			task.delay(0.6, Sound.play, "levelUp")
 		end
 		for i, b in reward.bonus or {} do

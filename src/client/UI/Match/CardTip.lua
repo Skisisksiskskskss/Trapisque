@@ -40,9 +40,9 @@ local GAP = 10
 local CATEGORY_LABEL = {
 	trap = "TRAP",
 	assist = "ASSIST",
-	neutral = "NEUTRAL",
+	neutral = "BOARD PIECE",
 	potion = "POTION",
-	natural = "NATURAL",
+	natural = "HAZARD",
 }
 
 function CardTip.new(layer: Instance)
@@ -75,7 +75,7 @@ local function buildInfo(parent: Frame, itemId: string, o, width: number, height
 		Parent = parent,
 	})
 	Util.corner(panel, 12)
-	Util.stroke(panel, color, 2)
+	Util.stroke(panel, C.line, 3)
 	Util.new("UISizeConstraint", { MinSize = Vector2.new(width, math.min(height, 150)), Parent = panel })
 	Util.pad(panel, 12, 10, 12, 12)
 	local list = Util.list(panel, "y", 6, "Left", "Top")
@@ -121,7 +121,7 @@ local function buildInfo(parent: Frame, itemId: string, o, width: number, height
 	rules.AutomaticSize = Enum.AutomaticSize.Y
 
 	-- how it's played
-	local how = if def and def.price then (def.price .. (if def.price == 1 then " coin" else " coins") .. " at the Potion Seller") else (CardStyle.useText[def and def.use or "none"] or "")
+	local how = if def then CardStyle.howToPlay(def) else ""
 	if how ~= "" then
 		local line = Widgets.label(panel, {
 			name = "How",

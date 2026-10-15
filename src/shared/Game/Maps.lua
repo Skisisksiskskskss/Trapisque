@@ -23,7 +23,6 @@ local defs = {
 		tokenEvery = 3,
 		naturalKind = "river",
 		counterItem = "bridge",
-		naturalCard = "river_trap",
 	},
 	{
 		id = "junction",
@@ -40,13 +39,12 @@ local defs = {
 		tokenEvery = 5,
 		naturalKind = "gate",
 		counterItem = "key",
-		naturalCard = "gate_trap",
 	},
 	{
 		id = "slimy",
 		name = "Slimy Snares",
 		theme = "swamp",
-		blurb = "A bubbling swamp that spirals in to the treasure. Slime pools stop you unless you wear Boots.",
+		blurb = "A bubbling swamp that spirals in to the treasure. Slime pools eat 5 of your steps (you're stuck in one if that's all you had) unless you wear Boots.",
 		start = { 0, 0 },
 		route = "E10 NE NW NE NW NE NW W10 SW SE SW SE E7 NE NW W4",
 		natural = { [8] = "slime", [19] = "slime", [34] = "slime" },
@@ -54,7 +52,6 @@ local defs = {
 		tokenEvery = 5,
 		naturalKind = "slime",
 		counterItem = "boots",
-		naturalCard = "slime_trap",
 	},
 }
 

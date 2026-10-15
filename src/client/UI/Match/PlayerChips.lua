@@ -1,8 +1,9 @@
 --[[
 	PlayerChips
 	One chip per player: their avatar (with their seat colour around it), name and
-	@username, character, treasures, coins, cards and any status they're under. Whose
-	turn it is shows as a brass rim and a draining timer bar.
+	@username, character, treasures, coins, cards, their Power bar and any status they're
+	under (with the turns it has left). Whose turn it is shows as a sun-yellow rim and a
+	draining timer bar.
 
 	Three shapes, picked by the layout:
 		"full"   PC: a dark card with every detail
@@ -11,7 +12,7 @@
 
 		local chips = PlayerChips.new(parent, seats, { target, mySeat, isTeam })
 		chips:layout(L.players)        -- { rect, dir, chip = { w, h, kind }, gap }
-		chips:update(players)          -- [seat] = { treasures, coins, handCount, burning, ... }
+		chips:update(players)          -- [seat] = { treasures, coins, handCount, power, powerCap, frozen, ... }
 		chips:setCurrent(seat, deadline) ; chips:tick(now)
 		chips:pick(seats, onPick) ; chips:clearPick()
 		chips:center(seat) -> Vector2  -- stage pixels
@@ -35,17 +36,16 @@ local hex = Theme.hex
 local PlayerChips = {}
 PlayerChips.__index = PlayerChips
 
-local CHIP_BG = hex("1F150E")
-local CHIP_BG_TURN = hex("3A2A14")
-local TEXT_FAINT = hex("BFA98A")
+local CHIP_BG = C.panel
+local CHIP_BG_TURN = C.panelHi
+local TEXT_FAINT = C.textSoft
 
+-- statuses; the number beside each is how many turns it has left
 local STATUS = {
-	{ key = "burning", icon = "fire", color = hex("E2622B") },
-	{ key = "frozen", icon = "ice", color = hex("5DADE2") },
-	{ key = "held", icon = "lock", color = hex("8A9099") },
-	{ key = "skip", icon = "snare", color = hex("A0522D") },
-	{ key = "boots", icon = "boots", color = hex("8B6B3E") },
-	{ key = "anchor", icon = "hourglass", color = hex("8E6CEF") },
+	{ key = "frozen", icon = "snowflake", color = hex("45C3FF"), count = true },
+	{ key = "burning", icon = "flame", color = hex("FF9A3C"), count = true },
+	{ key = "skip", icon = "zzz", color = hex("6B3FD6"), count = true },
+	{ key = "anchor", icon = "time_potion", color = hex("9A6BFF"), count = false },
 }
 
 local function seatColor(seat: number): Color3
@@ -120,7 +120,7 @@ function PlayerChips:_build(info, x: number, y: number, chip)
 		Parent = self.root,
 	})
 	Util.corner(root, math.min(12, h * 0.3))
-	local rim = Util.stroke(root, Util.shade(color, -0.35), 2)
+	local rim = Util.stroke(root, C.line, 2.5)
 	local e = { root = root, rim = rim, info = info, kind = kind, w = w, h = h, color = color }
 
 	local name = info.name .. (if info.seat == self.mySeat then " (you)" else "")
@@ -135,13 +135,14 @@ function PlayerChips:_build(info, x: number, y: number, chip)
 		for i = 1, self.target do
 			local pip = Util.new("Frame", {
 				Name = "Pip" .. i,
-				BackgroundColor3 = hex("4A3A28"),
+				BackgroundColor3 = C.panelDeep,
 				BorderSizePixel = 0,
 				Size = UDim2.fromOffset(size, size),
 				LayoutOrder = i,
 				Parent = holder,
 			})
 			Util.corner(pip, 0.5)
+			Util.stroke(pip, C.line, if size >= 10 then 2 else 1.5)
 			list[i] = pip
 		end
 		return list, holder
@@ -150,7 +151,7 @@ function PlayerChips:_build(info, x: number, y: number, chip)
 	local function counter(parent: Instance, icon: string, iconColor: Color3, order: number, size: number)
 		local box = Util.frame(parent, { Name = icon, Size = UDim2.fromOffset(size + 20, size + 2), LayoutOrder = order })
 		local ic = Util.frame(box, { Size = UDim2.fromOffset(size, size), Position = UDim2.fromOffset(0, 1) })
-		Icons.make(ic, icon, Icons.flatColors(iconColor, CHIP_BG))
+		Icons.medallion(ic, icon, iconColor, { Size = UDim2.fromScale(1, 1) })
 		local n = Widgets.label(box, {
 			text = "0",
 			font = "chunky",
@@ -176,7 +177,7 @@ function PlayerChips:_build(info, x: number, y: number, chip)
 			text = name,
 			font = "heavy",
 			size = 16,
-			color = if info.look and info.look.vip then hex("F2C445") else C.white,
+			color = if info.look and info.look.vip then C.sun else C.text,
 			sizeUDim = UDim2.fromOffset(w - tx - 8 - tagRoom, 18),
 			position = UDim2.fromOffset(tx, 5),
 		})
@@ -195,6 +196,10 @@ function PlayerChips:_build(info, x: number, y: number, chip)
 		end
 		local rowY = h - 20
 		e.pips = pips(root, tx, rowY + 2, 14, 4)
+		-- the Power bar, between the name and the treasures
+		if h >= 56 then
+			e.power = self:_powerBar(root, tx, 40, w - tx - 10, 6, info.character)
+		end
 		local counters = Util.frame(root, {
 			Name = "Counters",
 			AnchorPoint = Vector2.new(1, 0),
@@ -202,14 +207,14 @@ function PlayerChips:_build(info, x: number, y: number, chip)
 			Size = UDim2.fromOffset(80, 18),
 		})
 		Util.list(counters, "x", 4, "Right", "Center")
-		e.coins = counter(counters, "coin", C.brass, 1, 14)
-		e.cards = counter(counters, "book", C.woodLight, 2, 14)
+		e.coins = counter(counters, "coin", C.sun, 1, 14)
+		e.cards = counter(counters, "book", C.sky, 2, 14)
 		-- statuses sit to the right of the name line
 		local st = Util.frame(root, {
 			Name = "Status",
 			AnchorPoint = Vector2.new(1, 0),
 			Position = UDim2.new(1, -8 - tagRoom, 0, 5),
-			Size = UDim2.fromOffset(90, 16),
+			Size = UDim2.fromOffset(110, 16),
 		})
 		Util.list(st, "x", 3, "Right", "Center")
 		e.statusRow = st
@@ -240,13 +245,14 @@ function PlayerChips:_build(info, x: number, y: number, chip)
 			text = info.name,
 			font = "heavy",
 			size = 11,
-			color = C.white,
+			color = C.text,
 			sizeUDim = UDim2.fromOffset(w - tx - 4, 13),
 			position = UDim2.fromOffset(tx, 3),
 		})
 		e.name.TextTruncate = Enum.TextTruncate.AtEnd
 		local pipSize = math.clamp(math.floor((w - tx - 6 - (self.target - 1) * 3) / self.target), 6, 11)
-		e.pips = pips(root, tx, h - pipSize - 5, pipSize, 3)
+		e.pips = pips(root, tx, h - pipSize - 8, pipSize, 3)
+		e.power = self:_powerBar(root, tx, h - 6, w - tx - 5, 3, info.character)
 		e.statusSize = math.floor(avatarSize * 0.42)
 	else -- "stack"
 		local avatarSize = math.min(h - 30, w - 12)
@@ -260,7 +266,7 @@ function PlayerChips:_build(info, x: number, y: number, chip)
 			text = info.name,
 			font = "heavy",
 			size = 11,
-			color = C.white,
+			color = C.text,
 			align = "center",
 			sizeUDim = UDim2.fromOffset(w - 6, 13),
 			position = UDim2.fromOffset(3, 4 + avatarSize + 1),
@@ -268,7 +274,8 @@ function PlayerChips:_build(info, x: number, y: number, chip)
 		e.name.TextTruncate = Enum.TextTruncate.AtEnd
 		local pipSize = math.clamp(math.floor((w - 10 - (self.target - 1) * 3) / self.target), 6, 10)
 		local pw = self.target * pipSize + (self.target - 1) * 3
-		e.pips = pips(root, (w - pw) / 2, h - pipSize - 5, pipSize, 3)
+		e.pips = pips(root, (w - pw) / 2, h - pipSize - 8, pipSize, 3)
+		e.power = self:_powerBar(root, 6, h - 6, w - 12, 3, info.character)
 		e.statusSize = math.floor(avatarSize * 0.42)
 	end
 	if kind ~= "full" then
@@ -301,7 +308,7 @@ function PlayerChips:_build(info, x: number, y: number, chip)
 		size = UDim2.new(1, -16, 0, 3),
 		position = UDim2.new(0, 8, 1, -4),
 		value = 1,
-		color = C.brass,
+		color = C.sun,
 		z = 6,
 	})
 	e.timer.root.Visible = false
@@ -315,7 +322,7 @@ function PlayerChips:_build(info, x: number, y: number, chip)
 	end)
 	root.MouseEnter:Connect(function()
 		if self.pickable and self.pickable[info.seat] then
-			Util.tween(root, 0.1, { BackgroundColor3 = hex("4A3A20") })
+			Util.tween(root, 0.1, { BackgroundColor3 = C.panelHi })
 		end
 	end)
 	root.MouseLeave:Connect(function()
@@ -326,16 +333,47 @@ function PlayerChips:_build(info, x: number, y: number, chip)
 	return e
 end
 
--- players: [seat] = { treasures, coins, handCount, burning, frozen, held, skip, boots, anchor, finished }
+-- A thin Power bar in the character's colour (full: sun yellow).
+function PlayerChips:_powerBar(parent: Instance, x: number, y: number, w: number, h: number, character: string?)
+	local track = Util.new("Frame", {
+		Name = "Power",
+		BackgroundColor3 = C.panelDeep,
+		BorderSizePixel = 0,
+		Position = UDim2.fromOffset(x, y),
+		Size = UDim2.fromOffset(math.max(4, w), h),
+		ZIndex = 4,
+		Parent = parent,
+	})
+	Util.corner(track, 0.5)
+	local fill = Util.new("Frame", {
+		Name = "Fill",
+		BackgroundColor3 = Theme.Character[character or ""] or C.sky,
+		BorderSizePixel = 0,
+		Size = UDim2.fromScale(0, 1),
+		ZIndex = 5,
+		Parent = track,
+	})
+	Util.corner(fill, 0.5)
+	return { track = track, fill = fill, color = Theme.Character[character or ""] or C.sky }
+end
+
+-- players: [seat] = { treasures, coins, handCount, power, powerCap, frozen, burning, skip, anchor }
 function PlayerChips:update(players)
 	self.state = players
 	for seat, e in self.chips do
 		local p = players[seat]
 		if p then
+			if e.power then
+				local cap = math.max(1, p.powerCap or 1)
+				local k = math.clamp((p.power or 0) / cap, 0, 1)
+				local fill = e.power.fill :: Frame
+				Util.tween(fill, 0.3, { Size = UDim2.fromScale(k, 1) }, Enum.EasingStyle.Quad)
+				fill.BackgroundColor3 = if k >= 1 then C.sun else e.power.color
+			end
 			for i, pip in e.pips do
 				local filled = i <= (p.treasures or 0)
 				local was = pip:GetAttribute("Filled") == true
-				pip.BackgroundColor3 = if filled then C.gold else hex("4A3A28")
+				pip.BackgroundColor3 = if filled then C.sun else C.panelDeep
 				if filled and not was then
 					Util.bump(pip, 0.6)
 				end
@@ -355,21 +393,39 @@ function PlayerChips:update(players)
 			for _, s in STATUS do
 				local v = p[s.key]
 				if v == true or (type(v) == "number" and v > 0) then
-					table.insert(active, s)
+					table.insert(active, { spec = s, n = if type(v) == "number" then v else 0 })
 				end
 			end
 			if e.statusRow then
 				Util.clear(e.statusRow, true)
-				for i, s in active do
-					local holder = Util.frame(e.statusRow, { Name = s.key, Size = UDim2.fromOffset(e.statusSize, e.statusSize), LayoutOrder = i })
-					Icons.medallion(holder, s.icon, s.color, { Size = UDim2.fromScale(1, 1) })
+				for i, a in active do
+					local s = a.spec
+					local showN = s.count and a.n > 0
+					local holder = Util.frame(e.statusRow, {
+						Name = s.key,
+						Size = UDim2.fromOffset(e.statusSize + (if showN then 12 else 0), e.statusSize),
+						LayoutOrder = i,
+					})
+					local ic = Util.frame(holder, { Size = UDim2.fromOffset(e.statusSize, e.statusSize) })
+					Icons.medallion(ic, s.icon, s.color, { Size = UDim2.fromScale(1, 1) })
+					if showN then
+						Widgets.label(holder, {
+							text = tostring(a.n),
+							font = "chunky",
+							size = 13,
+							color = C.text,
+							outline = C.line,
+							sizeUDim = UDim2.fromOffset(12, e.statusSize),
+							position = UDim2.fromOffset(e.statusSize, 0),
+						})
+					end
 				end
 			elseif e.statusBadge then
 				Util.clear(e.statusBadge)
-				local s = active[1]
-				e.statusBadge.Visible = s ~= nil
-				if s then
-					Icons.medallion(e.statusBadge, s.icon, s.color, { Size = UDim2.fromScale(1, 1) })
+				local a = active[1]
+				e.statusBadge.Visible = a ~= nil
+				if a then
+					Icons.medallion(e.statusBadge, a.spec.icon, a.spec.color, { Size = UDim2.fromScale(1, 1) })
 				end
 			end
 			if p.finished and e.name then
@@ -385,8 +441,8 @@ function PlayerChips:setCurrent(seat: number?, deadline: number?)
 	self.timerStart = workspace:GetServerTimeNow()
 	for s, e in self.chips do
 		local on = s == seat
-		e.rim.Color = if on then C.brass else Util.shade(e.color, -0.35)
-		e.rim.Thickness = if on then 3 else 2
+		e.rim.Color = if on then C.sun else C.line
+		e.rim.Thickness = if on then 3.5 else 2.5
 		e.root.BackgroundColor3 = if on then CHIP_BG_TURN else CHIP_BG
 		e.timer.root.Visible = on and deadline ~= nil and deadline > 0
 		if on then
@@ -405,7 +461,7 @@ function PlayerChips:tick(now: number)
 	local total = math.max(1, self.deadline - (self.timerStart or now))
 	local left = math.clamp((self.deadline - now) / total, 0, 1)
 	e.timer:set(left, true)
-	e.timer.fill.BackgroundColor3 = if left < 0.25 then C.bad else C.brass
+	e.timer.fill.BackgroundColor3 = if left < 0.25 then C.bad else C.sun
 end
 
 function PlayerChips:center(seat: number): Vector2?
@@ -428,7 +484,7 @@ function PlayerChips:flash(seat: number, color: Color3)
 	Util.bump(e.root, 0.1)
 	task.delay(0.6, function()
 		if e.root.Parent then
-			e.rim.Color = if seat == self.currentSeat then C.brass else old
+			e.rim.Color = if seat == self.currentSeat then C.sun else old
 		end
 	end)
 end
@@ -473,8 +529,8 @@ function PlayerChips:pick(seats: { number }, onPick: (number) -> ())
 	self.onPick = onPick
 	for s, e in self.chips do
 		if self.pickable[s] then
-			e.rim.Color = C.gold
-			e.rim.Thickness = 3
+			e.rim.Color = C.sun
+			e.rim.Thickness = 3.5
 			local pulse = Util.new("Frame", {
 				Name = "PickPulse",
 				BackgroundTransparency = 1,
@@ -483,7 +539,7 @@ function PlayerChips:pick(seats: { number }, onPick: (number) -> ())
 				Parent = e.root,
 			})
 			Util.corner(pulse, math.min(12, e.h * 0.3))
-			local st = Util.stroke(pulse, C.gold, 3)
+			local st = Util.stroke(pulse, C.sun, 3)
 			task.spawn(function()
 				while pulse.Parent do
 					Util.tween(st, 0.45, { Transparency = 0.8 }, Enum.EasingStyle.Sine)

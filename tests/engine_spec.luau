@@ -474,6 +474,26 @@ test("slime stops you unless you have Boots", function()
 	eq(g.players[1].tile, 11)
 end)
 
+test("a big move wades through slime but the slime eats some steps", function()
+	-- 12 steps from tile 6: the pool on tile 8 eats SlimeDrag of the 10 left
+	local g = newGame({ map = "slimy" })
+	setTile(g, 1, 6)
+	local events = move(g, 1, "sum", 6, 6)
+	eq(g.players[1].tile, 8 + (10 - R.SlimeDrag))
+	local slimed = false
+	for _, e in events do
+		if e.t == "natural" and e.kind == "slime" and e.drag == R.SlimeDrag then
+			slimed = true
+		end
+	end
+	truthy(slimed, "a slime event with the steps it ate")
+	-- the Naturalist wades through for free
+	g = newGame({ map = "slimy", characters = { "naturalist", "mage" } })
+	setTile(g, 1, 6)
+	move(g, 1, "sum", 6, 6)
+	eq(g.players[1].tile, 18)
+end)
+
 test("keys open gated shortcuts", function()
 	local g = newGame({ map = "junction" })
 	local board = g.board

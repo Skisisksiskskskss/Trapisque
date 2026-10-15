@@ -1,8 +1,8 @@
 --[[
 	LobbyScreen
-	Home base between matches: your profile, the Play and Party panels, the Top Players
-	board, the menu (Chests, Locker, Shop, How to Play, Settings), the matchmaking
-	banner and party invites.
+	Home base between matches: your profile (level, Gems, trophies and rank), the Play
+	and Party panels, the Top Players board, the menu (Chests, Quests, Locker, Shop,
+	How to Play, Settings), the matchmaking banner and party invites.
 
 	The arrangement follows the screen (Layout.lobby) and is rebuilt when it changes
 	shape: three columns on a big monitor, two on a laptop, compact panels on a phone
@@ -30,6 +30,10 @@ local LeaderboardPanel = require(script.Parent.LeaderboardPanel)
 local Chests = require(script.Parent.Chests)
 local Locker = require(script.Parent.Locker)
 local Pages = require(script.Parent.Pages)
+local Quests = require(script.Parent.Quests)
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Progress = require(ReplicatedStorage.Shared.Meta.Progress)
 
 local Client = UI.Parent
 local Net = require(Client.Net)
@@ -108,14 +112,14 @@ local function profileChip(parent: Instance, maid, r): Frame
 	})
 	place(chip, r)
 	Util.corner(chip, 14)
-	Util.stroke(chip, C.brassDark, 2)
+	Util.stroke(chip, C.line, 3)
 	local h = r.h
 	local avatar = h - 20
 	Avatars.portrait(chip, { userId = player.UserId, name = player.DisplayName }, {
 		AnchorPoint = Vector2.new(0, 0.5),
 		Position = UDim2.new(0, 10, 0.5, 0),
 		Size = UDim2.fromOffset(avatar, avatar),
-	}, { ring = C.brass, ringPx = 3 })
+	}, { ring = C.sun, ringPx = 3 })
 	local x = avatar + 20
 	local name = Widgets.label(chip, {
 		text = player.DisplayName,
@@ -140,8 +144,40 @@ local function profileChip(parent: Instance, maid, r): Frame
 		position = UDim2.fromOffset(x + 44, h / 2 + 17),
 		color = C.info,
 	})
-	local gems = gemCounter(chip, 24, maid)
-	gems.Position = UDim2.new(1, -16, 0.5, 0)
+	local gems = gemCounter(chip, 22, maid)
+	gems.Position = UDim2.new(1, -16, 0.32, 0)
+	-- trophies and rank (from ranked Quick Play)
+	local trophyRow = Util.frame(chip, {
+		Name = "Trophies",
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(1, -16, 0.74, 0),
+		Size = UDim2.fromOffset(140, 22),
+	})
+	Util.list(trophyRow, "x", 6, "Right", "Center")
+	local trophyText = Widgets.label(trophyRow, {
+		text = "0",
+		font = "chunky",
+		size = 16,
+		color = C.text,
+		align = "right",
+		sizeUDim = UDim2.fromOffset(0, 20),
+		layoutOrder = 1,
+	})
+	trophyText.AutomaticSize = Enum.AutomaticSize.X
+	local trophyIcon = Util.frame(trophyRow, { Size = UDim2.fromOffset(20, 20), LayoutOrder = 2 })
+	local shownRank = nil
+	maid:add(State.watch("profile", function(p)
+		if not p then
+			return
+		end
+		local rank = Progress.rank(p.trophies or 0)
+		trophyText.Text = rank.name .. "  " .. Util.commas(p.trophies or 0)
+		if shownRank ~= rank.id then
+			shownRank = rank.id
+			Util.clear(trophyIcon)
+			Icons.medallion(trophyIcon, "crown", Color3.fromHex(string.sub(rank.color, 2)), { Size = UDim2.fromScale(1, 1) })
+		end
+	end, true))
 
 	local lastTitle = nil
 	maid:add(State.watch("profile", function(p)
@@ -179,13 +215,13 @@ local function compactChip(parent: Instance, maid, r): Frame
 	})
 	place(chip, r)
 	Util.corner(chip, r.h / 2)
-	Util.stroke(chip, C.brassDark, 2)
+	Util.stroke(chip, C.line, 2.5)
 	local avatar = r.h - 8
 	Avatars.portrait(chip, { userId = player.UserId, name = player.DisplayName }, {
 		AnchorPoint = Vector2.new(0, 0.5),
 		Position = UDim2.new(0, 4, 0.5, 0),
 		Size = UDim2.fromOffset(avatar, avatar),
-	}, { ring = C.brass, ringPx = 2 })
+	}, { ring = C.sun, ringPx = 2 })
 	local x = avatar + 12
 	local name = Widgets.label(chip, {
 		text = player.DisplayName,
@@ -223,6 +259,7 @@ end
 
 local NAV = {
 	{ id = "chests", text = "CHESTS", short = "CHESTS", icon = "chest", style = "brass" },
+	{ id = "quests", text = "QUESTS", short = "QUESTS", icon = "star", style = "orange" },
 	{ id = "locker", text = "LOCKER", short = "LOCKER", icon = "hanger", style = "wood" },
 	{ id = "shop", text = "SHOP", short = "SHOP", icon = "bag", style = "wood" },
 	{ id = "leaders", text = "TOP PLAYERS", short = "TOP", icon = "crown", style = "wood" },
@@ -233,6 +270,8 @@ local NAV = {
 local function openPage(id: string, popups: Instance)
 	if id == "chests" then
 		Chests.open(popups)
+	elseif id == "quests" then
+		Quests.open(popups)
 	elseif id == "locker" then
 		Locker.open(popups)
 	elseif id == "shop" then
@@ -266,6 +305,7 @@ local function buildNav(parent: Instance, maid, spec, popups: Instance, withLead
 	local layout = Util.list(nav, "x", gap, "Center", "Center")
 	layout.SortOrder = Enum.SortOrder.LayoutOrder
 	local chest = nil
+	local quests = nil
 	for i, item in items do
 		local onClick = function()
 			openPage(item.id, popups)
@@ -276,7 +316,9 @@ local function buildNav(parent: Instance, maid, spec, popups: Instance, withLead
 				Size = UDim2.new(1 / n, -gap * (n - 1) / n, 1, 0),
 				LayoutOrder = i,
 			})
-			local size = spec.rect.h - 18
+			-- as big as the bar allows, but never wider than its share of the row
+			local cellW = (spec.rect.w - gap * (n - 1)) / n
+			local size = math.min(spec.rect.h - 18, math.floor(cellW - 4))
 			local b = Widgets.iconButton(cell, {
 				icon = item.icon,
 				style = item.style,
@@ -298,6 +340,8 @@ local function buildNav(parent: Instance, maid, spec, popups: Instance, withLead
 			})
 			if item.id == "chests" then
 				chest = { button = b, icon = true }
+			elseif item.id == "quests" then
+				quests = b
 			end
 		else
 			local b = Widgets.button(nav, {
@@ -305,16 +349,25 @@ local function buildNav(parent: Instance, maid, spec, popups: Instance, withLead
 				text = if spec.kind == "full" then item.text else item.short,
 				icon = item.icon,
 				style = item.style,
-				textSize = if spec.kind == "full" then 19 else 15,
+				textSize = if spec.kind == "full" then 19 elseif n >= 7 then 13 else 15,
 				size = UDim2.new(1 / n, -gap * (n - 1) / n, 1, 0),
 				layoutOrder = i,
 				onClick = onClick,
 			})
 			if item.id == "chests" then
 				chest = { button = b, icon = false }
+			elseif item.id == "quests" then
+				quests = b
 			end
 		end
 	end
+	-- the Quests button shows how many of today's quests are left
+	maid:add(State.watch("profile", function(p)
+		if quests and p then
+			local left = Quests.unfinished(p)
+			quests:setBadge(if left > 0 then tostring(left) else nil)
+		end
+	end, true))
 	local wasFree: boolean? = nil
 	maid:add(State.watch("profile", function(p)
 		if not chest or not p then
@@ -349,7 +402,7 @@ local function build(frame: Frame, maid, L, popups: Instance)
 			text = "Trapisque",
 			font = "display",
 			size = math.floor(math.min(60, r.h * 0.86)),
-			color = C.brassLight,
+			color = C.sun,
 			align = if L.form == "tall" then "center" else "left",
 			outline = C.bg,
 			outlineThickness = if r.h >= 60 then 3 else 2,

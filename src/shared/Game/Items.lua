@@ -166,7 +166,7 @@ local defs = {
 		category = "assist",
 		use = "passive",
 		short = "Walk through slime",
-		text = "Works by itself: the first time slime would slow you, you pull these on and ignore slime until you reach the treasure.",
+		text = "Works by itself: carries you through one slime pool.",
 	},
 
 	-- Neutral cards (visible board pieces) -----------------------------------------

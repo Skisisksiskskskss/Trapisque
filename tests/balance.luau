@@ -12,6 +12,7 @@ local Rng = requireModule("Shared/Game/Rng")
 
 local GAMES = BALANCE_GAMES or 1200
 local SETUPS = BALANCE_SETUPS or { { 2, "quick" }, { 4, "quick" }, { 4, "standard" }, { 6, "quick" } }
+-- BALANCE_MAPS = { "slimy" } limits the report to some maps
 
 local function play(seed, mapId, n, length)
 	local rng = Rng.new(seed * 13 + 7)
@@ -53,6 +54,9 @@ for _, setup in SETUPS do
 	end
 	print(header .. "   rounds  limit")
 	for _, mapDef in Maps.list do
+		if BALANCE_MAPS and not table.find(BALANCE_MAPS, mapDef.id) then
+			continue
+		end
 		local wins, seen = {}, {}
 		for _, c in Characters.ids do
 			wins[c] = 0

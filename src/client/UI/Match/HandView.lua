@@ -7,11 +7,13 @@
 
 	Hovering a card raises it (and the match screen shows its rules); pressing and
 	dragging it out of the hand picks it up to play on the board; a plain click or tap
-	is a click.
+	is a click. You play one card a turn: once you have, the rest dim until your next
+	turn. Cards that work by themselves (Shield, Bridge, Key, Boots) wear an AUTO tag.
 
 		local hand = HandView.new(parent, { touch = bool })
 		hand:layout(L.hand)                 -- { rect, dir = "x"|"y", card = { w, h }, gap }
-		hand:setHand(ids, armed)            -- reconcile with the server's hand
+		hand:setHand(ids)                   -- reconcile with the server's hand
+		hand:setSpent(on)                   -- dims the hand after this turn's card
 		hand:add(id) ; hand:remove(id)      -- one card in / out, animated
 		hand:slotCenter(index?) -> Vector2  -- absolute screen position (nil: where the next card goes)
 		hand:slotRect(index) -> (pos, size) -- absolute screen rect of a card
@@ -23,6 +25,9 @@
 ]]
 
 local UserInputService = game:GetService("UserInputService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Items = require(ReplicatedStorage.Shared.Game.Items)
 
 local UI = script.Parent.Parent
 local Util = require(UI.Util)
@@ -36,7 +41,6 @@ local Sound = require(UI.Parent.Sound)
 local DRAG_START = 14
 
 local C = Theme.C
-local hex = Theme.hex
 
 local HandView = {}
 HandView.__index = HandView
@@ -45,7 +49,7 @@ function HandView.new(parent: Instance, opts)
 	local self = setmetatable({}, HandView)
 	self.touch = opts and opts.touch == true
 	self.list = {} -- { { id, slot, card } }
-	self.armed = {}
+	self.spent = false
 	self.maid = Util.maid()
 	self.root = Util.frame(parent, { Name = "Hand" })
 	self.scroll = (Util.new("ScrollingFrame", {
@@ -54,7 +58,7 @@ function HandView.new(parent: Instance, opts)
 		BorderSizePixel = 0,
 		Size = UDim2.fromScale(1, 1),
 		ScrollBarThickness = 4,
-		ScrollBarImageColor3 = C.brass,
+		ScrollBarImageColor3 = C.sun,
 		CanvasSize = UDim2.new(),
 		AutomaticCanvasSize = Enum.AutomaticSize.XY,
 		ElasticBehavior = Enum.ElasticBehavior.Never,
@@ -64,7 +68,7 @@ function HandView.new(parent: Instance, opts)
 	self.listLayout.SortOrder = Enum.SortOrder.LayoutOrder
 	self.empty = Widgets.label(self.root, {
 		name = "Empty",
-		text = "No cards yet. Land on tokens to spin for some!",
+		text = "No cards yet. Land on tokens to win some!",
 		font = "heavy",
 		size = 15,
 		color = C.text,
@@ -281,7 +285,7 @@ function HandView:_make(id: string, animate: boolean)
 	return entry
 end
 
--- keyboard numbers (PC) and the raised, brass-rimmed look of armed boosts
+-- keyboard numbers (PC), AUTO tags on passive cards, and the dimmed look once spent
 function HandView:_refresh()
 	for i, e in self.list do
 		e.slot.LayoutOrder = i
@@ -291,7 +295,7 @@ function HandView:_refresh()
 			if not key then
 				local badge = Util.new("Frame", {
 					Name = "KeyHint",
-					BackgroundColor3 = hex("1F150E"),
+					BackgroundColor3 = C.panelDeep,
 					BorderSizePixel = 0,
 					AnchorPoint = Vector2.new(0.5, 0.5),
 					Position = UDim2.fromScale(0.12, 0.06),
@@ -300,13 +304,13 @@ function HandView:_refresh()
 					Parent = root,
 				})
 				Util.corner(badge, 5)
-				Util.stroke(badge, C.brass, 1.5)
+				Util.stroke(badge, C.line, 2)
 				Widgets.label(badge, {
 					name = "N",
 					text = tostring(i),
 					font = "chunky",
 					size = 12,
-					color = C.brass,
+					color = C.sun,
 					align = "center",
 					sizeUDim = UDim2.fromScale(1, 1),
 					z = 46,
@@ -320,30 +324,46 @@ function HandView:_refresh()
 		elseif key then
 			key:Destroy()
 		end
-		local on = self.armed[e.id] == true
-		local rim = root:FindFirstChild("ArmedRim")
-		if on and not rim then
-			local r = Util.new("Frame", {
-				Name = "ArmedRim",
-				BackgroundTransparency = 1,
+		local def = Items.get(e.id)
+		local passive = def ~= nil and def.use == "passive"
+		if passive and not root:FindFirstChild("AutoTag") then
+			Widgets.badge(root, {
+				name = "AutoTag",
+				text = "AUTO",
+				color = C.mint,
+				height = 16,
+				textSize = 11,
+				anchor = Vector2.new(0.5, 0.5),
+				position = UDim2.new(0.5, 0, 0, 2),
+				z = 44,
+			})
+		end
+		-- one card a turn: the rest wait (dimmed) until your next turn
+		local dim = self.spent and not passive
+		local shade = root:FindFirstChild("Spent")
+		if dim and not shade then
+			local f = Util.new("Frame", {
+				Name = "Spent",
+				BackgroundColor3 = C.bgDeep,
+				BackgroundTransparency = 0.4,
+				BorderSizePixel = 0,
 				Size = UDim2.fromScale(1, 1),
-				ZIndex = 40,
+				ZIndex = 42,
 				Parent = root,
 			})
-			Util.corner(r, CardStyle.corner)
-			Util.stroke(r, C.brassLight, 4)
-		elseif not on and rim then
-			rim:Destroy()
+			Util.corner(f, CardStyle.corner)
+		elseif not dim and shade then
+			shade:Destroy()
 		end
 		self:_place(e)
 	end
 	self.empty.Visible = #self.list == 0
 end
 
--- Where a card sits in its slot: armed boosts stand up a little, the hovered card too.
+-- Where a card sits in its slot: the hovered card stands up a little.
 function HandView:_place(e)
 	local root = e.card.root
-	local lift = (if self.armed[e.id] then -10 else 0) + (if e.hover then -6 else 0)
+	local lift = if e.hover then -8 else 0
 	if self.spec and self.spec.dir == "y" then
 		-- a column of cards: they slide out towards the board
 		Util.tween(root, 0.18, { Position = UDim2.new(0.5, -lift, 0.5, 0) }, Enum.EasingStyle.Back)
@@ -352,7 +372,7 @@ function HandView:_place(e)
 	end
 end
 
--- The card being held over the board leaves an empty, brass-rimmed spot in the hand.
+-- The card being held over the board leaves an empty, outlined spot in the hand.
 function HandView:setHeld(index: number?)
 	for i, e in self.list do
 		local held = i == index
@@ -370,7 +390,7 @@ function HandView:setHeld(index: number?)
 				Parent = e.slot,
 			})
 			Util.corner(g, CardStyle.corner)
-			Util.stroke(g, C.brass, 2, 0.35)
+			Util.stroke(g, C.sun, 2, 0.35)
 		elseif not held and ghost then
 			ghost:Destroy()
 		end
@@ -387,8 +407,7 @@ function HandView:slotRect(index: number): (Vector2?, Vector2?)
 end
 
 -- Reconcile with an authoritative hand (keeps cards that are already there).
-function HandView:setHand(ids: { string }, armed: { [string]: boolean }?)
-	self.armed = armed or {}
+function HandView:setHand(ids: { string })
 	if not self.spec then
 		self.pending = ids
 		return
@@ -417,8 +436,12 @@ function HandView:setHand(ids: { string }, armed: { [string]: boolean }?)
 	self:_refresh()
 end
 
-function HandView:setArmed(armed: { [string]: boolean })
-	self.armed = armed
+-- Once you've played your card this turn, the others dim (passive cards never do).
+function HandView:setSpent(on: boolean)
+	if self.spent == on then
+		return
+	end
+	self.spent = on
 	self:_refresh()
 end
 
