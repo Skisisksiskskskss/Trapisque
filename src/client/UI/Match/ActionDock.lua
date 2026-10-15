@@ -307,15 +307,17 @@ function ActionDock:setPower(power: number, cap: number, o)
 		local k = if cap > 0 then math.clamp(power / cap, 0, 1) else 0
 		Util.tween(bar.fill, 0.35, { Size = UDim2.fromScale(k, 1) }, Enum.EasingStyle.Back)
 		local fill = bar.fill :: Frame
-		fill.BackgroundColor3 = if full then C.sun else (Theme.Character[self.character] or C.sky)
+		-- a tween (not a plain set) so it also cancels a glow tween still running
+		Util.tween(fill, 0.12, { BackgroundColor3 = if full then C.sun else (Theme.Character[self.character] or C.sky) })
 		if power > before then
 			Util.bump(bar.track, 0.08)
 		end
-		if full and not self.fullPulse then
-			self.fullPulse = true
+		-- a full bar glows (one pulse loop per bar: a relayout builds a new one)
+		if full and self.pulseBar ~= bar then
+			self.pulseBar = bar
 			task.spawn(function()
 				local track = bar.track
-				while self.fullPulse and track.Parent do
+				while self.pulseBar == bar and track.Parent do
 					Util.tween(bar.fill, 0.45, { BackgroundColor3 = C.sunLight }, Enum.EasingStyle.Sine)
 					task.wait(0.45)
 					Util.tween(bar.fill, 0.45, { BackgroundColor3 = C.sun }, Enum.EasingStyle.Sine)
@@ -323,7 +325,7 @@ function ActionDock:setPower(power: number, cap: number, o)
 				end
 			end)
 		elseif not full then
-			self.fullPulse = false
+			self.pulseBar = nil
 		end
 	end
 	if self.powerLabel then
