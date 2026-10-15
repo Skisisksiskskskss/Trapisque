@@ -419,26 +419,6 @@ end
 -- Panels
 ---------------------------------------------------------------------------
 
-local function grain(parent: Instance, color: Color3, count: number)
-	local canvas = Util.frame(parent, { Name = "Grain", ZIndex = 1 })
-	for i = 1, count do
-		local y = (i - 0.5) / count + (math.random() - 0.5) * 0.06
-		local line = Util.new("Frame", {
-			BackgroundColor3 = color,
-			BackgroundTransparency = 0.75,
-			BorderSizePixel = 0,
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.fromScale(0.5 + (math.random() - 0.5) * 0.1, y),
-			Size = UDim2.new(0.75 + math.random() * 0.2, 0, 0, 2),
-			Rotation = (math.random() - 0.5) * 1.6,
-			Parent = canvas,
-		})
-		Util.corner(line, 1)
-	end
-	return canvas
-end
-Widgets.grain = grain
-
 --[[
 	Widgets.panel(parent, {
 		style = "walnut" | "wood" | "dark" | "board", title, size, position, anchor,
@@ -478,10 +458,9 @@ function Widgets.panel(parent: Instance?, o: { [string]: any }): (Frame, Frame)
 		})
 		Util.corner(rim, 2)
 	elseif style == "wood" or style == "board" then
-		-- the Potion Seller's stall: warm wood planks
-		root.BackgroundColor3 = if style == "board" then C.woodDark else C.wood
+		-- a raised panel (the Potion Seller's stall)
+		root.BackgroundColor3 = if style == "board" then C.panelDeep else C.panelRaised
 		Util.stroke(root, C.line, 4)
-		grain(root, C.woodDeep, 5)
 	elseif style == "dark" then
 		root.BackgroundColor3 = C.panelDeep
 		root.BackgroundTransparency = 0.04

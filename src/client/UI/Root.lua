@@ -3,7 +3,8 @@
 	The single ScreenGui everything lives in. It hides Roblox's own UI, sizes a virtual
 	stage for the screen it's on (Layout.metrics: PC, landscape phone or upright phone),
 	measures the safe area and Roblox's top bar so nothing sits under them, draws the
-	wooden tabletop background and switches between screens with animated transitions.
+	night-purple table behind everything and switches between screens with animated
+	transitions.
 
 	Layers (bottom to top): Background, Screens, Overlay, Popups, Toasts
 
@@ -38,24 +39,26 @@ local function layer(name: string, z: number): Frame
 	return Util.frame(Root.stage, { Name = name, ZIndex = z })
 end
 
+-- The table: a deep night purple with a scatter of soft dots (the same as the loading
+-- screen, so the hand-over is seamless).
 local function buildBackground(bg: Frame)
 	bg.BackgroundTransparency = 0
-	bg.BackgroundColor3 = C.table
-	-- planks
-	for i = 0, 14 do
-		local plank = Util.new("Frame", {
-			Name = "Plank",
-			BackgroundColor3 = C.tablePlank,
-			BackgroundTransparency = 0.2,
+	bg.BackgroundColor3 = C.bg
+	for i = 0, 23 do
+		local size = 0.05 + (i % 3) * 0.02
+		local dot = Util.new("Frame", {
+			Name = "Dot",
+			BackgroundColor3 = C.panel,
 			BorderSizePixel = 0,
-			Position = UDim2.new(0, 0, i / 14, 0),
-			Size = UDim2.new(1, 0, 0, 3),
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(((i * 37) % 100) / 100, ((i * 61 + 13) % 100) / 100),
+			Size = UDim2.fromScale(size, size),
+			SizeConstraint = Enum.SizeConstraint.RelativeYY,
 			ZIndex = 1,
 			Parent = bg,
 		})
-		plank.Rotation = (math.random() - 0.5) * 0.3
+		Util.corner(dot, 0.5)
 	end
-	Widgets.grain(bg, C.tableLight, 22)
 end
 
 -- A full-screen frame in its own ScreenGui with the given insets, to read where the
