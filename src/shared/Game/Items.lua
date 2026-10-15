@@ -1,62 +1,86 @@
 --[[
 	Items
 	Every card in Trapisque. A card has:
-		category  trap | assist | neutral | potion | natural | coin
-		use       how the card is played:
-		            place     - put on a board tile (ends your turn)
-		            boost     - arm before rolling; changes this turn's roll (free)
-		            passive   - sits in your hand and triggers automatically
-		            regen     - recharge your character ability (free)
-		            anchor    - Time Travel: drop an anchor where you stand (free)
-		            moonwalk  - step back 1-3 tiles (ends your turn)
-		            telepathy - move any player 1-3 tiles (ends your turn)
-		            jeopardy  - Double Jeopardy (ends your turn)
-		free      true when using it does NOT end your turn
+		category  trap | assist | neutral | potion | coin
+		use       how the card is played (each turn you may play ONE card):
+		            place     - put it on a tile near you (traps are hidden from opponents)
+		            boost     - changes the move you're about to make (speed, bounce, moonwalk)
+		            passive   - stays in your hand and works by itself (Shield, Bridge...)
+		            juice     - fills your Power bar
+		            reroll    - roll your dice again
+		            anchor    - Time Travel: drop an anchor where you stand
+		            telepathy - move any player 1-3 tiles
+		            jeopardy  - Double Jeopardy
+		            xray      - see every hidden trap
+		hidden    traps that opponents can't see once placed (everything else is visible)
 ]]
 
 local Items = {}
 
 local defs = {
-	-- Trap cards ------------------------------------------------------------
+	-- Traps (hidden from opponents) ---------------------------------------------
 	{
 		id = "spike",
 		name = "Spike",
 		category = "trap",
 		use = "place",
-		short = "Lander dies",
-		text = "Place on a tile. Whoever lands here dies and must restart their cycle.",
+		hidden = true,
+		short = "Back to Start",
+		text = "Hide it near you. Whoever lands here is knocked out and goes back to the Start.",
+	},
+	{
+		id = "grog",
+		name = "Grog",
+		category = "trap",
+		use = "place",
+		hidden = true,
+		short = "Roll 4+ or get eaten",
+		text = "Hide a hungry Grog near you. Whoever lands here rolls a die: 1 to 3 and the Grog eats them (back to the Start).",
 	},
 	{
 		id = "fire",
 		name = "Fire",
 		category = "trap",
 		use = "place",
-		short = "Lander burns",
-		text = "Place on a tile. The lander Burns until their cycle ends: trap penalties are doubled, assist cards are halved and dying also costs a treasure.",
+		hidden = true,
+		short = "Burns them",
+		text = "Hide it near you. Whoever lands here is Burning: they hop back 1 tile at the start of their next 2 turns.",
 	},
 	{
 		id = "ice",
 		name = "Ice",
 		category = "trap",
 		use = "place",
-		short = "Lander freezes",
-		text = "Place on a tile. The lander is Frozen until their cycle ends: even rolls are halved, odd rolls lose 1.",
+		hidden = true,
+		short = "Freezes them",
+		text = "Hide it near you. Whoever lands here is Frozen: their next 2 turns they roll just one die and charge no Power.",
+	},
+	{
+		id = "snare",
+		name = "Snare",
+		category = "trap",
+		use = "place",
+		hidden = true,
+		short = "Skip a turn",
+		text = "Hide it near you. Whoever lands here skips their next turn.",
 	},
 	{
 		id = "mudslide",
 		name = "Mudslide",
 		category = "trap",
 		use = "place",
-		short = "Back 2",
-		text = "Place on a tile. The lander slides back 2 tiles.",
+		hidden = true,
+		short = "Slide back 3",
+		text = "Hide it near you. Whoever lands here slides back 3 tiles.",
 	},
 	{
-		id = "mud",
-		name = "Mud",
+		id = "banana",
+		name = "Banana Peel",
 		category = "trap",
 		use = "place",
-		short = "Back 1",
-		text = "Place on a tile. The lander slips back 1 tile.",
+		hidden = true,
+		short = "Slip back 2, drop a card",
+		text = "Hide it near you. Whoever lands here slips back 2 tiles and drops a random card.",
 	},
 	{
 		id = "wall",
@@ -64,52 +88,61 @@ local defs = {
 		category = "trap",
 		use = "place",
 		short = "Blocks moves under 5",
-		text = "Place on a tile. Nobody can move past it unless they move 5 or more. Landing exactly on it is fine. It crumbles once someone gets over it.",
-	},
-	{
-		id = "snare",
-		name = "Snare",
-		category = "trap",
-		use = "place",
-		short = "Skip a turn",
-		text = "Place on a tile. The lander skips their next turn.",
-	},
-	{
-		id = "grog",
-		name = "Grog",
-		category = "trap",
-		use = "place",
-		short = "Roll 4+ or die",
-		text = "Place a Grog monster. The lander must roll 4 or more or the Grog eats them.",
+		text = "Build it near you, where everyone can see it. Nobody gets past unless they move 5 or more. It crumbles once someone gets over it.",
 	},
 
-	-- Assist cards ----------------------------------------------------------
+	-- Assist cards ----------------------------------------------------------------
 	{
-		id = "regeneration",
-		name = "Regeneration",
+		id = "speed_boost",
+		name = "Speed Boost",
 		category = "assist",
-		use = "regen",
-		free = true,
-		short = "Recharge ability",
-		text = "Free: instantly recharge your character's ability.",
+		use = "boost",
+		boost = "double",
+		short = "Double your move",
+		text = "Play before you move: the die you pick counts double.",
 	},
 	{
 		id = "bounce_pad",
 		name = "Bounce Pad",
 		category = "assist",
 		use = "boost",
-		free = true,
-		short = "+2 this move",
-		text = "Boost: arm before rolling to move 2 extra tiles this turn.",
+		boost = "plus",
+		amount = 3,
+		short = "+3 to your move",
+		text = "Play before you move: move 3 extra tiles.",
 	},
 	{
-		id = "speed_boost",
-		name = "Speed Boost",
+		id = "moonwalk",
+		name = "Moonwalk",
 		category = "assist",
 		use = "boost",
-		free = true,
-		short = "x2 this move",
-		text = "Boost: arm before rolling to double this turn's move.",
+		boost = "back",
+		short = "Move backwards",
+		text = "Play before you move: this turn you move backwards. Great for grabbing a token or bonking someone behind you.",
+	},
+	{
+		id = "clover",
+		name = "Lucky Clover",
+		category = "assist",
+		use = "reroll",
+		short = "Reroll your dice",
+		text = "Don't like your dice? Roll them again.",
+	},
+	{
+		id = "juice",
+		name = "Juice Box",
+		category = "assist",
+		use = "juice",
+		short = "Fill your Power",
+		text = "Fills your Power bar, so your ability is ready right now.",
+	},
+	{
+		id = "shield",
+		name = "Shield",
+		category = "assist",
+		use = "passive",
+		short = "Blocks a trap or bonk",
+		text = "Works by itself: blocks the next trap you land on or the next bonk that hits you.",
 	},
 	{
 		id = "bridge",
@@ -117,7 +150,7 @@ local defs = {
 		category = "assist",
 		use = "passive",
 		short = "Cross a river",
-		text = "Automatic: lets you cross one river without falling in.",
+		text = "Works by itself: carries you across one river.",
 	},
 	{
 		id = "key",
@@ -125,7 +158,7 @@ local defs = {
 		category = "assist",
 		use = "passive",
 		short = "Open a gate",
-		text = "Automatic: opens one locked gate, or a gated shortcut.",
+		text = "Works by itself: opens one locked gate or gated shortcut.",
 	},
 	{
 		id = "boots",
@@ -133,33 +166,17 @@ local defs = {
 		category = "assist",
 		use = "passive",
 		short = "Walk through slime",
-		text = "Automatic: the first time slime would slow you, you pull these on and ignore slime for the rest of the cycle.",
-	},
-	{
-		id = "shield",
-		name = "Shield",
-		category = "assist",
-		use = "passive",
-		short = "Block one trap",
-		text = "Automatic: blocks the next trap you trigger.",
-	},
-	{
-		id = "moonwalk",
-		name = "Moonwalk",
-		category = "assist",
-		use = "moonwalk",
-		short = "Back 1-3",
-		text = "Action: step back 1 to 3 tiles of your choice. You land like a normal move.",
+		text = "Works by itself: the first time slime would slow you, you pull these on and ignore slime until you reach the treasure.",
 	},
 
-	-- Neutral cards ---------------------------------------------------------
+	-- Neutral cards (visible board pieces) -----------------------------------------
 	{
 		id = "teleporter",
 		name = "Teleporter",
 		category = "neutral",
 		use = "place",
 		short = "Linked pairs",
-		text = "Place on a tile at least 8 tiles from the treasure. Teleporters link in pairs: landing on one sends you to its partner.",
+		text = "Place it near you, at least 8 tiles from the treasure. Teleporters link in pairs: landing on one sends you to its partner.",
 	},
 	{
 		id = "spore_warper",
@@ -167,7 +184,7 @@ local defs = {
 		category = "neutral",
 		use = "place",
 		short = "Swap with nearest",
-		text = "Place on a tile. The lander swaps places with the nearest player.",
+		text = "Place it near you. Whoever lands here swaps places with the nearest other player.",
 	},
 	{
 		id = "conveyor",
@@ -175,27 +192,28 @@ local defs = {
 		category = "neutral",
 		use = "place",
 		short = "3-tile belt",
-		text = "Place a 3-tile belt facing forward or backward. Anyone landing on it rides it off the end.",
+		text = "Place a 3-tile belt near you, facing forward or back. Anyone landing on it rides it off the end. It wears out after 3 rides.",
 	},
 	{
-		id = "shifting_sands",
-		name = "Shifting Sands",
+		id = "trampoline",
+		name = "Trampoline",
 		category = "neutral",
 		use = "place",
-		short = "Moves by treasures",
-		text = "Place on a tile. On an even cycle the lander moves forward by their treasure count; on an odd cycle, backward.",
+		short = "Bounce ahead 3",
+		text = "Place it near you. Whoever lands here bounces 3 tiles forward. It wears out after 2 bounces.",
 	},
 
-	-- Potions (Potion Seller) -------------------------------------------------
+	-- Potions (Potion Seller) ---------------------------------------------------------
 	{
 		id = "speed_potion",
 		name = "Speed Potion",
 		category = "potion",
 		use = "boost",
-		free = true,
+		boost = "plus",
+		amount = 2,
 		price = 1,
-		short = "+1 this move",
-		text = "Boost: arm before rolling to move 1 extra tile this turn.",
+		short = "+2 to your move",
+		text = "Play before you move: move 2 extra tiles.",
 	},
 	{
 		id = "phoenix_potion",
@@ -203,27 +221,35 @@ local defs = {
 		category = "potion",
 		use = "passive",
 		price = 2,
-		short = "Survive a death",
-		text = "Automatic: the next time you would die, you survive instead.",
+		short = "Survive a knockout",
+		text = "Works by itself: the next time you'd be knocked out (Spike, Grog), you survive instead.",
 	},
 	{
-		id = "time_potion",
-		name = "Time Travel Potion",
+		id = "xray_potion",
+		name = "X-Ray Potion",
 		category = "potion",
-		use = "anchor",
-		free = true,
-		price = 3,
-		short = "Anchor & recall",
-		text = "Free: drop a time anchor where you stand. On a later turn, use your action to warp back to it.",
+		use = "xray",
+		price = 2,
+		short = "See hidden traps",
+		text = "Drink it to see every trap that's hidden on the board right now.",
 	},
 	{
 		id = "telepathy_potion",
 		name = "Telepathy Potion",
 		category = "potion",
 		use = "telepathy",
-		price = 4,
+		price = 3,
 		short = "Move anyone 1-3",
-		text = "Action: move any player 1 to 3 tiles forward or backward.",
+		text = "Move any player 1 to 3 tiles forward or back. Push someone onto your trap!",
+	},
+	{
+		id = "time_potion",
+		name = "Time Travel Potion",
+		category = "potion",
+		use = "anchor",
+		price = 4,
+		short = "Anchor & recall",
+		text = "Drop a time anchor where you stand. On any later turn you can warp back to it instead of moving, even after you've banked a treasure.",
 	},
 	{
 		id = "jeopardy_potion",
@@ -232,39 +258,10 @@ local defs = {
 		use = "jeopardy",
 		price = 5,
 		short = "Swap hands, 6 & 6",
-		text = "Action: swap hands with a player, push them back 6 tiles and jump forward 6 yourself.",
+		text = "Swap hands with a player, push them back 6 tiles and jump forward 6 yourself.",
 	},
 
-	-- Natural trap cards (Naturalist only) -----------------------------------
-	{
-		id = "river_trap",
-		name = "River",
-		category = "natural",
-		use = "place",
-		natural = "river",
-		short = "Ends your move",
-		text = "Place a river. Anyone without a Bridge falls in and their move ends there. Naturalists swim through.",
-	},
-	{
-		id = "gate_trap",
-		name = "Locked Gate",
-		category = "natural",
-		use = "place",
-		natural = "gate",
-		short = "Stuck until 4+",
-		text = "Place a locked gate. Anyone without a Key stops on it and is stuck until they roll 4+.",
-	},
-	{
-		id = "slime_trap",
-		name = "Slime",
-		category = "natural",
-		use = "place",
-		natural = "slime",
-		short = "Halves moves",
-		text = "Place slime. Moving through it without Boots halves your move (odd moves lose 1).",
-	},
-
-	-- Not a card: coins are tracked separately -------------------------------
+	-- Not a card: coins are tracked separately ------------------------------------
 	{
 		id = "coin",
 		name = "Coin",
@@ -279,24 +276,23 @@ Items.byId = {}
 Items.list = {}
 for i, def in defs do
 	def.order = i
-	def.free = def.free == true
+	def.hidden = def.hidden == true
 	Items.byId[def.id] = def
 	table.insert(Items.list, def)
 end
 
--- The three spinners. "bkb" is replaced by the map's counter item (Bridge/Key/Boots),
--- or by the map's natural trap card when the Naturalist spins.
+-- The three spinners. "bkb" is replaced by the map's counter card (Bridge/Key/Boots).
 Items.wheels = {
-	trap = { "spike", "fire", "ice", "mudslide", "mud", "wall", "snare", "grog", "coin" },
-	assist = { "regeneration", "bounce_pad", "speed_boost", "bkb", "shield", "moonwalk", "coin" },
-	neutral = { "teleporter", "spore_warper", "conveyor", "shifting_sands", "coin" },
+	trap = { "spike", "grog", "fire", "ice", "snare", "mudslide", "banana", "wall", "coin" },
+	assist = { "speed_boost", "bounce_pad", "moonwalk", "clover", "juice", "shield", "bkb", "coin" },
+	neutral = { "teleporter", "spore_warper", "conveyor", "trampoline", "coin" },
 }
 
-Items.potions = { "speed_potion", "phoenix_potion", "time_potion", "telepathy_potion", "jeopardy_potion" }
+Items.potions = { "speed_potion", "phoenix_potion", "xray_potion", "telepathy_potion", "time_potion", "jeopardy_potion" }
 
-Items.trapIds = { "spike", "fire", "ice", "mudslide", "mud", "wall", "snare", "grog" }
+Items.trapIds = { "spike", "grog", "fire", "ice", "snare", "mudslide", "banana", "wall" }
 
--- Natural trap kind -> the card that counters it
+-- Natural hazard kind -> the card that counters it
 Items.naturalCounter = {
 	river = "bridge",
 	gate = "key",
@@ -310,6 +306,12 @@ end
 function Items.isTrap(id: string): boolean
 	local def = Items.byId[id]
 	return def ~= nil and def.category == "trap"
+end
+
+-- Is this card hidden from opponents once it's on the board?
+function Items.isHidden(id: string): boolean
+	local def = Items.byId[id]
+	return def ~= nil and def.hidden
 end
 
 return Items

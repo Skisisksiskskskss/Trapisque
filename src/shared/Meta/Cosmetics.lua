@@ -9,7 +9,8 @@
 
 	category  pawn | dice | trail | emote | title
 	rarity    common | rare | epic | legendary | mythic
-	source    nil = in chests, "default" = everyone owns it, "vip" / "emotepack" = gamepass
+	source    nil = in chests, "default" = everyone owns it, "vip" / "emotepack" = gamepass,
+	          "mastery" = earned by levelling up a character (Meta/Progress)
 ]]
 
 local Cosmetics = {}
@@ -175,6 +176,38 @@ local defs = {
 	{ id = "title_royalty", category = "title", name = "Treasure Royalty", rarity = "mythic", look = { text = "Treasure Royalty", color = "#F07CB0", rainbow = true } },
 	{ id = "title_vip", category = "title", name = "VIP", rarity = "legendary", source = "vip", look = { text = "VIP", color = "#D3A2F7" } },
 }
+
+-- Mastery titles: "Mage Fan", "Mage Pro", "Mage Legend"... earned by playing a character
+-- (ids match Progress.masteryTitleId)
+local masteryColors = {
+	mage = "#45C3FF",
+	trapper = "#E8893A",
+	fire_starter = "#FF4F5E",
+	naturalist = "#8BE04E",
+	warper = "#9A6BFF",
+	overseer = "#FFD23F",
+}
+local masteryNames = {
+	mage = "Mage",
+	trapper = "Trapper",
+	fire_starter = "Fire Starter",
+	naturalist = "Naturalist",
+	warper = "Warper",
+	overseer = "Overseer",
+}
+for _, charId in { "mage", "trapper", "fire_starter", "naturalist", "warper", "overseer" } do
+	for _, tier in { { "fan", "Fan", "rare" }, { "pro", "Pro", "epic" }, { "legend", "Legend", "legendary" } } do
+		local text = masteryNames[charId] .. " " .. tier[2]
+		table.insert(defs, {
+			id = "title_" .. charId .. "_" .. tier[1],
+			category = "title",
+			name = text,
+			rarity = tier[3],
+			source = "mastery",
+			look = { text = text, color = masteryColors[charId], rainbow = tier[1] == "legend" or nil },
+		})
+	end
+end
 
 Cosmetics.byId = {}
 Cosmetics.list = {}

@@ -1,6 +1,7 @@
 --[[
 	LeaderboardService
-	All-time top players: most wins, most treasures found, highest level.
+	Top players: most trophies (ranked Quick Play), most wins, most treasures found,
+	highest level.
 
 	Scores live in one OrderedDataStore per board and are sent in when a match ends.
 	Each board's top 50 is read at most once a minute per server and shared by everyone
@@ -12,7 +13,7 @@
 		LeaderboardService.init(profileOf)       -- profileOf(player) -> saved profile
 		LeaderboardService.submit(player, data)  -- after a match (data = saved profile)
 
-	Client request: "leaderboard.get" { board = "wins" | "treasures" | "level" } ->
+	Client request: "leaderboard.get" { board = "trophies" | "wins" | "treasures" | "level" } ->
 		{ board, live, entries = { { rank, userId, name, username, value } },
 		  me = { rank?, value } }
 ]]
@@ -29,6 +30,12 @@ local LeaderboardService = {}
 type Board = { store: string, value: (any) -> number }
 
 local BOARDS: { [string]: Board } = {
+	trophies = {
+		store = "TrapisqueTrophies_v1",
+		value = function(d)
+			return d.trophies or 0
+		end,
+	},
 	wins = {
 		store = "TrapisqueWins_v1",
 		value = function(d)

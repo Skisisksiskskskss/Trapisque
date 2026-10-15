@@ -13,6 +13,10 @@ from PIL import Image, ImageDraw, ImageFont, ImageFilter
 FONT_DIR = os.environ.get("TRAPISQUE_FONTS", os.path.join(os.path.dirname(os.path.abspath(__file__)), "fonts"))
 
 
+# The sticker outline colour (Theme.C.line): a deep purple-black.
+LINE = "#1B1030"
+
+
 def hex_rgba(h, a=255):
     h = h.lstrip("#")
     return (int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16), a)
@@ -79,6 +83,8 @@ class Canvas:
             c = "ink"
         if isinstance(c, str) and c.startswith("#"):
             rgba = hex_rgba(c)
+        elif c == "line":
+            rgba = self.colors.get("line", hex_rgba(LINE))
         else:
             rgba = self.colors.get(c, self.colors["ink"])
         return (rgba[0], rgba[1], rgba[2], int(rgba[3] * alpha))
@@ -186,20 +192,20 @@ class Canvas:
         ImageDraw.Draw(img).polygon(pts, fill=self.col(color))
         self.layer.paste_shape(img)
 
-    def star(self, cx, cy, dd, color, points=5):
+    def star(self, cx, cy, dd, color, points=5, extra=0):
         # rounded cartoon star: a thick pentagram stroke plus a filled middle
         th = dd * 0.18
         R = dd / 2 - th / 2
         pts = [(cx + R * math.cos(math.radians(-90 + 72 * k)), cy + R * math.sin(math.radians(-90 + 72 * k))) for k in range(5)]
         for k in range(5):
             a, b = pts[k], pts[(k + 2) % 5]
-            self.line(a[0], a[1], b[0], b[1], th, color)
-        self.circle(cx, cy, dd * 0.42, color)
+            self.line(a[0], a[1], b[0], b[1], th + 2 * extra, color)
+        self.circle(cx, cy, dd * 0.42 + 2 * extra, color)
 
-    def sparkle(self, cx, cy, dd, color):
+    def sparkle(self, cx, cy, dd, color, extra=0):
         # 4-point twinkle: thin rounded strokes from each tip to the waist
         R = dd / 2
-        th = dd * 0.12
+        th = dd * 0.12 + 2 * extra
         r = R * 0.22
         outer = [(cx, cy - R + th / 2), (cx + R - th / 2, cy), (cx, cy + R - th / 2), (cx - R + th / 2, cy)]
         inner = [(cx + r, cy - r), (cx + r, cy + r), (cx - r, cy + r), (cx - r, cy - r)]
@@ -207,7 +213,7 @@ class Canvas:
             o = outer[i]
             self.line(o[0], o[1], inner[i][0], inner[i][1], th, color)
             self.line(o[0], o[1], inner[i - 1][0], inner[i - 1][1], th, color)
-        self.circle(cx, cy, r * 2.4, color)
+        self.circle(cx, cy, r * 2.4 + 2 * extra, color)
 
     def taper(self, pts, th0, th1, color, steps=5):
         """Brush stroke along a path whose thickness goes from th0 to th1 (smooth curve)."""
@@ -225,7 +231,8 @@ class Canvas:
         ImageDraw.Draw(img).rounded_rectangle([x0, y0, x1, y1], radius=min(x1 - x0, y1 - y0) / 2, outline=self.col(color, 1 - t), width=max(1, int(self.L(th))))
         self.layer.paste_shape(img)
 
-    def chevron(self, cx, cy, size, th, color, dir=90):
+    def chevron(self, cx, cy, size, th, color, dir=90, extra=0):
+        th = th + 2 * extra
         a = math.radians(dir - 90)
         ux, uy = math.cos(a), math.sin(a)
         px, py = -uy, ux
@@ -234,15 +241,18 @@ class Canvas:
         self.line(tx - ux * s + px * s, ty - uy * s + py * s, tx, ty, th, color)
         self.line(tx - ux * s - px * s, ty - uy * s - py * s, tx, ty, th, color)
 
-    def arrow(self, cx, cy, ln, th, color, dir=90):
+    def arrow(self, cx, cy, ln, th, color, dir=90, extra=0):
         a = math.radians(dir - 90)
         ux, uy = math.cos(a), math.sin(a)
         x1, y1 = cx - ux * ln / 2, cy - uy * ln / 2
         x2, y2 = cx + ux * ln / 2, cy + uy * ln / 2
-        self.line(x1, y1, x2 - ux * th, y2 - uy * th, th, color)
-        self.tri(x2 - ux * th * 1.6, y2 - uy * th * 1.6, th * 3.2, color, dir=dir)
+        self.line(x1, y1, x2 - ux * th, y2 - uy * th, th + 2 * extra, color)
+        bx, by, bw = x2 - ux * th * 1.6, y2 - uy * th * 1.6, th * 3.2
+        if extra:
+            bx, by, bw = bx - ux * extra, by - uy * extra, bw + extra / 0.2071
+        self.tri(bx, by, bw, color, dir=dir)
 
-    def text(self, cx, cy, w, h, s, color, fnt="chunky", rot=0):
+    def text(self, cx, cy, w, h, s, color, fnt="chunky", rot=0, stroke=0, stroke_color="line"):
         px_h = self.L(h)
         f = font(fnt, px_h * 0.9)
         img = self.layer.blank()
@@ -255,7 +265,9 @@ class Canvas:
             bbox = d.textbbox((0, 0), s, font=f)
             tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
         x, y = self.P(cx, cy)
-        d.text((x - tw / 2 - bbox[0], y - th / 2 - bbox[1]), s, font=f, fill=self.col(color))
+        sw = int(round(self.L(stroke))) if stroke else 0
+        d.text((x - tw / 2 - bbox[0], y - th / 2 - bbox[1]), s, font=f, fill=self.col(color),
+               stroke_width=sw, stroke_fill=self.col(stroke_color) if sw else None)
         if rot:
             img = img.rotate(-rot, resample=Image.BICUBIC, center=(x, y))
         self.layer.paste_shape(img)
@@ -359,7 +371,193 @@ def _with_color(op, c):
     return {"__args": list(op), "c": c}
 
 
-def draw_ops(cv, ops):
+FACE_KINDS = ("eyes", "eye", "mouth", "blush", "shine")
+
+
+def _split(op):
+    if isinstance(op, dict):
+        return list(op["__args"]), {k: v for k, v in op.items() if k != "__args"}
+    return list(op), {}
+
+
+def _join(args, o):
+    if o:
+        d = dict(o)
+        d["__args"] = args
+        return d
+    return args
+
+
+def flatten(ops, color=None):
+    """Expand groups into one flat list in canvas coordinates (colours passed down)."""
+    out = []
+    for op in ops:
+        args, o = _split(op)
+        if color is not None and o.get("c") is None:
+            o["c"] = color
+        if args[0] == "group":
+            sub = [_transform(x, o.get("rot", 0), o.get("s", 1), o.get("dx", 0), o.get("dy", 0), o.get("fx", False)) for x in o["ops"]]
+            # faces inside a group keep their own geometry args; scale them like circles
+            out.extend(flatten(sub, o.get("c")))
+        else:
+            out.append(_join(args, o))
+    return out
+
+
+def inflate(op, w):
+    """The op grown by w on every side (the sticker outline behind it), or None."""
+    args, o = _split(op)
+    kind = args[0]
+    if o.get("ol") is False or o.get("c") == "bg" or kind in FACE_KINDS or kind == "text" or (o.get("t") or 0) > 0.5:
+        return None
+    a = list(args)
+    o = dict(o)
+    o["c"] = "line"
+    o.pop("t", None)
+    if kind == "rect":
+        m = min(a[3], a[4])
+        r = o.get("r", 0) or 0
+        o["r"] = (r * m + w) / (m + 2 * w)
+        a[3] += 2 * w
+        a[4] += 2 * w
+    elif kind in ("circle",):
+        a[3] += 2 * w
+    elif kind == "pill":
+        a[3] += 2 * w
+        a[4] += 2 * w
+    elif kind == "line":
+        a[5] += 2 * w
+    elif kind == "path":
+        a[2] += 2 * w
+    elif kind == "taper":
+        a[2] += 2 * w
+        a[3] += 2 * w
+    elif kind == "tri":
+        dr = math.radians(o.get("dir", 0) - 90)
+        a[1] -= math.cos(dr) * w
+        a[2] -= math.sin(dr) * w
+        a[3] += w / 0.2071
+    elif kind == "half":
+        a[3] += 2 * w
+    elif kind in ("ring", "arc"):
+        a[3] += 2 * w
+        a[4] += 2 * w
+    elif kind == "oring":
+        a[3] += 2 * w
+        a[4] += 2 * w
+        a[5] += 2 * w
+    elif kind == "drop":
+        a[3] += w
+    elif kind == "hex":
+        a[3] += 4 * w / math.sqrt(3)
+    elif kind in ("star", "sparkle", "chevron", "arrow"):
+        o["extra"] = w
+    else:
+        return None
+    return _join(a, o)
+
+
+def draw_face(cv, kind, a, o):
+    """Eyes, mouths and cheeks: drawn on top, with their own ink lines (never outlined)."""
+    line = "line"
+    if kind == "blush":
+        cx, cy, gap, d = a[1], a[2], a[3], a[4]
+        for sx in (-1, 1):
+            cv.rect(cx + sx * gap / 2, cy, d, d * 0.62, o.get("c") or "#FF7BAC", r=0.5, t=0.45)
+        return
+    if kind == "shine":
+        cx, cy, d = a[1], a[2], a[3]
+        cv.rect(cx, cy, d * 0.28, d, "#FFFFFF", r=0.5, rot=o.get("rot", 35), t=o.get("t", 0.15))
+        return
+    if kind == "mouth":
+        cx, cy, w = a[1], a[2], a[3]
+        mood = o.get("mood", "smile")
+        th = max(w * 0.16, 0.02)
+        if mood == "smile":
+            cv.arc(cx, cy - w * 0.25, w, th, line, dir=180, keep=0.5)
+        elif mood == "frown":
+            cv.arc(cx, cy + w * 0.25, w, th, line, dir=0, keep=0.5)
+        elif mood == "flat":
+            cv.line(cx - w / 2, cy, cx + w / 2, cy, th, line)
+        elif mood == "smirk":
+            cv.line(cx - w / 2, cy + w * 0.06, cx + w * 0.25, cy - w * 0.04, th, line)
+            cv.arc(cx + w * 0.3, cy - w * 0.12, w * 0.4, th, line, dir=135, keep=0.5)
+        elif mood == "o":
+            cv.circle(cx, cy, w * 0.55, line)
+            cv.circle(cx, cy + w * 0.08, w * 0.28, "#FF6B8A")
+        elif mood in ("grin", "open", "teeth"):
+            cv.half(cx, cy - w * 0.12, w, line, dir=180)
+            if mood == "open":
+                cv.half(cx, cy + w * 0.14, w * 0.5, "#FF6B8A", dir=0)
+            elif mood == "grin":
+                cv.rect(cx, cy - w * 0.05, w * 0.72, w * 0.16, "#FFFFFF", r=0.3)
+            else:
+                n = 4
+                for i in range(n):
+                    tx = cx - w * 0.34 + i * w * 0.68 / (n - 1)
+                    cv.tri(tx, cy - w * 0.12, w * 0.2, "#FFFFFF", dir=180)
+        return
+    # eyes
+    if kind == "eye":
+        cx, cy, d = a[1], a[2], a[3]
+        spots = [(cx, cy)]
+    else:
+        cx, cy, gap, d = a[1], a[2], a[3], a[4]
+        spots = [(cx - gap / 2, cy), (cx + gap / 2, cy)]
+    mood = o.get("mood", "normal")
+    look = o.get("look") or [0, 0]
+    for i, (ex, ey) in enumerate(spots):
+        m = mood
+        if mood == "wink":
+            m = "happy" if i == 1 else "normal"
+        if m == "happy":
+            cv.arc(ex, ey + d * 0.15, d * 0.9, d * 0.2, line, dir=0, keep=0.5)
+            continue
+        if m == "closed":
+            cv.line(ex - d * 0.4, ey, ex + d * 0.4, ey, d * 0.18, line)
+            continue
+        if m == "dizzy":
+            cv.line(ex - d * 0.3, ey - d * 0.3, ex + d * 0.3, ey + d * 0.3, d * 0.18, line)
+            cv.line(ex - d * 0.3, ey + d * 0.3, ex + d * 0.3, ey - d * 0.3, d * 0.18, line)
+            continue
+        cv.circle(ex, ey, d, line)
+        cv.circle(ex, ey, d * 0.78, "#FFFFFF")
+        pd = d * (0.3 if m == "shock" else 0.46)
+        px, py = ex + look[0] * d * 0.16, ey + look[1] * d * 0.16
+        cv.circle(px, py, pd, line)
+        cv.circle(px - pd * 0.22, py - pd * 0.24, pd * 0.36, "#FFFFFF")
+        if m == "sleepy":
+            lid = o.get("lid", "#000000")
+            cv.half(ex, ey, d * 0.82, lid, dir=0)
+            cv.line(ex - d * 0.42, ey, ex + d * 0.42, ey, d * 0.12, line)
+        if m in ("angry", "sad"):
+            s = 1 if (i == 0) == (m == "angry") else -1
+            if kind == "eye":
+                s = 0
+            cv.line(ex - d * 0.5, ey - d * 0.62 - s * d * 0.14, ex + d * 0.5, ey - d * 0.62 + s * d * 0.14, d * 0.2, line)
+
+
+def draw_ops(cv, ops, outline=0):
+    flat = flatten(ops)
+    if outline:
+        for op in flat:
+            big = inflate(op, outline)
+            if big is not None:
+                _draw_one(cv, big)
+    for op in flat:
+        _draw_one(cv, op)
+
+
+def _draw_one(cv, op):
+    args, o = _split(op)
+    kind = args[0]
+    if kind in FACE_KINDS:
+        draw_face(cv, kind, args, o)
+        return
+    _draw_list(cv, [op])
+
+
+def _draw_list(cv, ops):
     for op in ops:
         if isinstance(op, dict):
             args = op["__args"]
@@ -376,6 +574,8 @@ def draw_ops(cv, ops):
             if c is not None:
                 sub = [_with_color(x, c) for x in sub]
             draw_ops(cv, sub)
+        elif kind in FACE_KINDS:
+            draw_face(cv, kind, args, o)
         elif kind == "rect":
             cv.rect(args[1], args[2], args[3], args[4], c, r=o.get("r", 0) or 0, rot=o.get("rot", 0) or 0, t=o.get("t", 0) or 0)
         elif kind == "circle":
@@ -403,14 +603,14 @@ def draw_ops(cv, ops):
         elif kind == "hex":
             cv.hex(args[1], args[2], args[3], c, rot=o.get("rot", 0))
         elif kind == "star":
-            cv.star(args[1], args[2], args[3], c, points=o.get("points", 5))
+            cv.star(args[1], args[2], args[3], c, points=o.get("points", 5), extra=o.get("extra", 0))
         elif kind == "sparkle":
-            cv.sparkle(args[1], args[2], args[3], c)
+            cv.sparkle(args[1], args[2], args[3], c, extra=o.get("extra", 0))
         elif kind == "chevron":
-            cv.chevron(args[1], args[2], args[3], args[4], c, dir=o.get("dir", 90))
+            cv.chevron(args[1], args[2], args[3], args[4], c, dir=o.get("dir", 90), extra=o.get("extra", 0))
         elif kind == "arrow":
-            cv.arrow(args[1], args[2], args[3], args[4], c, dir=o.get("dir", 90))
+            cv.arrow(args[1], args[2], args[3], args[4], c, dir=o.get("dir", 90), extra=o.get("extra", 0))
         elif kind == "text":
-            cv.text(args[1], args[2], args[3], args[4], args[5], c, fnt=o.get("font", "chunky"), rot=o.get("rot", 0))
+            cv.text(args[1], args[2], args[3], args[4], args[5], c, fnt=o.get("font", "chunky"), rot=o.get("rot", 0), stroke=o.get("stroke", 0))
         else:
             raise ValueError("unknown op " + str(kind))

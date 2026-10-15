@@ -179,7 +179,9 @@ function Shapes.hex(parent: Instance, cx: number, cy: number, d: number, color: 
 end
 
 -- Rounded cartoon star: a thick pentagram stroke with a filled middle.
+-- o.extra thickens every stroke (the outline drawn behind a sticker).
 function Shapes.star(parent: Instance, cx: number, cy: number, d: number, color: Color3, o: { [string]: any }?)
+	local extra = if o and o.extra then o.extra else 0
 	local th = d * 0.18
 	local R = d / 2 - th / 2
 	local pts = {}
@@ -189,15 +191,16 @@ function Shapes.star(parent: Instance, cx: number, cy: number, d: number, color:
 	end
 	for k = 0, 4 do
 		local a, b = pts[k], pts[(k + 2) % 5]
-		Shapes.line(parent, a[1], a[2], b[1], b[2], th, color, o)
+		Shapes.line(parent, a[1], a[2], b[1], b[2], th + 2 * extra, color, o)
 	end
-	Shapes.circle(parent, cx, cy, d * 0.42, color, o)
+	Shapes.circle(parent, cx, cy, d * 0.42 + 2 * extra, color, o)
 end
 
 -- 4-point twinkle made of thin rounded strokes.
 function Shapes.sparkle(parent: Instance, cx: number, cy: number, d: number, color: Color3, o: { [string]: any }?)
+	local extra = if o and o.extra then o.extra else 0
 	local R = d / 2
-	local th = d * 0.12
+	local th = d * 0.12 + 2 * extra
 	local r = R * 0.22
 	local outer = {
 		{ cx, cy - R + th / 2 },
@@ -211,7 +214,7 @@ function Shapes.sparkle(parent: Instance, cx: number, cy: number, d: number, col
 		Shapes.line(parent, outer[i][1], outer[i][2], inner[i][1], inner[i][2], th, color, o)
 		Shapes.line(parent, outer[i][1], outer[i][2], prev[1], prev[2], th, color, o)
 	end
-	Shapes.circle(parent, cx, cy, r * 2.4, color, o)
+	Shapes.circle(parent, cx, cy, r * 2.4 + 2 * extra, color, o)
 end
 
 -- Catmull-Rom smoothing of a point list (used by tapered strokes).
@@ -269,6 +272,7 @@ end
 -- Chevron pointing in `dir` (0 = up, 90 = right).
 function Shapes.chevron(parent: Instance, cx: number, cy: number, size: number, th: number, color: Color3, o: { [string]: any }?)
 	local dir = if o and o.dir then o.dir else 90
+	th += 2 * (if o and o.extra then o.extra else 0)
 	local a = math.rad(dir - 90)
 	local ux, uy = math.cos(a), math.sin(a) -- forward
 	local px, py = -uy, ux -- side
@@ -281,14 +285,19 @@ end
 -- Arrow: shaft + head, pointing in `dir`.
 function Shapes.arrow(parent: Instance, cx: number, cy: number, len: number, th: number, color: Color3, o: { [string]: any }?)
 	local dir = if o and o.dir then o.dir else 90
+	local extra = if o and o.extra then o.extra else 0
 	local a = math.rad(dir - 90)
 	local ux, uy = math.cos(a), math.sin(a)
 	local x1, y1 = cx - ux * len / 2, cy - uy * len / 2
 	local x2, y2 = cx + ux * len / 2, cy + uy * len / 2
-	Shapes.line(parent, x1, y1, x2 - ux * th, y2 - uy * th, th, color, o)
+	Shapes.line(parent, x1, y1, x2 - ux * th, y2 - uy * th, th + 2 * extra, color, o)
 	local opts = table.clone(o or {})
 	opts.dir = dir
-	Shapes.tri(parent, x2 - ux * th * 1.6, y2 - uy * th * 1.6, th * 3.2, color, opts)
+	local bx, by, bw = x2 - ux * th * 1.6, y2 - uy * th * 1.6, th * 3.2
+	if extra > 0 then
+		bx, by, bw = bx - ux * extra, by - uy * extra, bw + extra / 0.2071
+	end
+	Shapes.tri(parent, bx, by, bw, color, opts)
 end
 
 function Shapes.text(parent: Instance, cx: number, cy: number, w: number, h: number, text: string, color: Color3, font: Font, o: { [string]: any }?): TextLabel
@@ -306,6 +315,21 @@ function Shapes.text(parent: Instance, cx: number, cy: number, w: number, h: num
 	t.TextTransparency = if o and o.t then o.t else 0
 	t.ZIndex = nextZ(parent)
 	t.Parent = parent
+	if o and o.stroke and o.stroke > 0 then
+		-- outlined lettering: the stroke is a fraction of the canvas, so it scales with it
+		local stroke = Instance.new("UIStroke")
+		stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
+		stroke.Color = o.strokeColor or Color3.fromHex("1B1030")
+		stroke.LineJoinMode = Enum.LineJoinMode.Round
+		stroke.Parent = t
+		local canvas = parent :: GuiObject
+		local fraction = o.stroke
+		local function fit()
+			stroke.Thickness = math.max(1, canvas.AbsoluteSize.X * fraction)
+		end
+		fit()
+		canvas:GetPropertyChangedSignal("AbsoluteSize"):Connect(fit)
+	end
 	return t
 end
 

@@ -5,28 +5,25 @@
 
 	Usage
 		local game = Engine.new({ mode = "chaos", map = "blissful", seed = 42,
-			players = { { id = "u1", name = "Ana" }, { id = "bot1", name = "Bot", isBot = true } } })
+			players = { { id = "u1", name = "Ana", character = "mage" }, { id = "bot1", name = "Bot", isBot = true } } })
 		local events = game:start()
-		local ok, err, events = game:command(seat, { type = "roll" })
+		local ok, err, events = game:command(seat, { type = "move", die = 1 })
 
 	Every state change is reported as an event table (field `t` is the type) so clients
-	can animate exactly what happened. See docs/RULES.md for the rules in plain English.
+	can animate exactly what happened. Some events are secret (a hidden trap being placed):
+	Engine:eventsFor(seat, events) gives the version a seat may see. See docs/RULES.md.
 
-	Turn structure
-		Free actions (any order, before your main action):
-			ability     use your character ability (once per turn, if charged)
-			arm         arm/disarm a Boost card for this turn's roll
-			regen       play Regeneration
-			anchor      drop a Time Travel anchor
-			give        (finished team players) hand a card to a teammate
-		Main action (ends your turn):
-			roll        roll the die and move
-			place       play a card onto the board
-			moonwalk    step back 1-3 tiles
-			telepathy   move any player 1-3 tiles
-			jeopardy    Double Jeopardy
-			recall      warp back to your Time Travel anchor
+	A turn
+		Your two dice roll by themselves when your turn starts. Then, in any order:
+			play      play ONE card from your hand (hide a trap, boost your move...)
+			ability   use your ability, if your Power bar is full
+			give      (team modes) pass a card to a teammate - counts as your card
+		and finally one of:
+			move      pick a die to move with; the other die charges your Power
+			          (doubles: you may move the total instead)
+			recall    warp back to your Time Travel anchor instead of moving
 		Landing on a Potion Seller opens the shop: buy / shopDone.
+		Scavenge offers two cards: pick.
 ]]
 
 local Config = require(script.Parent.Parent.Config)
@@ -38,6 +35,7 @@ local Modes = require(script.Parent.Modes)
 local Board = require(script.Parent.Board)
 
 local Rules = Config.Rules
+local CharCfg = Config.Characters
 
 local Engine = {}
 Engine.__index = Engine
@@ -64,15 +62,6 @@ local function count(list, value): number
 	return n
 end
 
--- Ice / slime: even moves are halved, odd moves lose 1 (rulebook wording).
-local function chill(m: number): number
-	if m % 2 == 0 then
-		return m // 2
-	end
-	return m - 1
-end
-Engine.chill = chill
-
 local function hasCard(p, item: string): boolean
 	return table.find(p.hand, item) ~= nil
 end
@@ -84,6 +73,37 @@ local function removeCard(p, item: string): boolean
 		return true
 	end
 	return false
+end
+
+-- Slime halves what's left of a move (rounding up, so you always get somewhere).
+local function halve(m: number): number
+	return math.ceil(m / 2)
+end
+Engine.halve = halve
+
+local function trapCap(p): number
+	if p.character == "trapper" then
+		return CharCfg.trapper.trapCap
+	end
+	return Rules.TrapCap
+end
+
+local function newStats()
+	return {
+		deaths = 0, -- times you were knocked out
+		kos = 0, -- players your traps knocked out
+		gotchas = 0, -- times your hidden traps caught someone
+		bonks = 0, -- bonks you landed
+		bonked = 0, -- bonks you took
+		placed = 0,
+		played = 0,
+		spins = 0,
+		bought = 0,
+		abilities = 0,
+		doubles = 0,
+		tiles = 0, -- tiles walked
+		coins = 0, -- coins earned
+	}
 end
 
 ---------------------------------------------------------------------------
@@ -104,8 +124,10 @@ function Engine.new(opts)
 	self.seed = opts.seed or 1
 	self.rng = Rng.new(self.seed)
 	self.target = opts.target or mode.target
+	self.teamTarget = self.target * mode.teamSize
+	-- a weekly event's twist on the rules (Shared/Meta/Progress events), or none
+	self.mut = opts.mutator or {}
 	self.length = opts.length or "classic"
-	self.rechargeCycles = if self.target <= 2 then Rules.QuickRechargeCycles else Rules.AbilityRechargeCycles
 	local caps = Rules.MaxRounds
 	self.maxRounds = if type(caps) == "table" then (caps[self.length] or caps.classic) else caps
 	self.events = {}
@@ -121,10 +143,14 @@ function Engine.new(opts)
 
 	-- board layers
 	self.tokens = {} -- [tile] = "trap" | "assist" | "neutral" | "potion"
-	self.placed = {} -- [tile] = { item, owner, uses, dir, tiles }
+	self.placed = {} -- [tile] = visible piece: { item, owner, team, uses, dir, tiles }
 	self.cover = {} -- [tile] = origin tile of the conveyor covering it
+	self.traps = {} -- [tile] = { trap, ... } hidden traps (a tile can hold several)
 	self.natural = {} -- [tile] = "river" | "gate" | "slime"
+	self.grown = {} -- [seat] = { tiles } natural hazards a Naturalist grew, oldest first
+	self.embers = {} -- [tile] = { owner, team } burning tiles left by a Blast Off
 	self.teleporters = {} -- tiles, in placement order (pairs: 1-2, 3-4, ...)
+	self.placeOrder = 0
 	self.stock = {}
 	for _, id in Items.potions do
 		self.stock[id] = Rules.PotionStock
@@ -144,14 +170,12 @@ function Engine.new(opts)
 			tile = self.board.start,
 			trail = { self.board.start },
 			treasures = 0,
-			laps = 0,
 			coins = Rules.StartingCoins,
 			hand = {},
-			status = { burning = false, frozen = false, boots = false, held = false, skip = 0 },
-			ability = { ready = true, progress = 0 },
+			power = 0,
+			status = { frozen = 0, burning = 0, skip = 0 },
 			anchor = nil,
-			finished = false,
-			stats = { deaths = 0, placed = 0, used = 0, spins = 0, bought = 0, abilities = 0 },
+			stats = newStats(),
 		}
 		self.players[i] = p
 	end
@@ -180,7 +204,7 @@ function Engine:_assignTeams(preset: boolean)
 end
 
 ---------------------------------------------------------------------------
--- events
+-- events and secrets
 ---------------------------------------------------------------------------
 
 function Engine:_emit(evt)
@@ -193,6 +217,65 @@ function Engine:_flushEvents()
 	return out
 end
 
+-- Who may see a secret: { team = n, overseer = true? } (that team, and Overseers if
+-- set), { seat = n } or { seats = { [n] = true } }.
+function Engine:_mayKnow(seat: number, secret): boolean
+	if secret.seat ~= nil then
+		return secret.seat == seat
+	end
+	if secret.seats ~= nil then
+		return secret.seats[seat] == true
+	end
+	local p = self.players[seat]
+	if not p then
+		return false
+	end
+	if secret.team ~= nil and p.team == secret.team then
+		return true
+	end
+	return secret.overseer == true and p.character == "overseer"
+end
+
+--[[
+	The events as `seat` may see them. A secret event carries `secret` (who may know)
+	and optionally `alt` (what everyone else sees instead, or nothing).
+]]
+function Engine:eventsFor(seat: number, events)
+	local out = {}
+	for _, e in events do
+		local secret = e.secret
+		if secret == nil then
+			table.insert(out, e)
+		elseif self:_mayKnow(seat, secret) then
+			local copy = table.clone(e)
+			copy.secret = nil
+			copy.alt = nil
+			table.insert(out, copy)
+		elseif e.alt ~= nil then
+			table.insert(out, e.alt)
+		end
+	end
+	return out
+end
+
+-- Can `seat` see this hidden trap? Its owner's team, Overseers, and X-Ray drinkers can.
+function Engine:canSee(seat: number, trap): boolean
+	if trap.public then
+		return true
+	end
+	local p = self.players[seat]
+	if not p then
+		return false
+	end
+	if trap.team ~= nil and p.team == trap.team then
+		return true
+	end
+	if p.character == "overseer" then
+		return true
+	end
+	return trap.seenBy ~= nil and trap.seenBy[seat] == true
+end
+
 ---------------------------------------------------------------------------
 -- setup
 ---------------------------------------------------------------------------
@@ -201,14 +284,12 @@ function Engine:start()
 	assert(self.phase == "setup", "Engine: already started")
 	local rng = self.rng
 
-	-- characters: draw at random, one of each (rulebook)
-	local pool = copyList(Characters.ids)
-	rng:shuffle(pool)
-	for i, p in self.players do
+	-- characters: picks are kept (two players may pick the same one); anyone without a
+	-- pick gets a random character, preferring ones nobody has
+	for _, p in self.players do
 		if p.character == nil or Characters.get(p.character) == nil then
-			-- skip characters already claimed by presets
-			local pick
-			for j, c in pool do
+			local free = {}
+			for _, c in Characters.ids do
 				local taken = false
 				for _, other in self.players do
 					if other.character == c then
@@ -217,38 +298,34 @@ function Engine:start()
 					end
 				end
 				if not taken then
-					pick = table.remove(pool, j)
-					break
+					table.insert(free, c)
 				end
 			end
-			p.character = pick or Characters.ids[((i - 1) % #Characters.ids) + 1]
+			p.character = if #free > 0 then rng:pick(free) else rng:pick(Characters.ids)
 		end
 	end
 
-	-- turn order: Overseer always first, everyone else shuffled
+	-- turn order: shuffled
 	local order = {}
 	for _, p in self.players do
-		if p.character ~= "overseer" then
-			table.insert(order, p.index)
-		end
+		table.insert(order, p.index)
 	end
 	rng:shuffle(order)
-	for _, p in self.players do
-		if p.character == "overseer" then
-			table.insert(order, 1, p.index)
-		end
-	end
 	self.turnOrder = order
 
-	-- natural traps and pre-set dangers from the map
+	-- natural hazards and map traps
 	for tile, kind in self.board.naturalInit do
 		self.natural[tile] = kind
 	end
 	for tile, item in self.map.startingPlaced or {} do
-		self:_addPlaced(tile, item, 0, nil)
+		if Items.isHidden(item) then
+			self:_addTrap(tile, item, 0, nil, true)
+		else
+			self:_addPlaced(tile, item, 0, nil)
+		end
 	end
 
-	-- tokens: a random token on every token spot (rulebook), at least one Potion Seller
+	-- tokens: a random token on every token spot, at least one Potion Seller
 	local spots = copyList(self.board.tokenSpots)
 	for _, tile in spots do
 		self.tokens[tile] = rng:weighted(Config.TokenWeights)
@@ -278,24 +355,47 @@ function Engine:start()
 	end
 	self:_emit(setup)
 
-	-- starting cards
-	for _, p in self.players do
-		local dealt = {}
-		if p.character == "trapper" then
-			for _ = 1, Rules.TrapperStartingTraps do
-				table.insert(dealt, rng:pick(Items.trapIds))
-			end
-		elseif p.character == "fire_starter" then
-			for _ = 1, Rules.FireStarterStartingFires do
-				table.insert(dealt, "fire")
-			end
+	-- starting cards: one assist card each, plus the Trapper's trap and the Fire Starter's Fire
+	local starters = {}
+	for _, id in Items.wheels.assist do
+		if id ~= "coin" and id ~= "bkb" then
+			table.insert(starters, id)
 		end
-		if #dealt > 0 then
-			for _, item in dealt do
+	end
+	for _, p in self.players do
+		local dealt = { rng:pick(starters) }
+		if p.character == "trapper" then
+			local traps = {}
+			for _, id in Items.trapIds do
+				if id ~= "wall" then
+					table.insert(traps, id)
+				end
+			end
+			table.insert(dealt, rng:pick(traps))
+		elseif p.character == "fire_starter" then
+			table.insert(dealt, "fire")
+		end
+		for _ = 1, self.mut.startTraps or 0 do
+			local traps = {}
+			for _, id in Items.trapIds do
+				if id ~= "wall" then
+					table.insert(traps, id)
+				end
+			end
+			table.insert(dealt, rng:pick(traps))
+		end
+		for _, item in dealt do
+			if #p.hand < Rules.HandLimit then
 				table.insert(p.hand, item)
 			end
-			self:_emit({ t = "deal", p = p.index, items = dealt })
 		end
+		self:_emit({
+			t = "deal",
+			p = p.index,
+			items = dealt,
+			secret = { seat = p.index },
+			alt = { t = "deal", p = p.index, count = #dealt },
+		})
 	end
 
 	self.phase = "action"
@@ -325,7 +425,6 @@ function Engine:_advance()
 		if self.turnPtr > #self.turnOrder then
 			self.turnPtr = 1
 			self.round += 1
-			self:_onNewRound()
 			if self.round > self.maxRounds then
 				self:_gameOver(nil, "rounds")
 				return
@@ -342,16 +441,68 @@ function Engine:_beginTurn(): boolean
 	local p = self.players[seat]
 	self.current = seat
 	self.turnCount += 1
-	self.turn = { armed = {}, abilityUsed = false, number = self.turnCount }
+	self.landings = 0
+	self.turn = {
+		number = self.turnCount,
+		dice = {},
+		cardsPlayed = 0,
+		abilityUsed = false,
+		boost = nil,
+		canShop = false,
+	}
 	self.phase = "action"
 	self:_emit({ t = "turn", p = seat, round = self.round, n = self.turnCount })
+	self:_clearEmbers(seat)
 	if p.status.skip > 0 then
 		p.status.skip -= 1
 		self:_emit({ t = "skip", p = seat })
 		self.turn = nil
 		return false
 	end
+	if p.status.burning > 0 then
+		-- Burning: hop back a tile (it can land you on something nasty)
+		p.status.burning -= 1
+		self:_emit({ t = "burn", p = seat, left = p.status.burning })
+		self:_shiftBack(p, 1, "burn")
+		self:_land(p, true)
+		if p.status.burning == 0 then
+			self:_emit({ t = "status", p = seat, status = "burning", on = false })
+		end
+		if self.phase == "over" then
+			return true
+		end
+	end
+	self:_roll(p, false)
 	return true
+end
+
+-- Rolls the current player's dice: two, or one while Frozen.
+function Engine:_roll(p, reroll: boolean)
+	local frozen = false
+	if reroll then
+		frozen = #self.turn.dice == 1
+	elseif p.status.frozen > 0 then
+		frozen = true
+		p.status.frozen -= 1
+	end
+	-- Frozen: one die, and you shuffle along at half speed (rounded up)
+	local dice
+	if frozen then
+		dice = { halve(self.rng:int(1, 6)) }
+	else
+		dice = {}
+		for _ = 1, math.clamp(self.mut.diceCount or 2, 2, 3) do
+			table.insert(dice, self.rng:int(1, 6))
+		end
+	end
+	self.turn.dice = dice
+	if #dice == 2 and dice[1] == dice[2] then
+		p.stats.doubles += 1
+	end
+	self:_emit({ t = "roll", p = p.index, dice = copyList(dice), frozen = frozen, reroll = reroll })
+	if frozen and not reroll and p.status.frozen == 0 then
+		self:_emit({ t = "status", p = p.index, status = "frozen", on = false })
+	end
 end
 
 function Engine:_finishTurn()
@@ -362,40 +513,13 @@ function Engine:_finishTurn()
 	self:_advance()
 end
 
-function Engine:_onNewRound()
-	for _, p in self.players do
-		local def = Characters.get(p.character)
-		local ab = def and def.ability
-		if ab and ab.recharge == "rounds" and not p.ability.ready then
-			p.ability.progress += 1
-			if p.ability.progress >= ab.amount then
-				p.ability.ready = true
-				p.ability.progress = 0
-				self:_emit({ t = "recharge", p = p.index })
-			end
-		end
-	end
-end
-
-function Engine:_onCycleComplete(p)
-	local def = Characters.get(p.character)
-	local ab = def and def.ability
-	if ab and ab.recharge == "cycles" and not p.ability.ready then
-		p.ability.progress += 1
-		if p.ability.progress >= self.rechargeCycles then
-			p.ability.ready = true
-			p.ability.progress = 0
-			self:_emit({ t = "recharge", p = p.index })
-		end
-	end
-end
-
 ---------------------------------------------------------------------------
 -- board layer helpers
 ---------------------------------------------------------------------------
 
 function Engine:_addPlaced(tile: number, item: string, owner: number, dir: string?)
-	local entry = { item = item, owner = owner, uses = Rules.PlacedUses[item], dir = dir }
+	local p = self.players[owner]
+	local entry = { item = item, owner = owner, team = p and p.team, uses = Rules.PlacedUses[item], dir = dir }
 	if item == "conveyor" then
 		local tiles = self.board:span(tile, Rules.ConveyorLength)
 		assert(tiles, "Engine: conveyor span invalid")
@@ -407,6 +531,7 @@ function Engine:_addPlaced(tile: number, item: string, owner: number, dir: strin
 		table.insert(self.teleporters, tile)
 	end
 	self.placed[tile] = entry
+	return entry
 end
 
 function Engine:_removePlaced(tile: number, reason: string)
@@ -429,16 +554,10 @@ function Engine:_removePlaced(tile: number, reason: string)
 	self:_emit({ t = "removed", tile = tile, item = entry.item, reason = reason })
 end
 
--- One trigger of a placed item: decrements uses and removes it when spent.
+-- One trigger of a visible piece: decrements uses and removes it when spent.
 function Engine:_usePlaced(tile: number)
 	local entry = self.placed[tile]
-	if not entry then
-		return
-	end
-	if entry.uses == nil then
-		if Items.isTrap(entry.item) or entry.item == "spore_warper" then
-			self:_removePlaced(tile, "used")
-		end
+	if not entry or entry.uses == nil then
 		return
 	end
 	entry.uses -= 1
@@ -456,9 +575,88 @@ function Engine:_teleportPartner(tile: number): number?
 	return self.teleporters[partnerIndex]
 end
 
--- Placement rules, shared with the client (it passes layers rebuilt from a snapshot).
--- layers = { placed, cover, natural, tokens, teleporters? }
-function Engine.checkPlacement(board, layers, itemId: string, tile: number, dir: string?): (boolean, string?)
+-- Embers (Blast Off) --------------------------------------------------------
+
+function Engine:_clearEmbers(seat: number)
+	local tiles = {}
+	for tile, e in self.embers do
+		if e.owner == seat then
+			table.insert(tiles, tile)
+		end
+	end
+	if #tiles > 0 then
+		table.sort(tiles)
+		for _, tile in tiles do
+			self.embers[tile] = nil
+		end
+		self:_emit({ t = "embersOut", p = seat, tiles = tiles })
+	end
+end
+
+-- Hidden traps -------------------------------------------------------------
+
+function Engine:_addTrap(tile: number, item: string, owner: number, team: number?, public: boolean?)
+	self.placeOrder += 1
+	local trap = { item = item, owner = owner, team = team, order = self.placeOrder, public = public == true, seenBy = {} }
+	local list = self.traps[tile]
+	if not list then
+		list = {}
+		self.traps[tile] = list
+	end
+	table.insert(list, trap)
+	return trap
+end
+
+function Engine:_takeTrap(tile: number, trap)
+	local list = self.traps[tile]
+	if not list then
+		return
+	end
+	local i = table.find(list, trap)
+	if i then
+		table.remove(list, i)
+	end
+	if #list == 0 then
+		self.traps[tile] = nil
+	end
+end
+
+-- Every hidden trap a player owns, oldest first: { {tile, trap}, ... }
+function Engine:trapsOf(seat: number)
+	local out = {}
+	for tile, list in self.traps do
+		for _, trap in list do
+			if trap.owner == seat then
+				table.insert(out, { tile = tile, trap = trap })
+			end
+		end
+	end
+	table.sort(out, function(a, b)
+		return a.trap.order < b.trap.order
+	end)
+	return out
+end
+
+-- The secret that goes with an event about `trap`: who may know about it.
+local function trapSecret(trap)
+	if trap.public then
+		return nil
+	end
+	return { team = trap.team, overseer = true }
+end
+
+---------------------------------------------------------------------------
+-- placement rules
+---------------------------------------------------------------------------
+
+--[[
+	Placement rules, shared with the client (it passes layers rebuilt from a snapshot).
+	layers = { placed, cover, natural, tokens, traps? }   `traps` only holds what the
+	placer can see; hidden traps they can't see never block a tile.
+	ctx = { from = tile, range = number?, seat = number?, team = number? }
+	(range nil = anywhere on the board)
+]]
+function Engine.checkPlacement(board, layers, itemId: string, tile: number, dir: string?, ctx): (boolean, string?)
 	local def = Items.get(itemId)
 	if not def or def.use ~= "place" then
 		return false, "That card can't be placed."
@@ -466,6 +664,7 @@ function Engine.checkPlacement(board, layers, itemId: string, tile: number, dir:
 	if type(tile) ~= "number" or board.tiles[tile] == nil then
 		return false, "Pick a tile on the board."
 	end
+	ctx = ctx or {}
 	local function free(t: number): (boolean, string?)
 		if board:isSpecial(t) then
 			return false, "Not on the Start or Treasure tile."
@@ -474,15 +673,26 @@ function Engine.checkPlacement(board, layers, itemId: string, tile: number, dir:
 			return false, "That tile already has a token."
 		end
 		if layers.natural[t] then
-			return false, "A natural trap is already there."
+			return false, "A hazard is already there."
 		end
 		if layers.placed[t] or layers.cover[t] then
-			return false, "Something is already placed there."
+			return false, "Something is already there."
 		end
 		if board.tiles[t].kind == "shortcutGate" then
 			return false, "Not on a shortcut gate."
 		end
+		local mine = layers.traps and layers.traps[t]
+		if mine then
+			for _, trap in mine do
+				if trap.public or (ctx.team ~= nil and trap.team == ctx.team) then
+					return false, "There's already a trap there."
+				end
+			end
+		end
 		return true, nil
+	end
+	if ctx.range ~= nil and ctx.from ~= nil and board:raceDistance(ctx.from, tile) > ctx.range then
+		return false, "Too far: place it within " .. ctx.range .. " tiles of you."
 	end
 	if itemId == "conveyor" then
 		if dir ~= "fwd" and dir ~= "back" then
@@ -510,16 +720,59 @@ function Engine.checkPlacement(board, layers, itemId: string, tile: number, dir:
 	return true, nil
 end
 
-function Engine:canPlace(itemId: string, tile: number, dir: string?): (boolean, string?)
-	return Engine.checkPlacement(self.board, self, itemId, tile, dir)
+-- The placement context for player `p` (how far from them they may place). `mut` is
+-- the game's event twist, if any.
+function Engine.placeContext(p, mut: { [string]: any }?)
+	return {
+		from = p.tile,
+		range = if p.character == "trapper" then nil else ((mut and mut.trapRange) or Rules.TrapRange),
+		seat = p.index,
+		team = p.team,
+	}
+end
+
+-- The board as `seat` sees it, for placement checks.
+function Engine:layersFor(seat: number)
+	local traps = {}
+	for tile, list in self.traps do
+		for _, trap in list do
+			if self:canSee(seat, trap) then
+				traps[tile] = traps[tile] or {}
+				table.insert(traps[tile], trap)
+			end
+		end
+	end
+	return { placed = self.placed, cover = self.cover, natural = self.natural, tokens = self.tokens, traps = traps }
+end
+
+function Engine:canPlace(p, itemId: string, tile: number, dir: string?): (boolean, string?)
+	return Engine.checkPlacement(self.board, self:layersFor(p.index), itemId, tile, dir, Engine.placeContext(p, self.mut))
+end
+
+-- Overgrow: a free tile near the Naturalist (no token, piece, hazard or special tile).
+function Engine:canGrow(p, tile: number): (boolean, string?)
+	local board = self.board
+	if type(tile) ~= "number" or board.tiles[tile] == nil then
+		return false, "Pick a tile on the board."
+	end
+	if board:raceDistance(p.tile, tile) > CharCfg.naturalist.range then
+		return false, "Too far: grow it within " .. CharCfg.naturalist.range .. " tiles of you."
+	end
+	if board:isSpecial(tile) or board.tiles[tile].kind == "shortcutGate" then
+		return false, "Not on that tile."
+	end
+	if self.tokens[tile] or self.natural[tile] or self.placed[tile] or self.cover[tile] then
+		return false, "Something is already there."
+	end
+	return true, nil
 end
 
 ---------------------------------------------------------------------------
--- cards
+-- cards, coins and power
 ---------------------------------------------------------------------------
 
 function Engine:_giveCard(p, item: string, source: string?)
-	if #p.hand >= Rules.HandLimit or count(p.hand, item) >= Rules.PerItemLimit then
+	if #p.hand >= Rules.HandLimit then
 		self:_emit({ t = "handFull", p = p.index, item = item })
 		return false
 	end
@@ -528,105 +781,103 @@ function Engine:_giveCard(p, item: string, source: string?)
 	return true
 end
 
+function Engine:_addCoins(p, n: number, why: string)
+	if n <= 0 then
+		return
+	end
+	p.coins += n
+	p.stats.coins += n
+	self:_emit({ t = "coin", p = p.index, coins = p.coins, gain = n, why = why })
+end
+
 function Engine:_spin(p, wheel: string)
 	local segments = Items.wheels[wheel]
 	local index = self.rng:int(1, #segments)
 	local segment = segments[index]
-	local result = segment
-	if segment == "bkb" then
-		result = if p.character == "naturalist" then self.map.naturalCard else self.map.counterItem
-	end
+	local result = if segment == "bkb" then self.map.counterItem else segment
 	p.stats.spins += 1
 	self:_emit({ t = "spin", p = p.index, wheel = wheel, index = index, result = result })
 	if result == "coin" then
-		p.coins += 1
-		self:_emit({ t = "coin", p = p.index, coins = p.coins })
+		self:_addCoins(p, 1, "wheel")
 	else
 		self:_giveCard(p, result, wheel)
 	end
 end
 
----------------------------------------------------------------------------
--- statuses, death, treasure
----------------------------------------------------------------------------
-
-function Engine:_setStatus(p, status: string, source: string)
-	if status == "frozen" and p.character == "mage" then
-		self:_emit({ t = "immune", p = p.index, what = "ice" })
-		return
-	end
-	p.status[status] = true
-	self:_emit({ t = "status", p = p.index, status = status, on = true, source = source })
+function Engine.powerCap(p): number
+	return Characters.cost(p.character)
 end
 
-function Engine:_clearCycleStatuses(p)
-	p.status.burning = false
-	p.status.frozen = false
-	p.status.boots = false
-	p.status.held = false
+function Engine:_gainPower(p, n: number)
+	local cap = Engine.powerCap(p)
+	local before = p.power
+	p.power = math.clamp(p.power + n, 0, cap)
+	if p.power ~= before then
+		self:_emit({ t = "power", p = p.index, power = p.power, gain = p.power - before, full = p.power >= cap })
+	end
+end
+
+---------------------------------------------------------------------------
+-- statuses, knockouts, treasure
+---------------------------------------------------------------------------
+
+function Engine:_setStatus(p, status: string, source: string, turns: number?)
+	if status == "frozen" then
+		if p.character == "mage" then
+			self:_emit({ t = "immune", p = p.index, what = "frozen" })
+			return
+		end
+		p.status.frozen = math.max(p.status.frozen, turns or Rules.FrozenTurns)
+		self:_emit({ t = "status", p = p.index, status = "frozen", on = true, turns = p.status.frozen, source = source })
+	elseif status == "burning" then
+		p.status.burning = math.max(p.status.burning, Rules.BurningTurns)
+		self:_emit({ t = "status", p = p.index, status = "burning", on = true, turns = p.status.burning, source = source })
+	elseif status == "snared" then
+		p.status.skip += 1
+		self:_emit({ t = "snared", p = p.index, source = source })
+	end
 end
 
 function Engine:_sendToStart(p, kind: string)
 	p.tile = self.board.start
 	p.trail = { self.board.start }
-	self:_clearCycleStatuses(p)
 	self:_emit({ t = "move", p = p.index, path = { self.board.start }, kind = kind })
 end
 
--- Returns true if the player actually died.
-function Engine:_kill(p, cause: string, fromTrap: boolean): boolean
+-- Knocked out (Spike, Grog): back to the Start. Returns true if it happened.
+function Engine:_knockout(p, cause: string, by: number?): boolean
 	if removeCard(p, "phoenix_potion") then
 		self:_emit({ t = "phoenix", p = p.index, cause = cause })
 		return false
 	end
-	local doubled = p.status.burning or (fromTrap and p.character == "naturalist")
-	local lost = false
-	if doubled and not p.finished and p.treasures > 0 then
-		p.treasures -= 1
-		lost = true
-	end
 	p.stats.deaths += 1
-	self:_emit({ t = "death", p = p.index, cause = cause, lost = lost, treasures = p.treasures })
+	local killer = by and self.players[by]
+	if killer and killer ~= p then
+		killer.stats.kos += 1
+	end
+	self:_emit({ t = "death", p = p.index, cause = cause, by = by })
 	self:_sendToStart(p, "respawn")
 	return true
 end
 
-function Engine:_reachTreasure(p)
-	p.laps += 1
-	if p.finished then
-		-- (rulebook) a finished player keeps playing to help their team, but their laps
-		-- don't count towards anyone's treasures and earn nothing
-		self:_emit({ t = "lap", p = p.index })
-		self:_onCycleComplete(p)
-		self:_sendToStart(p, "home")
-		return
-	end
-	p.treasures += 1
-	p.coins += Rules.CoinsPerTreasure
-	self:_emit({ t = "treasure", p = p.index, treasures = p.treasures, coins = p.coins })
-	self:_onCycleComplete(p)
-	self:_sendToStart(p, "home")
-	if p.treasures >= self.target then
-		p.finished = true
-		self:_emit({ t = "finished", p = p.index })
-		self:_checkWin(p)
-	end
-end
-
-function Engine:_checkWin(p)
-	if self.phase == "over" then
-		return
-	end
-	if not self.mode.isTeam then
-		self:_gameOver(p.team, "treasure")
-		return
-	end
-	for _, other in self.players do
-		if other.team == p.team and not other.finished then
-			return
+function Engine:teamTreasures(team: number): number
+	local n = 0
+	for _, p in self.players do
+		if p.team == team then
+			n += p.treasures
 		end
 	end
-	self:_gameOver(p.team, "treasure")
+	return n
+end
+
+function Engine:_reachTreasure(p)
+	p.treasures += 1
+	self:_emit({ t = "treasure", p = p.index, treasures = p.treasures, team = self:teamTreasures(p.team) })
+	self:_addCoins(p, Rules.CoinsPerTreasure, "treasure")
+	self:_sendToStart(p, "home")
+	if self:teamTreasures(p.team) >= self.teamTarget then
+		self:_gameOver(p.team, "treasure")
+	end
 end
 
 function Engine:score(p): number
@@ -705,134 +956,156 @@ end
 -- movement
 ---------------------------------------------------------------------------
 
--- Where a dice walk goes next from `cur`. Gated shortcuts need a Key (or the Naturalist).
-function Engine:_peekNext(p, cur: number, keys: number): (number?, boolean)
-	local sc = self.board.shortcut[cur]
-	if sc and (p.character == "naturalist" or keys > 0) then
-		return sc, p.character ~= "naturalist"
-	end
-	return self.board.nextMain[cur], false
-end
+--[[
+	Where a forward walk of `m` steps goes, without changing anything. Used for the
+	real walk, for previews on screen and by bots. `state` needs: board, natural,
+	placed, and the walker `p` (tile, trail, hand, character, status.boots).
 
--- The tiles a dice walk of `m` steps would visit (no side effects).
-function Engine:projectPath(p, m: number): { number }
-	local path = {}
-	local cur = p.tile
+	Returns {
+		path = { tiles }, tile = landing tile,
+		result = "landed" | "stopped" (river/gate) | "blocked" (wall) | "treasure",
+		uses = { "key" | "bridge" | "boots" | "shield", ... } in order, with the tile,
+		slowed = tile where slime slowed you (or nil), crumbles = { wall tiles passed },
+	}
+]]
+function Engine.walkPlan(state, p, m: number)
+	local board = state.board
 	local keys = count(p.hand, "key")
-	for _ = 1, m do
-		local nxt, usedKey = self:_peekNext(p, cur, keys)
+	local bridges = count(p.hand, "bridge")
+	local boots = count(p.hand, "boots")
+	local shields = count(p.hand, "shield")
+	local wild = p.character == "naturalist"
+	local plan = { path = {}, tile = p.tile, result = "landed", uses = {}, slowed = nil, crumbles = {} }
+	local wallsBlock = m < Rules.WallPassMin
+	local cur = p.tile
+	local left = m
+	while left > 0 do
+		local nxt
+		local sc = board.shortcut[cur]
+		if sc and keys > 0 then
+			keys -= 1
+			table.insert(plan.uses, { item = "key", tile = sc, why = "shortcut" })
+			nxt = sc
+		else
+			nxt = board.nextMain[cur]
+		end
 		if not nxt then
 			break
 		end
-		if usedKey then
-			keys -= 1
+		-- walls: you can't move past one unless you move 5+; landing on it is fine
+		local piece = state.placed[nxt]
+		if piece and piece.item == "wall" and left > 1 then
+			if wallsBlock then
+				if shields > 0 then
+					shields -= 1
+					table.insert(plan.uses, { item = "shield", tile = nxt, why = "wall" })
+					table.insert(plan.crumbles, nxt)
+				else
+					plan.result = "blocked"
+					plan.blockedAt = nxt
+					break
+				end
+			else
+				table.insert(plan.crumbles, nxt)
+			end
 		end
-		table.insert(path, nxt)
 		cur = nxt
-		if nxt == self.board.treasure then
+		table.insert(plan.path, nxt)
+		left -= 1
+		if nxt == board.treasure then
+			plan.result = "treasure"
 			break
 		end
+		-- hazards stop you on them, unless you carry the card that gets you past
+		local nat = state.natural[nxt]
+		if nat and not wild and left > 0 then
+			local counter = Items.naturalCounter[nat]
+			local have = if counter == "key" then keys elseif counter == "bridge" then bridges else boots
+			if have > 0 then
+				if counter == "key" then
+					keys -= 1
+				elseif counter == "bridge" then
+					bridges -= 1
+				else
+					boots -= 1
+				end
+				table.insert(plan.uses, { item = counter, tile = nxt })
+			else
+				plan.result = "stopped"
+				plan.hazard = nat
+				break
+			end
+		end
 	end
-	return path
+	plan.tile = cur
+	return plan
 end
 
--- Dice walk. Returns "landed" | "blocked" | "stopped" | "treasure".
-function Engine:_walk(p, m: number): string
-	local board = self.board
+-- A backward walk retraces your trail (Moonwalk). Hazards and walls don't stop it.
+function Engine.backPlan(p, m: number)
+	local trail = p.trail
 	local path = {}
-	local crumbled = {}
+	local n = math.min(m, #trail - 1)
+	for i = 1, n do
+		table.insert(path, trail[#trail - i])
+	end
+	return { path = path, tile = if #path > 0 then path[#path] else p.tile, result = "landed", uses = {}, crumbles = {} }
+end
+
+function Engine:_walk(p, m: number): string
+	local plan = Engine.walkPlan(self, p, m)
+	local path = {}
 	local function flush()
 		if #path > 0 then
 			self:_emit({ t = "move", p = p.index, path = path, kind = "walk" })
 			path = {}
 		end
 	end
-	local wallsBlock = m < Rules.WallPassMin
-	local steps = 0
-	local result = "landed"
-	while steps < m do
-		local cur = p.tile
-		local nxt, usesKey = self:_peekNext(p, cur, count(p.hand, "key"))
-		if not nxt then
-			break
-		end
-		if usesKey then
-			removeCard(p, "key")
+	local useAt = {}
+	for _, u in plan.uses do
+		useAt[u.tile] = useAt[u.tile] or {}
+		table.insert(useAt[u.tile], u)
+	end
+	local function applyUses(tile: number)
+		for _, u in useAt[tile] or {} do
 			flush()
-			self:_emit({ t = "useCard", p = p.index, item = "key", tile = nxt, why = "shortcut" })
-		end
-		-- walls: you can't move past one unless you move 5+; landing on it is fine
-		local entry = self.placed[nxt]
-		if entry and entry.item == "wall" and steps + 1 < m then
-			if wallsBlock then
-				if removeCard(p, "shield") then
-					flush()
-					self:_emit({ t = "shield", p = p.index, item = "wall", tile = nxt })
-					table.insert(crumbled, nxt)
-				else
-					flush()
-					self:_emit({ t = "blocked", p = p.index, tile = nxt })
-					result = "blocked"
-					break
-				end
+			if u.item == "shield" then
+				removeCard(p, "shield")
+				self:_emit({ t = "shield", p = p.index, item = "wall", tile = tile })
 			else
-				table.insert(crumbled, nxt)
-			end
-		end
-		p.tile = nxt
-		table.insert(p.trail, nxt)
-		table.insert(path, nxt)
-		steps += 1
-		if nxt == board.treasure then
-			result = "treasure"
-			break
-		end
-		local nat = self.natural[nxt]
-		if nat and p.character ~= "naturalist" then
-			if nat == "river" then
-				if removeCard(p, "bridge") then
-					flush()
-					self:_emit({ t = "useCard", p = p.index, item = "bridge", tile = nxt })
-				else
-					-- (digital) the rulebook only says a Bridge gets you across; without one
-					-- you fall in and your move ends at the river
-					flush()
-					self:_emit({ t = "natural", p = p.index, kind = "river", tile = nxt })
-					result = "stopped"
-					break
-				end
-			elseif nat == "gate" then
-				if removeCard(p, "key") then
-					flush()
-					self:_emit({ t = "useCard", p = p.index, item = "key", tile = nxt })
-				else
-					flush()
-					p.status.held = true
-					self:_emit({ t = "natural", p = p.index, kind = "gate", tile = nxt })
-					result = "stopped"
-					break
-				end
+				removeCard(p, u.item)
+				self:_emit({ t = "useCard", p = p.index, item = u.item, tile = tile, why = u.why })
 			end
 		end
 	end
+	for _, tile in plan.path do
+		applyUses(tile)
+		p.tile = tile
+		table.insert(p.trail, tile)
+		table.insert(path, tile)
+		p.stats.tiles += 1
+	end
 	flush()
-	for _, tile in crumbled do
+	if plan.result == "blocked" then
+		self:_emit({ t = "blocked", p = p.index, tile = plan.blockedAt })
+	elseif plan.result == "stopped" then
+		self:_emit({ t = "natural", p = p.index, kind = plan.hazard, tile = p.tile })
+	end
+	for _, tile in plan.crumbles do
 		if self.placed[tile] and self.placed[tile].item == "wall" then
 			self:_removePlaced(tile, "crumble")
 		end
 	end
-	return result
+	return plan.result
 end
 
--- Forced movement (traps, potions, abilities). Nothing on the way counts; callers
--- then resolve the tile it ends on with _land(p, true).
+-- Forced movement (traps, bonks, potions, abilities). Callers then resolve the tile it
+-- ends on with _land(p, true).
 function Engine:_shiftForward(p, n: number, kind: string)
 	local board = self.board
 	local path = {}
-	p.status.held = false
 	for _ = 1, n do
-		local cur = p.tile
-		local nxt = (p.character == "naturalist" and board.shortcut[cur]) or board.nextMain[cur]
+		local nxt = board.nextMain[p.tile]
 		if not nxt then
 			break
 		end
@@ -852,7 +1125,6 @@ end
 
 function Engine:_shiftBack(p, n: number, kind: string)
 	local path = {}
-	p.status.held = false
 	for _ = 1, n do
 		if #p.trail <= 1 then
 			break
@@ -877,7 +1149,6 @@ end
 function Engine:_warpTo(p, tile: number, kind: string, trail: { number }?)
 	p.tile = tile
 	p.trail = if trail then copyList(trail) else copyList(self.board.pathFromStart[tile])
-	p.status.held = false
 	self:_emit({ t = "move", p = p.index, path = { tile }, kind = kind })
 end
 
@@ -886,8 +1157,6 @@ function Engine:_swap(a, b, kind: string)
 	local trailA, trailB = a.trail, b.trail
 	a.tile, b.tile = tb, ta
 	a.trail, b.trail = trailB, trailA
-	a.status.held = false
-	b.status.held = false
 	self:_emit({ t = "swap", a = a.index, b = b.index, kind = kind, ta = a.tile, tb = b.tile })
 end
 
@@ -913,14 +1182,15 @@ end
 -- landing
 ---------------------------------------------------------------------------
 
--- One action can chain landings (pushed onto Mud, back onto a Conveyor...). Placed
--- traps wear out so chains end on their own; this is only a safety net.
-local MAX_LANDINGS = 12
+-- One action can chain landings (bonked onto a Mudslide, back onto a belt...). Pieces
+-- wear out so chains end on their own; this is only a safety net.
+local MAX_LANDINGS = 16
 
--- Resolves the tile `p` ended up on. Every way of arriving counts: a dice walk, a
--- trap pushing you, a Nudge, Telepathy, a swap, a conveyor ride... `forced` is true
--- for anything but a walk (a walk already dealt with the gates it went through).
-function Engine:_land(p, forced: boolean?)
+-- Resolves the tile `p` ended up on. Every way of arriving counts: a walk, a trap
+-- pushing you, a bonk, a Nudge, a swap, a belt... `forced` is true for anything but
+-- the current player's own move. `teleported`: you just came through a teleporter, so
+-- the one you arrive on doesn't send you straight back.
+function Engine:_land(p: any, forced: boolean?, teleported: boolean?): ()
 	if self.phase == "over" then
 		return
 	end
@@ -937,36 +1207,57 @@ function Engine:_land(p, forced: boolean?)
 		self:_rideConveyor(p, origin)
 		return
 	end
-	local entry = self.placed[tile]
-	if entry then
-		if entry.item == "wall" then
-			self:_emit({ t = "trigger", p = p.index, tile = tile, item = "wall", owner = entry.owner })
+	-- hidden traps (other teams' traps go off, oldest first)
+	local list = self.traps[tile]
+	if list then
+		for _, trap in copyList(list) do
+			if trap.public or trap.team ~= p.team then
+				local deaths = p.stats.deaths
+				self:_triggerTrap(p, tile, trap)
+				if p.tile ~= tile or p.stats.deaths ~= deaths or self.phase == "over" then
+					return
+				end
+			end
+		end
+	end
+	local ember = self.embers[tile]
+	if ember and ember.team ~= p.team then
+		self:_emit({ t = "scorch", p = p.index, tile = tile, owner = ember.owner })
+		self:_setStatus(p, "burning", "embers")
+	end
+	local piece = self.placed[tile]
+	if piece and not (teleported and piece.item == "teleporter") then
+		if piece.item == "wall" then
+			self:_emit({ t = "trigger", p = p.index, tile = tile, item = "wall", owner = piece.owner })
 			self:_removePlaced(tile, "crumble")
 		else
-			local deaths = p.stats.deaths
-			self:_trigger(p, tile, entry)
-			if p.tile ~= tile or p.stats.deaths ~= deaths or self.phase == "over" then
+			self:_triggerPiece(p, tile, piece)
+			if p.tile ~= tile or self.phase == "over" then
 				return
 			end
 		end
 	end
-	-- (digital) put onto a locked gate: it holds you unless you carry a Key
-	if forced and self.natural[tile] == "gate" and p.character ~= "naturalist" and not p.status.held then
-		if removeCard(p, "key") then
-			self:_emit({ t = "useCard", p = p.index, item = "key", tile = tile })
-		else
-			p.status.held = true
-			self:_emit({ t = "natural", p = p.index, kind = "gate", tile = tile })
+	-- bonk everyone from another team standing here
+	if not forced or Rules.BonkChain then
+		for _, other in self.players do
+			if other ~= p and other.tile == tile and other.team ~= p.team and p.tile == tile then
+				self:_bonk(p, other)
+				if self.phase == "over" then
+					return
+				end
+			end
 		end
+	end
+	if p.tile ~= tile then
+		return
 	end
 	local token = self.tokens[tile]
 	if token then
 		if token == "potion" then
-			-- the shop opens for whoever's turn it is (anyone else just passes by)
-			if p.index == self.current and self.turn then
+			-- the shop opens for the player whose turn it is, on their own move
+			if p.index == self.current and self.turn and self.turn.canShop then
 				self.phase = "shop"
 				self.turn.shopTile = tile
-				self.turn.shopResume = self.freeAction == true
 				self:_emit({ t = "shop", p = p.index, tile = tile })
 			end
 		else
@@ -976,7 +1267,26 @@ function Engine:_land(p, forced: boolean?)
 	end
 end
 
--- (digital) A used token jumps to a random free tile, so the board keeps changing.
+function Engine:_bonk(attacker, victim)
+	if removeCard(victim, "shield") then
+		self:_emit({ t = "shield", p = victim.index, item = "bonk", tile = victim.tile, by = attacker.index })
+		return
+	end
+	attacker.stats.bonks += 1
+	victim.stats.bonked += 1
+	self:_emit({ t = "bonk", p = attacker.index, target = victim.index, tile = victim.tile })
+	if attacker.character == "fire_starter" then
+		self:_setStatus(victim, "burning", "bonk")
+	end
+	self:_shiftBack(victim, self.mut.bonkBack or Rules.BonkBack, "bonk")
+	self:_land(victim, true)
+	if (Rules.BonkBounce or 0) > 0 and self.phase ~= "over" then
+		self:_shiftForward(attacker, Rules.BonkBounce, "bounce")
+		self:_land(attacker, true)
+	end
+end
+
+-- A used token jumps to a random free tile, so the board keeps changing.
 function Engine:_relocateToken(tile: number)
 	local kind = self.tokens[tile]
 	if not kind then
@@ -1018,94 +1328,101 @@ function Engine:_rideConveyor(p, origin: number)
 	end
 	self:_emit({ t = "trigger", p = p.index, tile = p.tile, item = "conveyor", owner = entry.owner, dir = entry.dir })
 	local tiles = entry.tiles
-	local steps
+	local pos = table.find(tiles, p.tile) or 1
+	self:_usePlaced(origin)
 	if entry.dir == "fwd" then
-		local pos = table.find(tiles, p.tile) or 1
-		steps = #tiles - pos + 1
-		self:_usePlaced(origin)
-		self:_shiftForward(p, steps, "conveyor")
+		self:_shiftForward(p, #tiles - pos + 1, "conveyor")
 	else
 		-- ride back off the start of the belt (retrace the trail)
-		local pos = table.find(tiles, p.tile) or 1
-		steps = pos
-		self:_usePlaced(origin)
-		self:_shiftBack(p, steps, "conveyor")
+		self:_shiftBack(p, pos, "conveyor")
 	end
 	self:_land(p, true)
 end
 
-function Engine:_trigger(p, tile: number, entry)
-	local item = entry.item
-	local def = Items.get(item)
-	self:_emit({ t = "trigger", p = p.index, tile = tile, item = item, owner = entry.owner })
-	if def.category == "trap" then
-		self:_usePlaced(tile)
-		if removeCard(p, "shield") then
-			self:_emit({ t = "shield", p = p.index, item = item, tile = tile })
-			return
-		end
-		local double = p.status.burning or p.character == "naturalist"
-		local mult = if double then 2 else 1
-		if item == "spike" then
-			self:_kill(p, "spike", true)
-		elseif item == "fire" then
-			self:_setStatus(p, "burning", "fire")
-		elseif item == "ice" then
-			self:_setStatus(p, "frozen", "ice")
-		elseif item == "mudslide" then
-			self:_shiftBack(p, Rules.MudslideBack * mult, "mudslide")
-			self:_land(p, true)
-		elseif item == "mud" then
-			self:_shiftBack(p, Rules.MudBack * mult, "mud")
-			self:_land(p, true)
-		elseif item == "snare" then
-			p.status.skip += 1
-			self:_emit({ t = "snared", p = p.index })
-		elseif item == "grog" then
-			local roll = self.rng:int(1, 6)
-			local survived = roll >= Rules.GrogSurviveMin
-			self:_emit({ t = "grog", p = p.index, roll = roll, survived = survived })
-			if not survived then
-				self:_kill(p, "grog", true)
-			end
-		end
+function Engine:_triggerTrap(p, tile: number, trap)
+	local item = trap.item
+	self:_takeTrap(tile, trap)
+	self:_emit({ t = "trigger", p = p.index, tile = tile, item = item, owner = trap.owner, hidden = not trap.public })
+	if removeCard(p, "shield") then
+		self:_emit({ t = "shield", p = p.index, item = item, tile = tile })
 		return
 	end
-	-- neutral cards
+	local owner = self.players[trap.owner]
+	if owner and owner ~= p then
+		owner.stats.gotchas += 1
+		self:_emit({ t = "gotcha", p = owner.index, target = p.index, item = item })
+		self:_addCoins(owner, Rules.CoinsPerGotcha, "gotcha")
+		self:_gainPower(owner, Rules.PowerPerGotcha)
+	end
+	local by = if owner then owner.index else nil
+	self:_trapEffect(p, item, by)
+	if owner and owner ~= p and owner.character == "trapper" and self.phase ~= "over" then
+		-- Bounty Hunter: the Trapper hops forward
+		self:_emit({ t = "bounty", p = owner.index })
+		self:_shiftForward(owner, CharCfg.trapper.bounty, "bounty")
+		self:_land(owner, true)
+	end
+end
+
+function Engine:_trapEffect(p, item: string, by: number?)
+	if item == "spike" then
+		self:_knockout(p, "spike", by)
+	elseif item == "grog" then
+		local roll = self.rng:int(1, 6)
+		local survived = roll >= Rules.GrogSurviveMin
+		self:_emit({ t = "grog", p = p.index, roll = roll, survived = survived })
+		if not survived then
+			self:_knockout(p, "grog", by)
+		end
+	elseif item == "fire" then
+		self:_setStatus(p, "burning", "fire")
+	elseif item == "ice" then
+		self:_setStatus(p, "frozen", "ice")
+	elseif item == "snare" then
+		self:_setStatus(p, "snared", "snare")
+	elseif item == "mudslide" then
+		self:_shiftBack(p, Rules.MudslideBack, "mudslide")
+		self:_land(p, true)
+	elseif item == "banana" then
+		if #p.hand > 0 then
+			local lost = table.remove(p.hand, self.rng:int(1, #p.hand))
+			self:_emit({ t = "drop", p = p.index, item = lost })
+		end
+		self:_shiftBack(p, Rules.BananaBack, "banana")
+		self:_land(p, true)
+	end
+end
+
+-- Visible pieces: teleporters, spore warpers, trampolines.
+function Engine:_triggerPiece(p, tile: number, piece)
+	local item = piece.item
+	self:_emit({ t = "trigger", p = p.index, tile = tile, item = item, owner = piece.owner })
 	if item == "teleporter" then
 		local partner = self:_teleportPartner(tile)
 		if partner then
 			self:_warpTo(p, partner, "teleport")
+			self:_land(p, true, true)
 		else
 			self:_emit({ t = "fizzle", p = p.index, item = item, tile = tile })
 		end
 	elseif item == "spore_warper" then
-		self:_usePlaced(tile)
+		self:_removePlaced(tile, "used")
 		if p.character == "warper" then
 			self:_emit({ t = "immune", p = p.index, what = "swap" })
 		else
 			local other = self:_nearestOther(p)
 			if other then
 				self:_swap(p, other, "spore")
-				self:_land(p, true)
-				self:_land(other, true)
+				self:_land(p, true, false)
+				self:_land(other, true, false)
 			else
 				self:_emit({ t = "fizzle", p = p.index, item = item, tile = tile })
 			end
 		end
-	elseif item == "shifting_sands" then
+	elseif item == "trampoline" then
 		self:_usePlaced(tile)
-		local k = p.treasures
-		local cycle = k + 1
-		self:_emit({ t = "sands", p = p.index, amount = k, forward = cycle % 2 == 0 })
-		if k > 0 then
-			if cycle % 2 == 0 then
-				self:_shiftForward(p, k, "sands")
-			else
-				self:_shiftBack(p, k, "sands")
-			end
-			self:_land(p, true)
-		end
+		self:_shiftForward(p, Rules.TrampolineForward, "trampoline")
+		self:_land(p, true, false)
 	end
 end
 
@@ -1134,6 +1451,7 @@ function Engine:command(seat: number, cmd)
 	local kind = cmd.type
 	local ok, err
 	self.landings = 0
+	self.turn.canShop = true
 	if self.phase == "shop" then
 		if kind == "buy" then
 			ok, err = self:_cmdBuy(p, cmd)
@@ -1142,12 +1460,16 @@ function Engine:command(seat: number, cmd)
 		else
 			return fail("Finish shopping first.")
 		end
-	elseif kind == "roll" then
-		ok, err = self:_cmdRoll(p)
-	elseif kind == "use" then
-		ok, err = self:_cmdUse(p, cmd)
-	elseif kind == "arm" then
-		ok, err = self:_cmdArm(p, cmd)
+	elseif self.phase == "pick" then
+		if kind == "pick" then
+			ok, err = self:_cmdPick(p, cmd)
+		else
+			return fail("Pick a card first.")
+		end
+	elseif kind == "move" then
+		ok, err = self:_cmdMove(p, cmd)
+	elseif kind == "play" then
+		ok, err = self:_cmdPlay(p, cmd)
 	elseif kind == "ability" then
 		ok, err = self:_cmdAbility(p, cmd)
 	elseif kind == "recall" then
@@ -1156,6 +1478,9 @@ function Engine:command(seat: number, cmd)
 		ok, err = self:_cmdGive(p, cmd)
 	else
 		return fail("Unknown command.")
+	end
+	if self.turn then
+		self.turn.canShop = false
 	end
 	if not ok then
 		-- nothing should have been emitted, but never leak half-done events
@@ -1169,98 +1494,105 @@ end
 function Engine:autoAct()
 	if self.phase == "shop" then
 		return self:command(self.current, { type = "shopDone" })
-	elseif self.phase == "action" then
-		return self:command(self.current, { type = "roll" })
+	elseif self.phase == "pick" then
+		return self:command(self.current, { type = "pick", index = 1 })
+	elseif self.phase == "action" and self.turn then
+		local dice = self.turn.dice
+		local die = 1
+		for i, d in dice do
+			if d > dice[die] then
+				die = i
+			end
+		end
+		return self:command(self.current, { type = "move", die = die })
 	end
 	return false, "Nothing to do.", {}
 end
 
-function Engine:_cmdRoll(p)
-	local rng = self.rng
-	local die = rng:int(1, 6)
-	local escaped = nil
-	if p.status.held then
-		if die < Rules.GateEscapeMin then
-			self:_emit({ t = "roll", p = p.index, die = die, move = 0, held = true, escaped = false, mods = {} })
-			self:_finishTurn()
-			return true
+-- The dice option `die` (1, 2 or "sum") for the current turn: steps and Power gained.
+function Engine:moveOption(die: any): (number?, number?)
+	local turn = self.turn
+	if not turn then
+		return nil, nil
+	end
+	local dice = turn.dice
+	if die == "sum" then
+		if #dice == 2 and dice[1] == dice[2] then
+			return dice[1] + dice[2], 0
 		end
-		p.status.held = false
-		escaped = true
+		return nil, nil
 	end
-	local m = die
-	local mods = {}
-	if p.status.frozen then
-		m = chill(m)
-		table.insert(mods, "frozen")
+	local i = tonumber(die)
+	if i == nil or i ~= math.floor(i) or dice[i :: number] == nil then
+		return nil, nil
 	end
-	local armed = self.turn and self.turn.armed or {}
-	local burning = p.status.burning
-	if armed.speed_boost and removeCard(p, "speed_boost") then
-		m = if burning then math.floor(m * 1.5) else m * 2
-		table.insert(mods, "speed_boost")
+	-- the best of the dice you don't move with charges your Power
+	local other = 0
+	for j, d in dice do
+		if j ~= i and d > other then
+			other = d
+		end
 	end
-	if armed.speed_potion and removeCard(p, "speed_potion") then
-		m += 1
-		table.insert(mods, "speed_potion")
+	return dice[i :: number], other
+end
+
+-- Applies the boost played this turn to a move of `m` steps: (steps, backwards).
+function Engine.boosted(m: number, boost: string?): (number, boolean)
+	local def = boost and Items.get(boost)
+	if not def then
+		return m, false
 	end
-	if armed.bounce_pad and removeCard(p, "bounce_pad") then
-		m += if burning then math.max(1, Rules.BounceForward // 2) else Rules.BounceForward
-		table.insert(mods, "bounce_pad")
+	if def.boost == "double" then
+		return m * 2, false
+	elseif def.boost == "plus" then
+		return m + (def.amount or 0), false
+	elseif def.boost == "back" then
+		return m, true
 	end
-	if self.turn then
-		self.turn.armed = {}
+	return m, false
+end
+
+function Engine:_cmdMove(p, cmd)
+	local m, gain = self:moveOption(cmd.die)
+	if not m then
+		return false, "Pick one of your dice."
 	end
-	-- slime: if the move would cross slime, the whole move is chilled (unless Boots)
-	if m > 0 and p.character ~= "naturalist" and not p.status.boots then
-		local crosses = false
-		for _, t in self:projectPath(p, m) do
-			if self.natural[t] == "slime" then
-				crosses = true
-				break
+	local backwards
+	m, backwards = Engine.boosted(m, self.turn.boost)
+	self:_emit({
+		t = "choose",
+		p = p.index,
+		die = cmd.die,
+		move = m,
+		back = backwards,
+		boost = self.turn.boost,
+	})
+	if (gain :: number) > 0 then
+		self:_gainPower(p, (gain :: number) * (self.mut.powerMult or 1))
+	end
+	self.turn.boost = nil
+	self.turn.moved = true
+	if backwards then
+		local plan = Engine.backPlan(p, m)
+		if #plan.path > 0 then
+			for _ = 1, #plan.path do
+				table.remove(p.trail)
 			end
+			p.tile = p.trail[#p.trail]
+			p.stats.tiles += #plan.path
+			self:_emit({ t = "move", p = p.index, path = plan.path, kind = "moonwalk" })
+			self:_land(p)
 		end
-		if crosses then
-			if removeCard(p, "boots") then
-				p.status.boots = true
-				table.insert(mods, "boots")
-			else
-				m = chill(m)
-				table.insert(mods, "slime")
-			end
-		end
-	end
-	self:_emit({ t = "roll", p = p.index, die = die, move = m, mods = mods, escaped = escaped })
-	if m > 0 then
+	else
 		local result = self:_walk(p, m)
 		if result == "treasure" then
 			self:_reachTreasure(p)
-		elseif result == "landed" or result == "blocked" then
+		else
 			self:_land(p)
 		end
 	end
 	if self.phase == "action" then
 		self:_finishTurn()
-	end
-	return true
-end
-
-function Engine:_cmdArm(p, cmd)
-	local item = cmd.item
-	local def = type(item) == "string" and Items.get(item)
-	if not def or def.use ~= "boost" then
-		return false, "That card isn't a boost."
-	end
-	if not hasCard(p, item) then
-		return false, "You don't have that card."
-	end
-	local armed = self.turn.armed
-	if armed[item] then
-		armed[item] = nil
-		self:_emit({ t = "arm", p = p.index, item = item, on = false })
-	else
-		armed[item] = true
-		self:_emit({ t = "arm", p = p.index, item = item, on = true })
 	end
 	return true
 end
@@ -1279,54 +1611,90 @@ function Engine:_validTarget(p, target, allowSelf: boolean): (any, string?)
 	return t, nil
 end
 
-function Engine:_cmdUse(p, cmd)
+function Engine:_cmdPlay(p, cmd)
 	local item = cmd.item
 	local def = type(item) == "string" and Items.get(item)
-	if not def then
+	if not def or def.category == "coin" then
 		return false, "Unknown card."
 	end
 	if not hasCard(p, item) then
 		return false, "You don't have that card."
 	end
+	if def.use == "passive" then
+		return false, "That card works by itself."
+	end
+	if self.turn.cardsPlayed >= Rules.CardsPerTurn then
+		return false, "You've already played a card this turn."
+	end
 	local use = def.use
 	if use == "place" then
 		local tile = tonumber(cmd.tile)
 		local dir = cmd.dir
-		local ok, why = self:canPlace(item, tile :: number, dir)
+		local ok, why = self:canPlace(p, item, tile :: number, dir)
 		if not ok then
 			return false, why
 		end
 		removeCard(p, item)
+		self:_spend(p, item)
 		p.stats.placed += 1
-		p.stats.used += 1
-		if def.category == "natural" then
-			self.natural[tile :: number] = def.natural
+		if def.hidden then
+			-- your oldest trap goes if you already have as many out as you may
+			local mine = self:trapsOf(p.index)
+			while #mine >= trapCap(p) do
+				local oldest = table.remove(mine, 1)
+				self:_takeTrap(oldest.tile, oldest.trap)
+				self:_emit({
+					t = "removed",
+					tile = oldest.tile,
+					item = oldest.trap.item,
+					reason = "replaced",
+					secret = trapSecret(oldest.trap),
+				})
+			end
+			local trap = self:_addTrap(tile :: number, item, p.index, p.team)
+			self:_emit({
+				t = "place",
+				p = p.index,
+				item = item,
+				tile = tile,
+				hidden = true,
+				secret = trapSecret(trap),
+				alt = { t = "hide", p = p.index },
+			})
 		else
 			self:_addPlaced(tile :: number, item, p.index, if item == "conveyor" then dir else nil)
+			self:_emit({ t = "place", p = p.index, item = item, tile = tile, dir = if item == "conveyor" then dir else nil })
 		end
-		self:_emit({ t = "place", p = p.index, item = item, tile = tile, dir = if item == "conveyor" then dir else nil })
-		self:_finishTurn()
 		return true
-	elseif use == "moonwalk" then
-		local max = Rules.MoonwalkMax
-		if p.status.burning then
-			max = math.max(1, max // 2)
-		end
-		local steps = tonumber(cmd.steps)
-		if not steps or steps ~= math.floor(steps) or steps < 1 or steps > max then
-			return false, "Moonwalk 1 to " .. max .. " tiles."
-		end
-		if #p.trail <= 1 then
-			return false, "You're already at the start."
+	elseif use == "boost" then
+		removeCard(p, item)
+		self:_spend(p, item)
+		self.turn.boost = item
+		self:_emit({ t = "play", p = p.index, item = item })
+		return true
+	elseif use == "juice" then
+		if p.power >= Engine.powerCap(p) then
+			return false, "Your Power is already full."
 		end
 		removeCard(p, item)
-		p.stats.used += 1
-		self:_emit({ t = "useCard", p = p.index, item = item, steps = steps })
-		self:_shiftBack(p, steps, "moonwalk")
-		self:_land(p, true)
-		if self.phase == "action" then
-			self:_finishTurn()
+		self:_spend(p, item)
+		self:_emit({ t = "play", p = p.index, item = item })
+		self:_gainPower(p, Engine.powerCap(p))
+		return true
+	elseif use == "reroll" then
+		removeCard(p, item)
+		self:_spend(p, item)
+		self:_emit({ t = "play", p = p.index, item = item })
+		self:_roll(p, true)
+		return true
+	elseif use == "anchor" then
+		if p.anchor then
+			return false, "You already have a time anchor."
 		end
+		removeCard(p, item)
+		self:_spend(p, item)
+		p.anchor = { tile = p.tile, trail = copyList(p.trail) }
+		self:_emit({ t = "play", p = p.index, item = item, tile = p.tile })
 		return true
 	elseif use == "telepathy" then
 		local t, why = self:_validTarget(p, cmd.target, true)
@@ -1337,14 +1705,14 @@ function Engine:_cmdUse(p, cmd)
 		if not steps or steps ~= math.floor(steps) or steps == 0 or math.abs(steps) > Rules.TelepathyMax then
 			return false, "Move them 1 to " .. Rules.TelepathyMax .. " tiles."
 		end
+		if steps < 0 and #t.trail <= 1 then
+			return false, "They're already at the Start."
+		end
 		removeCard(p, item)
-		p.stats.used += 1
-		self:_emit({ t = "useCard", p = p.index, item = item, target = t.index, steps = steps })
+		self:_spend(p, item)
+		self:_emit({ t = "play", p = p.index, item = item, target = t.index, steps = steps })
 		self:_shift(t, steps, "telepathy")
 		self:_land(t, true)
-		if self.phase == "action" then
-			self:_finishTurn()
-		end
 		return true
 	elseif use == "jeopardy" then
 		local t, why = self:_validTarget(p, cmd.target, false)
@@ -1352,48 +1720,52 @@ function Engine:_cmdUse(p, cmd)
 			return false, why
 		end
 		removeCard(p, item)
-		p.stats.used += 1
+		self:_spend(p, item)
 		p.hand, t.hand = t.hand, p.hand
-		self:_emit({ t = "useCard", p = p.index, item = item, target = t.index })
-		-- both new hands ride along; the server only shows each player their own
-		self:_emit({ t = "handSwap", a = p.index, b = t.index, handA = copyList(p.hand), handB = copyList(t.hand) })
+		self:_emit({ t = "play", p = p.index, item = item, target = t.index })
+		-- both new hands ride along; each player only sees their own
+		self:_emit({
+			t = "handSwap",
+			a = p.index,
+			b = t.index,
+			handA = copyList(p.hand),
+			handB = copyList(t.hand),
+			secret = { seats = { [p.index] = true, [t.index] = true } },
+			alt = { t = "handSwap", a = p.index, b = t.index, countA = #p.hand, countB = #t.hand },
+		})
 		self:_shiftBack(t, Rules.JeopardySteps, "jeopardy")
 		self:_land(t, true)
 		self:_shiftForward(p, Rules.JeopardySteps, "jeopardy")
 		self:_land(p, true)
-		if self.phase == "action" then
-			self:_finishTurn()
-		end
 		return true
-	elseif use == "regen" then
-		local cdef = Characters.get(p.character)
-		local ab = cdef and cdef.ability
-		if not ab or ab.recharge == "perTurn" then
-			return false, "Your character has nothing to recharge."
-		end
-		if p.ability.ready then
-			return false, "Your ability is already charged."
-		end
+	elseif use == "xray" then
 		removeCard(p, item)
-		p.stats.used += 1
-		p.ability.ready = true
-		p.ability.progress = 0
-		self:_emit({ t = "useCard", p = p.index, item = item })
-		self:_emit({ t = "recharge", p = p.index })
-		return true
-	elseif use == "anchor" then
-		if p.anchor then
-			return false, "You already have a time anchor."
+		self:_spend(p, item)
+		local seen = {}
+		for tile, list in self.traps do
+			for _, trap in list do
+				if not self:canSee(p.index, trap) then
+					trap.seenBy[p.index] = true
+					table.insert(seen, { tile = tile, item = trap.item, owner = trap.owner })
+				end
+			end
 		end
-		removeCard(p, item)
-		p.stats.used += 1
-		p.anchor = { tile = p.tile, trail = copyList(p.trail) }
-		self:_emit({ t = "useCard", p = p.index, item = item, tile = p.tile })
+		self:_emit({
+			t = "xray",
+			p = p.index,
+			traps = seen,
+			secret = { seat = p.index },
+			alt = { t = "play", p = p.index, item = item },
+		})
 		return true
-	elseif use == "boost" then
-		return self:_cmdArm(p, { item = item })
 	end
-	return false, "That card works automatically."
+	return false, "That card works by itself."
+end
+
+-- Bookkeeping for a card leaving your hand by being played.
+function Engine:_spend(p, _item: string)
+	self.turn.cardsPlayed += 1
+	p.stats.played += 1
 end
 
 function Engine:_cmdRecall(p)
@@ -1402,9 +1774,10 @@ function Engine:_cmdRecall(p)
 		return false, "You have no time anchor."
 	end
 	p.anchor = nil
+	self.turn.moved = true
 	self:_emit({ t = "recall", p = p.index, tile = anchor.tile })
 	self:_warpTo(p, anchor.tile, "recall", anchor.trail)
-	self:_land(p, true)
+	self:_land(p)
 	if self.phase == "action" then
 		self:_finishTurn()
 	end
@@ -1415,8 +1788,8 @@ function Engine:_cmdGive(p, cmd)
 	if not self.mode.isTeam then
 		return false, "Only in team modes."
 	end
-	if not p.finished then
-		return false, "Finish your treasures before giving cards away."
+	if self.turn.cardsPlayed >= Rules.CardsPerTurn then
+		return false, "You've already played a card this turn."
 	end
 	local t, why = self:_validTarget(p, cmd.target, false)
 	if not t then
@@ -1429,10 +1802,11 @@ function Engine:_cmdGive(p, cmd)
 	if type(item) ~= "string" or not hasCard(p, item) then
 		return false, "You don't have that card."
 	end
-	if #t.hand >= Rules.HandLimit or count(t.hand, item) >= Rules.PerItemLimit then
+	if #t.hand >= Rules.HandLimit then
 		return false, t.name .. "'s hand is full."
 	end
 	removeCard(p, item)
+	self.turn.cardsPlayed += 1
 	table.insert(t.hand, item)
 	self:_emit({ t = "give", p = p.index, target = t.index, item = item })
 	return true
@@ -1450,7 +1824,7 @@ function Engine:_cmdBuy(p, cmd)
 	if p.coins < def.price then
 		return false, "Not enough coins."
 	end
-	if #p.hand >= Rules.HandLimit or count(p.hand, item) >= Rules.PerItemLimit then
+	if #p.hand >= Rules.HandLimit then
 		return false, "Your hand is full."
 	end
 	p.coins -= def.price
@@ -1469,77 +1843,171 @@ function Engine:_cmdShopDone(p)
 		self:_relocateToken(turn.shopTile)
 		turn.shopTile = nil
 	end
-	if turn and turn.shopResume then
-		-- the shop opened during a free action (your own Nudge or Warp): carry on
-		turn.shopResume = nil
+	if turn and not turn.moved then
+		-- the shop opened before you moved (an ability or card put you there): carry on
 		return true
 	end
 	self:_finishTurn()
 	return true
 end
 
+-- Scavenge: keep one of the two cards on offer.
+function Engine:_cmdPick(p, cmd)
+	local pick = self.turn.pick
+	local i = tonumber(cmd.index)
+	if not pick or (i ~= 1 and i ~= 2) or pick.options[i :: number] == nil then
+		return false, "Pick one of the cards."
+	end
+	local item = pick.options[i :: number]
+	self.turn.pick = nil
+	self.phase = "action"
+	self:_emit({ t = "picked", p = p.index, secret = { seat = p.index }, alt = { t = "picked", p = p.index } })
+	self:_giveCard(p, item, "scavenge")
+	return true
+end
+
+-- Everyone a Mage's Blizzard freezes: every rival.
+function Engine:_blizzardTargets(p): { number }
+	local hit = {}
+	for _, o in self.players do
+		if o.team ~= p.team then
+			table.insert(hit, o.index)
+		end
+	end
+	return hit
+end
+
 function Engine:_cmdAbility(p, cmd)
 	local cdef = Characters.get(p.character)
 	local ab = cdef and cdef.ability
 	if not ab then
-		return false, "Your character has no active ability."
+		return false, "Your character has no ability."
 	end
 	if self.turn.abilityUsed then
 		return false, "You already used your ability this turn."
 	end
-	if not p.ability.ready then
-		return false, "Your ability is recharging."
+	if p.power < ab.cost then
+		return false, "Your Power bar isn't full yet."
 	end
 	local id = ab.id
 	local target
-	if ab.target ~= "none" then
+	if ab.target == "other" or ab.target == "any" then
 		local why
 		target, why = self:_validTarget(p, cmd.target, ab.target == "any")
 		if not target then
 			return false, why
 		end
-		if ab.target == "sameTile" and target.tile ~= p.tile then
-			return false, "They must be on your tile."
+		if ab.range and self.board:raceDistance(p.tile, target.tile) > ab.range then
+			return false, "Too far: they must be within " .. ab.range .. " tiles."
 		end
 	end
 	local option = cmd.option
-	if ab.options and not table.find(ab.options, option) then
+	if ab.options and id ~= "scavenge" and not table.find(ab.options, option) then
 		return false, "Choose an option."
 	end
-	if id == "hex" and option == "freeze" and target.character == "mage" then
-		return false, "Mages can't be frozen."
-	end
-	if id == "warp" and target.tile == p.tile then
-		return false, "You're already on the same tile."
+	local tile = tonumber(cmd.tile)
+	if id == "warp" then
+		if target.tile == p.tile then
+			return false, "You're already on the same tile."
+		end
+		if target.character == "warper" then
+			return false, "Warpers can't be swapped."
+		end
 	end
 	if id == "nudge" and option == "back" and #target.trail <= 1 then
-		return false, "They're already at the start."
+		return false, "They're already at the Start."
+	end
+	if id == "overgrow" then
+		local ok, why = self:canGrow(p, tile :: number)
+		if not ok then
+			return false, why
+		end
 	end
 
 	-- commit
 	self.turn.abilityUsed = true
 	p.stats.abilities += 1
-	if ab.recharge ~= "perTurn" then
-		p.ability.ready = false
-		p.ability.progress = 0
-	end
-	self:_emit({ t = "ability", p = p.index, ability = id, target = target and target.index, option = option })
-	self.freeAction = true
-	if id == "hex" then
-		self:_setStatus(target, if option == "freeze" then "frozen" else "burning", "hex")
+	p.power = 0
+	self:_emit({ t = "ability", p = p.index, ability = id, target = target and target.index, option = option, tile = tile })
+	if id == "blizzard" then
+		local hit = self:_blizzardTargets(p)
+		self:_emit({ t = "blizzard", p = p.index, targets = hit })
+		for _, seat in hit do
+			self:_setStatus(self.players[seat], "frozen", "blizzard", CharCfg.mage.turns)
+		end
+		-- and the Mage skates ahead on the ice
+		if (CharCfg.mage.skate or 0) > 0 then
+			self:_shiftForward(p, CharCfg.mage.skate, "skate")
+			if self.phase ~= "over" and p.tile ~= self.board.start then
+				self:_land(p, true)
+			end
+		end
 	elseif id == "scavenge" then
-		self:_spin(p, "trap")
-	elseif id == "ignite" then
-		self:_setStatus(target, "burning", "ignite")
+		local pool = {}
+		for _, t in Items.trapIds do
+			table.insert(pool, t)
+		end
+		local a = table.remove(pool, self.rng:int(1, #pool))
+		local b = pool[self.rng:int(1, #pool)]
+		self.turn.pick = { kind = "scavenge", options = { a, b } }
+		self.phase = "pick"
+		self:_emit({
+			t = "offer",
+			p = p.index,
+			options = { a, b },
+			secret = { seat = p.index },
+			alt = { t = "offer", p = p.index },
+		})
+	elseif id == "blast" then
+		local from = p.tile
+		self:_shiftForward(p, CharCfg.fire_starter.blast, "blast")
+		if self.phase ~= "over" then
+			-- the tiles flown over burn until the Fire Starter's next turn
+			local burnt = {}
+			local cur = from
+			while true do
+				cur = self.board.nextMain[cur]
+				if not cur or cur == p.tile or cur == self.board.treasure then
+					break
+				end
+				if not self.board:isSpecial(cur) then
+					self.embers[cur] = { owner = p.index, team = p.team }
+					table.insert(burnt, cur)
+				end
+				if #burnt >= CharCfg.fire_starter.blast then
+					break
+				end
+			end
+			if #burnt > 0 then
+				self:_emit({ t = "embers", p = p.index, tiles = burnt })
+			end
+			if p.tile ~= self.board.start then
+				self:_land(p, true)
+			end
+		end
+	elseif id == "overgrow" then
+		local kind = self.map.naturalKind
+		local mine = self.grown[p.index] or {}
+		self.grown[p.index] = mine
+		while #mine >= CharCfg.naturalist.cap do
+			local old = table.remove(mine, 1)
+			if self.natural[old] then
+				self.natural[old] = nil
+				self:_emit({ t = "wither", tile = old, kind = kind })
+			end
+		end
+		self.natural[tile :: number] = kind
+		table.insert(mine, tile :: number)
+		self:_emit({ t = "grow", p = p.index, tile = tile, kind = kind })
 	elseif id == "warp" then
 		self:_swap(p, target, "warp")
 		self:_land(p, true)
 		self:_land(target, true)
 	elseif id == "nudge" then
-		self:_shift(target, if option == "fwd" then 1 else -1, "nudge")
+		local steps = CharCfg.overseer.steps
+		self:_shift(target, if option == "fwd" then steps else -steps, "nudge")
 		self:_land(target, true)
 	end
-	self.freeAction = false
 	return true
 end
 
@@ -1565,7 +2033,8 @@ function Engine:isOpponent(a, b): boolean
 	return a.team ~= b.team
 end
 
--- A plain-data view of the game for clients. `forSeat` sees their own hand.
+-- A plain-data view of the game for clients. `forSeat` sees their own hand and the
+-- hidden traps they're allowed to see.
 function Engine:snapshot(forSeat: number?)
 	local players = {}
 	for _, p in self.players do
@@ -1581,20 +2050,18 @@ function Engine:snapshot(forSeat: number?)
 			treasures = p.treasures,
 			coins = p.coins,
 			handCount = #p.hand,
-			burning = p.status.burning,
+			power = p.power,
+			powerCap = Engine.powerCap(p),
 			frozen = p.status.frozen,
-			boots = p.status.boots,
-			held = p.status.held,
+			burning = p.status.burning,
 			skip = p.status.skip,
-			abilityReady = p.ability.ready,
-			abilityProgress = p.ability.progress,
+			boots = p.status.boots,
 			anchor = if p.anchor then p.anchor.tile else 0,
-			finished = p.finished,
 			trailLength = #p.trail,
 			stats = table.clone(p.stats),
 		})
 	end
-	local tokens, placed, natural = {}, {}, {}
+	local tokens, placed, natural, traps = {}, {}, {}, {}
 	for tile, kind in self.tokens do
 		table.insert(tokens, { tile = tile, kind = kind })
 	end
@@ -1604,6 +2071,14 @@ function Engine:snapshot(forSeat: number?)
 	for tile, kind in self.natural do
 		table.insert(natural, { tile = tile, kind = kind })
 	end
+	for tile, list in self.traps do
+		for _, trap in list do
+			if forSeat and self:canSee(forSeat, trap) then
+				table.insert(traps, { tile = tile, item = trap.item, owner = trap.owner, team = trap.team, public = trap.public })
+			end
+		end
+	end
+	local turn = self.turn
 	local snap = {
 		mode = self.mode.id,
 		map = self.map.id,
@@ -1612,29 +2087,29 @@ function Engine:snapshot(forSeat: number?)
 		round = self.round,
 		turnNo = self.turnCount,
 		target = self.target,
+		teamTarget = self.teamTarget,
 		order = copyList(self.turnOrder or {}),
 		players = players,
 		tokens = tokens,
 		placed = placed,
 		natural = natural,
+		traps = traps,
 		teleporters = copyList(self.teleporters),
 		stock = table.clone(self.stock),
 		winnerTeam = self.winnerTeam,
 		ranking = self.ranking and copyList(self.ranking) or nil,
 		endReason = self.endReason,
-		abilityUsed = self.turn ~= nil and self.turn.abilityUsed or false,
+		dice = if turn then copyList(turn.dice) else {},
+		cardsPlayed = if turn then turn.cardsPlayed else 0,
+		abilityUsed = if turn then turn.abilityUsed else false,
+		boost = if turn then turn.boost else nil,
+		mutator = table.clone(self.mut),
 	}
 	if forSeat and self.players[forSeat] then
 		local me = self.players[forSeat]
 		snap.hand = copyList(me.hand)
-		if forSeat == self.current and self.turn then
-			local armed = {}
-			for item in self.turn.armed do
-				table.insert(armed, item)
-			end
-			snap.armed = armed
-		else
-			snap.armed = {}
+		if turn and turn.pick and forSeat == self.current then
+			snap.pick = copyList(turn.pick.options)
 		end
 	end
 	return snap
@@ -1642,7 +2117,7 @@ end
 
 -- Rebuilds lookup layers from a snapshot (client-side placement previews).
 function Engine.layersFromSnapshot(board, snap)
-	local layers = { placed = {}, cover = {}, natural = {}, tokens = {} }
+	local layers = { placed = {}, cover = {}, natural = {}, tokens = {}, traps = {} }
 	for _, t in snap.tokens do
 		layers.tokens[t.tile] = t.kind
 	end
@@ -1656,6 +2131,10 @@ function Engine.layersFromSnapshot(board, snap)
 				layers.cover[t] = e.tile
 			end
 		end
+	end
+	for _, trap in snap.traps or {} do
+		layers.traps[trap.tile] = layers.traps[trap.tile] or {}
+		table.insert(layers.traps[trap.tile], trap)
 	end
 	return layers
 end

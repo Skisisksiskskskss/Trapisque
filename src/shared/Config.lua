@@ -11,42 +11,53 @@ local Config = {}
 -- Rules
 ---------------------------------------------------------------------------
 Config.Rules = {
-	TreasuresToWin = 5, -- (rulebook) World War Four overrides this to 4 in Modes
-	StartingCoins = 1, -- (digital) so the Potion Seller is useful early
-	CoinsPerTreasure = 1, -- (digital) reaching the treasure pays out one coin
-	HandLimit = 8, -- (digital) max cards in hand
-	PerItemLimit = 5, -- (rulebook) "at most 5 items" of one kind per player
-	PotionStock = 9, -- (rulebook) 9 of each potion at the Potion Seller
+	TreasuresToWin = 4, -- Classic length; World War Four uses 3 (see Modes)
+	StartingCoins = 1, -- so the Potion Seller is useful early
+	CoinsPerTreasure = 2, -- banking a treasure pays out
+	CoinsPerGotcha = 1, -- your hidden trap caught someone...
+	PowerPerGotcha = 2, -- ...which also charges your Power
+	HandLimit = 5, -- max cards in hand
+	CardsPerTurn = 1, -- cards you may play each turn (passive cards don't count)
+	PotionStock = 6, -- of each potion at the Potion Seller, per match
 
-	WallPassMin = 5, -- (rulebook) you can't move past a wall unless you move more than 4
-	GrogSurviveMin = 4, -- (rulebook) roll 4+ or the Grog gets you
-	GateEscapeMin = 4, -- (digital) locked gate: roll 4+ on a later turn to break free
-	TeleporterMinDistance = 8, -- (rulebook) teleporters must be 8+ tiles from the treasure
-	ConveyorLength = 3, -- (rulebook) conveyor covers 3 tiles
-	MudBack = 1, -- (rulebook)
-	MudslideBack = 2, -- (rulebook)
-	BounceForward = 2, -- (rulebook)
-	MoonwalkMax = 3, -- (rulebook)
-	TelepathyMax = 3, -- (rulebook)
-	JeopardySteps = 6, -- (rulebook)
-
-	AbilityRechargeCycles = 2, -- (rulebook) Mage & Trapper recharge every 2 cycles
-	QuickRechargeCycles = 1, -- (digital) ...but every cycle in 2-treasure games
-	OverseerRechargeRounds = 2, -- (rulebook) Overseer recharges every 2 rounds
-	TrapperStartingTraps = 2, -- (rulebook v1)
-	FireStarterStartingFires = 2, -- (rulebook v1)
+	TrapRange = 5, -- traps and board pieces go on a tile within this many tiles of you
+	TrapCap = 3, -- hidden traps you can have out at once (placing another removes your oldest)
+	BonkBack = 2, -- landing on someone knocks them back this many tiles...
+	BonkBounce = 1, -- ...and bounces you forward this many (which keeps players from bunching up)
+	BonkChain = false, -- only your own move bonks; being knocked onto someone doesn't
+	WallPassMin = 5, -- you can't move past a wall unless you move 5 or more
+	GrogSurviveMin = 4, -- roll 4+ or the Grog gets you
+	TeleporterMinDistance = 8, -- teleporters must be 8+ tiles from the treasure
+	ConveyorLength = 3, -- a conveyor covers 3 tiles
+	MudslideBack = 3,
+	BananaBack = 2,
+	TrampolineForward = 3,
+	TelepathyMax = 3,
+	JeopardySteps = 6,
+	FrozenTurns = 2, -- Frozen: roll one die, halved (no choice, no Power), for this many turns
+	BurningTurns = 2, -- Burning: hop back 1 at the start of this many turns
 
 	-- Durability of things placed on the board (number of triggers before they vanish).
-	-- nil means permanent.
+	-- nil means one trigger for traps, permanent for teleporters.
 	PlacedUses = {
 		wall = 1,
 		conveyor = 3,
-		shifting_sands = 2,
-		teleporter = nil,
+		trampoline = 2,
 	},
 
-	-- (digital) safety valve per match length; the highest score wins if it's reached
-	MaxRounds = { quick = 50, standard = 75, classic = 120 },
+	-- safety valve per match length; the highest score wins if it's reached
+	MaxRounds = { quick = 40, standard = 60, classic = 80 },
+}
+
+-- Character numbers (Power costs and passives). Tuned with bot simulations so that
+-- every character wins about as often on every map (see tests/balance.luau).
+Config.Characters = {
+	mage = { cost = 7, turns = 1, skate = 1 },
+	trapper = { cost = 6, trapCap = 4, bounty = 2 },
+	fire_starter = { cost = 10, blast = 4 },
+	naturalist = { cost = 6, range = 5, cap = 2 },
+	warper = { cost = 10, range = 7 },
+	overseer = { cost = 4, steps = 2 },
 }
 
 -- Relative chances for a token spot to become each token type at setup.

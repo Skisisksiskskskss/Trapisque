@@ -1,6 +1,6 @@
 --[[
 	LeaderboardPanel
-	The all-time top players: most wins, most treasures found, highest level. Each row
+	The top players: most trophies, most wins, most treasures found, highest level. Each row
 	shows the player's avatar, display name and @username; your own row is gold, and
 	the footer says where you stand even when you're not in the top 50.
 
@@ -30,6 +30,7 @@ LeaderboardPanel.__index = LeaderboardPanel
 local player = Players.LocalPlayer
 
 local BOARDS = {
+	{ id = "trophies", text = "Trophies", unit = "trophy", units = "trophies" },
 	{ id = "wins", text = "Wins", unit = "win", units = "wins" },
 	{ id = "treasures", text = "Treasures", unit = "treasure", units = "treasures" },
 	{ id = "level", text = "Level", unit = "", units = "" },
@@ -38,7 +39,7 @@ local MEDALS = { hex("E2B53C"), hex("B8C0C8"), hex("C98A4B") }
 local CACHE_TIME = 30
 
 -- shared between panels (the lobby rebuilds them when the screen changes shape)
-local selected = "wins"
+local selected = "trophies"
 local cache = {} -- [board] = { at, data }
 
 local function boardDef(id: string)

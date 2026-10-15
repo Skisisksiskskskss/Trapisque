@@ -157,3 +157,140 @@ test("every chest rarity has items and no exclusive items drop", function()
 		end
 	end
 end)
+
+---------------------------------------------------------------------------
+-- Progress: mastery, quests, streak, trophies, events
+---------------------------------------------------------------------------
+
+local Progress = requireModule("Shared/Meta/Progress")
+local Characters = requireModule("Shared/Game/Characters")
+
+test("mastery levels climb with XP and every title exists", function()
+	eq(Progress.masteryLevel(0), 1)
+	eq(Progress.masteryLevel(119), 1)
+	eq(Progress.masteryLevel(120), 2)
+	eq(Progress.masteryLevel(10 ^ 6), Progress.masteryMax)
+	local into, need = Progress.masteryProgress(150)
+	eq(into, 30)
+	eq(need, 180)
+	local _, none = Progress.masteryProgress(10 ^ 6)
+	eq(none, nil, "no next level at max")
+	for _, c in Characters.ids do
+		for _, tier in Progress.masteryTitles do
+			local def = Cosmetics.get(Progress.masteryTitleId(c, tier))
+			truthy(def, "missing mastery title " .. c .. " " .. tier)
+			eq(def.source, "mastery")
+		end
+	end
+	-- a win pays more than a loss; practice pays half
+	local win = Progress.masteryXp({ treasures = 2, won = true, stats = { bonks = 3 } })
+	local loss = Progress.masteryXp({ treasures = 0, won = false, stats = {} })
+	truthy(win > loss)
+	eq(Progress.masteryXp({ treasures = 0, won = false, practice = true, stats = {} }), math.floor(loss * 0.5))
+end)
+
+test("daily quests: three different ones, stable per day, one character quest at most", function()
+	for user = 1, 60 do
+		for day = 20000, 20006 do
+			local list = Progress.dailyQuests(user, day)
+			eq(#list, Progress.QuestsPerDay)
+			local seen, chars = {}, 0
+			for _, q in list do
+				falsy(seen[q.id], "duplicate quest")
+				seen[q.id] = true
+				local def = Progress.questById[q.id]
+				truthy(def, "unknown quest " .. q.id)
+				if string.sub(def.stat, 1, 5) == "char:" then
+					chars += 1
+				end
+			end
+			truthy(chars <= 1, "two character quests")
+			local again = Progress.dailyQuests(user, day)
+			for i, q in list do
+				eq(again[i].id, q.id, "quests change on rejoin")
+			end
+		end
+	end
+	-- a reroll swaps in a quest that isn't already there
+	local list = Progress.dailyQuests(7, 20001)
+	local fresh = Progress.rerollQuest(list, 2, 99)
+	truthy(fresh)
+	for _, q in list do
+		truthy(q.id ~= fresh.id, "reroll gave a duplicate")
+	end
+end)
+
+test("quest progress counts the right match stats", function()
+	local result = { treasures = 2, won = true, character = "mage", stats = { bonks = 4, gotchas = 1 } }
+	eq(Progress.questGain(Progress.questById.games, result), 1)
+	eq(Progress.questGain(Progress.questById.win, result), 1)
+	eq(Progress.questGain(Progress.questById.treasures, result), 2)
+	eq(Progress.questGain(Progress.questById.bonks, result), 4)
+	eq(Progress.questGain(Progress.questById.gotchas, result), 1)
+	eq(Progress.questGain(Progress.questById.char_mage, result), 1)
+	eq(Progress.questGain(Progress.questById.char_warper, result), 0)
+	eq(Progress.questGain(Progress.questById.spins, result), 0)
+end)
+
+test("login streak grows on consecutive days and resets after a gap", function()
+	local count, day = Progress.nextStreak(nil, 100)
+	eq(count, 1)
+	eq(day, 1)
+	count, day = Progress.nextStreak({ day = 100, count = 1 }, 100)
+	eq(count, 1)
+	eq(day, nil, "paid twice in a day")
+	count, day = Progress.nextStreak({ day = 100, count = 1 }, 101)
+	eq(count, 2)
+	eq(day, 2)
+	count, day = Progress.nextStreak({ day = 106, count = 7 }, 107)
+	eq(count, 8)
+	eq(day, 1, "the week of rewards starts over after day 7")
+	count = Progress.nextStreak({ day = 100, count = 5 }, 103)
+	eq(count, 1, "a missed day resets the streak")
+end)
+
+test("trophies: winners gain, last place loses a little, never below zero", function()
+	truthy(Progress.trophyDelta(1, 4, true, false, 500) > 0)
+	truthy(Progress.trophyDelta(4, 4, false, false, 500) < 0)
+	local mid = Progress.trophyDelta(2, 4, false, false, 500)
+	truthy(mid < Progress.trophyDelta(1, 4, true, false, 500))
+	eq(Progress.trophyDelta(4, 4, false, false, 0), 0, "nothing to lose")
+	truthy(Progress.trophyDelta(4, 4, false, false, 50) > Progress.trophyDelta(4, 4, false, false, 500), "new players lose less")
+	eq(Progress.rank(0).id, "wood")
+	eq(Progress.rank(650).id, "gold")
+	eq(Progress.rank(99999).id, "legend")
+end)
+
+test("weekly events rotate and every event mode game finishes", function()
+	local seen = {}
+	for week = 0, 7 do
+		seen[Progress.currentEvent(week * 7 * 86400 + 1).id] = true
+	end
+	for _, e in Progress.events do
+		truthy(seen[e.id], "event never comes up: " .. e.id)
+		eq(Progress.eventById(e.id), e)
+	end
+	truthy(Modes.get("event") and Modes.get("event").isEvent, "event queue mode")
+	local Engine = requireModule("Shared/Game/Engine")
+	local Bot = requireModule("Shared/Game/Bot")
+	for i, e in Progress.events do
+		for seed = 1, 4 do
+			local players = {}
+			for s = 1, 4 do
+				players[s] = { id = "b" .. s, name = "B" .. s, isBot = true }
+			end
+			local g = Engine.new({ mode = "event", map = "blissful", players = players, seed = seed * 31 + i, target = 2, mutator = e.mutator })
+			g:start()
+			local guard = 0
+			while g.phase ~= "over" do
+				guard += 1
+				assert(guard < 20000, "event game stuck: " .. e.id)
+				local cmd = Bot.decide(g, g.current)
+				local ok = cmd ~= nil and g:command(g.current, cmd)
+				if not ok then
+					g:autoAct()
+				end
+			end
+		end
+	end
+end)

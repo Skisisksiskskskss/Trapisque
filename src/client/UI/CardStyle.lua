@@ -1,64 +1,66 @@
 --[[
 	CardStyle
-	Layout of the carved wooden cards (fractions of the card's width/height), shared by
+	Layout of Trapisque's sticker cards (fractions of the card's width/height), shared by
 	the in-game Cards widget and the offline previewer.
+
+	A card is a candy-coloured slab in its category's colour with the dark outline, the
+	category name across the top, the illustration in a cream window with a sunburst
+	behind it, and the name in outlined lettering along the bottom.
 ]]
 
 local CardStyle = {}
 
 CardStyle.aspect = 0.72 -- width / height
-CardStyle.corner = 0.09 -- corner radius, fraction of width
+CardStyle.corner = 0.1 -- corner radius, fraction of width
+CardStyle.outline = 0.035 -- the dark outline, fraction of width
+CardStyle.lip = 0.035 -- the darker edge under the card (its thickness), fraction of height
 
--- Everything sits inside the carved frame with the same margin all round:
--- frame inset 0.045 of the width, content inset 0.08 of the width (0.0576 of the height).
-CardStyle.frameInset = 0.045
--- painted category band across the top (fractions of width / height)
-CardStyle.band = { y = 0.0576, h = 0.13, inset = 0.08 }
--- burned-in symbol, centred between the band and the name strip
-CardStyle.icon = { cx = 0.5, cy = 0.4925, size = 0.6 }
--- paper name strip along the bottom
-CardStyle.plate = { x = 0.08, y = 0.7974, w = 0.84, h = 0.145 }
-
--- Wood grain: one long stroke in the open strip above the symbol and one below it
--- (normalized card space: x across, y down), so no grain runs under anything.
-CardStyle.grain = {
-	{ { 0.12, 0.236 }, { 0.32, 0.226 }, { 0.52, 0.24 }, { 0.72, 0.228 }, { 0.88, 0.236 } },
-	{ { 0.12, 0.752 }, { 0.3, 0.762 }, { 0.5, 0.748 }, { 0.7, 0.76 }, { 0.88, 0.752 } },
-}
+-- category name along the top (fractions of width / height)
+CardStyle.tag = { y = 0.075, h = 0.075 }
+-- the cream window the art sits in
+CardStyle.window = { x = 0.08, y = 0.13, w = 0.84, h = 0.6, corner = 0.12 }
+-- the art itself, centred in the window (size: fraction of the card's width)
+CardStyle.icon = { cx = 0.5, cy = 0.43, size = 0.7 }
+-- the name along the bottom
+CardStyle.name = { y = 0.845, h = 0.12 }
+-- sunburst rays behind the art
+CardStyle.rays = 10
 
 -- Text sizes as a fraction of the card's width: the same on every card, stepping
 -- down only when a line doesn't fit (Cards.lua cardText)
 CardStyle.text = {
-	plate = 0.12,
+	name = 0.14,
+	tag = 0.075,
 	title = 0.15,
-	tag = 0.06,
-	header = 0.06,
-	body = 0.078,
-	footer = 0.056,
+	header = 0.065,
+	body = 0.08,
+	footer = 0.06,
 }
 
--- How each kind of card is played (shown on the back)
+-- How each kind of card is played (shown on the back and in the card tip)
 CardStyle.useText = {
-	place = "Place it on a tile (uses your turn)",
-	boost = "Free: arm it before you roll",
-	passive = "Works automatically",
-	regen = "Free: use any time on your turn",
-	anchor = "Free: drop it, recall later",
-	moonwalk = "Uses your turn",
-	telepathy = "Uses your turn",
-	jeopardy = "Uses your turn",
+	place = "Place it within 5 tiles of you",
+	hide = "Hide it within 5 tiles of you",
+	boost = "Play it, then pick your die",
+	passive = "Works by itself from your hand",
+	juice = "Play it to fill your Power",
+	reroll = "Play it to roll again",
+	anchor = "Drop it now, warp back later",
+	telepathy = "Play it on your turn",
+	jeopardy = "Play it on your turn",
+	xray = "Play it on your turn",
 	none = "",
 }
 
--- Wood tones per category (front of the card)
-CardStyle.wood = {
-	trap = { "#C08852", "#A26B3A" },
-	assist = { "#C9925A", "#A97441" },
-	neutral = { "#BC8957", "#9B6C42" },
-	potion = { "#CD9A60", "#AC7A45" },
-	natural = { "#BF8D59", "#9D7046" },
-	coin = { "#C9925A", "#A97441" },
-	character = { "#C38B53", "#A06A38" },
-}
+-- The line for a card: hidden traps say "Hide", everything else uses its kind.
+function CardStyle.howToPlay(def): string
+	if def.price then
+		return def.price .. (if def.price == 1 then " coin" else " coins") .. " at the Potion Seller"
+	end
+	if def.use == "place" and def.hidden then
+		return CardStyle.useText.hide
+	end
+	return CardStyle.useText[def.use] or ""
+end
 
 return CardStyle

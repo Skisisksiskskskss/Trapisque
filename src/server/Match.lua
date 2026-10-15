@@ -19,6 +19,7 @@ local Maps = require(Shared.Game.Maps)
 local Pacing = require(Shared.Game.Pacing)
 local TurnClock = require(Shared.Game.TurnClock)
 local Cosmetics = require(Shared.Meta.Cosmetics)
+local Progress = require(Shared.Meta.Progress)
 
 local Net = require(script.Parent.Net)
 local DataService = require(script.Parent.DataService)
@@ -90,7 +91,7 @@ function Match.new(spec, hooks)
 	-- seat order: by team when teams are preset, humans before bots otherwise
 	local entries = {}
 	for _, h in spec.humans do
-		table.insert(entries, { player = h.player, team = h.team, isBot = false })
+		table.insert(entries, { player = h.player, team = h.team, isBot = false, character = h.character })
 	end
 	for _, b in spec.bots or {} do
 		table.insert(entries, { team = b.team, isBot = true })
@@ -130,13 +131,27 @@ function Match.new(spec, hooks)
 			self.seatOf[e.player] = seat
 		end
 		self.seats[seat] = info
+		-- humans play the character they picked in the lobby; bots get one at random
+		local character = e.character
+		if character == nil and not e.isBot then
+			character = DataService.selectedCharacter(e.player)
+		end
 		enginePlayers[seat] = {
 			id = if info.isBot then ("bot" .. seat) else ("u" .. info.userId),
 			userId = info.userId,
 			name = info.name,
 			isBot = info.isBot,
 			team = e.team,
+			character = character,
 		}
+	end
+
+	-- the weekly event queue plays with the week's twist on the rules
+	local mutator = nil
+	if mode.isEvent then
+		local event = Progress.eventById(spec.event) or Progress.currentEvent()
+		self.event = event.id
+		mutator = event.mutator
 	end
 
 	self.engine = Engine.new({
@@ -147,6 +162,7 @@ function Match.new(spec, hooks)
 		target = Modes.targetFor(mode, self.length),
 		length = self.length,
 		teamsPreset = spec.teamsPreset == true,
+		mutator = mutator,
 	})
 	-- practice games have no turn timer (nobody is waiting on you)
 	self.clock = TurnClock.new({ timed = self.kind ~= "practice" })
@@ -195,34 +211,13 @@ local function serverTime(clockTime: number): number
 	return workspace:GetServerTimeNow() + (clockTime - os.clock())
 end
 
--- Events as `seat` may see them: hidden cards (other players' opening deals, the
--- hands traded by Double Jeopardy) are replaced by counts.
-local function eventsFor(seat: number, events)
-	local out = table.create(#events)
-	for i, e in events do
-		if e.t == "deal" and e.p ~= seat then
-			out[i] = { t = "deal", p = e.p, count = #(e.items or {}) }
-		elseif e.t == "handSwap" then
-			out[i] = {
-				t = "handSwap",
-				a = e.a,
-				b = e.b,
-				countA = #(e.handA or {}),
-				countB = #(e.handB or {}),
-				hand = if seat == e.a then e.handA elseif seat == e.b then e.handB else nil,
-			}
-		else
-			out[i] = e
-		end
-	end
-	return out
-end
-
 -- `timing` = { startAt, endAt }: when this batch starts and stops playing, server time.
+-- Each seat only gets what it may know: rivals' hidden traps, other players' cards and
+-- the like are left out or replaced by counts (Engine:eventsFor and Engine:snapshot).
 function Match:_payloadFor(seat: number, events, timing)
 	return {
 		id = self.id,
-		events = eventsFor(seat, events),
+		events = self.engine:eventsFor(seat, events),
 		snapshot = self.engine:snapshot(seat),
 		deadline = serverTime(self.clock.deadline),
 		auto = self.clock:isAway(seat),
@@ -318,6 +313,10 @@ function Match:_botReactions(events)
 			seat, emote, chance = e.p, "emote_oops", 0.35
 		elseif e.t == "treasure" then
 			seat, emote, chance = e.p, "emote_nice", 0.25
+		elseif e.t == "gotcha" then
+			seat, emote, chance = e.p, "emote_nice", 0.2
+		elseif e.t == "bonk" then
+			seat, emote, chance = e.target, "emote_oops", 0.15
 		elseif e.t == "gameover" then
 			for s, info in self.seats do
 				if info.isBot and random:NextNumber() < 0.6 then
@@ -369,6 +368,8 @@ function Match:command(player: Player, cmd)
 		target = cmd.target,
 		steps = cmd.steps,
 		option = cmd.option,
+		die = cmd.die,
+		index = cmd.index,
 	}
 	local ok, err, events = engine:command(seat, clean)
 	if not ok then
@@ -505,6 +506,7 @@ function Match:_finish()
 			character = p.character,
 			treasures = p.treasures,
 			won = p.team == engine.winnerTeam,
+			place = table.find(engine.ranking or {}, seat) or #self.seats,
 			stats = table.clone(p.stats),
 			look = info.look,
 		})
@@ -519,8 +521,13 @@ function Match:_finish()
 					treasures = p.treasures,
 					won = p.team == engine.winnerTeam,
 					practice = self.kind == "practice",
-					deaths = p.stats.deaths,
-					placed = p.stats.placed,
+					ranked = self.kind == "public" and not self.mode.isTeam and not self.mode.isEvent,
+					place = table.find(engine.ranking or {}, seat) or #self.seats,
+					players = #self.seats,
+					character = p.character,
+					mode = self.mode.id,
+					event = self.event,
+					stats = table.clone(p.stats),
 				})
 				LeaderboardService.submit(player, DataService.get(player))
 				Net.push(player, "match.end", {

@@ -16,13 +16,12 @@ local function checkInvariants(g, label)
 		truthy(p.tile ~= board.treasure, label .. ": parked on the treasure")
 		truthy(#p.hand <= Config.Rules.HandLimit, label .. ": hand over limit")
 		truthy(p.coins >= 0, label .. ": negative coins")
-		truthy(p.treasures >= 0 and p.treasures <= g.target, label .. ": treasure count out of range")
+		truthy(p.treasures >= 0 and p.treasures <= g.teamTarget, label .. ": treasure count out of range")
 		truthy(p.status.skip >= 0 and p.status.skip <= 3, label .. ": odd skip count")
+		truthy(p.status.frozen >= 0 and p.status.burning >= 0, label .. ": negative status")
+		truthy(p.power >= 0 and p.power <= Engine.powerCap(p), label .. ": Power out of range")
 		for _, item in p.hand do
 			truthy(Items.get(item) and item ~= "coin", label .. ": bad card " .. tostring(item))
-		end
-		if p.finished then
-			eq(p.treasures, g.target, label .. ": finished without the target")
 		end
 		-- every consecutive pair in the trail must be a forward edge
 		for i = 1, #p.trail - 1 do
@@ -33,6 +32,21 @@ local function checkInvariants(g, label)
 	for tile, e in g.placed do
 		truthy(not board:isSpecial(tile), label .. ": item on special tile")
 		truthy(Items.get(e.item), label .. ": unknown placed item")
+	end
+	local perOwner = {}
+	for tile, list in g.traps do
+		truthy(not board:isSpecial(tile), label .. ": trap on special tile")
+		truthy(#list > 0, label .. ": empty trap list left behind")
+		for _, trap in list do
+			truthy(Items.isHidden(trap.item), label .. ": a visible card in the hidden layer")
+			perOwner[trap.owner] = (perOwner[trap.owner] or 0) + 1
+		end
+	end
+	for owner, n in perOwner do
+		if owner > 0 then
+			local cap = if g.players[owner].character == "trapper" then Config.Characters.trapper.trapCap else Config.Rules.TrapCap
+			truthy(n <= cap, label .. ": too many traps for P" .. owner)
+		end
 	end
 	for tile, origin in g.cover do
 		truthy(g.placed[origin] and g.placed[origin].item == "conveyor", label .. ": dangling conveyor cover at " .. tile)
@@ -46,7 +60,7 @@ local function checkInvariants(g, label)
 end
 
 local function randomGarbage(rng)
-	local kinds = { "roll", "use", "arm", "ability", "recall", "give", "buy", "shopDone", "nope" }
+	local kinds = { "move", "play", "ability", "recall", "give", "buy", "shopDone", "pick", "nope" }
 	local items = {}
 	for _, def in Items.list do
 		table.insert(items, def.id)
@@ -58,7 +72,9 @@ local function randomGarbage(rng)
 		tile = rng:int(-2, 80),
 		target = rng:int(0, 7),
 		steps = rng:int(-5, 5),
-		option = ({ "freeze", "burn", "fwd", "back", "x" })[rng:int(1, 5)],
+		die = ({ 1, 2, "sum", 3, 0 })[rng:int(1, 5)],
+		index = rng:int(0, 3),
+		option = ({ "fwd", "back", "x" })[rng:int(1, 3)],
 		dir = ({ "fwd", "back", "up" })[rng:int(1, 3)],
 	}
 end
@@ -107,6 +123,7 @@ local function simulate(seed, modeId, mapId, length, fuzz)
 			local ok, err = false, nil
 			if cmd then
 				ok, err = g:command(g.current, cmd)
+				truthy(ok, label .. ": the bot's " .. tostring(cmd.type) .. " was refused: " .. tostring(err))
 			end
 			if not ok then
 				ok, err = g:autoAct()
@@ -127,7 +144,7 @@ local function simulate(seed, modeId, mapId, length, fuzz)
 	return g
 end
 
-local SIM_GAMES = 60
+local SIM_GAMES = 40
 
 test("bots finish full games on every map and mode", function()
 	local totals = {}

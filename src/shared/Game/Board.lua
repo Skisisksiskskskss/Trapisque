@@ -181,6 +181,11 @@ function Board.build(def)
 		self.mainDist[id] = steps
 	end
 	self.routeLength = self.mainDist[self.start]
+	-- how far along the race each tile is (branch tiles count by what's left to walk)
+	self.progress = {}
+	for id = 1, self.totalTiles do
+		self.progress[id] = self.routeLength - self.mainDist[id]
+	end
 
 	-- a shortest path from Start to every tile (used to rebuild a trail after teleports)
 	self.pathFromStart = {}
@@ -279,6 +284,12 @@ function Board:tileDistance(a: number, b: number): number
 		self._pairCache[a] = row
 	end
 	return row[b] or math.huge
+end
+
+-- How far apart two tiles are in the race, ahead or behind ("within 5 tiles of you").
+-- Measured along the route, so a gated shortcut doesn't bring the far end in reach.
+function Board:raceDistance(a: number, b: number): number
+	return math.abs((self.progress[a] or 0) - (self.progress[b] or 0))
 end
 
 function Board:isSpecial(id: number): boolean

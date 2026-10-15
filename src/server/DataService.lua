@@ -3,6 +3,9 @@
 	Player profiles (Gems, levels, stats, cosmetics, settings), gamepass ownership and
 	the paid-random-items policy check.
 
+	It also runs the reasons to come back (rules in Shared/Meta/Progress): the character
+	you play, character mastery, daily quests, the login streak and trophies.
+
 	Profiles are saved with a lightweight session lock so a player who teleports between
 	servers can't be loaded in two places at once (which would lose progress).
 	In Studio without API access, profiles live in memory only.
@@ -18,6 +21,8 @@ local Shared = ReplicatedStorage.Shared
 local Config = require(Shared.Config)
 local Cosmetics = require(Shared.Meta.Cosmetics)
 local Passes = require(Shared.Meta.Passes)
+local Progress = require(Shared.Meta.Progress)
+local Characters = require(Shared.Game.Characters)
 
 local ServerInfo = require(script.Parent.ServerInfo)
 local Net = require(script.Parent.Net)
@@ -42,7 +47,13 @@ local function newProfile()
 		gems = Config.Rewards.StartingGems,
 		xp = 0,
 		level = 1,
-		stats = { games = 0, wins = 0, treasures = 0, deaths = 0, placed = 0, practice = 0 },
+		stats = { games = 0, wins = 0, treasures = 0, deaths = 0, placed = 0, practice = 0, bonks = 0, gotchas = 0 },
+		character = Characters.ids[1], -- the character you play in matches
+		mastery = {}, -- [characterId] = mastery XP
+		quests = { day = -1, list = {}, rerolled = false, bonus = false },
+		streak = { day = -10, count = 0 },
+		trophies = 0,
+		bestTrophies = 0,
 		owned = owned,
 		equipped = {
 			pawn = Cosmetics.defaults.pawn,
@@ -98,6 +109,9 @@ local function reconcile(data)
 		emotes = table.clone(Cosmetics.defaults.emotes)
 	end
 	data.equipped.emotes = emotes
+	if Characters.get(data.character) == nil then
+		data.character = Characters.ids[1]
+	end
 	return data
 end
 
@@ -280,6 +294,7 @@ function DataService.view(player: Player)
 			table.insert(passes, k)
 		end
 	end
+	local quests = DataService.questView(player)
 	return {
 		gems = data.gems,
 		xp = data.xp,
@@ -304,7 +319,96 @@ function DataService.view(player: Player)
 		restricted = prof.restricted,
 		settings = table.clone(data.settings),
 		temp = prof.temp,
+		character = data.character,
+		mastery = table.clone(data.mastery),
+		quests = quests,
+		questRerolled = data.quests.rerolled,
+		questBonus = data.quests.bonus,
+		streak = { count = data.streak.count, day = data.streak.day, today = Progress.today() },
+		trophies = data.trophies,
+		bestTrophies = data.bestTrophies,
 	}
+end
+
+-- Today's quests (made fresh on a new day).
+local function ensureQuests(player: Player, data)
+	local today = Progress.today()
+	if data.quests.day ~= today then
+		data.quests = { day = today, list = Progress.dailyQuests(player.UserId, today), rerolled = false, bonus = false }
+	end
+	return data.quests
+end
+
+-- The quests as the lobby shows them.
+function DataService.questView(player: Player)
+	local data = DataService.get(player)
+	if not data then
+		return {}
+	end
+	local out = {}
+	for i, q in ensureQuests(player, data).list do
+		local def = Progress.questById[q.id]
+		if def then
+			table.insert(out, {
+				index = i,
+				id = q.id,
+				text = Progress.questText(def),
+				goal = def.goal,
+				gems = def.gems,
+				progress = math.min(q.progress, def.goal),
+				done = q.done,
+			})
+		end
+	end
+	return out
+end
+
+-- The character a player takes into matches.
+function DataService.selectedCharacter(player: Player): string
+	local data = DataService.get(player)
+	local id = data and data.character
+	if id and Characters.get(id) then
+		return id
+	end
+	return Characters.ids[1]
+end
+
+function DataService.selectCharacter(player: Player, id: any)
+	local data = DataService.get(player)
+	if not data then
+		return false, "Your profile is still loading."
+	end
+	if type(id) ~= "string" or Characters.get(id) == nil then
+		return false, "Unknown character."
+	end
+	data.character = id
+	return true
+end
+
+-- Swap one of today's quests for another (once a day, not finished ones).
+function DataService.rerollQuest(player: Player, index: any)
+	local data = DataService.get(player)
+	if not data then
+		return false, "Your profile is still loading."
+	end
+	local quests = ensureQuests(player, data)
+	local q = type(index) == "number" and quests.list[index]
+	if not q then
+		return false, "Pick a quest."
+	end
+	if quests.rerolled then
+		return false, "You've already swapped a quest today."
+	end
+	if q.done then
+		return false, "That quest is already done."
+	end
+	local fresh = Progress.rerollQuest(quests.list, index, player.UserId + quests.day * 31 + index)
+	if not fresh then
+		return false, "No other quests to swap in."
+	end
+	quests.list[index] = fresh
+	quests.rerolled = true
+	return true
 end
 
 function DataService.pushProfile(player: Player)
@@ -393,13 +497,100 @@ function DataService.saveSettings(player: Player, settings)
 	return true
 end
 
--- Gems/XP for a finished match. Returns a summary for the results screen.
+-- Mastery XP for the character played; returns what changed.
+local function applyMastery(data, result)
+	local charId = result.character
+	if not charId or Characters.get(charId) == nil then
+		return nil
+	end
+	local before = data.mastery[charId] or 0
+	local gain = Progress.masteryXp(result)
+	local after = before + gain
+	data.mastery[charId] = after
+	local oldLevel, newLevel = Progress.masteryLevel(before), Progress.masteryLevel(after)
+	local gems, titles = 0, {}
+	for level = oldLevel + 1, newLevel do
+		gems += Progress.masteryGems(level)
+		local tier = Progress.masteryTitles[level]
+		if tier then
+			local id = Progress.masteryTitleId(charId, tier)
+			if Cosmetics.get(id) and not data.owned[id] then
+				data.owned[id] = true
+				table.insert(titles, id)
+			end
+		end
+	end
+	data.gems += gems
+	local into, need = Progress.masteryProgress(after)
+	return {
+		character = charId,
+		xp = gain,
+		level = newLevel,
+		levelsGained = newLevel - oldLevel,
+		into = into,
+		need = need,
+		gems = gems,
+		titles = titles,
+	}
+end
+
+-- Daily quests move along; finished ones pay out right away.
+local function applyQuests(player: Player, data, result)
+	local quests = ensureQuests(player, data)
+	local out, gems, chest = {}, 0, false
+	for i, q in quests.list do
+		local def = Progress.questById[q.id]
+		if def and not q.done then
+			local gain = Progress.questGain(def, result)
+			if gain > 0 then
+				q.progress = math.min(def.goal, q.progress + gain)
+				local finished = q.progress >= def.goal
+				if finished then
+					q.done = true
+					gems += def.gems
+				end
+				table.insert(out, { index = i, text = Progress.questText(def), progress = q.progress, goal = def.goal, done = finished, gems = def.gems })
+			end
+		end
+	end
+	data.gems += gems
+	local allDone = #quests.list > 0
+	for _, q in quests.list do
+		allDone = allDone and q.done
+	end
+	if allDone and not quests.bonus then
+		quests.bonus = true
+		chest = true
+		data.freeChests.explorer = (data.freeChests.explorer or 0) + Progress.QuestBonusChests
+	end
+	return { changed = out, gems = gems, chest = chest }
+end
+
+-- Trophies from a ranked (public free-for-all) match.
+local function applyTrophies(data, result)
+	if not result.ranked or result.practice then
+		return nil
+	end
+	local before = data.trophies
+	local delta = Progress.trophyDelta(result.place or result.players or 1, result.players or 1, result.won == true, result.team == true, before)
+	data.trophies = math.max(0, before + delta)
+	data.bestTrophies = math.max(data.bestTrophies, data.trophies)
+	local oldRank, newRank = Progress.rank(before), Progress.rank(data.trophies)
+	return { delta = delta, total = data.trophies, rank = newRank.id, rankUp = newRank.min > oldRank.min }
+end
+
+--[[
+	Rewards for a finished match. result = { treasures, won, practice, ranked, place,
+	players, character, mode, event, stats (the engine's per-player stats) }.
+	Returns a summary for the results screen.
+]]
 function DataService.applyMatchResult(player: Player, result)
 	local data = DataService.get(player)
 	if not data then
 		return nil
 	end
 	local R = Config.Rewards
+	local stats = result.stats or {}
 	local gems = R.MatchGems + R.TreasureGems * result.treasures + (if result.won then R.WinGems else 0)
 	local xp = R.MatchXP + R.TreasureXP * result.treasures + (if result.won then R.WinXP else 0)
 	if result.practice then
@@ -438,8 +629,14 @@ function DataService.applyMatchResult(player: Player, result)
 		end
 	end
 	s.treasures += result.treasures
-	s.deaths += result.deaths or 0
-	s.placed += result.placed or 0
+	s.deaths += stats.deaths or 0
+	s.placed += stats.placed or 0
+	s.bonks += stats.bonks or 0
+	s.gotchas += stats.gotchas or 0
+
+	local mastery = applyMastery(data, result)
+	local quests = applyQuests(player, data, result)
+	local trophies = applyTrophies(data, result)
 
 	return {
 		gems = gems + levelsGained * R.LevelUpGems,
@@ -447,6 +644,9 @@ function DataService.applyMatchResult(player: Player, result)
 		levelsGained = levelsGained,
 		level = data.level,
 		bonus = bonus,
+		mastery = mastery,
+		quests = quests,
+		trophies = trophies,
 	}
 end
 
@@ -458,20 +658,30 @@ end
 -- lifecycle
 ---------------------------------------------------------------------------
 
-local function dailyReward(player: Player)
+-- Logging in on consecutive days pays more each day (Progress.streakGems); day 7 adds
+-- a free chest. VIPs also get a free Explorer Chest every day.
+local function loginStreak(player: Player)
 	local prof = profiles[player]
 	local data = prof.data
-	local today = os.time() // 86400
-	if data.lastDaily == today then
+	local today = Progress.today()
+	local count, rewardDay = Progress.nextStreak(data.streak, today)
+	if not rewardDay then
 		return
 	end
+	data.streak = { day = today, count = count }
 	data.lastDaily = today
-	data.gems += Config.Rewards.DailyGems
-	local msg = "Daily reward: +" .. Config.Rewards.DailyGems .. " Gems"
+	local gems = Progress.streakGems[rewardDay]
+	data.gems += gems
+	local msg = "Day " .. count .. " streak: +" .. gems .. " Gems"
+	if rewardDay == Progress.StreakChestDay then
+		data.freeChests.explorer = (data.freeChests.explorer or 0) + 1
+		msg ..= " and a free Explorer Chest!"
+	end
 	if prof.passes.VIP then
 		data.freeChests.explorer = (data.freeChests.explorer or 0) + 1
-		msg ..= " and a free Explorer Chest (VIP)"
+		msg ..= " (VIP: +1 free Explorer Chest)"
 	end
+	ensureQuests(player, data)
 	task.delay(4, function()
 		Net.push(player, "toast", { text = msg, kind = "reward" })
 	end)
@@ -486,7 +696,7 @@ local function onPlayerAdded(player: Player)
 	profiles[player] = prof
 	prof.restricted = checkPolicy(player)
 	refreshPasses(player)
-	dailyReward(player)
+	loginStreak(player)
 	loadedSignal:Fire(player)
 	DataService.pushProfile(player)
 	if temp and store then
@@ -578,6 +788,24 @@ function DataService.init()
 
 	Net.handle("settings.save", function(player, payload)
 		DataService.saveSettings(player, payload.settings)
+		return true
+	end)
+
+	Net.handle("character.select", function(player, payload)
+		local ok2, err = DataService.selectCharacter(player, payload.character)
+		if not ok2 then
+			return false, err
+		end
+		DataService.pushProfile(player)
+		return true
+	end)
+
+	Net.handle("quests.reroll", function(player, payload)
+		local ok2, err = DataService.rerollQuest(player, payload.index)
+		if not ok2 then
+			return false, err
+		end
+		DataService.pushProfile(player)
 		return true
 	end)
 

@@ -1,102 +1,113 @@
 --[[
 	Characters
-	The six Trapisque characters. Characters are dealt at random at the start of a match
-	(rulebook: "Assign characters by drawing cards randomly"), one of each at most.
+	The six Trapisque characters. You pick yours in the lobby (two players can pick the
+	same one). Every character has:
 
-	ability.recharge:
-		cycles    - recharges after the owner completes `amount` cycles (treasure laps)
-		rounds    - recharges after `amount` full rounds of turns
-		once      - one use per game; only a Regeneration card brings it back
-		perTurn   - can be used once every turn, no recharge needed
+		passive   always on, and worth about the same on every map
+		ability   costs Power. Your Power bar is as long as your ability's cost: the die
+		          you don't move with charges it, and when it's full the ability is ready.
+
+	Every ability helps the one who uses it, not just hurts someone: in a free-for-all,
+	hurting one rival helps your other rivals as much as it helps you.
+
 	ability.target:
-		other     - any other player
-		any       - any player, including yourself
-		sameTile  - another player standing on your tile
-		none      - no target
+		other   any other player          any   any player, including yourself
+		none    no target                 tile  a tile near you
+	ability.range: how far away (in tiles) the target may be, if limited.
 ]]
 
 local Config = require(script.Parent.Parent.Config)
 
 local Characters = {}
 
-local R = Config.Rules
+local C = Config.Characters
 
 local defs = {
 	{
 		id = "mage",
 		name = "Mage",
 		tagline = "Master of frost and flame",
-		passive = "Immune to Ice and freezing.",
+		passiveName = "Frostproof",
+		passive = "Can't be Frozen.",
 		ability = {
-			id = "hex",
-			name = "Hex",
-			text = "Freeze or Burn any player until their cycle ends.",
-			recharge = "cycles",
-			amount = R.AbilityRechargeCycles,
-			target = "other",
-			options = { "freeze", "burn" },
+			id = "blizzard",
+			name = "Blizzard",
+			text = "Freeze every rival for their next turn, and skate " .. C.mage.skate .. (if C.mage.skate == 1 then " tile" else " tiles") .. " ahead on the ice.",
+			cost = C.mage.cost,
+			target = "none",
 		},
 	},
 	{
 		id = "trapper",
 		name = "Trapper",
 		tagline = "Never leaves home without a trap",
-		passive = "Starts with " .. R.TrapperStartingTraps .. " random trap cards.",
+		passiveName = "Bounty Hunter",
+		passive = "Hides traps anywhere on the board and keeps up to " .. C.trapper.trapCap .. " out. Each time one catches someone, you hop " .. C.trapper.bounty .. (if C.trapper.bounty == 1 then " tile" else " tiles") .. " forward.",
 		ability = {
 			id = "scavenge",
 			name = "Scavenge",
-			text = "Spin the Trap wheel for a free card.",
-			recharge = "cycles",
-			amount = R.AbilityRechargeCycles,
+			text = "Pick one of two random trap cards.",
+			cost = C.trapper.cost,
 			target = "none",
 		},
-		startingCards = "traps",
+		startingCards = "trap",
 	},
 	{
 		id = "fire_starter",
 		name = "Fire Starter",
 		tagline = "Leaves a trail of embers",
-		passive = "Starts with " .. R.FireStarterStartingFires .. " Fire cards.",
+		passiveName = "Hot Hands",
+		passive = "Your bonks set rivals on fire. Starts with a Fire card.",
 		ability = {
-			id = "ignite",
-			name = "Ignite",
-			text = "Burn a player standing on your tile. Usable every turn.",
-			recharge = "perTurn",
-			target = "sameTile",
+			id = "blast",
+			name = "Blast Off",
+			text = "Rocket " .. C.fire_starter.blast .. " tiles forward. The tiles you fly over burn until your next turn.",
+			cost = C.fire_starter.cost,
+			target = "none",
 		},
-		startingCards = "fires",
+		startingCards = "fire",
 	},
 	{
 		id = "naturalist",
 		name = "Naturalist",
 		tagline = "At home in the wild",
-		passive = "Walks through rivers, gates, slime and gated shortcuts. Gets natural trap cards instead of Bridge/Key/Boots. Takes double penalties from trap cards.",
-		ability = nil,
+		passiveName = "Wild Walker",
+		passive = "Rivers, locked gates and slime don't stop you.",
+		ability = {
+			id = "overgrow",
+			name = "Overgrow",
+			text = "Grow this map's hazard (river, gate or slime) on a tile up to " .. C.naturalist.range .. " tiles away. You can keep " .. C.naturalist.cap .. " out at once.",
+			cost = C.naturalist.cost,
+			target = "tile",
+			range = C.naturalist.range,
+		},
 	},
 	{
 		id = "warper",
 		name = "Warper",
 		tagline = "Here one moment, there the next",
-		passive = "Immune to swaps.",
+		passiveName = "Slippery",
+		passive = "Can't be swapped by anyone else.",
 		ability = {
 			id = "warp",
 			name = "Warp",
-			text = "Swap places with any player. Once per game (Regeneration restores it).",
-			recharge = "once",
+			text = "Swap places with a player up to " .. C.warper.range .. " tiles away.",
+			cost = C.warper.cost,
 			target = "other",
+			range = C.warper.range,
 		},
 	},
 	{
 		id = "overseer",
 		name = "Overseer",
 		tagline = "Sees every move before it happens",
-		passive = "Always takes the first turn.",
+		passiveName = "All-Seeing",
+		passive = "Sees every hidden trap.",
 		ability = {
 			id = "nudge",
 			name = "Nudge",
-			text = "Move any player (even yourself) 1 tile forward or back.",
-			recharge = "rounds",
-			amount = R.OverseerRechargeRounds,
+			text = "Move any player (even yourself) " .. C.overseer.steps .. " tiles forward or back.",
+			cost = C.overseer.cost,
 			target = "any",
 			options = { "fwd", "back" },
 		},
@@ -115,6 +126,12 @@ end
 
 function Characters.get(id: string)
 	return Characters.byId[id]
+end
+
+-- How much Power this character's ability needs (the length of their Power bar).
+function Characters.cost(id: string): number
+	local def = Characters.byId[id]
+	return if def and def.ability then def.ability.cost else 0
 end
 
 return Characters

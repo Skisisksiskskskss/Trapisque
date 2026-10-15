@@ -1,9 +1,10 @@
 --[[
 	Modes
-	The four Trapisque game modes.
+	The Trapisque game modes: the four from the rulebook plus the weekly event.
 
 	teams = number of teams, teamSize = players per team. A teamSize of 1 means
-	free-for-all. `target` is how many treasures each player needs.
+	free-for-all. `target` is how many treasures each player is worth to their team:
+	a team wins when its treasures add up to target x teamSize (teammates pool them).
 ]]
 
 local Config = require(script.Parent.Parent.Config)
@@ -15,7 +16,7 @@ local defs = {
 		id = "chaos",
 		name = "Chaos Trapisque",
 		short = "Chaos",
-		blurb = "Free-for-all. First to 5 treasures wins.",
+		blurb = "Free-for-all. First to grab the treasures wins.",
 		minPlayers = 2,
 		maxPlayers = 6,
 		teamSize = 1,
@@ -25,7 +26,7 @@ local defs = {
 		id = "assist",
 		name = "Assist Trapisque",
 		short = "Assist",
-		blurb = "2 vs 2. A team wins when both teammates have 5 treasures.",
+		blurb = "2 vs 2. Teammates pool their treasures.",
 		minPlayers = 4,
 		maxPlayers = 4,
 		teams = 2,
@@ -36,7 +37,7 @@ local defs = {
 		id = "factions",
 		name = "Factions",
 		short = "Factions",
-		blurb = "Three teams of 2. Both teammates need 5 treasures.",
+		blurb = "Three teams of 2. Teammates pool their treasures.",
 		minPlayers = 6,
 		maxPlayers = 6,
 		teams = 3,
@@ -44,15 +45,27 @@ local defs = {
 		target = Config.Rules.TreasuresToWin,
 	},
 	{
+		-- free-for-all with the week's twist on the rules (Meta/Progress events)
+		id = "event",
+		name = "Weekly Event",
+		short = "Event",
+		blurb = "Free-for-all with this week's twist on the rules.",
+		minPlayers = 2,
+		maxPlayers = 6,
+		teamSize = 1,
+		target = Config.Rules.TreasuresToWin,
+		isEvent = true,
+	},
+	{
 		id = "ww4",
 		name = "World War Four",
 		short = "WW4",
-		blurb = "3 vs 3. Every teammate needs 4 treasures.",
+		blurb = "3 vs 3. The biggest brawl: teammates pool their treasures.",
 		minPlayers = 6,
 		maxPlayers = 6,
 		teams = 2,
 		teamSize = 3,
-		target = 4,
+		target = 3,
 	},
 }
 
@@ -69,11 +82,11 @@ function Modes.get(id: string)
 	return Modes.byId[id]
 end
 
--- Match length presets. Classic is the rulebook; Quick fits a Roblox session better.
+-- Match length presets. Quick fits a Roblox session; Classic is the long game.
 Modes.lengths = {
-	{ id = "quick", name = "Quick", target = 2, blurb = "2 treasures each. About 10 minutes." },
-	{ id = "standard", name = "Standard", target = 3, blurb = "3 treasures each. About 15 minutes." },
-	{ id = "classic", name = "Classic", blurb = "The full rulebook: 5 treasures (4 in World War Four)." },
+	{ id = "quick", name = "Quick", target = 2, blurb = "2 treasures each. About 8 minutes." },
+	{ id = "standard", name = "Standard", target = 3, blurb = "3 treasures each. About 12 minutes." },
+	{ id = "classic", name = "Classic", blurb = "4 treasures each (3 in World War Four). The long game." },
 }
 Modes.lengthById = {}
 for _, l in Modes.lengths do
