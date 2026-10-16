@@ -47,8 +47,11 @@ function Chests.art(parent: Instance, look, props: { [string]: any }?)
 	root.Name = "Chest"
 	local body, trim, band, gem = hex(string.sub(look.body, 2)), hex(string.sub(look.trim, 2)), hex(string.sub(look.band, 2)), hex(string.sub(look.gem, 2))
 
-	-- lid and box share one width; only the lid's top corners are rounded
+	-- lid and box share one width; only the lid's top corners are rounded. Each part
+	-- gets the sticker outline first (the same shape, a little bigger, in the line colour).
+	local o = 0.06
 	local base = Shapes.canvas(root, { Name = "Base", ZIndex = 1 })
+	Shapes.rect(base, 0.5, 0.6825, 0.8 + o, 0.395 + o, C.line, { r = 0.08 })
 	Shapes.rect(base, 0.5, 0.6825, 0.8, 0.395, body)
 	Shapes.rect(base, 0.27, 0.6825, 0.09, 0.395, trim)
 	Shapes.rect(base, 0.73, 0.6825, 0.09, 0.395, trim)
@@ -56,6 +59,8 @@ function Chests.art(parent: Instance, look, props: { [string]: any }?)
 	Shapes.circle(base, 0.5, 0.58, 0.075, gem)
 
 	local lid = Shapes.canvas(root, { Name = "Lid", ZIndex = 2 })
+	Shapes.rect(lid, 0.5, 0.375, 0.8 + o, 0.22 + o, C.line, { r = 0.4 })
+	Shapes.rect(lid, 0.5, 0.43, 0.8 + o, 0.11 + o * 0.6, C.line)
 	Shapes.rect(lid, 0.5, 0.375, 0.8, 0.22, body, { r = 0.4 })
 	Shapes.rect(lid, 0.5, 0.43, 0.8, 0.11, body)
 	Shapes.rect(lid, 0.27, 0.375, 0.09, 0.22, trim)
@@ -325,7 +330,7 @@ function Chests.open(layer: Instance): () -> ()
 		local strip = oddsStrip(card, chest, 278, stripLucky)
 		local buttons = Util.frame(card, {
 			AnchorPoint = Vector2.new(0.5, 1),
-			Position = UDim2.new(0.5, 0, 1, -50),
+			Position = UDim2.new(0.5, 0, 1, -58),
 			Size = UDim2.new(1, -30, 0, 52),
 		})
 		local one = Widgets.button(buttons, {

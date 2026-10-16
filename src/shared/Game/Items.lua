@@ -76,6 +76,7 @@ local defs = {
 	{
 		id = "banana",
 		name = "Banana Peel",
+		nick = "Banana", -- on cards too small for the whole name
 		category = "trap",
 		use = "place",
 		hidden = true,
@@ -95,6 +96,7 @@ local defs = {
 	{
 		id = "speed_boost",
 		name = "Speed Boost",
+		nick = "Boost", -- on cards too small for the whole name
 		category = "assist",
 		use = "boost",
 		boost = "double",
@@ -104,6 +106,7 @@ local defs = {
 	{
 		id = "bounce_pad",
 		name = "Bounce Pad",
+		nick = "Bounce", -- on cards too small for the whole name
 		category = "assist",
 		use = "boost",
 		boost = "plus",
@@ -123,6 +126,7 @@ local defs = {
 	{
 		id = "clover",
 		name = "Lucky Clover",
+		nick = "Clover", -- on cards too small for the whole name
 		category = "assist",
 		use = "reroll",
 		short = "Reroll your dice",
@@ -131,6 +135,7 @@ local defs = {
 	{
 		id = "juice",
 		name = "Juice Box",
+		nick = "Juice", -- on cards too small for the whole name
 		category = "assist",
 		use = "juice",
 		short = "Fill your Power",
@@ -181,6 +186,7 @@ local defs = {
 	{
 		id = "spore_warper",
 		name = "Spore Warper",
+		nick = "Spores", -- on cards too small for the whole name
 		category = "neutral",
 		use = "place",
 		short = "Swap with nearest",
@@ -189,6 +195,7 @@ local defs = {
 	{
 		id = "conveyor",
 		name = "Conveyor Belt",
+		nick = "Conveyor", -- on cards too small for the whole name
 		category = "neutral",
 		use = "place",
 		short = "3-tile belt",
@@ -207,6 +214,7 @@ local defs = {
 	{
 		id = "speed_potion",
 		name = "Speed Potion",
+		nick = "Speed", -- on cards too small for the whole name
 		category = "potion",
 		use = "boost",
 		boost = "plus",
@@ -218,6 +226,7 @@ local defs = {
 	{
 		id = "phoenix_potion",
 		name = "Phoenix Potion",
+		nick = "Phoenix", -- on cards too small for the whole name
 		category = "potion",
 		use = "passive",
 		price = 2,
@@ -227,6 +236,7 @@ local defs = {
 	{
 		id = "xray_potion",
 		name = "X-Ray Potion",
+		nick = "X-Ray", -- on cards too small for the whole name
 		category = "potion",
 		use = "xray",
 		price = 2,
@@ -236,6 +246,7 @@ local defs = {
 	{
 		id = "telepathy_potion",
 		name = "Telepathy Potion",
+		nick = "Telepathy", -- on cards too small for the whole name
 		category = "potion",
 		use = "telepathy",
 		price = 3,
@@ -245,6 +256,7 @@ local defs = {
 	{
 		id = "time_potion",
 		name = "Time Travel Potion",
+		nick = "Time", -- on cards too small for the whole name
 		category = "potion",
 		use = "anchor",
 		price = 4,
@@ -254,6 +266,7 @@ local defs = {
 	{
 		id = "jeopardy_potion",
 		name = "Double Jeopardy",
+		nick = "Jeopardy", -- on cards too small for the whole name
 		category = "potion",
 		use = "jeopardy",
 		price = 5,

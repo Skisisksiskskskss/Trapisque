@@ -9,7 +9,7 @@ import math
 import os
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
-# Luckiest Guy, Fondamento and Nunito (Google Fonts); set TRAPISQUE_FONTS to use another folder
+# Luckiest Guy and Nunito (Google Fonts); set TRAPISQUE_FONTS to use another folder
 FONT_DIR = os.environ.get("TRAPISQUE_FONTS", os.path.join(os.path.dirname(os.path.abspath(__file__)), "fonts"))
 
 
@@ -26,10 +26,11 @@ _WEIGHTS = {"body": "Bold", "heavy": "ExtraBold", "regular": "SemiBold"}
 
 
 def font(kind, size):
-    """Theme.Font: chunky = Luckiest Guy, display = Fondamento, body/heavy/regular = Nunito."""
+    """Theme.Font: chunky and display = Luckiest Guy, body/heavy/regular = Nunito
+    Bold/ExtraBold/SemiBold."""
     files = {
         "chunky": "LuckiestGuy-Regular.ttf",
-        "display": "Fondamento-Regular.ttf",
+        "display": "LuckiestGuy-Regular.ttf",
         "body": "Nunito[wght].ttf",
     }
     path = os.path.join(FONT_DIR, files.get(kind, files["body"]))
@@ -611,6 +612,8 @@ def _draw_list(cv, ops):
         elif kind == "arrow":
             cv.arrow(args[1], args[2], args[3], args[4], c, dir=o.get("dir", 90), extra=o.get("extra", 0))
         elif kind == "text":
-            cv.text(args[1], args[2], args[3], args[4], args[5], c, fnt=o.get("font", "chunky"), rot=o.get("rot", 0), stroke=o.get("stroke", 0))
+            # Icons.lua: font "body" is Theme.Font.BodyHeavy, anything else Chunky
+            fnt = "heavy" if o.get("font") == "body" else "chunky"
+            cv.text(args[1], args[2], args[3], args[4], args[5], c, fnt=fnt, rot=o.get("rot", 0), stroke=o.get("stroke", 0))
         else:
             raise ValueError("unknown op " + str(kind))

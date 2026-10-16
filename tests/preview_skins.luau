@@ -9,6 +9,9 @@
 function PreviewJson(v)
 	local t = type(v)
 	if t == "number" then
+		if v == math.floor(v) and math.abs(v) < 2 ^ 53 then
+			return string.format("%d", v)
+		end
 		return string.format("%.6g", v)
 	elseif t == "string" then
 		local s = v:gsub("\\", "\\\\"):gsub('"', '\\"'):gsub("\n", "\\n")

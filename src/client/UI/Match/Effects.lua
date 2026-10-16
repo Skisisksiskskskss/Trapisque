@@ -227,7 +227,7 @@ function Effects.trap(view, item: string, tile: number)
 			burst(view, at - Vector2.new(0, 0.6 * U), C.woodLight, 8, 1.1, 0.18, 0.5)
 		end)
 	elseif item == "snare" then
-		ring(view, at, C.woodLight, 2, 0.4, 0.4, 6)
+		ring(view, at, C.textSoft, 2, 0.4, 0.4, 6)
 	elseif item == "grog" then
 		ring(view, at, C.lime, 0.5, 2.4, 0.6, 7)
 	elseif item == "teleporter" then
@@ -387,7 +387,7 @@ end
 function Effects.snared(view, seat: number)
 	local at = view:pawnWorld(seat)
 	popSticker(view, at, "zzz", 1, 1)
-	shoutAt(view, at, "SNARED!", C.woodLight)
+	shoutAt(view, at, "SNARED!", C.textSoft)
 	view:setMood(seat, "dizzy", 1.6)
 end
 

@@ -508,38 +508,7 @@ function BoardView:_buildDecor()
 		local c = Shapes.canvas(holder)
 		Icons.draw(c, { { "group", fx = d.flip, ops = DecorData[d.kind] } }, colors)
 	end
-	-- compass rose (left out when no corner has room for it)
-	local cp = L.compass
-	if cp then
-		local size = cp.size * U
-		local holder = Util.frame(layer, {
-			Name = "Compass",
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.fromOffset((cp.x - L.x0) * U, (cp.y - L.y0) * U),
-			Size = UDim2.fromOffset(size, size),
-		})
-		local ink = T.ink
-		Icons.draw(Shapes.canvas(holder), DecorData.compass_rose, { ink = ink, bg = colors.bg, acc2 = C.inkRed, acc = ink, hi = colors.bg })
-		self.compass = holder
-	end
-	-- title ribbon
-	local title = L.title
-	local ribbonHolder = Util.frame(layer, {
-		Name = "TitleSpot",
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromOffset((title.x - L.x0) * U, (title.y - L.y0) * U),
-		Size = UDim2.fromOffset(title.w * U, title.h * U),
-	})
-	local r = Widgets.ribbon(ribbonHolder, self.def.name, { width = title.w * U })
-	r.Size = UDim2.fromOffset(title.w * U, title.h * U)
-	r.Position = UDim2.fromScale(0.5, 0.5)
-	local label = r:FindFirstChildWhichIsA("TextLabel", true)
-	if label then
-		local constraint = label:FindFirstChildOfClass("UITextSizeConstraint")
-		if constraint then
-			constraint.MaxTextSize = math.floor(title.h * U * 0.62)
-		end
-	end
+	-- (the map's name is in the top bar: the strip above the tiles ends up under the HUD)
 end
 
 function BoardView:_buildLinks()
@@ -662,13 +631,17 @@ BoardView.plaque = plaque
 	so it reads as "hidden". Map traps everyone can see are solid.
 ]]
 local function trapMark(parent: Instance, trap, at: UDim2, size: number, z: number): GuiObject
+	-- the owner's ring scales with the mark, and the group leaves room for it (a
+	-- CanvasGroup clips whatever sticks out)
+	local ring = math.max(1, math.min(0.08 * U, size * 0.12))
+	local box = size + 2 * ring + 2
 	local g = Util.new("CanvasGroup", {
 		Name = "Trap",
 		BackgroundTransparency = 1,
 		GroupTransparency = if trap.public then 0 else 0.25,
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = at,
-		Size = UDim2.fromOffset(size * 1.2, size * 1.2),
+		Size = UDim2.fromOffset(box, box),
 		ZIndex = z,
 		Parent = parent,
 	})
@@ -680,11 +653,11 @@ local function trapMark(parent: Instance, trap, at: UDim2, size: number, z: numb
 		BorderSizePixel = 0,
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.5),
-		Size = UDim2.fromScale(1 / 1.2, 1 / 1.2),
+		Size = UDim2.fromOffset(size, size),
 		Parent = g,
 	})
 	Util.corner(disc, 0.5)
-	Util.stroke(disc, color, 0.08 * U)
+	Util.stroke(disc, color, ring)
 	local art = Icons.stickerFor(trap.item)
 	if art then
 		Icons.sticker(disc, art, { Size = UDim2.fromScale(0.84, 0.84), ZIndex = 2 }, 0.05)
@@ -713,7 +686,7 @@ function BoardView:_paintTile(tile: number)
 	local token = self.tokens[tile]
 	local traps = self.traps[tile]
 	local ember = self.embers[tile]
-	local topColor = TILE_COLORS[kind] or (if parts.branch then TILE_COLORS.branch else TILE_COLORS.normal)
+	local topColor = if kind == "normal" and parts.branch then TILE_COLORS.branch else (TILE_COLORS[kind] or TILE_COLORS.normal)
 	local skinKind = natural
 	if not skinKind and beltAngle then
 		skinKind = "conveyor"
@@ -757,7 +730,8 @@ function BoardView:_paintTile(tile: number)
 			Icons.sticker(icon, art, nil, 0.06)
 			parts.icon = icon
 		end
-	elseif entry then
+	elseif entry and not (entry.item == "conveyor" and beltAngle) then
+		-- (a belt's first tile shows the belt itself, not a plaque on top of it)
 		parts.plaque = plaque(root, entry.item, entry.owner, mid, 0.86 * U, 6)
 	end
 	local busyCenter = natural ~= nil or entry ~= nil
@@ -1353,7 +1327,14 @@ function BoardView:_stepTags()
 	local pathTag = self.pathTag
 	if pathTag and self.pathTagTile then
 		local at = self:toStage(self:tileWorld(self.pathTagTile) - Vector2.new(0, 0.95 * U))
-		pathTag.Position = UDim2.fromOffset(at.X, at.Y)
+		-- keep the whole row of badges over the board, even at its edges
+		local list = pathTag:FindFirstChildOfClass("UIListLayout")
+		local k = math.max(0.01, Util.inheritedScale(self.overlay, true))
+		local half = (if list then list.AbsoluteContentSize.X / k else 260) / 2 + 6
+		local f = self.focus
+		local x = math.clamp(at.X, f.x + half, math.max(f.x + half, f.x + f.w - half))
+		local y = math.max(at.Y, f.y + 30)
+		pathTag.Position = UDim2.fromOffset(x, y)
 	end
 	local tag = self.tag
 	if not tag or not tag.Visible then
@@ -1676,7 +1657,8 @@ function BoardView:showPath(path: { number }?, o: { [string]: any }?)
 	end
 	local opts = o or {}
 	local color = opts.color or C.sun
-	local layer = Util.frame(self.layers.Fx, { Name = "PathPreview", ZIndex = 32 })
+	-- over the board pieces but under the pawns, so nobody is hidden by the dots
+	local layer = Util.frame(self.layers.Pieces, { Name = "PathPreview", ZIndex = 32 })
 	self.pathLayer = layer
 	for i, tile in path do
 		if i < #path then

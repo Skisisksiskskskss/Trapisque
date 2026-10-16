@@ -72,17 +72,27 @@ local PIPS = {
 	{ { 0.28, 0.28 }, { 0.72, 0.28 }, { 0.5, 0.5 }, { 0.28, 0.72 }, { 0.72, 0.72 } },
 	{ { 0.28, 0.25 }, { 0.72, 0.25 }, { 0.28, 0.5 }, { 0.72, 0.5 }, { 0.28, 0.75 }, { 0.72, 0.75 } },
 }
+-- the pair is sized by the screen's height and spaced inside its own box, so they
+-- keep their gap on a wide monitor and on a phone held upright alike
+local pair = Instance.new("Frame")
+pair.Name = "Dice"
+pair.BackgroundTransparency = 1
+pair.AnchorPoint = Vector2.new(0.5, 0.5)
+pair.Position = UDim2.fromScale(0.5, 0.56)
+pair.Size = UDim2.fromScale(0.24, 0.1)
+pair.SizeConstraint = Enum.SizeConstraint.RelativeYY
+pair.Parent = bg
 local dice = {}
-for i, x in { 0.44, 0.56 } do
+for i, x in { 0.2, 0.8 } do
 	local die = Instance.new("Frame")
 	die.Name = "Die" .. i
 	die.BackgroundColor3 = CREAM
 	die.BorderSizePixel = 0
 	die.AnchorPoint = Vector2.new(0.5, 0.5)
-	die.Position = UDim2.fromScale(x, 0.56)
-	die.Size = UDim2.fromScale(0.1, 0.1)
+	die.Position = UDim2.fromScale(x, 0.5)
+	die.Size = UDim2.fromScale(1, 1)
 	die.SizeConstraint = Enum.SizeConstraint.RelativeYY
-	die.Parent = bg
+	die.Parent = pair
 	Instance.new("UICorner", die).CornerRadius = UDim.new(0.22, 0)
 	local stroke = Instance.new("UIStroke")
 	stroke.Color = LINE

@@ -36,6 +36,7 @@ CardTip.__index = CardTip
 
 local INFO_W = 264
 local GAP = 10
+local MARGIN = 8 -- room around the tip for outlines (its CanvasGroup clips)
 
 local CATEGORY_LABEL = {
 	trap = "TRAP",
@@ -297,11 +298,15 @@ function CardTip:_arrange(animate: boolean)
 	end
 	x = math.clamp(x, 8, math.max(8, stage.X - w - 8))
 	y = math.clamp(y, 8, math.max(8, stage.Y - h - 8))
-	group.Size = UDim2.fromOffset(w, h)
+	-- a CanvasGroup clips at its edges: leave a margin for the outlines and shadows
+	local m = MARGIN
+	cardSlot.Position = cardSlot.Position + UDim2.fromOffset(m, m)
+	info.Position = info.Position + UDim2.fromOffset(m, m)
+	group.Size = UDim2.fromOffset(w + 2 * m, h + 2 * m)
 	if animate then
-		Util.tween(group, 0.12, { Position = UDim2.fromOffset(x, y) }, Enum.EasingStyle.Quad)
+		Util.tween(group, 0.12, { Position = UDim2.fromOffset(x - m, y - m) }, Enum.EasingStyle.Quad)
 	else
-		group.Position = UDim2.fromOffset(x, y)
+		group.Position = UDim2.fromOffset(x - m, y - m)
 	end
 end
 

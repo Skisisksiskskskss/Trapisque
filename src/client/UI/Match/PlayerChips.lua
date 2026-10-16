@@ -255,7 +255,11 @@ function PlayerChips:_build(info, x: number, y: number, chip)
 		e.power = self:_powerBar(root, tx, h - 6, w - tx - 5, 3, info.character)
 		e.statusSize = math.floor(avatarSize * 0.42)
 	else -- "stack"
-		local avatarSize = math.min(h - 30, w - 12)
+		-- bottom up: the Power bar, the treasures, the name, and the avatar in what's left
+		local pipSize = math.clamp(math.floor((w - 10 - (self.target - 1) * 3) / self.target), 6, 9)
+		local pipsY = h - 8 - pipSize
+		local nameY = pipsY - 13
+		local avatarSize = math.max(16, math.min(nameY - 5, w - 12))
 		e.avatar = Avatars.portrait(root, info, {
 			AnchorPoint = Vector2.new(0.5, 0),
 			Position = UDim2.new(0.5, 0, 0, 4),
@@ -268,13 +272,12 @@ function PlayerChips:_build(info, x: number, y: number, chip)
 			size = 11,
 			color = C.text,
 			align = "center",
-			sizeUDim = UDim2.fromOffset(w - 6, 13),
-			position = UDim2.fromOffset(3, 4 + avatarSize + 1),
+			sizeUDim = UDim2.fromOffset(w - 6, 12),
+			position = UDim2.fromOffset(3, nameY),
 		})
 		e.name.TextTruncate = Enum.TextTruncate.AtEnd
-		local pipSize = math.clamp(math.floor((w - 10 - (self.target - 1) * 3) / self.target), 6, 10)
 		local pw = self.target * pipSize + (self.target - 1) * 3
-		e.pips = pips(root, (w - pw) / 2, h - pipSize - 8, pipSize, 3)
+		e.pips = pips(root, (w - pw) / 2, pipsY, pipSize, 3)
 		e.power = self:_powerBar(root, 6, h - 6, w - 12, 3, info.character)
 		e.statusSize = math.floor(avatarSize * 0.42)
 	end
@@ -302,14 +305,16 @@ function PlayerChips:_build(info, x: number, y: number, chip)
 		end
 	end
 
-	-- whose-turn rim and timer bar
+	-- whose-turn rim and timer bar (along the top edge, clear of the treasures and Power)
+	local small = kind ~= "full"
 	e.timer = Widgets.progress(root, {
 		name = "Timer",
-		size = UDim2.new(1, -16, 0, 3),
-		position = UDim2.new(0, 8, 1, -4),
+		size = UDim2.new(1, if small then -12 else -16, 0, if small then 2 else 3),
+		position = UDim2.new(0, if small then 6 else 8, 0, if small then 1 else 2),
 		value = 1,
 		color = C.sun,
 		z = 6,
+		plain = true,
 	})
 	e.timer.root.Visible = false
 

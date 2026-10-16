@@ -103,13 +103,6 @@ function Widgets.label(parent: Instance?, o: { [string]: any }): TextLabel
 	return label
 end
 
--- Burned-in text on wood: dark letters, one flat layer.
-function Widgets.carved(parent: Instance, o: { [string]: any }): TextLabel
-	local opts = table.clone(o)
-	opts.color = o.color or C.engrave
-	return Widgets.label(parent, opts)
-end
-
 ---------------------------------------------------------------------------
 -- Buttons
 ---------------------------------------------------------------------------
@@ -823,7 +816,10 @@ function Widgets.progress(parent: Instance, o: { [string]: any })
 		Parent = parent,
 	})
 	Util.corner(root, 0.5)
-	Util.stroke(root, C.line, 3)
+	-- o.plain: a hairline (a turn timer) with no outline or shine
+	if not o.plain then
+		Util.stroke(root, C.line, 3)
+	end
 	local fill = Util.new("Frame", {
 		Name = "Fill",
 		BackgroundColor3 = o.color or C.sun,
@@ -833,17 +829,19 @@ function Widgets.progress(parent: Instance, o: { [string]: any })
 		Parent = root,
 	})
 	Util.corner(fill, 0.5)
-	local shine = Util.new("Frame", {
-		Name = "Shine",
-		BackgroundColor3 = C.white,
-		BackgroundTransparency = 0.6,
-		BorderSizePixel = 0,
-		Size = UDim2.new(1, -6, 0.28, 0),
-		Position = UDim2.new(0, 3, 0.16, 0),
-		ZIndex = (o.z or 1) + 2,
-		Parent = fill,
-	})
-	Util.corner(shine, 0.5)
+	if not o.plain then
+		local shine = Util.new("Frame", {
+			Name = "Shine",
+			BackgroundColor3 = C.white,
+			BackgroundTransparency = 0.6,
+			BorderSizePixel = 0,
+			Size = UDim2.new(1, -6, 0.28, 0),
+			Position = UDim2.new(0, 3, 0.16, 0),
+			ZIndex = (o.z or 1) + 2,
+			Parent = fill,
+		})
+		Util.corner(shine, 0.5)
+	end
 	local p = { root = root, fill = fill }
 	function p.set(_self, v: number, instant: boolean?)
 		local s = UDim2.fromScale(math.clamp(v, 0, 1), 1)

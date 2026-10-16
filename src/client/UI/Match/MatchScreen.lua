@@ -95,6 +95,13 @@ local function toHex(c: Color3): string
 	return c:ToHex()
 end
 
+-- "a Spike", "an Ice", "an X-Ray Potion"
+local function aName(name: string): string
+	local first = string.upper(string.sub(name, 1, 1))
+	local an = string.find("AEIOU", first, 1, true) ~= nil or string.upper(string.sub(name, 1, 2)) == "X-"
+	return (if an then "an " else "a ") .. name
+end
+
 local function copy(list)
 	local out = {}
 	for i, v in list or {} do
@@ -620,9 +627,12 @@ function MatchScreen:_updateRound()
 		modeName = event.name
 	end
 	local lengthName = LENGTH_NAME[self.length or ""] or ""
+	local mapName = if self.mapDef then self.mapDef.name else ""
 	local w = self.L and self.L.info and self.L.info.w or 300
-	if w >= 300 then
-		self.roundLabel.Text = string.format("Round %d  ·  %s%s  ·  First to %d", round, modeName, if lengthName ~= "" then ("  ·  " .. lengthName) else "", self.target or 0)
+	if w >= 460 then
+		self.roundLabel.Text = string.format("Round %d  ·  %s  ·  %s%s  ·  First to %d", round, mapName, modeName, if lengthName ~= "" then ("  ·  " .. lengthName) else "", self.target or 0)
+	elseif w >= 300 then
+		self.roundLabel.Text = string.format("Round %d  ·  %s  ·  First to %d", round, mapName, self.target or 0)
 	elseif w >= 160 then
 		self.roundLabel.Text = string.format("Round %d  ·  First to %d", round, self.target or 0)
 	else
@@ -708,6 +718,15 @@ function MatchScreen:_tag(seat: number?): string
 	end
 	local color = Util.shade(Theme.Seat[((seat - 1) % 6) + 1], 0.25)
 	return string.format('<font color="#%s">%s</font>', toHex(color), self:_name(seat))
+end
+
+-- "Pip's" / "your" ("Your" to start a line), in the player's colour
+function MatchScreen:_poss(seat: number?, capital: boolean?): string
+	if seat ~= nil and seat == self.mySeat then
+		local color = Util.shade(Theme.Seat[((seat - 1) % 6) + 1], 0.25)
+		return string.format('<font color="#%s">%s</font>', toHex(color), if capital then "Your" else "your")
+	end
+	return self:_tag(seat) .. "'s"
 end
 
 -- "s" after a verb for others ("You bonk" / "Pip bonks")
@@ -816,6 +835,7 @@ function MatchScreen:_refreshDice()
 		enabled = mine and self:_myTurn() and #dice > 0,
 		power = power,
 		hint = hint,
+		over = v.phase == "over",
 	})
 	self.dock:setRecall(mine and me ~= nil and (me.anchor or 0) > 0 and v.phase == "action", self:_myTurn())
 end
@@ -1219,7 +1239,7 @@ function MatchScreen:_play(e)
 		end
 	elseif t == "handFull" then
 		board:floatText(self:_pawnWorld(e.p), "HAND FULL", C.bad)
-		feed:add(self:_tag(e.p) .. "'s hand is full (5 cards)")
+		feed:add(self:_poss(e.p, true) .. " hand is full (" .. Rules.HandLimit .. " cards)")
 	elseif t == "coin" then
 		Sound.play("coin")
 		board:floatText(self:_pawnWorld(e.p), "+" .. tostring(e.gain or 1) .. " COIN", C.sun)
@@ -1237,23 +1257,23 @@ function MatchScreen:_play(e)
 		if e.hidden then
 			-- a hidden trap is used up when it goes off
 			self:_removeTrap(e.tile, e.item)
-			local owner = if e.owner and e.owner > 0 then (self:_tag(e.owner) .. "'s") else "a"
-			feed:add(self:_tag(e.p) .. " stepped on " .. owner .. " hidden " .. name .. "!", nil, e.item, C.trap)
+			local what = if e.owner and e.owner > 0 then (self:_poss(e.owner) .. " hidden " .. name) else aName("hidden " .. name)
+			feed:add(self:_tag(e.p) .. " stepped on " .. what .. "!", nil, e.item, C.trap)
 		elseif e.item ~= "wall" then
-			feed:add(self:_tag(e.p) .. " hit " .. (if e.owner and e.owner > 0 then (self:_tag(e.owner) .. "'s ") else "a ") .. name, nil, e.item, Theme.Category[if BoardView.isNeutral(e.item) then "neutral" else "trap"])
+			feed:add(self:_tag(e.p) .. " hit " .. (if e.owner and e.owner > 0 then (self:_poss(e.owner) .. " " .. name) else aName(name)), nil, e.item, Theme.Category[if BoardView.isNeutral(e.item) then "neutral" else "trap"])
 		end
 	elseif t == "gotcha" then
 		Effects.gotcha(board, e.p, e.target)
 		self.chips:flash(e.p, C.coral)
 		self.chips:shake(e.target)
 		local def = Items.get(e.item)
-		feed:add("GOTCHA! " .. self:_tag(e.p) .. " caught " .. self:_tag(e.target) .. " with a " .. (if def then def.name else "trap") .. " (+1 coin, +" .. Rules.PowerPerGotcha .. " Power)", C.sun, e.item, C.trap)
+		feed:add("GOTCHA! " .. self:_tag(e.p) .. " caught " .. self:_tag(e.target) .. " with " .. aName(if def then def.name else "trap") .. " (+1 coin, +" .. Rules.PowerPerGotcha .. " Power)", C.sun, e.item, C.trap)
 	elseif t == "bounty" then
 		Effects.bounty(board, e.p)
 	elseif t == "shield" then
 		self:_lose(e.p, "shield")
 		Effects.shield(board, e.p)
-		local what = if e.item == "bonk" then "a bonk" elseif e.item == "wall" then "a Wall" else ("a " .. ((Items.get(e.item) or {}).name or "trap"))
+		local what = if e.item == "bonk" then "a bonk" elseif e.item == "wall" then "a Wall" else aName((Items.get(e.item) or {}).name or "trap")
 		feed:add(self:_tag(e.p) .. " blocked " .. what .. " with a Shield", nil, "shield", C.assist)
 	elseif t == "bonk" then
 		Effects.bonk(board, e.p, e.target)
@@ -1601,7 +1621,7 @@ function MatchScreen:_playPlace(e, speed: number)
 		Overlays.flyCard(self.fly, e.item, from, self:_tileSpot(e.tile), speed, land, { slam = true })
 	end
 	local verb = if e.hidden then " hid " else " placed "
-	self.feed:add(self:_tag(e.p) .. verb .. (if def then ("a " .. def.name) else "a card") .. (if e.hidden then " (only your team sees it)" else ""), nil, e.item, Theme.Category[def and def.category or "trap"])
+	self.feed:add(self:_tag(e.p) .. verb .. (if def then aName(def.name) else "a card") .. (if e.hidden then " (only your team sees it)" else ""), nil, e.item, Theme.Category[def and def.category or "trap"])
 end
 
 -- A card that's played (not placed): it flies from the hand to its player's pawn.

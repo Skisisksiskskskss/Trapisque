@@ -8,7 +8,11 @@ from plain UI frames, with no uploaded images, in one "candy-night sticker" styl
 bright flat colours with a thick dark outline on a night-purple table, and characters,
 traps and tokens with faces.
 
-PREVIEW_IMAGES
+| Match (PC) | Lobby (PC) | Match (upright phone) |
+| --- | --- | --- |
+| ![Match on a PC](docs/previews/07-match-pc.png) | ![Lobby on a PC](docs/previews/08-lobby-pc.png) | ![Match on an upright phone](docs/previews/07-match-phone-portrait.png) |
+
+More in [docs/previews](docs/previews): boards, cards, stickers, character select, quests, results.
 
 ## What's in the game
 
@@ -200,13 +204,23 @@ argument counts.
 
 `tools/preview/` re-draws the game's art from the same data the Lua uses (icons,
 boards, cards, collectibles and full screens) as PNGs, so the look can be reviewed
-without opening Studio. It needs Python 3 with Pillow, and the Luckiest Guy,
-Fondamento and Nunito fonts from Google Fonts in `tools/preview/fonts` (or in a folder
-named by `TRAPISQUE_FONTS`). Each script's header explains its inputs. The data comes
-from `tests/dump_*.luau`, run through the bundler (bundle `tests/preview_skins.luau`
-first for the board and screen dumps: it records the tile skins from the game's own
-`TileSkins` code). `tools/preview/hud.py` draws the match screen and lobby at real
-device sizes from the game's `Layout` module.
+without opening Studio. It needs Python 3 with Pillow and the Luckiest Guy and Nunito
+fonts from Google Fonts in `tools/preview/fonts` (or a folder named by
+`TRAPISQUE_FONTS`). `python3 tools/preview/all.py` runs every `tests/dump_*.luau`
+and every renderer and writes `docs/previews`.
+
+### Smoke test
+
+`tools/smoke.sh` plays the whole game (server and client) on a fake Roblox in
+`tests/fake`: a scripted player tours the lobby and plays a match to the end with the
+real controls on a PC, on phones held both ways, in a team mode, in the weekly event
+and through Quick Play (going idle until a bot takes over, then coming back). Any Lua
+error, warning, table Roblox would mangle on a remote or in a DataStore, or work left
+running after the match fails it. It takes about two minutes:
+
+```sh
+LUAU=/path/to/luau tools/smoke.sh
+```
 
 ### Art rules
 

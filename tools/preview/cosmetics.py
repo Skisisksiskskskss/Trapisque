@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Preview sheet of every collectible cosmetic (mirrors client/UI/CosmeticArt.lua).
+"""Preview sheet of every collectible cosmetic (mirrors client/UI/CosmeticArt.lua),
+on tiles like the Locker's (Lobby/Locker.lua: a raised purple tile rimmed in the
+rarity's colour, the name strip along the bottom). draw_pawn and draw_die are also used
+by the board and dice tray previews.
 
 Usage: python3 tools/preview/cosmetics.py cosmetics.json out.png
 """
@@ -12,7 +15,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 from render import Layer, Canvas, draw_ops, hex_rgba, font  # noqa: E402
 from PIL import Image, ImageDraw, ImageFilter  # noqa: E402
 
-SEATS = ["#E35D5D", "#4E8FDB", "#5DB866", "#EDBB36", "#A56CDB", "#F0883A"]
+SEATS = ["#FF4F5E", "#45A6FF", "#6BD94A", "#FFC93C", "#A879FF", "#FF8F3C"]  # Theme.Seat
 RAINBOW = ["#FF5E5E", "#FFB13B", "#FFE45C", "#5EE07A", "#4FC3FF", "#8E7CFF", "#FF6FD8"]
 
 
@@ -156,7 +159,7 @@ def draw_trail(img, x, y, size, item, data):
     layer = Layer(int(size), int(size), ss=4)
     color = hex_rgba(look.get("color", "#FFFFFF"))
     color2 = hex_rgba(look.get("color2", look.get("color", "#FFFFFF")))
-    cv = Canvas(layer, 0, 0, size, {"ink": color, "acc": color2, "bg": hex_rgba("#3B2A1E")})
+    cv = Canvas(layer, 0, 0, size, {"ink": color, "acc": color2, "bg": hex_rgba(PANEL_RAISED)})
     kind = look["kind"]
     if kind == "none":
         draw_ops(cv, data["icons"]["close"])
@@ -192,10 +195,15 @@ def rgb_to_hex(c):
     return "#%02X%02X%02X" % c
 
 
+# Theme.C (the candy-night palette)
+BG, PANEL_RAISED, PANEL_DEEP, CREAM, LINE, ENGRAVE = "#1F1438", "#3A2866", "#1A1131", "#FFF4E2", "#1B1030", "#4E2E14"
+
+
 def card(img, x, y, w, h, rarity_color):
-    """Locker tile: flat dark panel, rarity-coloured rim, name strip along the bottom."""
-    aa_rrect(img, (x, y, x + w, y + h), 14, fill=(59, 42, 30, 255), outline=rgb(rarity_color) + (255,), width=4)
-    aa_rrect(img, (x + 6, y + h - 46, x + w - 6, y + h - 6), 10, fill=(42, 29, 20, 255))
+    """Locker tile: C.panelRaised, corner 12, the rarity's colour as a 3 px stroke, and
+    the C.panelDeep name strip (44 tall, 6 px in) along the bottom."""
+    aa_rrect(img, (x, y, x + w, y + h), 12, fill=hex_rgba(PANEL_RAISED), outline=rgb(rarity_color) + (255,), width=3)
+    aa_rrect(img, (x + 6, y + h - 50, x + w - 6, y + h - 6), 8, fill=hex_rgba(PANEL_DEEP))
 
 
 def main():
@@ -212,9 +220,10 @@ def main():
         n = len([i for i in data["items"] if i["category"] == cat])
         rows += (n + cols - 1) // cols
     H = 80 + len(cats) * 50 + rows * (ch + gap) + 20
-    img = Image.new("RGBA", (W, H), hex_rgba("#22170F"))
+    img = Image.new("RGBA", (W, H), hex_rgba(BG))
     d = ImageDraw.Draw(img)
-    d.text((gap, 18), "Treasure Chest collectibles (cosmetic only)", font=font("display", 34), fill=hex_rgba("#FFE39A"))
+    d.text((gap, 18), "Treasure Chest collectibles (cosmetic only)", font=font("chunky", 34), fill=hex_rgba(CREAM),
+           stroke_width=3, stroke_fill=hex_rgba(LINE))
     lx = W - 900
     for r in data["rarities"]:
         d.rounded_rectangle([lx, 26, lx + 22, 48], radius=5, fill=hex_rgba(r["color"]))
@@ -223,7 +232,7 @@ def main():
     y = 80
     for cat, title in cats:
         d = ImageDraw.Draw(img)
-        d.text((gap, y), title, font=font("chunky", 28), fill=hex_rgba("#E3B04B"))
+        d.text((gap, y), title, font=font("chunky", 28), fill=hex_rgba("#FFD23F"), stroke_width=2, stroke_fill=hex_rgba(LINE))
         y += 44
         items = sorted([i for i in data["items"] if i["category"] == cat], key=lambda i: (order[i["rarity"]], i["name"]))
         for k, it in enumerate(items):
@@ -249,17 +258,18 @@ def main():
                     f = font("chunky", 22 * (cw - 44) / (bb[2] - bb[0]))
                     bb = d.textbbox((0, 0), txt, font=f)
                 bx, by = x0 + cw / 2 - tw / 2, y0 + 50
-                aa_rrect(img, (bx, by, bx + tw, by + 40), 12, fill=hex_rgba("#F3E4C1"), outline=hex_rgba(it["look"]["color"]), width=3)
+                # CosmeticArt.emoteBubble: C.parchment (cream) with the emote's colour as its stroke
+                aa_rrect(img, (bx, by, bx + tw, by + 40), 12, fill=hex_rgba(CREAM), outline=hex_rgba(it["look"]["color"]), width=3)
                 d = ImageDraw.Draw(img)
-                d.text((x0 + cw / 2 - (bb[2] - bb[0]) / 2 - bb[0], by + 20 - (bb[3] - bb[1]) / 2 - bb[1]), txt, font=f, fill=hex_rgba("#3A2414"))
+                d.text((x0 + cw / 2 - (bb[2] - bb[0]) / 2 - bb[0], by + 20 - (bb[3] - bb[1]) / 2 - bb[1]), txt, font=f, fill=hex_rgba(LINE))
             elif cat == "title":
                 # CosmeticArt.title: the text on a dark nameplate filling 90% x 30% of the preview
                 txt = it["look"]["text"]
                 if txt:
                     px0, py0, pw_, ph_ = x0 + 10, y0 + 45, cw - 20, 38
-                    aa_rrect(img, (px0, py0, px0 + pw_, py0 + ph_), 6, fill=hex_rgba("#4E2E14"))
+                    aa_rrect(img, (px0, py0, px0 + pw_, py0 + ph_), 6, fill=hex_rgba(ENGRAVE))
                     d = ImageDraw.Draw(img)
-                    f = font("body", 20)
+                    f = font("heavy", 20)
                     bb = d.textbbox((0, 0), txt, font=f)
                     if bb[2] - bb[0] > pw_ - 16:
                         f = font("body", 20 * (pw_ - 16) / (bb[2] - bb[0]))
@@ -267,13 +277,13 @@ def main():
                     d.text((x0 + cw / 2 - (bb[2] - bb[0]) / 2 - bb[0], py0 + ph_ / 2 - (bb[3] - bb[1]) / 2 - bb[1]), txt, font=f,
                            fill=hex_rgba(it["look"]["color"]))
             d = ImageDraw.Draw(img)
-            f = font("body", 16)
+            f = font("heavy", 15)
             nm = it["name"]
             bb = d.textbbox((0, 0), nm, font=f)
             if bb[2] - bb[0] > cw - 16:
                 f = font("body", 16 * (cw - 16) / (bb[2] - bb[0]))
                 bb = d.textbbox((0, 0), nm, font=f)
-            d.text((x0 + cw / 2 - (bb[2] - bb[0]) / 2 - bb[0], y0 + ch - 40), nm, font=f, fill=hex_rgba("#FFF5DE"))
+            d.text((x0 + cw / 2 - (bb[2] - bb[0]) / 2 - bb[0], y0 + ch - 44), nm, font=f, fill=hex_rgba(CREAM))
             tag = r["name"].upper()
             if it["source"] == "vip":
                 tag = "VIP PASS"

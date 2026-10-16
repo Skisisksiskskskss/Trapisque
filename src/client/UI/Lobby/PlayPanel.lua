@@ -170,7 +170,7 @@ function PlayPanel.new(parent: Instance, popups: Instance, opts: { [string]: any
 		Position = UDim2.new(0, 6, 0.5, 0),
 		Size = UDim2.fromOffset(34, 34),
 	})
-	Icons.make(compass, "compass", Icons.flatColors(C.sun, C.panel))
+	Icons.medallion(compass, "dice", C.sun, { Size = UDim2.fromScale(1, 1) })
 	self.statusText = Widgets.label(status, {
 		text = "",
 		font = "heavy",
@@ -219,15 +219,16 @@ function PlayPanel:_eventTile(holder: Frame, mode, event)
 	})
 	Util.corner(tile, 12)
 	local stroke = Util.stroke(tile, C.line, 2.5)
-	-- a stripe of the event's colour down the left
+	-- a stripe of the event's colour down the left, inside the tile's rounded corners
 	local stripe = Util.new("Frame", {
 		Name = "Stripe",
 		BackgroundColor3 = color,
 		BorderSizePixel = 0,
-		Size = UDim2.new(0, 10, 1, 0),
+		Position = UDim2.fromOffset(6, 8),
+		Size = UDim2.new(0, 7, 1, -16),
 		Parent = tile,
 	})
-	Util.corner(stripe, 6)
+	Util.corner(stripe, 0.5)
 	local ic = Util.frame(tile, { AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 20, 0.5, 0), Size = UDim2.fromOffset(40, 40) })
 	Icons.medallion(ic, "star", color, { Size = UDim2.fromScale(1, 1) })
 	Widgets.label(tile, {
@@ -293,7 +294,7 @@ function PlayPanel:_modeTile(grid: Frame, mode, order: number, event: any?)
 		scaled = true,
 	})
 	-- compact tiles are narrow: the player count gets its own line under the name
-	Widgets.label(tile, {
+	local count = Widgets.label(tile, {
 		text = playerRange(mode),
 		font = "heavy",
 		size = if compact then 12 else 13,
@@ -318,7 +319,10 @@ function PlayPanel:_modeTile(grid: Frame, mode, order: number, event: any?)
 	-- event) shows just the name and player count
 	local function fit()
 		local k = math.max(0.01, Util.inheritedScale(tile, true))
-		blurb.Visible = tile.AbsoluteSize.Y / k >= top + pad + 30
+		local h = tile.AbsoluteSize.Y / k
+		blurb.Visible = h >= top + pad + 30
+		-- (and a very short compact tile has room for the name only)
+		count.Visible = not compact or h >= 36 + 16 + 2
 	end
 	tile:GetPropertyChangedSignal("AbsoluteSize"):Connect(fit)
 	task.defer(fit)

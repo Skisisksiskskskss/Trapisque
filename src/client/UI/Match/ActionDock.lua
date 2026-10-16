@@ -441,7 +441,28 @@ function ActionDock:_buildTray(r, form: string)
 	})
 	self.recallButton.root.Visible = false
 
-	-- your turn's countdown: a clock badge on the tray's top corner
+	-- your turn's countdown. An upright phone has no room around the tray (the ability
+	-- sits right above it), so there it's a line along the tray's top edge.
+	self.clockBar = nil
+	self.clockBadge = nil
+	self.clockShown = nil
+	if form ~= "wide" and form ~= "short" then
+		local bar = Widgets.progress(box, {
+			name = "ClockBar",
+			plain = true,
+			size = UDim2.new(1, -24, 0, 3),
+			position = UDim2.fromOffset(12, 3),
+			value = 1,
+			color = C.sun,
+			z = 30,
+		})
+		bar.root.Visible = false
+		self.clockBar = bar
+		self.dieWidgets = {}
+		self.dieCount = 0
+		return
+	end
+	-- a clock badge on the tray's top corner
 	local badge = Util.new("Frame", {
 		Name = "Clock",
 		BackgroundColor3 = C.panelDeep,
@@ -484,7 +505,9 @@ function ActionDock:_buildDice(n: number)
 	local aw = if area.X > 0 then area.X / k else (self.trayRect.w - 12)
 	local ah = if area.Y > 0 then area.Y / k else (self.trayRect.h - 40)
 	local gap = if self.form == "wide" then 12 else 8
-	local size = math.floor(math.min(ah - 4, (aw - (n - 1) * gap) / n, 84))
+	-- the +POWER tag hangs under each die: leave room for it inside the dice area
+	local size = math.floor(math.min((ah - 6) / 1.16, (aw - (n - 1) * gap) / n, 84))
+	local overhang = math.floor(size * 0.16)
 	local total = n * size + (n - 1) * gap
 	for i = 1, n do
 		local x = (aw - total) / 2 + (i - 1) * (size + gap)
@@ -493,7 +516,7 @@ function ActionDock:_buildDice(n: number)
 			Text = "",
 			AutoButtonColor = false,
 			BackgroundTransparency = 1,
-			Position = UDim2.fromOffset(x, (ah - size) / 2),
+			Position = UDim2.fromOffset(x, math.max(0, (ah - size - overhang) / 2)),
 			Size = UDim2.fromOffset(size, size),
 			ZIndex = 4,
 			Parent = self.diceArea,
@@ -665,7 +688,8 @@ function ActionDock:setDice(info)
 		if showTag then
 			local label = w.tag:FindFirstChildWhichIsA("TextLabel", true)
 			if label then
-				label.Text = "+" .. tostring(power) .. " POWER"
+				-- small dice (phones) have room for the number only
+				label.Text = "+" .. tostring(power) .. (if w.size >= 64 then " POWER" else "")
 			end
 		end
 		if w.key then
@@ -674,10 +698,12 @@ function ActionDock:setDice(info)
 		w.button.Active = info.mine == true
 	end
 	if self.caption then
-		if #dice == 0 then
+		if info.over then
+			self.caption.Text = "GAME OVER"
+		elseif #dice == 0 then
 			self.caption.Text = if info.mine then "YOUR DICE" else ""
 		elseif info.mine then
-			self.caption.Text = if info.frozen then "FROZEN! ONE DIE" else "PICK A DIE"
+			self.caption.Text = if info.chosen ~= nil then "GO!" elseif info.frozen then "FROZEN! ONE DIE" else "PICK A DIE"
 		else
 			self.caption.Text = string.upper((info.owner or "") .. "'S DICE")
 		end
@@ -792,6 +818,29 @@ end
 	and ticks in the last seconds, before the turn is played for you.
 ]]
 function ActionDock:setClock(left: number?)
+	local bar = self.clockBar
+	if bar then
+		if left == nil then
+			bar.root.Visible = false
+			self.clockShown = nil
+			return
+		end
+		if not bar.root.Visible then
+			-- the countdown starts full: whatever time this turn (or shop) began with
+			bar.root.Visible = true
+			self.clockTotal = math.max(1, left)
+		end
+		bar:set(math.clamp(left / (self.clockTotal or 1), 0, 1), true)
+		local secs = math.max(0, math.ceil(left))
+		bar.fill.BackgroundColor3 = if secs <= 10 then C.bad else C.sun
+		if secs ~= self.clockShown then
+			self.clockShown = secs
+			if secs <= 5 and secs > 0 then
+				Sound.play("tick", 1.15)
+			end
+		end
+		return
+	end
 	local badge = self.clockBadge
 	if not badge then
 		return

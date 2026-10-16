@@ -1,314 +1,331 @@
 #!/usr/bin/env python3
-"""Previews of reading and playing a card (developer preview tool).
+"""Reading and playing a card, on the PC match screen (developer preview tool).
 
-Built on the match screen from hud.py (same Layout rects, board and HUD), with what
-CardTip, BoardView:highlight / previewTile and Overlays.heldCard / Effects.place draw:
+Built on the match screen from hud.py (same Layout rects, board and HUD), with what the
+Lua draws at those moments:
 
-  11-card-hover-pc.png   hovering a card: it rises out of the hand with its rules
-  12-placing-pc.png      placing it: glowing tiles, the tile under the card shows what
-                         it'll look like, the card rides on the pointer
-  13-placing-slam.gif    letting go: the card is slapped onto the tile, with the ring of
-                         dust and the jolt, and the tile takes its new look
+  11-card-hover-pc.png  hovering a card in your hand (HandView raises it 8 px) and
+                        CardTip:show: the card big above it and its rules beside it (the
+                        name with its medallion and category badge, what it does, how
+                        it's played, what a click does right now). CardTip is a
+                        CanvasGroup, so it clips what crosses its edges.
+  12-placing-pc.png     dragging the card onto the board (MatchScreen:_placeFlow): the
+                        tiles the rules allow glow in the card's colour
+                        (BoardView:highlight), the tile under the card shows what it will
+                        look like (BoardView:previewTile), the card rides beside the
+                        pointer shrunk to 0.66 (Overlays.heldCard), its spot in the hand
+                        waits empty (HandView:setHeld), the hint strip says what to do.
+  13-placing-slam.gif   letting go, cropped around the tile: the glow clears, the card is
+                        lifted a touch and slapped down (held:drop), Effects.place's ring
+                        and dust go out as the board jolts, then the server's answer
+                        turns the preview into the real (see-through) trap.
 
-Usage: python3 tools/preview/moments.py <dir with icons/board/cosmetics/cards/screens .json> <outdir>
+Usage: python3 tools/preview/moments.py <dir with board.json, cards.json, screens.json> <outdir>
 """
-import json
 import math
 import os
 import sys
-import textwrap
 
 sys.path.insert(0, os.path.dirname(__file__))
-from render import Layer, Canvas, draw_ops, hex_rgba, font  # noqa: E402
-from cards import CardPainter  # noqa: E402
-import hud  # noqa: E402
-from screens import (Screen, S, shade, BRASS, BRASS_LIGHT, BRASS_DARK, WHITE, CAT, PANEL_DEEP, PANEL_EDGE,  # noqa: E402
-                     TEXT, TEXT_SOFT, TEXT_FAINT, mix)
-from PIL import Image, ImageDraw  # noqa: E402
+from screens import WHITE, button, badge, get_font  # noqa: E402
+from hud import Match, load, new_stage, save, roblox_chrome  # noqa: E402
+from board import BoardScene, UNIT, hexagon, TOP, TILE_COLORS, name_tag  # noqa: E402
+from cards import CardPainter, CATEGORY_LABEL  # noqa: E402
 
-TILE_SCALE = 0.88
 GAP = 10
 INFO_W = 264
-CATEGORY_LABEL = {"trap": "TRAP", "assist": "ASSIST", "neutral": "NEUTRAL", "potion": "POTION", "natural": "NATURAL"}
+TIP_LABEL = dict(CATEGORY_LABEL, natural="HAZARD")
 
 
-def hexagon_pts(cx, cy, r):
-    return [(cx + r * math.cos(math.radians(60 * i + 30)), cy + r * math.sin(math.radians(60 * i + 30))) for i in range(6)]
-
-
-def wrap_lines(sc, txt, kind, size, width):
-    """The line breaks Screen.text(wrap=True) makes."""
-    f = font(kind, size * S)
-    avg = sc.d.textbbox((0, 0), "abcdefghijklmnopqrstuvwxyz", font=f)
-    cpl = max(4, int(width * S / ((avg[2] - avg[0]) / 26)))
-    return textwrap.wrap(txt, cpl) or [""]
-
-
-def cursor(sc, x, y, scale=1.0):
+def cursor(st, x, y):
     """A mouse pointer, so it's clear where the player is pointing."""
     pts = [(0, 0), (0, 17), (4.5, 13), (8, 20), (11, 18.5), (7.5, 12), (13, 12)]
-    poly = [((x + px * scale) * S, (y + py * scale) * S) for px, py in pts]
-    sc.d.polygon(poly, fill=hex_rgba("#FFFFFF"), outline=hex_rgba("#111111"), width=max(1, int(1.6 * S)))
+    st.poly([(x + px - 1.2, y + py - 1.2) for px, py in [(p[0] * 1.12, p[1] * 1.12) for p in pts]], "#111111")
+    st.poly([(x + px, y + py) for px, py in pts], WHITE)
 
 
-def card_img(painter, item, w):
-    lay = Image.new("RGBA", (int((w + 20) * S), int((w / 0.72 + 20) * S)), (0, 0, 0, 0))
-    painter.item_front(lay, 10 * S, 10 * S, w * S, item)
-    return lay
+def card_hint(scr, item, touch=False):
+    """MatchScreen:_cardHint on my turn, before I've played a card."""
+    info = scr["items"][item]
+    click = "Tap" if touch else "Click"
+    if info["use"] in ("passive", "none"):
+        return "Works by itself: just keep it in your hand.", False
+    if info["use"] == "place":
+        rng = scr["placing"].get(item, {}).get("range")
+        reach = (" within %d tiles of you" % rng) if rng else " anywhere"
+        if info.get("hidden"):
+            return ("Tap HIDE" if touch else "Click it") + ", or drag it onto a tile" + reach + ". Rivals won't see it!", True
+        return ("Tap PLACE" if touch else "Click it") + ", or drag it onto a tile" + reach + ".", True
+    if info["use"] == "boost":
+        return click + " to play it, then pick your die.", True
+    return "", False
 
 
-def paste_card(sc, painter, item, cx, cy, w, rot=0.0, alpha=1.0):
-    img = card_img(painter, item, w)
-    if rot:
-        img = img.rotate(rot, resample=Image.BICUBIC, expand=True)
-    if alpha < 1:
-        a = img.getchannel("A").point(lambda v: int(v * alpha))
-        img.putalpha(a)
-    sc.img.alpha_composite(img, (int(cx * S - img.width / 2), int(cy * S - img.height / 2)))
+def wrapped_h(st, text, kind, size, width):
+    f = get_font(kind, st.L(size))
+    return len(st._wrap([(text, WHITE)], f, st.L(width), f.getlength(" "))) * size
 
 
-# --------------------------------------------------------------------- CardTip
-def info_height(sc, info, use_text, hint, w):
-    inner = w - 24
-    h = 10 + 30 + 6
-    h += len(wrap_lines(sc, info["text"], "body", 16, inner)) * 16 * 1.2 + 6
-    how = (str(info["price"]) + " coins at the Potion Seller") if info.get("price") else use_text.get(info["use"], "")
-    if how:
-        h += len(wrap_lines(sc, how, "heavy", 13, inner)) * 13 * 1.2 + 6
-    if hint:
-        h += 2 + 6 + len(wrap_lines(sc, hint, "heavy", 15, inner)) * 15 * 1.2
-    return h + 12, how
-
-
-def draw_info(sc, info, item, x, y, w, h, how, hint, ready):
-    color = CAT.get(info["category"], BRASS)
-    sc.frame(x, y, w, h, 12, PANEL_DEEP, color, 2)
-    cx, cy = x + 12, y + 10
-    sc.medallion(item, cx + 15, cy + 15, 30 / 1.16, color)
-    sc.text(cx + 38, cy, w - 24 - 112, 30, info["name"], "chunky", 19, TEXT)
-    sc.badge(x + w - 12, cy + 4, CATEGORY_LABEL.get(info["category"], ""), color, h=22, size=13, anchor_right=True)
-    cy += 36
-    inner = w - 24
-    lines = wrap_lines(sc, info["text"], "body", 16, inner)
-    sc.text(cx, cy, inner, len(lines) * 16 * 1.2, info["text"], "body", 16, TEXT, wrap=True, valign="top")
-    cy += len(lines) * 16 * 1.2 + 6
-    if how:
-        n = len(wrap_lines(sc, how, "heavy", 13, inner))
-        sc.text(cx, cy, inner, n * 13 * 1.2, how, "heavy", 13, TEXT_SOFT, wrap=True, valign="top")
-        cy += n * 13 * 1.2 + 6
-    if hint:
-        sc.rect(cx, cy, inner, 2, 1, PANEL_EDGE, 0.8)
-        cy += 8
-        n = len(wrap_lines(sc, hint, "heavy", 15, inner))
-        sc.text(cx, cy, inner, n * 15 * 1.2, hint, "heavy", 15, BRASS_LIGHT if ready else TEXT_FAINT, wrap=True, valign="top")
-
-
-def card_tip(sc, painter, scr, item, anchor, hint, ready):
-    """CardTip:show + _arrange, side "up", rules beside the big card."""
+def card_tip(st, scr, painter, item, anchor, hint, ready):
+    """CardTip:show / _arrange, side "up" (a row of cards)."""
+    C = st.C
     ax, ay, aw, ah = anchor
-    info = scr["itemInfo"][item]
-    card_w = max(116, min(186, int(aw * 1.5)))
-    card_h = int(card_w / 0.72)
-    info_w = min(INFO_W, int(sc.w - card_w - 3 * GAP - 16))
-    info_h, how = info_height(sc, info, scr["useText"], hint, info_w)
-    info_h = max(info_h, min(card_h, 150))
+    info = scr["items"][item]
+    color = st.theme["Category"].get(info["category"], C["brass"])
+    card_w = max(116, min(186, math.floor(aw * 1.5)))
+    card_h = math.floor(card_w / painter.S["aspect"])
+    info_w = min(INFO_W, math.floor(st.w - card_w - 3 * GAP - 16))
+    inner = info_w - 24
+    # the rules panel's height (AutomaticSize Y, at least min(cardH, 150))
+    hh = 10 + 30 + 6 + wrapped_h(st, info["text"], "body", 16, inner)
+    if info["how"]:
+        hh += 6 + wrapped_h(st, info["how"], "heavy", 13, inner)
+    if hint:
+        hh += 6 + 2 + 6 + wrapped_h(st, hint, "heavy", 15, inner)
+    info_h = max(hh + 12, min(card_h, 150))
     w, h = card_w + GAP + info_w, max(card_h, info_h)
     cx = ax + aw / 2
-    rules_right = cx + card_w / 2 + GAP + info_w <= sc.w - 8
+    rules_right = cx + card_w / 2 + GAP + info_w <= st.w - 8
     card_x = 0 if rules_right else info_w + GAP
-    x = max(8, min(cx - card_w / 2 - card_x, sc.w - w - 8))
-    y = max(8, ay - 8 - h)
-    paste_card(sc, painter, item, x + card_x + card_w / 2, y + h - card_h / 2, card_w)
-    ix = x + (card_w + GAP if rules_right else 0)
-    draw_info(sc, info, item, ix, y + h - info_h, info_w, info_h, how, hint, ready)
+    x = cx - card_w / 2 - card_x
+    y = ay - 8 - h
+    x = max(8, min(x, max(8, st.w - w - 8)))
+    y = max(8, min(y, max(8, st.h - h - 8)))
+    with st.layer(clip=(x, y, w, h)):
+        painter.item_front(st, x + card_x, y + h - card_h, card_w, item)
+        ix, iy = x + (card_w + GAP if rules_right else 0), y + h - info_h
+        st.rect(ix, iy, info_w, info_h, C["panelDeep"], corner=12, stroke=(C["line"], 3))
+        px, py = ix + 12, iy + 10
+        st.medallion(item, px + 15, py + 15, 30, color)
+        st.label(px + 38, py, inner - 112, 30, info["name"], "chunky", 19, C["text"], truncate=True)
+        badge(st, px + inner, py + 15, TIP_LABEL.get(info["category"], ""), color, height=22, text_size=13, anchor=(1, 0.5))
+        py += 30 + 6
+        th = wrapped_h(st, info["text"], "body", 16, inner)
+        st.label(px, py, inner, th, info["text"], "body", 16, C["text"], wrap=True, valign="top")
+        py += th
+        if info["how"]:
+            py += 6
+            th = wrapped_h(st, info["how"], "heavy", 13, inner)
+            st.label(px, py, inner, th, info["how"], "heavy", 13, C["textSoft"], wrap=True, valign="top")
+            py += th
+        if hint:
+            py += 6
+            st.rect(px, py, inner, 2, C["panelEdge"], corner=1, alpha=0.8)
+            py += 2 + 6
+            th = wrapped_h(st, hint, "heavy", 15, inner)
+            st.label(px, py, inner, th, hint, "heavy", 15, C["brassLight"] if ready else C["textFaint"], wrap=True, valign="top")
 
 
-# --------------------------------------------------------------------- placing
-def tile_look(sc, ctx, scr, tile, kind, alpha=1.0, scale=1.0, owner_color=None, ghost_rim=None):
-    """A tile reskinned for `kind` (the TileSkins ops recorded by dump_screens), with the
-    little card on it. ghost_rim draws BoardView:previewTile's coloured rim."""
-    layout, to_stage, ppu = ctx["layout"], ctx["to_stage"], ctx["ppu"]
-    t = layout["tiles"][tile - 1]
-    cx, cy = to_stage(t["x"], t["y"])
-    sheet = {s["kind"]: s for s in scr["sheet"]}
-    sk = sheet[kind]
-    u = ppu * scale
-    side = 2 * u
-    pad = 6
-    lay = Image.new("RGBA", (int((side + 2 * pad) * S), int((side + 2 * pad) * S)), (0, 0, 0, 0))
-    d = ImageDraw.Draw(lay)
-    o = (side / 2 + pad) * S
-    if ghost_rim:
-        d.polygon([(o + px * S, o + py * S) for px, py in hexagon_pts(0, 0, TILE_SCALE * 1.06 * u)], fill=hex_rgba(ghost_rim))
-    d.polygon([(o + px * S, o + py * S) for px, py in hexagon_pts(0, 0, TILE_SCALE * u)], fill=hex_rgba(sk["top"] or "#E9BE84"))
-    skin = Layer(int(side * S) + 8, int(side * S) + 8, ss=1)
-    draw_ops(Canvas(skin, 4, 4, side * S, {"ink": hex_rgba("#4A3020")}), sk["ops"])
-    lay.alpha_composite(skin.final(), (int(pad * S) - 4, int(pad * S) - 4))
-    # the little card (BoardView plaque): 0.6 x 0.8 units, owner-coloured rim
-    pw, ph, sw = 0.6 * u, 0.8 * u, 0.07 * u
-    rim = owner_color or ghost_rim or BRASS
-    d = ImageDraw.Draw(lay)
-    d.rounded_rectangle([o - (pw / 2 + sw) * S, o - (ph / 2 + sw) * S, o + (pw / 2 + sw) * S, o + (ph / 2 + sw) * S],
-                        radius=(0.12 * u + sw) * S, fill=hex_rgba(rim))
-    d.rounded_rectangle([o - pw / 2 * S, o - ph / 2 * S, o + pw / 2 * S, o + ph / 2 * S], radius=0.12 * u * S, fill=hex_rgba("#2A1C13"))
-    isz = 0.48 * u
-    ic = Layer(int(isz * S) + 8, int(isz * S) + 8, ss=3)
-    colors = {"ink": hex_rgba(WHITE), "bg": hex_rgba("#2A1C13"), "acc": hex_rgba(WHITE), "acc2": hex_rgba(WHITE), "hi": hex_rgba("#2A1C13")}
-    draw_ops(Canvas(ic, 4, 4, isz * S, colors), sc.icons[kind])
-    lay.alpha_composite(ic.final(), (int(o - isz / 2 * S) - 4, int(o - isz / 2 * S) - 4))
-    if alpha < 1:
-        lay.putalpha(lay.getchannel("A").point(lambda v: int(v * alpha)))
-    sc.img.alpha_composite(lay, (int((cx - side / 2 - pad) * S), int((cy - side / 2 - pad) * S)))
-    return cx, cy
+def base_screen(data, scr, dev, held=None, hovered=None):
+    """The match screen at my turn with nothing hovered on the board."""
+    mt = Match(data, scr, dev)
+    st = new_stage(data, scr, mt.m)
+    bs, to_stage = mt.board(st, {"preview": None})
+    painter = CardPainter(data["cards"])
+    mt.chips(st)
+    rects = mt.hand(st, painter, mt.snap["hand"], hovered=hovered, held=held)
+    me = mt.players[mt.my_seat]
+    return mt, st, bs, to_stage, painter, rects, me
 
 
-def glows(sc, ctx, tiles, color, alpha=0.5):
-    layout, to_stage, ppu = ctx["layout"], ctx["to_stage"], ctx["ppu"]
-    lay = Image.new("RGBA", sc.img.size, (0, 0, 0, 0))
-    d = ImageDraw.Draw(lay)
-    for tid in tiles:
-        t = layout["tiles"][tid - 1]
-        cx, cy = to_stage(t["x"], t["y"])
-        d.polygon([(px * S, py * S) for px, py in hexagon_pts(cx, cy, TILE_SCALE * 1.1 * ppu)], fill=hex_rgba(color, int(255 * alpha)))
-    sc.img = Image.alpha_composite(sc.img, lay)
+def hover_moment(data, scr, out):
+    dev = next(d for d in scr["devices"] if d["file"] == "pc")
+    index = 0
+    item = scr["snapshot"]["hand"][index]
+    mt, st, bs, to_stage, painter, rects, me = base_screen(data, scr, dev, hovered=index)
+    turn = scr["turn"]
+    mt.power_panel(st, me["character"], me["power"], me["powerCap"])
+    mt.dice_tray(st, turn["dice"], None, turn["power"], turn["clock"])
+    mt.feed(st, scr["feed"])
+    mt.top(st)
+    hint, ready = card_hint(scr, item)
+    card_tip(st, scr, painter, item, rects[index], hint, ready)
+    x, y, w, h = rects[index]
+    cursor(st, x + w * 0.55, y + h * 0.42)
+    roblox_chrome(st, mt.m)
+    save(st, dev, out)
 
 
-def hint_strip(sc, L, text):
-    """MatchScreen:_hint: the strip across the top of the board with CANCEL."""
-    r = L["hint"]
-    h = max(44, r["h"])
-    sc.frame(r["x"], r["y"], r["w"], h, 12, PANEL_DEEP, BRASS, 2)
-    bw = 86 if r["w"] < 420 else 110
-    sc.button(r["x"] + r["w"] - 6 - bw, r["y"] + 6, bw, h - 12, text="CANCEL", style="red", size=15)
-    sc.text(r["x"] + 12, r["y"], r["w"] - (24 + bw + 6), h, text, "heavy", 13 if r["w"] < 420 else 16, TEXT)
+def placing_moment(data, scr, out, item="fire", tile=13):
+    dev = next(d for d in scr["devices"] if d["file"] == "pc")
+    index = scr["snapshot"]["hand"].index(item)
+    mt, st, bs, to_stage, painter, rects, me = base_screen(data, scr, dev, held=index)
+    C = st.C
+    info = scr["items"][item]
+    color = st.theme["Category"].get(info["category"], C["sun"])
+    turn = scr["turn"]
+    # while a card is being placed it's not "my move" for the dice and the ability
+    mt.power_panel(st, me["character"], me["power"], me["powerCap"], my_turn=False)
+    mt.dice_tray(st, turn["dice"], None, turn["power"], turn["clock"], hint="")
+    mt.feed(st, scr["feed"])
+    mt.top(st)
+    # the board's glow on the tiles the rules allow, and the preview on the one under the card
+    f = mt.L["focus"]
+    x0, y0, x1, y1 = bs.tileBox
+    s = min(f["w"] / (x1 - x0), f["h"] / (y1 - y0))
+    ox, oy = f["x"] + f["w"] / 2 - (x0 + x1) / 2 * s, f["y"] + f["h"] / 2 - (y0 + y1) / 2 * s
+    r = bs.style["tileScale"] * UNIT
+    with st.at(ox, oy, s):
+        for t in scr["placing"][item]["valid"]:
+            px, py = bs.pos[t]
+            st.poly(hexagon(px, py, r * 1.1, bs.flat), color, alpha=0.5)
+        # BoardView:previewTile: a CanvasGroup (GroupTransparency 0.2, scale 1.06) with a
+        # rim in the card's colour, the tile top, and the hidden trap as only I'll see it
+        px, py = bs.pos[tile]
+        k = 1.06
+        with st.layer(alpha=0.8):
+            st.poly(hexagon(px, py, r * 1.08 * k, bs.flat), color)
+            st.poly(hexagon(px, py, r * k, bs.flat), TOP.get(item, TILE_COLORS["normal"]))
+            if info.get("hidden"):
+                bs.trap_mark(st, {"item": item, "owner": mt.my_seat}, px, py, 0.8 * UNIT * k)
+            else:
+                bs.plaque(st, item, mt.my_seat, px, py, 0.86 * UNIT * k)
+    # the name tag stays over my pawn
+    cur = scr["snapshot"]["current"]
+    wx, wy, share = bs.rest(cur)
+    tx, ty = ox + wx * s, oy + (wy - bs.style["pawn"] * UNIT * 0.62 * share) * s
+    name_tag(st, tx, ty - 4, "You", mt.seat_color(cur))
+    # the hint strip (MatchScreen:_hint) with CANCEL
+    hr = mt.L["hint"]
+    hh = max(44, hr["h"])
+    st.rect(hr["x"], hr["y"], hr["w"], hh, C["panel"], corner=12, stroke=(C["line"], 3))
+    bw = 86 if hr["w"] < 420 else 110
+    reach = " within %d tiles" % scr["placing"][item]["range"]
+    prompt = "Drop " + info["name"] + " on a glowing tile" + reach + (". Only your team will see it!" if info.get("hidden") else "")
+    st.label(hr["x"] + 12, hr["y"], hr["w"] - (24 + (bw + 6)), hh, prompt, "heavy", 13 if hr["w"] < 420 else 16, C["text"], wrap=True)
+    button(st, hr["x"] + hr["w"] - 6 - bw, hr["y"] + 6, bw, hh - 12, text="CANCEL", style="red", text_size=15)
+    # the card beside the pointer (Overlays.heldCard over a tile it can go on)
+    pointer = (ox + px * s + 6, oy + py * s + 4)
+    w = max(70, min(120, mt.L["hand"]["card"]["w"]))
+    scale = 0.66
+    cw = w * scale
+    ccx, ccy = pointer[0] + w * 0.42, pointer[1] - w * 0.62
+    painter.item_front(st, ccx - cw / 2, ccy - cw / painter.S["aspect"] / 2, cw, item)
+    cursor(st, pointer[0], pointer[1])
+    roblox_chrome(st, mt.m)
+    save(st, dev, out)
 
 
-def pick_target(scr, ctx):
-    """A glowing tile near the middle of the board's lower row, clear of pawns."""
-    layout = ctx["layout"]
-    taken = {p["tile"] for p in scr["snapshot"]["players"]}
-    valid = [t for t in scr["valid"]["spike"] if t not in taken]
-    tb = layout["tileBounds"]
-    mx = (tb["x0"] + tb["x1"]) / 2
-    best = min(valid, key=lambda t: abs(layout["tiles"][t - 1]["x"] - mx) + 0.6 * abs(layout["tiles"][t - 1]["y"] - tb["y1"]))
-    return best, valid
-
-
-# --------------------------------------------------------------------- scenes
-def hover_scene(data, scr, dev, out, painter):
-    sc, ctx = hud.match_screen(data, scr, dev, None, save=False, raised=0)
-    x, y, w, h = ctx["hand"][0]
-    card_tip(sc, painter, scr, "spike", (x, y - 6, w, h), "Click it, or drag it onto a glowing tile.", True)
-    cursor(sc, x + w * 0.58, y + h * 0.42)
-    sc.save(out, out_w=dev["w"])
-
-
-def placing_scene(data, scr, dev, out, painter):
-    state = {}
-
-    def overlay(sc, ctx):
-        target, valid = pick_target(scr, ctx)
-        state["target"] = target
-        glows(sc, ctx, valid, CAT["trap"], 0.48)
-        state["spot"] = tile_look(sc, ctx, scr, target, "spike", alpha=0.7, scale=1.04, ghost_rim=CAT["trap"])
-
-    sc, ctx = hud.match_screen(data, scr, dev, None, save=False, held=0, overlay=overlay)
-    hint_strip(sc, ctx["L"], "Click a glowing tile for Spike (right-click: cancel)")
-    tx, ty = state["spot"]
-    w = max(70, min(120, ctx["L"]["hand"]["card"]["w"]))
-    # the held card over a tile it can go on (Overlays.heldCard:over): shrunk and lifted off
-    # beside the pointer, leaning a little, so the tile shows what it'll become
-    px, py = tx + 6, ty - 4
-    paste_card(sc, painter, "spike", px + 0.42 * w, py - 0.62 * w, w * 0.66, rot=-7)
-    cursor(sc, px, py)
-    sc.save(out, out_w=dev["w"])
-
-
-def slam_gif(data, scr, dev, out, painter):
-    """The moment of letting go, cropped around the tile, as a short loop."""
-    state = {}
-
-    def overlay(sc, ctx):
-        state["target"], _ = pick_target(scr, ctx)
-
-    base, ctx = hud.match_screen(data, scr, dev, None, save=False, held=0, overlay=overlay)
-    target = state["target"]
-    t = ctx["layout"]["tiles"][target - 1]
-    tx, ty = ctx["to_stage"](t["x"], t["y"])
-    ppu = ctx["ppu"]
+def slam_gif(data, scr, out, item="fire", tile=13):
+    import random
+    from PIL import Image
+    dev = next(d for d in scr["devices"] if d["file"] == "pc")
+    index = scr["snapshot"]["hand"].index(item)
+    mt, st, bs, to_stage, painter, rects, me = base_screen(data, scr, dev, held=index)
+    C = st.C
+    info = scr["items"][item]
+    color = st.theme["Category"].get(info["category"], C["sun"])
+    turn = scr["turn"]
+    mt.power_panel(st, me["character"], me["power"], me["powerCap"], my_turn=False)
+    mt.dice_tray(st, turn["dice"], None, turn["power"], turn["clock"], hint="")
+    mt.feed(st, scr["feed"])
+    mt.top(st)
+    f = mt.L["focus"]
+    x0, y0, x1, y1 = bs.tileBox
+    s = min(f["w"] / (x1 - x0), f["h"] / (y1 - y0))
+    ox, oy = f["x"] + f["w"] / 2 - (x0 + x1) / 2 * s, f["y"] + f["h"] / 2 - (y0 + y1) / 2 * s
+    cur = scr["snapshot"]["current"]
+    wx, wy, share = bs.rest(cur)
+    name_tag(st, ox + wx * s, oy + (wy - bs.style["pawn"] * UNIT * 0.62 * share) * s - 4, "You", mt.seat_color(cur))
+    base = st.img.copy()
+    r = bs.style["tileScale"] * UNIT
+    px, py = bs.pos[tile]
+    tx, ty = ox + px * s, oy + py * s
+    w = max(70, min(120, mt.L["hand"]["card"]["w"]))
     cw, ch = 520, 330
-    cx0, cy0 = int(max(0, min(tx - cw / 2, base.w - cw))), int(max(0, min(ty - ch * 0.6, base.h - ch)))
-    base_img = base.img.copy()
-    w = max(70, min(120, ctx["L"]["hand"]["card"]["w"]))
+    cx0 = max(0, min(tx - cw / 2, st.w - cw))
+    cy0 = max(0, min(ty - ch * 0.6, st.h - ch))
     frames, durations = [], []
+    rnd = random.Random(5)
+    dust = []
+    for i in range(1, 9):
+        a = (i / 8) * math.tau + rnd.random() * 0.4
+        dust.append((a, 1.05 * (0.6 + rnd.random() * 0.6)))
 
-    def frame(draw, dur, jolt=(0, 0)):
-        sc = Screen(data, w=base.w, h=base.h)
-        sc.img = base_img.copy()
-        draw(sc)
-        crop = sc.img.crop((int((cx0 + jolt[0]) * S), int((cy0 + jolt[1]) * S), int((cx0 + jolt[0] + cw) * S), int((cy0 + jolt[1] + ch) * S)))
-        frames.append(crop.convert("RGB"))
+    def frame(draw, dur, jolt=(0.0, 0.0)):
+        st.img = base.copy()
+        draw()
+        k = st.ss
+        crop = st.img.crop((int((cx0 + jolt[0]) * k), int((cy0 + jolt[1]) * k), int((cx0 + jolt[0] + cw) * k), int((cy0 + jolt[1] + ch) * k)))
+        frames.append(crop.resize((cw * 2, ch * 2), resample=Image.LANCZOS).convert("RGB"))
         durations.append(dur)
 
-    def ghost(sc):
-        tile_look(sc, ctx, scr, target, "spike", alpha=0.7, scale=1.04, ghost_rim=CAT["trap"])
+    def glows():
+        with st.at(ox, oy, s):
+            for t in scr["placing"][item]["valid"]:
+                gx, gy = bs.pos[t]
+                st.poly(hexagon(gx, gy, r * 1.1, bs.flat), color, alpha=0.5)
 
-    # 1. over the tile: the card is lifted off beside the pointer, the tile shows its new look
-    for i, (dx, dy, rot) in enumerate([(30, -26, -8), (16, -14, -6), (6, -4, -4)]):
-        def f(sc, dx=dx, dy=dy, rot=rot):
-            px, py = tx + dx, ty + dy
-            ghost(sc)
-            paste_card(sc, painter, "spike", px + 0.42 * w, py - 0.62 * w, w * 0.66, rot=rot)
-            cursor(sc, px, py)
-        frame(f, 420 if i == 2 else 90)
-    # 2. click: it's lifted a touch, then slapped down
-    def lift(sc):
-        ghost(sc)
-        paste_card(sc, painter, "spike", tx, ty - 14, w * 0.9, rot=0)
-        cursor(sc, tx + 6, ty - 4)
-    frame(lift, 90)
-    def slap(sc):
-        ghost(sc)
-        paste_card(sc, painter, "spike", tx, ty - 2, w * 0.5, rot=0)
-        cursor(sc, tx + 6, ty - 4)
-    frame(slap, 70)
-    # 3. impact: the tile takes its look, a ring and dust go out, the board jolts
-    dust = [(math.cos(i / 9 * math.tau + 0.3), math.sin(i / 9 * math.tau + 0.3)) for i in range(9)]
-    for k, (ring_r, dust_d, alpha, jolt, settle) in enumerate([(0.7, 0.15, 1.0, (3, -2), 1.08), (1.2, 0.45, 0.85, (-3, 2), 1.05),
-                                                              (1.7, 0.75, 0.6, (2, 1), 1.02), (2.1, 0.95, 0.35, (0, 0), 1.0),
-                                                              (2.4, 1.05, 0.12, (0, 0), 1.0)]):
-        def f(sc, ring_r=ring_r, dust_d=dust_d, alpha=alpha, settle=settle):
-            tile_look(sc, ctx, scr, target, "spike", alpha=1.0, scale=settle, owner_color=hud.SEAT[0])
-            r = ring_r * ppu / 2
-            sc.outline(tx - r, ty - r, 2 * r, 2 * r, r, CAT["trap"], 5 * alpha + 1, alpha)
-            for dx, dy in dust:
-                px, py = tx + dx * dust_d * ppu, ty + 0.25 * ppu + dy * dust_d * ppu
-                dd = 0.15 * ppu * (1 - 0.6 * (dust_d / 1.05))
-                sc.rect(px - dd / 2, py - dd / 2, dd, dd, dd / 2, "#CDB894", alpha)
-            cursor(sc, tx + 6, ty - 4)
-        frame(f, 60 if k < 4 else 80, jolt)
-    # 4. placed
-    def done(sc):
-        tile_look(sc, ctx, scr, target, "spike", alpha=1.0, owner_color=hud.SEAT[0])
-        cursor(sc, tx + 6, ty - 4)
-    frame(done, 1400)
+    def ghost():
+        with st.at(ox, oy, s):
+            k = 1.06
+            with st.layer(alpha=0.8):
+                st.poly(hexagon(px, py, r * 1.08 * k, bs.flat), color)
+                st.poly(hexagon(px, py, r * k, bs.flat), TOP.get(item, TILE_COLORS["normal"]))
+                bs.trap_mark(st, {"item": item, "owner": mt.my_seat}, px, py, 0.8 * UNIT * k)
+
+    def card(cx, cy, scale):
+        cwid = w * scale
+        painter.item_front(st, cx - cwid / 2, cy - cwid / painter.S["aspect"] / 2, cwid, item)
+
+    # 1. over the tile: the card beside the pointer, the tile showing its new look
+    for i, (dx, dy) in enumerate([(34, -30), (18, -16), (6, 4)]):
+        def f1(dx=dx, dy=dy):
+            glows()
+            ghost()
+            card(tx + dx + w * 0.42, ty + dy - w * 0.62, 0.66)
+            cursor(st, tx + dx, ty + dy)
+        frame(f1, 400 if i == 2 else 90)
+
+    # 2. let go: the glow clears, the card is lifted a touch (0.09 s) and slapped down (0.07 s)
+    def f2():
+        ghost()
+        card(tx, ty - 14, 0.9)
+        cursor(st, tx + 6, ty + 4)
+    frame(f2, 90)
+
+    def f3():
+        ghost()
+        card(tx, ty, 0.45)
+        cursor(st, tx + 6, ty + 4)
+    frame(f3, 70)
+
+    # 3. Effects.place: a ring (0.7 -> 2.4 tiles, 5 px, fading), cream dust flying out,
+    # the board jolting (0.07 tiles for 0.2 s); the preview stays until the server answers
+    for t, jolt in ((0.06, (3, -2)), (0.13, (-2, 2)), (0.21, (1, 1)), (0.31, (0, 0)), (0.43, (0, 0))):
+        def f4(t=t):
+            ghost()
+            with st.at(ox, oy, s):
+                q = min(1.0, t / 0.45)
+                size = (0.7 + (2.4 - 0.7) * (1 - (1 - q) ** 2)) * UNIT
+                st.circle(px, py, size, None, stroke=(color, 5, 1 - q * q))
+                q2 = min(1.0, t / 0.42)
+                e = 1 - (1 - q2) ** 2
+                for a, dist in dust:
+                    d = dist * UNIT * e
+                    dd = 0.14 * UNIT * (1 - 0.8 * e)
+                    st.circle(px + math.cos(a) * d, py + 0.25 * UNIT + math.sin(a) * d, dd, C["cream"],
+                              stroke=(C["line"], max(1, 0.14 * UNIT * 0.12)))
+            cursor(st, tx + 6, ty + 4)
+        frame(f4, 60, jolt=jolt if t < 0.2 else (0, 0))
+
+    # 4. the server's answer: the preview goes and the real (see-through) trap pops in
+    for scale, dur in ((0.6, 70), (1.08, 70), (1.0, 1400)):
+        def f5(scale=scale):
+            with st.at(ox, oy, s):
+                bs.trap_mark(st, {"item": item, "owner": mt.my_seat}, px, py, 0.8 * UNIT * scale)
+            cursor(st, tx + 6, ty + 4)
+        frame(f5, dur)
     frames[0].save(out, save_all=True, append_images=frames[1:], duration=durations, loop=0, optimize=True)
     print("wrote", out, frames[0].size, len(frames), "frames")
 
 
 def main():
     src, outdir = sys.argv[1], sys.argv[2]
-    data = {}
-    for name in ("icons", "board", "cosmetics", "cards"):
-        data[name] = json.load(open(os.path.join(src, name + ".json")))
-    data["looks"] = {i["id"]: i["look"] for i in data["cosmetics"]["items"]}
-    data["patterns"] = data["cosmetics"]["patterns"]
-    scr = json.load(open(os.path.join(src, "screens.json")))
-    painter = CardPainter(data["cards"])
-    pc = next(d for d in scr["devices"] if d["file"] == "pc")
-    hover_scene(data, scr, pc, os.path.join(outdir, "11-card-hover-pc.png"), painter)
-    placing_scene(data, scr, pc, os.path.join(outdir, "12-placing-pc.png"), painter)
-    slam_gif(data, scr, pc, os.path.join(outdir, "13-placing-slam.gif"), painter)
+    data, scr = load(src)
+    hover_moment(data, scr, os.path.join(outdir, "11-card-hover-pc.png"))
+    placing_moment(data, scr, os.path.join(outdir, "12-placing-pc.png"))
+    slam_gif(data, scr, os.path.join(outdir, "13-placing-slam.gif"))
 
 
 if __name__ == "__main__":

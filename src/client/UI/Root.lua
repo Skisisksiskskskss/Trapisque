@@ -263,7 +263,7 @@ function Root.currentName(): string?
 	return current and current.name
 end
 
--- Full-screen "teleporting" curtain with a spinning compass.
+-- Full-screen "teleporting" curtain with a tumbling die.
 local curtain: Frame? = nil
 function Root.curtain(message: string?)
 	if not message then
@@ -301,16 +301,19 @@ function Root.curtain(message: string?)
 	})
 	curtain = c
 	Util.tween(c, 0.3, { BackgroundTransparency = 0.05 })
-	local compass = Icons.make(c, "compass", Icons.inkColors(C.brass, C.table), {
+	local die = Icons.medallion(c, "dice", C.sun, {
+		AnchorPoint = Vector2.new(0.5, 0.5),
 		Size = UDim2.fromOffset(110, 110),
 		Position = UDim2.fromScale(0.5, 0.44),
-		SizeConstraint = Enum.SizeConstraint.RelativeXY,
 		ZIndex = 501,
 	})
 	task.spawn(function()
-		while compass.Parent do
-			compass.Rotation = (compass.Rotation + 3) % 360
-			RunService.RenderStepped:Wait()
+		-- a tumble, a little rest, another tumble
+		local t = 0
+		while die.Parent do
+			t += RunService.RenderStepped:Wait()
+			local phase = t % 1.4
+			die.Rotation = if phase < 0.5 then phase / 0.5 * 360 else 0
 		end
 	end)
 	Widgets.label(c, {

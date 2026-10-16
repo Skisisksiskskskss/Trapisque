@@ -277,11 +277,12 @@ function CosmeticArt.title(parent: Instance, titleId: string?, props: { [string]
 	end
 	local plate = Util.new("Frame", {
 		Name = "Title",
-		BackgroundColor3 = Theme.C.engrave,
+		BackgroundColor3 = Theme.C.panelDeep,
 		BorderSizePixel = 0,
 		Size = UDim2.fromScale(1, 1),
 	})
 	Util.corner(plate, 6)
+	Util.stroke(plate, Theme.C.line, 2)
 	local label = Util.new("TextLabel", {
 		Name = "Text",
 		BackgroundTransparency = 1,

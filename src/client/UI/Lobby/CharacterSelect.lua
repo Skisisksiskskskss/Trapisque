@@ -58,7 +58,7 @@ function CharacterSelect.open(popups: Instance)
 	local cols = if narrow then 2 else 3
 	local cellW = if narrow then 158 else 196
 	local cardW = if narrow then 104 else 128
-	local cellH = math.floor(cardW / CardStyle.aspect) + 104
+	local cellH = math.floor(cardW / CardStyle.aspect) + 112 -- card, mastery, bar, next title, PICK
 	local rows = math.ceil(#Characters.list / cols)
 	local content, close = Widgets.modal(popups, {
 		title = "Characters",
@@ -217,7 +217,8 @@ function CharacterSelect.strip(parent: Instance, opts: { [string]: any }?)
 		size = if compact then 11 else 13,
 		color = C.textSoft,
 	})
-	local bar = Widgets.progress(root, { value = 0, size = UDim2.fromOffset(100, 8) })
+	-- (the short strip's bar is a plain line: an outline would run into the text above)
+	local bar = Widgets.progress(root, { value = 0, size = UDim2.fromOffset(100, 8), plain = compact })
 	local change = Widgets.button(root, {
 		text = "CHANGE",
 		style = "purple",
@@ -250,10 +251,10 @@ function CharacterSelect.strip(parent: Instance, opts: { [string]: any }?)
 		local tx = ps + 14
 		name.Position = UDim2.fromOffset(tx, if compact then 3 else 6)
 		name.Size = UDim2.new(1, -(tx + bw + 16), 0, if compact then 18 else 24)
-		sub.Position = UDim2.fromOffset(tx, if compact then 21 else 30)
-		sub.Size = UDim2.new(1, -(tx + bw + 16), 0, 14)
-		bar.root.Position = UDim2.fromOffset(tx, h - (if compact then 10 else 14))
-		bar.root.Size = UDim2.new(1, -(tx + bw + 20), 0, if compact then 6 else 8)
+		sub.Position = UDim2.fromOffset(tx, if compact then 20 else 30)
+		sub.Size = UDim2.new(1, -(tx + bw + 16), 0, if compact then 13 else 14)
+		bar.root.Position = UDim2.fromOffset(tx, h - (if compact then 9 else 14))
+		bar.root.Size = UDim2.new(1, -(tx + bw + 20), 0, if compact then 5 else 8)
 		local profile = State.get("profile")
 		local id = profile and profile.character or Characters.ids[1]
 		local def = Characters.get(id)

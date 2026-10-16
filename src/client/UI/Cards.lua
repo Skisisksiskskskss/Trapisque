@@ -43,21 +43,31 @@ end
 	Card text keeps one size on every card (a fraction of the card's width) and only
 	steps down when it doesn't fit its box. An outlined label's outline scales too.
 ]]
-local function cardText(label: TextLabel, card: GuiObject, frac: number, minSize: number, strokeFrac: number?)
+local function cardText(label: TextLabel, card: GuiObject, frac: number, minSize: number, strokeFrac: number?, short: string?)
 	label.TextScaled = false
 	local constraint = label:FindFirstChildOfClass("UITextSizeConstraint")
 	if constraint then
 		constraint:Destroy()
 	end
 	local stroke = label:FindFirstChildOfClass("UIStroke")
+	local full = label.Text
 	local function fit()
 		local width = card.AbsoluteSize.X / Util.inheritedScale(card, true)
 		if width < 1 then
 			return
 		end
+		label.Text = full
 		label.TextSize = math.max(minSize, math.floor(width * frac))
 		while not label.TextFits and label.TextSize > minSize do
 			label.TextSize -= 1
+		end
+		if short and not label.TextFits then
+			-- a small card (a phone's hand): the short name instead
+			label.Text = short
+			label.TextSize = math.max(minSize, math.floor(width * frac))
+			while not label.TextFits and label.TextSize > minSize do
+				label.TextSize -= 1
+			end
 		end
 		if stroke and strokeFrac then
 			stroke.Thickness = math.max(1, card.AbsoluteSize.X * strokeFrac)
@@ -156,7 +166,7 @@ local function topTag(face: Frame, text: string, card: GuiObject)
 	return label
 end
 
-local function nameLine(face: Frame, text: string, card: GuiObject)
+local function nameLine(face: Frame, text: string, card: GuiObject, short: string?)
 	local N = CardStyle.name
 	local label = Widgets.label(face, {
 		name = "Name",
@@ -172,7 +182,7 @@ local function nameLine(face: Frame, text: string, card: GuiObject)
 		outlineThickness = 2.5,
 		z = 6,
 	})
-	cardText(label, card, TEXT.name, 8, 0.02)
+	cardText(label, card, TEXT.name, 7, 0.02, if short then string.upper(short) else nil)
 	return label
 end
 
@@ -348,7 +358,7 @@ function Cards.item(parent: Instance?, itemId: string, props: { [string]: any }?
 	front.Name = "Front"
 	topTag(face, CATEGORY_LABEL[category] or "", root)
 	window(face, color, Cards.art(itemId))
-	nameLine(face, def.name, root)
+	nameLine(face, def.name, root, def.nick)
 
 	-- back
 	local tag = (CATEGORY_LABEL[category] or "") .. (if category == "trap" and def.hidden then " · HIDDEN" else "")
