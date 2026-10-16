@@ -59,7 +59,7 @@ Config.Characters = {
 	mage = { cost = 7, turns = 1, skate = 1 },
 	trapper = { cost = 6, trapCap = 4, bounty = 2 },
 	fire_starter = { cost = 10, blast = 4 },
-	naturalist = { cost = 6, range = 5, cap = 2 },
+	naturalist = { cost = 12, charge = 2, trample = 2 },
 	warper = { cost = 10, range = 7 },
 	overseer = { cost = 4, steps = 2 },
 }
@@ -139,6 +139,29 @@ Config.GamePasses = {
 	DoubleGems = 0,
 	LuckyCharm = 0,
 	EmotePack = 0,
+	Chat = 0, -- 10 Robux: type your own lines in the game chat
+	VoicePack = 0,
+	VictoryParade = 0,
+	CaptainsChest = 0,
+}
+
+-- Staff: the owner (and admins the owner picks) get the staff panel. The game's creator
+-- is always the owner (the group's owner, for a group game); list more owner ids here.
+Config.Staff = {
+	OwnerIds = {},
+	StudioIsOwner = true, -- everyone testing in Studio is the owner
+	AdminMaxBanHours = 72, -- admins can ban for up to this long; only the owner bans for good
+	StoreName = "TrapisqueStaff_v1",
+	Topic = "TrapisqueStaff",
+}
+
+-- The game chat (ChatService): quick lines for everyone, typed lines with the Chat pass.
+Config.Chat = {
+	MaxLength = 120,
+	Cooldown = 1.2, -- seconds between lines
+	Burst = 3, -- lines in a row before the cooldown bites
+	History = 40, -- lines each chat window keeps
+	BubbleSeconds = 5,
 }
 
 Config.Rewards = {

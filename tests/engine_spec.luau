@@ -724,22 +724,28 @@ test("fire starter: Blast Off rockets forward and leaves burning tiles", functio
 	eq(g.embers[3], nil, "the embers die down at the Fire Starter's next turn")
 end)
 
-test("naturalist: Overgrow grows the map's hazard nearby, two at a time", function()
-	local g = newGame({ characters = { "naturalist", "mage" } })
-	local function grow(tile)
-		g.players[1].power = CC.naturalist.cost
-		g.turn.abilityUsed = false
-		cmd(g, 1, { type = "ability", tile = tile })
-	end
-	grow(4)
-	eq(g.natural[4], "river")
-	grow(5)
-	grow(6)
-	eq(g.natural[4], nil, "the oldest withers")
-	eq(g.natural[6], "river")
+test("naturalist: Stampede charges ahead and tramples rivals in the way", function()
+	local g = newGame({ characters = { "naturalist", "mage", "trapper" } })
+	setTile(g, 1, 4)
+	setTile(g, 2, 5) -- run over
+	setTile(g, 3, 9) -- out of the way
 	g.players[1].power = CC.naturalist.cost
-	g.turn.abilityUsed = false
-	falsy(g:command(1, { type = "ability", tile = 30 }), "too far")
+	cmd(g, 1, { type = "ability" })
+	eq(g.players[1].tile, 4 + CC.naturalist.charge, "charged ahead")
+	eq(g.players[2].tile, 5 - CC.naturalist.trample, "trampled back")
+	eq(g.players[3].tile, 9, "the one out of the way is fine")
+	eq(g.players[1].power, 0, "it costs the whole bar")
+	-- a rival on the tile the herd stops on is trampled too
+	g = newGame({ characters = { "naturalist", "mage" } })
+	setTile(g, 1, 4)
+	setTile(g, 2, 4 + CC.naturalist.charge)
+	g.players[1].power = CC.naturalist.cost
+	cmd(g, 1, { type = "ability" })
+	eq(g.players[2].tile, 4 + CC.naturalist.charge - CC.naturalist.trample, "trampled where the herd stops")
+	eq(g.players[1].tile, 4 + CC.naturalist.charge, "no bounce")
+	-- not without the Power
+	g = newGame({ characters = { "naturalist", "mage" } })
+	falsy(g:command(1, { type = "ability" }), "the bar isn't full")
 end)
 
 test("warper: Warp swaps with a player in reach; nobody else can swap a Warper", function()

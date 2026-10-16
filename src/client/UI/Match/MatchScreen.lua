@@ -38,13 +38,13 @@ local Engine = require(Shared.Game.Engine)
 local Pacing = require(Shared.Game.Pacing)
 local Cosmetics = require(Shared.Meta.Cosmetics)
 local Progress = require(Shared.Meta.Progress)
+local Voices = require(Shared.Meta.Voices)
 
 local UI = script.Parent.Parent
 local Util = require(UI.Util)
 local Theme = require(UI.Theme)
 local Widgets = require(UI.Widgets)
 local Icons = require(UI.Icons)
-local CosmeticArt = require(UI.CosmeticArt)
 local Avatars = require(UI.Avatars)
 local Layout = require(UI.Layout)
 local Root = require(UI.Root)
@@ -59,6 +59,8 @@ local Effects = require(script.Parent.Effects)
 local Inspector = require(script.Parent.Inspector)
 local CardTip = require(script.Parent.CardTip)
 local VolumeRows = require(UI.VolumeRows)
+local ChatPanel = require(UI.ChatPanel)
+local StaffPanel = require(UI.StaffPanel)
 local Shop = require(script.Parent.Shop)
 local Results = require(script.Parent.Results)
 
@@ -66,6 +68,8 @@ local Client = UI.Parent
 local Net = require(Client.Net)
 local State = require(Client.State)
 local Sound = require(Client.Sound)
+local Chat = require(Client.Chat)
+local Voice = require(Client.Voice)
 
 local C = Theme.C
 local Rules = Config.Rules
@@ -175,8 +179,19 @@ function MatchScreen.show(payload)
 		end
 	end))
 	self.maid:add(Net.on("match.emote", function(data)
-		if self.alive and data.id == self.id and self.chips then
-			self.chips:emote(data.seat, data.emote)
+		if self.alive and data.id == self.id then
+			self:_emote(data)
+		end
+	end))
+	-- chat lines pop as bubbles over the speaker's character
+	self.maid:add(Chat.onLine(function(line)
+		if self.alive and line.seat and self.board and Chat.bubbles() then
+			local info = self.seats[line.seat] or {}
+			self.board:say(line.seat, line.text, {
+				name = info.name or line.name,
+				color = Theme.seatColor(line.seat),
+				staff = line.staff,
+			})
 			Sound.play("pop")
 		end
 	end))
@@ -612,6 +627,7 @@ function MatchScreen:_layoutTop(L, m)
 	for i = start, #list do
 		local item = list[i]
 		Widgets.iconButton(self.buttons, {
+			name = item.key,
 			icon = item.icon,
 			style = item.style,
 			size = UDim2.fromOffset(b.size, b.size),
@@ -1494,6 +1510,9 @@ function MatchScreen:_play(e)
 		Overlays.abilityBanner(self.fx, p and p.character or "mage", ab and ab.name or "Ability", self:_name(e.p), speed)
 		if e.ability ~= "blizzard" and e.ability ~= "blast" then
 			Effects.ability(board, e.ability, e.p, e.target)
+			if e.ability == "stampede" then
+				Effects.stampede(board, e.p)
+			end
 		end
 		local target = if e.target then (" on " .. self:_tag(e.target)) else ""
 		local option = if e.option == "fwd" then " (forward)" elseif e.option == "back" then " (back)" else ""
@@ -1515,14 +1534,6 @@ function MatchScreen:_play(e)
 		board:setEmbers(table.clone(v.embers))
 	elseif t == "scorch" then
 		Effects.scorch(board, e.p)
-	elseif t == "grow" then
-		v.natural[e.tile] = e.kind
-		board:setNatural(e.tile, e.kind)
-		Effects.grow(board, e.tile)
-		feed:add(self:_tag(e.p) .. " grew a " .. tostring(e.kind) .. " out of the ground!", nil, "naturalist", C.lime)
-	elseif t == "wither" then
-		v.natural[e.tile] = nil
-		board:setNatural(e.tile, nil)
 	elseif t == "swap" then
 		local a, b = self:_player(e.a), self:_player(e.b)
 		if a then
@@ -2221,7 +2232,6 @@ function MatchScreen:_placeFlow(itemId: string, opts: { [string]: any }?): boole
 	return true
 end
 
--- Pick a tile on the board (Overgrow). onPick gets the tile.
 function MatchScreen:_pickTile(prompt: string, tiles: { number }, color: Color3, onPick: (number) -> ())
 	if self.targeting then
 		return
@@ -2640,7 +2650,6 @@ end
 -- your ability
 ---------------------------------------------------------------------------
 
--- Tiles a Naturalist can grow a hazard on (the engine's canGrow, from what I can see).
 function MatchScreen:_growTiles(): { number }
 	local me = self:_player(self.mySeat)
 	local board = self.board.board
@@ -2699,12 +2708,6 @@ function MatchScreen:_abilityClicked()
 	end
 	if ab.target == "none" then
 		send(nil)
-		return
-	end
-	if ab.target == "tile" then
-		self:_pickTile(ab.name .. ": pick a tile within " .. (ab.range or 0) .. " tiles", self:_growTiles(), C.lime, function(tile)
-			send({ tile = tile })
-		end)
 		return
 	end
 	local seats = {}
@@ -2785,54 +2788,43 @@ function MatchScreen:_openPick(options: { string })
 	end)
 end
 
+-- An emote: a bubble over the character (in the emote's colour), read out in their voice.
+function MatchScreen:_emote(data)
+	local def = Cosmetics.get(data.emote)
+	if not def then
+		return
+	end
+	local info = self.seats[data.seat] or {}
+	local p = self.view and self.view.players[data.seat]
+	if self.board and Chat.bubbles() then
+		self.board:say(data.seat, def.look.text, {
+			emote = true,
+			name = info.name,
+			color = Theme.seatColor(data.seat),
+			rim = Color3.fromHex(string.sub(def.look.color, 2)),
+		})
+	elseif self.chips then
+		self.chips:emote(data.seat, data.emote)
+	end
+	Sound.play("pop")
+	local settings = (State.get("profile") or {}).settings or {}
+	if settings.voices ~= false then
+		Voice.say(def.look.text, Voices.resolve(data.voice, p and p.character))
+	end
+end
+
+-- The say button: your emotes, the quick lines and (with the Chat pass) your own words.
 function MatchScreen:_emotePicker()
 	local profile = State.get("profile")
 	local emotes = profile and profile.equipped and profile.equipped.emotes or { "emote_gg" }
-	local cols = if Root.metrics.form == "tall" then 2 else 3
-	local content, close = Widgets.modal(self.popups, {
-		title = "Emotes",
-		titleWidth = 220,
-		width = cols * 160 + 60,
-		height = 150 + math.ceil(#emotes / cols) * 54,
+	ChatPanel.open(self.popups, {
+		title = "Say something",
+		emotes = emotes,
+		closeOnSend = true,
+		colorOf = function(line)
+			return if line.seat then Theme.seatColor(line.seat) else Theme.playerColor(line.character)
+		end,
 	})
-	local grid = Util.frame(content, {})
-	Util.new("UIGridLayout", {
-		CellSize = UDim2.fromOffset(150, 44),
-		CellPadding = UDim2.fromOffset(10, 10),
-		HorizontalAlignment = Enum.HorizontalAlignment.Center,
-		SortOrder = Enum.SortOrder.LayoutOrder,
-		Parent = grid,
-	})
-	for i, id in emotes do
-		local def = Cosmetics.get(id)
-		if def then
-			local b = Util.new("TextButton", {
-				Name = id,
-				Text = "",
-				AutoButtonColor = false,
-				BackgroundTransparency = 1,
-				LayoutOrder = i,
-				Parent = grid,
-			})
-			local bubble = CosmeticArt.emoteBubble(b, id, {
-				AnchorPoint = Vector2.new(0.5, 0.5),
-				Position = UDim2.fromScale(0.5, 0.5),
-			})
-			if bubble then
-				bubble.Active = false
-			end
-			b.Activated:Connect(function()
-				close()
-				local ok, err = Net.request("match.emote", { emote = id })
-				if not ok then
-					Widgets.toast(tostring(err), "error")
-				end
-			end)
-			b.MouseEnter:Connect(function()
-				Util.bump(b, 0.06)
-			end)
-		end
-	end
 end
 
 -- Everyone at a glance: treasures, coins, cards, Power, bonks, gotchas.
@@ -2939,11 +2931,12 @@ function MatchScreen:_inspectPlayer(seat: number)
 end
 
 function MatchScreen:_menu()
+	local staff = State.get("staff")
 	local content, close = Widgets.modal(self.popups, {
 		title = "Menu",
 		titleWidth = 200,
 		width = 420,
-		height = 380,
+		height = if staff then 442 else 380,
 	})
 	local list = Util.frame(content, {})
 	Util.list(list, "y", 12, "Center", "Center")
@@ -2962,13 +2955,27 @@ function MatchScreen:_menu()
 			end,
 		})
 	end
+	if staff then
+		Widgets.button(list, {
+			text = if staff == "owner" then "OWNER PANEL" else "ADMIN PANEL",
+			icon = "crown",
+			style = "brass",
+			textSize = 20,
+			size = UDim2.fromOffset(280, 50),
+			layoutOrder = 5,
+			onClick = function()
+				close()
+				StaffPanel.open(self.popups)
+			end,
+		})
+	end
 	Widgets.button(list, {
 		text = "LEAVE MATCH",
 		icon = "exit",
 		style = "red",
 		textSize = 20,
 		size = UDim2.fromOffset(280, 50),
-		layoutOrder = 4,
+		layoutOrder = 6,
 		onClick = function()
 			close()
 			local confirm, closeConfirm = Widgets.modal(self.popups, {
@@ -3018,6 +3025,15 @@ function MatchScreen:_showResults(data)
 		if self.shop then
 			self.shop:close()
 			self.shop = nil
+		end
+		if self.board and type(data.parade) == "table" and #data.parade > 0 then
+			for _, seat in data.parade do
+				Effects.parade(self.board, seat)
+			end
+			task.wait(2.6)
+			if not self.alive then
+				return
+			end
 		end
 		Results.show(self.popups, data, self.mySeat, self.isTeam, function()
 			Net.request("match.leave")

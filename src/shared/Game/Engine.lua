@@ -149,7 +149,6 @@ function Engine.new(opts)
 	self.cover = {} -- [tile] = origin tile of the conveyor covering it
 	self.traps = {} -- [tile] = { trap, ... } hidden traps (a tile can hold several)
 	self.natural = {} -- [tile] = "river" | "gate" | "slime"
-	self.grown = {} -- [seat] = { tiles } natural hazards a Naturalist grew, oldest first
 	self.embers = {} -- [tile] = { owner, team } burning tiles left by a Blast Off
 	self.teleporters = {} -- tiles, in placement order (pairs: 1-2, 3-4, ...)
 	self.placeOrder = 0
@@ -782,24 +781,6 @@ function Engine:canPlace(p, itemId: string, tile: number, dir: string?): (boolea
 	return Engine.checkPlacement(self.board, self:layersFor(p.index), itemId, tile, dir, Engine.placeContext(p, self.mut))
 end
 
--- Overgrow: a free tile near the Naturalist (no token, piece, hazard or special tile).
-function Engine:canGrow(p, tile: number): (boolean, string?)
-	local board = self.board
-	if type(tile) ~= "number" or board.tiles[tile] == nil then
-		return false, "Pick a tile on the board."
-	end
-	if board:raceDistance(p.tile, tile) > CharCfg.naturalist.range then
-		return false, "Too far: grow it within " .. CharCfg.naturalist.range .. " tiles of you."
-	end
-	if board:isSpecial(tile) or board.tiles[tile].kind == "shortcutGate" then
-		return false, "Not on that tile."
-	end
-	if self.tokens[tile] or self.natural[tile] or self.placed[tile] or self.cover[tile] then
-		return false, "Something is already there."
-	end
-	return true, nil
-end
-
 ---------------------------------------------------------------------------
 -- cards, coins and power
 ---------------------------------------------------------------------------
@@ -1344,7 +1325,9 @@ function Engine:_land(p: any, forced: boolean?, teleported: boolean?): ()
 	end
 end
 
-function Engine:_bonk(attacker, victim)
+-- `back` overrides how far the victim flies; `trample` (a Stampede running them over)
+-- doesn't bounce the attacker forward.
+function Engine:_bonk(attacker, victim, back: number?, trample: boolean?)
 	if removeCard(victim, "shield") then
 		self:_emit({ t = "shield", p = victim.index, item = "bonk", tile = victim.tile, by = attacker.index })
 		return
@@ -1355,9 +1338,9 @@ function Engine:_bonk(attacker, victim)
 	if attacker.character == "fire_starter" then
 		self:_setStatus(victim, "burning", "bonk")
 	end
-	self:_shiftBack(victim, self.mut.bonkBack or Rules.BonkBack, "bonk")
+	self:_shiftBack(victim, back or self.mut.bonkBack or Rules.BonkBack, "bonk")
 	self:_land(victim, true)
-	if (Rules.BonkBounce or 0) > 0 and self.phase ~= "over" then
+	if not trample and (Rules.BonkBounce or 0) > 0 and self.phase ~= "over" then
 		self:_shiftForward(attacker, Rules.BonkBounce, "bounce")
 		self:_land(attacker, true)
 	end
@@ -2030,12 +2013,6 @@ function Engine:_cmdAbility(p, cmd)
 	if id == "nudge" and option == "back" and #target.trail <= 1 then
 		return false, "They're already at the Start."
 	end
-	if id == "overgrow" then
-		local ok, why = self:canGrow(p, tile :: number)
-		if not ok then
-			return false, why
-		end
-	end
 
 	-- commit
 	self.turn.abilityUsed = true
@@ -2098,20 +2075,29 @@ function Engine:_cmdAbility(p, cmd)
 				self:_land(p, true)
 			end
 		end
-	elseif id == "overgrow" then
-		local kind = self.map.naturalKind
-		local mine = self.grown[p.index] or {}
-		self.grown[p.index] = mine
-		while #mine >= CharCfg.naturalist.cap do
-			local old = table.remove(mine, 1)
-			if self.natural[old] then
-				self.natural[old] = nil
-				self:_emit({ t = "wither", tile = old, kind = kind })
+	elseif id == "stampede" then
+		-- the herd charges ahead; rivals on the tiles it runs over (the last one too) are
+		-- trampled back
+		local over = {}
+		local cur = p.tile
+		for _ = 1, CharCfg.naturalist.charge do
+			cur = self.board.nextMain[cur]
+			if not cur or cur == self.board.treasure then
+				break
+			end
+			over[cur] = true
+		end
+		self:_shiftForward(p, CharCfg.naturalist.charge, "stampede")
+		if self.phase ~= "over" then
+			for _, other in self.players do
+				if self.phase ~= "over" and other ~= p and self:isOpponent(p, other) and over[other.tile] then
+					self:_bonk(p, other, CharCfg.naturalist.trample, true)
+				end
+			end
+			if self.phase ~= "over" and p.tile ~= self.board.start then
+				self:_land(p, true)
 			end
 		end
-		self.natural[tile :: number] = kind
-		table.insert(mine, tile :: number)
-		self:_emit({ t = "grow", p = p.index, tile = tile, kind = kind })
 	elseif id == "warp" then
 		self:_swap(p, target, "warp")
 		self:_land(p, true)

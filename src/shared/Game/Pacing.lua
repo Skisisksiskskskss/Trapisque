@@ -29,6 +29,7 @@ local FAST_KINDS = {
 	bounce = true,
 	skate = true,
 	blast = true,
+	stampede = true,
 	trampoline = true,
 	bounty = true,
 }

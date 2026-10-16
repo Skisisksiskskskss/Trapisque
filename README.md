@@ -71,12 +71,31 @@ rendered offline (see [Screenshots](#screenshots)).
   raining on you), dice, trails, emotes and titles. You open chests with Gems, which
   you earn by playing.
 - **Gamepasses** that never touch gameplay (see below).
+- **Chat that everyone can see.** Lines pop up as big speech bubbles over the
+  speaker's character on the board (in the lobby, under the chat button with their
+  avatar), with their name on a tab in their colour. Each line is read out loud in the
+  speaker's voice: Roblox's text-to-speech pushed through a character (a grumbly old
+  mage, a salty sea dog, a squeaky warper, a parrot, a ghost, a clockwork voice), so it
+  never sounds like a newsreader; if a voice can't be had it babbles instead. Sixteen
+  quick lines ("Ahoy!", "Watch your step!", "GG!") are free for everyone, whatever
+  their Roblox chat settings. Typing your own lines is the Chat pass, and still needs
+  chat switched on in your Roblox settings: every typed line goes through Roblox's
+  filter for each person who reads it. Voices and bubbles can be switched off in
+  Settings, and you can tap a name in the chat to hide that person's lines.
+- **Owner and admin panels.** The game's owner (and the admins they pick) get a panel
+  from Settings or the match menu: mute, kick, ban (admins for up to 3 days, the owner
+  for good), end a stuck match, announce to the server; and for the owner, give anyone
+  gamepasses, Gems, free chests, any item or the whole collection (online or not: gifts
+  wait for them), make or remove admins, announce to every server, rain Gems or chests
+  on a server, switch the weekly event and shut every server down for an update.
+  Every action is checked on the server and logged.
 - **Any screen.** The layout follows the device: the board fills the screen on a PC,
   phones held sideways keep the cards under your left thumb and the dice under your
   right, and phones held upright stand the board up. Nothing sits over Roblox's own
   buttons, notches or the home bar.
-- **Sound.** Dice on felt, steps, card swishes, bonks and a thud when a card hits the
-  board, all from Roblox's free audio library. Music and sound effects each have a
+- **Sound.** Pirate sounds from Roblox's free audio library: dice rattling in a cup,
+  wooden pieces tapped down, a ship's bell for your turn, a cutlass drawn for abilities,
+  a deep thump for bonks, and a tavern accordion in the lobby. Music and sound effects each have a
   volume slider (in Settings and the match menu), saved to your profile.
 - **Music that follows the game.** Three moods, each a short playlist that's
   shuffled so no track plays twice in a row. Each track crossfades into the next
@@ -86,9 +105,9 @@ rendered offline (see [Screenshots](#screenshots)).
 
   | Mood | Tracks (APM, Roblox audio library) |
   | --- | --- |
-  | Lobby | [Les Voyages de la Mappa Mundi](https://create.roblox.com/store/asset/1837137568), [Magic - The Harp](https://create.roblox.com/store/asset/1844347220), [Clair De Lune (harp)](https://create.roblox.com/store/asset/96767255237081) |
-  | Match | [Shards Shimmer](https://create.roblox.com/store/asset/9048197244), [Exploring Concepts (Underscore)](https://create.roblox.com/store/asset/9040054834), [Puzzles in Twilight (Alt)](https://create.roblox.com/store/asset/79301554757012), [Mystery Islands](https://create.roblox.com/store/asset/1844986119) |
-  | Endgame | [Mind Puzzle (b)](https://create.roblox.com/store/asset/1839856504), [Curious Crime (Pulse Only)](https://create.roblox.com/store/asset/129673998145182) |
+  | Lobby | [Step Dance](https://create.roblox.com/store/asset/1846419945), [Sailing Boots](https://create.roblox.com/store/asset/1845746272), [Swig Yer Jig (A)](https://create.roblox.com/store/asset/1840406291), [Captains All](https://create.roblox.com/store/asset/1840678834) |
+  | Match | [Celtic Shanty Main ALT light](https://create.roblox.com/store/asset/1835239421), [Irish Journey (Underscore)](https://create.roblox.com/store/asset/9047779811), [Celtic Adventures](https://create.roblox.com/store/asset/1836969461), [Treasure Island A](https://create.roblox.com/store/asset/1846637377) |
+  | Endgame | [Pinnacle - Percussion Only](https://create.roblox.com/store/asset/1845091505), [Crucial (Underscore Version)](https://create.roblox.com/store/asset/1842899524), [Visions (Underscore Version)](https://create.roblox.com/store/asset/1842868865) |
 
 ## Project layout
 
@@ -128,7 +147,8 @@ In Studio:
    progress isn't kept.
 2. Press **Play**. Studio can't teleport, so matchmaking, parties and matches all run
    on the one test server. Every gamepass counts as owned in Studio
-   (`Config.StudioOwnsAllPasses`), so you can try everything.
+   (`Config.StudioOwnsAllPasses`), and everyone testing is the owner
+   (`Config.Staff.StudioIsOwner`), so you can try everything.
 3. To test with several players, use **Test → Clients and Servers**.
 
 ## Publishing
@@ -141,6 +161,11 @@ In Studio:
    all work in a published experience without extra setup.
 3. Create the gamepasses (next section) and paste their ids into
    `src/shared/Config.lua`.
+4. The owner panel is yours automatically: the game's creator (the group's owner, for
+   a group game) is the owner. Add more owners by user id in `Config.Staff.OwnerIds`;
+   admins are picked in the panel itself. Staff lists, bans and gifts for offline
+   players live in the `TrapisqueStaff_v1` DataStore and reach every server through
+   MessagingService.
 
 ## Gamepasses
 
@@ -153,9 +178,13 @@ Create these on the Creator Dashboard (**Monetization → Passes**) and put thei
 | `DoubleGems` | 2x Gems | Double Gems from every match (stacks with VIP). |
 | `LuckyCharm` | Lucky Charm | Legendary and Mythic chest odds ×1.5, and the chest screens show your boosted odds. Hidden for players whose region doesn't allow paid random items. |
 | `EmotePack` | Emote Pack | 6 extra emotes, and up to 6 emotes equipped in matches. |
+| `Chat` | Chat | Type your own lines in the game chat (set its price to 10 Robux). Quick lines are free for everyone. |
+| `VoicePack` | Voice Pack | Pick the voice your chat bubbles speak in (Grumbly, Salty, Chipper, Squeaky, Parrot, Ghostly, Clockwork); without it you speak in your character's own voice. |
+| `VictoryParade` | Victory Parade | Cannons, streamers and a fanfare over your character when you win, seen by everyone in the match. |
+| `CaptainsChest` | Captain's Chest | The Admiralty accessory pack, the Golden Doubloon dice and the Captain title. |
 
 None of them changes how a match plays. They only speed up or add to the cosmetic
-collection.
+collection, or add ways to talk and show off.
 
 ## Treasure Chests
 

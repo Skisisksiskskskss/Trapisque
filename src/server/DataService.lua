@@ -21,6 +21,7 @@ local Shared = ReplicatedStorage.Shared
 local Config = require(Shared.Config)
 local Cosmetics = require(Shared.Meta.Cosmetics)
 local Gacha = require(Shared.Meta.Gacha)
+local Voices = require(Shared.Meta.Voices)
 local Passes = require(Shared.Meta.Passes)
 local Progress = require(Shared.Meta.Progress)
 local Characters = require(Shared.Game.Characters)
@@ -64,10 +65,11 @@ local function newProfile()
 			emotes = table.clone(Cosmetics.defaults.emotes),
 		},
 		pity = { explorer = {}, royal = {} },
+		granted = {}, -- [passKey] = true: passes the owner gave this player
 		freeChests = { explorer = Config.Rewards.StartingFreeChests },
 		chestsOpened = 0,
 		lastDaily = 0,
-		settings = { sfx = true, music = true, sfxVolume = 1, musicVolume = 0.7, autoRoll = false, fastAnim = false },
+		settings = { sfx = true, music = true, sfxVolume = 1, musicVolume = 0.7, autoRoll = false, fastAnim = false, voices = true, bubbles = true, voice = "auto" },
 	}
 end
 
@@ -222,6 +224,11 @@ local function grantPassPerks(prof)
 			data.owned[id] = true
 		end
 	end
+	if prof.passes.CaptainsChest then
+		for _, id in Cosmetics.fromSource("captain") do
+			data.owned[id] = true
+		end
+	end
 end
 
 local function refreshPasses(player: Player)
@@ -229,8 +236,9 @@ local function refreshPasses(player: Player)
 	if not prof then
 		return
 	end
+	local granted = prof.data.granted or {}
 	for _, pass in Passes.list do
-		prof.passes[pass.key] = ownsPass(player, pass.key)
+		prof.passes[pass.key] = granted[pass.key] == true or ownsPass(player, pass.key)
 	end
 	grantPassPerks(prof)
 end
@@ -446,6 +454,106 @@ function DataService.publicLook(player: Player)
 	}
 end
 
+-- Fires (player) when a profile has loaded.
+DataService.loaded = loadedSignal.Event
+
+---------------------------------------------------------------------------
+-- staff tools (AdminService checks who may use them)
+---------------------------------------------------------------------------
+
+-- Give (or take back) a gamepass's perks without a purchase.
+function DataService.grantPass(player: Player, passKey: string, on: boolean): boolean
+	local prof = profiles[player]
+	if not prof or not Passes.byKey[passKey] then
+		return false
+	end
+	prof.data.granted = prof.data.granted or {}
+	prof.data.granted[passKey] = if on then true else nil
+	refreshPasses(player)
+	DataService.pushProfile(player)
+	return true
+end
+
+function DataService.giveItem(player: Player, itemId: string): boolean
+	local data = DataService.get(player)
+	if not data or not Cosmetics.get(itemId) then
+		return false
+	end
+	data.owned[itemId] = true
+	DataService.pushProfile(player)
+	return true
+end
+
+function DataService.giveEverything(player: Player): boolean
+	local data = DataService.get(player)
+	if not data then
+		return false
+	end
+	for _, def in Cosmetics.list do
+		data.owned[def.id] = true
+	end
+	DataService.pushProfile(player)
+	return true
+end
+
+function DataService.giveChests(player: Player, chestId: string, count: number): boolean
+	local data = DataService.get(player)
+	if not data or (chestId ~= "explorer" and chestId ~= "royal") then
+		return false
+	end
+	data.freeChests[chestId] = math.max(0, (data.freeChests[chestId] or 0) + math.floor(count))
+	DataService.pushProfile(player)
+	return true
+end
+
+-- What the staff panel shows about someone.
+function DataService.summary(player: Player)
+	local prof = profiles[player]
+	if not prof then
+		return { userId = player.UserId, name = player.DisplayName, username = player.Name, loading = true }
+	end
+	local data = prof.data
+	local passes, granted = {}, {}
+	for key, on in prof.passes do
+		if on then
+			table.insert(passes, key)
+		end
+	end
+	for key in data.granted or {} do
+		table.insert(granted, key)
+	end
+	local owned = 0
+	for _ in data.owned do
+		owned += 1
+	end
+	return {
+		userId = player.UserId,
+		name = player.DisplayName,
+		username = player.Name,
+		level = data.level,
+		gems = data.gems,
+		trophies = data.trophies or 0,
+		games = (data.stats.games or 0) + (data.stats.practice or 0),
+		wins = data.stats.wins or 0,
+		character = data.character,
+		passes = passes,
+		granted = granted,
+		owned = owned,
+		freeChests = table.clone(data.freeChests),
+	}
+end
+
+-- The voice someone's chat bubbles speak in: their pick with the Voice Pack, else
+-- "auto" (their character's own).
+function DataService.voiceOf(player: Player): string
+	local data = DataService.get(player)
+	local v = data and data.settings and data.settings.voice
+	if type(v) == "string" and Voices.byId[v] and DataService.hasPass(player, "VoicePack") then
+		return v
+	end
+	return "auto"
+end
+
 function DataService.addGems(player: Player, amount: number)
 	local data = DataService.get(player)
 	if data then
@@ -502,6 +610,11 @@ function DataService.saveSettings(player: Player, settings)
 		elseif type(current) == "number" and type(v) == "number" and v == v then
 			-- volumes (0..1)
 			data.settings[k] = math.clamp(v, 0, 1)
+		elseif k == "voice" and type(v) == "string" and Voices.byId[v] then
+			-- picking a voice is the Voice Pack's (your character's own voice is free)
+			if v == "auto" or DataService.hasPass(player, "VoicePack") then
+				data.settings.voice = v
+			end
 		end
 	end
 	return true

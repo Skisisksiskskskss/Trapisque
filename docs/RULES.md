@@ -175,7 +175,7 @@ Playing a potion counts as your card for the turn.
 
 ## Hazards
 
-Each map has its own hazard; the Naturalist can grow more of them.
+Each map has its own hazard; the Naturalist walks straight through all of them.
 
 | Map | Hazard | Without the counter card |
 | --- | --- | --- |
@@ -193,7 +193,7 @@ hazards.
 | Mage | **Frostproof:** can't be Frozen. | **Blizzard (7):** every rival is Frozen for their next turn, and you skate 1 tile ahead. |
 | Trapper | **Bounty Hunter:** hides traps anywhere on the board and keeps up to 4 out; each time one catches someone, you hop 2 tiles forward. | **Scavenge (6):** pick one of two random trap cards. |
 | Fire Starter | **Hot Hands:** your bonks set rivals on fire. Starts with a Fire card. | **Blast Off (10):** rocket 4 tiles forward; the tiles you fly over burn until your next turn. |
-| Naturalist | **Wild Walker:** rivers, locked gates and slime never stop or slow you. | **Overgrow (6):** grow this map's hazard on a free tile up to 5 tiles away (2 at once; the oldest withers). |
+| Naturalist | **Wild Walker:** rivers, locked gates and slime never stop or slow you. | **Stampede (12):** charge 2 tiles forward with a herd of wild boars; every rival on those tiles (or where you land) is knocked back 2 tiles. **(digital)** |
 | Warper | **Slippery:** can't be swapped by anyone else. | **Warp (10):** swap places with a player up to 7 tiles away. |
 | Overseer | **All-Seeing:** sees every hidden trap. | **Nudge (4):** move any player, even yourself, 2 tiles forward or back. |
 
@@ -246,7 +246,7 @@ practice matches.
    Power, instead of rolling one die and moving.
 2. **Power abilities.** Abilities cost Power instead of recharging on a timer, and
    several were reworked so each one helps the player using it (Blizzard, Blast Off,
-   Overgrow, Scavenge, the Trapper's bounty).
+   Stampede, Scavenge, the Trapper's bounty).
 3. **Hidden traps** placed near you, with a cap, instead of open traps anywhere.
 4. **One card per turn.**
 5. **Bonks** when you land on a rival.

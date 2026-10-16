@@ -116,8 +116,11 @@ function CharacterSelect.open(popups: Instance)
 			Position = UDim2.new(0.5, 0, 0, 8),
 			Size = UDim2.fromOffset(cardW, cardW / CardStyle.aspect),
 		})
+		-- open it big to read its rules
 		Cards.interactive(card, function()
-			card:flip()
+			Cards.zoom(card.root, function(parent, props)
+				return Cards.character(parent, def.id, props)
+			end)
 		end)
 		local level, into, need = masteryOf(profile, def.id)
 		local y = 8 + math.floor(cardW / CardStyle.aspect) + 6

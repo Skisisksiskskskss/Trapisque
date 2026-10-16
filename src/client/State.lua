@@ -4,7 +4,8 @@
 		State.set("profile", data)
 		State.get("profile")
 		State.watch("profile", function(value) ... end) -> disconnect function
-	Keys: profile, party, queue, invite, teleporting, lobbyPlayers, role, studio
+	Keys: profile, party, queue, invite, teleporting, lobbyPlayers, role, studio,
+	      chat (what typing in chat needs), staff ("owner" | "admin" | nil)
 ]]
 
 local State = {}

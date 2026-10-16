@@ -89,12 +89,14 @@ local SIZE_ARGS = {
 	arrow = { 4, 5 },
 	text = { 4, 5 },
 	eyes = { 4, 5 },
+	dots = { 4, 5 },
+	brows = { 4, 5 },
 	eye = { 4 },
 	mouth = { 4 },
 	blush = { 4, 5 },
 	shine = { 4 },
 }
-local FACE = { eyes = true, eye = true, mouth = true, blush = true, shine = true }
+local FACE = { eyes = true, eye = true, mouth = true, blush = true, shine = true, dots = true, brows = true }
 local DIR_DEFAULT = { tri = 0, half = 0, arc = 0, drop = 0, chevron = 90, arrow = 90 }
 local ROT_KINDS = { rect = true, pill = true, hex = true, text = true }
 
@@ -235,6 +237,60 @@ local TONGUE = Color3.fromHex("FF6B8A")
 local function drawFace(canvas: Instance, op, colors)
 	local kind = op[1]
 	local line = resolve(colors, "line")
+	if kind == "dots" then
+		-- the crew's eyes: plain ink dots that change shape with the mood
+		local cx, cy, gap, d = op[2], op[3], op[4], op[5]
+		local mood = op.mood or "normal"
+		for i, sx in { -1, 1 } do
+			local ex = cx + sx * gap / 2
+			local m = mood
+			if mood == "wink" then
+				m = if i == 2 then "happy" else "normal"
+			end
+			if m == "happy" then
+				Shapes.arc(canvas, ex, cy + d * 0.45, d * 1.7, d * 0.4, line, { dir = 0, keep = 0.5 })
+			elseif m == "closed" then
+				Shapes.line(canvas, ex - d * 0.8, cy, ex + d * 0.8, cy, d * 0.36, line)
+			elseif m == "dizzy" then
+				Shapes.line(canvas, ex - d * 0.7, cy - d * 0.7, ex + d * 0.7, cy + d * 0.7, d * 0.34, line)
+				Shapes.line(canvas, ex - d * 0.7, cy + d * 0.7, ex + d * 0.7, cy - d * 0.7, d * 0.34, line)
+			else
+				-- a small white eye in an ink rim, with an ink pupil
+				local big = if m == "shock" then 1.25 else 1
+				Shapes.rect(canvas, ex, cy, d * 1.75 * big, d * 2.15 * big, line, { r = 0.5 })
+				Shapes.rect(canvas, ex, cy, d * 1.25 * big, d * 1.65 * big, WHITE, { r = 0.5 })
+				local pd = if m == "shock" then 0.5 else 0.8
+				Shapes.rect(canvas, ex, cy + d * 0.15, d * pd, d * pd * 1.25, line, { r = 0.5 })
+				if m == "smug" then
+					-- heavy lids
+					Shapes.rect(canvas, ex, cy - d * 0.45, d * 1.75, d * 1.05, line, { r = 0.3 })
+				end
+			end
+		end
+		return
+	elseif kind == "brows" then
+		local cx, cy, gap, w = op[2], op[3], op[4], op[5]
+		local mood = op.mood or "normal"
+		local col = if op.c then resolve(colors, op.c) else line
+		local th = w * 0.32
+		for i, sx in { -1, 1 } do
+			local ex = cx + sx * gap / 2
+			-- how far the inner end (nearest the nose) dips (+) or lifts (-)
+			local tilt, lift = 0, 0
+			if mood == "angry" then
+				tilt = w * 0.35
+			elseif mood == "sad" then
+				tilt = -w * 0.3
+			elseif mood == "raised" then
+				lift = w * 0.3
+			elseif mood == "smug" then
+				lift = if i == 2 then w * 0.3 else -w * 0.05
+			end
+			local inner, outer = ex - sx * w / 2, ex + sx * w / 2
+			Shapes.line(canvas, outer, cy - lift, inner, cy - lift + tilt, th, col)
+		end
+		return
+	end
 	if kind == "blush" then
 		local cx, cy, gap, d = op[2], op[3], op[4], op[5]
 		local col = if op.c then resolve(colors, op.c) else BLUSH
@@ -452,7 +508,7 @@ function Icons.stickerFor(id: string): { any }?
 		return art
 	end
 	if StickerArt.bodyColor[id] then
-		return StickerArt.mascot(id)
+		return StickerArt.mascot(id, nil, { bust = true })
 	end
 	return StickerArt.misc[id]
 end
@@ -478,18 +534,6 @@ function Icons.medallion(parent: Instance, id: string, color: Color3, props: { [
 	end
 	Util.corner(disc, 0.5)
 	Util.scaledStroke(disc, Theme.C.line, 0.07, 2)
-	local shine = Util.new("Frame", {
-		Name = "Shine",
-		BackgroundColor3 = Color3.new(1, 1, 1),
-		BackgroundTransparency = 0.8,
-		BorderSizePixel = 0,
-		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.fromScale(0.5, 0.08),
-		Size = UDim2.fromScale(0.66, 0.3),
-		ZIndex = disc.ZIndex,
-		Parent = disc,
-	})
-	Util.corner(shine, 0.5)
 	disc.Parent = parent
 	local art = Icons.stickerFor(id)
 	if art then

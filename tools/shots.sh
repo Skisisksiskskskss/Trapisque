@@ -16,6 +16,7 @@ declare -A SCENARIOS=(
 	[laptop]='name = "laptop", w = 1366, h = 768, mode = "chaos", map = "Junction Dungeon", bots = 3, seed = 4'
 	[phone]='name = "phone", w = 844, h = 390, touch = true, safe = { l = 47, r = 47, t = 0, b = 21 }, inset = 48, barLeft = 160, mode = "chaos", map = "Junction Dungeon", bots = 2, seed = 11'
 	[boards]='name = "boards", w = 1600, h = 900'
+	[crew]='name = "crew", w = 1500, h = 760'
 	[upright]='name = "upright", w = 390, h = 844, touch = true, safe = { l = 0, r = 0, t = 47, b = 34 }, inset = 95, barLeft = 110, barRight = 340, mode = "chaos", map = "Blissful Tricks", bots = 3, seed = 5'
 )
 ORDER=(pc phone upright)
@@ -28,6 +29,8 @@ for name in "${ORDER[@]}"; do
 	script=tests/smoke/smoke.luau
 	if [ "$name" = boards ]; then
 		script=tests/smoke/boards.luau # just the maps
+	elif [ "$name" = crew ]; then
+		script=tests/smoke/crew.luau # just the characters
 	fi
 	python3 tools/bundle.py --all "build/shots/$name.run.luau" "build/shots/$name.luau" \
 		tests/fake/classes.luau tests/fake/fonts.luau tests/fake/roblox.luau tests/fake/shots.luau "$script"

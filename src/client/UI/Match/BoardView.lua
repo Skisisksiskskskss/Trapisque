@@ -29,6 +29,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
+local TextService = game:GetService("TextService")
 
 local Shared = ReplicatedStorage.Shared
 local Maps = require(Shared.Game.Maps)
@@ -162,9 +163,12 @@ function BoardView.new(parent: Frame, mapId: string, opts: { [string]: any }?)
 	self:_buildHits()
 
 	self:_bindInput()
+	self.bubbles = {} -- [seat] = { holder, w, h, token }
+	self.bubbleZ = 20
 	self.maid:add(RunService.RenderStepped:Connect(function(dt)
 		self:_stepCamera(dt)
 		self:_stepTags()
+		self:_stepBubbles()
 	end))
 	return self
 end
@@ -622,18 +626,6 @@ function BoardView:_paintTile(tile: number)
 		})
 		Util.corner(disc, 0.5)
 		Util.stroke(disc, C.line, 0.07 * U)
-		local shine = Util.new("Frame", {
-			Name = "Shine",
-			BackgroundColor3 = C.white,
-			BackgroundTransparency = 0.75,
-			BorderSizePixel = 0,
-			AnchorPoint = Vector2.new(0.5, 0),
-			Position = UDim2.fromScale(0.5, 0.08),
-			Size = UDim2.fromScale(0.62, 0.28),
-			ZIndex = 2,
-			Parent = disc,
-		})
-		Util.corner(shine, 0.5)
 		local art = StickerArt.tokens[token]
 		if art then
 			Icons.sticker(disc, art, { Size = UDim2.fromScale(0.78, 0.78), ZIndex = 3 }, 0.06)
@@ -1285,6 +1277,173 @@ function BoardView:setStatus(seat: number, status: string, on: boolean)
 	if pawn then
 		pawn[status] = on
 		self:_statusMarks(seat)
+	end
+end
+
+---------------------------------------------------------------------------
+-- speech bubbles
+---------------------------------------------------------------------------
+
+--[[
+	A speech bubble over pawn `seat`'s head: a chat line or an emote, big and in front
+	of everything on the board, with its speaker's name on a tab in their colour. It
+	stays on screen (pinned to the edge when the speaker is off it) and the character
+	bobs as it talks. A new line from the same player replaces their last one.
+		opts: { name, color (the tab), rim (the outline, an emote's colour), staff, emote }
+]]
+function BoardView:say(seat: number, text: string, opts: { [string]: any }?)
+	local pawn = self.pawns[seat]
+	if not pawn or type(text) ~= "string" or text == "" then
+		return
+	end
+	local o = opts or {}
+	local old = self.bubbles[seat]
+	if old then
+		old.holder:Destroy()
+		self.bubbles[seat] = nil
+	end
+	local emote = o.emote == true
+	local size = if emote then 24 else 20
+	local maxW = if emote then 220 else 240
+	local bounds = TextService:GetTextSize(text, size, Enum.Font.Oswald, Vector2.new(maxW, 1000))
+	local textW = math.clamp(math.ceil(bounds.X * 1.06) + 2, 40, maxW)
+	local textH = math.max(size + 2, math.ceil(bounds.Y) + 2)
+	local name = o.name or ""
+	if o.staff then
+		name = name .. "  ·  " .. o.staff
+	end
+	local tabW = math.min(maxW, math.ceil(TextService:GetTextSize(name, 14, Enum.Font.Oswald, Vector2.new(1000, 40)).X) + 22)
+	local bodyW = math.max(textW + 26, tabW + 20)
+	local bodyH = textH + 22
+	local tail = 12
+	local tabUp = 13
+	self.bubbleZ += 3
+	local z = self.bubbleZ
+	local holder = Util.frame(self.overlay, {
+		Name = "Bubble" .. seat,
+		AnchorPoint = Vector2.new(0.5, 1),
+		Size = UDim2.fromOffset(bodyW, bodyH + tail + tabUp),
+		ZIndex = z,
+	})
+	local tip = Util.new("Frame", {
+		Name = "Tail",
+		BackgroundColor3 = C.panel,
+		BorderSizePixel = 0,
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(0.5, 0, 1, -tail - 2),
+		Size = UDim2.fromOffset(20, 20),
+		Rotation = 45,
+		ZIndex = z,
+		Parent = holder,
+	})
+	Util.stroke(tip, C.line, 3)
+	local rim = o.rim or C.line
+	local body = Util.new("Frame", {
+		Name = "Body",
+		BackgroundColor3 = C.panel,
+		BorderSizePixel = 0,
+		Position = UDim2.fromOffset(0, tabUp),
+		Size = UDim2.fromOffset(bodyW, bodyH),
+		ZIndex = z + 1,
+		Parent = holder,
+	})
+	Util.corner(body, 12)
+	Util.stroke(body, rim, if emote then 4 else 3)
+	-- hide the body's outline where the tail joins it
+	Util.new("Frame", {
+		Name = "Joint",
+		BackgroundColor3 = C.panel,
+		BorderSizePixel = 0,
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 1, if emote then -4 else -3),
+		Size = UDim2.fromOffset(20, 8),
+		ZIndex = z + 2,
+		Parent = body,
+	})
+	local label = Widgets.label(body, {
+		text = text,
+		font = if emote then "chunky" else "heavy",
+		size = size,
+		color = C.text,
+		align = if textH > size + 6 then "left" else "center",
+		wrap = true,
+		sizeUDim = UDim2.new(1, -24, 1, -14),
+		position = UDim2.fromOffset(12, 10),
+		z = z + 3,
+	})
+	label.TextYAlignment = Enum.TextYAlignment.Center
+	if name ~= "" then
+		local color = o.color or C.steelDark
+		local tab = Util.new("Frame", {
+			Name = "Name",
+			BackgroundColor3 = color,
+			BorderSizePixel = 0,
+			Position = UDim2.fromOffset(10, 0),
+			Size = UDim2.fromOffset(tabW, 24),
+			ZIndex = z + 4,
+			Parent = holder,
+		})
+		Util.corner(tab, 6)
+		Util.stroke(tab, C.line, 2.5)
+		local nameLabel = Widgets.label(tab, {
+			text = name,
+			font = "heavy",
+			size = 14,
+			color = Theme.textOn(color),
+			align = "center",
+			sizeUDim = UDim2.fromScale(1, 1),
+			z = z + 5,
+		})
+		nameLabel.TextTruncate = Enum.TextTruncate.AtEnd
+	end
+	local entry = { holder = holder, w = bodyW, h = bodyH + tail + tabUp }
+	self.bubbles[seat] = entry
+	self:_stepBubbles()
+	Util.popIn(holder, 0.3, 0.5)
+	-- the character talks: a bob per word or so
+	local words = 0
+	for _ in string.gmatch(text, "%S+") do
+		words += 1
+	end
+	task.spawn(function()
+		for _ = 1, math.clamp(words, 2, 7) do
+			if not holder.Parent then
+				break
+			end
+			Util.bump(pawn.lift, 0.07)
+			task.wait(0.24)
+		end
+	end)
+	local seconds = math.clamp(Config.Chat.BubbleSeconds + #text / 25, 3, 9)
+	task.delay(seconds, function()
+		if self.bubbles[seat] == entry then
+			self.bubbles[seat] = nil
+		end
+		if holder.Parent then
+			Util.tween(Util.scaler(holder), 0.18, { Scale = 0 }, Enum.EasingStyle.Back, Enum.EasingDirection.In)
+			task.wait(0.2)
+			holder:Destroy()
+		end
+	end)
+end
+
+function BoardView:_stepBubbles()
+	local f = self.focus
+	for seat, b in self.bubbles do
+		local pawn = self.pawns[seat]
+		if not pawn or not b.holder.Parent then
+			continue
+		end
+		local pos = pawn.frame.Position
+		local lift = pawn.lift.Position
+		local top = Vector2.new(pos.X.Offset, pos.Y.Offset + lift.Y.Offset - PAWN * U * 0.55 * pawn.share.Scale)
+		local at = self:toStage(top)
+		-- clear the name tag over the player whose turn it is
+		local lifted = if seat == self.currentSeat and self.tag and self.tag.Visible then 28 else 0
+		local half = b.w / 2 + 6
+		local x = math.clamp(at.X, f.x + half, math.max(f.x + half, f.x + f.w - half))
+		local y = math.clamp(at.Y - 2 - lifted, f.y + b.h + 4, math.max(f.y + b.h + 4, f.y + f.h - 4))
+		b.holder.Position = UDim2.fromOffset(x, y)
 	end
 end
 

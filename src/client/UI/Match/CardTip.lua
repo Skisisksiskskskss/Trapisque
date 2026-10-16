@@ -187,7 +187,9 @@ end
 ]]
 function CardTip:show(itemId: string, o)
 	local stage = self:_stage()
-	local cardW = math.clamp(math.floor(o.anchor.w * 1.5), 116, 186)
+	-- big enough to read at a glance (but never taller than half the screen)
+	local cardW = math.clamp(math.floor(o.anchor.w * 2.1), 150, 250)
+	cardW = math.min(cardW, math.floor(stage.Y * 0.5 * CardStyle.aspect))
 	local cardH = math.floor(cardW / CardStyle.aspect)
 	local infoW = math.min(INFO_W, math.floor(stage.X - cardW - 3 * GAP - 16))
 	local stacked = infoW < 180 -- no room beside the card: the rules go under it

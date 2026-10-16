@@ -74,12 +74,11 @@ local defs = {
 		passiveName = "Wild Walker",
 		passive = "Rivers, locked gates and slime pools never stop or slow you.",
 		ability = {
-			id = "overgrow",
-			name = "Overgrow",
-			text = "Grow this map's hazard (river, gate or slime) on a tile up to " .. C.naturalist.range .. " tiles away. You can keep " .. C.naturalist.cap .. " out at once.",
+			id = "stampede",
+			name = "Stampede",
+			text = "Charge " .. C.naturalist.charge .. " tiles forward with a herd of wild boars. Every rival in the way is knocked back " .. C.naturalist.trample .. " tiles.",
 			cost = C.naturalist.cost,
-			target = "tile",
-			range = C.naturalist.range,
+			target = "none",
 		},
 	},
 	{

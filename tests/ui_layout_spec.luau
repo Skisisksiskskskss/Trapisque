@@ -142,6 +142,7 @@ test("the lobby fits every screen without overlaps", function()
 			nav = L.nav.rect,
 			play = L.play,
 			party = L.party,
+			chat = L.chat,
 		}
 		if L.title then
 			parts.title = L.title

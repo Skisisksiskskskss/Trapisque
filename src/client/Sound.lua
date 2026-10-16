@@ -45,29 +45,34 @@ local function asset(n: number): string
 end
 
 --[[
-	Effects. Wood, cards and felt to match the board: Pro Sound Effects and APM library
-	clips (Roblox's licensed audio library) plus a few of Roblox's own interface sounds.
-	Volumes are loudness-matched, so the interface is quietest and rewards loudest.
+	Effects. A pirate's table: wood, dice, coins, a ship's bell and a cutlass. Pro Sound
+	Effects and APM library clips (Roblox's licensed audio library) plus a few of Roblox's
+	own interface sounds. Pawns hop on wooden taps (five takes), a bonk is a deep wooden
+	thump instead of a cartoon boing, the dice rattle and land on a felt-topped wooden
+	table, your turn rings the ship's bell (pitched down so it stays warm, not piercing)
+	and an ability draws a cutlass. Volumes are loudness-matched, so the interface is
+	quietest (hover is barely there: it plays a lot) and rewards loudest.
 ]]
 local LIBRARY: { [string]: Def } = {
 	-- interface
 	click = { id = asset(9120917438), volume = 0.8, jitter = 0.04 }, -- soft wooden tok
-	hover = { id = asset(17208348006), volume = 0.35, max = 1 },
+	hover = { id = asset(17208348006), volume = 0.2, jitter = 0.05, max = 1 }, -- a whisper of a tick
 	open = { id = asset(15675037413), volume = 0.32 }, -- paper swipe
 	close = { id = asset(17208186900), volume = 0.4 },
 	error = { id = asset(17208353912), volume = 0.37 },
 	pop = { id = asset(9119708437), volume = 0.6, jitter = 0.06 }, -- quick card fwip
+	blip = { id = asset(9119983245), volume = 0.3, jitter = 0.03, max = 4 }, -- a babbled syllable (Voice)
 	-- the board
 	step = {
-		id = asset(9119976006), -- temple-block pops, one per tile
-		variants = { asset(9119976006), asset(9119976314), asset(9119976306), asset(9119976519), asset(9119976693) },
-		volume = 0.6,
+		id = asset(9114559553), -- a wooden piece tapped down, one per tile
+		variants = { asset(9114559553), asset(9114559675), asset(9114559668), asset(9114559697), asset(9114559804) },
+		volume = 0.27,
 		jitter = 0.05,
 		max = 3,
 	},
 	whoosh = { id = asset(9120704978), volume = 0.45, jitter = 0.05 },
-	dice = { id = asset(9114074033), volume = 1.5 }, -- a die shaken and rolled
-	diceLand = { id = asset(9114072359), volume = 0.7 }, -- ...landing on a felt-topped table
+	dice = { id = asset(9114072590), volume = 0.56, jitter = 0.04, start = 0.04 }, -- dice rattled in a cup
+	diceLand = { id = asset(9114072359), volume = 0.7 }, -- ...landing on a felt-topped wooden table
 	tick = { id = asset(9119983245), volume = 0.32, max = 3 }, -- the wheel's pointer
 	card = { id = asset(9119707474), volume = 0.45, jitter = 0.06, max = 3 }, -- card sliding off the deck
 	reveal = { id = asset(9114035710), volume = 1.6, jitter = 0.04 }, -- card flick and snap
@@ -76,15 +81,16 @@ local LIBRARY: { [string]: Def } = {
 	coins = { id = asset(9113848871), volume = 0.6 },
 	treasure = { id = asset(9040172806), volume = 0.48 }, -- pizzicato and glockenspiel sting
 	trap = { id = asset(9116723368), volume = 0.45 }, -- metal latch snap
-	death = { id = asset(9113854388), volume = 1.05 }, -- cartoon bonk
+	death = { id = asset(9120885662), volume = 0.6 }, -- a deep wooden thump (a bonk, or back to start)
+	bonk = { id = asset(9120885662), volume = 0.6 }, -- the same thump by its own name (a stampede plays it low)
 	splash = { id = asset(9117947535), volume = 0.84 },
 	fire = { id = asset(9114445792), volume = 0.57 },
 	ice = { id = asset(9125611419), volume = 0.1, start = 0.15 },
 	slime = { id = asset(9117284472), volume = 0.51 },
 	magic = { id = asset(9116395089), volume = 1.5 }, -- soft chimes
-	ability = { id = asset(9116422213), volume = 0.35 }, -- short shimmering transformation
+	ability = { id = asset(9119742538), volume = 0.88, jitter = 0.04, start = 0.42 }, -- a cutlass drawn
 	teleport = { id = asset(9125635426), volume = 0.22 }, -- sparkling pass-by
-	turn = { id = asset(17208361335), volume = 0.28 },
+	turn = { id = asset(9113583408), volume = 0.33, pitch = 0.8, start = 0.14 }, -- the ship's bell, ding-ding
 	win = { id = asset(1846251701), volume = 0.31, start = 0.4 },
 	lose = { id = asset(1846251702), volume = 0.23 },
 	chest = { id = asset(9120881818), volume = 0.56 }, -- wooden chest creaking open
@@ -92,33 +98,36 @@ local LIBRARY: { [string]: Def } = {
 }
 
 --[[
-	Music moods: harps and mysteries by lantern light. Each track has its volume
+	Music moods: a pirate tavern in the lobby, a light Celtic adventure under the board
+	and drums when someone is a treasure from winning. Each track has its volume
 	(loudness-matched: every track sits at the same level under the effects, about
-	-27 LUFS in the lobby and -29 in a match at full music volume), where its music
-	starts (skipping silence) and where its ending begins (the next track fades in
-	from there). All from APM's library on Roblox, chosen by measuring them: steady
-	loudness, few busy hits, no vocals, nothing comedic.
+	-27 LUFS in the lobby, -29 in a match and -28 for the drums at full music volume),
+	where its music starts (skipping silence) and where its ending begins (the next
+	track fades in from there). All instrumental, from APM's library on Roblox, chosen
+	by measuring them: steady loudness, no vocals, nothing comedic.
 ]]
 type Track = { id: string, name: string, volume: number, start: number?, fadeAt: number? }
 
 local PLAYLISTS: { [string]: { Track } } = {
-	-- the map room at night: calm, a little magical
+	-- the tavern: accordion, fiddle and a light beat, easy to sit with for a while
 	lobby = {
-		{ id = asset(1837137568), name = "Les Voyages de la Mappa Mundi", volume = 0.168, fadeAt = 134 },
-		{ id = asset(1844347220), name = "Magic - The Harp", volume = 0.237, start = 0.8, fadeAt = 221 },
-		{ id = asset(96767255237081), name = "Clair De Lune (harp)", volume = 0.245, fadeAt = 184 },
+		{ id = asset(1846419945), name = "Step Dance", volume = 0.245, start = 0.2, fadeAt = 137 },
+		{ id = asset(1845746272), name = "Sailing Boots", volume = 0.389, start = 0.3, fadeAt = 124 },
+		{ id = asset(1840406291), name = "Swig Yer Jig (A)", volume = 0.316, start = 1, fadeAt = 176 },
+		{ id = asset(1840678834), name = "Captains All", volume = 0.202, start = 0.2, fadeAt = 118 },
 	},
-	-- a match: steady thinking music that never fights the board for attention
+	-- a match: light Celtic adventure that stays under the board
 	match = {
-		{ id = asset(9048197244), name = "Shards Shimmer", volume = 0.188, fadeAt = 156 },
-		{ id = asset(9040054834), name = "Exploring Concepts (Underscore)", volume = 0.107, fadeAt = 141 },
-		{ id = asset(79301554757012), name = "Puzzles in Twilight (Alt)", volume = 0.193, fadeAt = 159 },
-		{ id = asset(1844986119), name = "Mystery Islands", volume = 0.385, start = 0.2, fadeAt = 198 },
+		{ id = asset(1835239421), name = "Celtic Shanty Main ALT light", volume = 0.2, start = 0.3, fadeAt = 140 },
+		{ id = asset(9047779811), name = "Irish Journey (Underscore)", volume = 0.136, fadeAt = 98 },
+		{ id = asset(1836969461), name = "Celtic Adventures", volume = 0.245, fadeAt = 125 },
+		{ id = asset(1846637377), name = "Treasure Island A", volume = 0.157, start = 0.2, fadeAt = 254 },
 	},
-	-- someone is a treasure away from winning: a ticking, clockwork pulse
+	-- someone is a treasure away from winning: drums
 	tension = {
-		{ id = asset(1839856504), name = "Mind Puzzle (b)", volume = 0.188, start = 0.3, fadeAt = 296 },
-		{ id = asset(129673998145182), name = "Curious Crime (Pulse Only)", volume = 0.176, fadeAt = 164 },
+		{ id = asset(1845091505), name = "Pinnacle - Percussion Only", volume = 0.224, start = 0.3, fadeAt = 103 },
+		{ id = asset(1842899524), name = "Crucial (Underscore Version)", volume = 0.275, fadeAt = 104 },
+		{ id = asset(1842868865), name = "Visions (Underscore Version)", volume = 0.232, fadeAt = 118 },
 	},
 }
 

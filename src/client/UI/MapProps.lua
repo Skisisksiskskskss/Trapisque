@@ -68,15 +68,11 @@ MapProps.bush = {
 	{ "circle", 0.3, 0.66, 0.42, c = P.leafDark },
 	{ "circle", 0.7, 0.66, 0.42, c = P.leafDark },
 	{ "circle", 0.5, 0.52, 0.5, c = P.leaf },
-	{ "circle", 0.42, 0.44, 0.14, c = P.leafLight, ol = false },
-	{ "circle", 0.3, 0.6, 0.07, c = P.red, ol = false },
-	{ "circle", 0.66, 0.68, 0.07, c = P.red, ol = false },
 }
 
 MapProps.rock = {
 	{ "rect", 0.44, 0.66, 0.66, 0.5, r = 0.45, c = P.rock },
 	{ "rect", 0.74, 0.76, 0.36, 0.28, r = 0.45, c = P.rockDark },
-	{ "line", 0.28, 0.58, 0.4, 0.5, 0.05, c = P.rockLight, ol = false },
 }
 
 MapProps.hut = {

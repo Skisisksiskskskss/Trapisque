@@ -20,6 +20,7 @@ local Pacing = require(Shared.Game.Pacing)
 local TurnClock = require(Shared.Game.TurnClock)
 local Cosmetics = require(Shared.Meta.Cosmetics)
 local Progress = require(Shared.Meta.Progress)
+local QuickChat = require(Shared.Meta.QuickChat)
 
 local Net = require(script.Parent.Net)
 local DataService = require(script.Parent.DataService)
@@ -36,6 +37,13 @@ local BOT_NAMES = {
 }
 
 local random = Random.new()
+
+-- quick chat lines a bot may say instead of an emote
+local BOT_LINES = {
+	emote_oops = { "oops", "nofair", "close" },
+	emote_nice = { "gotcha", "yoho", "arr" },
+	emote_gg = { "gg", "wp" },
+}
 
 local function botLook()
 	local function pick(category, maxRarity)
@@ -322,16 +330,40 @@ function Match:_botReactions(events)
 			for s, info in self.seats do
 				if info.isBot and random:NextNumber() < 0.6 then
 					task.delay(random:NextNumber() * 2 + 1, function()
-						self:_sendEmote(s, "emote_gg")
+						if random:NextNumber() < 0.5 then
+							self:_botSay(s, if random:NextNumber() < 0.5 then "gg" else "wp")
+						else
+							self:_sendEmote(s, "emote_gg")
+						end
 					end)
 				end
 			end
 		end
 		if seat and self.seats[seat] and self.seats[seat].isBot and random:NextNumber() < chance then
 			task.delay(random:NextNumber() + 0.8, function()
-				self:_sendEmote(seat, emote)
+				-- half the time a bot says it with a quick chat line instead
+				local line = BOT_LINES[emote]
+				if line and random:NextNumber() < 0.5 then
+					self:_botSay(seat, line[random:NextInteger(1, #line)])
+				else
+					self:_sendEmote(seat, emote)
+				end
 			end)
 		end
+	end
+end
+
+-- A bot's quick chat line (fixed text, like everyone's quick lines).
+function Match:_botSay(seat: number, quickId: string)
+	local q = QuickChat.get(quickId)
+	local info = self.seats[seat]
+	if self.closed or not q or not info then
+		return
+	end
+	local p = self.engine.players[seat]
+	local line = { from = 0, name = info.name, seat = seat, text = q.text, quick = q.id, voice = "auto", character = p and p.character }
+	for _, h in self:humans() do
+		Net.push(h, "chat.line", line)
 	end
 end
 
@@ -339,8 +371,10 @@ function Match:_sendEmote(seat: number, emoteId: string)
 	if self.closed then
 		return
 	end
+	local info = self.seats[seat]
+	local voice = if info and info.player then DataService.voiceOf(info.player) else "auto"
 	for _, p in self:humans() do
-		Net.push(p, "match.emote", { id = self.id, seat = seat, emote = emoteId })
+		Net.push(p, "match.emote", { id = self.id, seat = seat, emote = emoteId, voice = voice })
 	end
 end
 
@@ -512,6 +546,14 @@ function Match:_finish()
 			look = info.look,
 		})
 	end
+	-- winners with the Victory Parade pass get their parade, seen by everyone
+	local parade = {}
+	for seat, info in self.seats do
+		local p = engine.players[seat]
+		if info.player and p.team == engine.winnerTeam and DataService.hasPass(info.player, "VictoryParade") then
+			table.insert(parade, seat)
+		end
+	end
 	local wait = math.max(0, self.busyUntil - os.clock())
 	task.delay(wait, function()
 		for seat, info in self.seats do
@@ -540,6 +582,7 @@ function Match:_finish()
 					reward = reward,
 					kind = self.kind,
 					resultsTime = T.ResultsTime,
+					parade = parade,
 				})
 				DataService.pushProfile(player)
 				task.spawn(DataService.save, player, false)

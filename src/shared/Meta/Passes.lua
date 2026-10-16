@@ -1,7 +1,8 @@
 --[[
 	Passes
 	Gamepasses sold in the Shop. None of them change match gameplay: they speed up the
-	cosmetic collection or add cosmetics. Gamepass ids go in Config.GamePasses (create
+	cosmetic collection, add cosmetics, or add ways to talk (the Chat pass unlocks typing
+	your own lines; quick chat is free). Gamepass ids go in Config.GamePasses (create
 	the passes on the Creator Dashboard first). A pass with id 0 is hidden in the Shop.
 ]]
 
@@ -13,7 +14,7 @@ Passes.list = {
 	{
 		key = "VIP",
 		name = "VIP",
-		color = "#C77DFF",
+		color = "#F5B700",
 		icon = "crown",
 		perks = {
 			"+25% Gems from every match",
@@ -51,6 +52,47 @@ Passes.list = {
 		perks = {
 			"6 extra emotes, yours forever",
 			"Equip up to 6 emotes in matches",
+		},
+	},
+	{
+		key = "Chat",
+		name = "Chat",
+		color = "#2E8FB3",
+		icon = "bubble",
+		perks = {
+			"Type your own lines in the game chat",
+			"(Quick chat lines are free for everyone)",
+			"Needs chat to be on in your Roblox settings",
+		},
+	},
+	{
+		key = "VoicePack",
+		name = "Voice Pack",
+		color = "#D94C9C",
+		icon = "music",
+		perks = {
+			"Pick the voice your chat bubbles talk in",
+			"Grumbly, Squeaky, Parrot, Ghostly, Clockwork...",
+		},
+	},
+	{
+		key = "VictoryParade",
+		name = "Victory Parade",
+		color = "#F5B700",
+		icon = "star",
+		perks = {
+			"Cannons, streamers and a brass fanfare when you win",
+			"Everyone in the match sees it",
+		},
+	},
+	{
+		key = "CaptainsChest",
+		name = "Captain's Chest",
+		color = "#2B4C7E",
+		icon = "chest",
+		perks = {
+			"The Admiral accessory pack (bicorne and medals)",
+			"The Golden Doubloon dice and the Captain title",
 		},
 	},
 }

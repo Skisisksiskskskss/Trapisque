@@ -9,7 +9,8 @@
 
 	category  accessory | dice | trail | emote | title
 	rarity    common | rare | epic | legendary | mythic
-	source    nil = in chests, "default" = everyone owns it, "vip" / "emotepack" = gamepass,
+	source    nil = in chests, "default" = everyone owns it, "vip" / "emotepack" / "captain"
+	          = gamepass,
 	          "mastery" = earned by levelling up a character (Meta/Progress)
 ]]
 
@@ -81,6 +82,8 @@ local defs = {
 		look = { pieces = { "gulls", "admiral" }, animated = true } },
 	{ id = "acc_royal", category = "accessory", name = "Royal Crown", rarity = "legendary", source = "vip",
 		look = { pieces = { "crown", "cape" } } },
+	{ id = "acc_admiralty", category = "accessory", name = "Admiralty", rarity = "legendary", source = "captain",
+		look = { pieces = { "admiral", "goldchain" } } },
 
 	-------------------------------------------------------------------------
 	-- Dice: how your die looks when you roll
@@ -106,6 +109,8 @@ local defs = {
 		look = { face = "#E0FBFC", face2 = "#98C1D9", pip = "#3D5A80", edge = "#FFFFFF" } },
 	{ id = "dice_gold", category = "dice", name = "Golden", rarity = "legendary",
 		look = { face = "#FFE066", face2 = "#D4A017", pip = "#5C3D00", edge = "#FFF3B0" } },
+	{ id = "dice_doubloon", category = "dice", name = "Golden Doubloon", rarity = "legendary", source = "captain",
+		look = { face = "#F5B700", face2 = "#C98F00", pip = "#1C1A24", edge = "#FFE7A3" } },
 	{ id = "dice_cosmic", category = "dice", name = "Cosmic", rarity = "mythic",
 		look = { gradient = true, face = "#240046", face2 = "#7B2CBF", pip = "#FFFFFF", edge = "#E0AAFF", spin = true } },
 
@@ -169,7 +174,8 @@ local defs = {
 	{ id = "title_warlord", category = "title", name = "Warlord", rarity = "epic", look = { text = "Warlord", color = "#EF8240" } },
 	{ id = "title_legend", category = "title", name = "Living Legend", rarity = "legendary", look = { text = "Living Legend", color = "#F2C445" } },
 	{ id = "title_royalty", category = "title", name = "Treasure Royalty", rarity = "mythic", look = { text = "Treasure Royalty", color = "#F07CB0", rainbow = true } },
-	{ id = "title_vip", category = "title", name = "VIP", rarity = "legendary", source = "vip", look = { text = "VIP", color = "#D3A2F7" } },
+	{ id = "title_vip", category = "title", name = "VIP", rarity = "legendary", source = "vip", look = { text = "VIP", color = "#F5B700" } },
+	{ id = "title_captain", category = "title", name = "Captain", rarity = "legendary", source = "captain", look = { text = "Captain", color = "#2B4C7E" } },
 }
 
 -- Mastery titles: "Mage Fan", "Mage Pro", "Mage Legend"... earned by playing a character

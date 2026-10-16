@@ -71,7 +71,7 @@ BoardLayout.PropSize = {
 }
 
 -- Props that lie flat on the ground (drawn under the tiles, may touch the trail).
-local GROUND = { dock = true, xmark = true }
+local GROUND = { dock = true }
 
 local function dist(ax: number, ay: number, bx: number, by: number): number
 	local dx, dy = ax - bx, ay - by
@@ -258,12 +258,12 @@ function BoardLayout.build(board, mapDef, Rng, opts: { [string]: any }?)
 		while at <= total + 1e-6 do
 			local x, y = pointAt(cv.samples, L, at)
 			local r = landCfg.r + (rng:float() - 0.5) * 2 * landCfg.jitter
-			table.insert(layout.land, { x = x, y = y, r = r, inner = r - landCfg.beach })
+			table.insert(layout.land, { x = x, y = y, r = r })
 			at += 1.1
 		end
 	end
 	for _, a in landCfg.add or {} do
-		table.insert(layout.land, { x = a[1], y = a[2], r = a[3], inner = if a.inner == false then nil else a[3] - landCfg.beach })
+		table.insert(layout.land, { x = a[1], y = a[2], r = a[3] })
 	end
 	for _, a in scene.islets or {} do
 		table.insert(layout.land, { x = a[1], y = a[2], r = a[3], islet = true })
@@ -423,48 +423,130 @@ function BoardLayout.build(board, mapDef, Rng, opts: { [string]: any }?)
 		end
 	end
 
-	-- the gates' posts (Junction): a squat tower either side of each gate tile
+	-- landmarks: each one only where it fits (on land or at sea as it should be, clear
+	-- of the trail, the tiles and each other); the dock runs from the Start out to the
+	-- nearest water
 	local props = layout.props
-	if scene.gates then
-		for tile, kind in board.naturalInit do
-			if kind == "gate" then
-				local p = pos[tile]
-				local a = math.rad(p[3] + 90)
-				for _, sgn in { 1, -1 } do
-					table.insert(props, {
-						kind = "gatepost",
-						x = p[1] + math.cos(a) * 1.45 * sgn,
-						y = p[2] + math.sin(a) * 1.45 * sgn,
-						size = 1.15,
-						fixed = true,
-					})
-				end
-			end
-		end
-	end
-
-	-- landmarks
+	local WATER = { ship = true, wreck = true, sunken = true }
 	for _, m in scene.landmarks or {} do
 		local kind = m[1]
+		local size = m.size or BoardLayout.PropSize[kind] or 1.5
 		local x, y, angle = m.x, m.y, 0
 		if m.tile then
 			local p = pos[m.tile]
 			x, y, angle = p[1] + (m.dx or 0), p[2] + (m.dy or 0), p[3]
-			if kind == "dock" then
-				-- the pier runs out to sea behind the Start
-				local back = math.rad(p[3] + 180)
-				x, y = p[1] + math.cos(back) * m.size * 0.42, p[2] + math.sin(back) * m.size * 0.42
+		end
+		local fits = true
+		if kind == "dock" then
+			local p = pos[m.tile or 1]
+			local bestA, bestD = nil, math.huge
+			for k = 0, 23 do
+				local a = k * math.pi / 12
+				local reach = 0.5
+				while reach <= 6 do
+					local qx, qy = p[1] + math.cos(a) * reach, p[2] + math.sin(a) * reach
+					if landDepth(qx, qy) < -0.4 then
+						break
+					end
+					reach += 0.25
+				end
+				-- straight out to sea, and not across another bit of trail
+				local clear = nearTrail(p[1] + math.cos(a) * (reach * 0.5 + 0.9), p[2] + math.sin(a) * (reach * 0.5 + 0.9), -1, 2.5) > 1.4
+				if clear and reach < bestD then
+					bestA, bestD = a, reach
+				end
+			end
+			if bestA then
+				local len = math.clamp(bestD + 1.2, size * 0.8, 3.4)
+				size = len
+				x = p[1] + math.cos(bestA) * len * 0.5
+				y = p[2] + math.sin(bestA) * len * 0.5
+				angle = math.deg(bestA)
+			else
+				fits = false
+			end
+		else
+			local reach = size * S.reach
+			local depth = landDepth(x, y)
+			if WATER[kind] then
+				fits = depth <= -(reach * 0.6)
+			else
+				fits = depth >= reach * 0.3
+			end
+			fits = fits and nearTrail(x, y) >= S.trailW / 2 + reach * 0.85
+			for _, t in layout.tiles do
+				if dist(x, y, t.x, t.y) < S.tileR * (t.scale or 1) + reach * 0.85 then
+					fits = false
+				end
+			end
+			for _, q in props do
+				if not q.ground and dist(x, y, q.x, q.y) < reach + q.size * S.reach then
+					fits = false
+				end
 			end
 		end
-		table.insert(props, {
-			kind = kind,
-			x = x,
-			y = y,
-			size = m.size or BoardLayout.PropSize[kind] or 1.5,
-			angle = angle,
-			ground = GROUND[kind] == true,
-			fixed = true,
-		})
+		if fits then
+			table.insert(props, {
+				kind = kind,
+				x = x,
+				y = y,
+				size = size,
+				angle = angle,
+				ground = GROUND[kind] == true,
+				fixed = true,
+			})
+		end
+	end
+
+	-- ground patches (jungle, rock, moss) in the wide parts of the land, well away from
+	-- the trail: a few overlapping discs each, like the woods on an old map
+	layout.patches = {}
+	do
+		local cands = {}
+		local y0, y1, x0, x1 = math.huge, -math.huge, math.huge, -math.huge
+		for _, c in layout.land do
+			x0, x1 = math.min(x0, c.x - c.r), math.max(x1, c.x + c.r)
+			y0, y1 = math.min(y0, c.y - c.r), math.max(y1, c.y + c.r)
+		end
+		local yy = y0
+		while yy <= y1 do
+			local xx = x0
+			while xx <= x1 do
+				local depth = landDepth(xx, yy)
+				local room = nearTrail(xx, yy)
+				if depth >= 1.5 and room >= 2.3 then
+					table.insert(cands, { xx, yy, math.min(depth - 0.5, room - 1.3) })
+				end
+				xx += 0.8
+			end
+			yy += 0.8
+		end
+		table.sort(cands, function(a, b)
+			return a[3] > b[3]
+		end)
+		local centres = {}
+		for _, c in cands do
+			local free = true
+			for _, q in centres do
+				if dist(c[1], c[2], q[1], q[2]) < 2.6 then
+					free = false
+					break
+				end
+			end
+			if free and #centres < (scene.patchCount or 7) then
+				table.insert(centres, c)
+				local r0 = math.min(1.3, c[3])
+				table.insert(layout.patches, { x = c[1], y = c[2], r = r0 })
+				for k = 1, 3 do
+					local a = rng:float() * math.pi * 2
+					local px, py = c[1] + math.cos(a) * r0 * 0.75, c[2] + math.sin(a) * r0 * 0.75
+					local r = math.min(r0 * (0.55 + rng:float() * 0.25), landDepth(px, py) - 0.45, nearTrail(px, py) - 1.3)
+					if r > 0.35 then
+						table.insert(layout.patches, { x = px, y = py, r = r })
+					end
+				end
+			end
+		end
 	end
 
 	-- the scatter: props on the land and on the water, none on the trail, a tile, a
@@ -575,7 +657,7 @@ function BoardLayout.build(board, mapDef, Rng, opts: { [string]: any }?)
 			s.x1, s.y1 = turn(s.x1, s.y1)
 			s.x2, s.y2 = turn(s.x2, s.y2)
 		end
-		for _, list in { layout.land, layout.pools, layout.props, layout.waves } do
+		for _, list in { layout.land, layout.pools, layout.props, layout.waves, layout.patches } do
 			for _, c in list do
 				c.x, c.y = turn(c.x, c.y)
 				if c.angle then

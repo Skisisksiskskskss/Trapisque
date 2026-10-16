@@ -40,10 +40,13 @@ CLASSES = [
     "TextService", "DataStoreService", "MemoryStoreService", "TeleportService", "PolicyService",
     "UserService", "ServerScriptService", "ServerStorage", "Lighting", "Debris",
     "CollectionService", "LocalizationService", "GroupService", "BadgeService",
-    "MessagingService", "AnalyticsService",
+    "MessagingService", "AnalyticsService", "TextChatService",
+    # chat voices (client Voice.lua)
+    "AudioTextToSpeech", "AudioDeviceOutput", "AudioFader", "Wire", "AudioEcho", "AudioReverb",
+    "AudioChorus", "AudioFlanger", "AudioDistortion", "AudioEqualizer", "AudioTremolo",
     # what services hand back
     "DataStore", "OrderedDataStore", "DataStorePages", "MemoryStoreSortedMap",
-    "MemoryStoreQueue",
+    "MemoryStoreQueue", "TextFilterResult",
 ]
 
 

@@ -131,6 +131,14 @@ function MapArt.draw(layers: { [string]: Frame }, L, U: number)
 		end
 	end
 
+	-- patches of jungle, rock or moss, away from the trail
+	for _, c in L.patches or {} do
+		disc(land, L, U, c.x, c.y, c.r + 0.07, C.line, 6, "PatchEdge")
+	end
+	for _, c in L.patches or {} do
+		disc(land, L, U, c.x, c.y, c.r, col.inner, 7, "Patch")
+	end
+
 	-- the trail (a shortcut runs through a dark tunnel), then what crosses it
 	local trail = layers.Trail
 	local W = S.trailW

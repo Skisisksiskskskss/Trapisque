@@ -3334,6 +3334,56 @@ METHODS.TextService = {
 		return v2(widest, math.max(1, lines) * size * (if m then m.line else 1))
 	end,
 }
+-- typed chat goes through the filter (the fake lets everything through)
+METHODS.TextService.FilterStringAsync = function(_self, text, _fromUserId, _context)
+	local r = newInstance("TextFilterResult", { Name = "TextFilterResult" })
+	S[r].text = text
+	return r
+end
+METHODS.TextFilterResult = {
+	GetChatForUserAsync = function(self)
+		return S[self].text
+	end,
+	GetNonChatStringForBroadcastAsync = function(self)
+		return S[self].text
+	end,
+	GetNonChatStringForUserAsync = function(self)
+		return S[self].text
+	end,
+}
+service("TextChatService")
+METHODS.TextChatService = {
+	CanUserChatAsync = function()
+		return true
+	end,
+	CanUsersChatAsync = function()
+		return true
+	end,
+}
+-- one server: what's published comes straight back to its subscribers
+service("MessagingService")
+F.subscriptions = {}
+METHODS.MessagingService = {
+	PublishAsync = function(_self, topic, message)
+		for _, fn in F.subscriptions[topic] or {} do
+			task.spawn(fn, { Data = message, Sent = os.time() })
+		end
+	end,
+	SubscribeAsync = function(_self, topic, fn)
+		F.subscriptions[topic] = F.subscriptions[topic] or {}
+		table.insert(F.subscriptions[topic], fn)
+		return { Disconnect = function() end }
+	end,
+}
+-- text-to-speech never loads offline, so the chat voices babble instead
+METHODS.AudioTextToSpeech = {
+	LoadAsync = function()
+		return Enum.AssetFetchStatus.Failure
+	end,
+	Play = function() end,
+	Pause = function() end,
+	Unload = function() end,
+}
 service("SocialService")
 F.invites = 0
 METHODS.SocialService = {

@@ -392,6 +392,72 @@ function Cards.character(parent: Instance?, characterId: string, props: { [strin
 	return makeCardObject(root, flipper, front, back)
 end
 
+--[[
+	Opens a card big over everything, to read it: it turns to its rules side; click it to
+	turn it back over, click outside it to close. `make(parent, props)` builds the card
+	(Cards.item / Cards.character) at the size given. Returns a close function.
+]]
+function Cards.zoom(from: GuiObject, make: (Instance, { [string]: any }) -> any): () -> ()
+	local gui = from:FindFirstAncestorWhichIsA("ScreenGui")
+	if not gui then
+		return function() end
+	end
+	local backdrop = Util.new("TextButton", {
+		Name = "CardZoom",
+		Text = "",
+		AutoButtonColor = false,
+		BackgroundColor3 = C.dim,
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		Size = UDim2.fromScale(1, 1),
+		ZIndex = 900,
+		Parent = gui,
+	})
+	Util.tween(backdrop, 0.15, { BackgroundTransparency = 0.3 })
+	local screen = gui.AbsoluteSize
+	local h = math.min(screen.Y * 0.74, screen.X * 0.86 / CardStyle.aspect)
+	local card = make(backdrop, {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.47),
+		Size = UDim2.fromOffset(h * CardStyle.aspect, h),
+		ZIndex = 901,
+	})
+	Util.popIn(card.root, 0.25, 0.6)
+	task.delay(0.2, function()
+		if card.root.Parent then
+			card:showBack(true)
+		end
+	end)
+	Cards.interactive(card, function()
+		card:flip()
+	end)
+	Widgets.label(backdrop, {
+		text = "Click the card to turn it over. Click outside it to close.",
+		font = "heavy",
+		size = 18,
+		color = C.textLight,
+		align = "center",
+		sizeUDim = UDim2.new(1, 0, 0, 24),
+		anchor = Vector2.new(0.5, 1),
+		position = UDim2.new(0.5, 0, 1, -16),
+		z = 902,
+	})
+	local closed = false
+	local function close()
+		if closed then
+			return
+		end
+		closed = true
+		Util.tween(backdrop, 0.12, { BackgroundTransparency = 1 })
+		Util.tween(Util.scaler(card.root), 0.12, { Scale = 0.85 })
+		task.delay(0.13, function()
+			backdrop:Destroy()
+		end)
+	end
+	backdrop.Activated:Connect(close)
+	return close
+end
+
 -- Lifts a card on hover; calls onClick when pressed.
 function Cards.interactive(card, onClick: (() -> ())?)
 	local root = card.root

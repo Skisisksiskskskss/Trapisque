@@ -10,13 +10,14 @@
 	           main-route tiles are spaced evenly along a smooth curve through them
 	branches   extra bend points for each gated shortcut, between its two main tiles
 	land       r: how far the land reaches either side of the trail; jitter: how ragged
-	           the coast is; beach: the strip between the coast and the inner ground;
+	           the coast is (inner ground grows in patches away from the trail);
 	           fill: water narrower than about twice this, between bends, becomes land;
-	           add: extra land { x, y, r } (inner = false: no inner ground there)
+	           add: extra land { x, y, r }
 	islets     little islands { x, y, r }
 	props      what grows or stands around: { kind, weight } lists for the land and the
 	           water, and how many to place on each
-	landmarks  fixed props: { kind, x, y, size } or { kind, tile, dx, dy, size }
+	landmarks  fixed props: { kind, x, y, size } or { kind, tile, dx, dy, size }; one that
+	           doesn't fit (on the trail, a tile, the wrong side of the coast) is left out
 	colors     the map's inks (the outline is always the UI's ink)
 	tile       stone = round stepping stones, slab = square slabs turned along the trail
 ]]
@@ -43,14 +44,13 @@ MapScenes.blissful = {
 	islets = { { 3.4, 3.4, 1.3 }, { 29.2, 15.4, 1.1 }, { 18.6, 18.4, 1.0 } },
 	rivers = true,
 	props = {
-		land = { { "palm", 6 }, { "bush", 4 }, { "rock", 1 }, { "hut", 1 }, { "flowers", 2 } },
+		land = { { "palm", 6 }, { "bush", 3 }, { "rock", 2 }, { "hut", 1 } },
 		landCount = 22,
 		water = { { "rock", 3 }, { "barrel", 1 }, { "gull", 2 } },
 		waterCount = 7,
 	},
 	landmarks = {
 		{ "dock", tile = 1, size = 3.2 },
-		{ "xmark", tile = 36, size = 3.2 },
 		{ "ship", x = 6.2, y = 2.6, size = 3.8 },
 		{ "wreck", x = 27.4, y = 16.4, size = 3 },
 		{ "skullrock", x = 16.6, y = 12.2, size = 2.4 },
@@ -142,14 +142,13 @@ MapScenes.slimy = {
 	islets = { { 26.6, 16.2, 1.2 }, { 27.4, 2.4, 1.0 }, { 1.6, 2.6, 1.1 }, { 14.6, 18.6, 0.9 } },
 	pools = true,
 	props = {
-		land = { { "mangrove", 4 }, { "reeds", 4 }, { "mushroom", 3 }, { "log", 1 }, { "stump", 1 } },
+		land = { { "mangrove", 4 }, { "reeds", 4 }, { "log", 2 }, { "stump", 2 } },
 		landCount = 20,
 		water = { { "lily", 6 }, { "reeds", 2 }, { "bubbles", 2 } },
 		waterCount = 12,
 	},
 	landmarks = {
 		{ "dock", tile = 1, size = 3 },
-		{ "xmark", tile = 44, size = 3 },
 		{ "sunken", x = 27.2, y = 9.6, size = 3.2 },
 		{ "deadtree", x = 13.4, y = 9.2, size = 2.2 },
 	},

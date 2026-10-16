@@ -31,6 +31,7 @@ local Chests = require(script.Parent.Chests)
 local Locker = require(script.Parent.Locker)
 local Pages = require(script.Parent.Pages)
 local Quests = require(script.Parent.Quests)
+local LobbyChat = require(script.Parent.LobbyChat)
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Progress = require(ReplicatedStorage.Shared.Meta.Progress)
@@ -468,6 +469,7 @@ local function build(frame: Frame, maid, L, popups: Instance)
 
 	-- menu (the leaderboard joins it when there's no column or tab for it)
 	buildNav(frame, maid, L.nav, popups, L.leaders == nil)
+	LobbyChat.build(frame, maid, L.chat, popups)
 end
 
 function LobbyScreen.show()

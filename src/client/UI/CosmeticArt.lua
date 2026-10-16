@@ -94,7 +94,7 @@ local function animate(holder: Frame, spec, z: number, tweens: { Tween })
 		})
 	end
 	local inner = Util.frame(sprite, { Name = "Art", Position = UDim2.fromScale(0.5 - px, 0.5 - py), Size = UDim2.fromScale(1, 1) })
-	Icons.sticker(inner, spec.ops, nil, 0.04)
+	Icons.sticker(inner, spec.ops, nil, 0.025)
 	local time = spec.time or 1
 	local delay = spec.delay or 0
 	local function loop(target: Instance, goal: { [string]: any }, reverses: boolean, style: Enum.EasingStyle?)
@@ -145,15 +145,14 @@ function CosmeticArt.character(parent: Instance?, character: string, accessoryId
 		end
 	end
 	local names = CosmeticArt.accessoryPieces(accessoryId)
-	local one = character == "overseer" -- one big eye
 	local tweens: { Tween } = {}
 	local z = 0
 	local function draw(piece)
-		local ops = piece.ops or (if one then piece.one else piece.two)
+		local ops = piece.ops
 		if ops then
 			z += 1
 			local layer = Util.frame(holder, { Name = "Piece", Size = UDim2.fromScale(1, 1), ZIndex = z })
-			Icons.sticker(layer, ops, nil, 0.04)
+			Icons.sticker(layer, ops, nil, 0.025)
 		end
 		for _, spec in piece.anim or {} do
 			z += 1

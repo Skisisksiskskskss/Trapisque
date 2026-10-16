@@ -41,7 +41,7 @@ local ABILITY_COLOR = {
 	blizzard = C.sky,
 	scavenge = C.orange,
 	blast = C.coral,
-	overgrow = C.lime,
+	stampede = C.lime,
 	warp = C.grape,
 	nudge = C.sun,
 }
@@ -309,6 +309,32 @@ function Effects.gotcha(view, owner: number, victim: number)
 	end)
 end
 
+-- The Victory Parade pass: cannons either side of the winner, streamers in every
+-- crew's colours and a brass fanfare.
+function Effects.parade(view, seat: number)
+	local at = view:pawnWorld(seat)
+	local U = view.UNIT
+	Sound.play("win", 1.06)
+	Sound.play("treasure")
+	shoutAt(view, at, "VICTORY PARADE!", C.sun, 40)
+	view:setMood(seat, "happy", 3)
+	for i, side in { -1, 1, -1, 1 } do
+		task.delay((i - 1) * 0.35, function()
+			local blast = at + Vector2.new(side * 1.6 * U, -0.4 * U)
+			Sound.play("death", 0.7)
+			boom(view, blast, C.white, 1.6)
+			burst(view, blast, ({ C.coral, C.sun, C.sky, C.lime, C.pink, C.orange })[(i % 6) + 1], 12, 2.2, 0.16, 0.9)
+			view:shake(0.1, 0.2)
+		end)
+	end
+	task.delay(1.4, function()
+		for _, color in { C.coral, C.sun, C.sky, C.lime, C.pink } do
+			burst(view, at, color, 6, 2.8, 0.14, 1.1)
+		end
+		ring(view, at, C.sun, 0.6, 3.2, 0.8, 7)
+	end)
+end
+
 function Effects.death(view, seat: number)
 	local pawn = view.pawns[seat]
 	if not pawn then
@@ -485,13 +511,13 @@ function Effects.bounty(view, seat: number)
 	burst(view, at, C.sun, 8, 1, 0.14, 0.45)
 end
 
--- Overgrow: a hazard sprouts out of the ground.
-function Effects.grow(view, tile: number)
-	local at = view:tileWorld(tile)
-	Sound.play("slime", 1.4)
-	burst(view, at, C.lime, 12, 1.2, 0.2, 0.6)
-	ring(view, at, C.lime, 0.4, 2.2, 0.5, 6)
-	view:shake(0.05, 0.15)
+-- Stampede: the Naturalist's herd of wild boars thunders off.
+function Effects.stampede(view, seat: number)
+	local at = view:pawnWorld(seat)
+	Sound.play("bonk", 0.8)
+	shoutAt(view, at, "STAMPEDE!", C.lime, 30)
+	burst(view, at, hex("C9A26B"), 14, 1.6, 0.22, 0.6)
+	view:shake(0.12, 0.35)
 end
 
 -- X-Ray: a scan sweeps the board; the traps it found pop up.

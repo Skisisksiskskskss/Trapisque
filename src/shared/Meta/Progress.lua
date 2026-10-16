@@ -281,7 +281,17 @@ Progress.events = {
 }
 
 -- This week's event (weeks start on Thursday, Unix epoch week).
+-- The owner can switch this week's event (staff panel); every server and client sets this.
+Progress.eventOverride = nil :: string?
+
 function Progress.currentEvent(now: number?)
+	if Progress.eventOverride then
+		for _, e in Progress.events do
+			if e.id == Progress.eventOverride then
+				return e
+			end
+		end
+	end
 	local week = (now or os.time()) // (7 * DAY)
 	return Progress.events[(week % #Progress.events) + 1]
 end

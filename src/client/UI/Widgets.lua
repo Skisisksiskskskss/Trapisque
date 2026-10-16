@@ -151,7 +151,7 @@ function Widgets.button(parent: Instance?, o: { [string]: any })
 		Position = UDim2.fromOffset(0, depth),
 		Parent = root,
 	})
-	Util.corner(side, o.corner or 10)
+	Util.corner(side, o.corner or 6)
 	local sideStroke = Util.stroke(side, style.stroke, 3)
 
 	local face = Util.new("Frame", {
@@ -162,7 +162,7 @@ function Widgets.button(parent: Instance?, o: { [string]: any })
 		ZIndex = 2,
 		Parent = root,
 	})
-	Util.corner(face, o.corner or 10)
+	Util.corner(face, o.corner or 6)
 	local faceStroke = Util.stroke(face, style.stroke, 3)
 	-- (printed paint is flat: the old candy shine stays, invisible, for the code that
 	-- still toggles it)
@@ -186,7 +186,7 @@ function Widgets.button(parent: Instance?, o: { [string]: any })
 		ZIndex = 4,
 		Parent = face,
 	})
-	Util.corner(hover, o.corner or 10)
+	Util.corner(hover, o.corner or 6)
 
 	local content = Util.frame(face, { Name = "Content", ZIndex = 5 })
 	local list = Util.list(content, "x", 8, "Center", "Center")
@@ -411,7 +411,7 @@ function Widgets.iconButton(parent: Instance?, o: { [string]: any })
 	local opts = table.clone(o)
 	opts.text = nil
 	opts.size = o.size or UDim2.fromOffset(48, 50)
-	opts.corner = o.corner or 12
+	opts.corner = o.corner or 8
 	opts.depth = o.depth or 4
 	local b = Widgets.button(parent, opts)
 	local holder = b.root:FindFirstChild("IconHolder", true)
@@ -447,7 +447,7 @@ function Widgets.panel(parent: Instance?, o: { [string]: any }): (Frame, Frame)
 		ZIndex = o.z or 1,
 		LayoutOrder = o.layoutOrder or 0,
 	})
-	local corner = o.corner or 10
+	local corner = o.corner or 6
 	Util.corner(root, corner)
 	if style == "walnut" then
 		root.BackgroundColor3 = C.panel
@@ -951,7 +951,7 @@ function Widgets.badge(parent: Instance, o: { [string]: any }): Frame
 		LayoutOrder = o.layoutOrder or 0,
 		Parent = parent,
 	})
-	Util.corner(b, 0.5)
+	Util.corner(b, 5) -- a printed tag, not a pill
 	Util.stroke(b, o.stroke or C.line, 2.5)
 	Util.pad(b, 8, 0, 8, 0)
 	Widgets.label(b, {

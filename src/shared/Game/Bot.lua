@@ -593,27 +593,10 @@ local function abilityCommand(game, p)
 		-- a wall in the way doesn't stop a rocket, so just go (unless I'm at the Start with
 		-- nothing ahead worth reaching: it's still +4, so always worth it)
 		return { type = "ability" }
-	elseif ab.id == "overgrow" then
-		-- grow the hazard on the path just ahead of the most dangerous opponent in reach
-		local best, bestV = nil, 0
-		for _, o in opps do
-			local tile = o.tile
-			for step = 1, 4 do
-				tile = board.nextMain[tile]
-				if not tile then
-					break
-				end
-				if game:canGrow(p, tile) then
-					local v = victimWeight(game, p, o) * (1.2 - step * 0.15)
-					if v > bestV then
-						best, bestV = tile, v
-					end
-				end
-			end
-		end
-		if best then
-			return { type = "ability", tile = best }
-		end
+	elseif ab.id == "stampede" then
+		-- the Power bar can't overfill, so waiting for someone to trample only wastes
+		-- charge: +3 is always worth it, and a rival in the way is a bonus
+		return { type = "ability" }
 	elseif ab.id == "warp" then
 		local myDist = distOf(game, p, p.tile)
 		local best, bestGain = nil, 0

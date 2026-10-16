@@ -19,6 +19,8 @@ local PartyService = require(script.Parent.PartyService)
 local MatchmakingService = require(script.Parent.MatchmakingService)
 local MatchService = require(script.Parent.MatchService)
 local LeaderboardService = require(script.Parent.LeaderboardService)
+local ChatService = require(script.Parent.ChatService)
+local AdminService = require(script.Parent.AdminService)
 
 Net.init()
 TeleportUtil.init()
@@ -28,6 +30,8 @@ GachaService.init()
 PartyService.init()
 MatchmakingService.init()
 MatchService.init()
+ChatService.init()
+AdminService.init()
 
 TeleportUtil.Failed:Connect(function(player, message)
 	Net.push(player, "teleporting", nil)
@@ -46,6 +50,8 @@ Net.handle("hello", function(player)
 		party = PartyService.view(PartyService.get(player)),
 		match = match and match:resync(player) or nil,
 		status = MatchService.status(player),
+		chat = ChatService.status(player),
+		staff = AdminService.role(player),
 	}
 end)
 

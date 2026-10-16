@@ -65,7 +65,7 @@ for _, def in Maps.list do
 			truthy(#L.props >= 12, "expected a lived-in map, got " .. #L.props .. " props")
 			for i, p in L.props do
 				truthy(MapScenes ~= nil and p.size > 0, "prop size")
-				if not p.ground and not p.fixed then
+				if not p.ground then
 					local reach = p.size * S.reach
 					for _, s in L.trail do
 						truthy(segDist(p.x, p.y, s.x1, s.y1, s.x2, s.y2) >= S.trailW / 2 + reach - EPS, p.kind .. " stands on the trail")

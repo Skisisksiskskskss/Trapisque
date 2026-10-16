@@ -345,6 +345,7 @@ end
 		compact   true when the panels must use their compact layouts
 		nav       { rect, kind = "full" | "short" | "icon" }   the menu buttons
 		invites   rect          where party invites stack up
+		chat      rect          the chat button, in the free part of Roblox's top bar
 	}
 	PC: title and profile on top, Play | Party | Top across the middle (Top moves to the
 	menu when there isn't room), the menu along the bottom. Phones held sideways: the
@@ -356,6 +357,8 @@ function Layout.lobby(m)
 	local safe = Layout.safeRect(m, 0)
 	local top = math.max(m.topbar.y1, safe.y)
 	local out: { [string]: any } = { form = form }
+	local band = Layout.bandRect(m, 10)
+	out.chat = rect(band.x, band.y, band.h, band.h)
 
 	if form == "wide" then
 		local M = 24
@@ -386,12 +389,12 @@ function Layout.lobby(m)
 	elseif form == "short" then
 		local M = 10
 		local x0, x1 = safe.x + M, safe.x + safe.w - M
-		-- the profile chip rides in the free middle of Roblox's top bar
-		local band = Layout.bandRect(m, 10)
-		local chipW = math.min(340, band.w)
+		-- the profile chip rides in the free middle of Roblox's top bar, after the chat button
+		local chatW = band.h + 8
+		local chipW = math.min(340, band.w - chatW)
 		out.profile = { rect = rect(band.x + band.w - chipW, band.y, chipW, band.h), kind = "compact" }
-		if band.w - chipW >= 190 then
-			out.title = rect(band.x, band.y, math.min(240, band.w - chipW - 16), band.h)
+		if band.w - chipW - chatW >= 190 then
+			out.title = rect(band.x + chatW, band.y, math.min(240, band.w - chipW - chatW - 16), band.h)
 		end
 		local navH = math.max(46, math.ceil(44 / m.scale))
 		local nav = rect(x0, safe.y + safe.h - 8 - navH, x1 - x0, navH)

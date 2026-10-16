@@ -39,9 +39,15 @@ local function screenWidth(): number
 	return Layout.safeRect(m, if m.form == "wide" then 16 else 6).w
 end
 
--- Inspected cards: 206 wide on a monitor, down to 140 on a narrow phone.
+-- Inspected cards: big enough to read (up to 300 wide on a monitor, 150 on a narrow
+-- phone), and never taller than about two thirds of the screen.
 local function cardWidth(): number
-	return math.clamp(math.floor((screenWidth() - 2 * PAD - 66) / 2), 140, 206)
+	local w = math.clamp(math.floor((screenWidth() - 2 * PAD - 66) / 2), 150, 300)
+	local m = Widgets.metrics
+	if m then
+		w = math.min(w, math.floor(m.vh * 0.62 * CardStyle.aspect))
+	end
+	return math.max(140, w)
 end
 
 -- Front and back of the same card side by side.

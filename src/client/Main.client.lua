@@ -13,10 +13,23 @@ local State = require(Client.State)
 local Sound = require(Client.Sound)
 local Root = require(Client.UI.Root)
 local Widgets = require(Client.UI.Widgets)
+local StaffPanel = require(Client.UI.StaffPanel)
+local _Chat = require(Client.Chat) -- starts listening for chat lines straight away
 local LobbyScreen = require(Client.UI.Lobby.LobbyScreen)
 local MatchScreen = require(Client.UI.Match.MatchScreen)
 
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Progress = require(ReplicatedStorage.Shared.Meta.Progress)
+
 local player = Players.LocalPlayer
+
+-- the owner can switch the weekly event; every screen shows the one in play
+local function syncEvent()
+	local id = ReplicatedStorage:GetAttribute("TrapisqueEvent")
+	Progress.eventOverride = if type(id) == "string" and id ~= "" then id else nil
+end
+syncEvent()
+ReplicatedStorage:GetAttributeChangedSignal("TrapisqueEvent"):Connect(syncEvent)
 
 -- Roblox's own HUD pieces we don't use (the chat and menu stay available)
 local function hideCoreGui()
@@ -68,6 +81,15 @@ Net.on("toast", function(data)
 		Widgets.toast(data.text, data.kind)
 	end
 end)
+Net.on("staff.announce", function(data)
+	StaffPanel.announce(Root.toasts, data)
+end)
+Net.on("staff.role", function(data)
+	State.set("staff", if type(data) == "table" then data.role else nil)
+	if type(data) == "table" and data.role then
+		Widgets.toast("You're now an admin! Open the panel from Settings (or the match menu).", "reward")
+	end
+end)
 Net.on("teleporting", function(data)
 	State.set("teleporting", data)
 	Root.curtain(if data then (data.reason or "Teleporting...") else nil)
@@ -112,6 +134,8 @@ State.set("role", data.role)
 State.set("studio", data.studio)
 State.set("profile", data.profile)
 State.set("party", data.party)
+State.set("chat", data.chat)
+State.set("staff", data.staff)
 if data.profile and data.profile.settings then
 	Sound.applySettings(data.profile.settings)
 end

@@ -28,6 +28,8 @@ local rng = Random.new(cfg.seed or 7)
 F.mount(F.ReplicatedStorage, "Shared", getNode("Shared"))
 F.mount(game:GetService("ServerScriptService"), "Server", getNode("Server"))
 F.mount(game:GetService("ReplicatedFirst"), "First", getNode("First"))
+-- the tester is the game's owner (the owner panel gets a look too)
+requireModule("Shared/Config").Staff.OwnerIds = { 4242 }
 
 F.setScreen({
 	w = cfg.w or 1280,
@@ -116,6 +118,27 @@ local function press(root, pattern: string): boolean
 	end
 	F.click(list[1])
 	return true
+end
+
+-- Like press, scrolling through `root`'s scrolling lists until the button shows up.
+local function pressScrolled(root, pattern: string): boolean
+	if press(root, pattern) then
+		return true
+	end
+	for _, sf in F.findAll(root, function(d)
+		return d:IsA("ScrollingFrame") and F.visible(d)
+	end) do
+		local y = 0
+		while y < sf.AbsoluteCanvasSize.Y do
+			y += math.max(40, sf.AbsoluteSize.Y * 0.6)
+			sf.CanvasPosition = Vector2.new(0, y)
+			F.run(0.1)
+			if press(root, pattern) then
+				return true
+			end
+		end
+	end
+	return false
 end
 
 ---------------------------------------------------------------------------
@@ -258,6 +281,69 @@ for _, page in PAGES do
 	noProblems("the " .. page.id .. " page")
 end
 
+-- the chat: a quick line from the chat window, one with it closed (a bubble drops in
+-- under the button), then the owner panel gives me the Chat pass and I type a line
+local Chat = requireModule("Client/Chat")
+do
+	local button = visibleNamed(Root.screens, "Chat")
+	check(button ~= nil, "no chat button in the lobby")
+	F.click(buttonIn(button))
+	F.run(1)
+	local top = modals()
+	check(top[#top] ~= nil, "the chat window didn't open")
+	check(press(top[#top], "^AHOY!$"), "no quick lines in the chat window")
+	F.run(1.5)
+	check(#Chat.history() >= 1, "my quick line never came back from the server")
+	shot("chat")
+	closeModals()
+	F.spawn(Net.request, "chat.send", { quick = "yoho" })
+	F.run(1)
+	local bubbles = visibleNamed(Root.screens, "ChatBubbles")
+	check(bubbles ~= nil and #bubbles:GetChildren() >= 2, "no chat bubble under the chat button")
+	shot("chat-bubble")
+	F.run(10)
+	noProblems("the lobby chat")
+
+	check(openNav("settings"), "Settings didn't open")
+	top = modals()
+	check(press(top[#top], "OWNER PANEL"), "the owner has no OWNER PANEL button in Settings")
+	F.run(2)
+	top = modals()
+	for _, tab in { "FIND", "SERVER", "ADMINS", "BANS", "LOG", "PLAYERS" } do
+		check(press(top[#top], "^" .. tab .. "$"), "no " .. tab .. " tab in the owner panel")
+		F.run(0.8)
+	end
+	shot("owner-panel")
+	check(press(top[#top], "^MANAGE$"), "no MANAGE button on the owner panel's players")
+	F.run(1.2)
+	local sheet = modals()
+	shot("owner-sheet")
+	-- (offline every pass reads as bought, so it may already say ON)
+	check(pressScrolled(sheet[#sheet], "^GIVE CHAT$") or pressScrolled(sheet[#sheet], "^CHAT: ON$"), "no Chat pass button on a player's sheet")
+	F.run(1.5)
+	check(pressScrolled(sheet[#sheet], "^%+100 GEMS$"), "no +100 GEMS button on a player's sheet")
+	F.run(1.5)
+	closeModals()
+	check(State.hasPass("Chat"), "the owner panel didn't give the Chat pass")
+	noProblems("the owner panel")
+
+	F.click(buttonIn(visibleNamed(Root.screens, "Chat")))
+	F.run(1)
+	top = modals()
+	local box = F.findAll(top[#top], function(d)
+		return d:IsA("TextBox")
+	end)[1]
+	check(box ~= nil, "no text box in the chat window with the Chat pass")
+	box.Text = "Ahoy from the smoke test"
+	check(press(top[#top], "^SEND$"), "no SEND button in the chat window")
+	F.run(1.5)
+	local last = Chat.history()[#Chat.history()]
+	check(last ~= nil and last.text == "Ahoy from the smoke test", "my typed line never came back")
+	closeModals()
+	F.run(1)
+	noProblems("typing in the chat")
+end
+
 -- open a chest with the starting gems, through the reveal
 do
 	if openNav("chests") then
@@ -369,6 +455,23 @@ end), "the match never started")
 local screen = MatchScreen.current()
 say("match started at %.1fs (seat %d, %s)", F.now, screen.mySeat, screen.mapDef.id)
 noProblems("starting the match")
+
+-- say something: the say button, a quick line, a bubble over my character
+do
+	F.run(3)
+	local sayButton = visibleNamed(Root.screens, "emote")
+	check(sayButton ~= nil, "no say button in the match")
+	F.click(buttonIn(sayButton))
+	F.run(1)
+	local top = modals()
+	check(top[#top] ~= nil, "the say window didn't open")
+	check(press(top[#top], "^GOOD LUCK!$"), "no quick lines in the match's say window")
+	F.run(1)
+	check(screen.board.bubbles[screen.mySeat] ~= nil, "my line didn't pop up over my character")
+	shot("match-bubble")
+	closeModals()
+	noProblems("saying something in the match")
+end
 
 -- The player's hands: one decision every so often, like a person.
 local nextThink = F.now + 2

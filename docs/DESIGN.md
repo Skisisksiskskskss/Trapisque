@@ -73,7 +73,7 @@ everyone, and costs Power instead of recharging on a timer:
 | Mage | Hex one player (freeze or burn) | **Blizzard**: freeze every rival for a turn, skate 1 ahead (7 Power) | Single-target harm; now hits the whole table but costs more. |
 | Trapper | 2 free traps, Scavenge spins | Hides traps anywhere, 4 out, **hops 2 forward per catch**; Scavenge picks 1 of 2 traps | Traps only helped indirectly; now a catch moves you too. |
 | Fire Starter | Ignite a player on your tile | Bonks set rivals on fire; **Blast Off** rockets 4 and leaves burning embers | Needed a self-benefit and a reason to get close. |
-| Naturalist | Walked through everything incl. shortcuts | Ignores hazards; **Overgrow** grows the map's hazard nearby | Shortcut-walking was worth 11 to 17 tiles a lap on Junction. |
+| Naturalist | Walked through everything incl. shortcuts | Ignores hazards; **Stampede** charges 2 tiles and knocks rivals in the way back 2 (12 Power) | Shortcut-walking was worth 11 to 17 tiles a lap on Junction. Stampede replaced Overgrow (growing hazards) because it was no fun to play: a charge you feel beats a puddle for someone else. |
 | Warper | Swap with anyone, once a game | **Warp** with someone up to 7 tiles away (10 Power) | Unlimited range let the Warper jump to the leader. |
 | Overseer | Nudge 1, always went first | Sees hidden traps; **Nudge 2** anyone, cost 4 | Going first was a free edge; vision is a counter, not a bonus. |
 
@@ -106,32 +106,38 @@ fair is 1 ÷ players. With 900 games, about ±2 points is noise in the 4-player 
 | Junction Dungeon | 23.9% | **8.3%** | **7.5%** | **57.3%** | 32.3% | 21.2% |
 | Slimy Snares | 35.5% | 10.5% | 11.5% | 22.7% | **49.3%** | 20.8% |
 
-**After** (v2 with backwards doubles and the underdog's gold die, 600 games per map;
-with 600 games, about ±2.5 points is noise in the 4-player tables):
+**After** (v2 with backwards doubles, the underdog's gold die and the Naturalist's
+Stampede; 600 games per map for 4-player Quick and 300 for the others, so about ±2.5
+points is noise in the Quick table and ±3.5 in the rest):
 
 | 4 players, Quick | Mage | Trapper | Fire Starter | Naturalist | Warper | Overseer |
 | --- | --- | --- | --- | --- | --- | --- |
-| Blissful Tricks | 27.0% | 21.0% | 22.5% | 25.9% | 27.5% | 26.1% |
-| Junction Dungeon | 25.1% | 22.2% | 25.2% | 24.7% | 25.9% | 26.9% |
-| Slimy Snares | 25.3% | 24.7% | 26.0% | 24.2% | 25.7% | 24.1% |
+| Blissful Tricks | 27.0% | 22.7% | 21.5% | 25.4% | 28.2% | 25.1% |
+| Junction Dungeon | 29.3% | 22.5% | 24.2% | 25.4% | 25.4% | 23.1% |
+| Slimy Snares | 26.8% | 25.7% | 20.5% | 28.7% | 25.7% | 22.6% |
 
 | 4 players, Standard | Mage | Trapper | Fire Starter | Naturalist | Warper | Overseer |
 | --- | --- | --- | --- | --- | --- | --- |
-| Blissful Tricks | 28.3% | 25.7% | 22.2% | 24.4% | 23.2% | 26.1% |
-| Junction Dungeon | 25.8% | 29.4% | 24.0% | 23.4% | 21.4% | 25.9% |
-| Slimy Snares | 27.0% | 26.7% | 22.5% | 23.7% | 26.2% | 23.9% |
+| Blissful Tricks | 29.1% | 30.0% | 20.0% | 19.7% | 30.3% | 20.7% |
+| Junction Dungeon | 26.6% | 30.0% | 25.0% | 19.7% | 20.7% | 27.8% |
+| Slimy Snares | 28.1% | 29.1% | 20.5% | 23.2% | 22.7% | 26.3% |
 
 | 2 players, Quick (fair 50%) | Mage | Trapper | Fire Starter | Naturalist | Warper | Overseer |
 | --- | --- | --- | --- | --- | --- | --- |
-| Blissful Tricks | 50.3% | 38.3% | 53.1% | 55.0% | 46.3% | 58.2% |
-| Junction Dungeon | 53.8% | 46.4% | 50.7% | 50.0% | 39.3% | 60.9% |
-| Slimy Snares | 55.8% | 42.6% | 53.6% | 52.5% | 43.8% | 52.2% |
+| Blissful Tricks | 55.4% | 37.1% | 53.3% | 50.0% | 46.1% | 59.8% |
+| Junction Dungeon | 50.5% | 49.5% | 49.5% | 42.9% | 48.0% | 60.9% |
+| Slimy Snares | 51.5% | 44.8% | 50.5% | 56.1% | 45.1% | 52.9% |
 
 | 6 players, Quick (fair 16.7%; all six play every game) | Mage | Trapper | Fire Starter | Naturalist | Warper | Overseer |
 | --- | --- | --- | --- | --- | --- | --- |
-| Blissful Tricks | 13.3% | 18.2% | 15.5% | 16.0% | 22.2% | 14.8% |
-| Junction Dungeon | 15.7% | 18.8% | 14.0% | 16.7% | 19.7% | 15.2% |
-| Slimy Snares | 13.0% | 19.7% | 16.0% | 16.8% | 21.8% | 12.7% |
+| Blissful Tricks | 15.7% | 22.7% | 13.0% | 17.0% | 19.7% | 12.0% |
+| Junction Dungeon | 18.3% | 21.7% | 13.7% | 14.7% | 17.3% | 14.3% |
+| Slimy Snares | 15.3% | 21.3% | 15.7% | 14.3% | 20.7% | 12.7% |
+
+Stampede was tuned on 4-player Quick. At 8 Power with a 3-tile charge it won 33 to
+40%; 10 Power and a 2-tile charge brought it to 27 to 32%, and 12 Power with a 2-tile
+charge (knocking rivals back 2) landed on 25 to 29%. It's a little behind in Standard,
+where games are long enough for the cheaper abilities to come round more often.
 
 The underdog's gap was tuned with these runs: at 6 tiles, the gold die also charged
 Power and pushed the Overseer to 31% in 4-player games; as a move-only die with an
@@ -197,3 +203,33 @@ shortcuts, hazards) is the rulebook's, so none of this touches balance.
 
 Everything is still drawn from UI frames at runtime (no uploaded images), so it stays
 crisp at any size. `tools/shots.sh` renders real screenshots offline for review.
+
+## 6. Talking at the table
+
+A board game is loud. Players can't see each other here, and many can't use Roblox's
+chat at all, so the game has its own:
+
+- **Quick lines are free for everyone.** Sixteen fixed lines ("Ahoy!", "Watch your
+  step!", "Not fair!", "GG!") need no filtering, so anyone can use them whatever
+  their settings. Bots use them too (an "Oops!" when they're sent home, a "GG!" at the
+  end), which keeps a table of bots from feeling dead.
+- **Typing is the Chat pass** (10 Robux), and only for accounts whose Roblox settings
+  allow chat. Every typed line is filtered for each reader and only reaches people
+  who may chat with the speaker. Staff mutes stop typing but not quick lines.
+- **Bubbles come from the players.** A line pops up over the speaker's character on
+  the board, bigger than anything else on it, with their name on a tab in their
+  colour; the character bobs as it talks, and the bubble stays on screen even when
+  the speaker is off it. Emotes use the same bubbles. In the lobby, lines drop in
+  under the chat button with the speaker's avatar.
+- **Read out loud, with character.** Roblox's text-to-speech is used, but never plain:
+  each voice is a pitch, a speed and a chain of effects (a warm low growl, a gravelly
+  sea dog, a chipmunk squeak, a flanged parrot, an echoing ghost, a tremolo clockwork).
+  Each character has one; the Voice Pack picks any. Text-to-speech is rate-limited, so
+  quick lines load once per voice and replay, and a line that can't get a voice in
+  time is babbled (one squeaky syllable per word, pitched by its vowels). In the lobby
+  only your own and your party's lines speak, or a full lobby would be a racket.
+
+The owner and admin panels exist so the game can be run without opening Studio:
+moderation (mutes, kicks, timed bans, ending a stuck match) for admins, and gifts,
+events, announcements and shutdowns for the owner. The server checks every action
+again, and every action is logged.

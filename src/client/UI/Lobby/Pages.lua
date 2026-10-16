@@ -1,6 +1,7 @@
 --[[
 	Pages
-	The smaller lobby windows: the gamepass Shop, How to Play and Settings.
+	The smaller lobby windows: the gamepass Shop, How to Play and Settings (volumes,
+	the chat's voices and bubbles, your voice, and the staff panel for staff).
 
 		Pages.shop(popupLayer)
 		Pages.rules(popupLayer)
@@ -17,6 +18,7 @@ local Passes = require(Shared.Meta.Passes)
 local Characters = require(Shared.Game.Characters)
 local Modes = require(Shared.Game.Modes)
 local Progress = require(Shared.Meta.Progress)
+local Voices = require(Shared.Meta.Voices)
 
 local UI = script.Parent.Parent
 local Util = require(UI.Util)
@@ -25,10 +27,12 @@ local Icons = require(UI.Icons)
 local Widgets = require(UI.Widgets)
 local VolumeRows = require(UI.VolumeRows)
 local LeaderboardPanel = require(script.Parent.LeaderboardPanel)
+local StaffPanel = require(UI.StaffPanel)
 
 local Client = UI.Parent
 local Net = require(Client.Net)
 local State = require(Client.State)
+local Voice = require(Client.Voice)
 
 local C = Theme.C
 local hex = Theme.hex
@@ -63,25 +67,16 @@ function Pages.shop(layer: Instance): () -> ()
 		wrap = true,
 		sizeUDim = UDim2.new(1, 0, 0, if narrow then 34 else 24),
 	})
-	-- four across on a wide screen; on an upright phone they scroll, one or two per row
+	-- four across on a wide screen (scrolling down to the rest), one or two on a phone
 	local top = if narrow then 42 else 34
-	local row
-	if narrow then
-		local cols = if roomW >= 560 then 2 else 1
-		row = Widgets.scroll(content, {
-			position = UDim2.fromOffset(0, top),
-			size = UDim2.new(1, 0, 1, -top),
-			grid = UDim2.new(1 / cols, -14 * (cols - 1) / cols - 4, 0, 400),
-			gap = 14,
-			padding = 4,
-		})
-	else
-		row = Util.frame(content, {
-			Position = UDim2.fromOffset(0, top),
-			Size = UDim2.new(1, 0, 1, -top),
-		})
-		Util.list(row, "x", 14, "Center", "Top")
-	end
+	local cols = if not narrow then 4 elseif roomW >= 560 then 2 else 1
+	local row = Widgets.scroll(content, {
+		position = UDim2.fromOffset(0, top),
+		size = UDim2.new(1, 0, 1, -top),
+		grid = UDim2.new(1 / cols, -14 * (cols - 1) / cols - 4, 0, 400),
+		gap = 14,
+		padding = 4,
+	})
 
 	local cards = {}
 	local function render()
@@ -332,16 +327,117 @@ end
 -- Settings
 ---------------------------------------------------------------------------
 
+local function saveSetting(key: string, value: any)
+	local profile = State.get("profile")
+	local settings = table.clone(profile and profile.settings or {})
+	settings[key] = value
+	if profile then
+		profile.settings = settings
+		State.set("profile", profile)
+	end
+	task.spawn(Net.request, "settings.save", { settings = settings })
+end
+
+local function toggleRow(list: Instance, label: string, key: string, order: number)
+	local profile = State.get("profile")
+	local row = Util.frame(list, { Name = key, Size = UDim2.new(1, 0, 0, 40), LayoutOrder = order })
+	Widgets.label(row, {
+		text = label,
+		font = "heavy",
+		size = 18,
+		color = C.text,
+		sizeUDim = UDim2.new(1, -90, 1, 0),
+	})
+	Widgets.toggle(row, {
+		value = not (profile and profile.settings and profile.settings[key] == false),
+		anchor = Vector2.new(1, 0.5),
+		position = UDim2.fromScale(1, 0.5),
+		onChange = function(v)
+			saveSetting(key, v)
+		end,
+	})
+end
+
+-- The voice your chat bubbles speak in: your character's, or (Voice Pack) any of them.
+local function voiceRow(list: Instance, order: number)
+	local profile = State.get("profile")
+	local current = profile and profile.settings and profile.settings.voice or "auto"
+	local hasPack = State.hasPass("VoicePack")
+	Widgets.label(list, {
+		text = if hasPack then "Your voice" else "Your voice (pick any with the Voice Pack)",
+		font = "heavy",
+		size = 18,
+		color = C.text,
+		sizeUDim = UDim2.new(1, 0, 0, 24),
+		layoutOrder = order,
+	})
+	local grid = Util.frame(list, { Name = "Voices", Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, LayoutOrder = order + 1 })
+	Util.new("UIGridLayout", {
+		CellSize = UDim2.fromOffset(150, 38),
+		CellPadding = UDim2.fromOffset(8, 8),
+		SortOrder = Enum.SortOrder.LayoutOrder,
+		HorizontalAlignment = Enum.HorizontalAlignment.Center,
+		Parent = grid,
+	})
+	local chips = {}
+	local function paint()
+		for id, b in chips do
+			b:setStyle(if id == current then "brass" else "panel")
+		end
+	end
+	for i, v in Voices.list do
+		local locked = v.id ~= "auto" and not hasPack
+		chips[v.id] = Widgets.button(grid, {
+			text = v.name,
+			icon = if locked then "lock" else nil,
+			style = "panel",
+			textSize = 15,
+			font = "heavy",
+			depth = 3,
+			layoutOrder = i,
+			onClick = function()
+				local character = profile and profile.character
+				Voice.sample(Voices.resolve(v.id, character))
+				if locked then
+					Widgets.toast("That's a Voice Pack voice. Get it in the Shop!", "info")
+					return
+				end
+				current = v.id
+				paint()
+				saveSetting("voice", v.id)
+			end,
+		})
+	end
+	paint()
+end
+
 function Pages.settings(layer: Instance): () -> ()
+	local staff = State.get("staff")
 	local content, close = Widgets.modal(layer, {
 		title = "Settings",
 		titleWidth = 240,
-		width = 520,
-		height = 350,
+		width = 560,
+		height = if staff then 690 else 620,
 	})
-	local list = Util.frame(content, {})
-	Util.list(list, "y", 14, "Center", "Top")
+	local list = Widgets.scroll(content, { gap = 12, padding = 4 })
 	VolumeRows.build(list, 1)
+	toggleRow(list, "Read chat out loud", "voices", 3)
+	toggleRow(list, "Chat bubbles over players", "bubbles", 4)
+	voiceRow(list, 5)
+	if staff then
+		Widgets.button(list, {
+			text = if staff == "owner" then "OWNER PANEL" else "ADMIN PANEL",
+			icon = "crown",
+			style = "brass",
+			textSize = 20,
+			size = UDim2.fromOffset(280, 50),
+			layoutOrder = 8,
+			onClick = function()
+				close()
+				StaffPanel.open(layer)
+			end,
+		})
+	end
 	Widgets.label(list, {
 		text = "Trapisque v" .. tostring(State.get("version") or "1.0"),
 		font = "body",

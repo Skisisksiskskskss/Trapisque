@@ -124,8 +124,11 @@ function Shop.open(layer: Instance, o)
 			Position = UDim2.new(0.5, 0, 0, 0),
 			Size = UDim2.fromOffset(cardW, cardH),
 		})
+		-- open it big to read its rules
 		Cards.interactive(card, function()
-			card:flip()
+			Cards.zoom(card.root, function(parent, props)
+				return Cards.item(parent, id, props)
+			end)
 		end)
 		local stock = Widgets.label(slot, {
 			text = "",
