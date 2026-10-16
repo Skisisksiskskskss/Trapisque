@@ -850,8 +850,12 @@ function MatchScreen:_refresh()
 	elseif self.shop and me then
 		self.shop:update(me.coins, v.stock or {}, v.hand or {})
 	end
-	-- Scavenge: your two cards to pick from
-	if v.phase == "pick" and v.current == self.mySeat and v.pick and not self.playing and not self.closePick then
+	-- Scavenge: your two cards to pick from (not again while the one you took is on its
+	-- way: the phase only moves on once the server's answer has played)
+	if v.phase ~= "pick" or v.current ~= self.mySeat then
+		self.pickSent = nil
+	end
+	if v.phase == "pick" and v.current == self.mySeat and v.pick and not self.playing and not self.closePick and not self.pickSent then
 		self:_openPick(v.pick)
 	end
 end
@@ -1982,6 +1986,9 @@ end
 	Returns false if there's nowhere to put it.
 ]]
 function MatchScreen:_placeFlow(itemId: string, opts: { [string]: any }?): boolean
+	if self.targeting then
+		return false -- already placing or picking something
+	end
 	local o = opts or {}
 	local def = Items.get(itemId)
 	local hidden = def.hidden == true
@@ -2184,6 +2191,9 @@ end
 
 -- Pick a tile on the board (Overgrow). onPick gets the tile.
 function MatchScreen:_pickTile(prompt: string, tiles: { number }, color: Color3, onPick: (number) -> ())
+	if self.targeting then
+		return
+	end
 	if #tiles == 0 then
 		Widgets.toast("There's nowhere to do that right now.", "error")
 		return
@@ -2225,6 +2235,9 @@ end
 
 -- Pick a player from the chips.
 function MatchScreen:_pickPlayer(prompt: string, seats: { number }, onPick: (number) -> ())
+	if self.targeting then
+		return
+	end
 	if #seats == 0 then
 		Widgets.toast("There's nobody you can pick right now.", "error")
 		return
@@ -2360,11 +2373,17 @@ function MatchScreen:_cardClicked(itemId: string, index: number)
 			self:_closeTip()
 			return
 		end
+		-- one tap does it: a second tap while the tip closes would play the card twice
+		local used = false
 		local actions = {}
 		for _, a in self:_cardActions(itemId, index) do
 			if a.onClick then
 				local run = a.onClick
 				a.onClick = function()
+					if used then
+						return
+					end
+					used = true
 					self:_closeTip()
 					run()
 				end
@@ -2562,10 +2581,14 @@ function MatchScreen:_cardActions(itemId: string, index: number?): { any }
 	-- team modes: pass a card to a teammate (it counts as your card this turn)
 	local me = self:_player(self.mySeat)
 	if mine and not spent and self.isTeam and me then
-		local mates = {}
+		local mates, full = {}, 0
 		for seat, p in v.players do
 			if p.team == me.team and seat ~= self.mySeat then
-				table.insert(mates, seat)
+				if (p.handCount or 0) >= Rules.HandLimit then
+					full += 1
+				else
+					table.insert(mates, seat)
+				end
 			end
 		end
 		if #mates > 0 then
@@ -2574,6 +2597,8 @@ function MatchScreen:_cardActions(itemId: string, index: number?): { any }
 					self:_cmd({ type = "give", item = itemId, target = seat })
 				end)
 			end })
+		elseif full > 0 then
+			table.insert(actions, { text = "Your teammate's hand is full.", disabled = true })
 		end
 	end
 	return actions
@@ -2693,15 +2718,25 @@ function MatchScreen:_openShop()
 	if not me then
 		return
 	end
+	local done = false
 	self.shop = Shop.open(self.popups, {
 		coins = me.coins,
 		stock = self.view.stock or {},
 		hand = self.view.hand or {},
 		onBuy = function(itemId)
-			self:_cmd({ type = "buy", item = itemId })
+			if not done then
+				self:_cmd({ type = "buy", item = itemId })
+			end
 		end,
 		onDone = function()
-			self:_cmd({ type = "shopDone" })
+			-- once: the shop stays up until the server's answer has played
+			if done then
+				return
+			end
+			done = true
+			if not self:_cmd({ type = "shopDone" }) then
+				done = false
+			end
 		end,
 	})
 end
@@ -2710,7 +2745,11 @@ end
 function MatchScreen:_openPick(options: { string })
 	self.closePick = Overlays.pickCard(self.popups, "SCAVENGE: KEEP ONE", options, function(i)
 		self.closePick = nil
-		self:_cmd({ type = "pick", index = i })
+		self.pickSent = true
+		if not self:_cmd({ type = "pick", index = i }) then
+			self.pickSent = nil
+			self:_refresh()
+		end
 	end)
 end
 

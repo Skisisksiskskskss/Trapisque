@@ -8,10 +8,14 @@ instance tree (folders + module nodes) so those requires resolve to the bundled
 module functions.
 
 Usage:
-    python3 tools/bundle.py <out.luau> <entry.luau> [more entries...]
+    python3 tools/bundle.py [--all] <out.luau> <entry.luau> [more entries...]
 
 The entry file runs after the bundle is set up and can call:
     requireModule("Shared/Game/Engine")
+
+--all also bundles the server (Server/...), the ReplicatedFirst scripts (First/...) and
+the entry scripts themselves (Server/Main, Client/Main, First/Loading), for the smoke
+test that runs the whole game on a fake Roblox (tests/fake).
 """
 import os
 import sys
@@ -25,18 +29,27 @@ MOUNTS = [
 ]
 
 
-def collect():
+ALL_MOUNTS = MOUNTS + [
+    ("src/server", "Server"),
+    ("src/first", "First"),
+]
+
+
+def collect(everything=False):
     modules = {}
-    for folder, prefix in MOUNTS:
+    for folder, prefix in (ALL_MOUNTS if everything else MOUNTS):
         base = os.path.join(ROOT, folder)
         for dirpath, _dirnames, filenames in os.walk(base):
             for fn in sorted(filenames):
                 if not (fn.endswith(".lua") or fn.endswith(".luau")):
                     continue
-                if fn.endswith(".server.lua") or fn.endswith(".client.lua"):
+                script = fn.endswith(".server.lua") or fn.endswith(".client.lua")
+                if script and not everything:
                     continue
                 full = os.path.join(dirpath, fn)
                 rel = os.path.relpath(full, base)
+                if script:
+                    rel = rel.rsplit(".", 2)[0] + ".lua"
                 name = rel.rsplit(".", 1)[0].replace(os.sep, "/")
                 if name.endswith("/init") or name == "init":
                     raise SystemExit("init modules are not supported by the test bundler: " + full)
@@ -99,16 +112,44 @@ local function getNode(path)
 	return node
 end
 
+local __done = {}
+local __loading = {}
+
+-- Like Roblox's require: runs a module once, errors on a recursive require, and a
+-- thread requiring a module another thread is still loading (it yielded) waits for it.
 local function requireNode(node)
 	local path = rawget(node, "__path")
-	if __cache[path] ~= nil then
+	if __done[path] then
+		return __cache[path]
+	end
+	local loader = __loading[path]
+	if loader then
+		if loader == coroutine.running() or not (task and task.wait) then
+			error("Requested module was required recursively: " .. path, 2)
+		end
+		while __loading[path] do
+			task.wait()
+		end
+		if not __done[path] then
+			error("Requested module experienced an error while loading: " .. path, 2)
+		end
 		return __cache[path]
 	end
 	local fn = __sources[path]
 	assert(fn, "bundle: no module at " .. path)
-	__cache[path] = false -- cycle guard
-	local result = fn(node, requireNode)
+	__loading[path] = coroutine.running()
+	local ok, result = xpcall(fn, function(err)
+		if type(err) == "string" and not string.find(err, "\nstack:", 1, true) then
+			return err .. "\nstack:\n" .. debug.traceback()
+		end
+		return err
+	end, node, requireNode)
+	__loading[path] = nil
+	if not ok then
+		error(result, 0)
+	end
 	__cache[path] = result
+	__done[path] = true
 	return result
 end
 
@@ -119,11 +160,14 @@ end
 
 
 def main():
-    if len(sys.argv) < 3:
+    args = sys.argv[1:]
+    everything = "--all" in args
+    args = [a for a in args if a != "--all"]
+    if len(args) < 2:
         print(__doc__)
         sys.exit(2)
-    out, entries = sys.argv[1], sys.argv[2:]
-    modules = collect()
+    out, entries = args[0], args[1:]
+    modules = collect(everything)
     parts = [HEADER]
     for path, src in sorted(modules.items()):
         parts.append("__sources[%r] = function(script, require)\n%s\nend\n" % (path, src))

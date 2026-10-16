@@ -1,0 +1,660 @@
+--[[
+	Smoke test: the whole game, server and client, on the fake Roblox (tests/fake).
+
+	A scripted player joins, looks around the lobby (every menu page, the quests, the
+	character picker, the chests), starts a practice match against bots and plays it to
+	the end with the real controls: on a PC it hovers and picks dice with Q / W / E,
+	plays cards with the number keys and clicks the glowing tile when a card needs one,
+	and uses its ability with Space; on a phone it taps everything instead (a die twice,
+	a card and then PLAY, a tile and then the confirm button). It shops at the Potion
+	Seller and answers every pop-up. Then it checks the results reached the screen and
+	the profile, and that it got back to the lobby.
+
+	Any Lua error in any thread, any warning, and any table Roblox would mangle on its
+	way through a remote or into a DataStore fails the run.
+
+	Bundle with tools/bundle.py --all, with a scenario file (SMOKE = {...}) first:
+		SMOKE = { name, w, h, touch, safe, inset, barLeft, barRight, mode, bots, length,
+		          map, character, seed, verbose }
+	tools/smoke.sh runs every scenario.
+]]
+
+local F = Fake
+local cfg = SMOKE or {}
+F.verbose = cfg.verbose == true
+local rng = Random.new(cfg.seed or 7)
+
+-- the game's folders, where Roblox would have them
+F.mount(F.ReplicatedStorage, "Shared", getNode("Shared"))
+F.mount(game:GetService("ServerScriptService"), "Server", getNode("Server"))
+F.mount(game:GetService("ReplicatedFirst"), "First", getNode("First"))
+
+F.setScreen({
+	w = cfg.w or 1280,
+	h = cfg.h or 720,
+	touch = cfg.touch,
+	safe = cfg.safe,
+	inset = cfg.inset,
+	barLeft = cfg.barLeft,
+	barRight = cfg.barRight,
+})
+local touch = cfg.touch == true
+
+local stats = {
+	moves = 0,
+	cards = 0,
+	abilities = 0,
+	tiles = 0,
+	picks = 0,
+	buys = 0,
+	refused = 0,
+	pages = 0,
+	turns = 0,
+}
+local function say(fmt, ...)
+	if F.verbose then
+		F.print("[smoke] " .. string.format(fmt, ...))
+	end
+end
+
+local function fail(msg: string)
+	error("[" .. (cfg.name or "smoke") .. "] " .. msg .. "\n" .. F.problems(), 0)
+end
+
+local function check(cond, msg: string)
+	if not cond then
+		fail(msg)
+	end
+end
+
+local function noProblems(stage: string)
+	local p = F.problems()
+	if p ~= "" then
+		fail("problems after " .. stage .. ":\n" .. p)
+	end
+end
+
+---------------------------------------------------------------------------
+-- finding things on screen
+---------------------------------------------------------------------------
+
+local function visibleNamed(root, name: string)
+	for _, d in F.findAll(root, function(d)
+		return d.Name == name and F.visible(d)
+	end) do
+		return d
+	end
+	return nil
+end
+
+-- The button a player would press for this widget: itself, or the first button in it.
+local function buttonIn(inst)
+	if inst:IsA("GuiButton") then
+		return inst
+	end
+	for _, d in inst:GetDescendants() do
+		if d:IsA("GuiButton") and F.visible(d) then
+			return d
+		end
+	end
+	return nil
+end
+
+local function press(root, pattern: string): boolean
+	local list = F.buttons(root, pattern)
+	if #list == 0 then
+		return false
+	end
+	F.click(list[1])
+	return true
+end
+
+---------------------------------------------------------------------------
+-- boot: the server, then the player joins and their scripts run
+---------------------------------------------------------------------------
+
+F.spawn(function()
+	requireModule("Server/Main")
+end)
+F.run(1)
+noProblems("server start")
+
+local player = F.addPlayer("Tester", 4242)
+F.run(0.5)
+F.spawn(function()
+	requireModule("First/Loading")
+end)
+F.spawn(function()
+	requireModule("Client/Main")
+end)
+
+local playerGui = player:FindFirstChild("PlayerGui")
+local MatchScreen = requireModule("Client/UI/Match/MatchScreen")
+local Root = requireModule("Client/UI/Root")
+local State = requireModule("Client/State")
+local Widgets = requireModule("Client/UI/Widgets")
+local Net = requireModule("Client/Net")
+local Items = requireModule("Shared/Game/Items")
+
+-- every toast, and every command the screen sends
+local toasts = {}
+local realToast = Widgets.toast
+Widgets.toast = function(text, kind, ...)
+	table.insert(toasts, { text = tostring(text), kind = kind, t = F.now })
+	say("toast (%s): %s", tostring(kind), tostring(text))
+	return realToast(text, kind, ...)
+end
+local commands = {}
+local realRequest = Net.request
+Net.request = function(action, payload)
+	local ok, data = realRequest(action, payload)
+	if action == "match.cmd" then
+		table.insert(commands, { cmd = payload.cmd, ok = ok, err = if ok then nil else data, t = F.now })
+		if not ok then
+			stats.refused += 1
+		end
+		say("cmd %s %s -> %s %s", payload.cmd.type, tostring(payload.cmd.die or payload.cmd.item or payload.cmd.option or ""), tostring(ok), if ok then "" else tostring(data))
+	end
+	return ok, data
+end
+
+check(F.run(20, function()
+	return State.get("profile") ~= nil and Root.currentName() == "lobby"
+end), "the lobby never showed up")
+F.run(3)
+check(playerGui:FindFirstChild("TrapisqueLoading") == nil, "the loading screen never went away")
+noProblems("joining")
+say("lobby up at %.1fs", F.now)
+
+---------------------------------------------------------------------------
+-- the lobby
+---------------------------------------------------------------------------
+
+-- Open dialogs (Widgets.modal backdrops), oldest first.
+local function modals()
+	local out = F.findAll(Root.gui, function(d)
+		return d.Name == "Modal" and d:IsA("GuiButton") and F.visible(d)
+	end)
+	table.sort(out, function(a, b)
+		return F.state(a).id < F.state(b).id
+	end)
+	return out
+end
+
+local function closeModals()
+	for _ = 1, 4 do
+		local list = modals()
+		if #list == 0 then
+			return
+		end
+		F.click(list[#list])
+		F.run(0.5)
+	end
+end
+
+local function openNav(id: string): boolean
+	local item = visibleNamed(Root.screens, id)
+	if not item then
+		return false
+	end
+	local b = buttonIn(item)
+	if not b then
+		return false
+	end
+	local before = #modals()
+	F.click(b)
+	F.run(1.2)
+	stats.pages += 1
+	return #modals() > before
+end
+
+-- every page from the menu, with a few of the things on it
+local PAGES = {
+	{ id = "chests", try = { "SEE ODDS" } },
+	{ id = "quests", try = { "SWAP" } },
+	{ id = "locker", try = {} },
+	{ id = "shop", try = {} },
+	{ id = "leaders", try = {} },
+	{ id = "rules", try = {} },
+	{ id = "settings", try = {} },
+}
+for _, page in PAGES do
+	local opened = openNav(page.id)
+	if opened then
+		for _, pattern in page.try do
+			local top = modals()
+			if press(top[#top], pattern) then
+				F.run(1.5)
+			end
+		end
+		-- page tabs and pagers (How to Play, Top Players)
+		local top = modals()
+		if top[#top] then
+			for _, b in F.buttons(top[#top]) do
+				local text = F.textOf(b):upper()
+				if text:find("NEXT") or text:find("WINS") or text:find("LEVEL") then
+					F.click(b)
+					F.run(0.6)
+				end
+			end
+		end
+		closeModals()
+		say("page %s ok", page.id)
+	else
+		say("page %s: no button on this screen", page.id)
+	end
+	noProblems("the " .. page.id .. " page")
+end
+
+-- open a chest with the starting gems, through the reveal
+do
+	if openNav("chests") then
+		local top = modals()
+		local opened = false
+		for _, b in F.buttons(top[#top]) do
+			if not opened and F.textOf(b):match("^%d") then
+				F.click(b)
+				opened = true
+			end
+		end
+		if opened then
+			F.run(6)
+			press(Root.gui, "COLLECT")
+			F.run(1.5)
+		end
+		closeModals()
+	end
+	noProblems("opening a chest")
+end
+
+-- the character picker
+local character = cfg.character
+do
+	local strip = visibleNamed(Root.screens, "YourCharacter")
+	if strip then
+		F.click(buttonIn(strip))
+		F.run(1.2)
+		local top = modals()
+		if top[#top] then
+			local picks = F.buttons(top[#top], "^PICK$")
+			if character then
+				for _, b in picks do
+					local card = b.Parent
+					local found = false
+					while card and not found do
+						if F.textOf(card):upper():find(character:upper()) then
+							found = true
+						else
+							card = card.Parent
+						end
+					end
+					if found then
+						F.click(b)
+						break
+					end
+				end
+			elseif #picks > 0 then
+				F.click(picks[rng:NextInteger(1, #picks)])
+			end
+			F.run(1)
+		end
+		closeModals()
+	end
+	noProblems("picking a character")
+	local profile = State.get("profile")
+	say("character: %s", tostring(profile and profile.character))
+end
+
+---------------------------------------------------------------------------
+-- a practice match
+---------------------------------------------------------------------------
+
+-- what the lobby costs per frame, to compare with after the match
+F.run(3)
+local lobbyLoad = F.load()
+local lobbyCount = F.count(Root.gui)
+say("lobby load: %d frame connections, %d tweens, %d waiting threads, %d GUI objects", lobbyLoad.frameConns, lobbyLoad.tweens, lobbyLoad.waiting, lobbyCount)
+
+local mode = cfg.mode or "chaos"
+if cfg.quickplay then
+	-- Quick Play: queue, and bots fill the empty seats after a while
+	local tile = visibleNamed(Root.screens, mode)
+	check(tile ~= nil, "no tile for mode " .. mode)
+	F.click(buttonIn(tile))
+	F.run(0.5)
+	check(press(Root.screens, "FIND A MATCH"), "no FIND A MATCH button")
+	F.run(3)
+	local q = State.get("queue")
+	check(q ~= nil and q.state == "searching", "not searching after FIND A MATCH")
+	check(F.run(150, function()
+		return MatchScreen.current() ~= nil
+	end), "Quick Play never found a match")
+else
+	local tile = visibleNamed(Root.screens, mode)
+	check(tile ~= nil, "no tile for mode " .. mode)
+	F.click(buttonIn(tile))
+	F.run(0.5)
+	check(press(Root.screens, "^PRACTICE$") or press(Root.screens, "PRACTICE"), "no PRACTICE button")
+	F.run(1)
+	local top = modals()
+	check(top[#top] ~= nil, "the practice settings didn't open")
+	local panel = top[#top]
+	if cfg.map then
+		press(panel, "^" .. cfg.map:upper() .. "$")
+	end
+	press(panel, "^" .. (cfg.length or "Quick"):upper() .. "$")
+	if cfg.bots then
+		press(panel, "^" .. tostring(cfg.bots) .. "$")
+	end
+	F.run(0.3)
+	check(press(panel, "START"), "no START button")
+end
+
+check(F.run(15, function()
+	return MatchScreen.current() ~= nil
+end), "the match never started")
+local screen = MatchScreen.current()
+say("match started at %.1fs (seat %d, %s)", F.now, screen.mySeat, screen.mapDef.id)
+noProblems("starting the match")
+
+-- The player's hands: one decision every so often, like a person.
+local nextThink = F.now + 2
+local lastTurn = nil
+-- cfg.idle: touch nothing until the screen says a bot is playing for me, then come back
+local idle = cfg.idle == true
+local idleRound = nil
+local sawAway = false
+local function think()
+	if F.now < nextThink then
+		return
+	end
+	nextThink = F.now + 0.35 + rng:NextNumber() * 0.4
+	local s = MatchScreen.current()
+	if not s or not s.alive then
+		return
+	end
+	if s.awayBar then
+		if not sawAway then
+			say("away bar up at %.1fs", F.now)
+		end
+		sawAway = true
+		idle = false
+		press(s.awayBar, "BACK")
+		return
+	end
+	if idle then
+		if s.view.current == s.mySeat and s.view.round ~= idleRound then
+			idleRound = s.view.round
+			say("idle through my turn in round %d", s.view.round)
+		end
+		return
+	end
+
+	-- pop-ups first: the shop, a card to pick, a direction, a choice
+	local top = modals()
+	local panel = top[#top]
+	if not panel and #F.buttons(s.popups) > 0 then
+		panel = s.popups -- an overlay that isn't a dialog (Scavenge's pick)
+	end
+	if panel then
+		local buttons = F.buttons(panel)
+		local options = {}
+		for _, b in buttons do
+			local text = F.textOf(b):upper()
+			if text ~= "" and not text:find("CLOSE") and not text:find("LEAVE") and not text:find("MENU") then
+				table.insert(options, { b = b, text = text })
+			end
+		end
+		-- shop: buy one thing now and then, then finish
+		for _, o in options do
+			if o.text:find("DONE SHOPPING") then
+				local buys = {}
+				for _, x in options do
+					if x.text:match("^%d") then
+						table.insert(buys, x)
+					end
+				end
+				if #buys > 0 and rng:NextNumber() < 0.5 then
+					F.click(buys[rng:NextInteger(1, #buys)].b)
+					stats.buys += 1
+				else
+					F.click(o.b)
+				end
+				return
+			end
+		end
+		if #options > 0 then
+			local o = options[rng:NextInteger(1, #options)]
+			say("pop-up: %s", o.text)
+			F.click(o.b)
+			if o.text:find("TAKE") then
+				stats.picks += 1
+			end
+			return
+		end
+		-- nothing useful in it: close it
+		if panel ~= s.popups then
+			F.click(panel)
+		end
+		return
+	end
+
+	-- a card or ability waiting for a target
+	if s.targeting then
+		local h = s.board._highlight
+		if h and #h.tiles > 0 then
+			local tile = h.tiles[rng:NextInteger(1, #h.tiles)]
+			local hit = s.board.hits[tile]
+			F.click(hit)
+			stats.tiles += 1
+			if touch then
+				F.run(0.3)
+				-- the confirm button in the hint strip across the board
+				local hint = s.root:FindFirstChild("Hint")
+				say("tile %d tapped; hint %s", tile, if hint then F.whyHidden(hint) else "missing")
+				if hint and F.visible(hint) then
+					for _, b in F.buttons(hint) do
+						say("  hint button: %s", F.textOf(b))
+					end
+					for _, b in F.buttons(hint) do
+						local text = F.textOf(b):upper()
+						if not text:find("CANCEL") then
+							F.click(b)
+							break
+						end
+					end
+				end
+			end
+			return
+		end
+		if s.chips.pickable then
+			local seats = {}
+			for seat in s.chips.pickable do
+				table.insert(seats, seat)
+			end
+			if #seats > 0 then
+				F.click(s.chips.chips[seats[rng:NextInteger(1, #seats)]].root)
+				return
+			end
+		end
+		return
+	end
+
+	if not s:_myTurn() then
+		return
+	end
+	if lastTurn ~= s.view.round then
+		lastTurn = s.view.round
+		stats.turns += 1
+	end
+	local me = s.view.players[s.mySeat]
+	local roll = rng:NextNumber()
+
+	-- a card now and then (one a turn)
+	local ids = s.hand:ids()
+	if #ids > 0 and (s.view.cardsPlayed or 0) == 0 and roll < 0.45 then
+		local i = rng:NextInteger(1, #ids)
+		local def = Items.get(ids[i])
+		if def and def.use ~= "passive" then
+			say("card %s", ids[i])
+			stats.cards += 1
+			if touch then
+				local entry = s.hand.list[i]
+				local hit = nil
+				for _, d in entry.card.root:GetChildren() do
+					if d:IsA("TextButton") then
+						hit = d
+					end
+				end
+				if hit then
+					F.click(hit)
+					F.run(0.4)
+					-- the card's action buttons in its tip
+					for _, b in F.buttons(s.root) do
+						local text = F.textOf(b):upper()
+						if text:find("^PLAY") or text:find("^HIDE") or text:find("^PLACE") or text:find("^USE") or text:find("^THROW") then
+							F.click(b)
+							break
+						end
+					end
+				end
+			else
+				F.key(Enum.KeyCode.One.EnumType:FromName(({ "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine" })[i]))
+			end
+			return
+		end
+	end
+
+	-- the ability once the bar is full
+	local cost = me and me.powerCost or nil
+	if me and me.power and s.dock and s.dock.powerInfo and s.dock.powerInfo.usable and roll < 0.8 then
+		say("ability")
+		stats.abilities += 1
+		if touch then
+			local b = visibleNamed(s.root, "AbilityButton")
+			if b then
+				F.click(b)
+			end
+		else
+			F.key(Enum.KeyCode.Space)
+		end
+		return
+	end
+	local _ = cost
+
+	-- move: look at a die or two, then go
+	local dice = s.view.dice or {}
+	if #dice == 0 then
+		return
+	end
+	local keys = {}
+	for i in dice do
+		table.insert(keys, i)
+	end
+	local pickIndex = keys[rng:NextInteger(1, #keys)]
+	local w = s.dock.dieWidgets and s.dock.dieWidgets[pickIndex]
+	if touch then
+		if w then
+			F.click(w.button)
+			F.run(0.3)
+			F.click(w.button)
+			stats.moves += 1
+		end
+	else
+		for _, k in keys do
+			local dw = s.dock.dieWidgets and s.dock.dieWidgets[k]
+			if dw then
+				F.hover(dw.button, true)
+				F.run(0.1)
+				F.hover(dw.button, false)
+			end
+		end
+		local key = ({ Enum.KeyCode.Q, Enum.KeyCode.W, Enum.KeyCode.E })[pickIndex]
+		F.key(key)
+		stats.moves += 1
+	end
+end
+table.insert(F.onFrame, think)
+
+local finished = F.run(cfg.matchTime or 2400, function()
+	local s = MatchScreen.current()
+	return s ~= nil and s.view.phase == "over"
+end)
+if not finished then
+	local standing = {}
+	for seat, p in screen.view.players do
+		table.insert(standing, string.format("seat %d: tile %s, %s treasures", seat, tostring(p.tile), tostring(p.treasures)))
+	end
+	fail(string.format("the match didn't finish in time (round %s, phase %s)\n%s", tostring(screen.view.round), tostring(screen.view.phase), table.concat(standing, "\n")))
+end
+say("match over at %.1fs: %d moves, %d cards, %d abilities, %d tiles, %d buys, %d refused", F.now, stats.moves, stats.cards, stats.abilities, stats.tiles, stats.buys, stats.refused)
+noProblems("the match")
+
+-- the results, then back to the lobby
+check(F.run(12, function()
+	return #F.buttons(Root.gui, "^LOBBY") > 0
+end), "the results never showed a LOBBY button")
+F.run(3)
+press(Root.gui, "^LOBBY")
+check(F.run(20, function()
+	return Root.currentName() == "lobby"
+end), "never got back to the lobby")
+F.run(3)
+table.remove(F.onFrame, table.find(F.onFrame, think))
+noProblems("going back to the lobby")
+
+-- nothing from the match keeps running
+F.run(5)
+local after = F.load()
+local afterCount = F.count(Root.gui)
+say("after the match: %d frame connections, %d tweens, %d waiting threads, %d GUI objects", after.frameConns, after.tweens, after.waiting, afterCount)
+check(after.frameConns <= lobbyLoad.frameConns, string.format("frame connections grew from %d to %d after the match (something from the match still runs every frame)", lobbyLoad.frameConns, after.frameConns))
+check(after.looping <= lobbyLoad.looping, string.format("looping tweens grew from %d to %d after the match", lobbyLoad.looping, after.looping))
+check(afterCount <= lobbyCount * 1.25 + 50, string.format("the lobby has %d GUI objects after the match, %d before", afterCount, lobbyCount))
+
+-- the profile saw the match
+local profile = State.get("profile")
+check(profile ~= nil and profile.stats ~= nil and (profile.stats.games or 0) + (profile.stats.practice or 0) >= 1, "the profile doesn't count the match")
+local played = screen.view.players[screen.mySeat].character
+check((profile.mastery and profile.mastery[played] or 0) > 0, "no mastery for " .. tostring(played) .. " after playing them")
+
+if cfg.idle then
+	check(sawAway, "idle for the whole match and the screen never said a bot was playing for me")
+end
+
+-- the UI really played: every one of my turns was a command from the screen
+local moves = 0
+for _, c in commands do
+	if c.cmd.type == "move" and c.ok then
+		moves += 1
+	end
+end
+check(moves >= 3, "the screen sent only " .. moves .. " moves")
+-- and never offered something the server then refused
+for _, c in commands do
+	if not c.ok then
+		fail(string.format("the server refused a %s command the screen sent at %.1fs: %s", c.cmd.type, c.t, tostring(c.err)))
+	end
+end
+
+local summary = string.format(
+	"%s: %d turns, %d moves, %d cards, %d abilities, %d tile clicks, %d picks, %d buys, %d refused commands, %d pages, %d toasts, %.0fs of game time",
+	cfg.name or "smoke",
+	stats.turns,
+	moves,
+	stats.cards,
+	stats.abilities,
+	stats.tiles,
+	stats.picks,
+	stats.buys,
+	stats.refused,
+	stats.pages,
+	#toasts,
+	F.now
+)
+F.print(summary)
+for _, t in toasts do
+	if t.kind == "error" then
+		F.print("  error toast: " .. t.text)
+	end
+end

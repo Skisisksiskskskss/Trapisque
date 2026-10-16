@@ -84,8 +84,8 @@ end
 
 -- Match length presets. Quick fits a Roblox session; Classic is the long game.
 Modes.lengths = {
-	{ id = "quick", name = "Quick", target = 2, blurb = "2 treasures each. About 8 minutes." },
-	{ id = "standard", name = "Standard", target = 3, blurb = "3 treasures each. About 12 minutes." },
+	{ id = "quick", name = "Quick", target = 2, blurb = "2 treasures each. About 10 minutes." },
+	{ id = "standard", name = "Standard", target = 3, blurb = "3 treasures each. About 15 minutes." },
 	{ id = "classic", name = "Classic", blurb = "4 treasures each (3 in World War Four). The long game." },
 }
 Modes.lengthById = {}
