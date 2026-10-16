@@ -18,7 +18,7 @@ Passes.list = {
 		perks = {
 			"+25% Gems from every match",
 			"A free Explorer Chest every day",
-			"Exclusive Royal Crown pawn and VIP title",
+			"Exclusive Royal Crown accessory and VIP title",
 			"Gold name in parties and matches",
 		},
 	},

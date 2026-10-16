@@ -7,7 +7,7 @@
 	`look` tables below are drawing instructions, not image ids. Colors are hex strings
 	so this module stays plain data.
 
-	category  pawn | dice | trail | emote | title
+	category  accessory | dice | trail | emote | title
 	rarity    common | rare | epic | legendary | mythic
 	source    nil = in chests, "default" = everyone owns it, "vip" / "emotepack" = gamepass,
 	          "mastery" = earned by levelling up a character (Meta/Progress)
@@ -16,11 +16,11 @@
 local Cosmetics = {}
 
 Cosmetics.rarities = {
-	{ id = "common", name = "Common", color = "#B9C2CF", glow = "#E3E8EF", order = 1 },
-	{ id = "rare", name = "Rare", color = "#4FA3FF", glow = "#A9D3FF", order = 2 },
-	{ id = "epic", name = "Epic", color = "#B36BFF", glow = "#DDBBFF", order = 3 },
-	{ id = "legendary", name = "Legendary", color = "#FFB536", glow = "#FFE2A3", order = 4 },
-	{ id = "mythic", name = "Mythic", color = "#FF5FA2", glow = "#FFC2DC", order = 5, rainbow = true },
+	{ id = "common", name = "Common", color = "#B8BDC7", glow = "#E3E6EB", order = 1 },
+	{ id = "rare", name = "Rare", color = "#2E8FB3", glow = "#9FD4E6", order = 2 },
+	{ id = "epic", name = "Epic", color = "#D7263D", glow = "#F09AA4", order = 3 },
+	{ id = "legendary", name = "Legendary", color = "#F5B700", glow = "#FFE7A3", order = 4 },
+	{ id = "mythic", name = "Mythic", color = "#D94C9C", glow = "#F3A6CF", order = 5 },
 }
 Cosmetics.rarityById = {}
 for _, r in Cosmetics.rarities do
@@ -28,7 +28,7 @@ for _, r in Cosmetics.rarities do
 end
 
 Cosmetics.categories = {
-	{ id = "pawn", name = "Pawns", single = "Pawn" },
+	{ id = "accessory", name = "Accessories", single = "Accessory" },
 	{ id = "dice", name = "Dice", single = "Dice" },
 	{ id = "trail", name = "Trails", single = "Trail" },
 	{ id = "emote", name = "Emotes", single = "Emote" },
@@ -40,52 +40,47 @@ Cosmetics.EmoteSlots = 6
 
 local defs = {
 	-------------------------------------------------------------------------
-	-- Pawns: the token that walks the board for you
-	-- look: fill, fill2 (second colour), pattern, accent,
-	-- gradient (blend fill -> fill2; only where the blend is the point), spin (animated blend)
+	-- Accessories: packs your character wears on the board (two pieces each; the
+	-- epic and better ones move). look.pieces names client/UI/AccessoryArt pieces.
 	-------------------------------------------------------------------------
-	{ id = "pawn_classic", category = "pawn", name = "Classic", rarity = "common", source = "default",
-		look = { fill = "seat", pattern = "ring", accent = "#FFFFFF" } },
-	{ id = "pawn_pebble", category = "pawn", name = "Pebble", rarity = "common",
-		look = { fill = "#8E9AAF", fill2 = "#5C677D", pattern = "dots", accent = "#C5CCD8" } },
-	{ id = "pawn_mint", category = "pawn", name = "Mint Swirl", rarity = "common",
-		look = { fill = "#7FE0C4", fill2 = "#E9FFF8", pattern = "stripes", accent = "#FFFFFF" } },
-	{ id = "pawn_sunset", category = "pawn", name = "Sunset", rarity = "common",
-		look = { gradient = true, fill = "#FF9F59", fill2 = "#FF5E8A", pattern = "sunset", accent = "#FFE9C7" } },
-	{ id = "pawn_ocean", category = "pawn", name = "Ocean", rarity = "common",
-		look = { fill = "#2E86DE", fill2 = "#48DBFB", pattern = "wave", accent = "#D6F4FF" } },
-	{ id = "pawn_moss", category = "pawn", name = "Mossy", rarity = "common",
-		look = { fill = "#6A994E", fill2 = "#A7C957", pattern = "leaf", accent = "#F2E8CF" } },
-	{ id = "pawn_ruby", category = "pawn", name = "Ruby", rarity = "rare",
-		look = { fill = "#E63946", fill2 = "#8D0801", pattern = "gem", accent = "#FFB3BA" } },
-	{ id = "pawn_emerald", category = "pawn", name = "Emerald", rarity = "rare",
-		look = { fill = "#2DC653", fill2 = "#036666", pattern = "gem", accent = "#B7FFD0" } },
-	{ id = "pawn_checker", category = "pawn", name = "Checkmate", rarity = "rare",
-		look = { fill = "#F5F5F5", fill2 = "#F5F5F5", pattern = "checker", accent = "#1B1B1E" } },
-	{ id = "pawn_candy", category = "pawn", name = "Candy Cane", rarity = "rare",
-		look = { fill = "#FFFFFF", fill2 = "#FFE3E3", pattern = "stripes", accent = "#E5383B" } },
-	{ id = "pawn_bee", category = "pawn", name = "Bumblebee", rarity = "rare",
-		look = { fill = "#FFD60A", fill2 = "#FFC300", pattern = "bands", accent = "#1D1D1D" } },
-	{ id = "pawn_galaxy", category = "pawn", name = "Galaxy", rarity = "epic",
-		look = { gradient = true, fill = "#3A0CA3", fill2 = "#0B0033", pattern = "stars", accent = "#F1E9FF", spin = true } },
-	{ id = "pawn_lava", category = "pawn", name = "Lava Core", rarity = "epic",
-		look = { gradient = true, fill = "#FF4800", fill2 = "#6A040F", pattern = "flame", accent = "#FFD166", spin = true } },
-	{ id = "pawn_frost", category = "pawn", name = "Frostbite", rarity = "epic",
-		look = { fill = "#CAF0F8", fill2 = "#48CAE4", pattern = "snow", accent = "#FFFFFF" } },
-	{ id = "pawn_toxic", category = "pawn", name = "Toxic Slime", rarity = "epic",
-		look = { fill = "#9EF01A", fill2 = "#38B000", pattern = "drip", accent = "#E9FFC2" } },
-	{ id = "pawn_gold", category = "pawn", name = "Solid Gold", rarity = "legendary",
-		look = { fill = "#FFE066", fill2 = "#C9930C", pattern = "star", accent = "#FFF8D6" } },
-	{ id = "pawn_phoenix", category = "pawn", name = "Phoenix", rarity = "legendary",
-		look = { gradient = true, fill = "#FFBE0B", fill2 = "#FB5607", pattern = "wings", accent = "#FFF3B0", spin = true } },
-	{ id = "pawn_void", category = "pawn", name = "Void Eye", rarity = "legendary",
-		look = { fill = "#14001F", fill2 = "#3C096C", pattern = "eye", accent = "#E0AAFF" } },
-	{ id = "pawn_prism", category = "pawn", name = "Prismatic", rarity = "mythic",
-		look = { gradient = true, fill = "rainbow", pattern = "diamond", accent = "#FFFFFF", spin = true } },
-	{ id = "pawn_crest", category = "pawn", name = "Trapisque Crest", rarity = "mythic",
-		look = { fill = "#1B263B", fill2 = "#0D1321", pattern = "chest", accent = "#FFC300" } },
-	{ id = "pawn_crown", category = "pawn", name = "Royal Crown", rarity = "legendary", source = "vip",
-		look = { fill = "#7B2CBF", fill2 = "#3C096C", pattern = "crown", accent = "#FFD60A" } },
+	{ id = "acc_none", category = "accessory", name = "Nothing", rarity = "common", source = "default",
+		look = { pieces = {} } },
+	{ id = "acc_gentleman", category = "accessory", name = "Gentleman", rarity = "common",
+		look = { pieces = { "monocle", "moustache" } } },
+	{ id = "acc_deckhand", category = "accessory", name = "Deckhand", rarity = "common",
+		look = { pieces = { "bandana", "neckerchief" } } },
+	{ id = "acc_beach", category = "accessory", name = "Beach Day", rarity = "common",
+		look = { pieces = { "shades", "lei" } } },
+	{ id = "acc_cook", category = "accessory", name = "Ship's Cook", rarity = "common",
+		look = { pieces = { "chefhat", "moustache" } } },
+	{ id = "acc_captain", category = "accessory", name = "Captain", rarity = "rare",
+		look = { pieces = { "tricorn", "hook" } } },
+	{ id = "acc_parrot", category = "accessory", name = "Parrot Pal", rarity = "rare",
+		look = { pieces = { "parrot", "eyepatch" } } },
+	{ id = "acc_diver", category = "accessory", name = "Deep Diver", rarity = "rare",
+		look = { pieces = { "mask", "lifebuoy" } } },
+	{ id = "acc_lookout", category = "accessory", name = "Lookout", rarity = "rare",
+		look = { pieces = { "sailorcap", "spyglass" } } },
+	{ id = "acc_propeller", category = "accessory", name = "Propeller Cap", rarity = "epic",
+		look = { pieces = { "propeller", "bowtie" }, animated = true } },
+	{ id = "acc_gloomy", category = "accessory", name = "Gloomy Day", rarity = "epic",
+		look = { pieces = { "raincloud", "umbrella" }, animated = true } },
+	{ id = "acc_oldsalt", category = "accessory", name = "Old Salt", rarity = "epic",
+		look = { pieces = { "beard", "pipe" }, animated = true } },
+	{ id = "acc_nightwatch", category = "accessory", name = "Night Watch", rarity = "epic",
+		look = { pieces = { "nightcap", "lantern" }, animated = true } },
+	{ id = "acc_kraken", category = "accessory", name = "Kraken Hat", rarity = "legendary",
+		look = { pieces = { "kraken", "pearls" }, animated = true } },
+	{ id = "acc_ghost", category = "accessory", name = "Ghost Crew", rarity = "legendary",
+		look = { pieces = { "ghost", "eyepatch" }, animated = true } },
+	{ id = "acc_kingpin", category = "accessory", name = "Pirate King", rarity = "legendary",
+		look = { pieces = { "crownGlint", "goldchain" }, animated = true } },
+	{ id = "acc_cannon", category = "accessory", name = "Cannon Cap", rarity = "mythic",
+		look = { pieces = { "cannon", "goldchain" }, animated = true } },
+	{ id = "acc_gulls", category = "accessory", name = "Gull Squad", rarity = "mythic",
+		look = { pieces = { "gulls", "admiral" }, animated = true } },
+	{ id = "acc_royal", category = "accessory", name = "Royal Crown", rarity = "legendary", source = "vip",
+		look = { pieces = { "crown", "cape" } } },
 
 	-------------------------------------------------------------------------
 	-- Dice: how your die looks when you roll
@@ -115,7 +110,7 @@ local defs = {
 		look = { gradient = true, face = "#240046", face2 = "#7B2CBF", pip = "#FFFFFF", edge = "#E0AAFF", spin = true } },
 
 	-------------------------------------------------------------------------
-	-- Trails: little particles that follow your pawn as it hops
+	-- Trails: little particles that follow your character as it hops
 	-- look: kind, color, color2
 	-------------------------------------------------------------------------
 	{ id = "trail_none", category = "trail", name = "No Trail", rarity = "common", source = "default",
@@ -226,7 +221,7 @@ for i, def in defs do
 end
 
 Cosmetics.defaults = {
-	pawn = "pawn_classic",
+	accessory = "acc_none",
 	dice = "dice_ivory",
 	trail = "trail_none",
 	title = "title_none",
@@ -236,6 +231,30 @@ Cosmetics.defaults = {
 function Cosmetics.get(id: string)
 	return Cosmetics.byId[id]
 end
+
+-- The pawn skins that accessories replaced, by rarity: saves that own them get the
+-- duplicate refund in Gems instead (DataService).
+Cosmetics.retired = {
+	pawn_pebble = "common",
+	pawn_mint = "common",
+	pawn_sunset = "common",
+	pawn_ocean = "common",
+	pawn_moss = "common",
+	pawn_ruby = "rare",
+	pawn_emerald = "rare",
+	pawn_checker = "rare",
+	pawn_candy = "rare",
+	pawn_bee = "rare",
+	pawn_galaxy = "epic",
+	pawn_lava = "epic",
+	pawn_frost = "epic",
+	pawn_toxic = "epic",
+	pawn_gold = "legendary",
+	pawn_phoenix = "legendary",
+	pawn_void = "legendary",
+	pawn_prism = "mythic",
+	pawn_crest = "mythic",
+}
 
 -- Items that can drop from chests, grouped by rarity.
 function Cosmetics.chestPool()

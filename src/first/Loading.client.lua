@@ -1,9 +1,9 @@
 --[[
 	Loading
-	A Trapisque splash (the night-purple table, the title in candy lettering and two
-	dice tumbling) shown while the game streams in, instead of Roblox's default loading
-	screen. Plain frames only: it runs from ReplicatedFirst before any of the game's
-	modules exist, so its few colours are copied from Theme.
+	A Trapisque splash (the open sea with its wave marks, the title in gold comic
+	lettering and two dice tumbling) shown while the game streams in, instead of
+	Roblox's default loading screen. Plain frames only: it runs from ReplicatedFirst
+	before any of the game's modules exist, so its few colours are copied from Theme.
 ]]
 
 local Players = game:GetService("Players")
@@ -12,12 +12,12 @@ local TweenService = game:GetService("TweenService")
 
 local player = Players.LocalPlayer
 
-local TABLE = Color3.fromHex("1F1438") -- Theme bg
-local DOTS = Color3.fromHex("2B1D4D") -- Theme panel
-local LINE = Color3.fromHex("1B1030") -- the sticker outline
-local CREAM = Color3.fromHex("FFF4E2")
-local SUN = Color3.fromHex("FFD23F")
-local LAVENDER = Color3.fromHex("CBBDF0")
+local TABLE = Color3.fromHex("17435F") -- Theme bg: the sea
+local DOTS = Color3.fromHex("1F6A8A") -- Theme skyDark: the wave marks
+local LINE = Color3.fromHex("1C1A24") -- the ink line
+local CREAM = Color3.fromHex("FFF8E7")
+local SUN = Color3.fromHex("F5B700")
+local LAVENDER = Color3.fromHex("BFD8E4") -- Theme textLightSoft
 
 local gui = Instance.new("ScreenGui")
 gui.Name = "TrapisqueLoading"
@@ -34,17 +34,37 @@ bg.BackgroundColor3 = TABLE
 bg.BorderSizePixel = 0
 bg.Size = UDim2.fromScale(1, 1)
 bg.Parent = gui
--- a scatter of soft dots on the table
-for i = 0, 23 do
-	local dot = Instance.new("Frame")
-	dot.BackgroundColor3 = DOTS
-	dot.BorderSizePixel = 0
-	dot.AnchorPoint = Vector2.new(0.5, 0.5)
-	dot.Position = UDim2.fromScale(((i * 37) % 100) / 100, ((i * 61 + 13) % 100) / 100)
-	dot.Size = UDim2.fromScale(0.05 + (i % 3) * 0.02, 0.05 + (i % 3) * 0.02)
-	dot.SizeConstraint = Enum.SizeConstraint.RelativeYY
-	dot.Parent = bg
-	Instance.new("UICorner", dot).CornerRadius = UDim.new(0.5, 0)
+-- printed wave marks on the sea: two shallow arcs each
+for i = 0, 17 do
+	local mark = Instance.new("Frame")
+	mark.BackgroundTransparency = 1
+	mark.AnchorPoint = Vector2.new(0.5, 0.5)
+	mark.Position = UDim2.fromScale(((i * 37) % 100) / 100, ((i * 61 + 13) % 100) / 100)
+	mark.Size = UDim2.fromScale(0.07, 0.07)
+	mark.SizeConstraint = Enum.SizeConstraint.RelativeYY
+	mark.Parent = bg
+	for side = 0, 1 do
+		local arc = Instance.new("Frame")
+		arc.BackgroundTransparency = 1
+		arc.AnchorPoint = Vector2.new(0.5, 0.5)
+		arc.Position = UDim2.fromScale(0.25 + side * 0.5, 0.75)
+		arc.Size = UDim2.fromScale(0.5, 0.5)
+		arc.Parent = mark
+		Instance.new("UICorner", arc).CornerRadius = UDim.new(0.5, 0)
+		local st = Instance.new("UIStroke")
+		st.Color = DOTS
+		st.Thickness = 3
+		st.Parent = arc
+		local cut = Instance.new("UIGradient")
+		cut.Rotation = 90
+		cut.Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0),
+			NumberSequenceKeypoint.new(0.419, 0),
+			NumberSequenceKeypoint.new(0.42, 1),
+			NumberSequenceKeypoint.new(1, 1),
+		})
+		cut.Parent = st
+	end
 end
 
 local title = Instance.new("TextLabel")
@@ -52,7 +72,7 @@ title.BackgroundTransparency = 1
 title.AnchorPoint = Vector2.new(0.5, 0.5)
 title.Position = UDim2.fromScale(0.5, 0.34)
 title.Size = UDim2.fromScale(0.6, 0.15)
-title.Font = Enum.Font.LuckiestGuy
+title.Font = Enum.Font.Bangers
 title.Text = "TRAPISQUE"
 title.TextScaled = true
 title.TextColor3 = SUN
@@ -128,7 +148,7 @@ status.BackgroundTransparency = 1
 status.AnchorPoint = Vector2.new(0.5, 0)
 status.Position = UDim2.fromScale(0.5, 0.68)
 status.Size = UDim2.fromScale(0.5, 0.04)
-status.Font = Enum.Font.Nunito
+status.Font = Enum.Font.Oswald
 status.Text = "Setting up the board..."
 status.TextScaled = true
 status.TextColor3 = LAVENDER

@@ -1,10 +1,12 @@
 --[[
 	CosmeticArt
-	Draws pawns, dice, trail particles, titles and emote bubbles from the cosmetic
-	definitions in Shared/Meta/Cosmetics. All shapes, no images.
+	Draws characters in their accessory packs, dice, trail particles, titles and emote
+	bubbles from the cosmetic definitions in Shared/Meta/Cosmetics. All shapes, no
+	images.
 ]]
 
 local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Cosmetics = require(ReplicatedStorage.Shared.Meta.Cosmetics)
@@ -13,7 +15,9 @@ local Theme = require(script.Parent.Theme)
 local Shapes = require(script.Parent.Shapes)
 local Icons = require(script.Parent.Icons)
 local IconData = require(script.Parent.IconData)
-local PawnPatterns = require(script.Parent.PawnPatterns)
+local PawnPatterns = require(script.Parent.PawnPatterns) -- (the dice pips live here)
+local StickerArt = require(script.Parent.StickerArt)
+local AccessoryArt = require(script.Parent.AccessoryArt)
 
 local CosmeticArt = {}
 
@@ -59,60 +63,127 @@ end
 -- Pawn
 ---------------------------------------------------------------------------
 
---[[
-	A pawn token: a coloured chip with a painted design, ringed in the player's seat
-	colour so everyone can tell pawns apart whatever skin they wear.
-	props go on the root frame (Size, Position...). Returns root.
-]]
-function CosmeticArt.pawn(parent: Instance?, skinId: string?, seatColor: Color3, props: { [string]: any }?): Frame
-	local def = Cosmetics.get(skinId or "") or Cosmetics.get(Cosmetics.defaults.pawn)
-	local look = def.look
-	local fill = if look.fill == "seat" then seatColor elseif look.fill == "rainbow" then Color3.fromHex("FFFFFF") else hex(look.fill, seatColor)
-	local fill2 = if look.fill == "seat" then Util.shade(seatColor, -0.22) else hex(look.fill2, Util.shade(fill, -0.2))
-	local accent = hex(look.accent, Theme.C.white)
-
-	local root = Util.frame(nil, {
-		Name = "Pawn",
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		SizeConstraint = Enum.SizeConstraint.RelativeYY,
-	})
-	if props then
-		for k, v in props do
-			(root :: any)[k] = v
-		end
+-- The pieces an accessory pack is made of (empty for none).
+function CosmeticArt.accessoryPieces(accessoryId: string?): { string }
+	local def = Cosmetics.get(accessoryId or "")
+	if def and def.category == "accessory" and def.look and def.look.pieces then
+		return def.look.pieces
 	end
-
-	-- chip edge: the same size as the face plus its rim, peeking out below it
-	-- (the rim is a UIStroke, which sits outside the face: 0.78 + 2 x 0.09 x 0.78 = 0.92)
-	Shapes.circle(root, 0.5, 0.54, 0.92, Util.shade(seatColor, -0.45), { name = "Side" })
-
-	local face = Shapes.circle(root, 0.5, 0.47, 0.78, fill, { name = "Face" })
-	if look.gradient then
-		-- only skins whose whole idea is a colour blend get one
-		local g = Util.grad(face, if look.fill == "rainbow" then RAINBOW else Util.seq({ fill, fill2 }), 60)
-		if look.spin then
-			CosmeticArt.spin(g, if look.fill == "rainbow" then 90 else 45)
-		end
-	end
-	Util.scaledStroke(face, seatColor, 0.09, 3)
-
-	local pattern = PawnPatterns[look.pattern or "ring"]
-	if pattern then
-		local canvas = Shapes.canvas(face, { Name = "Pattern", ZIndex = 2 })
-		Icons.draw(canvas, pattern, { ink = accent, acc = accent, acc2 = fill2, bg = fill, hi = fill })
-	end
-
-	root.Parent = parent
-	return root
+	return {}
 end
 
--- Small character badge that sits on a pawn's corner.
--- The accessory a character wears on the board and in portraits (nil: none).
-function CosmeticArt.accessory(parent: Instance, accessoryId: string?, props: { [string]: any }?): Frame?
-	if not accessoryId then
-		return nil
+-- One animated part of a piece: its ops on a frame pinned at the pivot, then the
+-- loop that moves it. The tweens are returned so they stop with the character.
+local function animate(holder: Frame, spec, z: number, tweens: { Tween })
+	local px, py = spec.pivot[1], spec.pivot[2]
+	local wrap = Util.frame(holder, {
+		Name = "Anim_" .. spec.kind,
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(px, py),
+		Size = UDim2.fromScale(1, 1),
+		ZIndex = z,
+	})
+	local sprite = wrap
+	if spec.kind == "orbit" then
+		-- circles the pivot at `amount`, turning back the other way to stay upright
+		sprite = Util.frame(wrap, {
+			Name = "Upright",
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.5 + spec.amount, 0.5),
+			Size = UDim2.fromScale(1, 1),
+		})
 	end
-	return nil
+	local inner = Util.frame(sprite, { Name = "Art", Position = UDim2.fromScale(0.5 - px, 0.5 - py), Size = UDim2.fromScale(1, 1) })
+	Icons.sticker(inner, spec.ops, nil, 0.04)
+	local time = spec.time or 1
+	local delay = spec.delay or 0
+	local function loop(target: Instance, goal: { [string]: any }, reverses: boolean, style: Enum.EasingStyle?)
+		local tw = TweenService:Create(target, TweenInfo.new(time, style or Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, reverses, delay), goal)
+		tw:Play()
+		table.insert(tweens, tw)
+	end
+	local kind = spec.kind
+	if kind == "spin" then
+		loop(wrap, { Rotation = 360 }, false, Enum.EasingStyle.Linear)
+	elseif kind == "orbit" then
+		local start = if delay > 0 then 180 else 0
+		wrap.Rotation = start
+		sprite.Rotation = -start
+		delay = 0
+		loop(wrap, { Rotation = start + 360 }, false, Enum.EasingStyle.Linear)
+		loop(sprite, { Rotation = -start - 360 }, false, Enum.EasingStyle.Linear)
+	elseif kind == "wiggle" then
+		local amount = spec.amount or 12
+		wrap.Rotation = -amount / 2
+		loop(wrap, { Rotation = amount / 2 }, true)
+	elseif kind == "bob" then
+		loop(wrap, { Position = UDim2.fromScale(px, py - (spec.amount or 0.05)) }, true)
+	elseif kind == "rise" or kind == "fall" then
+		local dy = if kind == "rise" then -(spec.amount or 0.2) else (spec.amount or 0.1)
+		local scale = Util.new("UIScale", { Parent = wrap })
+		loop(wrap, { Position = UDim2.fromScale(px, py + dy) }, false, Enum.EasingStyle.Linear)
+		loop(scale, { Scale = if kind == "rise" then 0.1 else 0.5 }, false, Enum.EasingStyle.Quad)
+	elseif kind == "flicker" or kind == "glint" then
+		local scale = Util.new("UIScale", { Parent = wrap })
+		scale.Scale = if kind == "glint" then 0.2 else 1
+		loop(scale, { Scale = if kind == "glint" then 1.15 else 0.7 }, true)
+	end
+end
+
+--[[
+	A character in its accessory pack: anything worn behind it, the character itself
+	(pulling `mood`'s face; a hat takes the place of its own headgear), then everything
+	worn in front. Animated pieces loop until the character is destroyed.
+		CosmeticArt.character(parent, characterId, accessoryId?, props?, mood?) -> Frame
+	props go on the (square) holder.
+]]
+function CosmeticArt.character(parent: Instance?, character: string, accessoryId: string?, props: { [string]: any }?, mood: string?): Frame
+	local holder = Util.frame(nil, { Name = "Character", SizeConstraint = Enum.SizeConstraint.RelativeYY })
+	if props then
+		for k, v in props do
+			(holder :: any)[k] = v
+		end
+	end
+	local names = CosmeticArt.accessoryPieces(accessoryId)
+	local one = character == "overseer" -- one big eye
+	local tweens: { Tween } = {}
+	local z = 0
+	local function draw(piece)
+		local ops = piece.ops or (if one then piece.one else piece.two)
+		if ops then
+			z += 1
+			local layer = Util.frame(holder, { Name = "Piece", Size = UDim2.fromScale(1, 1), ZIndex = z })
+			Icons.sticker(layer, ops, nil, 0.04)
+		end
+		for _, spec in piece.anim or {} do
+			z += 1
+			animate(holder, spec, z, tweens)
+		end
+	end
+	for _, name in names do
+		local piece = AccessoryArt.pieces[name]
+		if piece and piece.back then
+			draw(piece)
+		end
+	end
+	z += 1
+	local body = Util.frame(holder, { Name = "Body", Size = UDim2.fromScale(1, 1), ZIndex = z })
+	Icons.sticker(body, StickerArt.mascot(character, mood, { hat = AccessoryArt.wearsHat(names) }), nil, 0.05)
+	for _, name in names do
+		local piece = AccessoryArt.pieces[name]
+		if piece and not piece.back then
+			draw(piece)
+		end
+	end
+	if #tweens > 0 then
+		holder.Destroying:Connect(function()
+			for _, tw in tweens do
+				tw:Cancel()
+			end
+		end)
+	end
+	holder.Parent = parent
+	return holder
 end
 
 function CosmeticArt.characterBadge(parent: Instance, character: string, props: { [string]: any }?): Frame
@@ -361,17 +432,24 @@ function CosmeticArt.emoteBubble(parent: Instance, emoteId: string, props: { [st
 	return bubble
 end
 
+-- Who models accessories in previews (the Locker sets it to the character you play).
+CosmeticArt.previewCharacter = "mage"
+
 -- A preview tile for any cosmetic (locker grid, chest reveals, shop).
-function CosmeticArt.preview(parent: Instance, itemId: string, seatColor: Color3?, props: { [string]: any }?): Frame
+function CosmeticArt.preview(parent: Instance, itemId: string, _seatColor: Color3?, props: { [string]: any }?): Frame
 	local def = Cosmetics.get(itemId)
 	local holder = Util.frame(parent, props)
 	holder.Name = "Preview"
 	if not def then
 		return holder
 	end
-	local seat = seatColor or Theme.Seat[2]
-	if def.category == "pawn" then
-		CosmeticArt.pawn(holder, itemId, seat, { Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromScale(0.8, 0.8) })
+	if def.category == "accessory" then
+		-- worn by the character you play
+		CosmeticArt.character(holder, CosmeticArt.previewCharacter, itemId, {
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.5, 0.52),
+			Size = UDim2.fromScale(0.86, 0.86),
+		})
 	elseif def.category == "dice" then
 		CosmeticArt.die(holder, itemId, 5, { Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromScale(0.7, 0.7) })
 	elseif def.category == "trail" then

@@ -1132,6 +1132,15 @@ function MatchScreen:_play(e)
 	local v = self.view
 
 	if t == "setup" then
+		-- one of each character per match: say so if someone else got yours first
+		for _, sp in e.players or {} do
+			if sp.seat == self.mySeat and sp.wanted and sp.wanted ~= sp.character then
+				local wanted, got = Characters.get(sp.wanted), Characters.get(sp.character or "")
+				if wanted and got then
+					Widgets.toast(string.format("Someone else picked the %s first, so you're the %s this match!", wanted.name, got.name), "info")
+				end
+			end
+		end
 		return
 	elseif t == "deal" then
 		local items = e.items or {}

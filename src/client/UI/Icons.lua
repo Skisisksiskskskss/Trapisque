@@ -1,6 +1,6 @@
 --[[
 	Icons
-	Draws IconData / DecorData / StickerArt instruction lists with Shapes.
+	Draws IconData / StickerArt / MapProps / AccessoryArt instruction lists with Shapes.
 
 	Icons.draw(parent, ops, colors, outline?)   -- into an existing square canvas
 	Icons.make(parent, id, colors, props, outline?) -- new square canvas with that icon
@@ -13,7 +13,7 @@
 	outline: the sticker look. Every piece is first drawn grown by `outline` (a fraction
 	of the canvas) in the line colour, then the pieces themselves go on top, so the whole
 	drawing gets one clean dark outline. Pieces with ol = false (details inside a shape)
-	and faces are left out of that pass. tools/preview/render.py mirrors this exactly.
+	and faces are left out of that pass.
 ]]
 
 local Shapes = require(script.Parent.Shapes)

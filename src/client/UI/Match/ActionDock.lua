@@ -47,13 +47,13 @@ local C = Theme.C
 local ActionDock = {}
 ActionDock.__index = ActionDock
 
--- Ability button colour per character (Widgets button styles)
+-- Ability button colour per character: its own colour (Widgets button styles)
 local ABILITY_STYLE = {
 	mage = "blue",
 	trapper = "orange",
 	fire_starter = "red",
 	naturalist = "green",
-	warper = "purple",
+	warper = "pink",
 	overseer = "brass",
 }
 

@@ -187,7 +187,7 @@ function Effects.hide(view, seat: number)
 	Sound.play("whoosh", 1.25)
 	for i = 1, 3 do
 		task.delay(i * 0.06, function()
-			burst(view, at, hex("9C8FC4"), 7, 0.9 + i * 0.2, 0.26, 0.5)
+			burst(view, at, hex("B8BDC7"), 7, 0.9 + i * 0.2, 0.26, 0.5)
 		end)
 	end
 	shoutAt(view, at, "SHH...", C.textSoft, 24)
@@ -237,7 +237,7 @@ function Effects.trap(view, item: string, tile: number)
 			end)
 		end
 	elseif item == "spore_warper" then
-		burst(view, at, hex("C9B0FF"), 12, 1.3, 0.2, 0.7)
+		burst(view, at, hex("8FB3E8"), 12, 1.3, 0.2, 0.7)
 	elseif item == "trampoline" then
 		ring(view, at, C.pink, 0.5, 2.2, 0.5, 6)
 	end

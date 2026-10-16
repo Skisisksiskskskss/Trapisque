@@ -103,9 +103,13 @@ function Widgets.label(parent: Instance?, o: { [string]: any }): TextLabel
 	-- an ink outline is for light lettering on paint; dark ink on cream card needs none
 	-- (it would only thicken the letters into blobs)
 	local color = label.TextColor3
+	-- light lettering (white, gold, sky...) always gets the ink outline, comic style, so
+	-- it reads on cream card and on the sea alike (o.outline = false opts out)
 	local light = 0.299 * color.R + 0.587 * color.G + 0.114 * color.B > 0.45
-	if o.outline and (light or o.forceOutline) then
-		Util.new("UIStroke", { Color = o.outline, Thickness = o.outlineThickness or 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual, Parent = label })
+	local size = o.size or 18
+	if o.outline ~= false and ((o.outline and (light or o.forceOutline)) or (light and size >= 13)) then
+		local th = o.outlineThickness or (if size >= 22 then 2 else 1.5)
+		Util.new("UIStroke", { Color = if o.outline then o.outline else C.line, Thickness = th, ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual, Parent = label })
 	end
 	label.Parent = parent
 	return label
@@ -426,8 +430,8 @@ end
 		style = "walnut" | "wood" | "dark" | "board", title, size, position, anchor,
 		padding = 18, name, z
 	}) -> content frame, root frame
-	"walnut" (the default, the name is historical) is a night-purple panel with the
-	sticker outline and a hard shadow. "bright" is a candy panel (o.color).
+	"walnut" (the default, the name is historical) is a cream card panel with the ink
+	outline and a hard shadow. "bright" is a panel in a flat ink (o.color).
 ]]
 function Widgets.panel(parent: Instance?, o: { [string]: any }): (Frame, Frame)
 	local style = o.style or "walnut"

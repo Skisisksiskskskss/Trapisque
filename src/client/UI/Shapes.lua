@@ -329,7 +329,7 @@ function Shapes.text(parent: Instance, cx: number, cy: number, w: number, h: num
 		-- outlined lettering: the stroke is a fraction of the canvas, so it scales with it
 		local stroke = Instance.new("UIStroke")
 		stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
-		stroke.Color = o.strokeColor or Color3.fromHex("1B1030")
+		stroke.Color = o.strokeColor or Color3.fromHex("1C1A24")
 		stroke.LineJoinMode = Enum.LineJoinMode.Round
 		stroke.Parent = t
 		local canvas = parent :: GuiObject

@@ -4,21 +4,26 @@ Trapisque is a race to the treasure across a trap-filled board, for 2 to 6 playe
 started as a board game, and this repository is its Roblox version: a purely top-down
 2D game that uses the Roblox engine but doesn't look like a Roblox game. There is no 3D
 world. Apart from players' own Roblox avatar headshots, everything you see is drawn
-from plain UI frames, with no uploaded images, in one "candy-night sticker" style:
-bright flat colours with a thick dark outline on a night-purple table, and characters,
-traps and tokens with faces.
+from plain UI frames, with no uploaded images, in one pirate look: printed simply like
+an old board-game box (flat colour, a short list of inks, cream card on the open sea)
+and inked like a comic (one heavy ink line around everything, hard shadows, punchy
+lettering). Only the characters have faces.
 
 | Match (PC) | Lobby (PC) | Match (upright phone) |
 | --- | --- | --- |
-| ![Match on a PC](docs/previews/07-match-pc.png) | ![Lobby on a PC](docs/previews/08-lobby-pc.png) | ![Match on an upright phone](docs/previews/07-match-phone-portrait.png) |
+| ![Match on a PC](docs/previews/pc-match.png) | ![Lobby on a PC](docs/previews/pc-lobby.png) | ![Match on an upright phone](docs/previews/upright-match.png) |
 
-More in [docs/previews](docs/previews): boards, cards, stickers, character select, quests, results.
+More in [docs/previews](docs/previews): the three maps, the character picker, the
+locker, results, and phones held both ways. They're real screenshots of the game,
+rendered offline (see [Screenshots](#screenshots)).
 
 ## What's in the game
 
 - **Turns you play, not watch.** Your two dice are rolled for you and you pick which
   one to move with; the other one charges your Power bar. Hover a die and the board
-  shows exactly where it takes you and what happens there. Doubles can move the total.
+  shows exactly where it takes you and what happens there. Roll doubles and the second
+  die takes you backwards instead (or move the total). Whoever is clearly last (laps
+  count) rolls an extra gold die that only moves.
 - **Hidden traps.** Trap cards hide near you where only your team can see them. Guess
   where rivals will land; when one steps on yours: GOTCHA! (coins and Power for you).
 - **Bonks.** Land on a rival and they fly back 2 tiles. BOING.
@@ -29,8 +34,10 @@ More in [docs/previews](docs/previews): boards, cards, stickers, character selec
 - **Cards you plan around.** One card per turn: traps, boosts that change which tiles
   you can reach, board pieces (teleporters, trampolines, conveyor belts) and potions
   from the Potion Seller.
-- **Three maps** (Blissful Tricks, Junction Dungeon, Slimy Snares), each with its own
-  hazard, and **five modes**: Chaos (free-for-all), Assist (2 vs 2), Factions (three
+- **Three maps**, each a place the trail winds through: Blissful Tricks (a tropical
+  island cut by two rivers), Junction Dungeon (a rocky sea fortress with locked gates
+  and secret tunnels for its shortcuts) and Slimy Snares (a swamp boardwalk spiralling
+  in to the treasure, past slime pools). Each has its own hazard. **Five modes**: Chaos (free-for-all), Assist (2 vs 2), Factions (three
   teams of 2), World War Four (3 vs 3) and a **Weekly Event** with a twist on the
   rules (Trap Frenzy, Bonk Bonanza, Power Surge, Triple Dice). See
   [docs/RULES.md](docs/RULES.md) for the rules as played.
@@ -54,8 +61,15 @@ More in [docs/previews](docs/previews): boards, cards, stickers, character selec
 - **Cards you can feel.** Hover a card to lift it out of your hand with its rules
   beside it. Click it to play it, or drag it onto the board: a trap rides on the
   pointer over the tiles you may hide it on, and is slapped down with a thud.
-- **Treasure Chests.** A cosmetic-only collection: pawn skins, dice, trails, emotes and
-  titles. You open chests with Gems, which you earn by playing.
+- **Your character is your colour.** Each of the six characters has one colour, and
+  it's its player's colour everywhere (on the board, the player list, the feed). One of
+  each character per match: if two players want the same one, a random one of them
+  gets it and the other gets a free pick.
+- **Treasure Chests.** A cosmetic-only collection: accessory packs your character
+  wears on the board (a monocle and moustache, a captain's hat and hook, a parrot on
+  your shoulder; the epic ones move, like a spinning propeller cap or a little cloud
+  raining on you), dice, trails, emotes and titles. You open chests with Gems, which
+  you earn by playing.
 - **Gamepasses** that never touch gameplay (see below).
 - **Any screen.** The layout follows the device: the board fills the screen on a PC,
   phones held sideways keep the cards under your left thumb and the dice under your
@@ -88,8 +102,8 @@ src/client/          StarterPlayerScripts.Client: all screens and the art librar
   UI/                Icons, Cards, Shapes, Widgets... plus Lobby/ and Match/ screens
 src/first/           ReplicatedFirst loading screen
 tests/               rules, simulation, meta and board-layout tests (plain Luau)
-tools/               test bundler, type-check script and the preview renderer
-docs/                rules, design notes (balance tables) and preview images
+tools/               test bundler, type-check, smoke test and screenshot scripts
+docs/                rules, design notes (balance tables) and screenshots
 trapisquebooklet.html  the original rulebook
 ```
 
@@ -135,7 +149,7 @@ Create these on the Creator Dashboard (**Monetization → Passes**) and put thei
 
 | Key | Name | What it gives |
 | --- | --- | --- |
-| `VIP` | VIP | +25% Gems from every match, a free Explorer Chest every day, the Royal Crown pawn and VIP title, and a gold name in parties and matches. |
+| `VIP` | VIP | +25% Gems from every match, a free Explorer Chest every day, the Royal Crown accessory and VIP title, and a gold name in parties and matches. |
 | `DoubleGems` | 2x Gems | Double Gems from every match (stacks with VIP). |
 | `LuckyCharm` | Lucky Charm | Legendary and Mythic chest odds ×1.5, and the chest screens show your boosted odds. Hidden for players whose region doesn't allow paid random items. |
 | `EmotePack` | Emote Pack | 6 extra emotes, and up to 6 emotes equipped in matches. |
@@ -200,14 +214,20 @@ without `DEFS` the script looks in `.luau/globalTypes.d.luau`). It checks every 
 in strict mode and reports only real mistakes, like unknown properties or wrong
 argument counts.
 
-### Previews
+### Screenshots
 
-`tools/preview/` re-draws the game's art from the same data the Lua uses (icons,
-boards, cards, collectibles and full screens) as PNGs, so the look can be reviewed
-without opening Studio. It needs Python 3 with Pillow and the Luckiest Guy and Nunito
-fonts from Google Fonts in `tools/preview/fonts` (or a folder named by
-`TRAPISQUE_FONTS`). `python3 tools/preview/all.py` runs every `tests/dump_*.luau`
-and every renderer and writes `docs/previews`.
+`tools/shots.sh` takes real screenshots of the game without Studio: it plays the smoke
+test (below) on the fake Roblox and draws what's on screen at a few moments (the
+lobby and its pages, the character picker, a match, the results) on a PC and on
+phones held both ways; `tools/shots.sh boards` draws just the three maps. The fake
+measures text with the game's real fonts (`tests/fake/fonts.luau`, from
+`tools/gen_font_metrics.py`), so layouts wrap and truncate as they do in Roblox. It
+needs Python 3 with Pillow and the Bangers and Oswald fonts from Google Fonts in
+`tools/preview/fonts` (or a folder named by `TRAPISQUE_FONTS`):
+
+```sh
+LUAU=/path/to/luau OUT=docs/previews tools/shots.sh pc phone upright boards
+```
 
 ### Smoke test
 
@@ -224,17 +244,20 @@ LUAU=/path/to/luau tools/smoke.sh
 
 ### Art rules
 
-Everything is built from Frames with `UICorner` and `UIStroke`. Card art, mascots,
-tokens, hazards and board decorations are data (`StickerArt`, `IconData`, `DecorData`,
-`PawnPatterns`) drawn by `Icons` and `Shapes`. The style has a few strict rules so
-every screen comes out of the same kit:
+Everything is built from Frames with `UICorner` and `UIStroke`. Card art, characters,
+accessories, tokens, hazards, map props and the maps themselves are data
+(`StickerArt`, `AccessoryArt`, `MapProps`, `MapScenes`, `IconData`) drawn by `Icons`,
+`Shapes` and `MapArt`. The style has a few strict rules so every screen comes out of
+the same kit:
 
-- one outline colour (`Theme.C.line`) around everything, drawn as a real outline pass
-- flat candy colours from `Theme` only; hard offset shadows, never blurred ones
-- faces on things (traps, tokens, hazards, the six character mascots), with moods
-- two fonts: Luckiest Guy for anything loud, Nunito for reading
+- one ink line (`Theme.C.line`) around everything, drawn as a real outline pass, and
+  light lettering always outlined in it
+- a short list of flat pirate inks from `Theme` (no purple, no gradients, no glow);
+  hard ink shadows down and to the right, never blurred ones
+- only the six characters have faces; everything else is a plain object
+- a character's colour is its player's colour, everywhere
+- two fonts: Bangers for anything loud, Oswald for reading
 - the same sticker drawing wherever a thing appears (card, board, effects, menus)
-- gradients only on the few cosmetics that are meant to have them
 
 The fonts are built into Roblox, and the sounds and music are free Roblox audio
 library assets (listed in `src/client/Sound.lua`), so the game needs no uploads.

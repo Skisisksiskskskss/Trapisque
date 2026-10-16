@@ -46,7 +46,7 @@ local function row(list: Frame, i: number, r, mine: boolean, isTeam: boolean, na
 		text = PLACE[i] or tostring(i),
 		font = "chunky",
 		size = 22,
-		color = if r.won then C.brass else C.textSoft,
+		color = if r.won then C.sun else C.textSoft,
 		align = "center",
 		sizeUDim = UDim2.fromOffset(52, 52),
 	})
@@ -55,7 +55,7 @@ local function row(list: Frame, i: number, r, mine: boolean, isTeam: boolean, na
 		AnchorPoint = Vector2.new(0, 0.5),
 		Position = UDim2.new(0, 52, 0.5, 0),
 		Size = UDim2.fromOffset(42, 42),
-	}, { ring = seatColor, ringPx = 3 })
+	}, { back = seatColor, ring = C.line, ringPx = 3 })
 	local charDef = Characters.get(r.character or "")
 	local who = r.name .. (if mine then "  (you)" else "")
 	-- room on the right for the treasure count (and the WINNER badge when there's space)

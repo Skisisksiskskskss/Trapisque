@@ -535,7 +535,7 @@ StickerArt.moods = MOODS
 -- each character's own default face.
 local GEAR = {
 	mage = {
-		front = {
+		headFront = {
 			{ "taper", { { 0.5, 0.31 }, { 0.53, 0.17 }, { 0.65, 0.04 } }, 0.38, 0.05, c = "#2B4C7E" },
 			{ "pill", 0.5, 0.32, 0.72, 0.11, c = "#2B4C7E" },
 			{ "rect", 0.5, 0.27, 0.36, 0.05, r = 0.3, c = P.sun, ol = false },
@@ -560,7 +560,7 @@ local GEAR = {
 		mood = "smug",
 	},
 	fire_starter = {
-		back = {
+		headBack = {
 			{ "drop", 0.33, 0.35, 0.12, dir = -30, c = P.orange },
 			{ "drop", 0.67, 0.35, 0.12, dir = 30, c = P.orange },
 			{ "drop", 0.5, 0.31, 0.17, dir = 0, c = P.orange },
@@ -569,7 +569,7 @@ local GEAR = {
 		mood = "cheeky",
 	},
 	naturalist = {
-		back = {
+		headBack = {
 			{ "line", 0.5, 0.33, 0.5, 0.18, 0.045, c = P.leaf },
 			{ "drop", 0.4, 0.17, 0.08, dir = -65, c = P.leaf },
 			{ "drop", 0.6, 0.15, 0.08, dir = 65, c = P.leaf },
@@ -598,7 +598,7 @@ local GEAR = {
 		mood = "smug",
 	},
 	overseer = {
-		back = {
+		headBack = {
 			{ "rect", 0.5, 0.31, 0.38, 0.1, r = 0.2, c = P.coral },
 			{ "tri", 0.37, 0.27, 0.13, dir = 0, c = P.coral },
 			{ "tri", 0.5, 0.25, 0.15, dir = 0, c = P.coral },
@@ -631,14 +631,20 @@ faceless(StickerArt.misc)
 
 --[[
 	The mascot for a character. mood: idle | happy | shock | sad | dizzy | smug | angry
-	(nil = the character's usual face).
+	(nil = the character's usual face). opts.hat: it wears a hat, so its own headgear
+	(the Mage's hat, the Overseer's crown...) comes off.
 ]]
-function StickerArt.mascot(characterId: string, moodName: string?)
+function StickerArt.mascot(characterId: string, moodName: string?, opts: { [string]: any }?)
 	local colors = BODY[characterId] or { P.steel, P.steelDark }
 	local gear = GEAR[characterId] or {}
 	local mood = MOODS[moodName or gear.mood or "idle"] or MOODS.idle
 	local body, dark = colors[1], colors[2]
+	-- under a hat (an accessory), the character's own headgear comes off
+	local hat = opts ~= nil and opts.hat == true
 	local ops = {}
+	for _, op in (if hat then {} else gear.headBack) or {} do
+		table.insert(ops, op)
+	end
 	for _, op in gear.back or {} do
 		table.insert(ops, op)
 	end
@@ -650,6 +656,9 @@ function StickerArt.mascot(characterId: string, moodName: string?)
 	table.insert(ops, { "rect", 0.5, 0.62, 0.62, 0.62, r = 0.46, c = body })
 	table.insert(ops, shine(0.3, 0.47, 0.17, 25))
 	for _, op in gear.front or {} do
+		table.insert(ops, op)
+	end
+	for _, op in (if hat then {} else gear.headFront) or {} do
 		table.insert(ops, op)
 	end
 	if gear.cyclops then

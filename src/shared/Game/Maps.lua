@@ -1,6 +1,8 @@
 --[[
 	Maps
-	The three Trapisque boards, written as walks on a hex grid (see Board.lua).
+	The three Trapisque boards, written as walks on a hex grid (see Board.lua): that
+	gives the board graph the rules use. How each map looks (the winding route through
+	an island, a fortress, a swamp) is the client's MapScenes.
 
 	route     main path from Start; the last tile is the Treasure
 	branches  gated shortcuts: leave the main route at `from`, rejoin at `to`.
@@ -16,7 +18,7 @@ local defs = {
 		id = "blissful",
 		name = "Blissful Tricks",
 		theme = "water",
-		blurb = "A floating path across a sparkling lake. Rivers stop you in your tracks unless you carry a Bridge.",
+		blurb = "A sunny island cut by two rivers. Rivers stop you in your tracks unless you carry a Bridge.",
 		start = { 0, 0 },
 		route = "E3 NE E2 SE E2 NE2 NW W3 NW W3 SW W2 NW2 NE E4 NE E2 SE E2",
 		natural = { [12] = "river", [26] = "river" },
@@ -28,7 +30,7 @@ local defs = {
 		id = "junction",
 		name = "Junction Dungeon",
 		theme = "dungeon",
-		blurb = "Torch-lit corridors full of junctions. Locked gates stop you; a Key opens them and the gated shortcuts.",
+		blurb = "A rocky sea fortress full of locked gates and secret tunnels. Gates stop you; a Key opens them and the tunnels.",
 		start = { 0, 0 },
 		route = "E10 NE NW NE NW W10 NW NE E10 NE NW W8",
 		branches = {
@@ -44,7 +46,7 @@ local defs = {
 		id = "slimy",
 		name = "Slimy Snares",
 		theme = "swamp",
-		blurb = "A bubbling swamp that spirals in to the treasure. Slime pools eat 5 of your steps (you're stuck in one if that's all you had) unless you wear Boots.",
+		blurb = "A swamp boardwalk that spirals in to the treasure. Slime pools eat 5 of your steps (you're stuck in one if that's all you had) unless you wear Boots.",
 		start = { 0, 0 },
 		route = "E10 NE NW NE NW NE NW W10 SW SE SW SE E7 NE NW W4",
 		natural = { [8] = "slime", [19] = "slime", [34] = "slime" },

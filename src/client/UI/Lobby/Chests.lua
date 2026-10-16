@@ -321,7 +321,7 @@ function Chests.open(layer: Instance): () -> ()
 			text = "",
 			font = "heavy",
 			size = 14,
-			color = hex("B9A4E6"),
+			color = C.textSoft,
 			align = "center",
 			sizeUDim = UDim2.new(1, -30, 0, 18),
 			position = UDim2.fromOffset(15, 246),

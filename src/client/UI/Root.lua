@@ -3,8 +3,8 @@
 	The single ScreenGui everything lives in. It hides Roblox's own UI, sizes a virtual
 	stage for the screen it's on (Layout.metrics: PC, landscape phone or upright phone),
 	measures the safe area and Roblox's top bar so nothing sits under them, draws the
-	night-purple table behind everything and switches between screens with animated
-	transitions.
+	open sea (with printed wave marks) behind everything and switches between screens
+	with animated transitions.
 
 	Layers (bottom to top): Background, Screens, Overlay, Popups, Toasts
 
@@ -320,7 +320,7 @@ function Root.curtain(message: string?)
 		text = message,
 		font = "display",
 		size = 34,
-		color = C.text,
+		color = C.textLight,
 		align = "center",
 		sizeUDim = UDim2.new(1, 0, 0, 50),
 		anchor = Vector2.new(0.5, 0),

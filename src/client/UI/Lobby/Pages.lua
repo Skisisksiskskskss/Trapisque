@@ -229,7 +229,7 @@ local RULES = {
 	{
 		icon = "token_trap",
 		title = "Tokens",
-		text = "Land on a token to spin its wheel. Red Trap tokens give traps, green Assist tokens give helpful cards and purple Board Piece tokens give teleporters, trampolines and other pieces. A wheel can also land on a coin. The orange Potion Seller sells potions for coins. Once used, a token jumps to a new spot. You hold up to 5 cards.",
+		text = "Land on a token to spin its wheel. Red Trap tokens give traps, green Assist tokens give helpful cards and navy Board Piece tokens give teleporters, trampolines and other pieces. A wheel can also land on a coin. The orange Potion Seller sells potions for coins. Once used, a token jumps to a new spot. You hold up to 5 cards.",
 	},
 	{
 		icon = "river_trap",
@@ -239,7 +239,7 @@ local RULES = {
 	{
 		icon = "map",
 		title = "Reading the board",
-		text = "Each player is their character standing on their pawn. Tokens are the coloured discs. A board piece shows its picture on a disc in its owner's colour. Your team's hidden traps show see-through, rimmed in the owner's colour: rivals can't see them. Frozen players are in a block of ice, burning ones are on fire and snared ones are snoozing.",
+		text = "Each player is their character, standing on its tile in its own colour (that colour is the player's everywhere). Tokens are the coloured discs. A board piece shows its picture on a disc in its owner's colour. Your team's hidden traps show see-through, rimmed in the owner's colour: rivals can't see them. Frozen players are in a block of ice, burning ones are on fire and snared ones are snoozing.",
 	},
 	{
 		icon = "info",

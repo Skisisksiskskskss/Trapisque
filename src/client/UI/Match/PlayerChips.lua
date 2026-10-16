@@ -42,11 +42,11 @@ local TEXT_FAINT = C.textSoft
 
 -- statuses; the number beside each is how many turns it has left
 local STATUS = {
-	{ key = "frozen", icon = "snowflake", color = hex("45C3FF"), count = true },
-	{ key = "burning", icon = "flame", color = hex("FF9A3C"), count = true },
-	{ key = "skip", icon = "zzz", color = hex("6B3FD6"), count = true },
-	{ key = "anchor", icon = "time_potion", color = hex("9A6BFF"), count = false },
-	{ key = "underdog", icon = "dice", color = hex("FF6B5B"), count = false }, -- last: an extra die
+	{ key = "frozen", icon = "snowflake", color = hex("8FD3EE"), count = true },
+	{ key = "burning", icon = "flame", color = hex("F08A24"), count = true },
+	{ key = "skip", icon = "zzz", color = hex("2B4C7E"), count = true },
+	{ key = "anchor", icon = "time_potion", color = hex("2A9D8F"), count = false },
+	{ key = "underdog", icon = "dice", color = hex("F5B700"), count = false }, -- last: an extra (gold) die
 }
 
 local function seatColor(seat: number): Color3

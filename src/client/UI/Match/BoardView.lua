@@ -1032,16 +1032,13 @@ function BoardView:_drawMascot(pawn, mood: string?)
 	if pawn.mascot then
 		pawn.mascot:Destroy()
 	end
-	local holder = Util.frame(pawn.lift, {
+	pawn.mascot = CosmeticArt.character(pawn.lift, pawn.info.character or "mage", pawn.info.look and pawn.info.look.accessory, {
 		Name = "Mascot",
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.42),
-		Size = UDim2.fromScale(1, 1),
+		Size = UDim2.fromScale(0.96, 0.96),
 		ZIndex = 3,
-	})
-	Icons.sticker(holder, StickerArt.mascot(pawn.info.character or "mage", mood), { Size = UDim2.fromScale(0.96, 0.96) }, 0.05)
-	CosmeticArt.accessory(holder, pawn.info.look and pawn.info.look.accessory, { ZIndex = 4 })
-	pawn.mascot = holder
+	}, mood)
 end
 
 --[[

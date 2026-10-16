@@ -1,6 +1,6 @@
 --[[
 	Locker
-	Your collection: pawns, dice, trails, titles and emotes. Click something you own to
+	Your collection: accessories, dice, trails, titles and emotes. Click something you own to
 	equip it (emotes: pick up to six). Things you haven't found yet show as mystery tiles.
 
 		Locker.open(popupLayer, startCategory?)
@@ -51,7 +51,7 @@ function Locker.open(layer: Instance, startCategory: string?): () -> ()
 			maid:clean()
 		end,
 	})
-	local category = startCategory or "pawn"
+	local category = startCategory or "accessory"
 
 	local tabs = {}
 	for _, c in Cosmetics.categories do
@@ -78,6 +78,8 @@ end
 
 function Locker._fill(_maid, content: Frame, category: string)
 	local profile = State.get("profile")
+	-- accessories are modelled by the character you play
+	CosmeticArt.previewCharacter = if profile and profile.character then profile.character else "mage"
 	if not profile then
 		return
 	end
