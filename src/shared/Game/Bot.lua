@@ -239,35 +239,28 @@ local function moveValue(game, p, m: number, backwards: boolean, gain: number, v
 	return v, plan.tile
 end
 
--- Every way `p` could move with these dice: { die, m, back, gain }.
-local function moveOptions(dice, boost: string?)
+-- Every way `p` could move with these dice: { die, m, back, gain }. `gold` is the
+-- underdog's extra die (it charges no Power).
+local function moveOptions(dice, boost: string?, gold: number?)
 	local out = {}
-	local function add(die, m, gain)
-		local steps, back = Engine.boosted(m, boost)
-		table.insert(out, { die = die, m = steps, back = back, gain = gain })
+	local keys = {}
+	for i in dice do
+		table.insert(keys, i)
 	end
-	if #dice == 1 then
-		add(1, dice[1], 0)
-	else
-		for i, d in dice do
-			local other = 0
-			for j, e in dice do
-				if j ~= i and e > other then
-					other = e
-				end
-			end
-			add(i, d, other)
-		end
-		if #dice == 2 and dice[1] == dice[2] then
-			add("sum", dice[1] + dice[2], 0)
-		end
+	if Engine.dieOption(dice, "sum", gold) then
+		table.insert(keys, "sum")
+	end
+	for _, key in keys do
+		local m, gain, backDie = Engine.dieOption(dice, key, gold)
+		local steps, back = Engine.boosted(m :: number, boost)
+		table.insert(out, { die = key, m = steps, back = back or backDie == true, gain = gain })
 	end
 	return out
 end
 
-local function bestMove(game, p, dice, boost: string?, viewer: any?)
+local function bestMove(game, p, dice, boost: string?, viewer: any?, gold: number?)
 	local best, bestV, bestTile = nil, -math.huge, nil
-	for _, opt in moveOptions(dice, boost) do
+	for _, opt in moveOptions(dice, boost, gold) do
 		local v, tile = moveValue(game, p, opt.m, opt.back, opt.gain, viewer)
 		if v > bestV then
 			best, bestV, bestTile = opt, v, tile
@@ -469,7 +462,8 @@ end
 
 local function bestCardPlay(game, p)
 	local dice = game.turn.dice
-	local _, baseV = bestMove(game, p, dice, nil)
+	local gold = game.turn.gold
+	local _, baseV = bestMove(game, p, dice, nil, nil, gold)
 	local handFull = #p.hand >= Rules.HandLimit - 1
 	local best, bestV = nil, 0
 	local function consider(cmd, v)
@@ -484,7 +478,7 @@ local function bestCardPlay(game, p)
 			local def = Items.get(item)
 			local use = def and def.use
 			if use == "boost" then
-				local _, v = bestMove(game, p, dice, item)
+				local _, v = bestMove(game, p, dice, item, nil, gold)
 				consider({ type = "play", item = item }, v - baseV - 1.2)
 			elseif use == "reroll" then
 				local v = expectedRollValue(game, p, #dice == 1)
@@ -759,8 +753,9 @@ function Bot.decide(game, seat: number)
 		end
 	end
 
-	-- then move: pick the better die (or the total on doubles), or recall
-	local best, bestV = bestMove(game, p, turn.dice, turn.boost)
+	-- then move: pick the better die (forwards, backwards with the second of a pair, or the
+	-- total of doubles), or recall
+	local best, bestV = bestMove(game, p, turn.dice, turn.boost, nil, turn.gold)
 	if p.anchor then
 		local here = distOf(game, p, p.tile)
 		local there = distOf(game, p, p.anchor.tile)

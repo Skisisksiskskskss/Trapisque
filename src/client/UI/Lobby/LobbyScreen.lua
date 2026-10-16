@@ -135,7 +135,7 @@ local function profileChip(parent: Instance, maid, r): Frame
 		text = "LV 1",
 		font = "chunky",
 		size = 14,
-		color = C.infoSoft,
+		color = C.skyDark,
 		sizeUDim = UDim2.fromOffset(40, 16),
 		position = UDim2.fromOffset(x, h / 2 + 13),
 	})
@@ -236,7 +236,7 @@ local function compactChip(parent: Instance, maid, r): Frame
 		text = "LV 1",
 		font = "chunky",
 		size = 14,
-		color = C.infoSoft,
+		color = C.skyDark,
 		align = "right",
 		anchor = Vector2.new(1, 0.5),
 		sizeUDim = UDim2.fromOffset(52, 20),
@@ -331,12 +331,12 @@ local function buildNav(parent: Instance, maid, spec, popups: Instance, withLead
 				text = item.short,
 				font = "heavy",
 				size = 11,
-				color = C.text,
+				color = C.textLight,
 				align = "center",
 				sizeUDim = UDim2.new(1, 0, 0, 14),
 				anchor = Vector2.new(0, 1),
 				position = UDim2.fromScale(0, 1),
-				outline = C.bg,
+				outline = C.line,
 			})
 			if item.id == "chests" then
 				chest = { button = b, icon = true }
@@ -404,7 +404,7 @@ local function build(frame: Frame, maid, L, popups: Instance)
 			size = math.floor(math.min(60, r.h * 0.86)),
 			color = C.sun,
 			align = if L.form == "tall" then "center" else "left",
-			outline = C.bg,
+			outline = C.line,
 			outlineThickness = if r.h >= 60 then 3 else 2,
 		})
 		place(title, r)

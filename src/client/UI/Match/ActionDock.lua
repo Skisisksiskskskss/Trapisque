@@ -3,9 +3,10 @@
 	Your two action areas.
 
 	The dice tray. Every turn starts with your dice already rolled: two of them (three in
-	the Triple Dice event, one while you're Frozen). You pick the one to move with and
-	the best of the others charges your Power; doubles can also move the TOTAL (no
-	Power). Hovering a die (or tapping it once on a touch screen) shows on the board
+	the Triple Dice event or as the underdog, one while you're Frozen). You pick the one
+	to move with and the best of the others charges your Power. On doubles the second
+	die of the pair is marked BACK: it moves you backwards; or move the TOTAL of the pair
+	(no Power). Hovering a die (or tapping it once on a touch screen) shows on the board
 	where it takes you; clicking it (or tapping it again) moves. On other players' turns
 	the tray shows their dice, so you can see what they chose. RECALL joins the tray when
 	you've dropped a time anchor.
@@ -15,7 +16,7 @@
 
 		local dock = ActionDock.new(parent, { character = "mage", touch = bool })
 		dock:layout(L.ability, L.roll, form)
-		dock:setDice({ dice, mine, owner, frozen, chosen, enabled, power = { [key] = n }, hint })
+		dock:setDice({ dice, mine, owner, frozen, chosen, enabled, power = { [key] = n }, back = { [key] = true }, hint })
 		dock:rollDice(dice, frozen, speed)               -- tumbles them in (yields)
 		dock:choose(key)                                 -- the chosen die pops
 		dock:setPower(power, cap, { usable, used, mine })
@@ -568,20 +569,53 @@ function ActionDock:_buildDice(n: number)
 		tag.Visible = false
 		local keyHint = nil
 		if not self.touch and self.form == "wide" then
-			keyHint = Widgets.label(lift, {
-				name = "Key",
+			-- its keyboard key, on a little key cap
+			keyHint = Util.new("Frame", {
+				Name = "Key",
+				BackgroundColor3 = C.panelRaised,
+				BorderSizePixel = 0,
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				Position = UDim2.fromOffset(2, 2),
+				Size = UDim2.fromOffset(18, 18),
+				ZIndex = 9,
+				Parent = lift,
+			})
+			Util.corner(keyHint, 4)
+			Util.stroke(keyHint, C.line, 2)
+			Widgets.label(keyHint, {
 				text = DIE_KEYS[i] or "",
 				font = "chunky",
-				size = 11,
-				color = C.textFaint,
+				size = 13,
+				color = C.text,
 				align = "center",
-				sizeUDim = UDim2.fromOffset(16, 14),
-				anchor = Vector2.new(0, 0),
-				position = UDim2.fromOffset(-2, -6),
-				z = 9,
+				sizeUDim = UDim2.fromScale(1, 1),
+				z = 10,
 			})
 		end
-		local w = { button = btn, lift = lift, ring = ring, die = die, dim = dim, setValue = setValue, tag = tag, key = keyHint, index = i, size = size }
+		-- the second die of doubles goes the other way: a BACK flag on its top edge
+		local back = Widgets.badge(lift, {
+			name = "BackTag",
+			text = "BACK",
+			color = C.coral,
+			height = math.max(16, math.floor(size * 0.26)),
+			textSize = math.max(11, math.floor(size * 0.19)),
+			anchor = Vector2.new(0.5, 0.5),
+			position = UDim2.new(0.5, 0, 0, 2),
+			z = 9,
+		})
+		back.Visible = false
+		local gold = Widgets.badge(lift, {
+			name = "GoldTag",
+			text = "GOLD",
+			color = C.sun,
+			height = math.max(16, math.floor(size * 0.26)),
+			textSize = math.max(11, math.floor(size * 0.19)),
+			anchor = Vector2.new(0.5, 0.5),
+			position = UDim2.new(0.5, 0, 0, 2),
+			z = 9,
+		})
+		gold.Visible = false
+		local w = { button = btn, lift = lift, ring = ring, die = die, dim = dim, setValue = setValue, tag = tag, back = back, gold = gold, key = keyHint, index = i, size = size }
 		self.dieWidgets[i] = w
 		btn.MouseEnter:Connect(function()
 			self:_hover(i)
@@ -643,7 +677,7 @@ function ActionDock:clearSelection()
 	self:_updateFoot()
 end
 
--- Lifts the die (or TOTAL) under the pointer / picked on touch.
+-- Lifts the die (or both, for the TOTAL) under the pointer / picked on touch.
 function ActionDock:_showSelected(key: any)
 	for i, w in self.dieWidgets do
 		local on = key == i or (key == "sum" and self.diceInfo.sum)
@@ -661,6 +695,8 @@ end
 		chosen = key?,           -- picked already (the move is happening)
 		enabled = boolean,       -- I may pick now
 		power = { [key] = n },   -- Power each choice would charge
+		back = { [key] = true }, -- dice that move you backwards (the second of a pair)
+		gold = key?,             -- the underdog's extra die (moves you, charges no Power)
 		hint = string?,          -- the footer's line when there's nothing else to show
 	}
 ]]
@@ -679,6 +715,9 @@ function ActionDock:setDice(info)
 		w.setValue(dice[i] or 1)
 		local chosen = info.chosen
 		local picked = chosen == i or (chosen == "sum")
+		w.back.Visible = info.back ~= nil and info.back[i] == true and (chosen == nil or chosen == i)
+		-- the underdog's gold die: moves you, never charges Power
+		w.gold.Visible = info.gold == i and not w.back.Visible
 		local faded = chosen ~= nil and not picked
 		w.die.Rotation = 0
 		w.dim.Visible = faded
@@ -707,7 +746,7 @@ function ActionDock:setDice(info)
 		else
 			self.caption.Text = string.upper((info.owner or "") .. "'S DICE")
 		end
-		self.caption.TextColor3 = if info.mine then C.sun else C.textSoft
+		self.caption.TextColor3 = if info.mine then C.coral else C.textSoft
 	end
 	if info.chosen == nil and not self:_canPick() then
 		self.selected = nil
@@ -741,7 +780,7 @@ function ActionDock:_updateFoot()
 			if self.touch then
 				text = if self.selected ~= nil then "Tap it again to go!" else "Tap a die to see where it goes"
 			else
-				text = "Hover to see where it goes, click to go"
+				text = "Hover a die to preview, click to go"
 			end
 		end
 		self.footLabel.Text = text

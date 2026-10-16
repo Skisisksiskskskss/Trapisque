@@ -1,9 +1,8 @@
 --[[
 	StickerArt
-	Trapisque's illustrations, in one style: chunky shapes, a thick dark outline around
-	every piece (drawn automatically, see Icons.draw), flat candy colours with one shine,
-	and faces. Traps, cards, potions and the characters all have eyes, so the whole cast
-	feels like it belongs together.
+	Trapisque's illustrations, in one style: chunky shapes, a thick ink outline around
+	every piece (drawn automatically, see Icons.draw), flat pirate inks with one shine.
+	Only the characters have faces; cards, tokens and hazards are plain objects.
 
 	Pure data (no Roblox APIs), so the offline preview renders exactly the same art.
 
@@ -20,45 +19,45 @@
 
 local StickerArt = {}
 
--- The palette every illustration draws from (Theme mirrors the UI colours).
+-- The palette every illustration draws from: the pirate inks (Theme mirrors them).
 local P = {
-	line = "#1B1030",
+	line = "#1C1A24",
 	white = "#FFFFFF",
-	cream = "#FFF4E2",
-	coral = "#FF4F5E",
-	coralDark = "#C9303F",
-	orange = "#FF9A3C",
-	orangeDark = "#D9661A",
-	sun = "#FFD23F",
-	sunDark = "#E0A81C",
-	lime = "#8BE04E",
-	limeDark = "#4FAE2A",
-	leaf = "#3FA34D",
-	sky = "#45C3FF",
-	skyDark = "#1E8FD6",
-	ice = "#9FE6FF",
-	iceLight = "#D9F6FF",
-	grape = "#9A6BFF",
-	grapeDark = "#6B3FD6",
-	pink = "#FF6FB8",
-	pinkDark = "#D9408C",
-	steel = "#C9D3E6",
-	steelDark = "#8792AD",
-	wood = "#C98A4B",
-	woodDark = "#8E5726",
-	mud = "#A8743F",
+	cream = "#FFF8E7",
+	coral = "#D7263D", -- pirate red
+	coralDark = "#9E1B2C",
+	orange = "#F08A24",
+	orangeDark = "#B8601A",
+	sun = "#F5B700", -- gold
+	sunDark = "#C98F00",
+	lime = "#5DB54A",
+	limeDark = "#357A30",
+	leaf = "#3E8E41",
+	sky = "#1E7FD6",
+	skyDark = "#145A9C",
+	ice = "#8FD3EE",
+	iceLight = "#D6F1FA",
+	grape = "#2B4C7E", -- navy (no purple anywhere)
+	grapeDark = "#1C3459",
+	pink = "#D94C9C",
+	pinkDark = "#A1336F",
+	steel = "#B8BDC7",
+	steelDark = "#7D8592",
+	wood = "#B87333",
+	woodDark = "#7A4A1F",
+	mud = "#9C6B3A",
 	mudDark = "#6E4520",
-	slime = "#A6E83A",
-	slimeDark = "#6DB21F",
-	water = "#3FA7F5",
-	waterDark = "#1F6FC4",
-	glass = "#E3F7FF",
-	brick = "#F07A55",
+	slime = "#9BCF2E",
+	slimeDark = "#6DA020",
+	water = "#2E8FB3",
+	waterDark = "#1F6A8A",
+	glass = "#E3F4F7",
+	brick = "#E07A4F",
 	mortar = "#8E3A2A",
-	grog = "#6CC24A",
-	grogDark = "#3F8F2A",
-	moon = "#FFE58A",
-	moonDark = "#E8C45A",
+	grog = "#5DB54A",
+	grogDark = "#357A30",
+	moon = "#FFE7A3",
+	moonDark = "#E0C070",
 }
 StickerArt.palette = P
 
@@ -511,12 +510,12 @@ StickerArt.misc = {
 
 -- Body colour, darker shade (feet, details) for each character.
 local BODY = {
-	mage = { P.sky, P.skyDark },
-	trapper = { "#E8893A", "#A95A1E" },
-	fire_starter = { P.coral, P.coralDark },
-	naturalist = { P.lime, P.limeDark },
-	warper = { P.grape, P.grapeDark },
-	overseer = { P.sun, P.sunDark },
+	mage = { "#1E7FD6", "#145A9C" }, -- blue
+	trapper = { "#F08A24", "#B8601A" }, -- orange
+	fire_starter = { "#D7263D", "#9E1B2C" }, -- red
+	naturalist = { "#43A047", "#2E7D32" }, -- green
+	warper = { "#D94C9C", "#A1336F" }, -- pink
+	overseer = { "#F5B700", "#C98F00" }, -- gold
 }
 StickerArt.bodyColor = BODY
 
@@ -537,8 +536,8 @@ StickerArt.moods = MOODS
 local GEAR = {
 	mage = {
 		front = {
-			{ "taper", { { 0.5, 0.31 }, { 0.53, 0.17 }, { 0.65, 0.04 } }, 0.38, 0.05, c = "#7B4CE6" },
-			{ "pill", 0.5, 0.32, 0.72, 0.11, c = "#7B4CE6" },
+			{ "taper", { { 0.5, 0.31 }, { 0.53, 0.17 }, { 0.65, 0.04 } }, 0.38, 0.05, c = "#2B4C7E" },
+			{ "pill", 0.5, 0.32, 0.72, 0.11, c = "#2B4C7E" },
 			{ "rect", 0.5, 0.27, 0.36, 0.05, r = 0.3, c = P.sun, ol = false },
 			{ "star", 0.47, 0.17, 0.12, c = P.sun },
 		},
@@ -587,10 +586,10 @@ local GEAR = {
 	},
 	warper = {
 		back = {
-			{ "tri", 0.32, 0.36, 0.22, dir = -18, c = P.grape },
-			{ "tri", 0.68, 0.36, 0.22, dir = 18, c = P.grape },
-			{ "tri", 0.33, 0.37, 0.1, dir = -18, c = P.pink, ol = false },
-			{ "tri", 0.67, 0.37, 0.1, dir = 18, c = P.pink, ol = false },
+			{ "tri", 0.32, 0.36, 0.22, dir = -18, c = "#D94C9C" },
+			{ "tri", 0.68, 0.36, 0.22, dir = 18, c = "#D94C9C" },
+			{ "tri", 0.33, 0.37, 0.1, dir = -18, c = "#F3A6CF", ol = false },
+			{ "tri", 0.67, 0.37, 0.1, dir = 18, c = "#F3A6CF", ol = false },
 		},
 		front = {
 			{ "ring", 0.5, 0.82, 0.16, 0.04, c = P.sky, ol = false },
@@ -600,16 +599,35 @@ local GEAR = {
 	},
 	overseer = {
 		back = {
-			{ "rect", 0.5, 0.31, 0.38, 0.1, r = 0.2, c = P.orange },
-			{ "tri", 0.37, 0.27, 0.13, dir = 0, c = P.orange },
-			{ "tri", 0.5, 0.25, 0.15, dir = 0, c = P.orange },
-			{ "tri", 0.63, 0.27, 0.13, dir = 0, c = P.orange },
-			{ "circle", 0.5, 0.31, 0.05, c = P.pink, ol = false },
+			{ "rect", 0.5, 0.31, 0.38, 0.1, r = 0.2, c = P.coral },
+			{ "tri", 0.37, 0.27, 0.13, dir = 0, c = P.coral },
+			{ "tri", 0.5, 0.25, 0.15, dir = 0, c = P.coral },
+			{ "tri", 0.63, 0.27, 0.13, dir = 0, c = P.coral },
+			{ "circle", 0.5, 0.31, 0.05, c = P.sun, ol = false },
 		},
 		cyclops = true,
 		mood = "idle",
 	},
 }
+
+-- Objects have no faces in the pirate look (only the characters do): the eyes, mouths
+-- and cheeks come off every card, token, hazard and odd bit.
+local FACE = { eyes = true, eye = true, mouth = true, blush = true }
+local function faceless(list)
+	for key, ops in list do
+		local kept = {}
+		for _, op in ops do
+			if not FACE[op[1]] then
+				table.insert(kept, op)
+			end
+		end
+		list[key] = kept
+	end
+end
+faceless(StickerArt.cards)
+faceless(StickerArt.tokens)
+faceless(StickerArt.hazards)
+faceless(StickerArt.misc)
 
 --[[
 	The mascot for a character. mood: idle | happy | shock | sad | dizzy | smug | angry

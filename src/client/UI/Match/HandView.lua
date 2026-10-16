@@ -71,11 +71,11 @@ function HandView.new(parent: Instance, opts)
 		text = "No cards yet. Land on tokens to win some!",
 		font = "heavy",
 		size = 15,
-		color = C.text,
+		color = C.textLight,
 		align = "center",
 		wrap = true,
 		sizeUDim = UDim2.fromScale(1, 1),
-		outline = C.bg,
+		outline = C.line,
 	})
 	self.hovered = nil
 	self.press = nil

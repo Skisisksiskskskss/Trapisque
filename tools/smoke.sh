@@ -31,7 +31,7 @@ for name in "${ORDER[@]}"; do
 	spec=${SCENARIOS[$name]:?unknown scenario $name}
 	echo "SMOKE = { $spec }" > "build/smoke/$name.luau"
 	python3 tools/bundle.py --all "build/smoke/$name.run.luau" "build/smoke/$name.luau" \
-		tests/fake/classes.luau tests/fake/roblox.luau tests/smoke/smoke.luau
+		tests/fake/classes.luau tests/fake/fonts.luau tests/fake/roblox.luau tests/smoke/smoke.luau
 	if "$LUAU" "build/smoke/$name.run.luau" > "build/smoke/$name.out" 2>&1; then
 		grep -E "^$name:" "build/smoke/$name.out" || true
 		grep -E "^  " "build/smoke/$name.out" || true

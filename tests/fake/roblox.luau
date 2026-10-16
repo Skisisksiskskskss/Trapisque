@@ -1626,23 +1626,69 @@ local function contentText(inst): string
 end
 
 -- Width and height a text object's text takes, at its TextSize (unscaled).
+-- Character widths for the object's font (tests/fake/fonts.luau), or nil.
+local function metricsFor(st)
+	local fonts = FAKE_FONTS
+	if not fonts then
+		return nil
+	end
+	local family, weight = nil, "Regular"
+	local face = st.props.FontFace
+	if face then
+		family = tostring(rawget(face, "_family") or ""):match("families/([%w_]+)%.json")
+		local wt = rawget(face, "_weight")
+		weight = if wt then wt._name else "Regular"
+	elseif st.props.Font then
+		family = st.props.Font._name
+	end
+	local fam = family and fonts[family]
+	if not fam then
+		return nil
+	end
+	return fam[weight] or fam.Bold or fam.Regular or select(2, next(fam))
+end
+
+local function wordWidth(m, word: string, size: number): number
+	local w = 0
+	for i = 1, #word do
+		local b = string.byte(word, i)
+		w += if m and b >= 32 and b <= 126 then m.w[b - 31] else 0.52
+	end
+	return w * size
+end
+
+-- Width and height a text object's text takes, at its TextSize (unscaled), wrapping
+-- words at maxWidth when TextWrapped.
 local function textExtent(inst, maxWidth: number?): (number, number)
 	local st = S[inst]
 	local size = st.props.TextSize or 14
 	local text = contentText(inst)
-	local lines = 1
+	local m = metricsFor(st)
+	local wrap = st.props.TextWrapped and maxWidth and maxWidth > 0
+	local space = wordWidth(m, " ", size)
+	local lines = 0
 	local widest = 0
 	for line in (text .. "\n"):gmatch("(.-)\n") do
-		local w = textLength(line) * size * 0.52
-		if st.props.TextWrapped and maxWidth and maxWidth > 0 and w > maxWidth then
-			lines += math.ceil(w / maxWidth) - 1
-			w = maxWidth
-		end
-		widest = math.max(widest, w)
 		lines += 1
+		if not wrap then
+			widest = math.max(widest, wordWidth(m, line, size))
+		else
+			local x = 0
+			for word in line:gmatch("%S+") do
+				local ww = wordWidth(m, word, size)
+				if x > 0 and x + space + ww > (maxWidth :: number) then
+					widest = math.max(widest, x)
+					lines += 1
+					x = ww
+				else
+					x += (if x > 0 then space else 0) + ww
+				end
+			end
+			widest = math.max(widest, x)
+		end
 	end
-	lines -= 1
-	return widest, math.max(1, lines) * size * (st.props.LineHeight or 1)
+	local lineH = if m then m.line else 1
+	return widest, math.max(1, lines) * size * lineH * (st.props.LineHeight or 1)
 end
 
 local function constrain(inst, w: number, h: number): (number, number)
@@ -1670,7 +1716,21 @@ local function constrain(inst, w: number, h: number): (number, number)
 end
 
 -- Unscaled size of a GuiObject given its parent's unscaled content size.
-local function sizeIn(inst, pw: number, ph: number): (number, number)
+local layoutChildren -- (below) a frame sized to fit its children needs them laid out
+
+-- A frame's padding (UIPadding) in unscaled pixels: left + right, top + bottom.
+local function paddingOf(inst, w: number, h: number): (number, number)
+	for _, c in S[inst].children do
+		if S[c].cls.name == "UIPadding" then
+			local pl, pr, pt, pb = gget(c, "PaddingLeft"), gget(c, "PaddingRight"), gget(c, "PaddingTop"), gget(c, "PaddingBottom")
+			return pl._s * w + pl._o + pr._s * w + pr._o, pt._s * h + pt._o + pb._s * h + pb._o
+		end
+	end
+	return 0, 0
+end
+
+local sizeIn
+sizeIn = function(inst, pw: number, ph: number): (number, number)
 	local size = gget(inst, "Size")
 	local sc = gget(inst, "SizeConstraint")
 	local bw, bh = pw, ph
@@ -1692,6 +1752,30 @@ local function sizeIn(inst, pw: number, ph: number): (number, number)
 			if auto ~= Enum.AutomaticSize.X then
 				h = math.max(h, th)
 			end
+		else
+			-- a frame grows to fit what's inside it (its list, or its children's offsets)
+			local px, py = paddingOf(inst, w, h)
+			local cw, ch = 0, 0
+			local map, lw, lh = layoutChildren(inst, math.max(0, w - px), math.max(0, h - py))
+			if map then
+				cw, ch = lw, lh
+			else
+				for _, c in S[inst].children do
+					local cst = S[c]
+					if cst.cls.isA.GuiObject and gget(c, "Visible") then
+						local kw, kh = sizeIn(c, math.max(0, w - px), math.max(0, h - py))
+						local pos = gget(c, "Position")
+						cw = math.max(cw, pos._xo + kw)
+						ch = math.max(ch, pos._yo + kh)
+					end
+				end
+			end
+			if auto ~= Enum.AutomaticSize.Y then
+				w = math.max(w, cw + px)
+			end
+			if auto ~= Enum.AutomaticSize.X then
+				h = math.max(h, ch + py)
+			end
 		end
 	end
 	return constrain(inst, w, h)
@@ -1699,7 +1783,7 @@ end
 
 -- Layout-controlled positions of a parent's children: child -> {x, y, w, h} unscaled,
 -- relative to the parent's content box.
-local function layoutChildren(parent, pw: number, ph: number)
+layoutChildren = function(parent, pw: number, ph: number)
 	local st = S[parent]
 	local cache = st.layoutCache
 	if cache and cache.ver == layoutVersion and cache.pw == pw and cache.ph == ph then
@@ -3224,14 +3308,30 @@ METHODS.ContentProvider = {
 }
 service("TextService")
 METHODS.TextService = {
-	GetTextSize = function(_self, text, size, _font, frame)
-		local w = textLength(text) * size * 0.52
-		local lines = 1
-		if frame and frame.X > 0 and w > frame.X then
-			lines = math.ceil(w / frame.X)
-			w = frame.X
+	-- measured with the real fonts' widths (tests/fake/fonts.luau), wrapping words at
+	-- frame.X like Roblox does
+	GetTextSize = function(_self, text, size, font, frame)
+		local fam = FAKE_FONTS and font and FAKE_FONTS[font._name]
+		local m = fam and (fam.Regular or select(2, next(fam)))
+		local maxW = if frame and frame.X > 0 then frame.X else math.huge
+		local space = wordWidth(m, " ", size)
+		local lines, widest = 0, 0
+		for line in (tostring(text) .. "\n"):gmatch("(.-)\n") do
+			lines += 1
+			local x = 0
+			for word in line:gmatch("%S+") do
+				local ww = wordWidth(m, word, size)
+				if x > 0 and x + space + ww > maxW then
+					widest = math.max(widest, x)
+					lines += 1
+					x = ww
+				else
+					x += (if x > 0 then space else 0) + ww
+				end
+			end
+			widest = math.max(widest, x)
 		end
-		return v2(w, lines * size)
+		return v2(widest, math.max(1, lines) * size * (if m then m.line else 1))
 	end,
 }
 service("SocialService")
@@ -3982,4 +4082,14 @@ function F.problems(allowWarnings: { string }?): string
 		table.insert(lines, "ISSUE " .. m)
 	end
 	return table.concat(lines, "\n")
+end
+
+-- The scale a GUI object's offsets are drawn at (the UIScales above it, and its own).
+function F.scaleOf(inst): number
+	local st = S[inst]
+	if not st or not st.cls.isA.GuiObject then
+		return 1
+	end
+	local _, _, _, _, s = rectOf(inst)
+	return s
 end

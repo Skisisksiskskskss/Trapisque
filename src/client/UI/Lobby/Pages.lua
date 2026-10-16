@@ -129,7 +129,7 @@ function Pages.shop(layer: Instance): () -> ()
 		for j, perk in pass.perks do
 			local line = Util.frame(perks, { Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, LayoutOrder = j })
 			local tick = Util.frame(line, { Size = UDim2.fromOffset(18, 18), Position = UDim2.fromOffset(0, 2) })
-			Icons.make(tick, "check", Icons.flatColors(C.goodSoft, C.panelRaised))
+			Icons.make(tick, "check", Icons.flatColors(C.good, C.panelRaised))
 			local text = Widgets.label(line, {
 				text = perk,
 				font = "body",
@@ -204,7 +204,12 @@ local RULES = {
 	{
 		icon = "dice",
 		title = "Your turn",
-		text = "Your two dice are rolled for you. Pick one to move with: the OTHER die charges your Power bar. Rolled doubles? You can move the total instead.\n\nBefore you move you may play ONE card, and use your ability if your Power bar is full. Hover a die (tap it on a phone) to see exactly where it takes you and what happens there.",
+		text = "Your two dice are rolled for you. Pick one to move with: the OTHER die charges your Power bar. Rolled doubles? Three ways to go: forwards with the first die, BACKWARDS with the second (grab a token you just passed, or bonk someone right behind you), or the TOTAL of both (that charges no Power).\n\nBefore you move you may play ONE card, and use your ability if your Power bar is full. Hover a die (tap it on a phone) to see exactly where it takes you and what happens there.",
+	},
+	{
+		icon = "dice",
+		title = "The underdog",
+		text = "Fall clearly behind everyone (8 tiles or more, and every treasure counts as a whole lap, so banking one and starting again from the flag never makes you last) and you're the underdog: you roll an extra GOLD die on your turn. Move with whichever die you like; the gold one never charges Power. It's marked on your name.",
 	},
 	{
 		icon = "bolt",

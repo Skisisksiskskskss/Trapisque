@@ -316,7 +316,7 @@ function Effects.death(view, seat: number)
 	end
 	local at = view:pawnWorld(seat)
 	Sound.play("death")
-	burst(view, at, Theme.Seat[((seat - 1) % 6) + 1], 10, 1.2, 0.2, 0.6)
+	burst(view, at, Theme.seatColor(seat), 10, 1.2, 0.2, 0.6)
 	burst(view, at, C.white, 6, 0.8, 0.12, 0.5)
 	shoutAt(view, at, "BACK TO START!", C.coral, 26)
 	view:setMood(seat, "sad", 2.2)

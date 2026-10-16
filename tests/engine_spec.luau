@@ -118,7 +118,30 @@ test("Power stops at the length of your bar", function()
 	eq(g.players[1].power, CC.overseer.cost)
 end)
 
-test("doubles can move the total, without charging Power", function()
+test("doubles: the second die moves you backwards, and the other still charges Power", function()
+	local g = newGame()
+	setTile(g, 1, 8)
+	local events = move(g, 1, 2, 3, 3)
+	eq(g.players[1].tile, 5, "back 3 along the way you came")
+	eq(g.players[1].power, 3, "the first die charged Power")
+	local back = false
+	for _, e in events do
+		if e.t == "choose" and e.back then
+			back = true
+		end
+	end
+	truthy(back, "the choice says it went backwards")
+	-- the first die of the pair goes forwards as usual
+	local g2 = newGame()
+	setTile(g2, 1, 8)
+	move(g2, 1, 1, 3, 3)
+	eq(g2.players[1].tile, 11)
+	-- no pair, no backwards die
+	eq(select(3, Engine.dieOption({ 2, 5 }, 2)), false)
+	eq(select(3, Engine.dieOption({ 4, 2, 4 }, 3)), true, "a pair among three dice")
+end)
+
+test("doubles can also move the total, without charging Power", function()
 	local g = newGame()
 	local ok = g:command(1, { type = "move", die = "sum" })
 	-- the scripted start rolls 1 and 1: doubles
@@ -128,6 +151,90 @@ test("doubles can move the total, without charging Power", function()
 	local g2 = newGame()
 	dice(g2, 2, 5)
 	falsy(g2:command(1, { type = "move", die = "sum" }), "the total needs doubles")
+end)
+
+test("one of each character per match: a clash goes to one of them, the other is told", function()
+	local players = {}
+	for i = 1, 6 do
+		players[i] = { id = "p" .. i, name = "P" .. i, character = if i <= 3 then "mage" else nil }
+	end
+	local g = Engine.new({ mode = "chaos", map = "blissful", players = players, seed = 3 })
+	local events = g:start()
+	local seen, mages, told = {}, 0, 0
+	for _, p in g.players do
+		falsy(seen[p.character], "two players are the " .. tostring(p.character))
+		seen[p.character] = true
+		if p.character == "mage" then
+			mages += 1
+		end
+	end
+	eq(mages, 1)
+	for _, e in events do
+		if e.t == "setup" then
+			for _, sp in e.players do
+				if sp.wanted == "mage" then
+					told += 1
+				end
+			end
+		end
+	end
+	eq(told, 2, "the two who didn't get the Mage are told")
+end)
+
+test("the underdog: clearly last (laps count) rolls an extra die", function()
+	local g = newGame({ characters = { "mage", "trapper", "warper" } })
+	local board = g.board
+	local lap = board.dist[board.start]
+	-- everyone else is 10 tiles in: player 1, still at the Start, is the underdog
+	setTile(g, 2, board.pathFromStart[board.start][1])
+	for seat = 2, 3 do
+		local tile = board.start
+		for _ = 1, 10 do
+			tile = board.forward[tile][1]
+		end
+		setTile(g, seat, tile)
+	end
+	eq(g:progress(g.players[1]), 0)
+	eq(g:progress(g.players[2]), 10)
+	eq(g:underdogSeat(), 1)
+	g:_roll(g.players[1], false)
+	eq(#g.turn.dice, 3, "an extra die")
+	eq(g.turn.gold, 3, "the extra one is the gold die")
+	eq(g.players[1].stats.underdog, 1)
+	-- the gold die moves you but never charges Power, and never makes doubles
+	eq(select(2, Engine.dieOption({ 2, 3, 6 }, 1, 3)), 3, "Power from the other plain die, not the gold 6")
+	eq(select(2, Engine.dieOption({ 2, 3, 6 }, 3, 3)), 3, "moving with gold: the best plain die charges")
+	eq(select(3, Engine.dieOption({ 4, 1, 4 }, 3, 3)), false, "gold doesn't pair up")
+	eq(Engine.dieOption({ 5, 5, 2 }, "sum", 3), 10, "a plain pair can still move the total")
+	-- a treasure counts as a whole lap: back at the Start after banking one isn't last
+	g.players[1].treasures = 1
+	eq(g:progress(g.players[1]), lap)
+	truthy(g:underdogSeat() ~= 1)
+	-- close behind isn't clearly last
+	g.players[1].treasures = 0
+	local near = board.start
+	for _ = 1, 10 - R.UnderdogGap + 1 do
+		near = board.forward[near][1]
+	end
+	setTile(g, 1, near)
+	eq(g:underdogSeat(), nil)
+	-- a tie for last: nobody
+	setTile(g, 1, board.start)
+	setTile(g, 2, board.start)
+	eq(g:underdogSeat(), nil)
+	-- a frozen underdog still rolls the one frozen die
+	setTile(g, 2, g.players[3].tile)
+	g.players[1].status.frozen = 1
+	g:_roll(g.players[1], false)
+	eq(#g.turn.dice, 1)
+end)
+
+test("backwards from the start goes nowhere but still ends the turn", function()
+	local g = newGame()
+	local before = g.players[1].tile
+	move(g, 1, 2, 5, 5)
+	eq(g.players[1].tile, before)
+	eq(g.current, 2)
 end)
 
 test("Frozen: one die, at half speed, and no Power", function()
@@ -478,7 +585,8 @@ test("a big move wades through slime but the slime eats some steps", function()
 	-- 12 steps from tile 6: the pool on tile 8 eats SlimeDrag of the 10 left
 	local g = newGame({ map = "slimy" })
 	setTile(g, 1, 6)
-	local events = move(g, 1, "sum", 6, 6)
+	g.turn.boost = "speed_boost"
+	local events = move(g, 1, 1, 6, 1)
 	eq(g.players[1].tile, 8 + (10 - R.SlimeDrag))
 	local slimed = false
 	for _, e in events do
@@ -490,7 +598,8 @@ test("a big move wades through slime but the slime eats some steps", function()
 	-- the Naturalist wades through for free
 	g = newGame({ map = "slimy", characters = { "naturalist", "mage" } })
 	setTile(g, 1, 6)
-	move(g, 1, "sum", 6, 6)
+	g.turn.boost = "speed_boost"
+	move(g, 1, 1, 6, 1)
 	eq(g.players[1].tile, 18)
 end)
 
@@ -570,15 +679,14 @@ test("abilities need a full Power bar, once a turn", function()
 end)
 
 test("mage: Blizzard freezes every rival", function()
-	local g = newGame({ characters = { "mage", "warper", "trapper", "mage" } })
+	local g = newGame({ characters = { "mage", "warper", "trapper" } })
 	setTile(g, 2, 6)
 	setTile(g, 3, 30)
-	setTile(g, 4, 4)
 	g.players[1].power = CC.mage.cost
 	cmd(g, 1, { type = "ability" })
 	eq(g.players[2].status.frozen, CC.mage.turns)
 	eq(g.players[3].status.frozen, CC.mage.turns, "however far away")
-	eq(g.players[4].status.frozen, 0, "mages can't be frozen")
+	eq(g.players[1].status.frozen, 0, "not the Mage")
 	eq(g.players[1].tile, 1 + CC.mage.skate, "and the Mage skates ahead")
 end)
 

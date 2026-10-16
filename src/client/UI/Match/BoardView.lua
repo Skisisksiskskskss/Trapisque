@@ -1,16 +1,16 @@
 --[[
 	BoardView
-	Draws a Trapisque board as a sticker map on a night-coloured table and animates
-	everything on it.
+	Draws a Trapisque map (a pirate island, a sea fortress, a swamp: MapArt paints the
+	scene BoardLayout works out) and animates everything on it.
 
-	The map is built once in "world" pixels (U px per hex unit). A camera fits the tiles
+	The map is built once in "world" pixels (U px per map unit). A camera fits the tiles
 	into the part of the screen the HUD leaves free (setFocus) and lets players zoom
 	(wheel, pinch, buttons) and pan (drag); the map runs on under the HUD.
 
-	Reading order, bottom to top, is deliberate: the map, then cream tiles with the dark
-	sticker outline (whatever is on a tile sits on it as a sticker: tokens on coloured
-	discs, hazards, board pieces on their owner's colour, your own hidden traps
-	see-through), then pawns: each player's character mascot standing on their pawn.
+	Reading order, bottom to top, is deliberate: the scene, then the tiles (stepping
+	stones or slabs with the ink outline; whatever is on a tile sits on it as a sticker:
+	tokens on coloured discs, hazards, board pieces on their owner's colour, your own
+	hidden traps see-through), then the characters standing on their tiles.
 
 		view = BoardView.new(parent, mapId, { rotate = bool })
 		view:setFocus(rect)                 -- stage rect the tiles should fill
@@ -20,10 +20,10 @@
 		view:highlight(tiles, color, onPick, opts) -- let the player pick a tile
 		view:showPath(path, opts)            -- where a die would take you (nil clears)
 		view:setTraps(map) / addTrap / removeTrap -- the hidden traps you can see
-		view:setMood(seat, mood, seconds)    -- a pawn's mascot pulls a face
+		view:setMood(seat, mood, seconds)    -- a character pulls a face
 		view:tileWorld(tile) -> Vector2     -- centre of a tile in world pixels
 		view:toStage(world) -> Vector2      -- world pixels -> stage pixels (for overlays)
-		view:buildIntro()                   -- tiles snap into place one by one
+		view:buildIntro()                   -- tiles drop into place one by one
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -43,55 +43,34 @@ local Util = require(UI.Util)
 local Theme = require(UI.Theme)
 local Shapes = require(UI.Shapes)
 local Icons = require(UI.Icons)
-local DecorData = require(UI.DecorData)
 local CosmeticArt = require(UI.CosmeticArt)
 local Widgets = require(UI.Widgets)
 local BoardLayout = require(script.Parent.BoardLayout)
+local MapArt = require(script.Parent.MapArt)
 local StickerArt = require(UI.StickerArt)
 local Sound = require(UI.Parent.Sound)
 
 local C = Theme.C
 local hex = Theme.hex
 
-local U = 46 -- world pixels per hex unit
+local U = 46 -- world pixels per map unit
 local S = BoardLayout.Style
-local PAWN = S.pawn -- pawn diameter (hex units) when it has a tile to itself
+local PAWN = S.pawn -- a character's size (map units) when it has a tile to itself
 local MAX_ZOOM = 3
-local HIT = 1.55 -- a tile's click area: a square this many hex units wide
+local HIT = 1.55 -- a tile's click area: a square this many map units wide
 
---[[
-	The maps at night: a deep table colour, a wash (sea, stone, swamp), a lighter strip
-	of land under the path, and doodles in a soft candy ink. The cream tiles are the
-	brightest thing on the board, so the path always reads first.
-]]
-local THEMES = {
-	water = { paper = hex("1A1F4A"), wash = hex("1F3D7A"), washA = 0.9, land = hex("2D2D66"), ink = hex("6FA8FF"), acc = hex("2C4C8A"), acc2 = hex("FF6FB8") },
-	dungeon = { paper = hex("1F1636"), wash = hex("2E2350"), washA = 0.9, land = hex("3A2E62"), ink = hex("A98BEA"), acc = hex("4C3780"), acc2 = hex("FF9A3C") },
-	swamp = { paper = hex("17222E"), wash = hex("1D3F3A"), washA = 0.9, land = hex("2A3A46"), ink = hex("7FE0A8"), acc = hex("2E5A4A"), acc2 = hex("A6E83A") },
-}
-
--- tile tops; the side under each is the same colour, darker; every tile has the outline
-local TILE_COLORS = {
-	normal = hex("FFF4E2"),
-	branch = hex("DCCFF7"),
-	start = hex("9BE8FF"),
-	treasure = hex("FFD23F"),
-	shortcutGate = hex("C9D3E6"),
-}
 -- the top colour of a tile with something on it
 local TOP = {
-	river = hex("7FD3FF"),
-	gate = hex("C9D3E6"),
-	slime = hex("C8F07A"),
-	wall = hex("F2CC94"),
-	teleporter = hex("C9B0FF"),
-	spore_warper = hex("B9EE8A"),
-	conveyor = hex("AEB8CF"),
-	trampoline = hex("FFB3DA"),
-	embers = hex("FFC58A"),
+	river = hex("6CC9DB"),
+	gate = hex("B8BDC7"),
+	slime = hex("9BCF2E"),
+	wall = hex("F2A774"),
+	teleporter = hex("8FB3E8"),
+	spore_warper = hex("A6D98F"),
+	conveyor = hex("B8BDC7"),
+	trampoline = hex("F3A6CF"),
+	embers = hex("F5B26B"),
 }
-local RIM = C.line
-local TILE_NUMBER = hex("B4A3D8")
 local NEUTRAL_ITEMS = { teleporter = true, spore_warper = true, conveyor = true, trampoline = true }
 
 local BoardView = {}
@@ -112,9 +91,21 @@ function BoardView.new(parent: Frame, mapId: string, opts: { [string]: any }?)
 	self.mapId = mapId
 	self.board = Board.get(def)
 	self.layout = BoardLayout.build(self.board, def, Rng, { rotate = opts ~= nil and opts.rotate == true })
-	self.flat = self.layout.rotated == true
 	self.mySeat = opts and opts.mySeat
-	self.theme = THEMES[def.theme] or THEMES.water
+	-- the scene's inks for the tiles
+	local col = {}
+	for k, v in self.layout.scene.colors do
+		col[k] = hex(string.sub(v, 2))
+	end
+	self.inks = col
+	self.tileShape = self.layout.scene.tile or "stone"
+	self.tileColors = {
+		normal = col.tile,
+		branch = Util.shade(col.tile, -0.18),
+		start = col.start or C.sky,
+		treasure = C.sun,
+		shortcutGate = Util.shade(col.tile, -0.1),
+	}
 	self.maid = Util.maid()
 
 	local L = self.layout
@@ -142,7 +133,7 @@ function BoardView.new(parent: Frame, mapId: string, opts: { [string]: any }?)
 	self.overlay = Util.frame(self.container, { Name = "Tags", ZIndex = 5 })
 
 	self.layers = {}
-	for i, name in { "Paper", "Land", "Decor", "Links", "Tiles", "Pieces", "Pawns", "Fx", "Hits" } do
+	for i, name in { "Water", "Land", "Trail", "Props", "Tiles", "Pieces", "Pawns", "Fx", "Hits" } do
 		self.layers[name] = Util.frame(self.world, { Name = name, ZIndex = i })
 	end
 
@@ -166,10 +157,7 @@ function BoardView.new(parent: Frame, mapId: string, opts: { [string]: any }?)
 	self.goal = { x = cx, y = cy, zoom = 1 }
 	self.manualUntil = 0
 
-	self:_buildPaper()
-	self:_buildLand()
-	self:_buildDecor()
-	self:_buildLinks()
+	MapArt.draw(self.layers, L, U)
 	self:_buildTiles()
 	self:_buildHits()
 
@@ -424,146 +412,26 @@ end
 -- static layers
 ---------------------------------------------------------------------------
 
-function BoardView:_buildPaper()
-	local T = self.theme
-	local paper = Util.new("Frame", {
-		Name = "Parchment",
-		BackgroundColor3 = T.paper,
+-- A tile's shape: a round stepping stone or a square slab turned along the trail.
+function BoardView:_tileShape(parent: Instance, center: Vector2, radius: number, color: Color3, z: number, name: string, angle: number?): Frame
+	local f = Util.new("Frame", {
+		Name = name,
+		BackgroundColor3 = color,
 		BorderSizePixel = 0,
-		Size = UDim2.fromOffset(self.worldW, self.worldH),
-		Parent = self.layers.Paper,
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = px(center),
+		Size = UDim2.fromOffset(2 * radius, 2 * radius),
+		Rotation = if self.tileShape == "slab" then (angle or 0) else 0,
+		ZIndex = z,
+		Parent = parent,
 	})
-	Util.corner(paper, 0.35 * U)
-	Util.stroke(paper, C.line, 5)
-	-- sea / stone / swamp wash inside the frame
-	local inset = 0.55 * U
-	local wash = Util.new("Frame", {
-		Name = "Wash",
-		BackgroundColor3 = T.wash,
-		BackgroundTransparency = 1 - T.washA,
-		BorderSizePixel = 0,
-		Position = UDim2.fromOffset(inset, inset),
-		Size = UDim2.fromOffset(self.worldW - 2 * inset, self.worldH - 2 * inset),
-		ZIndex = 2,
-		Parent = paper,
-	})
-	Util.corner(wash, 0.3 * U)
-	-- double neatline frame
-	for i, spec in { { 0.3, 3, 0.25 }, { 0.45, 1.5, 0.45 } } do
-		local o = spec[1] * U
-		local line = Util.new("Frame", {
-			Name = "Neatline" .. i,
-			BackgroundTransparency = 1,
-			Position = UDim2.fromOffset(o, o),
-			Size = UDim2.fromOffset(self.worldW - 2 * o, self.worldH - 2 * o),
-			ZIndex = 3,
-			Parent = paper,
-		})
-		Util.corner(line, (0.25 - i * 0.03) * U)
-		Util.stroke(line, T.ink, spec[2], spec[3] + 0.3)
-	end
-	self.paper = paper
-end
-
--- "Land" under the path with an inked coastline: one ring of circles for the coast, a
--- slightly smaller ring of land circles on top.
-function BoardView:_buildLand()
-	local T = self.theme
-	local coastColor = Util.mix(T.ink, T.wash, 0.25)
-	local land = self.layers.Land
-	for pass = 1, 2 do
-		for _, t in self.layout.tiles do
-			local p = self:tileWorld(t.id)
-			local r = if pass == 1 then S.coast * U else (S.coast - 0.07) * U
-			local dot = Util.new("Frame", {
-				Name = if pass == 1 then "Coast" else "Shore",
-				BackgroundColor3 = if pass == 1 then coastColor else T.land,
-				BorderSizePixel = 0,
-				AnchorPoint = Vector2.new(0.5, 0.5),
-				Position = px(p),
-				Size = UDim2.fromOffset(2 * r, 2 * r),
-				ZIndex = pass,
-				Parent = land,
-			})
-			Util.corner(dot, 0.5)
-		end
-	end
-end
-
-function BoardView:_buildDecor()
-	local T = self.theme
-	local layer = self.layers.Decor
-	local L = self.layout
-	local inkMix = Util.mix(T.ink, T.wash, 0.22)
-	local colors = { ink = inkMix, bg = Util.mix(T.paper, T.wash, T.washA), acc = T.acc, acc2 = T.acc2, hi = T.land }
-	for _, d in L.decor do
-		local size = d.size * U
-		local holder = Util.frame(layer, {
-			Name = "Doodle_" .. d.kind,
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.fromOffset((d.x - L.x0) * U, (d.y - L.y0) * U),
-			Size = UDim2.fromOffset(size, size),
-			Rotation = d.rot,
-		})
-		local c = Shapes.canvas(holder)
-		Icons.draw(c, { { "group", fx = d.flip, ops = DecorData[d.kind] } }, colors)
-	end
-	-- (the map's name is in the top bar: the strip above the tiles ends up under the HUD)
-end
-
-function BoardView:_buildLinks()
-	local layer = self.layers.Links
-	local T = self.theme
-	for _, ln in self.layout.links do
-		local a = self:tileWorld(ln.from)
-		local b = self:tileWorld(ln.to)
-		local mid = (a + b) / 2
-		local dir = (b - a).Unit
-		local dash = Util.new("Frame", {
-			Name = "Dash",
-			BackgroundColor3 = if ln.shortcut then C.inkRed else T.ink,
-			BackgroundTransparency = if ln.shortcut then 0 else 0.25,
-			BorderSizePixel = 0,
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = px(mid),
-			Size = UDim2.fromOffset(0.32 * U, 0.12 * U),
-			Rotation = math.deg(math.atan2(dir.Y, dir.X)),
-			Parent = layer,
-		})
-		Util.corner(dash, 0.5)
-	end
-end
-
--- A hexagon from three rotated rectangles (pointy-top, or flat-top when `flat`).
-local function hexagon(parent: Instance, center: Vector2, radius: number, color: Color3, z: number, name: string, flat: boolean): { Frame }
-	local parts = {}
-	local base = if flat then 90 else 0
-	for i, rot in { 0, 60, 120 } do
-		local f = Util.new("Frame", {
-			Name = name .. i,
-			BackgroundColor3 = color,
-			BorderSizePixel = 0,
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = px(center),
-			Size = UDim2.fromOffset(math.sqrt(3) * radius, radius),
-			Rotation = rot + base,
-			ZIndex = z,
-			Parent = parent,
-		})
-		parts[i] = f
-	end
-	return parts
-end
-
-local function setHexColor(parts: { Frame }, color: Color3)
-	for _, f in parts do
-		f.BackgroundColor3 = color
-	end
+	Util.corner(f, if self.tileShape == "slab" then 0.22 else 0.5)
+	return f
 end
 
 function BoardView:_buildTiles()
 	local layer = self.layers.Tiles
-	-- tiles lower on the map draw over the ones above (their wooden sides hang down)
+	-- tiles lower on the map draw over the ones above (their shadows fall down-right)
 	local order = {}
 	for _, t in self.layout.tiles do
 		table.insert(order, t)
@@ -581,22 +449,22 @@ function BoardView:_buildTiles()
 			ZIndex = i,
 		})
 		local local0 = Vector2.new(U, U)
-		local r = S.tileScale * U
-		local side = hexagon(root, local0 + Vector2.new(0, S.tileDepth * U), r + 0.05 * U, RIM, 1, "Side", self.flat)
-		local rim = hexagon(root, local0, r + 0.05 * U, RIM, 2, "Rim", self.flat)
-		local top = hexagon(root, local0, r, TILE_COLORS.normal, 3, "Top", self.flat)
+		local r = S.tileR * U * (t.scale or 1)
+		local side = self:_tileShape(root, local0 + Vector2.new(0.1, S.tileDepth) * U, r, C.line, 1, "Side", t.angle)
+		local top = self:_tileShape(root, local0, r, self.tileColors.normal, 3, "Top", t.angle)
+		Util.stroke(top, C.line, 0.075 * U)
 		local label = Widgets.label(root, {
 			text = tostring(t.id),
 			font = "chunky",
-			size = math.floor(0.3 * U),
-			color = TILE_NUMBER,
+			size = math.floor(0.42 * U),
+			color = self.inks.number or C.textFaint,
 			align = "center",
-			sizeUDim = UDim2.fromOffset(U, 0.4 * U),
+			sizeUDim = UDim2.fromOffset(U, 0.5 * U),
 			anchor = Vector2.new(0.5, 0.5),
-			position = UDim2.fromOffset(U, U + 0.5 * U),
+			position = UDim2.fromOffset(U, U),
 			z = 8,
 		})
-		local parts = { root = root, side = side, rim = rim, top = top, label = label, kind = t.kind, branch = t.branch }
+		local parts = { root = root, side = side, top = top, label = label, kind = t.kind, branch = t.branch, angle = t.angle }
 		self.tileParts[t.id] = parts
 		self:_paintTile(t.id)
 	end
@@ -604,7 +472,7 @@ end
 
 -- A board piece as a sticker: its card art on a disc in its owner's colour.
 local function plaque(parent: Instance, item: string, owner: number?, at: UDim2, size: number, z: number): Frame
-	local color = if owner and owner > 0 then Theme.Seat[((owner - 1) % 6) + 1] else C.panelRaised
+	local color = if owner and owner > 0 then Theme.seatColor(owner) else C.panelRaised
 	local disc = Util.new("Frame", {
 		Name = "Plaque",
 		BackgroundColor3 = color,
@@ -646,7 +514,7 @@ local function trapMark(parent: Instance, trap, at: UDim2, size: number, z: numb
 		Parent = parent,
 	})
 	local owner = trap.owner or 0
-	local color = if owner > 0 then Theme.Seat[((owner - 1) % 6) + 1] else C.coral
+	local color = if owner > 0 then Theme.seatColor(owner) else C.coral
 	local disc = Util.new("Frame", {
 		Name = "Disc",
 		BackgroundColor3 = C.panelDeep,
@@ -686,7 +554,7 @@ function BoardView:_paintTile(tile: number)
 	local token = self.tokens[tile]
 	local traps = self.traps[tile]
 	local ember = self.embers[tile]
-	local topColor = if kind == "normal" and parts.branch then TILE_COLORS.branch else (TILE_COLORS[kind] or TILE_COLORS.normal)
+	local topColor = if kind == "normal" and parts.branch then self.tileColors.branch else (self.tileColors[kind] or self.tileColors.normal)
 	local skinKind = natural
 	if not skinKind and beltAngle then
 		skinKind = "conveyor"
@@ -698,8 +566,7 @@ function BoardView:_paintTile(tile: number)
 	elseif ember then
 		topColor = TOP.embers
 	end
-	setHexColor(parts.top, topColor)
-	setHexColor(parts.side, Util.shade(topColor, -0.45))
+	parts.top.BackgroundColor3 = topColor
 
 	local root = parts.root
 	local mid = UDim2.fromOffset(U, U)
@@ -1120,7 +987,9 @@ end
 ---------------------------------------------------------------------------
 
 function BoardView:addPawn(seat: number, info, tile: number)
-	local seatColor = Theme.Seat[((seat - 1) % 6) + 1]
+	-- the character is the piece: it stands on its tile in its own colour (that colour is
+	-- its player's everywhere), with a hard ink shadow under its feet
+	local color = Theme.playerColor(info.character)
 	local root = Util.frame(self.layers.Pawns, {
 		Name = "Pawn" .. seat,
 		AnchorPoint = Vector2.new(0.5, 0.5),
@@ -1128,49 +997,28 @@ function BoardView:addPawn(seat: number, info, tile: number)
 		ZIndex = seat,
 	})
 	local share = Util.new("UIScale", { Name = "ShareScale", Parent = root })
-	local lift = Util.frame(root, { Name = "Lift" })
-	-- a hard shadow on the tile so the pawn stands out from the board
 	local shadow = Util.new("Frame", {
 		Name = "Shadow",
 		BackgroundColor3 = C.shadow,
-		BackgroundTransparency = 0.45,
+		BackgroundTransparency = 0.35,
 		BorderSizePixel = 0,
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.62),
-		Size = UDim2.fromScale(0.96, 0.96),
+		Position = UDim2.fromScale(0.56, 0.84),
+		Size = UDim2.fromScale(0.78, 0.3),
 		ZIndex = 0,
 		Parent = root,
 	})
 	Util.corner(shadow, 0.5)
-	-- the pawn (its cosmetic skin, in the seat colour) is the disc the mascot stands on
-	CosmeticArt.pawn(lift, info.look and info.look.pawn, seatColor, {
-		Position = UDim2.fromScale(0.5, 0.5),
-		Size = UDim2.fromScale(1, 1),
-		ZIndex = 1,
-	})
-	local ring = Util.new("Frame", {
-		Name = "TurnRing",
-		BackgroundTransparency = 1,
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.47),
-		Size = UDim2.fromScale(1.2, 1.2),
-		Visible = false,
-		ZIndex = 0,
-		Parent = lift,
-	})
-	Util.corner(ring, 0.5)
-	local st = Util.stroke(ring, C.sun, 4)
+	local lift = Util.frame(root, { Name = "Lift" })
 	local pawn = {
 		frame = root,
 		lift = lift,
 		share = share,
 		shadow = shadow,
 		tile = tile,
-		ring = ring,
-		ringStroke = st,
 		seat = seat,
 		info = info,
-		color = seatColor,
+		color = color,
 	}
 	self.pawns[seat] = pawn
 	self.seatInfo[seat] = info
@@ -1179,18 +1027,21 @@ function BoardView:addPawn(seat: number, info, tile: number)
 	return root
 end
 
--- The character standing on the pawn, pulling `mood`'s face (nil: its usual one).
+-- The character, pulling `mood`'s face (nil: its usual one), wearing its accessories.
 function BoardView:_drawMascot(pawn, mood: string?)
 	if pawn.mascot then
 		pawn.mascot:Destroy()
 	end
-	pawn.mascot = Icons.sticker(pawn.lift, StickerArt.mascot(pawn.info.character or "mage", mood), {
+	local holder = Util.frame(pawn.lift, {
 		Name = "Mascot",
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.4),
-		Size = UDim2.fromScale(0.9, 0.9),
+		Position = UDim2.fromScale(0.5, 0.42),
+		Size = UDim2.fromScale(1, 1),
 		ZIndex = 3,
-	}, 0.05)
+	})
+	Icons.sticker(holder, StickerArt.mascot(pawn.info.character or "mage", mood), { Size = UDim2.fromScale(0.96, 0.96) }, 0.05)
+	CosmeticArt.accessory(holder, pawn.info.look and pawn.info.look.accessory, { ZIndex = 4 })
+	pawn.mascot = holder
 end
 
 --[[
@@ -1260,20 +1111,22 @@ function BoardView:setCurrent(seat: number?)
 	self.currentSeat = seat
 	for s, pawn in self.pawns do
 		local on = s == seat
-		pawn.ring.Visible = on
 		pawn.frame.ZIndex = if on then 20 else s
-		if on and not pawn.ringPulse then
-			pawn.ringPulse = true
+		if on and not pawn.bobbing then
+			-- whoever's turn it is bobs on the spot
+			pawn.bobbing = true
 			task.spawn(function()
-				while pawn.ring.Visible and pawn.ring.Parent do
-					Util.tween(pawn.ring, 0.6, { Size = UDim2.fromScale(1.32, 1.32) }, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
-					Util.tween(pawn.ringStroke, 0.6, { Transparency = 0.55 }, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
-					task.wait(0.6)
-					Util.tween(pawn.ring, 0.6, { Size = UDim2.fromScale(1.14, 1.14) }, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
-					Util.tween(pawn.ringStroke, 0.6, { Transparency = 0 }, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
-					task.wait(0.6)
+				while self.currentSeat == s and pawn.frame.Parent do
+					if not pawn.moving then
+						Util.tween(pawn.mascot, 0.35, { Position = UDim2.fromScale(0.5, 0.34) }, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
+					end
+					task.wait(0.35)
+					if pawn.mascot then
+						Util.tween(pawn.mascot, 0.35, { Position = UDim2.fromScale(0.5, 0.42) }, Enum.EasingStyle.Sine, Enum.EasingDirection.In)
+					end
+					task.wait(0.35)
 				end
-				pawn.ringPulse = false
+				pawn.bobbing = false
 			end)
 		end
 	end
@@ -1315,11 +1168,13 @@ function BoardView:_ensureTag()
 		label.AutomaticSize = Enum.AutomaticSize.X
 		self.tag = tag
 		self.tagLabel = label
-		self.tagStroke = Util.stroke(tag, C.white, 2)
+		self.tagStroke = Util.stroke(tag, C.line, 2.5)
 	end
+	-- a little flag in the player's colour
 	local info = self.seatInfo[seat] or {}
 	self.tagLabel.Text = info.tagName or info.name or ""
-	self.tagStroke.Color = pawn.color
+	self.tag.BackgroundColor3 = pawn.color
+	self.tagLabel.TextColor3 = Theme.textOn(pawn.color)
 	self.tag.Visible = true
 end
 
@@ -1629,9 +1484,10 @@ function BoardView:previewTile(tile: number?, item: string?, color: Color3?)
 	local mid = Vector2.new(U, U)
 	local def = Items.get(item)
 	local hidden = def ~= nil and (def :: any).hidden == true
-	local top = TOP[item] or TILE_COLORS.normal
-	hexagon(g, mid, S.tileScale * U * 1.08, color or C.sun, 1, "GhostRim", self.flat)
-	hexagon(g, mid, S.tileScale * U, top, 2, "GhostTop", self.flat)
+	local top = TOP[item] or self.tileColors.normal
+	local angle = self.tileParts[tile] and self.tileParts[tile].angle
+	self:_tileShape(g, mid, S.tileR * U * 1.12, color or C.sun, 1, "GhostRim", angle)
+	self:_tileShape(g, mid, S.tileR * U, top, 2, "GhostTop", angle)
 	if hidden then
 		trapMark(g, { item = item, owner = self.mySeat or 0 }, UDim2.fromOffset(U, U), 0.8 * U, 3)
 	else
@@ -1851,7 +1707,7 @@ end
 function BoardView:highlight(tiles: { number }, color: Color3, onPick: (number) -> (), opts: { [string]: any }?)
 	self:clearHighlight()
 	local o = opts or {}
-	local marks = {}
+	local marks: { Frame } = {}
 	local conns = {}
 	local selected: number? = nil
 	local function showPreview(tile: number?)
@@ -1864,11 +1720,10 @@ function BoardView:highlight(tiles: { number }, color: Color3, onPick: (number) 
 	end
 	for _, tile in tiles do
 		local center = self:tileWorld(tile)
-		local glow = hexagon(self.layers.Fx, center, S.tileScale * U * 1.1, color, 30, "Glow", self.flat)
-		for _, f in glow do
-			f.BackgroundTransparency = 0.5
-			table.insert(marks, f)
-		end
+		local parts = self.tileParts[tile]
+		local glow = self:_tileShape(self.layers.Fx, center, S.tileR * U * 1.22, color, 30, "Glow", parts and parts.angle)
+		glow.BackgroundTransparency = 0.5
+		table.insert(marks, glow)
 		local hit = self.hits[tile]
 		hit.Visible = true
 		table.insert(conns, hit.MouseEnter:Connect(function()

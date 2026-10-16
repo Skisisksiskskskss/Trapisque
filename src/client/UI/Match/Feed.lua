@@ -9,6 +9,8 @@
 		feed:add(text, color?, icon?)       -- text may use <font color> rich text
 ]]
 
+local TextService = game:GetService("TextService")
+
 local UI = script.Parent.Parent
 local Util = require(UI.Util)
 local Theme = require(UI.Theme)
@@ -48,6 +50,7 @@ function Feed:layout(spec)
 		elseif self.align == "left" then Enum.HorizontalAlignment.Left
 		else Enum.HorizontalAlignment.Right
 	self.maxW = r.w
+	self.maxH = r.h + 30
 	self.textSize = if r.w < 340 then 13 else 15
 	while #self.lines > self.max do
 		local old = table.remove(self.lines)
@@ -63,13 +66,20 @@ function Feed:add(text: string, color: Color3?, icon: string?, iconColor: Color3
 		table.remove(self.history, 1)
 	end
 	self.n += 1
+	local size = self.textSize or 15
+	local iconW = if icon then size + 2 + 6 else 0
+	local padX, padY = 18, 6
+	-- measure the line (tags stripped) so a long one wraps onto a taller row
+	local plain = string.gsub(text, "<[^>]+>", "")
+	local room = math.max(120, (self.maxW or 360) - padX - iconW)
+	local bounds = TextService:GetTextSize(plain, size, Enum.Font.Oswald, Vector2.new(room, 1000))
+	local textW = math.min(room, math.ceil(bounds.X * 1.06) + 2)
+	local textH = math.max(size + 2, math.ceil(bounds.Y) + 2)
 	local row = Util.new("Frame", {
 		Name = "Line",
 		BackgroundColor3 = C.panel,
-		BackgroundTransparency = 0.06,
 		BorderSizePixel = 0,
-		AutomaticSize = Enum.AutomaticSize.XY,
-		Size = UDim2.fromOffset(0, 0),
+		Size = UDim2.fromOffset(textW + padX + iconW, textH + padY),
 		LayoutOrder = -self.n, -- newest on top
 		ZIndex = 41,
 		Parent = self.root,
@@ -79,27 +89,35 @@ function Feed:add(text: string, color: Color3?, icon: string?, iconColor: Color3
 	Util.pad(row, 8, 3, 10, 3)
 	Util.list(row, "x", 6, "Left", "Center")
 	if icon then
-		local ic = Util.frame(row, { Name = "Icon", Size = UDim2.fromOffset(self.textSize + 2, self.textSize + 2), LayoutOrder = 1, ZIndex = 42 })
+		local ic = Util.frame(row, { Name = "Icon", Size = UDim2.fromOffset(size + 2, size + 2), LayoutOrder = 1, ZIndex = 42 })
 		Icons.medallion(ic, icon, iconColor or C.sun, { Size = UDim2.fromScale(1, 1) })
 	end
 	local label = Widgets.label(row, {
 		text = text,
 		font = "heavy",
-		size = self.textSize or 15,
-		color = color or C.text,
+		size = size,
+		-- (a line's colour is darkened until it reads on the cream row)
+		color = if color then Theme.inkOf(color) else C.text,
 		z = 42,
 		rich = true,
+		wrap = true,
 		layoutOrder = 2,
+		sizeUDim = UDim2.fromOffset(textW, textH),
 	})
-	label.AutomaticSize = Enum.AutomaticSize.XY
-	label.Size = UDim2.fromOffset(0, 0)
-	label.TextWrapped = true
-	Util.new("UISizeConstraint", { MaxSize = Vector2.new(math.max(120, (self.maxW or 360) - 40), 60), Parent = label })
+	label.TextYAlignment = Enum.TextYAlignment.Center
 	table.insert(self.lines, 1, row)
-	while #self.lines > self.max do
-		local old = table.remove(self.lines)
-		if old then
-			old:Destroy()
+	-- keep as many lines as fit (two-line rows take two places)
+	local used = 0
+	for i, line in self.lines do
+		used += line.Size.Y.Offset + 4
+		if i > 1 and (i > self.max or used > (self.maxH or math.huge)) then
+			for j = #self.lines, i, -1 do
+				local old = table.remove(self.lines, j)
+				if old then
+					old:Destroy()
+				end
+			end
+			break
 		end
 	end
 	Util.popIn(row, 0.2, 0.7)

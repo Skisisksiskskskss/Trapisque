@@ -223,11 +223,17 @@ end
 -- The display state, from a snapshot. `noHand` starts with an empty hand (the deal fills it).
 function MatchScreen:_viewFrom(snap, noHand: boolean?)
 	local players = {}
+	local characters = {}
+	for _, p in snap.players do
+		characters[p.seat] = p.character
+	end
+	Theme.setSeatCharacters(characters)
 	for _, p in snap.players do
 		local copyOf = table.clone(p)
 		if noHand then
 			copyOf.handCount = 0
 		end
+		copyOf.underdog = snap.underdog == p.seat
 		players[p.seat] = copyOf
 	end
 	local tokens, placed, natural, embers = {}, {}, {}, {}
@@ -255,6 +261,7 @@ function MatchScreen:_viewFrom(snap, noHand: boolean?)
 		cardsPlayed = snap.cardsPlayed or 0,
 		boost = snap.boost,
 		dice = copy(snap.dice),
+		gold = snap.gold,
 		chosen = nil,
 		hand = if noHand then {} else copy(snap.hand),
 		trail = copy(snap.trail),
@@ -585,10 +592,10 @@ function MatchScreen:_layoutTop(L, m)
 	self.buttons.Size = UDim2.fromOffset(b.rect.w, b.rect.h)
 	Util.list(self.buttons, "x", b.gap, "Right", "Center")
 	local list = {
-		{ icon = "people", style = "dark", onClick = function()
+		{ icon = "people", style = "panel", onClick = function()
 			self:_scoreboard()
 		end, key = "scores" },
-		{ icon = "map", style = "dark", onClick = function()
+		{ icon = "map", style = "panel", onClick = function()
 			if self.board then
 				self.board:fit()
 			end
@@ -596,7 +603,7 @@ function MatchScreen:_layoutTop(L, m)
 		{ icon = "smile", style = "brass", onClick = function()
 			self:_emotePicker()
 		end, key = "emote" },
-		{ icon = "gear", style = "dark", onClick = function()
+		{ icon = "gear", style = "panel", onClick = function()
 			self:_menu()
 		end, key = "menu" },
 	}
@@ -716,14 +723,14 @@ function MatchScreen:_tag(seat: number?): string
 	if not seat then
 		return "?"
 	end
-	local color = Util.shade(Theme.Seat[((seat - 1) % 6) + 1], 0.25)
+	local color = Theme.inkOf(Theme.seatColor(seat))
 	return string.format('<font color="#%s">%s</font>', toHex(color), self:_name(seat))
 end
 
 -- "Pip's" / "your" ("Your" to start a line), in the player's colour
 function MatchScreen:_poss(seat: number?, capital: boolean?): string
 	if seat ~= nil and seat == self.mySeat then
-		local color = Util.shade(Theme.Seat[((seat - 1) % 6) + 1], 0.25)
+		local color = Theme.inkOf(Theme.seatColor(seat))
 		return string.format('<font color="#%s">%s</font>', toHex(color), if capital then "Your" else "your")
 	end
 	return self:_tag(seat) .. "'s"
@@ -735,7 +742,7 @@ function MatchScreen:_s(seat: number?): string
 end
 
 function MatchScreen:_seatColor(seat: number): Color3
-	return Theme.Seat[((seat - 1) % 6) + 1]
+	return Theme.seatColor(seat)
 end
 
 -- Nothing is animating, nothing is pending, and it's my move.
@@ -810,10 +817,11 @@ function MatchScreen:_refreshDice()
 	local mine = v.current == self.mySeat
 	local dice = v.dice or {}
 	local mult = (v.mutator and v.mutator.powerMult) or 1
-	local power = {}
+	local power, back = {}, {}
 	for i in dice do
-		local _, gain = self:_moveOption(i)
+		local _, gain, backDie = self:_moveOption(i)
 		power[i] = (gain or 0) * mult
+		back[i] = backDie == true
 	end
 	local hint = nil
 	if v.phase == "over" then
@@ -834,6 +842,8 @@ function MatchScreen:_refreshDice()
 		chosen = v.chosen,
 		enabled = mine and self:_myTurn() and #dice > 0,
 		power = power,
+		back = back,
+		gold = v.gold,
 		hint = hint,
 		over = v.phase == "over",
 	})
@@ -1154,6 +1164,7 @@ function MatchScreen:_play(e)
 		v.cardsPlayed = 0
 		v.boost = nil
 		v.dice = {}
+		v.gold = nil
 		v.chosen = nil
 		self:_updateRound()
 		board:setCurrent(e.p)
@@ -1179,11 +1190,17 @@ function MatchScreen:_play(e)
 		board:floatText(self:_pawnWorld(e.p), "HOT HOT HOT!", C.orange)
 	elseif t == "roll" then
 		v.dice = copy(e.dice)
+		v.gold = e.gold
 		v.chosen = nil
 		self:_refreshDice()
 		self.dock:rollDice(e.dice, e.frozen == true, speed)
 		if e.reroll then
 			feed:add(self:_tag(e.p) .. " rolled again!", nil, "clover", C.lime)
+		end
+		if e.underdog and not e.reroll then
+			-- clearly last: an extra die to pick from
+			board:floatText(self:_pawnWorld(e.p) + Vector2.new(0, -0.45 * BoardView.UNIT), "UNDERDOG: GOLD DIE!", C.sun, 20)
+			feed:add(self:_tag(e.p) .. (if e.p == self.mySeat then " are" else " is") .. " the underdog: an extra gold die!", nil, "dice", C.sun)
 		end
 		if #e.dice == 2 and e.dice[1] == e.dice[2] then
 			board:floatText(self:_pawnWorld(e.p), "DOUBLES!", C.sun)
@@ -1195,7 +1212,7 @@ function MatchScreen:_play(e)
 		self:_refreshDice()
 		self:_previewDie(nil)
 		local how = if e.die == "sum" then ("the total: " .. e.move) else tostring(e.move)
-		feed:add(self:_tag(e.p) .. " move" .. self:_s(e.p) .. " " .. how .. (if e.back then " (backwards!)" else ""), nil, "dice", C.sun)
+		feed:add(self:_tag(e.p) .. " move" .. self:_s(e.p) .. " " .. how .. (if e.back then " backwards!" else ""), nil, "dice", C.sun)
 	elseif t == "power" then
 		local p = self:_player(e.p)
 		if p then
@@ -1664,26 +1681,9 @@ end
 -- your move: pick a die
 ---------------------------------------------------------------------------
 
--- Steps and Power for dice option `key` (1, 2, 3 or "sum"), like Engine:moveOption.
-function MatchScreen:_moveOption(key: any): (number?, number?)
-	local dice = self.view.dice or {}
-	if key == "sum" then
-		if #dice == 2 and dice[1] == dice[2] then
-			return dice[1] + dice[2], 0
-		end
-		return nil, nil
-	end
-	local d = dice[key]
-	if not d then
-		return nil, nil
-	end
-	local other = 0
-	for j, x in dice do
-		if j ~= key and x > other then
-			other = x
-		end
-	end
-	return d, other
+-- Steps, Power and backwards-or-not for die `key` (1, 2, 3 or "sum"), like Engine:moveOption.
+function MatchScreen:_moveOption(key: any): (number?, number?, boolean?)
+	return Engine.dieOption(self.view.dice or {}, key, self.view.gold)
 end
 
 -- The walk a die would make for me right now (nil if it can't).
@@ -1693,12 +1693,12 @@ function MatchScreen:_planFor(key: any)
 	if not me then
 		return nil
 	end
-	local m = self:_moveOption(key)
+	local m, _, backDie = self:_moveOption(key)
 	if not m then
 		return nil
 	end
 	local steps, back = Engine.boosted(m :: number, v.boost)
-	if back then
+	if back or backDie then
 		return Engine.backPlan({ trail = v.trail }, steps), steps, true
 	end
 	local state = { board = self.board.board, natural = v.natural, placed = v.placed }
@@ -1788,8 +1788,11 @@ function MatchScreen:_previewDie(key: any)
 	end
 	local me = self:_player(self.mySeat)
 	local tags = self:_outcome(plan)
-	local _, gain = self:_moveOption(key)
+	local _, gain, backDie = self:_moveOption(key)
 	local mult = (self.view.mutator and self.view.mutator.powerMult) or 1
+	if backDie then
+		table.insert(tags, 1, { text = "BACKWARDS", color = C.coral })
+	end
 	if (gain or 0) > 0 then
 		table.insert(tags, { text = "+" .. tostring((gain :: number) * mult) .. " POWER", color = C.sun })
 	end

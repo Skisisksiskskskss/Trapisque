@@ -32,6 +32,9 @@ Config.Rules = {
 	MudslideBack = 3,
 	BananaBack = 2,
 	SlimeDrag = 5, -- slime pools eat this many steps (with no more left than that, you're stuck in it)
+	-- Underdog: whoever is clearly last (behind everyone else by this many tiles, a whole
+	-- lap counting for every treasure) rolls an extra die on their turn
+	UnderdogGap = 8,
 	TrampolineForward = 3,
 	TelepathyMax = 3,
 	JeopardySteps = 6,

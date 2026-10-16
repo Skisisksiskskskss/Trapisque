@@ -39,25 +39,24 @@ local function layer(name: string, z: number): Frame
 	return Util.frame(Root.stage, { Name = name, ZIndex = z })
 end
 
--- The table: a deep night purple with a scatter of soft dots (the same as the loading
--- screen, so the hand-over is seamless).
+-- The table is the open sea: deep blue with printed wave marks, like the sea on an old
+-- chart (the loading screen draws the same, so the hand-over is seamless).
 local function buildBackground(bg: Frame)
 	bg.BackgroundTransparency = 0
 	bg.BackgroundColor3 = C.bg
-	for i = 0, 23 do
-		local size = 0.05 + (i % 3) * 0.02
-		local dot = Util.new("Frame", {
-			Name = "Dot",
-			BackgroundColor3 = C.panel,
-			BorderSizePixel = 0,
+	local Shapes = require(script.Parent.Shapes)
+	for i = 0, 27 do
+		local size = 0.07 + (i % 3) * 0.025
+		local holder = Util.frame(bg, {
+			Name = "Wave",
 			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.fromScale(((i * 37) % 100) / 100, ((i * 61 + 13) % 100) / 100),
+			Position = UDim2.fromScale(((i * 37 + 11) % 100) / 100, ((i * 61 + 13) % 100) / 100),
 			Size = UDim2.fromScale(size, size),
 			SizeConstraint = Enum.SizeConstraint.RelativeYY,
 			ZIndex = 1,
-			Parent = bg,
 		})
-		Util.corner(dot, 0.5)
+		local c = Shapes.canvas(holder)
+		Shapes.wave(c, 0.5, 0.5, 1, 0.07, C.skyDark)
 	end
 end
 

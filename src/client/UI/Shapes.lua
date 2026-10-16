@@ -164,6 +164,16 @@ function Shapes.arc(parent: Instance, cx: number, cy: number, d: number, th: num
 	return Shapes.ring(parent, cx, cy, d, th, color, opts)
 end
 
+-- A printed wave mark: two shallow arcs side by side, `w` wide, centred on (cx, cy).
+function Shapes.wave(parent: Instance, cx: number, cy: number, w: number, th: number, color: Color3, o: { [string]: any }?)
+	local d = w / 2
+	local opts = table.clone(o or {})
+	opts.dir = 0
+	opts.keep = 0.42
+	Shapes.arc(parent, cx - d / 2, cy + d / 2, d, th, color, opts)
+	Shapes.arc(parent, cx + d / 2, cy + d / 2, d, th, color, opts)
+end
+
 -- Pointy-top hexagon of circumradius d/2.
 function Shapes.hex(parent: Instance, cx: number, cy: number, d: number, color: Color3, o: { [string]: any }?): { Frame }
 	local R = d / 2

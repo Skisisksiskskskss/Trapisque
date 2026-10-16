@@ -1,8 +1,9 @@
 --[[
 	Widgets
-	Buttons, panels, labels and other reusable pieces in Trapisque's sticker style: candy
-	colours, one thick dark outline around everything, a hard shadow or a chunky lip
-	underneath, and outlined lettering. Every widget animates on hover and press.
+	Buttons, panels, labels and other reusable pieces in Trapisque's pirate print style:
+	flat paint and cream card, one heavy ink outline around everything, a solid ink
+	shadow underneath (a button presses down into its shadow), punchy lettering. Every
+	widget animates on hover and press.
 ]]
 
 local UserInputService = game:GetService("UserInputService")
@@ -21,32 +22,35 @@ local Widgets = {}
 -- The screen the UI is on (Root keeps this current), so modals and toasts can fit it.
 Widgets.metrics = Layout.metrics(1280, 720)
 
--- A candy button: its face, the darker lip under it, and outlined lettering.
-local function candy(face: Color3, lip: Color3?, text: Color3?)
+--[[
+	A painted button: its flat face, the solid ink shadow it sits on, and its lettering
+	(bone white with an ink outline on dark paint, plain ink on light paint).
+]]
+local function paint(face: Color3, light: boolean?)
 	return {
 		face = face,
-		light = face:Lerp(Color3.new(1, 1, 1), 0.2),
-		dark = lip or face:Lerp(Color3.new(0, 0, 0), 0.35),
+		light = face:Lerp(Color3.new(1, 1, 1), 0.18),
+		dark = C.shadow,
 		stroke = C.line,
-		text = text or C.white,
-		outline = C.line,
+		text = if light then C.text else C.textLight,
+		outline = if light then nil else C.line,
 	}
 end
 
 Widgets.ButtonStyles = {
-	-- the everyday button
-	wood = candy(hex("5B45A0"), hex("3A2A6E"), C.text),
-	-- sunny yellow: the button that matters most on a screen
-	brass = candy(C.sun, C.sunDark),
-	red = candy(C.coral, C.coralDark),
-	green = candy(C.lime, C.limeDark),
-	blue = candy(C.sky, C.skyDark),
-	purple = candy(C.grape, C.grapeDark),
-	orange = candy(C.orange, C.orangeDark),
-	pink = candy(C.pink, C.pinkDark),
-	-- a quiet button that sits flush with a panel
-	panel = candy(C.panelRaised, C.panelDeep, C.text),
-	dark = candy(C.panelDeep, hex("0E0819"), C.text),
+	-- the everyday button: navy
+	wood = paint(C.grape),
+	-- gold: the button that matters most on a screen
+	brass = paint(C.sun, true),
+	red = paint(C.coral),
+	green = paint(C.lime),
+	blue = paint(C.sky),
+	purple = paint(C.mint),
+	orange = paint(C.orange),
+	pink = paint(C.pink),
+	-- a quiet button that sits on a panel: cream card
+	panel = paint(C.panelRaised, true),
+	dark = paint(hex("2A2836")),
 }
 Widgets.ButtonStyles.sun = Widgets.ButtonStyles.brass
 Widgets.ButtonStyles.parchment = Widgets.ButtonStyles.panel
@@ -96,7 +100,11 @@ function Widgets.label(parent: Instance?, o: { [string]: any }): TextLabel
 		label.AutomaticSize = Enum.AutomaticSize.Y
 		label.Size = UDim2.new(label.Size.X.Scale, label.Size.X.Offset, 0, 0)
 	end
-	if o.outline then
+	-- an ink outline is for light lettering on paint; dark ink on cream card needs none
+	-- (it would only thicken the letters into blobs)
+	local color = label.TextColor3
+	local light = 0.299 * color.R + 0.587 * color.G + 0.114 * color.B > 0.45
+	if o.outline and (light or o.forceOutline) then
 		Util.new("UIStroke", { Color = o.outline, Thickness = o.outlineThickness or 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual, Parent = label })
 	end
 	label.Parent = parent
@@ -139,7 +147,7 @@ function Widgets.button(parent: Instance?, o: { [string]: any })
 		Position = UDim2.fromOffset(0, depth),
 		Parent = root,
 	})
-	Util.corner(side, o.corner or 14)
+	Util.corner(side, o.corner or 10)
 	local sideStroke = Util.stroke(side, style.stroke, 3)
 
 	local face = Util.new("Frame", {
@@ -150,13 +158,14 @@ function Widgets.button(parent: Instance?, o: { [string]: any })
 		ZIndex = 2,
 		Parent = root,
 	})
-	Util.corner(face, o.corner or 14)
+	Util.corner(face, o.corner or 10)
 	local faceStroke = Util.stroke(face, style.stroke, 3)
-	-- a soft highlight across the top half: the candy shine
+	-- (printed paint is flat: the old candy shine stays, invisible, for the code that
+	-- still toggles it)
 	local gloss = Util.new("Frame", {
 		Name = "Gloss",
 		BackgroundColor3 = C.white,
-		BackgroundTransparency = 0.82,
+		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
 		Size = UDim2.new(1, -10, 0.36, 0),
 		Position = UDim2.fromOffset(5, 4),
@@ -173,7 +182,7 @@ function Widgets.button(parent: Instance?, o: { [string]: any })
 		ZIndex = 4,
 		Parent = face,
 	})
-	Util.corner(hover, o.corner or 14)
+	Util.corner(hover, o.corner or 10)
 
 	local content = Util.frame(face, { Name = "Content", ZIndex = 5 })
 	local list = Util.list(content, "x", 8, "Center", "Center")
@@ -434,22 +443,11 @@ function Widgets.panel(parent: Instance?, o: { [string]: any }): (Frame, Frame)
 		ZIndex = o.z or 1,
 		LayoutOrder = o.layoutOrder or 0,
 	})
-	local corner = o.corner or 18
+	local corner = o.corner or 10
 	Util.corner(root, corner)
 	if style == "walnut" then
 		root.BackgroundColor3 = C.panel
 		Util.stroke(root, C.line, 4)
-		-- a lighter rim along the top edge: the panel catches the light
-		local rim = Util.new("Frame", {
-			Name = "Rim",
-			BackgroundColor3 = C.panelHi,
-			BackgroundTransparency = 0.55,
-			BorderSizePixel = 0,
-			Size = UDim2.new(1, -2 * corner, 0, 3),
-			Position = UDim2.fromOffset(corner, 4),
-			Parent = root,
-		})
-		Util.corner(rim, 2)
 	elseif style == "wood" or style == "board" then
 		-- a raised panel (the Potion Seller's stall)
 		root.BackgroundColor3 = if style == "board" then C.panelDeep else C.panelRaised
@@ -465,7 +463,7 @@ function Widgets.panel(parent: Instance?, o: { [string]: any }): (Frame, Frame)
 	if o.shadow ~= false then
 		task.defer(function()
 			if root.Parent then
-				Util.shadow(root, { offset = 7, transparency = 0.1, color = C.shadow })
+				Util.shadow(root, { offset = 7, transparency = 0, color = C.shadow })
 			end
 		end)
 	end
@@ -484,12 +482,13 @@ function Widgets.panel(parent: Instance?, o: { [string]: any }): (Frame, Frame)
 	return content, root
 end
 
--- Title plaque: a candy pill with outlined lettering, tilted a touch like a sticker.
+-- Title banner: a flat red band with bone lettering on a solid ink shadow, tilted a
+-- touch like a comic caption.
 function Widgets.ribbon(parent: Instance, text: string, o: { [string]: any }?)
 	local opts = o or {}
-	local color = opts.color or C.sun
-	if color == C.panelDeep then
-		color = C.sun
+	local color = opts.color or C.coral
+	if color == C.panelDeep or color == C.sun then
+		color = C.coral
 	end
 	local holder = Util.frame(parent, {
 		Name = "Ribbon",
@@ -501,14 +500,14 @@ function Widgets.ribbon(parent: Instance, text: string, o: { [string]: any }?)
 	})
 	local lip = Util.new("Frame", {
 		Name = "Lip",
-		BackgroundColor3 = color:Lerp(Color3.new(0, 0, 0), 0.35),
+		BackgroundColor3 = C.shadow,
 		BorderSizePixel = 0,
-		Position = UDim2.fromOffset(0, 5),
+		Position = UDim2.fromOffset(5, 5),
 		Size = UDim2.fromScale(1, 1),
 		ZIndex = 21,
 		Parent = holder,
 	})
-	Util.corner(lip, 14)
+	Util.corner(lip, 6)
 	Util.stroke(lip, C.line, 3)
 	local band = Util.new("Frame", {
 		Name = "Band",
@@ -518,13 +517,13 @@ function Widgets.ribbon(parent: Instance, text: string, o: { [string]: any }?)
 		ZIndex = 22,
 		Parent = holder,
 	})
-	Util.corner(band, 14)
+	Util.corner(band, 6)
 	Util.stroke(band, C.line, 3)
 	Widgets.label(band, {
 		text = string.upper(text),
 		font = "display",
-		size = 28,
-		color = C.white,
+		size = 30,
+		color = C.textLight,
 		align = "center",
 		sizeUDim = UDim2.new(1, -20, 1, -10),
 		anchor = Vector2.new(0.5, 0.5),
@@ -582,7 +581,7 @@ function Widgets.toggle(parent: Instance, o: { [string]: any })
 	Util.corner(fill, 0.5)
 	local knob = Util.new("Frame", {
 		Name = "Knob",
-		BackgroundColor3 = C.text,
+		BackgroundColor3 = C.panelRaised,
 		BorderSizePixel = 0,
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Size = UDim2.new(0, 0, 0.8, 0),
@@ -656,7 +655,7 @@ function Widgets.slider(parent: Instance, o: { [string]: any })
 	Util.corner(fill, 0.5)
 	local knob = Util.new("Frame", {
 		Name = "Knob",
-		BackgroundColor3 = C.text,
+		BackgroundColor3 = C.panelRaised,
 		BorderSizePixel = 0,
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(value, 0.5),
@@ -764,7 +763,7 @@ function Widgets.choice(parent: Instance, o: { [string]: any })
 			LayoutOrder = i,
 			Parent = root,
 		})
-		Util.corner(f, 12)
+		Util.corner(f, 8)
 		local stroke = Util.stroke(f, C.line, 3)
 		local label = Widgets.label(f, {
 			text = opt.text,
@@ -829,7 +828,7 @@ function Widgets.progress(parent: Instance, o: { [string]: any })
 		Parent = root,
 	})
 	Util.corner(fill, 0.5)
-	if not o.plain then
+	if false then
 		local shine = Util.new("Frame", {
 			Name = "Shine",
 			BackgroundColor3 = C.white,
@@ -1107,9 +1106,9 @@ function Widgets.toast(text: string, kind: string?)
 		ZIndex = 201,
 		Parent = holder,
 	})
-	Util.corner(note, 14)
+	Util.corner(note, 8)
 	Util.stroke(note, C.line, 3)
-	-- a candy stripe down the left says what kind of news it is
+	-- a painted stripe down the left says what kind of news it is
 	local stripe = Util.new("Frame", {
 		Name = "Stripe",
 		BackgroundColor3 = color,

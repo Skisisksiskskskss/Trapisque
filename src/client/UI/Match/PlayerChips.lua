@@ -46,10 +46,11 @@ local STATUS = {
 	{ key = "burning", icon = "flame", color = hex("FF9A3C"), count = true },
 	{ key = "skip", icon = "zzz", color = hex("6B3FD6"), count = true },
 	{ key = "anchor", icon = "time_potion", color = hex("9A6BFF"), count = false },
+	{ key = "underdog", icon = "dice", color = hex("FF6B5B"), count = false }, -- last: an extra die
 }
 
 local function seatColor(seat: number): Color3
-	return Theme.Seat[((seat - 1) % 6) + 1]
+	return Theme.seatColor(seat)
 end
 
 function PlayerChips.new(parent: Instance, seats, opts)
@@ -122,6 +123,37 @@ function PlayerChips:_build(info, x: number, y: number, chip)
 	Util.corner(root, math.min(12, h * 0.3))
 	local rim = Util.stroke(root, C.line, 2.5)
 	local e = { root = root, rim = rim, info = info, kind = kind, w = w, h = h, color = color }
+	if kind == "full" then
+		-- the player's colour (their character's) as a flag down the chip's left edge
+		local flag = Util.new("Frame", {
+			Name = "Flag",
+			BackgroundColor3 = color,
+			BorderSizePixel = 0,
+			Size = UDim2.new(0, 10, 1, 0),
+			ZIndex = 1,
+			Parent = root,
+		})
+		Util.corner(flag, math.min(12, h * 0.3))
+		local square = Util.new("Frame", {
+			Name = "FlagEdge",
+			BackgroundColor3 = color,
+			BorderSizePixel = 0,
+			Position = UDim2.fromOffset(5, 0),
+			Size = UDim2.new(0, 5, 1, 0),
+			ZIndex = 1,
+			Parent = root,
+		})
+		Util.new("Frame", {
+			Name = "FlagLine",
+			BackgroundColor3 = C.line,
+			BorderSizePixel = 0,
+			Position = UDim2.fromOffset(10, 0),
+			Size = UDim2.new(0, 2.5, 1, 0),
+			ZIndex = 1,
+			Parent = root,
+		})
+		square.Name = "FlagEdge"
+	end
 
 	local name = info.name .. (if info.seat == self.mySeat then " (you)" else "")
 	local charDef = Characters.get(info.character or "")
@@ -156,7 +188,7 @@ function PlayerChips:_build(info, x: number, y: number, chip)
 			text = "0",
 			font = "chunky",
 			size = size,
-			color = C.white,
+			color = C.text,
 			sizeUDim = UDim2.fromOffset(20, size + 2),
 			position = UDim2.fromOffset(size + 2, 0),
 		})
@@ -167,17 +199,17 @@ function PlayerChips:_build(info, x: number, y: number, chip)
 		local avatarSize = h - 16
 		e.avatar = Avatars.portrait(root, info, {
 			AnchorPoint = Vector2.new(0, 0.5),
-			Position = UDim2.new(0, 8, 0.5, 0),
+			Position = UDim2.new(0, 20, 0.5, 0),
 			Size = UDim2.fromOffset(avatarSize, avatarSize),
-		}, { ring = color, ringPx = 3 })
-		local tx = 8 + avatarSize + 10
+		}, { back = color, ring = C.line, ringPx = 2.5 })
+		local tx = 20 + avatarSize + 10
 		local tagRoom = if self.isTeam then 34 else 0
 		e.name = Widgets.label(root, {
 			name = "Name",
 			text = name,
 			font = "heavy",
 			size = 16,
-			color = if info.look and info.look.vip then C.sun else C.text,
+			color = Theme.nameColor(info.look),
 			sizeUDim = UDim2.fromOffset(w - tx - 8 - tagRoom, 18),
 			position = UDim2.fromOffset(tx, 5),
 		})
@@ -188,7 +220,7 @@ function PlayerChips:_build(info, x: number, y: number, chip)
 				text = sub,
 				font = "body",
 				size = 12,
-				color = Util.shade(Theme.Character[info.character] or TEXT_FAINT, 0.35),
+				color = Theme.inkOf(Theme.Character[info.character] or TEXT_FAINT),
 				sizeUDim = UDim2.fromOffset(w - tx - 8, 14),
 				position = UDim2.fromOffset(tx, 23),
 			})
@@ -238,7 +270,7 @@ function PlayerChips:_build(info, x: number, y: number, chip)
 			AnchorPoint = Vector2.new(0, 0.5),
 			Position = UDim2.new(0, 3, 0.5, 0),
 			Size = UDim2.fromOffset(avatarSize, avatarSize),
-		}, { ring = color, ringPx = 2 })
+		}, { back = color, ring = C.line, ringPx = 2 })
 		local tx = 3 + avatarSize + 5
 		e.name = Widgets.label(root, {
 			name = "Name",
@@ -264,7 +296,7 @@ function PlayerChips:_build(info, x: number, y: number, chip)
 			AnchorPoint = Vector2.new(0.5, 0),
 			Position = UDim2.new(0.5, 0, 0, 4),
 			Size = UDim2.fromOffset(avatarSize, avatarSize),
-		}, { ring = color, ringPx = 2 })
+		}, { back = color, ring = C.line, ringPx = 2 })
 		e.name = Widgets.label(root, {
 			name = "Name",
 			text = info.name,

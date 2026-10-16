@@ -704,7 +704,7 @@ function Overlays.reveal(layer: Frame, seats, duration: number)
 		})
 		name.TextTruncate = Enum.TextTruncate.AtEnd
 		local seatDot = Util.new("Frame", {
-			BackgroundColor3 = Theme.Seat[((info.seat - 1) % 6) + 1],
+			BackgroundColor3 = Theme.seatColor(info.seat),
 			BorderSizePixel = 0,
 			AnchorPoint = Vector2.new(0.5, 0.5),
 			Position = UDim2.new(0.5, 0, 1, -34),

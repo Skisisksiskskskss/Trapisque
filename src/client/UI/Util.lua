@@ -202,6 +202,8 @@ end
 function Util.shadow(inst: GuiObject, opts: { [string]: any }?)
 	local o = opts or {}
 	local offset = o.offset or 4
+	-- printed comic shadows fall down and to the right
+	local offsetX = o.offsetX or math.floor(offset * 0.6 + 0.5)
 	local transparency = o.transparency or 0.55
 	local parent = inst.Parent
 	if not parent then
@@ -213,7 +215,7 @@ function Util.shadow(inst: GuiObject, opts: { [string]: any }?)
 		BackgroundTransparency = transparency,
 		BorderSizePixel = 0,
 		AnchorPoint = inst.AnchorPoint,
-		Position = inst.Position + UDim2.fromOffset(0, offset),
+		Position = inst.Position + UDim2.fromOffset(offsetX, offset),
 		Size = inst.Size,
 		Rotation = inst.Rotation,
 		ZIndex = math.max(0, inst.ZIndex - 1),
@@ -224,7 +226,7 @@ function Util.shadow(inst: GuiObject, opts: { [string]: any }?)
 		c:Clone().Parent = sh
 	end
 	inst:GetPropertyChangedSignal("Position"):Connect(function()
-		sh.Position = inst.Position + UDim2.fromOffset(0, offset)
+		sh.Position = inst.Position + UDim2.fromOffset(offsetX, offset)
 	end)
 	inst:GetPropertyChangedSignal("Size"):Connect(function()
 		sh.Size = inst.Size

@@ -107,6 +107,14 @@ function CosmeticArt.pawn(parent: Instance?, skinId: string?, seatColor: Color3,
 end
 
 -- Small character badge that sits on a pawn's corner.
+-- The accessory a character wears on the board and in portraits (nil: none).
+function CosmeticArt.accessory(parent: Instance, accessoryId: string?, props: { [string]: any }?): Frame?
+	if not accessoryId then
+		return nil
+	end
+	return nil
+end
+
 function CosmeticArt.characterBadge(parent: Instance, character: string, props: { [string]: any }?): Frame
 	local color = Theme.Character[character] or Theme.C.inkSoft
 	return Icons.medallion(parent, character, color, props)

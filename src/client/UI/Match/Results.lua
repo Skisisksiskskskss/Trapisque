@@ -31,7 +31,7 @@ local Results = {}
 local PLACE = { "1st", "2nd", "3rd", "4th", "5th", "6th" }
 
 local function row(list: Frame, i: number, r, mine: boolean, isTeam: boolean, narrow: boolean)
-	local seatColor = Theme.Seat[((r.seat - 1) % 6) + 1]
+	local seatColor = Theme.seatColor(r.seat)
 	local f = Util.new("Frame", {
 		Name = "Row" .. i,
 		BackgroundColor3 = if mine then C.mine else C.panelRaised,
@@ -359,7 +359,7 @@ function Results.show(layer: Instance, data, mySeat: number, isTeam: boolean, on
 				text = head,
 				font = "chunky",
 				size = if narrow then 14 else 17,
-				color = if trophies and (trophies.delta or 0) > 0 then C.sun elseif trophies and (trophies.delta or 0) < 0 then C.badSoft else C.text,
+				color = if trophies and (trophies.delta or 0) > 0 then C.good elseif trophies and (trophies.delta or 0) < 0 then C.bad else C.text,
 				sizeUDim = UDim2.new(1, -(tx + 6), 0, 20),
 				position = UDim2.fromOffset(tx, if narrow then 2 else 8),
 			})

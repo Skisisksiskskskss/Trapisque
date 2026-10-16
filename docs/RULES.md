@@ -52,8 +52,17 @@ Your **two dice are rolled for you** as your turn starts. Then:
    *works by itself* never need playing: they act from your hand.
 2. **Use your ability**, if your Power bar is full.
 3. **Pick a die and move.** The die you move with is your move; the best of the dice
-   you *don't* use charges your **Power**. Rolled doubles? You may move the **total**
-   instead (that charges no Power).
+   you *don't* use charges your **Power**. Rolled doubles? You have three ways to go:
+   forwards with the first die, **backwards** with the second (the other one still
+   charges your Power: back onto a token you just passed, or onto a rival right behind
+   you), or the **total** of both (that charges no Power).
+
+**The underdog.** Whoever is clearly last rolls an extra **gold die** on their turn:
+move with any of the three, but the gold die never charges Power (and never makes
+doubles). Clearly last means behind every other player by **8 tiles or more**, where
+every treasure counts as a whole lap: banking a treasure and starting a new run from
+the Start never makes you the underdog. The player list marks the underdog. A frozen
+underdog still rolls just the one frozen die. **(digital)**
 
 You choose in any order, but moving ends your turn. Hovering a die (tapping it once on
 a phone) shows on the board exactly where it takes you and what happens there: a

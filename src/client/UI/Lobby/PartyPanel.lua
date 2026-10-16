@@ -324,7 +324,7 @@ function PartyPanel:_member(list: Instance, i: number, m, isLeader: boolean, par
 		AnchorPoint = Vector2.new(0, 0.5),
 		Position = UDim2.new(0, 5, 0.5, 0),
 		Size = UDim2.fromOffset(avatar, avatar),
-	}, { ring = Theme.Seat[((i - 1) % 6) + 1], ringPx = 2 })
+	}, { ring = Theme.seatColor(i), ringPx = 2 })
 	local nameX = avatar + 14
 	if m.leader then
 		local crown = Util.frame(row, { Position = UDim2.fromOffset(nameX, (h - 22) / 2), Size = UDim2.fromOffset(22, 22) })

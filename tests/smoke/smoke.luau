@@ -57,6 +57,15 @@ local function say(fmt, ...)
 	end
 end
 
+-- cfg.shots: screenshots along the way (tests/fake/shots.luau, tools/preview/shot.py)
+local shotsTaken = {}
+local function shot(name: string)
+	if cfg.shots and F.shot and not shotsTaken[name] then
+		shotsTaken[name] = true
+		F.shot((cfg.name or "smoke") .. "-" .. name)
+	end
+end
+
 local function fail(msg: string)
 	error("[" .. (cfg.name or "smoke") .. "] " .. msg .. "\n" .. F.problems(), 0)
 end
@@ -165,6 +174,7 @@ F.run(3)
 check(playerGui:FindFirstChild("TrapisqueLoading") == nil, "the loading screen never went away")
 noProblems("joining")
 say("lobby up at %.1fs", F.now)
+shot("lobby")
 
 ---------------------------------------------------------------------------
 -- the lobby
@@ -227,6 +237,8 @@ for _, page in PAGES do
 				F.run(1.5)
 			end
 		end
+		F.run(0.6)
+		shot("page-" .. page.id)
 		-- page tabs and pagers (How to Play, Top Players)
 		local top = modals()
 		if top[#top] then
@@ -275,6 +287,7 @@ do
 		F.click(buttonIn(strip))
 		F.run(1.2)
 		local top = modals()
+		shot("characters")
 		if top[#top] then
 			local picks = F.buttons(top[#top], "^PICK$")
 			if character then
@@ -557,6 +570,9 @@ local function think()
 		if w then
 			F.click(w.button)
 			F.run(0.3)
+			if stats.turns >= 4 then
+				shot("match")
+			end
 			F.click(w.button)
 			stats.moves += 1
 		end
@@ -566,6 +582,9 @@ local function think()
 			if dw then
 				F.hover(dw.button, true)
 				F.run(0.1)
+				if stats.turns >= 4 and k == keys[#keys] then
+					shot("match")
+				end
 				F.hover(dw.button, false)
 			end
 		end
@@ -595,6 +614,7 @@ check(F.run(12, function()
 	return #F.buttons(Root.gui, "^LOBBY") > 0
 end), "the results never showed a LOBBY button")
 F.run(3)
+shot("results")
 press(Root.gui, "^LOBBY")
 check(F.run(20, function()
 	return Root.currentName() == "lobby"

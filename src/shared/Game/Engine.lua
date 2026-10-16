@@ -20,7 +20,8 @@
 			give      (team modes) pass a card to a teammate - counts as your card
 		and finally one of:
 			move      pick a die to move with; the other die charges your Power
-			          (doubles: you may move the total instead)
+			          (doubles: the second die of the pair moves you backwards, or
+			          move the total, which charges no Power)
 			recall    warp back to your Time Travel anchor instead of moving
 		Landing on a Potion Seller opens the shop: buy / shopDone.
 		Scavenge offers two cards: pick.
@@ -101,6 +102,7 @@ local function newStats()
 		bought = 0,
 		abilities = 0,
 		doubles = 0,
+		underdog = 0,
 		tiles = 0, -- tiles walked
 		coins = 0, -- coins earned
 	}
@@ -284,24 +286,38 @@ function Engine:start()
 	assert(self.phase == "setup", "Engine: already started")
 	local rng = self.rng
 
-	-- characters: picks are kept (two players may pick the same one); anyone without a
-	-- pick gets a random character, preferring ones nobody has
+	-- characters: one of each per match, because a character's colour is its player's
+	-- colour. Picks are kept; when two players picked the same one, a random one of them
+	-- keeps it and the other gets a character nobody has (and is told why). Anyone
+	-- without a pick gets one nobody has.
+	local taken = {}
+	local wanting = {}
 	for _, p in self.players do
-		if p.character == nil or Characters.get(p.character) == nil then
+		if p.character ~= nil and Characters.get(p.character) ~= nil then
+			table.insert(wanting, p)
+		else
+			p.character = nil
+		end
+	end
+	rng:shuffle(wanting)
+	for _, p in wanting do
+		if taken[p.character] then
+			p.wanted = p.character
+			p.character = nil
+		else
+			taken[p.character] = true
+		end
+	end
+	for _, p in self.players do
+		if p.character == nil then
 			local free = {}
 			for _, c in Characters.ids do
-				local taken = false
-				for _, other in self.players do
-					if other.character == c then
-						taken = true
-						break
-					end
-				end
-				if not taken then
+				if not taken[c] then
 					table.insert(free, c)
 				end
 			end
 			p.character = if #free > 0 then rng:pick(free) else rng:pick(Characters.ids)
+			taken[p.character] = true
 		end
 	end
 
@@ -351,7 +367,7 @@ function Engine:start()
 
 	local setup = { t = "setup", players = {}, order = copyList(order) }
 	for _, p in self.players do
-		table.insert(setup.players, { seat = p.index, character = p.character, team = p.team })
+		table.insert(setup.players, { seat = p.index, character = p.character, team = p.team, wanted = p.wanted })
 	end
 	self:_emit(setup)
 
@@ -487,19 +503,36 @@ function Engine:_roll(p, reroll: boolean)
 	end
 	-- Frozen: one die, and you shuffle along at half speed (rounded up)
 	local dice
+	local underdog = false
 	if frozen then
 		dice = { halve(self.rng:int(1, 6)) }
 	else
 		dice = {}
-		for _ = 1, math.clamp(self.mut.diceCount or 2, 2, 3) do
+		local base = math.clamp(self.mut.diceCount or 2, 2, 3)
+		local n = base
+		if reroll then
+			-- a reroll rolls as many dice as before
+			n = math.max(base, #self.turn.dice)
+			underdog = self.turn.gold ~= nil
+		elseif n < 3 and self:underdogSeat() == p.index then
+			-- clearly last: an extra gold die to move with (it charges no Power)
+			n += 1
+			underdog = true
+			p.stats.underdog += 1
+		end
+		for _ = 1, n do
 			table.insert(dice, self.rng:int(1, 6))
 		end
 	end
 	self.turn.dice = dice
-	if #dice == 2 and dice[1] == dice[2] then
-		p.stats.doubles += 1
+	self.turn.gold = if underdog then #dice else nil
+	for i = 2, #dice do
+		if Engine.isBackDie(dice, i, self.turn.gold) then
+			p.stats.doubles += 1
+			break
+		end
 	end
-	self:_emit({ t = "roll", p = p.index, dice = copyList(dice), frozen = frozen, reroll = reroll })
+	self:_emit({ t = "roll", p = p.index, dice = copyList(dice), frozen = frozen, reroll = reroll, underdog = underdog, gold = self.turn.gold })
 	if frozen and not reroll and p.status.frozen == 0 then
 		self:_emit({ t = "status", p = p.index, status = "frozen", on = false })
 	end
@@ -883,6 +916,41 @@ end
 function Engine:score(p): number
 	-- treasures first, then how close you are to the next one
 	return p.treasures * 1000 + (1000 - (self.board.dist[p.tile] or 0))
+end
+
+--[[
+	How far along the race `p` is, in tiles: every treasure counts as a whole lap, then
+	how far into this lap they are. So scoring a treasure and starting again from the
+	Start never counts as falling behind.
+]]
+function Engine:progress(p): number
+	local board = self.board
+	local lap = board.dist[board.start] or 0
+	return p.treasures * lap + (lap - (board.dist[p.tile] or lap))
+end
+
+--[[
+	The underdog: the one player who is clearly last, behind everyone else by
+	Rules.UnderdogGap tiles or more (laps included). nil when nobody is.
+]]
+function Engine:underdogSeat(): number?
+	if #self.players < 2 then
+		return nil
+	end
+	local last, lastP, second = nil, math.huge, math.huge
+	for _, p in self.players do
+		local pr = self:progress(p)
+		if pr < lastP then
+			second = lastP
+			last, lastP = p.index, pr
+		elseif pr < second then
+			second = pr
+		end
+	end
+	if last and second - lastP >= (Rules.UnderdogGap or math.huge) then
+		return last
+	end
+	return nil
 end
 
 function Engine:teamScore(team: number): number
@@ -1518,31 +1586,66 @@ function Engine:autoAct()
 	return false, "Nothing to do.", {}
 end
 
--- The dice option `die` (1, 2 or "sum") for the current turn: steps and Power gained.
-function Engine:moveOption(die: any): (number?, number?)
-	local turn = self.turn
-	if not turn then
-		return nil, nil
+-- Is die `i` the second of a pair (doubles)? That one moves you backwards. The
+-- underdog's gold die (`gold`, its place in the roll) never pairs up.
+function Engine.isBackDie(dice: { number }, i: number, gold: number?): boolean
+	if i == gold then
+		return false
 	end
-	local dice = turn.dice
-	if die == "sum" then
-		if #dice == 2 and dice[1] == dice[2] then
-			return dice[1] + dice[2], 0
+	for j = 1, i - 1 do
+		if j ~= gold and dice[j] == dice[i] then
+			return true
 		end
-		return nil, nil
+	end
+	return false
+end
+
+-- The dice that count for doubles: all of them but the underdog's gold die.
+local function plainDice(dice: { number }, gold: number?): { number }
+	local out = {}
+	for i, d in dice do
+		if i ~= gold then
+			table.insert(out, d)
+		end
+	end
+	return out
+end
+
+--[[
+	What moving with die `die` (its place in the roll: 1, 2 or 3) does: the steps, the
+	Power the best of the other dice charges, and whether it goes backwards (the second
+	die of a pair). "sum" is the total of two doubles (no Power). `gold` is the
+	underdog's extra die: it can be moved with but never charges Power or pairs up.
+	Shared by the engine, the bots and the match screen.
+]]
+function Engine.dieOption(dice: { number }, die: any, gold: number?): (number?, number?, boolean?)
+	if die == "sum" then
+		local plain = plainDice(dice, gold)
+		if #plain == 2 and plain[1] == plain[2] then
+			return plain[1] + plain[2], 0, false
+		end
+		return nil, nil, nil
 	end
 	local i = tonumber(die)
 	if i == nil or i ~= math.floor(i) or dice[i :: number] == nil then
-		return nil, nil
+		return nil, nil, nil
 	end
-	-- the best of the dice you don't move with charges your Power
 	local other = 0
 	for j, d in dice do
-		if j ~= i and d > other then
+		if j ~= i and j ~= gold and d > other then
 			other = d
 		end
 	end
-	return dice[i :: number], other
+	return dice[i :: number], other, Engine.isBackDie(dice, i :: number, gold)
+end
+
+-- The dice option `die` for the current turn: steps, Power gained, backwards.
+function Engine:moveOption(die: any): (number?, number?, boolean?)
+	local turn = self.turn
+	if not turn then
+		return nil, nil, nil
+	end
+	return Engine.dieOption(turn.dice, die, turn.gold)
 end
 
 -- Applies the boost played this turn to a move of `m` steps: (steps, backwards).
@@ -1562,12 +1665,13 @@ function Engine.boosted(m: number, boost: string?): (number, boolean)
 end
 
 function Engine:_cmdMove(p, cmd)
-	local m, gain = self:moveOption(cmd.die)
+	local m, gain, backDie = self:moveOption(cmd.die)
 	if not m then
 		return false, "Pick one of your dice."
 	end
 	local backwards
 	m, backwards = Engine.boosted(m, self.turn.boost)
+	backwards = backwards or backDie == true
 	self:_emit({
 		t = "choose",
 		p = p.index,
@@ -2112,10 +2216,12 @@ function Engine:snapshot(forSeat: number?)
 		ranking = self.ranking and copyList(self.ranking) or nil,
 		endReason = self.endReason,
 		dice = if turn then copyList(turn.dice) else {},
+		gold = if turn then turn.gold else nil,
 		cardsPlayed = if turn then turn.cardsPlayed else 0,
 		abilityUsed = if turn then turn.abilityUsed else false,
 		boost = if turn then turn.boost else nil,
 		mutator = table.clone(self.mut),
+		underdog = if self.phase ~= "over" then self:underdogSeat() else nil,
 	}
 	if forSeat and self.players[forSeat] then
 		local me = self.players[forSeat]
