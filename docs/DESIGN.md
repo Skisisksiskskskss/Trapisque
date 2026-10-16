@@ -209,10 +209,13 @@ crisp at any size. `tools/shots.sh` renders real screenshots offline for review.
 A board game is loud. Players can't see each other here, and many can't use Roblox's
 chat at all, so the game has its own:
 
-- **Quick lines are free for everyone.** Sixteen fixed lines ("Ahoy!", "Watch your
-  step!", "Not fair!", "GG!") need no filtering, so anyone can use them whatever
-  their settings. Bots use them too (an "Oops!" when they're sent home, a "GG!" at the
-  end), which keeps a table of bots from feeling dead.
+- **Quick lines are free for everyone.** Six fixed lines ("Ahoy!", "Good luck!",
+  "Nice move!", "Oops!", "Thanks!", "GG!") need no filtering, so anyone can use them
+  whatever their settings. Six is enough to be friendly; anything more is what the
+  Chat pass is for. Bots use them too (an "Oops!" when they're sent home, a "GG!" at
+  the end), which keeps a table of bots from feeling dead.
+- **Easy to reach.** A gold CHAT button in the lobby's top bar, the speech-bubble
+  button in a match, and T on a keyboard everywhere.
 - **Typing is the Chat pass** (10 Robux), and only for accounts whose Roblox settings
   allow chat. Every typed line is filtered for each reader and only reaches people
   who may chat with the speaker. Staff mutes stop typing but not quick lines.
@@ -222,9 +225,13 @@ chat at all, so the game has its own:
   the speaker is off it. Emotes use the same bubbles. In the lobby, lines drop in
   under the chat button with the speaker's avatar.
 - **Read out loud, with character.** Roblox's text-to-speech is used, but never plain:
-  each voice is a pitch, a speed and a chain of effects (a warm low growl, a gravelly
-  sea dog, a chipmunk squeak, a flanged parrot, an echoing ghost, a tremolo clockwork).
-  Each character has one; the Voice Pack picks any. Text-to-speech is rate-limited, so
+  each voice is a base voice, a pitch, a pace and sometimes a light effect (a warm low
+  growl, a squeaky high one, a flanged parrot, an echoing ghost, a clockwork shimmer),
+  kept light enough that every word stays clear. Before a line is spoken it's made
+  speakable (`Meta/Speech`): numbers become words ("12" twelve, "3rd" third, "2v2" two
+  versus two), chat slang is said the way people say it ("gg" gee gee, "ez" ee zee,
+  "brb" be right back) and faces like ":)" are dropped. Each character has a voice;
+  the Voice Pack picks any. Text-to-speech is rate-limited, so
   quick lines load once per voice and replay, and a line that can't get a voice in
   time is babbled (one squeaky syllable per word, pitched by its vowels). In the lobby
   only your own and your party's lines speak, or a full lobby would be a racket.

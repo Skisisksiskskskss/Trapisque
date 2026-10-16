@@ -28,8 +28,13 @@ local rng = Random.new(cfg.seed or 7)
 F.mount(F.ReplicatedStorage, "Shared", getNode("Shared"))
 F.mount(game:GetService("ServerScriptService"), "Server", getNode("Server"))
 F.mount(game:GetService("ReplicatedFirst"), "First", getNode("First"))
--- the tester is the game's owner (the owner panel gets a look too)
-requireModule("Shared/Config").Staff.OwnerIds = { 4242 }
+-- the tester is the game's owner (the owner panel gets a look too); not in store
+-- screenshots, where an OWNER badge on a player's bubble would look odd
+if cfg.store then
+	requireModule("Shared/Config").Staff.StudioIsOwner = false
+else
+	requireModule("Shared/Config").Staff.OwnerIds = { 4242 }
+end
 -- MessagingService never answers (as in Studio with an unpublished place): the game
 -- must still let everyone in
 F.messagingHangs = true
@@ -154,7 +159,7 @@ end)
 F.run(1)
 noProblems("server start")
 
-local player = F.addPlayer("Tester", 4242)
+local player = F.addPlayer(cfg.player or "Tester", 4242)
 F.run(0.5)
 F.spawn(function()
 	requireModule("First/Loading")
@@ -162,6 +167,25 @@ end)
 F.spawn(function()
 	requireModule("Client/Main")
 end)
+
+-- store screenshots: everyone wears their character's portrait (the fake has no
+-- avatar headshots to show)
+if cfg.store then
+	local Avatars = requireModule("Client/UI/Avatars")
+	local StateModule = requireModule("Client/State")
+	Avatars.headshot = function()
+		return nil
+	end
+	local portrait = Avatars.portrait
+	Avatars.portrait = function(parent, info, props, opts)
+		local i = table.clone(info or {})
+		if not i.character then
+			local p = StateModule.get("profile")
+			i.character = if i.userId == 4242 and p then p.character else "mage"
+		end
+		return portrait(parent, i, props, opts)
+	end
+end
 
 local playerGui = player:FindFirstChild("PlayerGui")
 local MatchScreen = requireModule("Client/UI/Match/MatchScreen")
@@ -299,7 +323,7 @@ do
 	check(#Chat.history() >= 1, "my quick line never came back from the server")
 	shot("chat")
 	closeModals()
-	F.spawn(Net.request, "chat.send", { quick = "yoho" })
+	F.spawn(Net.request, "chat.send", { quick = "nice" })
 	F.run(1)
 	local bubbles = visibleNamed(Root.screens, "ChatBubbles")
 	check(bubbles ~= nil and #bubbles:GetChildren() >= 2, "no chat bubble under the chat button")
@@ -307,28 +331,30 @@ do
 	F.run(10)
 	noProblems("the lobby chat")
 
-	check(openNav("settings"), "Settings didn't open")
-	top = modals()
-	check(press(top[#top], "OWNER PANEL"), "the owner has no OWNER PANEL button in Settings")
-	F.run(2)
-	top = modals()
-	for _, tab in { "FIND", "SERVER", "ADMINS", "BANS", "LOG", "PLAYERS" } do
-		check(press(top[#top], "^" .. tab .. "$"), "no " .. tab .. " tab in the owner panel")
-		F.run(0.8)
+	if not cfg.store then
+		check(openNav("settings"), "Settings didn't open")
+		top = modals()
+		check(press(top[#top], "OWNER PANEL"), "the owner has no OWNER PANEL button in Settings")
+		F.run(2)
+		top = modals()
+		for _, tab in { "FIND", "SERVER", "ADMINS", "BANS", "LOG", "PLAYERS" } do
+			check(press(top[#top], "^" .. tab .. "$"), "no " .. tab .. " tab in the owner panel")
+			F.run(0.8)
+		end
+		shot("owner-panel")
+		check(press(top[#top], "^MANAGE$"), "no MANAGE button on the owner panel's players")
+		F.run(1.2)
+		local sheet = modals()
+		shot("owner-sheet")
+		-- (offline every pass reads as bought, so it may already say ON)
+		check(pressScrolled(sheet[#sheet], "^GIVE CHAT$") or pressScrolled(sheet[#sheet], "^CHAT: ON$"), "no Chat pass button on a player's sheet")
+		F.run(1.5)
+		check(pressScrolled(sheet[#sheet], "^%+100 GEMS$"), "no +100 GEMS button on a player's sheet")
+		F.run(1.5)
+		closeModals()
+		check(State.hasPass("Chat"), "the owner panel didn't give the Chat pass")
+		noProblems("the owner panel")
 	end
-	shot("owner-panel")
-	check(press(top[#top], "^MANAGE$"), "no MANAGE button on the owner panel's players")
-	F.run(1.2)
-	local sheet = modals()
-	shot("owner-sheet")
-	-- (offline every pass reads as bought, so it may already say ON)
-	check(pressScrolled(sheet[#sheet], "^GIVE CHAT$") or pressScrolled(sheet[#sheet], "^CHAT: ON$"), "no Chat pass button on a player's sheet")
-	F.run(1.5)
-	check(pressScrolled(sheet[#sheet], "^%+100 GEMS$"), "no +100 GEMS button on a player's sheet")
-	F.run(1.5)
-	closeModals()
-	check(State.hasPass("Chat"), "the owner panel didn't give the Chat pass")
-	noProblems("the owner panel")
 
 	F.click(buttonIn(visibleNamed(Root.screens, "Chat")))
 	F.run(1)
@@ -352,6 +378,13 @@ do
 	if openNav("chests") then
 		local top = modals()
 		local opened = false
+		-- the free chest if there is one, else the first one with a price
+		for _, b in F.buttons(top[#top], "OPEN FREE") do
+			if not opened then
+				F.click(b)
+				opened = true
+			end
+		end
 		for _, b in F.buttons(top[#top]) do
 			if not opened and F.textOf(b):match("^%d") then
 				F.click(b)
@@ -359,11 +392,23 @@ do
 			end
 		end
 		if opened then
-			F.run(6)
-			press(Root.gui, "COLLECT")
+			F.run(12, function()
+				return #F.buttons(Root.gui, "^COLLECT$") > 0
+			end)
+			F.run(0.6)
+			press(Root.gui, "^COLLECT$")
 			F.run(1.5)
 		end
 		closeModals()
+		-- the reveal can still be on its way: wait for it and collect it
+		if F.run(15, function()
+			return #F.buttons(Root.gui, "^COLLECT$") > 0
+		end) then
+			F.run(0.6)
+			shot("chest-reveal")
+			press(Root.gui, "^COLLECT$")
+			F.run(1.5)
+		end
 	end
 	noProblems("opening a chest")
 end

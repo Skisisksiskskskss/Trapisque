@@ -1,7 +1,8 @@
 --[[
 	LobbyChat
-	The chat in the lobby: a button in the free part of Roblox's top bar that opens the
-	chat window (with a count of lines you haven't seen), and speech bubbles that drop
+	The chat in the lobby: a gold CHAT button in the free part of Roblox's top bar (or
+	the T key) that opens the chat window (with a count of lines you haven't seen), and
+	speech bubbles that drop
 	in under it as people talk, each with the speaker's avatar and their name on a tab
 	in their character's colour. Your party's lines (and yours) are read out loud.
 
@@ -10,6 +11,7 @@
 
 local Players = game:GetService("Players")
 local TextService = game:GetService("TextService")
+local UserInputService = game:GetService("UserInputService")
 
 local UI = script.Parent.Parent
 local Util = require(UI.Util)
@@ -34,27 +36,44 @@ function LobbyChat.build(parent: Instance, maid, r, popups: Instance)
 	local open = false
 	local unread = 0
 	local button
-	button = Widgets.iconButton(parent, {
+	local function openChat()
+		if open then
+			return
+		end
+		open = true
+		unread = 0
+		button:setBadge(nil)
+		ChatPanel.open(popups, {
+			title = "Chat",
+			onClose = function()
+				open = false
+			end,
+		})
+	end
+	-- a gold CHAT button where it's easy to find (just an icon if the bar is tight)
+	local wide = r.w >= r.h * 2
+	local opts = {
 		name = "Chat",
 		icon = "bubble",
-		style = "panel",
+		style = "brass",
 		size = UDim2.fromOffset(r.w, r.h),
 		position = UDim2.fromOffset(r.x, r.y),
-		onClick = function()
-			if open then
-				return
-			end
-			open = true
-			unread = 0
-			button:setBadge(nil)
-			ChatPanel.open(popups, {
-				title = "Chat",
-				onClose = function()
-					open = false
-				end,
-			})
-		end,
-	})
+		onClick = openChat,
+	}
+	if wide then
+		opts.text = "CHAT"
+		opts.textSize = math.clamp(math.floor(r.h * 0.42), 14, 22)
+		opts.depth = 4
+		button = Widgets.button(parent, opts)
+	else
+		button = Widgets.iconButton(parent, opts)
+	end
+	-- T opens it from the keyboard
+	maid:add(UserInputService.InputBegan:Connect(function(input, processed)
+		if not processed and input.KeyCode == Enum.KeyCode.T and button.root.Parent then
+			openChat()
+		end
+	end))
 
 	-- the bubbles, newest at the top, right under the button
 	local W = 330
@@ -73,8 +92,8 @@ function LobbyChat.build(parent: Instance, maid, r, popups: Instance)
 		local color = Theme.playerColor(line.character)
 		local size = 18
 		local maxW = W - 64
-		local bounds = TextService:GetTextSize(line.text, size, Enum.Font.Oswald, Vector2.new(maxW, 1000))
-		local textW = math.clamp(math.ceil(bounds.X * 1.06) + 2, 40, maxW)
+		local bounds = TextService:GetTextSize(line.text, size, Enum.Font.Oswald, Vector2.new(maxW / 1.12, 1000))
+		local textW = math.clamp(math.ceil(bounds.X * 1.12) + 2, 40, maxW)
 		local textH = math.max(size + 2, math.ceil(bounds.Y) + 2)
 		local name = (line.name or "?") .. (if line.staff then ("  ·  " .. line.staff) else "")
 		local tabW = math.min(maxW, math.ceil(TextService:GetTextSize(name, 14, Enum.Font.Oswald, Vector2.new(1000, 40)).X) + 22)

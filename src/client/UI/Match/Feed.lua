@@ -72,8 +72,11 @@ function Feed:add(text: string, color: Color3?, icon: string?, iconColor: Color3
 	-- measure the line (tags stripped) so a long one wraps onto a taller row
 	local plain = string.gsub(text, "<[^>]+>", "")
 	local room = math.max(120, (self.maxW or 360) - padX - iconW)
-	local bounds = TextService:GetTextSize(plain, size, Enum.Font.Oswald, Vector2.new(room, 1000))
-	local textW = math.min(room, math.ceil(bounds.X * 1.06) + 2)
+	-- (measured as if the text were 12% wider: the heavy weight and bold names run wider
+	-- than the measuring font, and a line that wraps must get its second row)
+	local k = 1.12
+	local bounds = TextService:GetTextSize(plain, size, Enum.Font.Oswald, Vector2.new(room / k, 1000))
+	local textW = math.min(room, math.ceil(bounds.X * k) + 2)
 	local textH = math.max(size + 2, math.ceil(bounds.Y) + 2)
 	local row = Util.new("Frame", {
 		Name = "Line",

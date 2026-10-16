@@ -615,7 +615,7 @@ function MatchScreen:_layoutTop(L, m)
 				self.board:fit()
 			end
 		end, key = "fit" },
-		{ icon = "smile", style = "brass", onClick = function()
+		{ icon = "bubble", style = "brass", onClick = function()
 			self:_emotePicker()
 		end, key = "emote" },
 		{ icon = "gear", style = "panel", onClick = function()
@@ -1883,6 +1883,10 @@ function MatchScreen:_key(key: Enum.KeyCode)
 	end
 	if key == Enum.KeyCode.Tab then
 		self:_scoreboard()
+		return
+	end
+	if key == Enum.KeyCode.T then
+		self:_emotePicker()
 		return
 	end
 	if self.targeting then

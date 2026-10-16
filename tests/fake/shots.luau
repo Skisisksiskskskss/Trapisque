@@ -48,7 +48,8 @@ local function intersect(a, b)
 	if not b then
 		return a
 	end
-	return { math.max(a[1], b[1]), math.max(a[2], b[2]), math.min(a[3], b[3]), math.min(a[4], b[4]) }
+	-- a rounded clip (a CanvasGroup with a UICorner) rides along: the innermost one wins
+	return { math.max(a[1], b[1]), math.max(a[2], b[2]), math.min(a[3], b[3]), math.min(a[4], b[4]), b[5] or a[5] }
 end
 
 local function opFor(inst, alpha: number, clip)
@@ -130,7 +131,15 @@ end
 local function childClip(inst, clip)
 	if inst.ClipsDescendants or inst:IsA("ScrollingFrame") or inst:IsA("CanvasGroup") then
 		local p, z = inst.AbsolutePosition, inst.AbsoluteSize
-		return intersect(clip, { p.X, p.Y, p.X + z.X, p.Y + z.Y })
+		local box = { p.X, p.Y, p.X + z.X, p.Y + z.Y }
+		-- a CanvasGroup's UICorner rounds its clip, as in Roblox
+		local corner = inst:IsA("CanvasGroup") and inst:FindFirstChildOfClass("UICorner")
+		if corner then
+			local r = corner.CornerRadius
+			local radius = math.min(z.X, z.Y) * r.Scale + r.Offset
+			box[5] = { p.X, p.Y, p.X + z.X, p.Y + z.Y, math.min(radius, math.min(z.X, z.Y) / 2) }
+		end
+		return intersect(clip, box)
 	end
 	return clip
 end

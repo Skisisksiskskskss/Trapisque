@@ -535,6 +535,24 @@ function Icons.medallion(parent: Instance, id: string, color: Color3, props: { [
 	Util.corner(disc, 0.5)
 	Util.scaledStroke(disc, Theme.C.line, 0.07, 2)
 	disc.Parent = parent
+	if StickerArt.bodyColor[id] then
+		-- a character: a real portrait on a pale disc of their colour, cropped to the circle
+		disc.BackgroundColor3 = color:Lerp(Theme.C.cream, 0.62)
+		local crop = Util.new("CanvasGroup", {
+			Name = "Portrait",
+			BackgroundTransparency = 1,
+			Size = UDim2.fromScale(1, 1),
+			ZIndex = disc.ZIndex + 1,
+			Parent = disc,
+		})
+		Util.corner(crop, 0.5)
+		local s = Icons.sticker(crop, StickerArt.mascot(id, nil, { crop = true }), {
+			Size = UDim2.fromScale(1, 1),
+			ZIndex = disc.ZIndex + 1,
+		}, 0.045)
+		s.ZIndex = disc.ZIndex + 1
+		return disc
+	end
 	local art = Icons.stickerFor(id)
 	if art then
 		local s = Icons.sticker(disc, art, {

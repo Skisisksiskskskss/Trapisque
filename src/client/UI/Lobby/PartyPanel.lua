@@ -99,7 +99,8 @@ function PartyPanel:destroy()
 end
 
 function PartyPanel:render()
-	Util.clear(self.content)
+	-- (keeps the panel's padding, so nothing slides under the title or past the edges)
+	Util.clear(self.content, true)
 	local party = State.get("party")
 	if party then
 		self:_renderParty(party)

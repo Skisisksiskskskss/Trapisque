@@ -360,8 +360,9 @@ function Layout.lobby(m)
 	local top = math.max(m.topbar.y1, safe.y)
 	local out: { [string]: any } = { form = form }
 	local band = Layout.bandRect(m, 10)
-	out.chat = rect(band.x, band.y, band.h, band.h)
-	out.loader = rect(band.x + band.h + 8, band.y, math.min(220, band.w - band.h - 8), band.h)
+	local chatW = math.min(math.floor(band.h * 2.7), math.max(band.h, band.w - 8))
+	out.chat = rect(band.x, band.y, chatW, band.h)
+	out.loader = rect(band.x + chatW + 8, band.y, math.min(220, band.w - chatW - 8), band.h)
 
 	if form == "wide" then
 		local M = 24
@@ -393,13 +394,13 @@ function Layout.lobby(m)
 		local M = 10
 		local x0, x1 = safe.x + M, safe.x + safe.w - M
 		-- the profile chip rides in the free middle of Roblox's top bar, after the chat button
-		local chatW = band.h + 8
-		local chipW = math.min(340, band.w - chatW)
+		local afterChat = out.chat.w + 8
+		local chipW = math.min(340, band.w - afterChat)
 		out.profile = { rect = rect(band.x + band.w - chipW, band.y, chipW, band.h), kind = "compact" }
-		if band.w - chipW - chatW >= 190 then
-			out.title = rect(band.x + chatW, band.y, math.min(240, band.w - chipW - chatW - 16), band.h)
+		if band.w - chipW - afterChat >= 190 then
+			out.title = rect(band.x + afterChat, band.y, math.min(240, band.w - chipW - afterChat - 16), band.h)
 		end
-		out.loader = rect(band.x + chatW, band.y, math.min(220, band.w - chipW - chatW - 8), band.h)
+		out.loader = rect(band.x + afterChat, band.y, math.min(220, band.w - chipW - afterChat - 8), band.h)
 		local navH = math.max(46, math.ceil(44 / m.scale))
 		local nav = rect(x0, safe.y + safe.h - 8 - navH, x1 - x0, navH)
 		local y0 = top + 6

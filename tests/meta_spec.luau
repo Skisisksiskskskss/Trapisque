@@ -5,6 +5,7 @@ local Cosmetics = requireModule("Shared/Meta/Cosmetics")
 local Modes = requireModule("Shared/Game/Modes")
 local Config = requireModule("Shared/Config")
 local Rng = requireModule("Shared/Game/Rng")
+local Speech = requireModule("Shared/Meta/Speech")
 
 local cfg = Config.Matchmaking
 
@@ -293,4 +294,21 @@ test("weekly events rotate and every event mode game finishes", function()
 			end
 		end
 	end
+end)
+
+test("chat lines are made speakable: numbers, slang and letter-words", function()
+	eq(Speech.normalize("GG EZ"), "gee gee ee zee")
+	eq(Speech.normalize("gg wp, 12 treasures!!!"), "gee gee well played, twelve treasures!")
+	eq(Speech.normalize("I came 3rd of 6"), "I came third of six")
+	eq(Speech.normalize("21st"), "twenty-first")
+	eq(Speech.normalize("50% chance"), "fifty percent chance")
+	eq(Speech.normalize("2v2 me"), "two versus two me")
+	eq(Speech.normalize("u r 1,250 gems richer"), "you are one thousand two hundred fifty gems richer")
+	eq(Speech.normalize("noooooo :("), "noo")
+	eq(Speech.normalize("NPC lol"), "en pee see el oh el")
+	eq(Speech.normalize("hmm"), "hmm")
+	eq(Speech.normalize("HMM ok"), "HMM okay")
+	eq(Speech.normalize("3.5 x2"), "three point five times two")
+	eq(Speech.number(0), "zero")
+	eq(Speech.number(1000000), "one million")
 end)

@@ -71,17 +71,19 @@ rendered offline (see [Screenshots](#screenshots)).
   raining on you), dice, trails, emotes and titles. You open chests with Gems, which
   you earn by playing.
 - **Gamepasses** that never touch gameplay (see below).
-- **Chat that everyone can see.** Lines pop up as big speech bubbles over the
-  speaker's character on the board (in the lobby, under the chat button with their
-  avatar), with their name on a tab in their colour. Each line is read out loud in the
-  speaker's voice: Roblox's text-to-speech pushed through a character (a grumbly old
-  mage, a salty sea dog, a squeaky warper, a parrot, a ghost, a clockwork voice), so it
-  never sounds like a newsreader; if a voice can't be had it babbles instead. Sixteen
-  quick lines ("Ahoy!", "Watch your step!", "GG!") are free for everyone, whatever
-  their Roblox chat settings. Typing your own lines is the Chat pass, and still needs
-  chat switched on in your Roblox settings: every typed line goes through Roblox's
-  filter for each person who reads it. Voices and bubbles can be switched off in
-  Settings, and you can tap a name in the chat to hide that person's lines.
+- **Chat that everyone can see.** The gold CHAT button (or T on a keyboard) opens it,
+  in the lobby and in matches. Lines pop up as big speech bubbles over the speaker's
+  character on the board (in the lobby, under the chat button with their avatar), with
+  their name on a tab in their colour. Each line is read out loud in the speaker's
+  voice: Roblox's text-to-speech, pitched and paced for each character (a grumbly old
+  mage, a salty sea dog, a squeaky naturalist, a dandy, a captain), so it never sounds
+  like a newsreader, and made speakable first (numbers as words, "GG" spelled "gee
+  gee", "brb" said "be right back"); if a voice can't be had it babbles instead. Six
+  quick lines ("Ahoy!", "Good luck!", "GG!") are free for everyone, whatever their
+  Roblox chat settings. Typing anything else is the Chat pass, and still needs chat
+  switched on in your Roblox settings: every typed line goes through Roblox's filter
+  for each person who reads it. Voices and bubbles can be switched off in Settings,
+  and you can tap a name in the chat to hide that person's lines.
 - **Owner and admin panels.** The game's owner (and the admins they pick) get a panel
   from Settings or the match menu: mute, kick, ban (admins for up to 3 days, the owner
   for good), end a stuck match, announce to the server; and for the owner, give anyone
@@ -170,6 +172,43 @@ In Studio:
    players live in the `TrapisqueStaff_v1` DataStore and reach every server through
    MessagingService.
 
+## Going public
+
+Everything the experience page needs is in `docs/store/`, drawn by the game's own UI
+code (no outside or generated images; `tools/shots.sh art store` redraws them):
+
+| File | Where it goes |
+| --- | --- |
+| `store-icon.png` (512 x 512) | **Configure → Basic info → Icon** |
+| `store-banner.png` (1920 x 1080) | the first **Thumbnail** (Configure → Basic info), and anywhere you share the game |
+| `store-lobby.png`, `store-match.png`, `store-match-bubble.png`, `store-characters.png`, `store-chest-reveal.png` (1920 x 1080) | the other thumbnails, in that order |
+
+Before switching the experience to **Public**:
+
+1. Publish the place (above) and test a few matches with friends on live servers.
+2. Create the gamepasses (below) and put their ids in `Config.GamePasses`; set the Chat
+   pass to 10 Robux. A pass left at 0 shows as "SOON" in the Shop.
+3. **Configure → Questionnaire**: answer the maturity questions. The game has no
+   violence beyond cartoon bonks, no blood, and a filtered text chat (Roblox's filter
+   for every typed line; quick lines are fixed text). Paid random items: the Treasure
+   Chests are bought with Gems only (Gems are earned by playing, never sold), so no
+   real money buys a random item.
+4. **Configure → Places → Server size**: 20 is a good lobby size (matches run on their
+   own reserved servers).
+5. **Configure → Basic info**: genre *Strategy* (or *Party & Casual*), devices: computer,
+   phone and tablet. Name, description and tags below.
+6. Set the experience to **Public**.
+
+Store text to paste:
+
+> **Trapisque: a pirate board game for 2 to 6 players.** Race along the trail to the
+> treasure chest, roll two dice and pick one every turn, hide traps only your crew can
+> see, and bonk your rivals off their tiles. Six pirates, each with their own power:
+> freeze the table, charge with a boar stampede, warp past the leader... Quick 10-minute
+> games, team modes, a weekly event with a twist on the rules, daily quests and
+> Treasure Chests full of cosmetics. Play with friends in a party, or jump into Quick
+> Play.
+
 ## Gamepasses
 
 Create these on the Creator Dashboard (**Monetization → Passes**) and put their ids in
@@ -182,7 +221,7 @@ Create these on the Creator Dashboard (**Monetization → Passes**) and put thei
 | `LuckyCharm` | Lucky Charm | Legendary and Mythic chest odds ×1.5, and the chest screens show your boosted odds. Hidden for players whose region doesn't allow paid random items. |
 | `EmotePack` | Emote Pack | 6 extra emotes, and up to 6 emotes equipped in matches. |
 | `Chat` | Chat | Type your own lines in the game chat (set its price to 10 Robux). Quick lines are free for everyone. |
-| `VoicePack` | Voice Pack | Pick the voice your chat bubbles speak in (Grumbly, Salty, Chipper, Squeaky, Parrot, Ghostly, Clockwork); without it you speak in your character's own voice. |
+| `VoicePack` | Voice Pack | Pick the voice your chat bubbles speak in (Grumbly, Salty, Captain, Dandy, Chipper, Squeaky, Parrot, Ghostly, Clockwork); without it you speak in your character's own voice. |
 | `VictoryParade` | Victory Parade | Cannons, streamers and a fanfare over your character when you win, seen by everyone in the match. |
 | `CaptainsChest` | Captain's Chest | The Admiralty accessory pack, the Golden Doubloon dice and the Captain title. |
 

@@ -40,9 +40,9 @@ local random = Random.new()
 
 -- quick chat lines a bot may say instead of an emote
 local BOT_LINES = {
-	emote_oops = { "oops", "nofair", "close" },
-	emote_nice = { "gotcha", "yoho", "arr" },
-	emote_gg = { "gg", "wp" },
+	emote_oops = { "oops" },
+	emote_nice = { "nice" },
+	emote_gg = { "gg" },
 }
 
 local function botLook()
@@ -331,7 +331,7 @@ function Match:_botReactions(events)
 				if info.isBot and random:NextNumber() < 0.6 then
 					task.delay(random:NextNumber() * 2 + 1, function()
 						if random:NextNumber() < 0.5 then
-							self:_botSay(s, if random:NextNumber() < 0.5 then "gg" else "wp")
+							self:_botSay(s, if random:NextNumber() < 0.5 then "gg" else "thanks")
 						else
 							self:_sendEmote(s, "emote_gg")
 						end

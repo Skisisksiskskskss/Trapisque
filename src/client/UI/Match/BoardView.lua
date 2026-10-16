@@ -1305,8 +1305,8 @@ function BoardView:say(seat: number, text: string, opts: { [string]: any }?)
 	local emote = o.emote == true
 	local size = if emote then 24 else 20
 	local maxW = if emote then 220 else 240
-	local bounds = TextService:GetTextSize(text, size, Enum.Font.Oswald, Vector2.new(maxW, 1000))
-	local textW = math.clamp(math.ceil(bounds.X * 1.06) + 2, 40, maxW)
+	local bounds = TextService:GetTextSize(text, size, Enum.Font.Oswald, Vector2.new(maxW / 1.12, 1000))
+	local textW = math.clamp(math.ceil(bounds.X * 1.12) + 2, 40, maxW)
 	local textH = math.max(size + 2, math.ceil(bounds.Y) + 2)
 	local name = o.name or ""
 	if o.staff then
@@ -1819,7 +1819,8 @@ function BoardView:swirl(at: Vector2, color: Color3)
 end
 
 -- Pop-up text over the board. Sized in stage pixels (not world) so it stays readable
--- however far the camera is zoomed out.
+-- however far the camera is zoomed out. It starts above the character's head, clear of
+-- the name tag over the player whose turn it is.
 function BoardView:floatText(at: Vector2, text: string, color: Color3, size: number?)
 	local k = math.max(0.4, self:unitPixels() / U)
 	local label = Widgets.label(self.layers.Fx, {
@@ -1830,13 +1831,13 @@ function BoardView:floatText(at: Vector2, text: string, color: Color3, size: num
 		align = "center",
 		sizeUDim = UDim2.fromOffset(8 * U, 1.4 * U),
 		anchor = Vector2.new(0.5, 0.5),
-		position = px(at - Vector2.new(0, 0.5 * U)),
+		position = px(at - Vector2.new(0, 1.05 * U)),
 		outline = C.ink,
 		outlineThickness = 3 / k,
 		z = 60,
 	})
 	Util.popIn(label, 0.3, 0.4)
-	Util.tween(label, 1.2, { Position = px(at - Vector2.new(0, 1.5 * U)) }, Enum.EasingStyle.Quad)
+	Util.tween(label, 1.2, { Position = px(at - Vector2.new(0, 1.9 * U)) }, Enum.EasingStyle.Quad)
 	task.delay(0.9, function()
 		Util.tween(label, 0.35, { TextTransparency = 1 })
 		local st = label:FindFirstChildOfClass("UIStroke")

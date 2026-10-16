@@ -1,9 +1,10 @@
 --[[
 	Voices
-	How chat bubbles sound. Lines are read out loud, but not by a newsreader: Roblox's
-	text-to-speech goes through a pirate's throat first, pitched up or down, sped up or
-	slowed, through an echo, a chorus or a clockwork rattle, so every voice is a
-	character (client Voice.lua plays them).
+	How chat bubbles sound. Lines are read out loud (made speakable first by Speech:
+	numbers as words, "gg" as "gee gee"), but not by a newsreader: Roblox's
+	text-to-speech is pitched up or down a little, sped up or slowed, and some voices go
+	through a light echo or a clockwork shimmer, so every voice is a character and every
+	line stays easy to understand (client Voice.lua plays them).
 
 	Each character has its own voice; the Voice Pack lets you pick any of them.
 		tts      Roblox text-to-speech: its voice (VoiceId), pitch (semitones), speed
@@ -19,7 +20,7 @@ Voices.list = {
 	{
 		id = "grumbly",
 		name = "Grumbly",
-		tts = { voice = "1", pitch = -6, speed = 0.92 },
+		tts = { voice = "1", pitch = -3, speed = 0.95 },
 		fx = { "warm" },
 		pitch = 0.62,
 		spread = 0.12,
@@ -28,16 +29,34 @@ Voices.list = {
 	{
 		id = "salty",
 		name = "Salty",
-		tts = { voice = "7", pitch = -3, speed = 1.05 },
-		fx = { "gravel" },
+		tts = { voice = "7", pitch = -1, speed = 1 },
+		fx = {},
 		pitch = 0.8,
 		spread = 0.22,
 		speed = 8,
 	},
 	{
+		id = "captain",
+		name = "Captain",
+		tts = { voice = "3", pitch = -2, speed = 0.96 },
+		fx = { "warm" },
+		pitch = 0.75,
+		spread = 0.15,
+		speed = 7,
+	},
+	{
+		id = "dandy",
+		name = "Dandy",
+		tts = { voice = "5", pitch = 2, speed = 1.1 },
+		fx = {},
+		pitch = 1.1,
+		spread = 0.3,
+		speed = 10,
+	},
+	{
 		id = "chipper",
 		name = "Chipper",
-		tts = { voice = "8", pitch = 3, speed = 1.15 },
+		tts = { voice = "8", pitch = 2, speed = 1.08 },
 		fx = {},
 		pitch = 1.25,
 		spread = 0.25,
@@ -46,7 +65,7 @@ Voices.list = {
 	{
 		id = "squeaky",
 		name = "Squeaky",
-		tts = { voice = "4", pitch = 9, speed = 1.3 },
+		tts = { voice = "4", pitch = 5, speed = 1.12 },
 		fx = {},
 		pitch = 1.6,
 		spread = 0.3,
@@ -55,7 +74,7 @@ Voices.list = {
 	{
 		id = "parrot",
 		name = "Parrot",
-		tts = { voice = "10", pitch = 12, speed = 1.45 },
+		tts = { voice = "6", pitch = 7, speed = 1.15 },
 		fx = { "squawk" },
 		pitch = 1.9,
 		spread = 0.45,
@@ -64,7 +83,7 @@ Voices.list = {
 	{
 		id = "ghostly",
 		name = "Ghostly",
-		tts = { voice = "2", pitch = -4, speed = 0.8 },
+		tts = { voice = "2", pitch = -2, speed = 0.9 },
 		fx = { "haunt" },
 		pitch = 0.7,
 		spread = 0.4,
@@ -89,11 +108,11 @@ end
 -- each character's own voice (what "auto" means)
 Voices.character = {
 	mage = "grumbly",
-	trapper = "salty",
+	trapper = "chipper",
 	fire_starter = "salty",
-	naturalist = "chipper",
-	warper = "squeaky",
-	overseer = "chipper",
+	naturalist = "squeaky",
+	warper = "dandy",
+	overseer = "captain",
 }
 
 -- The voice someone speaks in: their pick (with the Voice Pack), else their character's.

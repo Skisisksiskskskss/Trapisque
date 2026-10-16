@@ -105,7 +105,7 @@ function Widgets.label(parent: Instance?, o: { [string]: any }): TextLabel
 	local color = label.TextColor3
 	-- light lettering (white, gold, sky...) always gets the ink outline, comic style, so
 	-- it reads on cream card and on the sea alike (o.outline = false opts out)
-	local light = 0.299 * color.R + 0.587 * color.G + 0.114 * color.B > 0.45
+	local light = 0.299 * color.R + 0.587 * color.G + 0.114 * color.B > 0.6
 	local size = o.size or 18
 	if o.outline ~= false and ((o.outline and (light or o.forceOutline)) or (light and size >= 13)) then
 		local th = o.outlineThickness or (if size >= 22 then 2 else 1.5)

@@ -72,7 +72,7 @@ Passes.list = {
 		icon = "music",
 		perks = {
 			"Pick the voice your chat bubbles talk in",
-			"Grumbly, Squeaky, Parrot, Ghostly, Clockwork...",
+			"Grumbly, Captain, Dandy, Parrot, Ghostly, Clockwork...",
 		},
 	},
 	{

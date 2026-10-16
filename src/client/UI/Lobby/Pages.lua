@@ -239,7 +239,7 @@ local RULES = {
 	{
 		icon = "info",
 		title = "Controls",
-		text = "PC: hover a die to see where it goes, click to move (or press Q, W, E). 1 to 5 play your cards, Space uses your ability, Esc cancels, Enter confirms, + and - zoom, F shows the whole board and Tab shows the scores. Drag to look around and scroll to zoom.\n\nPhone or tablet: tap a die to see where it goes, tap it again to move. Tap a card to read it and use its buttons, or drag it onto the board. Drag to look around and pinch to zoom.",
+		text = "PC: hover a die to see where it goes, click to move (or press Q, W, E). 1 to 5 play your cards, Space uses your ability, Esc cancels, Enter confirms, + and - zoom, F shows the whole board, Tab shows the scores and T opens the chat. Drag to look around and scroll to zoom.\n\nPhone or tablet: tap a die to see where it goes, tap it again to move. Tap a card to read it and use its buttons, or drag it onto the board. Drag to look around and pinch to zoom.",
 	},
 	{
 		icon = "people",

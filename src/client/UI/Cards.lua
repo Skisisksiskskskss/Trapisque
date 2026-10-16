@@ -104,7 +104,7 @@ local function slab(parent: Instance, color: Color3): (Frame, Frame)
 	return holder, face
 end
 
--- The cream window with a soft spotlight, and the art in it.
+-- The cream window, and the art in it.
 local function window(face: Frame, color: Color3, ops: { any }?)
 	local W = CardStyle.window
 	local win = Util.new("Frame", {
@@ -118,19 +118,8 @@ local function window(face: Frame, color: Color3, ops: { any }?)
 	})
 	Util.new("UICorner", { CornerRadius = UDim.new(W.corner, 0), Parent = win })
 	Util.scaledStroke(win, C.line, 0.025, 2)
-	local glow = Util.new("Frame", {
-		Name = "Spotlight",
-		BackgroundColor3 = color,
-		BackgroundTransparency = 0.8,
-		BorderSizePixel = 0,
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.5),
-		Size = UDim2.fromScale(0.86, 0.86),
-		SizeConstraint = Enum.SizeConstraint.RelativeXX,
-		ZIndex = 3,
-		Parent = win,
-	})
-	Util.corner(glow, 0.5)
+	-- the window is tinted with the card's colour (no spotlight disc behind the art)
+	win.BackgroundColor3 = C.cream:Lerp(color, 0.12)
 	if ops then
 		local I = CardStyle.icon
 		local art = Icons.sticker(face, ops, {

@@ -1,8 +1,9 @@
 --[[
 	Voice
 	Reads chat lines out loud in the speaker's voice (Meta/Voices): Roblox's
-	text-to-speech, pitched, sped up or slowed and run through a voice's effects, so a
-	line sounds like a grumbly old mage or a parrot, never like a newsreader.
+	text-to-speech, pitched, sped up or slowed and run through a voice's light effects,
+	so a line sounds like a grumbly old mage or a parrot, never like a newsreader. Each
+	line is made speakable first (Meta/Speech): numbers as words, "gg" as "gee gee".
 
 	Text-to-speech has a budget (Roblox rate-limits it), so a quick chat line is loaded
 	once per voice and replayed from then on, and a line that can't get a voice in time
@@ -16,6 +17,9 @@
 ]]
 
 local SoundService = game:GetService("SoundService")
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Speech = require(ReplicatedStorage.Shared.Meta.Speech)
 
 local Client = script.Parent
 local Sound = require(Client.Sound)
@@ -64,25 +68,18 @@ end
 -- What each voice's sound goes through on its way out.
 local FX = {
 	warm = {
-		{ "AudioEqualizer", { LowGain = 4, MidGain = 0, HighGain = -6 } },
-		{ "AudioReverb", { DecayTime = 0.6, WetLevel = -14, DryLevel = 0 } },
-	},
-	gravel = {
-		{ "AudioDistortion", { Level = 0.2 } },
-		{ "AudioEqualizer", { LowGain = 2, MidGain = 2, HighGain = -4 } },
+		{ "AudioEqualizer", { LowGain = 3, MidGain = 0, HighGain = -3 } },
+		{ "AudioReverb", { DecayTime = 0.5, WetLevel = -18, DryLevel = 0 } },
 	},
 	squawk = {
-		{ "AudioFlanger", { Depth = 0.6, Mix = 0.5, Rate = 3 } },
-		{ "AudioDistortion", { Level = 0.15 } },
+		{ "AudioFlanger", { Depth = 0.3, Mix = 0.25, Rate = 2 } },
 	},
 	haunt = {
-		{ "AudioChorus", { Depth = 0.5, Mix = 0.5, Rate = 0.4 } },
-		{ "AudioEcho", { DelayTime = 0.28, Feedback = 0.45, DryLevel = 0, WetLevel = -6 } },
-		{ "AudioReverb", { DecayTime = 2.5, WetLevel = -4, DryLevel = 0 } },
+		{ "AudioEcho", { DelayTime = 0.22, Feedback = 0.25, DryLevel = 0, WetLevel = -10 } },
+		{ "AudioReverb", { DecayTime = 1.6, WetLevel = -10, DryLevel = 0 } },
 	},
 	clockwork = {
-		{ "AudioTremolo", { Depth = 0.7, Frequency = 22 } },
-		{ "AudioFlanger", { Depth = 0.4, Mix = 0.4, Rate = 6 } },
+		{ "AudioFlanger", { Depth = 0.25, Mix = 0.3, Rate = 4 } },
 	},
 }
 
@@ -260,10 +257,14 @@ function Voice.say(text: string, voice)
 	if not enabled or not Sound.isEnabled() or type(text) ~= "string" or text == "" or not voice then
 		return
 	end
+	local said = Speech.normalize(string.sub(text, 1, 140))
+	if said == "" then
+		return
+	end
 	if #queue >= 4 then
 		table.remove(queue, 1)
 	end
-	table.insert(queue, { text = string.sub(text, 1, 140), voice = voice, at = os.clock() })
+	table.insert(queue, { text = said, voice = voice, at = os.clock() })
 	pump()
 end
 

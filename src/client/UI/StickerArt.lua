@@ -627,39 +627,56 @@ local CREW = {
 		},
 		browColor = WHITE,
 		hat = {
-			{ "taper", { { 0.5, 0.25 }, { 0.53, 0.1 }, { 0.64, -0.02 } }, 0.34, 0.05, c = BODY.mage[1] },
+			{ "taper", { { 0.5, 0.25 }, { 0.53, 0.11 }, { 0.63, 0.03 } }, 0.34, 0.05, c = BODY.mage[1] },
 			{ "pill", 0.5, 0.25, 0.56, 0.08, c = BODY.mage[1] },
 			{ "line", 0.36, 0.22, 0.64, 0.22, 0.025, c = GOLD, ol = false },
 			{ "circle", 0.47, 0.14, 0.07, c = GOLD, ol = false },
 			{ "circle", 0.49, 0.13, 0.06, c = BODY.mage[1], ol = false },
 		},
-		mood = "smug",
+		mood = "idle",
 	},
 	trapper = {
-		skin = "#D9A06B",
+		skin = "#E2AD80",
 		coat = BODY.trapper[1],
 		coatDark = BODY.trapper[2],
 		trousers = "#5A4632",
+		-- a fur collar and a belt with a brass buckle
 		coatDetail = {
-			{ "rect", 0.5, 0.68, 0.12, 0.2, c = CREAM, ol = false },
-			{ "pill", 0.5, 0.575, 0.38, 0.08, c = "#8B5A2B" },
+			{ "pill", 0.5, 0.58, 0.36, 0.08, c = "#8B5A2B" },
+			{ "rect", 0.5, 0.8, 0.44, 0.05, c = "#5A3A22", ol = false },
+			{ "rect", 0.5, 0.8, 0.06, 0.06, r = 0.2, c = GOLD, ol = false },
 		},
-		-- a coil of rope
-		hand = { { "ring", 0.22, 0.8, 0.15, 0.035, c = "#C9A26B" } },
-		-- a big black moustache
+		-- a coil of rope (a filled coil: a ring's outline balloons at big sizes)
+		hand = {
+			{ "line", 0.22, 0.87, 0.26, 0.97, 0.025, c = "#C9A26B" },
+			{ "circle", 0.22, 0.8, 0.15, c = "#C9A26B" },
+			{ "circle", 0.22, 0.8, 0.09, c = "#A8844E", ol = false },
+			{ "circle", 0.22, 0.8, 0.045, c = "#C9A26B", ol = false },
+		},
+		-- long auburn hair: a braid over her shoulder, locks framing her face
+		hairBack = {
+			{ "circle", 0.5, 0.39, 0.4, c = "#C0562A" },
+			{ "pill", 0.69, 0.6, 0.09, 0.3, rot = -10, c = "#C0562A" },
+			{ "line", 0.66, 0.55, 0.72, 0.53, 0.015, c = "#7A3212", ol = false },
+			{ "line", 0.67, 0.62, 0.73, 0.6, 0.015, c = "#7A3212", ol = false },
+			{ "circle", 0.705, 0.75, 0.05, c = "#3F8F4A" },
+		},
 		faceDetail = {
-			{ "pill", 0.45, 0.465, 0.13, 0.055, rot = 10, c = HAIR_DARK },
-			{ "pill", 0.55, 0.465, 0.13, 0.055, rot = -10, c = HAIR_DARK },
+			{ "pill", 0.35, 0.41, 0.06, 0.15, c = "#C0562A", ol = false },
+			{ "pill", 0.65, 0.41, 0.06, 0.15, c = "#C0562A", ol = false },
+			{ "circle", 0.4, 0.45, 0.05, c = "#E8907A", ol = false },
+			{ "circle", 0.6, 0.45, 0.05, c = "#E8907A", ol = false },
 		},
+		lashes = true,
 		-- a coonskin cap with its striped tail
 		hat = {
-			{ "taper", { { 0.64, 0.25 }, { 0.78, 0.34 }, { 0.82, 0.5 } }, 0.08, 0.06, c = "#8B5A2B" },
-			{ "line", 0.74, 0.31, 0.79, 0.35, 0.02, c = HAIR_DARK, ol = false },
-			{ "line", 0.79, 0.4, 0.84, 0.42, 0.02, c = HAIR_DARK, ol = false },
-			{ "half", 0.5, 0.27, 0.38, dir = 0, c = "#8B5A2B" },
-			{ "pill", 0.5, 0.27, 0.4, 0.07, c = "#6E4520" },
+			{ "taper", { { 0.63, 0.25 }, { 0.75, 0.32 }, { 0.78, 0.46 } }, 0.08, 0.06, c = "#7A6A58" },
+			{ "line", 0.72, 0.3, 0.77, 0.33, 0.02, c = HAIR_DARK, ol = false },
+			{ "line", 0.76, 0.38, 0.8, 0.39, 0.02, c = HAIR_DARK, ol = false },
+			{ "half", 0.5, 0.27, 0.37, dir = 0, c = "#7A6A58" },
+			{ "pill", 0.5, 0.27, 0.39, 0.07, c = "#5A4C3E" },
 		},
-		mood = "smug",
+		mood = "idle",
 	},
 	fire_starter = {
 		skin = "#A86B45",
@@ -680,8 +697,8 @@ local CREW = {
 		-- a bushy black chin beard
 		faceDetail = { { "half", 0.5, 0.52, 0.24, dir = 180, c = HAIR_DARK } },
 		hat = {
-			{ "tri", 0.7, 0.27, 0.1, dir = 70, c = BODY.fire_starter[1] },
-			{ "tri", 0.7, 0.29, 0.1, dir = 120, c = BODY.fire_starter[1] },
+			{ "pill", 0.7, 0.3, 0.06, 0.14, rot = 55, c = BODY.fire_starter[1] },
+			{ "pill", 0.71, 0.34, 0.06, 0.12, rot = 100, c = BODY.fire_starter[1] },
 			{ "half", 0.5, 0.29, 0.37, dir = 0, c = BODY.fire_starter[1] },
 			{ "circle", 0.42, 0.25, 0.04, c = CREAM, ol = false },
 			{ "circle", 0.56, 0.21, 0.04, c = CREAM, ol = false },
@@ -715,11 +732,14 @@ local CREW = {
 		},
 		-- a big leaf for a hat, and a flower
 		hat = {
-			{ "pill", 0.5, 0.2, 0.52, 0.12, rot = -8, c = "#5DB54A" },
-			{ "line", 0.28, 0.23, 0.72, 0.17, 0.02, c = "#357A30", ol = false },
-			{ "circle", 0.67, 0.25, 0.08, c = P.pink },
-			{ "circle", 0.67, 0.25, 0.03, c = GOLD, ol = false },
+			{ "line", 0.34, 0.26, 0.66, 0.26, 0.022, c = "#357A30" },
+			{ "drop", 0.38, 0.225, 0.06, dir = -45, c = "#5DB54A" },
+			{ "drop", 0.62, 0.225, 0.06, dir = 45, c = "#5DB54A" },
+			{ "drop", 0.5, 0.205, 0.065, dir = 0, c = "#7CC85A" },
+			{ "circle", 0.67, 0.28, 0.08, c = P.pink },
+			{ "circle", 0.67, 0.28, 0.03, c = GOLD, ol = false },
 		},
+		lashes = true,
 		mood = "happy",
 	},
 	warper = {
@@ -749,39 +769,54 @@ local CREW = {
 		},
 		-- a wide hat with a huge white feather
 		hat = {
-			{ "taper", { { 0.58, 0.2 }, { 0.74, 0.09 }, { 0.88, 0.04 } }, 0.09, 0.03, c = WHITE },
+			{ "taper", { { 0.58, 0.2 }, { 0.71, 0.1 }, { 0.83, 0.07 } }, 0.09, 0.03, c = WHITE },
 			{ "rect", 0.5, 0.19, 0.3, 0.13, r = 0.3, c = BODY.warper[1] },
 			{ "rect", 0.5, 0.225, 0.3, 0.035, c = INK, ol = false },
 			{ "pill", 0.5, 0.26, 0.64, 0.08, c = BODY.warper[1] },
 		},
-		mood = "smug",
+		mood = "idle",
 	},
 	overseer = {
 		skin = "#7A4E2D",
 		coat = BODY.overseer[1],
 		coatDark = BODY.overseer[2],
-		trousers = "#2B4C7E",
-		-- navy lapels and gold epaulettes
+		trousers = "#2A2836",
+		-- a harbour master's gold coat: navy lapels and cuffs, brass buttons, a white jabot
 		coatDetail = {
-			{ "tri", 0.44, 0.59, 0.1, dir = 180, c = "#2B4C7E", ol = false },
-			{ "tri", 0.56, 0.59, 0.1, dir = 180, c = "#2B4C7E", ol = false },
-			{ "pill", 0.31, 0.585, 0.12, 0.05, c = "#C98F00" },
-			{ "pill", 0.69, 0.585, 0.12, 0.05, c = "#C98F00" },
+			{ "line", 0.44, 0.6, 0.46, 0.86, 0.035, c = "#2B4C7E", ol = false },
+			{ "line", 0.56, 0.6, 0.54, 0.86, 0.035, c = "#2B4C7E", ol = false },
+			{ "circle", 0.4, 0.7, 0.035, c = "#A87A00", ol = false },
+			{ "circle", 0.4, 0.78, 0.035, c = "#A87A00", ol = false },
+			{ "circle", 0.6, 0.7, 0.035, c = "#A87A00", ol = false },
+			{ "circle", 0.6, 0.78, 0.035, c = "#A87A00", ol = false },
+			{ "tri", 0.5, 0.615, 0.1, dir = 180, c = CREAM },
+			{ "pill", 0.255, 0.8, 0.12, 0.05, rot = 14, c = "#2B4C7E" },
+			{ "pill", 0.745, 0.8, 0.12, 0.05, rot = -14, c = "#2B4C7E" },
 		},
-		-- a spyglass
+		-- a brass spyglass, pulled out
 		hand = {
-			{ "pill", 0.17, 0.74, 0.07, 0.24, rot = 20, c = "#9C6B3A" },
-			{ "pill", 0.14, 0.64, 0.08, 0.08, rot = 20, c = GOLD },
+			{ "line", 0.25, 0.88, 0.185, 0.67, 0.075, c = "#C9A227" },
+			{ "line", 0.185, 0.67, 0.155, 0.57, 0.055, c = "#A87A00" },
+			{ "line", 0.232, 0.82, 0.222, 0.785, 0.08, c = "#8A6410", ol = false },
 		},
-		-- a neat goatee
-		faceDetail = { { "tri", 0.5, 0.535, 0.08, dir = 180, c = HAIR_DARK } },
-		-- a black tricorn with gold trim
+		-- grey hair at the temples and a short grey beard
+		faceDetail = {
+			{ "pill", 0.345, 0.37, 0.05, 0.1, c = "#C9C2B6", ol = false },
+			{ "pill", 0.655, 0.37, 0.05, 0.1, c = "#C9C2B6", ol = false },
+			{ "half", 0.5, 0.485, 0.29, dir = 180, c = "#D8D2C8" },
+			{ "pill", 0.455, 0.47, 0.1, 0.04, rot = 10, c = "#D8D2C8" },
+			{ "pill", 0.545, 0.47, 0.1, 0.04, rot = -10, c = "#D8D2C8" },
+		},
+		browColor = "#D8D2C8",
+		-- a navy tricorn with gold trim and a cockade
 		hat = {
-			{ "half", 0.5, 0.245, 0.34, dir = 0, c = "#2A2836" },
-			{ "pill", 0.5, 0.245, 0.62, 0.1, c = "#2A2836" },
-			{ "tri", 0.22, 0.22, 0.12, dir = -50, c = "#2A2836" },
-			{ "tri", 0.78, 0.22, 0.12, dir = 50, c = "#2A2836" },
-			{ "line", 0.22, 0.255, 0.78, 0.255, 0.02, c = GOLD, ol = false },
+			{ "tri", 0.29, 0.21, 0.1, dir = -40, c = "#2B4C7E" },
+			{ "tri", 0.71, 0.21, 0.1, dir = 40, c = "#2B4C7E" },
+			{ "half", 0.5, 0.255, 0.3, dir = 0, c = "#2B4C7E" },
+			{ "pill", 0.5, 0.255, 0.5, 0.08, c = "#2B4C7E" },
+			{ "line", 0.28, 0.275, 0.72, 0.275, 0.018, c = GOLD, ol = false },
+			{ "circle", 0.5, 0.235, 0.07, c = GOLD },
+			{ "circle", 0.5, 0.235, 0.028, c = "#2B4C7E", ol = false },
 		},
 		mood = "idle",
 	},
@@ -812,13 +847,15 @@ plain(StickerArt.misc)
 --[[
 	A character, pulling a face: mood = idle | happy | shock | sad | dizzy | smug |
 	angry | cheeky (nil = their usual one). opts.hat: they wear a hat (an accessory),
-	so their own comes off. opts.bust: just the head and shoulders, filling the canvas
-	(medallions, portraits).
+	so their own comes off. opts.bust: just the head and shoulders (portraits);
+	opts.crop: a bust for a round portrait that crops it (Icons.medallion), whose coat
+	runs off the bottom and whose hat stays inside the circle.
 ]]
 function StickerArt.mascot(characterId: string, moodName: string?, opts: { [string]: any }?)
 	local crew = CREW[characterId] or CREW.mage
 	local mood = MOODS[moodName or crew.mood or "idle"] or MOODS.idle
-	local bust = opts ~= nil and opts.bust == true
+	local bust = opts ~= nil and (opts.bust == true or opts.crop == true)
+	local crop = opts ~= nil and opts.crop == true
 	local ops
 	if bust then
 		-- just the head and the shoulders of the coat
@@ -826,7 +863,11 @@ function StickerArt.mascot(characterId: string, moodName: string?, opts: { [stri
 		for _, op in crew.hairBack or {} do
 			table.insert(ops, op)
 		end
-		table.insert(ops, { "half", 0.5, 0.74, 0.56, dir = 0, c = crew.coat })
+		if crop then
+			table.insert(ops, { "rect", 0.5, 0.98, 0.7, 0.76, r = 0.32, c = crew.coat })
+		else
+			table.insert(ops, { "half", 0.5, 0.74, 0.56, dir = 0, c = crew.coat })
+		end
 		table.insert(ops, { "circle", 0.33, 0.4, 0.08, c = crew.skin })
 		table.insert(ops, { "circle", 0.67, 0.4, 0.08, c = crew.skin })
 		table.insert(ops, { "circle", 0.5, 0.38, 0.34, c = crew.skin })
@@ -841,12 +882,18 @@ function StickerArt.mascot(characterId: string, moodName: string?, opts: { [stri
 			table.insert(ops, op)
 		end
 	end
-	-- the face goes on last: the big nose, then the eyes over it
-	table.insert(ops, { "pill", 0.52, 0.44, 0.09, 0.11, c = darker(crew.skin, 0.86) })
-	table.insert(ops, { "brows", 0.5, 0.3, 0.15, 0.08, mood = mood.brows, c = crew.browColor })
+	-- the face goes on last: a small nose, then the brows, eyes (lashes) and mouth
+	table.insert(ops, { "pill", 0.5, 0.435, 0.06, 0.05, c = darker(crew.skin, 0.8), ol = false })
+	table.insert(ops, { "brows", 0.5, 0.3, 0.15, 0.06, mood = mood.brows, c = crew.browColor })
 	table.insert(ops, { "dots", 0.5, 0.36, 0.15, 0.045, mood = mood.eyes })
+	if crew.lashes and mood.eyes ~= "happy" and mood.eyes ~= "dizzy" then
+		table.insert(ops, { "line", 0.39, 0.335, 0.365, 0.315, 0.014, c = INK, ol = false })
+		table.insert(ops, { "line", 0.61, 0.335, 0.635, 0.315, 0.014, c = INK, ol = false })
+	end
 	table.insert(ops, { "mouth", 0.5, 0.5, 0.1, mood = mood.mouth })
-	if bust then
+	if crop then
+		return { { "group", s = 1.05, dy = 0.13, ops = ops } }
+	elseif bust then
 		return { { "group", s = 1.4, dy = 0.17, ops = ops } }
 	end
 	return ops

@@ -256,7 +256,7 @@ def draw_op(canvas, op, scale):
     clip = op.get("clip")
     cw, ch = canvas.size
     if clip:
-        cx0, cy0, cx1, cy1 = [v * k for v in clip]
+        cx0, cy0, cx1, cy1 = [v * k for v in clip[:4]]
     else:
         cx0, cy0, cx1, cy1 = 0, 0, cw, ch
     cx0, cy0 = max(cx0, 0, px), max(cy0, 0, py)
@@ -264,6 +264,14 @@ def draw_op(canvas, op, scale):
     if cx1 <= cx0 or cy1 <= cy0:
         return
     piece = layer.crop((int(cx0 - px), int(cy0 - py), int(cx1 - px), int(cy1 - py)))
+    rounded = clip[4] if clip and len(clip) > 4 and clip[4] else None
+    if rounded:
+        # a CanvasGroup with a UICorner: clip to its rounded box
+        from PIL import ImageChops
+        rx0, ry0, rx1, ry1, rad = [v * k for v in rounded]
+        mask = Image.new("L", piece.size, 0)
+        ImageDraw.Draw(mask).rounded_rectangle([rx0 - cx0, ry0 - cy0, rx1 - cx0 - 1, ry1 - cy0 - 1], radius=max(0, rad), fill=255)
+        piece.putalpha(ImageChops.multiply(piece.getchannel("A"), mask))
     canvas.alpha_composite(piece, (int(cx0), int(cy0)))
 
 
