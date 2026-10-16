@@ -110,6 +110,8 @@ Progress.questPool = {
 	{ id = "char_naturalist", text = "Play a match as the Naturalist", stat = "char:naturalist", goal = 1, gems = 35 },
 	{ id = "char_warper", text = "Play a match as the Warper", stat = "char:warper", goal = 1, gems = 35 },
 	{ id = "char_overseer", text = "Play a match as the Overseer", stat = "char:overseer", goal = 1, gems = 35 },
+	{ id = "char_gambler", text = "Play a match as the Gambler", stat = "char:gambler", goal = 1, gems = 35 },
+	{ id = "char_cannoneer", text = "Play a match as the Cannoneer", stat = "char:cannoneer", goal = 1, gems = 35 },
 }
 Progress.questById = {}
 for _, q in Progress.questPool do
@@ -122,8 +124,9 @@ function Progress.questText(q): string
 	return string.format(q.text, q.goal)
 end
 
--- Today's quests for a player: three different ones, at most one "play as" quest.
-function Progress.dailyQuests(userId: number, day: number): { any }
+-- Today's quests for a player: three different ones, at most one "play as" quest, and
+-- only for a character they can pick (`canPlay(characterId)`, if given).
+function Progress.dailyQuests(userId: number, day: number, canPlay: ((string) -> boolean)?): { any }
 	local rand = lcg(userId * 7919 + day * 104729 + 17)
 	local picked, out = {}, {}
 	local charQuest = false
@@ -132,7 +135,8 @@ function Progress.dailyQuests(userId: number, day: number): { any }
 		guard += 1
 		local q = Progress.questPool[rand(#Progress.questPool)]
 		local isChar = string.sub(q.stat, 1, 5) == "char:"
-		if not picked[q.id] and not (isChar and charQuest) then
+		local playable = not isChar or canPlay == nil or canPlay(string.sub(q.stat, 6))
+		if not picked[q.id] and not (isChar and charQuest) and playable then
 			picked[q.id] = true
 			charQuest = charQuest or isChar
 			table.insert(out, { id = q.id, progress = 0, done = false })
@@ -142,7 +146,7 @@ function Progress.dailyQuests(userId: number, day: number): { any }
 end
 
 -- A replacement for quest slot `index` that isn't one of today's.
-function Progress.rerollQuest(list, index: number, seed: number)
+function Progress.rerollQuest(list, index: number, seed: number, canPlay: ((string) -> boolean)?)
 	local rand = lcg(seed)
 	local have = {}
 	for _, q in list do
@@ -150,7 +154,8 @@ function Progress.rerollQuest(list, index: number, seed: number)
 	end
 	for _ = 1, 100 do
 		local q = Progress.questPool[rand(#Progress.questPool)]
-		if not have[q.id] then
+		local isChar = string.sub(q.stat, 1, 5) == "char:"
+		if not have[q.id] and (not isChar or canPlay == nil or canPlay(string.sub(q.stat, 6))) then
 			return { id = q.id, progress = 0, done = false }
 		end
 	end

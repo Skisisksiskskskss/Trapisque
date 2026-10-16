@@ -45,6 +45,19 @@ local defs = {
 		target = Config.Rules.TreasuresToWin,
 	},
 	{
+		-- a short free-for-all: one treasure wins, about 5 minutes (good on a phone)
+		id = "blitz",
+		name = "Blitz",
+		short = "Blitz",
+		blurb = "Free-for-all race to ONE treasure. About 5 minutes.",
+		minPlayers = 2,
+		maxPlayers = 6,
+		teamSize = 1,
+		target = 1,
+		turnTime = 30,
+		length = "blitz",
+	},
+	{
 		-- free-for-all with the week's twist on the rules (Meta/Progress events)
 		id = "event",
 		name = "Weekly Event",
@@ -84,6 +97,7 @@ end
 
 -- Match length presets. Quick fits a Roblox session; Classic is the long game.
 Modes.lengths = {
+	{ id = "blitz", name = "Blitz", target = 1, blurb = "1 treasure. About 5 minutes." },
 	{ id = "quick", name = "Quick", target = 2, blurb = "2 treasures each. About 10 minutes." },
 	{ id = "standard", name = "Standard", target = 3, blurb = "3 treasures each. About 15 minutes." },
 	{ id = "classic", name = "Classic", blurb = "4 treasures each (3 in World War Four). The long game." },

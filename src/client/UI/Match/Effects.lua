@@ -44,6 +44,8 @@ local ABILITY_COLOR = {
 	stampede = C.lime,
 	warp = C.grape,
 	nudge = C.sun,
+	doubledown = C.mint,
+	cannonball = C.orange,
 }
 Effects.abilityColor = ABILITY_COLOR
 
@@ -269,6 +271,10 @@ function Effects.natural(view, kind: string, tile: number, drag: number?)
 		Sound.play("slime")
 		burst(view, at, C.slime, 12, 1, 0.2, 0.6)
 		shoutAt(view, at, if drag then ("SLIMED -" .. drag) else "SLIMED!", C.slime)
+	elseif kind == "lava" then
+		Sound.play("fire")
+		burst(view, at, C.orange, 12, 1, 0.18, 0.6)
+		shoutAt(view, at, "TOO HOT!", C.orange)
 	end
 end
 

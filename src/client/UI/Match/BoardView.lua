@@ -24,6 +24,8 @@
 		view:tileWorld(tile) -> Vector2     -- centre of a tile in world pixels
 		view:toStage(world) -> Vector2      -- world pixels -> stage pixels (for overlays)
 		view:buildIntro()                   -- tiles drop into place one by one
+		view:setGhosts(tiles) / driftGhosts(moves, speed) / boo(tile)   -- Haunted Hollow
+		view:erupt(speed) / setRumble(on)   -- Mount Kaboom's volcano
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -65,6 +67,7 @@ local TOP = {
 	river = hex("6CC9DB"),
 	gate = hex("B8BDC7"),
 	slime = hex("9BCF2E"),
+	lava = hex("F2541B"),
 	wall = hex("F2A774"),
 	teleporter = hex("8FB3E8"),
 	spore_warper = hex("A6D98F"),
@@ -165,12 +168,182 @@ function BoardView.new(parent: Frame, mapId: string, opts: { [string]: any }?)
 	self:_bindInput()
 	self.bubbles = {} -- [seat] = { holder, w, h, token }
 	self.bubbleZ = 20
+	self.ghostSprites = {} -- Haunted Hollow: [ghost] = { holder, lift, tile }
 	self.maid:add(RunService.RenderStepped:Connect(function(dt)
 		self:_stepCamera(dt)
 		self:_stepTags()
 		self:_stepBubbles()
+		self:_stepGhosts()
 	end))
 	return self
+end
+
+---------------------------------------------------------------------------
+-- Haunted Hollow's ghosts and Mount Kaboom's volcano
+---------------------------------------------------------------------------
+
+-- A ghost hovers just off its tile's top corner, so the tile and whoever stands on it
+-- stay readable.
+function BoardView:_ghostSpot(tile: number): Vector2
+	return self:tileWorld(tile) + Vector2.new(0.5 * U, -0.62 * U)
+end
+
+function BoardView:setGhosts(tiles: { number })
+	for i, tile in tiles do
+		local g = self.ghostSprites[i]
+		if not g then
+			local holder = Util.frame(self.layers.Pawns, {
+				Name = "Ghost" .. i,
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				Size = UDim2.fromOffset(1.15 * U, 1.15 * U),
+				ZIndex = 30,
+			})
+			local lift = Util.frame(holder, { Name = "Lift", ZIndex = 30 })
+			Icons.sticker(lift, StickerArt.misc.ghost, { ZIndex = 31 }, 0.07)
+			g = { holder = holder, lift = lift, tile = tile, phase = i * 1.7 }
+			self.ghostSprites[i] = g
+		end
+		g.tile = tile
+		if not g.moving then
+			g.holder.Position = px(self:_ghostSpot(tile))
+		end
+	end
+	for i = #tiles + 1, #self.ghostSprites do
+		self.ghostSprites[i].holder:Destroy()
+		self.ghostSprites[i] = nil
+	end
+end
+
+function BoardView:_stepGhosts()
+	if #self.ghostSprites == 0 then
+		return
+	end
+	local t = os.clock()
+	for _, g in self.ghostSprites do
+		g.lift.Position = UDim2.fromOffset(0, math.sin(t * 2.2 + g.phase) * 0.08 * U)
+	end
+end
+
+-- The ghosts float down the trail: { { ghost, from, path } }. A ghost that reaches the
+-- Start fades out and comes back near the treasure. Yields until they've arrived.
+function BoardView:driftGhosts(moves, speed: number?)
+	local step = Pacing.GhostStep / math.max(speed or 1, 0.25)
+	local longest = 0
+	for _, m in moves do
+		local g = self.ghostSprites[m.ghost]
+		if g then
+			g.moving = true
+			longest = math.max(longest, #m.path)
+			task.spawn(function()
+				local prev = m.from
+				for _, tile in m.path do
+					local a, b = self:_ghostSpot(prev), self:_ghostSpot(tile)
+					if (b - a).Magnitude > 3 * U then
+						-- back up the trail: vanish and reappear
+						Util.tween(Util.scaler(g.holder), step * 0.5, { Scale = 0 })
+						task.wait(step * 0.5)
+						local frame = g.holder :: Frame
+						frame.Position = px(b)
+						Util.tween(Util.scaler(g.holder), step * 0.5, { Scale = 1 }, Enum.EasingStyle.Back)
+						task.wait(step * 0.5)
+					else
+						Util.tween(g.holder, step, { Position = px(b) }, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+						task.wait(step)
+					end
+					prev = tile
+				end
+				g.tile = prev
+				g.moving = false
+			end)
+		end
+	end
+	if longest > 0 then
+		Sound.play("whoosh", 0.7)
+		task.wait(step * longest + 0.05)
+	end
+end
+
+-- The ghost on `tile` lunges at whoever walked into it.
+function BoardView:boo(tile: number)
+	for _, g in self.ghostSprites do
+		if g.tile == tile then
+			local s = Util.scaler(g.holder)
+			Util.tween(s, 0.12, { Scale = 1.45 }, Enum.EasingStyle.Back)
+			task.delay(0.35, function()
+				Util.tween(s, 0.25, { Scale = 1 })
+			end)
+		end
+	end
+	self:floatText(self:tileWorld(tile), "BOO!", C.white, 34)
+end
+
+-- Where the volcano stands (its landmark), if this map has one.
+function BoardView:volcanoWorld(): Vector2?
+	for _, p in self.layout.props do
+		if p.kind == "volcano" then
+			local L = self.layout
+			return Vector2.new((p.x - L.x0) * U, (p.y - L.y0) * U)
+		end
+	end
+	return nil
+end
+
+-- KABOOM: the board shakes, the crater spits fire and every lava stream flares up.
+function BoardView:erupt(speed: number?)
+	local k = math.max(speed or 1, 0.25)
+	self:shake(0.22, 0.6 / k)
+	Sound.play("bonk", 0.55)
+	Sound.play("fire")
+	local at = self:volcanoWorld()
+	if at then
+		self:floatText(at, "KABOOM!", C.orange, 40)
+		for i = 1, 8 do
+			local a = (i / 8) * math.pi * 2
+			local rock = Util.new("Frame", {
+				Name = "Rock",
+				BackgroundColor3 = if i % 2 == 0 then C.orange else C.sun,
+				BorderSizePixel = 0,
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				Position = px(at - Vector2.new(0, 1.6 * U)),
+				Size = UDim2.fromOffset(0.34 * U, 0.34 * U),
+				ZIndex = 44,
+				Parent = self.layers.Fx,
+			})
+			Util.corner(rock, 0.5)
+			Util.stroke(rock, C.line, 2)
+			Util.tween(rock, 0.7 / k, { Position = px(at + Vector2.new(math.cos(a) * 2.6 * U, math.sin(a) * 1.6 * U)), BackgroundTransparency = 0.6 }, Enum.EasingStyle.Quad)
+			task.delay(0.72 / k, function()
+				rock:Destroy()
+			end)
+		end
+	end
+	for tile, kind in self.natural do
+		if kind == "lava" then
+			self:puff(self:tileWorld(tile), C.orange)
+		end
+	end
+end
+
+-- The lava tiles throb while the volcano is due to blow at the end of this round.
+function BoardView:setRumble(on: boolean)
+	if self.rumbling == on then
+		return
+	end
+	self.rumbling = on
+	if not on then
+		return
+	end
+	task.spawn(function()
+		while self.rumbling and self.container.Parent do
+			for tile, kind in self.natural do
+				local parts = self.tileParts[tile]
+				if kind == "lava" and parts and parts.icon then
+					Util.bump(parts.icon, 0.12)
+				end
+			end
+			task.wait(0.8)
+		end
+	end)
 end
 
 function BoardView:destroy()
@@ -880,6 +1053,9 @@ function BoardView:applySnapshot(snap)
 		embers[e.tile] = e.owner or 0
 	end
 	self:setEmbers(embers)
+	if snap.ghosts and #snap.ghosts > 0 then
+		self:setGhosts(snap.ghosts)
+	end
 	-- pawns
 	for _, p in snap.players do
 		local pawn = self.pawns[p.seat]

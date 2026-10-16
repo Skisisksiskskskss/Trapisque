@@ -1,14 +1,19 @@
 --[[
 	Maps
-	The three Trapisque boards, written as walks on a hex grid (see Board.lua): that
-	gives the board graph the rules use. How each map looks (the winding route through
-	an island, a fortress, a swamp) is the client's MapScenes.
+	The Trapisque boards, written as walks on a hex grid (see Board.lua): that gives the
+	board graph the rules use. How each map looks (the winding route through an island,
+	a fortress, a swamp, a haunted graveyard, a volcano) is the client's MapScenes.
 
 	route     main path from Start; the last tile is the Treasure
 	branches  gated shortcuts: leave the main route at `from`, rejoin at `to`.
 	          Only players holding a Key (or the Naturalist) take them.
 	natural   permanent natural traps, by main-route tile number
 	tokenEvery a random token is placed every N tiles (rulebook: 3 / 5 / 6)
+	ghosts    (Haunted Hollow) the tiles its ghosts start on; they drift toward the Start
+	          every round and scare back whoever walks into them
+	          (Mount Kaboom's natural "lava" streams stop you like rivers, and the volcano
+	          scorches whoever stands in one when it erupts)
+	counterItem the card that gets you past the map's hazard (the Assist wheel's map slot)
 ]]
 
 local Maps = {}
@@ -54,6 +59,30 @@ local defs = {
 		tokenEvery = 5,
 		naturalKind = "slime",
 		counterItem = "boots",
+	},
+	{
+		id = "haunted",
+		name = "Haunted Hollow",
+		theme = "haunted",
+		blurb = "A graveyard cove under a full moon. Two ghosts drift down the trail every round: walk into one and you stop dead and jump back a tile in fright, unless you carry a Lantern.",
+		start = { 0, 0 },
+		route = "E10 NE NW W10 NW NE E10 NE NW W3",
+		ghosts = { 14, 32 },
+		tokenEvery = 4,
+		naturalKind = "ghost",
+		counterItem = "lantern",
+	},
+	{
+		id = "volcano",
+		name = "Mount Kaboom",
+		theme = "volcano",
+		blurb = "A volcano island crossed by two lava streams. A stream stops you in your tracks unless you wear a Fire Cloak, and every 3 rounds the volcano blows: anyone standing in a stream gets scorched.",
+		start = { 0, 0 },
+		route = "E8 NE E2 NE NW W10 NW NE E10 NE NW W4",
+		natural = { [14] = "lava", [29] = "lava" },
+		tokenEvery = 4,
+		naturalKind = "lava",
+		counterItem = "cloak",
 	},
 }
 

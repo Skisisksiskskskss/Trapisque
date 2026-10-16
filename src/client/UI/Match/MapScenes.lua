@@ -20,6 +20,7 @@
 	           doesn't fit (on the trail, a tile, the wrong side of the coast) is left out
 	colors     the map's inks (the outline is always the UI's ink)
 	tile       stone = round stepping stones, slab = square slabs turned along the trail
+	lava       its lava tiles get lava streams (like rivers, in the scene's lava inks)
 ]]
 
 local MapScenes = {}
@@ -168,6 +169,94 @@ MapScenes.slimy = {
 		start = "#B8D98A",
 	},
 	tile = "slab",
+}
+
+MapScenes.haunted = {
+	path = {
+		{ 2.4, 15.6 }, { 5.5, 16.6 }, { 9, 16 }, { 12.5, 16.8 }, { 16, 16 }, { 19.5, 16.8 }, { 23, 16 }, { 26, 14.6 },
+		{ 27, 11.8 }, { 24.5, 10 }, { 21, 10.8 }, { 17.5, 9.8 }, { 14, 10.6 }, { 10.5, 9.6 }, { 7, 10.4 }, { 4, 9.2 },
+		{ 3.2, 6.4 }, { 5.6, 4.4 }, { 9, 4.8 }, { 12.5, 3.8 }, { 16, 4.6 }, { 19.5, 3.6 }, { 23, 4.4 }, { 25.6, 3.6 },
+		{ 27.4, 5.6 },
+	},
+	land = {
+		r = 2.4,
+		jitter = 0.3,
+		beach = 0.9,
+		fill = 2.4,
+		add = { { 30.2, 8.8, 2.2 }, { 14.6, 13.4, 1.6 }, { 9.4, 7.2, 1.5 }, { 20.6, 7.2, 1.5 } },
+	},
+	islets = { { 1.4, 2.2, 1.1 }, { 29.8, 17.4, 1.0 }, { 13.2, 19.2, 0.9 } },
+	props = {
+		land = { { "grave", 6 }, { "pumpkin", 3 }, { "deadtree", 2 }, { "lamp", 2 }, { "fence", 2 }, { "rock", 1 } },
+		landCount = 22,
+		water = { { "rock", 4 }, { "mist", 3 }, { "barrel", 1 } },
+		waterCount = 8,
+	},
+	landmarks = {
+		{ "dock", tile = 1, size = 3 },
+		{ "crypt", x = 30.2, y = 8.8, size = 2.8 },
+		{ "ghostship", x = 6.6, y = 19.6, size = 3.8 },
+		{ "deadtree", x = 14.6, y = 13.4, size = 2.2 },
+	},
+	colors = {
+		water = "#1E3A55",
+		waterMark = "#172E45",
+		shallows = "#2F5674",
+		land = "#7A7F6A",
+		inner = "#46603E",
+		innerMark = "#3A5134",
+		trail = "#A99B82",
+		tile = "#ECE6D4",
+		tileSide = "#8C8476",
+		number = "#8C8476",
+		start = "#9FB8C9",
+	},
+	tile = "slab",
+}
+
+MapScenes.volcano = {
+	path = {
+		{ 2.4, 16.4 }, { 5.8, 17.6 }, { 9.4, 16.6 }, { 13, 17.8 }, { 16.6, 16.6 }, { 20.2, 17.8 }, { 23.8, 16.8 }, { 26.6, 15 },
+		{ 26.8, 12.4 }, { 24, 11.2 }, { 20.6, 12.4 }, { 17, 11.2 }, { 13.4, 12.4 }, { 9.8, 11.2 }, { 6.4, 12.2 }, { 3.4, 11.2 },
+		{ 2.6, 8.4 }, { 4.6, 6 }, { 8, 6.8 }, { 11.6, 5.6 }, { 15.2, 6.8 }, { 18.6, 5.6 }, { 21.4, 3.4 }, { 21.6, 1.2 },
+	},
+	land = {
+		r = 2.4,
+		jitter = 0.32,
+		beach = 0.9,
+		fill = 2.4,
+		add = { { 27.2, 6.4, 3.6 }, { 24.4, 7.4, 2.2 }, { 15, 14.4, 1.4 } },
+	},
+	islets = { { 30.6, 16.8, 1.1 }, { 1.2, 2.6, 1.2 }, { 12.6, 20.4, 0.9 } },
+	lava = true,
+	props = {
+		land = { { "palm", 3 }, { "lavarock", 4 }, { "charred", 3 }, { "vent", 2 }, { "rock", 2 } },
+		landCount = 20,
+		water = { { "rock", 4 }, { "barrel", 1 }, { "gull", 1 } },
+		waterCount = 7,
+	},
+	landmarks = {
+		{ "dock", tile = 1, size = 3 },
+		{ "volcano", x = 27.2, y = 6.6, size = 5.2 },
+		{ "ship", x = 9, y = 1.4, size = 3.6 },
+	},
+	colors = {
+		water = "#24839F",
+		waterMark = "#1C6A82",
+		shallows = "#58B7C9",
+		land = "#6B5A50",
+		inner = "#4A3E38",
+		innerMark = "#3A302C",
+		trail = "#D4B088",
+		tile = "#F4E6CC",
+		tileSide = "#8A6A4A",
+		number = "#8A6A4A",
+		start = "#7FD1E0",
+		lava = "#F2541B",
+		lavaGlow = "#FFB000",
+		lavaCrust = "#7A1E0C",
+	},
+	tile = "stone",
 }
 
 return MapScenes

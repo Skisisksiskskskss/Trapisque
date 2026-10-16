@@ -22,6 +22,8 @@ local WALK_KINDS = {
 	jeopardy = true,
 	nudge = true,
 	burn = true,
+	scared = true,
+	scorched = true,
 }
 -- moves that zip along the path (knocked back, launched, sliding)
 local FAST_KINDS = {
@@ -32,6 +34,7 @@ local FAST_KINDS = {
 	stampede = true,
 	trampoline = true,
 	bounty = true,
+	cannon = true,
 }
 Pacing.walkKinds = WALK_KINDS
 Pacing.fastKinds = FAST_KINDS
@@ -90,8 +93,16 @@ local fixed = {
 	shop = 0.4,
 	shopClose = 0.2,
 	left = 0.6,
+	joined = 0.6,
 	tokenMove = 0.55, -- a used token flies to its new tile
+	boo = 0.9, -- a ghost lunges: BOO!
+	erupt = 1.6, -- KABOOM
+	doubleDown = 0.6,
+	cannon = 0.5,
 }
+
+-- Ghosts float down the trail one tile at a time (BoardView.driftGhosts).
+Pacing.GhostStep = 0.28
 
 function Pacing.duration(e): number
 	if e.t == "move" then
@@ -104,6 +115,13 @@ function Pacing.duration(e): number
 	end
 	if e.t == "status" and e.on == false then
 		return 0.3
+	end
+	if e.t == "ghosts" then
+		local longest = 0
+		for _, m in e.moves or {} do
+			longest = math.max(longest, #m.path)
+		end
+		return longest * Pacing.GhostStep + 0.15
 	end
 	return fixed[e.t] or 0.4
 end

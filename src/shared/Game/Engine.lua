@@ -25,6 +25,14 @@
 			recall    warp back to your Time Travel anchor instead of moving
 		Landing on a Potion Seller opens the shop: buy / shopDone.
 		Scavenge offers two cards: pick.
+
+	Between turns (the end of every round) Haunted Hollow's ghosts drift toward the Start
+	and Mount Kaboom's volcano counts down to its next eruption.
+
+	Extra options for Engine.new:
+		rig     { [seat] = { { a, b }, ... } } the dice those seats roll, in order (the
+		        guided first match), then random dice again
+		hands   { [seat] = { item, ... } } starting cards instead of the random ones
 ]]
 
 local Config = require(script.Parent.Parent.Config)
@@ -132,6 +140,8 @@ function Engine.new(opts)
 	self.length = opts.length or "classic"
 	local caps = Rules.MaxRounds
 	self.maxRounds = if type(caps) == "table" then (caps[self.length] or caps.classic) else caps
+	self.rig = opts.rig or {}
+	self.startHands = opts.hands
 	self.events = {}
 	self.phase = "setup"
 	self.round = 0
@@ -150,6 +160,9 @@ function Engine.new(opts)
 	self.traps = {} -- [tile] = { trap, ... } hidden traps (a tile can hold several)
 	self.natural = {} -- [tile] = "river" | "gate" | "slime"
 	self.embers = {} -- [tile] = { owner, team } burning tiles left by a Blast Off
+	self.ghosts = {} -- Haunted Hollow: the tile each ghost floats over
+	self.ghostAt = {} -- [tile] = ghost number
+	self.lava = {} -- Mount Kaboom: the lava stream tiles (natural "lava")
 	self.teleporters = {} -- tiles, in placement order (pairs: 1-2, 3-4, ...)
 	self.placeOrder = 0
 	self.stock = {}
@@ -331,7 +344,15 @@ function Engine:start()
 	-- natural hazards and map traps
 	for tile, kind in self.board.naturalInit do
 		self.natural[tile] = kind
+		if kind == "lava" then
+			table.insert(self.lava, tile)
+		end
 	end
+	table.sort(self.lava)
+	for _, tile in self.map.ghosts or {} do
+		table.insert(self.ghosts, tile)
+	end
+	self:_indexGhosts()
 	for tile, item in self.map.startingPlaced or {} do
 		if Items.isHidden(item) then
 			self:_addTrap(tile, item, 0, nil, true)
@@ -379,7 +400,10 @@ function Engine:start()
 	end
 	for _, p in self.players do
 		local dealt = { rng:pick(starters) }
-		if p.character == "trapper" then
+		local fixed = self.startHands and self.startHands[p.index]
+		if fixed then
+			dealt = copyList(fixed)
+		elseif p.character == "trapper" then
 			local traps = {}
 			for _, id in Items.trapIds do
 				if id ~= "wall" then
@@ -439,6 +463,10 @@ function Engine:_advance()
 		self.turnPtr += 1
 		if self.turnPtr > #self.turnOrder then
 			self.turnPtr = 1
+			self:_endRound()
+			if self.phase == "over" then
+				return
+			end
 			self.round += 1
 			if self.round > self.maxRounds then
 				self:_gameOver(nil, "rounds")
@@ -503,8 +531,12 @@ function Engine:_roll(p, reroll: boolean)
 	-- Frozen: one die, and you shuffle along at half speed (rounded up)
 	local dice
 	local underdog = false
-	if frozen then
-		dice = { halve(self.rng:int(1, 6)) }
+	local rigged = self.rig[p.index]
+	local fixed = if rigged and not reroll then table.remove(rigged, 1) else nil
+	if fixed and not frozen then
+		dice = copyList(fixed)
+	elseif frozen then
+		dice = { halve(self:_die(p)) }
 	else
 		dice = {}
 		local base = math.clamp(self.mut.diceCount or 2, 2, 3)
@@ -520,10 +552,11 @@ function Engine:_roll(p, reroll: boolean)
 			p.stats.underdog += 1
 		end
 		for _ = 1, n do
-			table.insert(dice, self.rng:int(1, 6))
+			table.insert(dice, self:_die(p))
 		end
 	end
 	self.turn.dice = dice
+	self.turn.frozen = frozen
 	self.turn.gold = if underdog then #dice else nil
 	for i = 2, #dice do
 		if Engine.isBackDie(dice, i, self.turn.gold) then
@@ -537,12 +570,82 @@ function Engine:_roll(p, reroll: boolean)
 	end
 end
 
+-- One die for `p` (the Gambler's Loaded Dice never roll a 1).
+function Engine:_die(p): number
+	return self.rng:int(if p.character == "gambler" then 2 else 1, 6)
+end
+
 function Engine:_finishTurn()
 	if self.phase == "over" then
 		return
 	end
 	self.phase = "action"
 	self:_advance()
+end
+
+---------------------------------------------------------------------------
+-- the end of a round: ghosts drift, the volcano rumbles
+---------------------------------------------------------------------------
+
+function Engine:_indexGhosts()
+	self.ghostAt = {}
+	for i, tile in self.ghosts do
+		self.ghostAt[tile] = i
+	end
+end
+
+-- Where a ghost on `tile` drifts next: one tile toward the Start; from just past the
+-- Start it floats back to just before the treasure and comes down the trail again.
+function Engine:_ghostStep(tile: number): number
+	local prev = self.board.prevMain[tile]
+	if prev == nil or prev <= self.board.start + 1 then
+		return self.board.treasure - 2
+	end
+	return prev
+end
+
+-- Will the volcano erupt at the end of this round?
+function Engine:eruptsThisRound(): boolean
+	return #self.lava > 0 and (Rules.EruptEvery or 0) > 0 and self.round % Rules.EruptEvery == 0
+end
+
+function Engine:_endRound()
+	if #self.ghosts > 0 then
+		local moves = {}
+		for i, from in self.ghosts do
+			local path = {}
+			local tile = from
+			for _ = 1, Rules.GhostDrift or 0 do
+				tile = self:_ghostStep(tile)
+				table.insert(path, tile)
+			end
+			self.ghosts[i] = tile
+			table.insert(moves, { ghost = i, from = from, path = path })
+		end
+		self:_indexGhosts()
+		self:_emit({ t = "ghosts", moves = moves })
+	end
+	if self:eruptsThisRound() then
+		-- KABOOM: lava pours down the streams and scorches anyone standing in one
+		self:_emit({ t = "erupt", tiles = copyList(self.lava), round = self.round })
+		for _, p in self.players do
+			if self.phase ~= "over" and self.natural[p.tile] == "lava" then
+				self:_scorch(p)
+			end
+		end
+	end
+end
+
+-- Caught in an eruption: Burning, and you scramble back. A Fire Cloak keeps you safe.
+function Engine:_scorch(p)
+	if removeCard(p, "cloak") then
+		self:_emit({ t = "useCard", p = p.index, item = "cloak", tile = p.tile, why = "lava" })
+		return
+	end
+	self:_emit({ t = "scorch", p = p.index, tile = p.tile, lava = true })
+	self:_setStatus(p, "burning", "lava")
+	self:_shiftBack(p, Rules.EruptBack or 0, "scorched")
+	self:_land(p, true)
 end
 
 ---------------------------------------------------------------------------
@@ -1008,22 +1111,29 @@ end
 --[[
 	Where a forward walk of `m` steps goes, without changing anything. Used for the
 	real walk, for previews on screen and by bots. `state` needs: board, natural,
-	placed, and the walker `p` (tile, hand, character).
+	placed, and optionally ghostAt (Haunted Hollow); the walker
+	`p` needs tile, hand, character and (for a ghost's scare) trail.
 
 	Returns {
 		path = { tiles }, tile = landing tile,
-		result = "landed" | "stopped" (river/gate) | "blocked" (wall) | "treasure",
-		uses = { "key" | "bridge" | "boots" | "shield", ... } in order, with the tile,
+		result = "landed" | "stopped" (river/gate/lava) | "blocked" (wall) | "treasure"
+			| "scared" (walked into a ghost: `flee` is the way back, `tile` its end),
+		uses = { "key" | "bridge" | "boots" | "lantern" | "cloak" | "shield", ... } in
+			order, with the tile,
 		slowed = tile where slime slowed you (or nil), crumbles = { wall tiles passed },
 	}
 ]]
-function Engine.walkPlan(state, p, m: number)
+function Engine.walkPlan(state, p, m: number, leap: boolean?)
 	local board = state.board
 	local keys = count(p.hand, "key")
 	local bridges = count(p.hand, "bridge")
 	local boots = count(p.hand, "boots")
+	local lanterns = count(p.hand, "lantern")
+	local cloaks = count(p.hand, "cloak")
 	local shields = count(p.hand, "shield")
-	local wild = p.character == "naturalist"
+	local ghostAt = state.ghostAt or {}
+	-- the Naturalist (and a Gambler's Double Down, `leap`) goes straight through hazards
+	local wild = p.character == "naturalist" or leap == true
 	local plan = { path = {}, tile = p.tile, result = "landed", uses = {}, slowed = nil, crumbles = {} }
 	local wallsBlock = m < Rules.WallPassMin
 	local cur = p.tile
@@ -1065,17 +1175,31 @@ function Engine.walkPlan(state, p, m: number)
 			plan.result = "treasure"
 			break
 		end
+		-- a ghost in your way scares you back (a Lantern shines it away)
+		if ghostAt[nxt] and not wild then
+			if lanterns > 0 then
+				lanterns -= 1
+				table.insert(plan.uses, { item = "lantern", tile = nxt, why = "ghost" })
+			else
+				plan.result = "scared"
+				plan.hazard = "ghost"
+				plan.scaredAt = nxt
+				break
+			end
+		end
 		-- hazards stop you on them (slime only drags you back a few steps), unless you
 		-- carry the card that gets you past
 		local nat = state.natural[nxt]
 		if nat and not wild and left > 0 then
 			local counter = Items.naturalCounter[nat]
-			local have = if counter == "key" then keys elseif counter == "bridge" then bridges else boots
+			local have = if counter == "key" then keys elseif counter == "bridge" then bridges elseif counter == "cloak" then cloaks else boots
 			if have > 0 then
 				if counter == "key" then
 					keys -= 1
 				elseif counter == "bridge" then
 					bridges -= 1
+				elseif counter == "cloak" then
+					cloaks -= 1
 				else
 					boots -= 1
 				end
@@ -1091,6 +1215,22 @@ function Engine.walkPlan(state, p, m: number)
 		end
 	end
 	plan.tile = cur
+	if plan.result == "scared" then
+		-- run back the way you came
+		local trail = {}
+		for _, t in p.trail or { p.tile } do
+			table.insert(trail, t)
+		end
+		for _, t in plan.path do
+			table.insert(trail, t)
+		end
+		local flee = {}
+		for i = 1, math.min(Rules.GhostScare or 0, #trail - 1) do
+			table.insert(flee, trail[#trail - i])
+		end
+		plan.flee = flee
+		plan.tile = if #flee > 0 then flee[#flee] else cur
+	end
 	return plan
 end
 
@@ -1106,7 +1246,7 @@ function Engine.backPlan(p, m: number)
 end
 
 function Engine:_walk(p, m: number): string
-	local plan = Engine.walkPlan(self, p, m)
+	local plan = Engine.walkPlan(self, p, m, self.turn ~= nil and self.turn.double == true)
 	local path = {}
 	local function flush()
 		if #path > 0 then
@@ -1148,6 +1288,9 @@ function Engine:_walk(p, m: number): string
 		self:_emit({ t = "blocked", p = p.index, tile = plan.blockedAt })
 	elseif plan.result == "stopped" then
 		self:_emit({ t = "natural", p = p.index, kind = plan.hazard, tile = p.tile })
+	elseif plan.result == "scared" then
+		self:_emit({ t = "boo", p = p.index, tile = p.tile, ghost = self.ghostAt[p.tile] })
+		self:_shiftBack(p, Rules.GhostScare or 0, "scared")
 	end
 	for _, tile in plan.crumbles do
 		if self.placed[tile] and self.placed[tile].item == "wall" then
@@ -1338,7 +1481,12 @@ function Engine:_bonk(attacker, victim, back: number?, trample: boolean?)
 	if attacker.character == "fire_starter" then
 		self:_setStatus(victim, "burning", "bonk")
 	end
-	self:_shiftBack(victim, back or self.mut.bonkBack or Rules.BonkBack, "bonk")
+	local knock = back or self.mut.bonkBack or Rules.BonkBack
+	if back == nil and attacker.character == "cannoneer" then
+		-- Broadside: the Cannoneer's bonks knock rivals further
+		knock += CharCfg.cannoneer.extraBack
+	end
+	self:_shiftBack(victim, knock, "bonk")
 	self:_land(victim, true)
 	if not trample and (Rules.BonkBounce or 0) > 0 and self.phase ~= "over" then
 		self:_shiftForward(attacker, Rules.BonkBounce, "bounce")
@@ -1632,19 +1780,20 @@ function Engine:moveOption(die: any): (number?, number?, boolean?)
 end
 
 -- Applies the boost played this turn to a move of `m` steps: (steps, backwards).
-function Engine.boosted(m: number, boost: string?): (number, boolean)
+-- `double`: the Gambler's Double Down (it doesn't double a Speed Boost again).
+function Engine.boosted(m: number, boost: string?, double: boolean?): (number, boolean)
 	local def = boost and Items.get(boost)
 	if not def then
-		return m, false
+		return if double then m * 2 else m, false
 	end
 	if def.boost == "double" then
 		return m * 2, false
 	elseif def.boost == "plus" then
-		return m + (def.amount or 0), false
+		return (if double then m * 2 else m) + (def.amount or 0), false
 	elseif def.boost == "back" then
-		return m, true
+		return if double then m * 2 else m, true
 	end
-	return m, false
+	return if double then m * 2 else m, false
 end
 
 function Engine:_cmdMove(p, cmd)
@@ -1653,7 +1802,7 @@ function Engine:_cmdMove(p, cmd)
 		return false, "Pick one of your dice."
 	end
 	local backwards
-	m, backwards = Engine.boosted(m, self.turn.boost)
+	m, backwards = Engine.boosted(m, self.turn.boost, self.turn.double)
 	backwards = backwards or backDie == true
 	self:_emit({
 		t = "choose",
@@ -1677,14 +1826,15 @@ function Engine:_cmdMove(p, cmd)
 			p.tile = p.trail[#p.trail]
 			p.stats.tiles += #plan.path
 			self:_emit({ t = "move", p = p.index, path = plan.path, kind = "moonwalk" })
-			self:_land(p)
+			self:_land(p, false)
 		end
 	else
 		local result = self:_walk(p, m)
 		if result == "treasure" then
 			self:_reachTreasure(p)
 		else
-			self:_land(p)
+			-- a ghost chased you back: you didn't land there by your own move
+			self:_land(p, result == "scared")
 		end
 	end
 	if self.phase == "action" then
@@ -2106,8 +2256,66 @@ function Engine:_cmdAbility(p, cmd)
 		local steps = CharCfg.overseer.steps
 		self:_shift(target, if option == "fwd" then steps else -steps, "nudge")
 		self:_land(target, true)
+	elseif id == "doubledown" then
+		-- this turn's move counts double
+		self.turn.double = true
+		self:_emit({ t = "doubleDown", p = p.index })
+	elseif id == "cannonball" then
+		-- fly at the nearest rival ahead (along the trail) and land on them with a bonk
+		local cfg = CharCfg.cannoneer
+		local cur, hit = p.tile, nil
+		for step = 1, cfg.range do
+			cur = self.board.nextMain[cur]
+			if not cur or cur == self.board.treasure then
+				break
+			end
+			for _, o in self.players do
+				if o ~= p and self:isOpponent(p, o) and o.tile == cur then
+					hit = step
+					break
+				end
+			end
+			if hit then
+				break
+			end
+		end
+		local steps = hit or cfg.fly
+		self:_emit({ t = "cannon", p = p.index, steps = steps, hit = hit ~= nil })
+		self:_shiftForward(p, steps, "cannon")
+		if self.phase ~= "over" and p.tile ~= self.board.start then
+			self:_land(p, false)
+		end
 	end
 	return true
+end
+
+---------------------------------------------------------------------------
+-- outside the turn: the match host's hooks
+---------------------------------------------------------------------------
+
+-- Coins from outside the rules (a lucky catch while fishing between turns). Returns
+-- the events to send.
+function Engine:grantCoins(seat: number, n: number, why: string)
+	local p = self.players[seat]
+	if not p or self.phase == "over" or self.phase == "setup" then
+		return {}
+	end
+	self:_addCoins(p, n, why)
+	return self:_flushEvents()
+end
+
+-- A player drops into a bot's seat (Quick Play drop-in). Returns the events to send.
+function Engine:takeSeat(seat: number, info)
+	local p = self.players[seat]
+	if not p or not p.isBot then
+		return {}
+	end
+	p.isBot = false
+	p.id = info.id or p.id
+	p.userId = info.userId
+	p.name = info.name or p.name
+	self:_emit({ t = "joined", p = seat, name = p.name })
+	return self:_flushEvents()
 end
 
 ---------------------------------------------------------------------------
@@ -2206,8 +2414,11 @@ function Engine:snapshot(forSeat: number?)
 		cardsPlayed = if turn then turn.cardsPlayed else 0,
 		abilityUsed = if turn then turn.abilityUsed else false,
 		boost = if turn then turn.boost else nil,
+		double = if turn then turn.double == true else false,
 		mutator = table.clone(self.mut),
 		underdog = if self.phase ~= "over" then self:underdogSeat() else nil,
+		ghosts = copyList(self.ghosts),
+		erupting = self:eruptsThisRound(),
 	}
 	if forSeat and self.players[forSeat] then
 		local me = self.players[forSeat]

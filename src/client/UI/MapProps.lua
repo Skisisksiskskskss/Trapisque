@@ -1,7 +1,8 @@
 --[[
 	MapProps
 	The things that stand around the maps' trails: palms and huts on the island, towers
-	and cannons in the fortress, mangroves and lily pads in the swamp, ships at sea. Sticker
+	and cannons in the fortress, mangroves and lily pads in the swamp, graves and
+	pumpkins in the haunted cove, lava rocks and steam vents on the volcano, ships at sea. Sticker
 	art (see StickerArt / Icons.sticker for the ops): flat pirate inks, one heavy ink
 	outline around the whole shape, no faces. Pure data.
 
@@ -43,6 +44,15 @@ local P = {
 	pink = "#D94C9C",
 	bone = "#F3E6C8",
 	slime = "#9BCF2E",
+	pumpkin = "#F08A24",
+	pumpkinDark = "#B8601A",
+	night = "#2A2836",
+	mist = "#C9D3E0",
+	lava = "#F2541B",
+	lavaGlow = "#FFB000",
+	basalt = "#4A3E38",
+	basaltDark = "#2E2624",
+	ash = "#8C8279",
 }
 
 local MapProps = {}
@@ -286,6 +296,120 @@ MapProps.deadtree = {
 	{ "taper", { { 0.5, 0.48 }, { 0.68, 0.32 }, { 0.82, 0.3 } }, 0.06, 0.03, c = P.stoneDark },
 	{ "taper", { { 0.52, 0.32 }, { 0.6, 0.16 }, { 0.62, 0.06 } }, 0.05, 0.025, c = P.stoneDark },
 	{ "pill", 0.3, 0.98, 0.5, 0.08, c = P.mossDark },
+}
+
+-- the haunted cove --------------------------------------------------------------
+
+-- a tombstone, a little crooked
+MapProps.grave = {
+	{ "rect", 0.5, 0.6, 0.5, 0.62, r = 0.42, rot = -6, c = P.stone },
+	{ "line", 0.4, 0.5, 0.6, 0.48, 0.03, c = P.stoneDark, ol = false },
+	{ "line", 0.4, 0.62, 0.6, 0.6, 0.03, c = P.stoneDark, ol = false },
+	{ "pill", 0.5, 0.92, 0.66, 0.1, c = P.mossDark },
+}
+
+MapProps.pumpkin = {
+	{ "circle", 0.32, 0.68, 0.42, c = P.pumpkinDark },
+	{ "circle", 0.68, 0.68, 0.42, c = P.pumpkinDark },
+	{ "circle", 0.5, 0.66, 0.5, c = P.pumpkin },
+	{ "line", 0.5, 0.46, 0.5, 0.86, 0.03, c = P.pumpkinDark, ol = false },
+	{ "rect", 0.5, 0.38, 0.08, 0.14, r = 0.3, rot = 12, c = P.mossDark },
+	{ "pill", 0.62, 0.38, 0.18, 0.07, rot = -20, c = P.leaf },
+}
+
+-- a lantern on a crooked post, glowing
+MapProps.lamp = {
+	{ "line", 0.46, 0.96, 0.5, 0.36, 0.06, c = P.trunkDark },
+	{ "line", 0.5, 0.36, 0.7, 0.32, 0.04, c = P.trunkDark },
+	{ "rect", 0.72, 0.5, 0.18, 0.22, r = 0.2, c = P.gold },
+	{ "rect", 0.72, 0.38, 0.22, 0.05, r = 0.3, c = P.iron, ol = false },
+	{ "rect", 0.72, 0.61, 0.22, 0.05, r = 0.3, c = P.iron, ol = false },
+}
+
+-- a broken bit of graveyard fence
+MapProps.fence = {
+	{ "line", 0.14, 0.56, 0.86, 0.5, 0.05, c = P.iron },
+	{ "line", 0.2, 0.92, 0.2, 0.32, 0.045, c = P.iron },
+	{ "line", 0.42, 0.92, 0.42, 0.3, 0.045, c = P.iron },
+	{ "line", 0.64, 0.92, 0.64, 0.36, 0.045, c = P.iron },
+	{ "line", 0.84, 0.9, 0.8, 0.42, 0.045, c = P.iron },
+	{ "tri", 0.2, 0.28, 0.07, dir = 0, c = P.iron, ol = false },
+	{ "tri", 0.42, 0.26, 0.07, dir = 0, c = P.iron, ol = false },
+}
+
+-- wisps of sea fog
+MapProps.mist = {
+	{ "pill", 0.44, 0.54, 0.7, 0.14, c = P.mist },
+	{ "pill", 0.6, 0.72, 0.56, 0.12, c = P.mist },
+}
+
+-- a stone crypt with an iron door
+MapProps.crypt = {
+	{ "rect", 0.5, 0.66, 0.78, 0.56, r = 0.05, c = P.stone },
+	{ "tri", 0.5, 0.3, 0.46, dir = 0, c = P.stoneDark },
+	{ "rect", 0.5, 0.39, 0.86, 0.07, r = 0.2, c = P.stoneDark },
+	{ "rect", 0.5, 0.74, 0.26, 0.4, r = 0.45, c = P.night },
+	{ "line", 0.5, 0.58, 0.5, 0.92, 0.025, c = P.ironLight, ol = false },
+	{ "line", 0.18, 0.92, 0.82, 0.92, 0.04, c = P.stoneDark, ol = false },
+	{ "line", 0.5, 0.12, 0.5, 0.02, 0.03, c = P.stoneDark },
+	{ "line", 0.45, 0.06, 0.55, 0.06, 0.03, c = P.stoneDark },
+}
+
+-- a wrecked ghost ship: torn grey sails, a bone-white hull line
+MapProps.ghostship = {
+	{ "line", 0.4, 0.68, 0.42, 0.08, 0.035, c = P.trunkDark },
+	{ "line", 0.66, 0.68, 0.64, 0.2, 0.035, c = P.trunkDark },
+	{ "rect", 0.41, 0.32, 0.34, 0.3, r = 0.08, rot = -4, c = P.mist },
+	{ "tri", 0.34, 0.5, 0.08, dir = 180, c = P.water, ol = false },
+	{ "tri", 0.48, 0.48, 0.07, dir = 180, c = P.water, ol = false },
+	{ "rect", 0.65, 0.4, 0.26, 0.22, r = 0.08, rot = 5, c = P.mist },
+	{ "tri", 0.6, 0.53, 0.06, dir = 180, c = P.water, ol = false },
+	{ "half", 0.52, 0.68, 0.84, dir = 180, c = P.night },
+	{ "rect", 0.52, 0.7, 0.84, 0.05, c = P.bone, ol = false },
+	{ "circle", 0.36, 0.78, 0.06, c = P.gold, ol = false },
+	{ "circle", 0.54, 0.8, 0.06, c = P.gold, ol = false },
+	{ "arc", 0.14, 0.94, 0.24, 0.05, dir = 0, keep = 0.42, c = P.mist, ol = false },
+}
+
+-- the volcano island ---------------------------------------------------------------
+
+-- the volcano: a basalt cone with lava running down from its crater and a plume
+MapProps.volcano = {
+	{ "tri", 0.5, 0.62, 0.86, dir = 0, c = P.basalt },
+	{ "rect", 0.5, 0.86, 0.96, 0.18, r = 0.45, c = P.basalt },
+	{ "rect", 0.5, 0.33, 0.3, 0.08, r = 0.4, c = P.basaltDark },
+	{ "taper", { { 0.46, 0.34 }, { 0.4, 0.56 }, { 0.3, 0.86 } }, 0.07, 0.04, c = P.lava, ol = false },
+	{ "taper", { { 0.56, 0.34 }, { 0.62, 0.6 }, { 0.72, 0.84 } }, 0.06, 0.035, c = P.lava, ol = false },
+	{ "rect", 0.5, 0.32, 0.22, 0.05, r = 0.4, c = P.lavaGlow, ol = false },
+	{ "circle", 0.44, 0.16, 0.18, c = P.ash },
+	{ "circle", 0.6, 0.08, 0.22, c = P.ash },
+	{ "circle", 0.5, 0.0, 0.16, c = P.ash },
+}
+
+-- a dark rock with glowing cracks
+MapProps.lavarock = {
+	{ "rect", 0.46, 0.66, 0.72, 0.52, r = 0.4, c = P.basalt },
+	{ "line", 0.3, 0.6, 0.48, 0.7, 0.04, c = P.lava, ol = false },
+	{ "line", 0.48, 0.7, 0.6, 0.58, 0.04, c = P.lava, ol = false },
+	{ "rect", 0.78, 0.8, 0.3, 0.22, r = 0.45, c = P.basaltDark },
+}
+
+-- a burnt tree: a black trunk, two stubby branches
+MapProps.charred = {
+	{ "taper", { { 0.5, 0.96 }, { 0.5, 0.6 }, { 0.48, 0.3 } }, 0.13, 0.06, c = P.basaltDark },
+	{ "taper", { { 0.5, 0.6 }, { 0.34, 0.46 }, { 0.28, 0.34 } }, 0.06, 0.03, c = P.basaltDark },
+	{ "taper", { { 0.5, 0.5 }, { 0.66, 0.4 }, { 0.72, 0.28 } }, 0.05, 0.025, c = P.basaltDark },
+	{ "circle", 0.48, 0.3, 0.06, c = P.lava, ol = false },
+	{ "pill", 0.5, 0.97, 0.46, 0.08, c = P.ash },
+}
+
+-- a steam vent: a rocky ring and puffs
+MapProps.vent = {
+	{ "rect", 0.5, 0.82, 0.62, 0.22, r = 0.45, c = P.basalt },
+	{ "rect", 0.5, 0.78, 0.3, 0.08, r = 0.45, c = P.lava, ol = false },
+	{ "circle", 0.44, 0.52, 0.22, c = P.mist },
+	{ "circle", 0.58, 0.34, 0.26, c = P.mist },
+	{ "circle", 0.48, 0.16, 0.18, c = P.mist },
 }
 
 -- flat on the ground ---------------------------------------------------------

@@ -16,7 +16,8 @@
 		tiles = { { id, x, y, angle, kind, branch, scale } },
 		trail = { { x1, y1, x2, y2, branch } },      -- tile to tile
 		land = { { x, y, r, inner } },                -- the land is the union of these discs
-		rivers = { { tile, points } },  tunnels = { { points } },  pools = { { x, y, r } },
+		rivers = { { tile, points } },  lava = { { tile, points } } (lava streams),
+		tunnels = { { points } },  pools = { { x, y, r } },
 		props = { { kind, x, y, size, flip, ground, angle } },
 		waves = { { x, y, w } },
 	}
@@ -68,6 +69,14 @@ BoardLayout.PropSize = {
 	lily = 0.9,
 	bubbles = 0.7,
 	islet = 1.0,
+	grave = 0.9,
+	pumpkin = 0.85,
+	lamp = 1.2,
+	fence = 1.1,
+	mist = 1.3,
+	lavarock = 1.0,
+	charred = 1.4,
+	vent = 1.1,
 }
 
 -- Props that lie flat on the ground (drawn under the tiles, may touch the trail).
@@ -188,6 +197,7 @@ function BoardLayout.build(board, mapDef, Rng, opts: { [string]: any }?)
 		trail = {},
 		land = {},
 		rivers = {},
+		lava = {},
 		tunnels = {},
 		pools = {},
 		props = {},
@@ -345,13 +355,13 @@ function BoardLayout.build(board, mapDef, Rng, opts: { [string]: any }?)
 		end
 	end
 
-	-- rivers (Blissful): from the river tile across the land to the sea, or to a pond
-	-- before they'd meet the trail again
+	-- rivers (Blissful) and lava streams (Mount Kaboom): from the tile across the land to
+	-- the sea, or to a pond before they'd meet the trail again
 	local mainL = lengths(mainCurve)
 	local spacing = mainL[#mainL] / math.max(1, board.count - 1)
-	if scene.rivers then
+	if scene.rivers or scene.lava then
 		for tile, kind in board.naturalInit do
-			if kind == "river" then
+			if (kind == "river" and scene.rivers) or (kind == "lava" and scene.lava) then
 				local p = pos[tile]
 				local here = (tile - 1) * spacing
 				local heading = math.rad(p[3] + 90)
@@ -390,7 +400,7 @@ function BoardLayout.build(board, mapDef, Rng, opts: { [string]: any }?)
 				for _, q in sides[2].pts do
 					table.insert(points, q)
 				end
-				table.insert(layout.rivers, { tile = tile, points = points, endA = sides[1].ends, endB = sides[2].ends })
+				table.insert(if kind == "lava" then layout.lava else layout.rivers, { tile = tile, points = points, endA = sides[1].ends, endB = sides[2].ends })
 			end
 		end
 	end
@@ -427,7 +437,7 @@ function BoardLayout.build(board, mapDef, Rng, opts: { [string]: any }?)
 	-- of the trail, the tiles and each other); the dock runs from the Start out to the
 	-- nearest water
 	local props = layout.props
-	local WATER = { ship = true, wreck = true, sunken = true }
+	local WATER = { ship = true, wreck = true, sunken = true, ghostship = true }
 	for _, m in scene.landmarks or {} do
 		local kind = m[1]
 		local size = m.size or BoardLayout.PropSize[kind] or 1.5
@@ -552,10 +562,12 @@ function BoardLayout.build(board, mapDef, Rng, opts: { [string]: any }?)
 	-- the scatter: props on the land and on the water, none on the trail, a tile, a
 	-- river, a pool, or each other
 	local function clearOfFeatures(x: number, y: number, reach: number): boolean
-		for _, r in layout.rivers do
-			for _, q in r.points do
-				if dist(x, y, q[1], q[2]) < reach + 0.75 then
-					return false
+		for _, list in { layout.rivers, layout.lava } do
+			for _, r in list do
+				for _, q in r.points do
+					if dist(x, y, q[1], q[2]) < reach + 0.75 then
+						return false
+					end
 				end
 			end
 		end
@@ -665,7 +677,7 @@ function BoardLayout.build(board, mapDef, Rng, opts: { [string]: any }?)
 				end
 			end
 		end
-		for _, list in { layout.rivers, layout.tunnels } do
+		for _, list in { layout.rivers, layout.lava, layout.tunnels } do
 			for _, r in list do
 				local pts = {}
 				for i, q in r.points do

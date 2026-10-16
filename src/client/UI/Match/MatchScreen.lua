@@ -89,10 +89,12 @@ local NATURAL_TEXT = {
 	river = "fell in the river",
 	gate = "is stuck at a locked gate",
 	slime = "got stuck in the slime",
+	lava = "is stopped by a lava stream",
 }
+local NATURAL_ICON = { river = "river_trap", gate = "lock", slime = "slime_trap", lava = "lava_trap", ghost = "ghost" }
 
 local WHEEL_NAME = { trap = "Trap", assist = "Assist", neutral = "Board Piece" }
-local LENGTH_NAME = { quick = "Quick", standard = "Standard", classic = "Classic" }
+local LENGTH_NAME = { blitz = "Blitz", quick = "Quick", standard = "Standard", classic = "Classic" }
 local DIE_KEYS = { [Enum.KeyCode.Q] = 1, [Enum.KeyCode.W] = 2, [Enum.KeyCode.E] = 3 }
 
 local function toHex(c: Color3): string
@@ -268,6 +270,10 @@ function MatchScreen:_viewFrom(snap, noHand: boolean?)
 	for _, t in snap.traps or {} do
 		table.insert(traps, table.clone(t))
 	end
+	local ghostAt = {}
+	for i, tile in snap.ghosts or {} do
+		ghostAt[tile] = i
+	end
 	return {
 		round = snap.round or 1,
 		current = snap.current,
@@ -275,6 +281,10 @@ function MatchScreen:_viewFrom(snap, noHand: boolean?)
 		abilityUsed = snap.abilityUsed == true,
 		cardsPlayed = snap.cardsPlayed or 0,
 		boost = snap.boost,
+		double = snap.double == true,
+		ghosts = copy(snap.ghosts),
+		ghostAt = ghostAt,
+		erupting = snap.erupting == true,
 		dice = copy(snap.dice),
 		gold = snap.gold,
 		chosen = nil,
@@ -1110,6 +1120,7 @@ function MatchScreen:_reconcile(payload)
 	if self.board then
 		self.board:applySnapshot(snap)
 		self.board:setCurrent(if snap.phase ~= "over" then snap.current else nil)
+		self.board:setRumble(snap.erupting == true and snap.phase ~= "over")
 	end
 	if self.chips then
 		self.chips:setCurrent(if snap.phase ~= "over" then snap.current else nil, self.deadline)
@@ -1191,6 +1202,13 @@ function MatchScreen:_play(e)
 		v.dice = {}
 		v.gold = nil
 		v.chosen = nil
+		v.double = false
+		local rumble = self.mapDef ~= nil and self.mapDef.id == "volcano" and (Rules.EruptEvery or 0) > 0 and e.round % Rules.EruptEvery == 0
+		if rumble and not v.erupting then
+			feed:add("The volcano rumbles... it blows at the end of this round! Stay out of the lava streams.", C.orange, "volcano", C.orange)
+		end
+		v.erupting = rumble
+		board:setRumble(rumble)
 		self:_updateRound()
 		board:setCurrent(e.p)
 		self.chips:setCurrent(e.p, nil)
@@ -1369,8 +1387,52 @@ function MatchScreen:_play(e)
 		if e.drag then
 			feed:add(self:_tag(e.p) .. " waded through slime (-" .. e.drag .. " steps)", nil, "slime_trap", C.natural)
 		else
-			feed:add(self:_tag(e.p) .. " " .. (NATURAL_TEXT[e.kind] or "hit a hazard"), nil, ({ river = "river_trap", gate = "lock", slime = "slime_trap" })[e.kind], C.natural)
+			feed:add(self:_tag(e.p) .. " " .. (NATURAL_TEXT[e.kind] or "hit a hazard"), nil, NATURAL_ICON[e.kind], C.natural)
 		end
+	elseif t == "boo" then
+		-- Haunted Hollow: walked into a ghost
+		board:boo(e.tile)
+		board:setMood(e.p, "shock", 1.6)
+		Sound.play("death", 1.4)
+		feed:add("BOO! A ghost scared " .. self:_tag(e.p) .. " back " .. tostring(Rules.GhostScare or 0) .. "!", nil, "ghost", C.white)
+	elseif t == "ghosts" then
+		v.ghosts = {}
+		v.ghostAt = {}
+		for _, m in e.moves or {} do
+			local tile = m.path[#m.path] or m.from
+			v.ghosts[m.ghost] = tile
+			v.ghostAt[tile] = m.ghost
+		end
+		board:driftGhosts(e.moves or {}, 1 / math.max(speed, 0.25))
+	elseif t == "erupt" then
+		-- Mount Kaboom: the volcano blows
+		v.erupting = false
+		board:setRumble(false)
+		board:erupt(1 / math.max(speed, 0.25))
+		Overlays.shout(self.fx, "KABOOM!", C.orange, speed, "The volcano erupts!")
+		feed:add("KABOOM! The volcano erupts: anyone in a lava stream gets scorched", C.orange, "volcano", C.orange)
+	elseif t == "doubleDown" then
+		v.double = true
+		board:floatText(self:_pawnWorld(e.p), "DOUBLE DOWN!", C.sun, 26)
+		if e.p == self.mySeat then
+			self:_refresh()
+		end
+	elseif t == "cannon" then
+		board:shake(0.12, 0.3)
+		Sound.play("bonk", 0.7)
+		board:floatText(self:_pawnWorld(e.p), if e.hit then "CANNONBALL!" else "BOOM!", C.orange, 26)
+	elseif t == "joined" then
+		local p = self:_player(e.p)
+		if p then
+			p.isBot = false
+			p.name = e.name or p.name
+		end
+		local info = self.seats[e.p]
+		if info then
+			info.isBot = false
+			info.name = e.name or info.name
+		end
+		feed:add((e.name or "A player") .. " dropped in and took over a bot's seat!", C.mint, "people", C.mint)
 	elseif t == "blocked" then
 		Effects.blocked(board, e.tile)
 		feed:add("A Wall stops " .. self:_tag(e.p), nil, "wall", C.trap)
@@ -1428,7 +1490,8 @@ function MatchScreen:_play(e)
 		self:_lose(e.p, e.item)
 		local from = if e.p == self.mySeat then self:_handSpot(nil) else self:_chipSpot(e.p)
 		Overlays.flyCard(self.fly, e.item, from, self:_pawnSpot(e.p), speed)
-		feed:add(self:_tag(e.p) .. " used " .. (if def then def.name else "a card") .. (if e.why == "shortcut" then " on a shortcut" else ""), nil, e.item, Theme.Category[def and def.category or "assist"])
+		local why = if e.why == "shortcut" then " on a shortcut" elseif e.why == "ghost" then " to scare off a ghost" elseif e.why == "lava" then " against the lava" else ""
+		feed:add(self:_tag(e.p) .. " used " .. (if def then def.name else "a card") .. why, nil, e.item, Theme.Category[def and def.category or "assist"])
 	elseif t == "xray" then
 		-- my X-Ray: every hidden trap shows up
 		self:_lose(e.p, "xray_potion")
@@ -1534,6 +1597,9 @@ function MatchScreen:_play(e)
 		board:setEmbers(table.clone(v.embers))
 	elseif t == "scorch" then
 		Effects.scorch(board, e.p)
+		if e.lava then
+			feed:add(self:_tag(e.p) .. " got scorched in a lava stream!", nil, "lava_trap", C.orange)
+		end
 	elseif t == "swap" then
 		local a, b = self:_player(e.a), self:_player(e.b)
 		if a then
@@ -1717,13 +1783,13 @@ function MatchScreen:_planFor(key: any)
 	if not m then
 		return nil
 	end
-	local steps, back = Engine.boosted(m :: number, v.boost)
+	local steps, back = Engine.boosted(m :: number, v.boost, v.double)
 	if back or backDie then
 		return Engine.backPlan({ trail = v.trail }, steps), steps, true
 	end
-	local state = { board = self.board.board, natural = v.natural, placed = v.placed }
-	local walker = { tile = me.tile, hand = v.hand, character = me.character }
-	return Engine.walkPlan(state, walker, steps), steps, false
+	local state = { board = self.board.board, natural = v.natural, placed = v.placed, ghostAt = v.ghostAt }
+	local walker = { tile = me.tile, hand = v.hand, character = me.character, trail = v.trail }
+	return Engine.walkPlan(state, walker, steps, v.double), steps, false
 end
 
 --[[
@@ -1750,6 +1816,11 @@ function MatchScreen:_outcome(plan): { any }
 		add("WALL!", C.coral)
 	elseif plan.result == "stopped" then
 		add(string.upper(plan.hazard or "hazard") .. " STOPS YOU", C.sky)
+	elseif plan.result == "scared" then
+		add("GHOST! BACK " .. tostring(Rules.GhostScare or 0), C.white)
+	end
+	if v.erupting and v.natural[tile] == "lava" and not Engine.hasCard({ hand = v.hand }, "cloak") then
+		add("ERUPTION!", C.orange)
 	end
 	if plan.slowed then
 		add("SLIME -" .. tostring(Rules.SlimeDrag or 0), C.slime)

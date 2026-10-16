@@ -2,7 +2,8 @@
 	CharacterSelect
 	Pick the character you take into matches. Each one shows its card (tap or hover it to
 	read its passive and ability), your mastery level with them, and the title you're
-	working towards. Playing a character levels up their mastery (Meta/Progress).
+	working towards. Playing a character levels up their mastery (Meta/Progress). Four
+	are free; the rest unlock as your level goes up (Config.CharacterUnlocks).
 
 		CharacterSelect.open(popups)
 		CharacterSelect.strip(parent, opts) -> { root, destroy }  -- the lobby's "your character" bar
@@ -54,8 +55,8 @@ local function nextTitle(level: number): (number?, string?)
 end
 
 function CharacterSelect.open(popups: Instance)
-	local roomW, _, narrow = Widgets.room()
-	local cols = if narrow then 2 else 3
+	local roomW, roomH, narrow = Widgets.room()
+	local cols = if narrow then 2 else 4
 	local cellW = if narrow then 158 else 196
 	local cardW = if narrow then 104 else 128
 	local cellH = math.floor(cardW / CardStyle.aspect) + 112 -- card, mastery, bar, next title, PICK
@@ -64,7 +65,8 @@ function CharacterSelect.open(popups: Instance)
 		title = "Characters",
 		titleWidth = 280,
 		width = math.min(roomW, cols * (cellW + 12) + 60),
-		height = 120 + rows * (cellH + 12),
+		-- taller than the screen: the grid scrolls
+		height = math.min(120 + rows * (cellH + 12), math.max(420, roomH)),
 	})
 	Widgets.label(content, {
 		text = "Pick who you play as. The more you play someone, the higher their mastery.",
@@ -75,10 +77,10 @@ function CharacterSelect.open(popups: Instance)
 		wrap = true,
 		sizeUDim = UDim2.new(1, 0, 0, if narrow then 34 else 22),
 	})
-	local grid = Util.frame(content, {
-		Name = "Grid",
-		Position = UDim2.fromOffset(0, if narrow then 40 else 30),
-		Size = UDim2.new(1, 0, 1, if narrow then -40 else -30),
+	local grid = Widgets.scroll(content, {
+		name = "Grid",
+		position = UDim2.fromOffset(0, if narrow then 40 else 30),
+		size = UDim2.new(1, 0, 1, if narrow then -40 else -30),
 	})
 	Util.new("UIGridLayout", {
 		CellSize = UDim2.fromOffset(cellW, cellH),
@@ -91,12 +93,16 @@ function CharacterSelect.open(popups: Instance)
 	local function refresh()
 		local profile = State.get("profile")
 		local current = profile and profile.character
+		local level = profile and profile.level or 1
 		for id, b in buttons do
 			local picked = id == current
-			b.button:setText(if picked then "PICKED" else "PICK")
-			b.button:setStyle(if picked then "green" else "brass")
+			local open = Characters.unlocked(id, level)
+			local def = Characters.get(id)
+			b.button:setText(if not open then ("LEVEL " .. tostring(def and def.unlockLevel or 0)) elseif picked then "PICKED" else "PICK")
+			b.button:setStyle(if not open then "dark" elseif picked then "green" else "brass")
 			b.rim.Color = if picked then C.sun else C.line
 			b.rim.Thickness = if picked then 4 else 2.5
+			b.lock.Visible = not open
 		end
 	end
 	for i, def in Characters.list do
@@ -122,6 +128,27 @@ function CharacterSelect.open(popups: Instance)
 				return Cards.character(parent, def.id, props)
 			end)
 		end)
+		-- locked: a padlock over the card until your level reaches it
+		local lock = Util.frame(cell, {
+			Name = "Lock",
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.new(0.5, 0, 0, 8 + cardW / CardStyle.aspect * 0.5),
+			Size = UDim2.fromOffset(cardW * 0.46, cardW * 0.46),
+			ZIndex = 20,
+			Visible = false,
+		})
+		local disc = Util.new("Frame", {
+			Name = "Disc",
+			BackgroundColor3 = C.panelDeep,
+			BackgroundTransparency = 0.1,
+			BorderSizePixel = 0,
+			Size = UDim2.fromScale(1, 1),
+			ZIndex = 20,
+			Parent = lock,
+		})
+		Util.corner(disc, 0.5)
+		Util.stroke(disc, C.line, 3)
+		Icons.make(disc, "lock", Icons.flatColors(C.sun, C.panelDeep), { Size = UDim2.fromScale(0.6, 0.6), Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5), ZIndex = 21 })
 		local level, into, need = masteryOf(profile, def.id)
 		local y = 8 + math.floor(cardW / CardStyle.aspect) + 6
 		Widgets.label(cell, {
@@ -160,6 +187,11 @@ function CharacterSelect.open(popups: Instance)
 			position = UDim2.new(0.5, 0, 1, -8),
 			depth = 4,
 			onClick = function()
+				local profile = State.get("profile")
+				if not Characters.unlocked(def.id, profile and profile.level or 1) then
+					Widgets.toast(string.format("Reach level %d to unlock the %s. Every match you play earns XP!", def.unlockLevel or 0, def.name), "info")
+					return
+				end
 				local ok, err = Net.request("character.select", { character = def.id })
 				if not ok then
 					Widgets.toast(tostring(err), "error")
@@ -169,7 +201,7 @@ function CharacterSelect.open(popups: Instance)
 				Util.bump(cell, 0.06)
 			end,
 		})
-		buttons[def.id] = { button = button, rim = rim }
+		buttons[def.id] = { button = button, rim = rim, lock = lock }
 	end
 	refresh()
 	local conn = State.watch("profile", function()

@@ -187,6 +187,8 @@ local masteryColors = {
 	naturalist = "#8BE04E",
 	warper = "#9A6BFF",
 	overseer = "#FFD23F",
+	gambler = "#3FD6C8",
+	cannoneer = "#D99A5B",
 }
 local masteryNames = {
 	mage = "Mage",
@@ -195,8 +197,10 @@ local masteryNames = {
 	naturalist = "Naturalist",
 	warper = "Warper",
 	overseer = "Overseer",
+	gambler = "Gambler",
+	cannoneer = "Cannoneer",
 }
-for _, charId in { "mage", "trapper", "fire_starter", "naturalist", "warper", "overseer" } do
+for _, charId in { "mage", "trapper", "fire_starter", "naturalist", "warper", "overseer", "gambler", "cannoneer" } do
 	for _, tier in { { "fan", "Fan", "rare" }, { "pro", "Pro", "epic" }, { "legend", "Legend", "legendary" } } do
 		local text = masteryNames[charId] .. " " .. tier[2]
 		table.insert(defs, {

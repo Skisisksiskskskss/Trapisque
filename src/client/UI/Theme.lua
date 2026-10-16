@@ -143,7 +143,7 @@ C.coin = C.sun
 
 Theme.C = C
 
--- The six characters' colours: a character's colour is its player's colour everywhere
+-- The characters' colours: a character's colour is its player's colour everywhere
 -- (the piece on the board, the name, the Power bar, the feed), so there's one of each
 -- character in a match.
 Theme.Character = {
@@ -153,6 +153,8 @@ Theme.Character = {
 	naturalist = hex("43A047"), -- green
 	warper = hex("D94C9C"), -- pink
 	overseer = hex("F5B700"), -- gold
+	gambler = hex("13A398"), -- teal
+	cannoneer = hex("8B5A2B"), -- brown
 }
 Theme.CharacterName = {
 	mage = "Blue",
@@ -161,6 +163,8 @@ Theme.CharacterName = {
 	naturalist = "Green",
 	warper = "Pink",
 	overseer = "Gold",
+	gambler = "Teal",
+	cannoneer = "Brown",
 }
 
 -- Seat colours (kept for anything that has no character yet): the character order.

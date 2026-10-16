@@ -173,6 +173,23 @@ local defs = {
 		short = "Walk through slime",
 		text = "Works by itself: carries you through one slime pool.",
 	},
+	{
+		id = "lantern",
+		name = "Lantern",
+		category = "assist",
+		use = "passive",
+		short = "Scare off a ghost",
+		text = "Works by itself: shines a ghost out of your way, so it can't scare you back.",
+	},
+	{
+		id = "cloak",
+		name = "Fire Cloak",
+		nick = "Cloak", -- on cards too small for the whole name
+		category = "assist",
+		use = "passive",
+		short = "Lava can't hurt you",
+		text = "Works by itself: carries you across one stream of molten lava, or keeps you safe from one eruption.",
+	},
 
 	-- Neutral cards (visible board pieces) -----------------------------------------
 	{
@@ -294,7 +311,8 @@ for i, def in defs do
 	table.insert(Items.list, def)
 end
 
--- The three spinners. "bkb" is replaced by the map's counter card (Bridge/Key/Boots).
+-- The three spinners. "bkb" is replaced by the map's counter card (Bridge, Key, Boots,
+-- Lantern or Fire Cloak).
 Items.wheels = {
 	trap = { "spike", "grog", "fire", "ice", "snare", "mudslide", "banana", "wall", "coin" },
 	assist = { "speed_boost", "bounce_pad", "moonwalk", "clover", "juice", "shield", "bkb", "coin" },
@@ -310,6 +328,8 @@ Items.naturalCounter = {
 	river = "bridge",
 	gate = "key",
 	slime = "boots",
+	ghost = "lantern",
+	lava = "cloak",
 }
 
 function Items.get(id: string)

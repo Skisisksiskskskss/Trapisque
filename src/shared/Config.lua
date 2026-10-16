@@ -36,6 +36,15 @@ Config.Rules = {
 	-- lap counting for every treasure) rolls an extra die on their turn
 	UnderdogGap = 8,
 	TrampolineForward = 3,
+	-- Haunted Hollow: ghosts drift this many tiles toward the Start at the end of every
+	-- round; walking into one stops you and scares you back this many tiles
+	GhostDrift = 2,
+	GhostScare = 1,
+	-- Mount Kaboom: lava streams stop you like rivers (a Fire Cloak carries you across),
+	-- and the volcano erupts at the end of every Nth round: anyone standing in a stream
+	-- is scorched (Burning) and scrambles back this many tiles
+	EruptEvery = 3,
+	EruptBack = 2,
 	TelepathyMax = 3,
 	JeopardySteps = 6,
 	FrozenTurns = 2, -- Frozen: roll one die, halved (no choice, no Power), for this many turns
@@ -50,18 +59,28 @@ Config.Rules = {
 	},
 
 	-- safety valve per match length; the highest score wins if it's reached
-	MaxRounds = { quick = 40, standard = 60, classic = 80 },
+	MaxRounds = { blitz = 25, quick = 40, standard = 60, classic = 80 },
 }
 
 -- Character numbers (Power costs and passives). Tuned with bot simulations so that
 -- every character wins about as often on every map (see tests/balance.luau).
 Config.Characters = {
-	mage = { cost = 7, turns = 1, skate = 1 },
+	mage = { cost = 8, turns = 1, skate = 1 },
 	trapper = { cost = 6, trapCap = 4, bounty = 2 },
 	fire_starter = { cost = 10, blast = 4 },
 	naturalist = { cost = 12, charge = 2, trample = 2 },
 	warper = { cost = 10, range = 7 },
 	overseer = { cost = 4, steps = 2 },
+	gambler = { cost = 17 },
+	cannoneer = { cost = 8, range = 6, fly = 3, extraBack = 1 },
+}
+
+-- Four characters are free; the others unlock at these account levels (by playing).
+Config.CharacterUnlocks = {
+	warper = 3,
+	overseer = 5,
+	gambler = 7,
+	cannoneer = 10,
 }
 
 -- Relative chances for a token spot to become each token type at setup.

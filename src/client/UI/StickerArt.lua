@@ -298,6 +298,26 @@ cards.boots = {
 	eyes(0.65, 0.42, 0.11, 0.08, "happy"),
 }
 
+cards.lantern = {
+	{ "ring", 0.5, 0.12, 0.16, 0.045, c = P.steelDark },
+	{ "rect", 0.5, 0.25, 0.46, 0.08, r = 0.3, c = P.steelDark },
+	{ "rect", 0.5, 0.54, 0.4, 0.46, r = 0.2, c = P.moon },
+	{ "line", 0.36, 0.34, 0.36, 0.76, 0.03, c = P.steelDark, ol = false },
+	{ "line", 0.64, 0.34, 0.64, 0.76, 0.03, c = P.steelDark, ol = false },
+	{ "drop", 0.5, 0.58, 0.09, dir = 0, c = P.orange, ol = false },
+	{ "drop", 0.5, 0.61, 0.045, dir = 0, c = P.sun, ol = false },
+	{ "rect", 0.5, 0.83, 0.46, 0.08, r = 0.3, c = P.steelDark },
+}
+
+cards.cloak = {
+	{ "tri", 0.5, 0.92, 0.84, dir = 0, c = P.coral },
+	{ "rect", 0.5, 0.22, 0.4, 0.12, r = 0.4, c = P.coralDark },
+	{ "circle", 0.5, 0.25, 0.08, c = P.sun },
+	{ "tri", 0.5, 0.92, 0.42, dir = 0, c = P.coralDark, ol = false },
+	{ "drop", 0.5, 0.66, 0.1, dir = 0, c = P.sun, ol = false },
+	{ "drop", 0.5, 0.7, 0.05, dir = 0, c = P.orange, ol = false },
+}
+
 -- Neutral cards ------------------------------------------------------------------
 
 cards.teleporter = {
@@ -459,7 +479,26 @@ StickerArt.hazards = {
 	},
 }
 
+-- Haunted Hollow's ghost (floats over its tile) and Mount Kaboom's lava stream
+StickerArt.hazards.lava = {
+	{ "rect", 0.5, 0.56, 0.94, 0.62, r = 0.45, c = "#F2541B" },
+	{ "circle", 0.3, 0.52, 0.16, c = "#FFB000", ol = false },
+	{ "circle", 0.62, 0.62, 0.12, c = "#FFB000", ol = false },
+	{ "circle", 0.74, 0.44, 0.1, c = "#7A1E0C", ol = false },
+	{ "circle", 0.46, 0.7, 0.08, c = "#7A1E0C", ol = false },
+}
+
 StickerArt.misc = {
+	ghost = {
+		{ "half", 0.5, 0.42, 0.66, dir = 0, c = "#F3F1EA" },
+		{ "rect", 0.5, 0.58, 0.66, 0.32, c = "#F3F1EA" },
+		{ "circle", 0.28, 0.76, 0.24, c = "#F3F1EA" },
+		{ "circle", 0.5, 0.78, 0.24, c = "#F3F1EA" },
+		{ "circle", 0.72, 0.76, 0.24, c = "#F3F1EA" },
+		{ "pill", 0.4, 0.42, 0.11, 0.17, c = P.line, ol = false },
+		{ "pill", 0.6, 0.42, 0.11, 0.17, c = P.line, ol = false },
+		{ "circle", 0.5, 0.58, 0.09, c = P.line, ol = false },
+	},
 	chest = {
 		{ "rect", 0.5, 0.66, 0.84, 0.46, r = 0.14, c = P.wood },
 		{ "rect", 0.5, 0.42, 0.84, 0.26, r = 0.4, c = P.woodDark },
@@ -505,7 +544,7 @@ StickerArt.misc = {
 ---------------------------------------------------------------------------
 
 --[[
-	The crew: six cartoon pirates, each one a clear silhouette in its own colour (the
+	The crew: eight cartoon pirates, each one a clear silhouette in its own colour (the
 	player's colour everywhere): a big head with a big nose, dot eyes and brows (no
 	googly eyes, no blush), a coat in the character's colour and one thing in the left
 	hand. All six share the same head and hands, so accessories fit everyone:
@@ -523,6 +562,8 @@ local BODY = {
 	naturalist = { "#43A047", "#2E7D32" }, -- green
 	warper = { "#D94C9C", "#A1336F" }, -- pink
 	overseer = { "#F5B700", "#C98F00" }, -- gold
+	gambler = { "#13A398", "#0B7A71" }, -- teal
+	cannoneer = { "#8B5A2B", "#5E3B1A" }, -- brown
 }
 StickerArt.bodyColor = BODY
 
@@ -819,6 +860,84 @@ local CREW = {
 			{ "circle", 0.5, 0.235, 0.028, c = "#2B4C7E", ol = false },
 		},
 		mood = "idle",
+	},
+	gambler = {
+		skin = "#F0C8A0",
+		coat = BODY.gambler[1],
+		coatDark = BODY.gambler[2],
+		trousers = "#2A2836",
+		-- a teal frock coat over a cream shirt, a red bow and brass buttons
+		coatDetail = {
+			{ "tri", 0.5, 0.605, 0.12, dir = 180, c = CREAM },
+			{ "pill", 0.5, 0.59, 0.12, 0.045, c = P.coral },
+			{ "circle", 0.5, 0.59, 0.03, c = P.coralDark, ol = false },
+			{ "circle", 0.43, 0.72, 0.03, c = GOLD, ol = false },
+			{ "circle", 0.43, 0.8, 0.03, c = GOLD, ol = false },
+		},
+		-- a big ivory die showing five
+		hand = {
+			{ "rect", 0.21, 0.78, 0.17, 0.17, r = 0.22, rot = -12, c = CREAM },
+			{ "circle", 0.21, 0.78, 0.028, c = INK, ol = false },
+			{ "circle", 0.17, 0.74, 0.026, c = INK, ol = false },
+			{ "circle", 0.25, 0.74, 0.026, c = INK, ol = false },
+			{ "circle", 0.17, 0.82, 0.026, c = INK, ol = false },
+			{ "circle", 0.25, 0.82, 0.026, c = INK, ol = false },
+		},
+		-- a short dark bob
+		hairBack = {
+			{ "circle", 0.5, 0.4, 0.4, c = "#3A2418" },
+			{ "rect", 0.5, 0.5, 0.42, 0.14, r = 0.4, c = "#3A2418" },
+		},
+		faceDetail = {
+			{ "pill", 0.35, 0.4, 0.06, 0.14, c = "#3A2418", ol = false },
+			{ "pill", 0.65, 0.4, 0.06, 0.14, c = "#3A2418", ol = false },
+		},
+		lashes = true,
+		-- a small teal tricorn with a playing card tucked in its band
+		hat = {
+			{ "rect", 0.66, 0.2, 0.09, 0.12, r = 0.15, rot = 18, c = CREAM },
+			{ "circle", 0.66, 0.2, 0.03, c = P.coral, ol = false },
+			{ "tri", 0.33, 0.235, 0.08, dir = -40, c = BODY.gambler[1] },
+			{ "tri", 0.67, 0.235, 0.08, dir = 40, c = BODY.gambler[1] },
+			{ "half", 0.5, 0.265, 0.26, dir = 0, c = BODY.gambler[1] },
+			{ "pill", 0.5, 0.265, 0.44, 0.07, c = BODY.gambler[1] },
+			{ "line", 0.32, 0.282, 0.68, 0.282, 0.016, c = GOLD, ol = false },
+		},
+		mood = "smug",
+	},
+	cannoneer = {
+		skin = "#D9A07A",
+		coat = BODY.cannoneer[1],
+		coatDark = BODY.cannoneer[2],
+		trousers = "#3A3A44",
+		-- a leather jerkin with a bandolier of powder pouches and a wide belt
+		coatDetail = {
+			{ "line", 0.34, 0.6, 0.64, 0.86, 0.035, c = "#2A2018", ol = false },
+			{ "rect", 0.42, 0.67, 0.06, 0.05, r = 0.2, c = "#C9A26B", ol = false },
+			{ "rect", 0.52, 0.75, 0.06, 0.05, r = 0.2, c = "#C9A26B", ol = false },
+			{ "rect", 0.5, 0.82, 0.44, 0.05, c = "#2A2018", ol = false },
+			{ "rect", 0.5, 0.82, 0.07, 0.06, r = 0.2, c = GOLD, ol = false },
+		},
+		-- a cannonball
+		hand = {
+			{ "circle", 0.21, 0.79, 0.17, c = "#3A3A44" },
+			{ "circle", 0.18, 0.76, 0.04, c = "#6B6B78", ol = false },
+		},
+		-- big ginger sideburns and a handlebar moustache
+		faceDetail = {
+			{ "pill", 0.35, 0.42, 0.06, 0.14, c = "#C0562A" },
+			{ "pill", 0.65, 0.42, 0.06, 0.14, c = "#C0562A" },
+			{ "pill", 0.44, 0.47, 0.13, 0.045, rot = 14, c = "#C0562A" },
+			{ "pill", 0.56, 0.47, 0.13, 0.045, rot = -14, c = "#C0562A" },
+		},
+		browColor = "#C0562A",
+		-- a steel gunner's helmet with a rim
+		hat = {
+			{ "half", 0.5, 0.27, 0.32, dir = 0, c = "#8C94A3" },
+			{ "pill", 0.5, 0.27, 0.5, 0.06, c = "#6E7686" },
+			{ "line", 0.5, 0.12, 0.5, 0.25, 0.02, c = "#B8BDC7", ol = false },
+		},
+		mood = "cheeky",
 	},
 }
 StickerArt.crew = CREW

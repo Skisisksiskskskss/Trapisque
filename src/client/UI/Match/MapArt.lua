@@ -197,6 +197,37 @@ function MapArt.draw(layers: { [string]: Frame }, L, U: number)
 			band(trail, L, U, a[1], a[2], a[1] + (b[1] - a[1]) * 0.6, a[2] + (b[2] - a[2]) * 0.6, 0.12, C.white, 6, "Ripple")
 		end
 	end
+	-- lava streams (Mount Kaboom): a glowing band with a dark crust, pooling at the ends
+	for _, r in L.lava or {} do
+		local pts = r.points
+		local lava = col.lava or C.coral
+		for i = 1, #pts - 1 do
+			local a, b = pts[i], pts[i + 1]
+			band(trail, L, U, a[1], a[2], b[1], b[2], 1.2, C.line, 4, "LavaBank")
+		end
+		for _, e in { { r.endA, pts[1] }, { r.endB, pts[#pts] } } do
+			if e[1] == "pond" then
+				disc(trail, L, U, e[2][1], e[2][2], 0.9, C.line, 4, "LavaPoolEdge")
+			end
+		end
+		for i = 1, #pts - 1 do
+			local a, b = pts[i], pts[i + 1]
+			band(trail, L, U, a[1], a[2], b[1], b[2], 1.0, lava, 5, "Lava")
+		end
+		for _, e in { { r.endA, pts[1] }, { r.endB, pts[#pts] } } do
+			if e[1] == "pond" then
+				disc(trail, L, U, e[2][1], e[2][2], 0.8, lava, 5, "LavaPool")
+			end
+		end
+		for i = 2, #pts - 2, 3 do
+			local a, b = pts[i], pts[i + 1]
+			band(trail, L, U, a[1], a[2], a[1] + (b[1] - a[1]) * 0.7, a[2] + (b[2] - a[2]) * 0.7, 0.22, col.lavaGlow or C.sun, 6, "LavaGlow")
+		end
+		for i = 4, #pts - 2, 5 do
+			local q = pts[i]
+			disc(trail, L, U, q[1], q[2], 0.16, col.lavaCrust or C.coralDark, 6, "Crust")
+		end
+	end
 	for _, p in L.pools do
 		disc(trail, L, U, p.x, p.y, p.r + 0.1, C.line, 7, "PoolEdge")
 	end

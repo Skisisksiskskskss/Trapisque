@@ -36,6 +36,8 @@ local ABILITY_VALUE = {
 	naturalist = 3.6,
 	warper = 7.0,
 	overseer = 1.6,
+	gambler = 4.0,
+	cannoneer = 4.4,
 }
 
 local TRAP_ORDER = { "spike", "grog", "snare", "mudslide", "ice", "banana", "fire", "wall" }
@@ -170,6 +172,10 @@ local function landingValue(game, p, tile: number, viewer: any?): number
 	if ember and ember.team ~= p.team then
 		v -= trapSeverity(game, "fire", p)
 	end
+	-- standing in a lava stream when the volcano blows
+	if game.natural[tile] == "lava" and not has(p, "cloak") and game:eruptsThisRound() then
+		v -= (Config.Rules.EruptBack or 0) + trapSeverity(game, "fire", p)
+	end
 	local piece = game.placed[tile]
 	if piece then
 		if piece.item == "teleporter" then
@@ -189,6 +195,8 @@ local function landingValue(game, p, tile: number, viewer: any?): number
 			v += BONK_VALUE * victimWeight(game, p, o)
 			if p.character == "fire_starter" then
 				v += 1.2
+			elseif p.character == "cannoneer" then
+				v += 0.8
 			end
 		end
 	end
@@ -215,13 +223,14 @@ local function powerValue(p, gain: number): number
 end
 
 -- The value of moving `m` steps (forwards or backwards) and charging `gain` Power.
-local function moveValue(game, p, m: number, backwards: boolean, gain: number, viewer: any?): (number, number)
+-- `leap`: a Double Down's move, which goes straight through hazards.
+local function moveValue(game, p, m: number, backwards: boolean, gain: number, viewer: any?, leap: boolean?): (number, number)
 	local before = distOf(game, p, p.tile)
 	local plan
 	if backwards then
 		plan = Engine.backPlan(p, m)
 	else
-		plan = Engine.walkPlan(game, p, m)
+		plan = Engine.walkPlan(game, p, m, leap)
 	end
 	local v
 	if plan.result == "treasure" then
@@ -241,7 +250,7 @@ end
 
 -- Every way `p` could move with these dice: { die, m, back, gain }. `gold` is the
 -- underdog's extra die (it charges no Power).
-local function moveOptions(dice, boost: string?, gold: number?)
+local function moveOptions(dice, boost: string?, gold: number?, double: boolean?)
 	local out = {}
 	local keys = {}
 	for i in dice do
@@ -252,7 +261,7 @@ local function moveOptions(dice, boost: string?, gold: number?)
 	end
 	for _, key in keys do
 		local m, gain, backDie = Engine.dieOption(dice, key, gold)
-		local steps, back = Engine.boosted(m :: number, boost)
+		local steps, back = Engine.boosted(m :: number, boost, double)
 		table.insert(out, { die = key, m = steps, back = back or backDie == true, gain = gain })
 	end
 	return out
@@ -260,8 +269,10 @@ end
 
 local function bestMove(game, p, dice, boost: string?, viewer: any?, gold: number?)
 	local best, bestV, bestTile = nil, -math.huge, nil
-	for _, opt in moveOptions(dice, boost, gold) do
-		local v, tile = moveValue(game, p, opt.m, opt.back, opt.gain, viewer)
+	-- the Gambler's Double Down doubles the move it's using this turn
+	local double = game.turn ~= nil and game.current == p.index and game.turn.double == true
+	for _, opt in moveOptions(dice, boost, gold, double) do
+		local v, tile = moveValue(game, p, opt.m, opt.back, opt.gain, viewer, double)
 		if v > bestV then
 			best, bestV, bestTile = opt, v, tile
 		end
@@ -597,6 +608,20 @@ local function abilityCommand(game, p)
 		-- the Power bar can't overfill, so waiting for someone to trample only wastes
 		-- charge: +3 is always worth it, and a rival in the way is a bonus
 		return { type = "ability" }
+	elseif ab.id == "doubledown" then
+		-- worth it when the doubled move really goes further (a river or a gate in the
+		-- way makes it a waste; the bar stays full for next turn)
+		local turn = game.turn
+		local _, plainV = bestMove(game, p, turn.dice, turn.boost, nil, turn.gold)
+		turn.double = true
+		local _, doubleV = bestMove(game, p, turn.dice, turn.boost, nil, turn.gold)
+		turn.double = nil
+		if doubleV - plainV >= 2 then
+			return { type = "ability" }
+		end
+	elseif ab.id == "cannonball" then
+		-- a flight forward (and maybe a bonk): never worse than waiting
+		return { type = "ability" }
 	elseif ab.id == "warp" then
 		local myDist = distOf(game, p, p.tile)
 		local best, bestGain = nil, 0
@@ -640,6 +665,10 @@ local function abilityCommand(game, p)
 					if game:canSee(p.index, trap) then
 						hurt += trapSeverity(game, trap.item, o)
 					end
+				end
+				-- into a lava stream just before the volcano blows
+				if game.natural[back] == "lava" and game:eruptsThisRound() and not has(o, "cloak") then
+					hurt += (Config.Rules.EruptBack or 0) + trapSeverity(game, "fire", o)
 				end
 				local v = hurt * victimWeight(game, p, o)
 				if v > bestV then

@@ -353,7 +353,14 @@ end
 local function ensureQuests(player: Player, data)
 	local today = Progress.today()
 	if data.quests.day ~= today then
-		data.quests = { day = today, list = Progress.dailyQuests(player.UserId, today), rerolled = false, bonus = false }
+		data.quests = {
+			day = today,
+			list = Progress.dailyQuests(player.UserId, today, function(id)
+				return Characters.unlocked(id, data.level)
+			end),
+			rerolled = false,
+			bonus = false,
+		}
 	end
 	return data.quests
 end
@@ -382,11 +389,11 @@ function DataService.questView(player: Player)
 	return out
 end
 
--- The character a player takes into matches.
+-- The character a player takes into matches (one they've unlocked).
 function DataService.selectedCharacter(player: Player): string
 	local data = DataService.get(player)
 	local id = data and data.character
-	if id and Characters.get(id) then
+	if id and Characters.get(id) and Characters.unlocked(id, data.level) then
 		return id
 	end
 	return Characters.ids[1]
@@ -397,8 +404,12 @@ function DataService.selectCharacter(player: Player, id: any)
 	if not data then
 		return false, "Your profile is still loading."
 	end
-	if type(id) ~= "string" or Characters.get(id) == nil then
+	local def = type(id) == "string" and Characters.get(id)
+	if not def then
 		return false, "Unknown character."
+	end
+	if not Characters.unlocked(id, data.level) then
+		return false, string.format("Reach level %d to unlock the %s.", def.unlockLevel or 0, def.name)
 	end
 	data.character = id
 	return true
@@ -421,7 +432,9 @@ function DataService.rerollQuest(player: Player, index: any)
 	if q.done then
 		return false, "That quest is already done."
 	end
-	local fresh = Progress.rerollQuest(quests.list, index, player.UserId + quests.day * 31 + index)
+	local fresh = Progress.rerollQuest(quests.list, index, player.UserId + quests.day * 31 + index, function(id)
+		return Characters.unlocked(id, data.level)
+	end)
 	if not fresh then
 		return false, "No other quests to swap in."
 	end

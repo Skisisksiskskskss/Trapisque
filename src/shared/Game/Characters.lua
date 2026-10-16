@@ -1,7 +1,7 @@
 --[[
 	Characters
-	The six Trapisque characters. You pick yours in the lobby (two players can pick the
-	same one). Every character has:
+	The eight Trapisque characters. You pick yours in the lobby; four are free and the
+	rest unlock as your account levels up (Config.CharacterUnlocks). Every character has:
 
 		passive   always on, and worth about the same on every map
 		ability   costs Power. Your Power bar is as long as your ability's cost: the die
@@ -72,7 +72,7 @@ local defs = {
 		name = "Naturalist",
 		tagline = "At home in the wild",
 		passiveName = "Wild Walker",
-		passive = "Rivers, locked gates and slime pools never stop or slow you.",
+		passive = "Hazards never stop or slow you: rivers, locked gates, slime, ghosts and lava.",
 		ability = {
 			id = "stampede",
 			name = "Stampede",
@@ -111,6 +111,34 @@ local defs = {
 			options = { "fwd", "back" },
 		},
 	},
+	{
+		id = "gambler",
+		name = "Gambler",
+		tagline = "Bets it all on one more roll",
+		passiveName = "Loaded Dice",
+		passive = "Your dice never roll a 1.",
+		ability = {
+			id = "doubledown",
+			name = "Double Down",
+			text = "This turn your move counts double, and you leap right over rivers, gates, slime, ghosts and lava on the way.",
+			cost = C.gambler.cost,
+			target = "none",
+		},
+	},
+	{
+		id = "cannoneer",
+		name = "Cannoneer",
+		tagline = "Always arrives with a bang",
+		passiveName = "Broadside",
+		passive = "Your bonks knock rivals back " .. (Config.Rules.BonkBack + C.cannoneer.extraBack) .. " tiles instead of " .. Config.Rules.BonkBack .. ".",
+		ability = {
+			id = "cannonball",
+			name = "Cannonball",
+			text = "Fire yourself at the nearest rival up to " .. C.cannoneer.range .. " tiles ahead and bonk them. Nobody there? You still fly " .. C.cannoneer.fly .. " tiles.",
+			cost = C.cannoneer.cost,
+			target = "none",
+		},
+	},
 }
 
 Characters.byId = {}
@@ -118,6 +146,7 @@ Characters.list = {}
 Characters.ids = {}
 for i, def in defs do
 	def.order = i
+	def.unlockLevel = Config.CharacterUnlocks[def.id] -- nil: free from the start
 	Characters.byId[def.id] = def
 	table.insert(Characters.list, def)
 	table.insert(Characters.ids, def.id)
@@ -125,6 +154,12 @@ end
 
 function Characters.get(id: string)
 	return Characters.byId[id]
+end
+
+-- Can a player of account `level` pick this character?
+function Characters.unlocked(id: string, level: number): boolean
+	local def = Characters.byId[id]
+	return def ~= nil and (def.unlockLevel == nil or level >= def.unlockLevel)
 end
 
 -- How much Power this character's ability needs (the length of their Power bar).

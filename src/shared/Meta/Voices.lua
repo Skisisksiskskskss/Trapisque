@@ -81,6 +81,24 @@ Voices.list = {
 		speed = 13,
 	},
 	{
+		id = "smooth",
+		name = "Smooth",
+		tts = { voice = "5", pitch = -1, speed = 0.95 },
+		fx = { "warm" },
+		pitch = 0.95,
+		spread = 0.18,
+		speed = 8,
+	},
+	{
+		id = "booming",
+		name = "Booming",
+		tts = { voice = "7", pitch = -4, speed = 0.92 },
+		fx = { "warm" },
+		pitch = 0.58,
+		spread = 0.14,
+		speed = 7,
+	},
+	{
 		id = "ghostly",
 		name = "Ghostly",
 		tts = { voice = "2", pitch = -2, speed = 0.9 },
@@ -113,6 +131,8 @@ Voices.character = {
 	naturalist = "squeaky",
 	warper = "dandy",
 	overseer = "captain",
+	gambler = "smooth",
+	cannoneer = "booming",
 }
 
 -- The voice someone speaks in: their pick (with the Voice Pack), else their character's.
