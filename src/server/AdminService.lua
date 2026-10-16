@@ -527,27 +527,6 @@ local function act(player: Player, payload): (boolean, any)
 end
 
 function AdminService.init()
-	local ok, ds = pcall(function()
-		return DataStoreService:GetDataStore(S.StoreName)
-	end)
-	if ok then
-		store = ds
-		if ServerInfo.isStudio then
-			local probe = pcall(function()
-				ds:GetAsync("__probe")
-			end)
-			if not probe then
-				store = nil
-			end
-		end
-	end
-	admins = load("admins", {})
-	bans = load("bans", {})
-	log = load("log", {})
-	pcall(function()
-		MessagingService:SubscribeAsync(S.Topic, onMessage)
-	end)
-
 	ChatService.setStaffTagger(function(p)
 		local r = AdminService.role(p)
 		return if r == "owner" then "OWNER" elseif r == "admin" then "ADMIN" else nil
@@ -586,6 +565,40 @@ function AdminService.init()
 		return true, stateFor(player)
 	end)
 	Net.handle("staff.do", act)
+
+	-- The stored lists and the line to the other servers come in the background:
+	-- DataStores and MessagingService can be slow, or missing altogether in Studio.
+	task.spawn(function()
+		local ok, ds = pcall(function()
+			return DataStoreService:GetDataStore(S.StoreName)
+		end)
+		if ok then
+			local usable = true
+			if ServerInfo.isStudio then
+				usable = pcall(function()
+					ds:GetAsync("__probe")
+				end)
+			end
+			if usable then
+				store = ds
+				admins = load("admins", {})
+				bans = load("bans", {})
+				log = load("log", {})
+				-- whoever got here before the lists did
+				for _, p in Players:GetPlayers() do
+					local b = banned(p.UserId)
+					if b then
+						p:Kick(banMessage(b))
+					else
+						task.spawn(applyPending, p)
+					end
+				end
+			end
+		end
+		pcall(function()
+			MessagingService:SubscribeAsync(S.Topic, onMessage)
+		end)
+	end)
 end
 
 return AdminService

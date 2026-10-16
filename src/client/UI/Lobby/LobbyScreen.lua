@@ -393,9 +393,71 @@ end
 -- the screen
 ---------------------------------------------------------------------------
 
+--[[
+	What's still loading once you're in (sounds and music), on a little pill in the top
+	bar that fills up and goes away. On a phone held sideways it sits where the title is,
+	so the title steps aside until it's done.
+]]
+local function buildLoader(parent: Instance, maid, r, title: GuiObject?)
+	if not r or r.w < 120 then
+		return
+	end
+	local h = math.floor(r.h * 0.72)
+	local pill = Util.new("Frame", {
+		Name = "StillLoading",
+		BackgroundColor3 = C.panel,
+		BorderSizePixel = 0,
+		Position = UDim2.fromOffset(r.x, r.y + (r.h - h) / 2),
+		Size = UDim2.fromOffset(r.w, h),
+		Visible = false,
+		Parent = parent,
+	})
+	Util.corner(pill, 0.5)
+	Util.stroke(pill, C.line, 2.5)
+	local fill = Util.new("Frame", {
+		Name = "Fill",
+		BackgroundColor3 = C.sunLight,
+		BorderSizePixel = 0,
+		Size = UDim2.fromScale(0, 1),
+		Parent = pill,
+	})
+	Util.corner(fill, 0.5)
+	local label = Widgets.label(pill, {
+		text = "",
+		font = "heavy",
+		size = 14,
+		color = C.text,
+		align = "center",
+		sizeUDim = UDim2.fromScale(1, 1),
+		z = 2,
+	})
+	maid:add(State.watch("loadingRest", function(v)
+		if v then
+			pill.Visible = true
+			if title then
+				title.Visible = false
+			end
+			label.Text = string.format("Loading sounds  %d%%", math.floor(v * 100))
+			Util.tween(fill, 0.2, { Size = UDim2.fromScale(math.max(0.08, v), 1) })
+		elseif pill.Visible then
+			label.Text = "All aboard!"
+			Util.tween(fill, 0.2, { Size = UDim2.fromScale(1, 1) })
+			task.delay(1.2, function()
+				if pill.Parent then
+					pill.Visible = false
+					if title then
+						title.Visible = true
+					end
+				end
+			end)
+		end
+	end, true))
+end
+
 -- Builds everything that moves with the screen's shape into `frame`.
 local function build(frame: Frame, maid, L, popups: Instance)
 	-- title
+	local titleLabel: GuiObject? = nil
 	if L.title then
 		local r = L.title
 		local title = Widgets.label(frame, {
@@ -409,6 +471,7 @@ local function build(frame: Frame, maid, L, popups: Instance)
 			outlineThickness = if r.h >= 60 then 3 else 2,
 		})
 		place(title, r)
+		titleLabel = title
 	end
 	-- profile
 	if L.profile.kind == "compact" then
@@ -470,6 +533,7 @@ local function build(frame: Frame, maid, L, popups: Instance)
 	-- menu (the leaderboard joins it when there's no column or tab for it)
 	buildNav(frame, maid, L.nav, popups, L.leaders == nil)
 	LobbyChat.build(frame, maid, L.chat, popups)
+	buildLoader(frame, maid, L.loader, if L.form == "short" then titleLabel else nil)
 end
 
 function LobbyScreen.show()

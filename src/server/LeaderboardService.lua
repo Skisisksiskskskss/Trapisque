@@ -201,13 +201,16 @@ function LeaderboardService.init(getProfile: (Player) -> any)
 		end
 	end
 	-- In Studio without API access, every DataStore call fails: use this server's players.
+	-- (Checked in the background: the call can be slow in Studio.)
 	if ServerInfo.isStudio and stores.wins then
-		local probeOk = pcall(function()
-			stores.wins:GetSortedAsync(false, 1)
+		task.spawn(function()
+			local probeOk = pcall(function()
+				stores.wins:GetSortedAsync(false, 1)
+			end)
+			if not probeOk then
+				table.clear(stores)
+			end
 		end)
-		if not probeOk then
-			table.clear(stores)
-		end
 	end
 
 	Net.handle("leaderboard.get", function(player, payload)

@@ -346,6 +346,8 @@ end
 		nav       { rect, kind = "full" | "short" | "icon" }   the menu buttons
 		invites   rect          where party invites stack up
 		chat      rect          the chat button, in the free part of Roblox's top bar
+		loader    rect          right after it: what's still loading once you're in (on a
+		                        phone held sideways it borrows the title's spot for a moment)
 	}
 	PC: title and profile on top, Play | Party | Top across the middle (Top moves to the
 	menu when there isn't room), the menu along the bottom. Phones held sideways: the
@@ -359,6 +361,7 @@ function Layout.lobby(m)
 	local out: { [string]: any } = { form = form }
 	local band = Layout.bandRect(m, 10)
 	out.chat = rect(band.x, band.y, band.h, band.h)
+	out.loader = rect(band.x + band.h + 8, band.y, math.min(220, band.w - band.h - 8), band.h)
 
 	if form == "wide" then
 		local M = 24
@@ -396,6 +399,7 @@ function Layout.lobby(m)
 		if band.w - chipW - chatW >= 190 then
 			out.title = rect(band.x + chatW, band.y, math.min(240, band.w - chipW - chatW - 16), band.h)
 		end
+		out.loader = rect(band.x + chatW, band.y, math.min(220, band.w - chipW - chatW - 8), band.h)
 		local navH = math.max(46, math.ceil(44 / m.scale))
 		local nav = rect(x0, safe.y + safe.h - 8 - navH, x1 - x0, navH)
 		local y0 = top + 6

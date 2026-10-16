@@ -30,6 +30,9 @@ F.mount(game:GetService("ServerScriptService"), "Server", getNode("Server"))
 F.mount(game:GetService("ReplicatedFirst"), "First", getNode("First"))
 -- the tester is the game's owner (the owner panel gets a look too)
 requireModule("Shared/Config").Staff.OwnerIds = { 4242 }
+-- MessagingService never answers (as in Studio with an unpublished place): the game
+-- must still let everyone in
+F.messagingHangs = true
 
 F.setScreen({
 	w = cfg.w or 1280,

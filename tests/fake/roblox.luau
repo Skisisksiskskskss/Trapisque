@@ -3370,6 +3370,10 @@ METHODS.MessagingService = {
 		end
 	end,
 	SubscribeAsync = function(_self, topic, fn)
+		-- F.messagingHangs: never answers, like Studio can in a place that isn't published
+		while F.messagingHangs do
+			task.wait(3600)
+		end
 		F.subscriptions[topic] = F.subscriptions[topic] or {}
 		table.insert(F.subscriptions[topic], fn)
 		return { Disconnect = function() end }

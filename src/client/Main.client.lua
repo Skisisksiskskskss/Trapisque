@@ -2,10 +2,24 @@
 	Trapisque client entry point.
 	There are no avatars and no 3D: the whole game is UI. This script sets the stage,
 	says hello to the server and routes between the lobby and matches.
+
+	The loading screen (ReplicatedFirst) follows along through two attributes on the
+	local player: TrapisqueLoad (0 to 1) and TrapisqueLoadText. It lifts as soon as the
+	lobby is up; sounds and music keep loading behind it (Sound.preload).
 ]]
 
 local Players = game:GetService("Players")
 local StarterGui = game:GetService("StarterGui")
+
+-- tells the loading screen how far along we are
+local function loading(progress: number, text: string?)
+	local me = Players.LocalPlayer
+	me:SetAttribute("TrapisqueLoad", progress)
+	if text then
+		me:SetAttribute("TrapisqueLoadText", text)
+	end
+end
+loading(0.4, "Charting the seas...")
 
 local Client = script.Parent
 local Net = require(Client.Net)
@@ -112,22 +126,34 @@ end)
 -- hello
 ---------------------------------------------------------------------------
 
+-- Keeps asking until the server answers, saying why on the loading screen when it
+-- takes a while (and in the output).
 local function hello()
-	for attempt = 1, 8 do
+	local attempt = 0
+	while true do
+		attempt += 1
 		local ok, data = Net.request("hello")
 		if ok and type(data) == "table" then
 			return data
 		end
-		task.wait(math.min(8, attempt * 1.5))
+		warn(string.format("[Trapisque] the server didn't answer hello (try %d): %s", attempt, tostring(data)))
+		if attempt >= 2 then
+			loading(0.55, string.format("Still hailing the harbour (%s)...", tostring(data)))
+		end
+		task.wait(math.min(6, attempt * 1.5))
 	end
-	return nil
 end
 
-Root.curtain("Unrolling the map...")
+loading(0.55, "Hailing the harbour...")
 local data = hello()
-if not data then
-	Root.curtain("Couldn't reach the server. Try rejoining!")
-	return
+loading(0.8, "Unpacking your sea chest...")
+-- a save that's slow to load arrives on its own a little later
+if data.profile == nil then
+	local t0 = os.clock()
+	while State.get("profile") == nil and os.clock() - t0 < 30 do
+		task.wait(0.2)
+	end
+	data.profile = State.get("profile")
 end
 State.set("version", data.version)
 State.set("role", data.role)
@@ -139,18 +165,20 @@ State.set("staff", data.staff)
 if data.profile and data.profile.settings then
 	Sound.applySettings(data.profile.settings)
 end
-Sound.preload()
+-- sounds and music load in the background; the lobby shows how far along they are
+Sound.preload(function(done, total)
+	State.set("loadingRest", if done >= total then nil else done / math.max(1, total))
+end)
 
 if data.match then
 	-- rejoined (or arrived on a match server) while a match is running
-	Root.curtain(nil)
 	MatchScreen.show(data.match)
 elseif data.role == "match" then
 	-- a reserved match server: the match starts once everyone has arrived
 	Root.curtain("Getting the board ready...")
 else
-	Root.curtain(nil)
 	LobbyScreen.show()
 end
+loading(1, "Land ho!")
 
 print(string.format("[Trapisque] client ready (v%s, %s) for %s", tostring(data.version), tostring(data.role), player.Name))

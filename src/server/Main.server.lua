@@ -1,6 +1,11 @@
 --[[
 	Trapisque server entry point.
 	Trapisque is a fully 2D game drawn with UI, so nobody gets an avatar.
+
+	The "hello" every client starts with is answered before anything else starts, and
+	each service then starts on its own. One that breaks, or hangs on a Roblox service
+	(Studio can, with DataStores or MessagingService in an unpublished place), is
+	reported in the output and never keeps players out.
 ]]
 
 local Players = game:GetService("Players")
@@ -23,36 +28,68 @@ local ChatService = require(script.Parent.ChatService)
 local AdminService = require(script.Parent.AdminService)
 
 Net.init()
-TeleportUtil.init()
-DataService.init()
-LeaderboardService.init(DataService.get)
-GachaService.init()
-PartyService.init()
-MatchmakingService.init()
-MatchService.init()
-ChatService.init()
-AdminService.init()
 
-TeleportUtil.Failed:Connect(function(player, message)
-	Net.push(player, "teleporting", nil)
-	Net.push(player, "toast", { text = "Teleport failed: " .. tostring(message), kind = "error" })
-end)
+-- Runs fn; on an error, says what broke and gives back nil.
+local function try(what: string, fn: (...any) -> any, ...: any): any
+	local ok, result = pcall(fn, ...)
+	if not ok then
+		warn(string.format("[Trapisque] %s failed: %s", what, tostring(result)))
+		return nil
+	end
+	return result
+end
 
--- First call every client makes: everything it needs to draw the right screen.
+-- First call every client makes: everything it needs to draw the right screen. Each
+-- part is fetched on its own, so one that fails leaves a gap instead of an error.
 Net.handle("hello", function(player)
 	DataService.waitFor(player, 20)
-	local match = MatchService.get(player)
+	local match = try("finding the player's match", MatchService.get, player)
 	return true, {
 		version = Config.Version,
 		role = ServerInfo.role,
 		studio = ServerInfo.isStudio,
-		profile = DataService.view(player),
-		party = PartyService.view(PartyService.get(player)),
-		match = match and match:resync(player) or nil,
-		status = MatchService.status(player),
-		chat = ChatService.status(player),
-		staff = AdminService.role(player),
+		profile = try("the profile", DataService.view, player),
+		party = try("the party", function()
+			return PartyService.view(PartyService.get(player))
+		end),
+		match = if match then try("the match", match.resync, match, player) else nil,
+		status = try("the match status", MatchService.status, player),
+		chat = try("the chat status", ChatService.status, player),
+		staff = try("the staff role", AdminService.role, player),
 	}
+end)
+
+-- Starts a service in its own thread, waiting a few seconds at most for it.
+local function start(name: string, fn: () -> ())
+	local done = false
+	task.spawn(function()
+		try("starting " .. name, fn)
+		done = true
+	end)
+	local deadline = os.clock() + 5
+	while not done and os.clock() < deadline do
+		task.wait()
+	end
+	if not done then
+		warn("[Trapisque] " .. name .. " is still starting; carrying on without waiting for it")
+	end
+end
+
+start("TeleportUtil", TeleportUtil.init)
+start("DataService", DataService.init)
+start("LeaderboardService", function()
+	LeaderboardService.init(DataService.get)
+end)
+start("GachaService", GachaService.init)
+start("PartyService", PartyService.init)
+start("MatchmakingService", MatchmakingService.init)
+start("MatchService", MatchService.init)
+start("ChatService", ChatService.init)
+start("AdminService", AdminService.init)
+
+TeleportUtil.Failed:Connect(function(player, message)
+	Net.push(player, "teleporting", nil)
+	Net.push(player, "toast", { text = "Teleport failed: " .. tostring(message), kind = "error" })
 end)
 
 print(string.format("[Trapisque] v%s server ready (%s%s)", Config.Version, ServerInfo.role, if ServerInfo.isStudio then ", Studio" else ""))

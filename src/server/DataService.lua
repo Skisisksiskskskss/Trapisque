@@ -266,10 +266,11 @@ function DataService.isLoaded(player: Player): boolean
 	return profiles[player] ~= nil
 end
 
+-- Waits (up to `timeout` seconds) for a player's profile; true once it's there.
 function DataService.waitFor(player: Player, timeout: number?)
 	local deadline = os.clock() + (timeout or 30)
 	while profiles[player] == nil and player.Parent == Players and os.clock() < deadline do
-		loadedSignal.Event:Wait()
+		task.wait(0.1)
 	end
 	return profiles[player] ~= nil
 end
@@ -840,11 +841,20 @@ function DataService.init()
 	end)
 	if ok then
 		store = ds
-		-- In Studio without "Enable Studio Access to API Services", DataStore calls fail.
+		-- In Studio without "Enable Studio Access to API Services" (or in a place that
+		-- isn't published), DataStore calls fail or never answer: give them 4 seconds.
 		if ServerInfo.isStudio then
-			local probeOk = pcall(function()
-				ds:GetAsync("__probe")
+			local answered, probeOk = false, false
+			task.spawn(function()
+				probeOk = pcall(function()
+					ds:GetAsync("__probe")
+				end)
+				answered = true
 			end)
+			local deadline = os.clock() + 4
+			while not answered and os.clock() < deadline do
+				task.wait(0.05)
+			end
 			if not probeOk then
 				warn("[Trapisque] DataStores unavailable in Studio; profiles are temporary. Enable Game Settings > Security > Studio Access to API Services to test saving.")
 				store = nil

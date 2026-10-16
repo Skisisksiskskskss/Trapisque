@@ -174,14 +174,50 @@ local function template(name: string, def: Def, groupName: string): Sound
 end
 
 -- Loads every effect in the background so the first dice roll isn't silent.
-function Sound.preload()
+--[[
+	Loads the sounds in the background once you're in: every effect and the lobby's
+	music first (onProgress(done, total) follows those), then the match music quietly.
+	Nothing waits for it: a sound that isn't in yet just plays once it is.
+]]
+function Sound.preload(onProgress: ((number, number) -> ())?)
 	task.spawn(function()
-		local list = {}
+		local first: { any } = {}
 		for name, def in LIBRARY do
-			table.insert(list, template(name, def, "Effects"))
+			table.insert(first, template(name, def, "Effects"))
+			for _, id in def.variants or {} do
+				if id ~= def.id then
+					table.insert(first, id)
+				end
+			end
+		end
+		for _, t in PLAYLISTS.lobby do
+			table.insert(first, t.id)
+		end
+		local total, done = #first, 0
+		if onProgress then
+			onProgress(0, total)
 		end
 		pcall(function()
-			ContentProvider:PreloadAsync(list)
+			ContentProvider:PreloadAsync(first, function()
+				done = math.min(total, done + 1)
+				if onProgress then
+					onProgress(done, total)
+				end
+			end)
+		end)
+		if onProgress and done < total then
+			onProgress(total, total)
+		end
+		local rest = {}
+		for mood, list in PLAYLISTS do
+			if mood ~= "lobby" then
+				for _, t in list do
+					table.insert(rest, t.id)
+				end
+			end
+		end
+		pcall(function()
+			ContentProvider:PreloadAsync(rest)
 		end)
 	end)
 end

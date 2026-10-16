@@ -150,6 +150,9 @@ In Studio:
    (`Config.StudioOwnsAllPasses`), and everyone testing is the owner
    (`Config.Staff.StudioIsOwner`), so you can try everything.
 3. To test with several players, use **Test → Clients and Servers**.
+4. If the loading screen sits on "Still hailing the harbour", the server isn't
+   answering: the reason is in brackets there and in the Output window, along with
+   any service that failed to start (`[Trapisque] ... failed`).
 
 ## Publishing
 
