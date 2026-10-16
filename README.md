@@ -172,6 +172,23 @@ In Studio:
    players live in the `TrapisqueStaff_v1` DataStore and reach every server through
    MessagingService.
 
+### Publishing without Studio
+
+`tools/publish.sh` builds the place and uploads it with Roblox's Open Cloud Place
+Publishing API, so an update can go out from anywhere with a shell (a cloud session
+started from a phone, for example). Rojo is downloaded if it isn't installed.
+
+```
+ROBLOX_UNIVERSE_ID=<universe id> ROBLOX_PLACE_ID=<start place id> tools/publish.sh
+```
+
+It reads the key from `ROBLOX_API_KEY`: an Open Cloud API key (Creator Hub > Open Cloud >
+API Keys) with the **universe-places** (Place Publishing) **Write** permission for this
+experience. Keep the key in your environment's secrets, never in the repo or a chat.
+`--saved` uploads a saved version without making it live. The experience has to exist
+on Roblox already (published once from Studio). Running servers keep the old version
+until they're restarted (Creator Hub > Configure > Server Management > Restart Servers).
+
 ## Going public
 
 Everything the experience page needs is in `docs/store/`, drawn by the game's own UI
