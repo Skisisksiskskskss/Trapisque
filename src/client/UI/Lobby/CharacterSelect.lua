@@ -100,17 +100,13 @@ function CharacterSelect.open(popups: Instance)
 		wrap = true,
 		sizeUDim = UDim2.new(1, 0, 0, if narrow then 34 else 22),
 	})
+	-- (the scroll's own grid: a second layout next to its list would be ignored)
 	local grid = Widgets.scroll(content, {
 		name = "Grid",
 		position = UDim2.fromOffset(0, if narrow then 40 else 30),
 		size = UDim2.new(1, 0, 1, if narrow then -40 else -30),
-	})
-	Util.new("UIGridLayout", {
-		CellSize = UDim2.fromOffset(cellW, cellH),
-		CellPadding = UDim2.fromOffset(12, 12),
-		HorizontalAlignment = Enum.HorizontalAlignment.Center,
-		SortOrder = Enum.SortOrder.LayoutOrder,
-		Parent = grid,
+		grid = UDim2.fromOffset(cellW, cellH),
+		gap = 12,
 	})
 	local buttons = {}
 	local function refresh()
@@ -119,7 +115,7 @@ function CharacterSelect.open(popups: Instance)
 		local level = profile and profile.level or 1
 		for id, b in buttons do
 			local picked = id == current
-			local open = Characters.unlocked(id, level)
+			local open = (profile and profile.unlockAll) or Characters.unlocked(id, level)
 			local def = Characters.get(id)
 			b.button:setText(if not open then ("LEVEL " .. tostring(def and def.unlockLevel or 0)) elseif picked then "PICKED" else "PICK")
 			b.button:setStyle(if not open then "dark" elseif picked then "green" else "brass")
@@ -185,7 +181,7 @@ function CharacterSelect.open(popups: Instance)
 			position = UDim2.fromOffset(6, y),
 		})
 		-- their base: faint until mastery 5 earns it
-		BaseArt.preview(cell, def.id, Progress.baseTier(level), {
+		BaseArt.preview(cell, def.id, if profile and profile.unlockAll then 2 else Progress.baseTier(level), {
 			AnchorPoint = Vector2.new(1, 0.5),
 			Position = UDim2.new(1, -3, 0, y + 9),
 			Size = UDim2.fromOffset(30, 30),
@@ -217,7 +213,7 @@ function CharacterSelect.open(popups: Instance)
 			depth = 4,
 			onClick = function()
 				local profile = State.get("profile")
-				if not Characters.unlocked(def.id, profile and profile.level or 1) then
+				if not (profile and profile.unlockAll) and not Characters.unlocked(def.id, profile and profile.level or 1) then
 					Widgets.toast(string.format("Reach level %d to unlock the %s. Every match you play earns XP!", def.unlockLevel or 0, def.name), "info")
 					return
 				end

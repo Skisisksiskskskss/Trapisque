@@ -113,7 +113,10 @@ rendered offline (see [Screenshots](#screenshots)).
   wait for them), make or remove admins, announce to every server, rain Gems or chests
   on a server, switch the weekly event and shut every server down for an update.
   Chat reports from every server wait in its REPORTS tab. Every action is checked on
-  the server and logged.
+  the server and logged. The owner also gets an **Unlock everything** switch in
+  Settings: every character, cosmetic and gold base for themselves while it's on,
+  without touching their real progress (switch it off and they're back to what
+  they've earned).
 - **Controllers.** On Xbox, PlayStation or a pad, the left stick moves a cursor and A
   clicks; B closes the window on top, X opens the chat, Y uses your ability and L1 / R1
   zoom the board.

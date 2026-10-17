@@ -452,6 +452,36 @@ do
 	say("character: %s", tostring(profile and profile.character))
 end
 
+-- the owner's unlock-all switch (offline, everyone is the owner): a locked character can
+-- be picked while it's on, and switching it off goes back to real progress
+do
+	local before = State.get("profile").character
+	local function ask(list)
+		local done = false
+		local results = {}
+		F.spawn(function()
+			for i, r in list do
+				results[i] = Net.request(r[1], r[2])
+			end
+			done = true
+		end)
+		check(F.run(5, function()
+			return done
+		end), "the unlock-all requests never came back")
+		F.run(0.5)
+		return results
+	end
+	local r = ask({ { "owner.unlockAll", { on = true } }, { "character.select", { character = "cannoneer" } } })
+	local profile = State.get("profile")
+	check(r[1] == true and r[2] == true and profile.unlockAll == true and profile.character == "cannoneer", "unlock-all didn't let the owner pick a locked character")
+	r = ask({ { "owner.unlockAll", { on = false } } })
+	profile = State.get("profile")
+	check(r[1] == true and profile.unlockAll == false and profile.character ~= "cannoneer", "switching unlock-all off didn't go back to real progress")
+	ask({ { "character.select", { character = before } } })
+	check(State.get("profile").character == before, "couldn't go back to the character picked before")
+	noProblems("the unlock-all switch")
+end
+
 ---------------------------------------------------------------------------
 -- a practice match
 ---------------------------------------------------------------------------

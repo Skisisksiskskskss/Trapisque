@@ -548,6 +548,45 @@ local function toggleRow(list: Instance, label: string, key: string, order: numb
 	})
 end
 
+-- The owner's unlock-all switch: every character, cosmetic and gold base, just for them,
+-- without touching their real progress; off again, they're back to what they've earned.
+local function unlockAllRow(list: Instance, order: number)
+	local profile = State.get("profile")
+	local row = Util.frame(list, { Name = "UnlockAll", Size = UDim2.new(1, 0, 0, 40), LayoutOrder = order })
+	Widgets.label(row, {
+		text = "Unlock everything (owner)",
+		font = "heavy",
+		size = 18,
+		color = C.text,
+		sizeUDim = UDim2.new(1, -90, 1, 0),
+	})
+	local toggle
+	toggle = Widgets.toggle(row, {
+		value = profile ~= nil and profile.unlockAll == true,
+		anchor = Vector2.new(1, 0.5),
+		position = UDim2.fromScale(1, 0.5),
+		onChange = function(v)
+			local ok, err = Net.request("owner.unlockAll", { on = v })
+			if ok then
+				Widgets.toast(if v then "Everything's unlocked for you. Switch it off to go back to your own progress." else "Back to your own progress.", "info")
+			else
+				Widgets.toast(tostring(err), "error")
+				toggle:set(not v, true)
+			end
+		end,
+	})
+	local note = Widgets.label(list, {
+		text = "Every character, cosmetic and gold base, just for you. Your real progress stays as it is.",
+		font = "body",
+		size = 14,
+		color = C.textSoft,
+		wrap = true,
+		sizeUDim = UDim2.new(1, 0, 0, 0),
+		layoutOrder = order,
+	})
+	note.AutomaticSize = Enum.AutomaticSize.Y
+end
+
 -- The voice your chat bubbles speak in: your character's, or (Voice Pack) any of them.
 local function voiceRow(list: Instance, order: number)
 	local profile = State.get("profile")
@@ -607,13 +646,16 @@ function Pages.settings(layer: Instance): () -> ()
 		title = "Settings",
 		titleWidth = 240,
 		width = 560,
-		height = if staff then 690 else 620,
+		height = if staff == "owner" then 770 elseif staff then 690 else 620,
 	})
 	local list = Widgets.scroll(content, { gap = 12, padding = 4 })
 	VolumeRows.build(list, 1)
 	toggleRow(list, "Read chat out loud", "voices", 3)
 	toggleRow(list, "Chat bubbles over players", "bubbles", 4)
 	voiceRow(list, 5)
+	if staff == "owner" then
+		unlockAllRow(list, 7)
+	end
 	if staff then
 		Widgets.button(list, {
 			text = if staff == "owner" then "OWNER PANEL" else "ADMIN PANEL",

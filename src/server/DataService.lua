@@ -77,6 +77,9 @@ local function newProfile()
 		tutorialDone = false, -- finished (or skipped) the guided first match
 		groupReward = false, -- claimed the join-the-group Gems
 		deals = { day = -1, bought = {} }, -- today's daily deals already bought
+		-- the owner's switch: every character, cosmetic and gold base while it's on,
+		-- without touching their real progress (see DataService.setUnlockAll)
+		unlockAll = false,
 	}
 end
 
@@ -112,15 +115,16 @@ local function reconcile(data)
 			data.owned[id] = nil
 		end
 	end
+	-- (with the owner's unlock-all on, what they wear needn't be owned)
 	for _, cat in { "accessory", "dice", "trail", "title" } do
 		local id = data.equipped[cat]
-		if id == nil or not data.owned[id] or Cosmetics.get(id) == nil then
+		if id == nil or not (data.owned[id] or data.unlockAll) or Cosmetics.get(id) == nil then
 			data.equipped[cat] = Cosmetics.defaults[cat]
 		end
 	end
 	local emotes = {}
 	for _, id in data.equipped.emotes or {} do
-		if data.owned[id] and #emotes < Cosmetics.EmoteSlots then
+		if (data.owned[id] or (data.unlockAll and Cosmetics.get(id))) and #emotes < Cosmetics.EmoteSlots then
 			table.insert(emotes, id)
 		end
 	end
@@ -303,6 +307,24 @@ function DataService.isLucky(player: Player): boolean
 	return prof ~= nil and prof.passes.LuckyCharm == true and not prof.restricted
 end
 
+-- Whether a player may use the unlock-all switch (Main hands over the owner check).
+function DataService.canUnlockAll(_player: Player): boolean
+	return false
+end
+
+-- The owner's unlock-all is on (and they're still the owner).
+local function everything(player: Player, data): boolean
+	return data.unlockAll == true and DataService.canUnlockAll(player)
+end
+
+local function hasCharacter(player: Player, data, id: string): boolean
+	return everything(player, data) or Characters.unlocked(id, data.level)
+end
+
+local function hasItem(player: Player, data, id: string): boolean
+	return data.owned[id] == true or (everything(player, data) and Cosmetics.get(id) ~= nil)
+end
+
 -- The view of the profile that the client sees.
 function DataService.view(player: Player)
 	local prof = profiles[player]
@@ -311,8 +333,14 @@ function DataService.view(player: Player)
 	end
 	local data = prof.data
 	local owned = {}
-	for id in data.owned do
-		table.insert(owned, id)
+	if everything(player, data) then
+		for _, def in Cosmetics.list do
+			table.insert(owned, def.id)
+		end
+	else
+		for id in data.owned do
+			table.insert(owned, id)
+		end
 	end
 	local passes = {}
 	for k, v in prof.passes do
@@ -358,6 +386,7 @@ function DataService.view(player: Player)
 		tutorialDone = data.tutorialDone,
 		groupReward = data.groupReward,
 		deals = DataService.dealsView(data),
+		unlockAll = everything(player, data),
 	}
 end
 
@@ -418,7 +447,7 @@ end
 function DataService.selectedCharacter(player: Player): string
 	local data = DataService.get(player)
 	local id = data and data.character
-	if id and Characters.get(id) and Characters.unlocked(id, data.level) then
+	if id and Characters.get(id) and hasCharacter(player, data, id) then
 		return id
 	end
 	return Characters.ids[1]
@@ -433,10 +462,41 @@ function DataService.selectCharacter(player: Player, id: any)
 	if not def then
 		return false, "Unknown character."
 	end
-	if not Characters.unlocked(id, data.level) then
+	if not hasCharacter(player, data, id) then
 		return false, string.format("Reach level %d to unlock the %s.", def.unlockLevel or 0, def.name)
 	end
 	data.character = id
+	return true
+end
+
+-- The owner's unlock-all switch. Off again, they're back to exactly what they've earned:
+-- anything worn or picked that they don't really have goes back to a default.
+function DataService.setUnlockAll(player: Player, on: boolean): (boolean, string?)
+	local data = DataService.get(player)
+	if not data then
+		return false, "Your profile is still loading."
+	end
+	if not DataService.canUnlockAll(player) then
+		return false, "Only the game's owner can do that."
+	end
+	data.unlockAll = on
+	if not on then
+		for _, cat in { "accessory", "dice", "trail", "title" } do
+			if not data.owned[data.equipped[cat]] then
+				data.equipped[cat] = Cosmetics.defaults[cat]
+			end
+		end
+		local emotes = {}
+		for _, id in data.equipped.emotes do
+			if data.owned[id] then
+				table.insert(emotes, id)
+			end
+		end
+		data.equipped.emotes = if #emotes > 0 then emotes else table.clone(Cosmetics.defaults.emotes)
+		if not Characters.unlocked(data.character, data.level) then
+			data.character = Characters.ids[1]
+		end
+	end
 	return true
 end
 
@@ -500,6 +560,9 @@ function DataService.baseFor(player: Player, character: string?): number
 	local data = DataService.get(player)
 	if not data or not character then
 		return 0
+	end
+	if everything(player, data) then
+		return 2
 	end
 	return Progress.baseTier(Progress.masteryLevel(data.mastery[character] or 0))
 end
@@ -691,7 +754,7 @@ function DataService.equip(player: Player, category: string, value: any)
 		local list, seen = {}, {}
 		for _, id in value do
 			local def = type(id) == "string" and Cosmetics.get(id)
-			if not def or def.category ~= "emote" or not data.owned[id] then
+			if not def or def.category ~= "emote" or not hasItem(player, data, id) then
 				return false, "You don't own that emote."
 			end
 			if not seen[id] then
@@ -709,7 +772,7 @@ function DataService.equip(player: Player, category: string, value: any)
 	if not def or def.category ~= category then
 		return false, "That item doesn't fit there."
 	end
-	if not data.owned[value] then
+	if not hasItem(player, data, value) then
 		return false, "You don't own that yet."
 	end
 	data.equipped[category] = value
@@ -1056,6 +1119,15 @@ function DataService.init()
 
 	Net.handle("settings.save", function(player, payload)
 		DataService.saveSettings(player, payload.settings)
+		return true
+	end)
+
+	Net.handle("owner.unlockAll", function(player, payload)
+		local ok2, err = DataService.setUnlockAll(player, type(payload) == "table" and payload.on == true)
+		if not ok2 then
+			return false, err
+		end
+		DataService.pushProfile(player)
 		return true
 	end)
 

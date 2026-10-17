@@ -1791,6 +1791,12 @@ layoutChildren = function(parent, pw: number, ph: number)
 	end
 	local list = firstChildOfClass(parent, "UIListLayout")
 	local grid = firstChildOfClass(parent, "UIGridLayout")
+	if list and grid and not st.warnedLayouts then
+		-- Roblox lays a frame out with only one of them (here, the list), so a grid
+		-- added next to a list never arranges anything
+		st.warnedLayouts = true
+		warn("two layouts in " .. fullName(parent) .. ": Roblox uses only one, so the UIGridLayout is ignored")
+	end
 	local layout = list or grid
 	if not layout then
 		st.layoutCache = { ver = layoutVersion, pw = pw, ph = ph, map = false, cw = 0, ch = 0 }

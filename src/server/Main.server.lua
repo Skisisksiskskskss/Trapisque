@@ -88,6 +88,9 @@ start("MatchService", MatchService.init)
 start("ChatService", ChatService.init)
 start("AdminService", AdminService.init)
 BadgeService.roleOf = AdminService.role
+DataService.canUnlockAll = function(player)
+	return AdminService.role(player) == "owner"
+end
 
 TeleportUtil.Failed:Connect(function(player, message)
 	Net.push(player, "teleporting", nil)
