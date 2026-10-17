@@ -2,7 +2,9 @@
 	The experience's store art, drawn by the game's own UI code (no outside images):
 	  store-icon     512 x 512    the Mage and the Fire Starter over the sea, title ribbon
 	  store-banner   1920 x 1080  the island map, the title, the whole crew and a treasure
-	tools/shots.sh art (writes PNGs into OUT).
+	  badges/<key>   512 x 512    each badge's medal (Shared/Meta/Badges), for the Creator
+	                              Dashboard (Roblox shows a badge's picture in a circle)
+	tools/shots.sh art (writes the icon and banner into OUT); tools/shots.sh badges.
 ]]
 
 local F = Fake
@@ -77,10 +79,12 @@ local function title(parent: Instance, text: string, cx: number, cy: number, sca
 	return holder
 end
 
+local badgesOnly = SMOKE ~= nil and SMOKE.name == "badges"
+
 ---------------------------------------------------------------------------
 -- icon
 ---------------------------------------------------------------------------
-do
+if not badgesOnly then
 	F.setScreen({ w = 512, h = 512, inset = 0 })
 	local gui = screenGui("Icon")
 	local bg = sea(gui, 512, 512, 10)
@@ -124,7 +128,7 @@ end
 ---------------------------------------------------------------------------
 -- banner
 ---------------------------------------------------------------------------
-do
+if not badgesOnly then
 	local W, H = 1920, 1080
 	F.setScreen({ w = W, h = H, inset = 0 })
 	local gui = screenGui("Banner")
@@ -219,4 +223,26 @@ do
 	F.run(0.5)
 	F.shot("store-banner")
 	gui:Destroy()
+end
+
+---------------------------------------------------------------------------
+-- badge icons
+---------------------------------------------------------------------------
+if badgesOnly then
+	local Badges = requireModule("Shared/Meta/Badges")
+	local BadgeArt = requireModule("Client/UI/BadgeArt")
+	F.setScreen({ w = 512, h = 512, inset = 0 })
+	for _, b in Badges.list do
+		local gui = screenGui("Badge")
+		local bg = sea(gui, 512, 512, 8)
+		BadgeArt.medal(bg, b.key, true, {
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromOffset(256, 256),
+			Size = UDim2.fromOffset(496, 496),
+			ZIndex = 5,
+		})
+		F.run(0.2)
+		F.shot("badges/" .. b.key)
+		gui:Destroy()
+	end
 end

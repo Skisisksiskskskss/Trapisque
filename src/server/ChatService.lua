@@ -10,6 +10,9 @@
 	          who reads it, and only reaches people whose settings let them chat with you.
 
 	Staff can mute a player (AdminService); a muted player can still use quick lines.
+	Each person's last few lines stay on this server for a while, so a report
+	(AdminService, "chat.report") can show staff what they said: filtered for everyone,
+	never the raw text.
 
 	Pushes "chat.line" { from, name, text, quick?, seat?, staff?, voice, character } to
 	everyone who hears it. The screen pops it as a bubble over the speaker's character
@@ -34,6 +37,7 @@ local ChatService = {}
 local canChatCache: { [number]: boolean } = {}
 local buckets: { [Player]: { tokens: number, t: number } } = {}
 local muted: { [number]: number } = {} -- [userId] = os.time() when the mute ends
+local said: { [number]: { name: string, lines: { any } } } = {} -- [userId] = their latest lines
 local staffTag: (Player) -> string? = function()
 	return nil
 end
@@ -86,14 +90,15 @@ local function allow(player: Player): boolean
 	return true
 end
 
--- Who hears this player: the people in their match, or everyone in the lobby. Also the
--- seat they speak from and the character they're playing (for their voice).
+-- Who hears this player: the people in their match (players and spectators), or
+-- everyone in the lobby. Also the seat they speak from and the character they're
+-- playing (for their voice).
 local function audience(player: Player): ({ Player }, number?, string)
 	local match = MatchService.get(player)
 	if match then
 		local seat = match.seatOf[player]
-		local p = seat and match.engine.players[seat]
-		return match:humans(), seat, (p and p.character) or DataService.selectedCharacter(player)
+		local p = seat and match.engine and match.engine.players[seat]
+		return match:audience(), seat, (p and p.character) or DataService.selectedCharacter(player)
 	end
 	local list = {}
 	for _, p in Players:GetPlayers() do
@@ -104,6 +109,41 @@ local function audience(player: Player): ({ Player }, number?, string)
 	return list, nil, DataService.selectedCharacter(player)
 end
 
+
+local function remember(player: Player, text: string, result: any)
+	local entry = said[player.UserId]
+	if not entry then
+		entry = { name = player.Name, lines = {} }
+		said[player.UserId] = entry
+	end
+	table.insert(entry.lines, { t = os.time(), text = text, result = result })
+	while #entry.lines > Config.Staff.ReportLines do
+		table.remove(entry.lines, 1)
+	end
+end
+
+-- Someone's latest lines the way everyone may see them, for a report: their name (if
+-- they've said anything here) and { { t, text } }. Yields: typed lines are filtered.
+function ChatService.recent(userId: number): (string?, { { t: number, text: string } })
+	local entry = said[userId]
+	if not entry then
+		return nil, {}
+	end
+	local out = {}
+	for _, l in entry.lines do
+		local text = l.text
+		if l.result == nil then
+			text = "[quick line] " .. text
+		elseif not ServerInfo.isStudio then
+			local ok, shown = pcall(function()
+				return l.result:GetNonChatStringForBroadcastAsync()
+			end)
+			text = if ok and type(shown) == "string" then shown else "(couldn't show this line)"
+		end
+		table.insert(out, { t = l.t, text = text })
+	end
+	return entry.name, out
+end
 
 function ChatService.isMuted(player: Player): boolean
 	local untilT = muted[player.UserId]
@@ -159,6 +199,7 @@ local function send(player: Player, payload): (boolean, string?)
 		for _, p in list do
 			Net.push(p, "chat.line", line)
 		end
+		remember(player, q.text, nil)
 		return true
 	end
 	-- typed lines
@@ -189,6 +230,7 @@ local function send(player: Player, payload): (boolean, string?)
 	if not ok or not filtered then
 		return false, "Couldn't send that. Try again."
 	end
+	remember(player, text, filtered)
 	for _, p in list do
 		if p == player or (canChat(p) and canChatTogether(player, p)) then
 			local okFor, shown = pcall(function()
@@ -212,6 +254,13 @@ function ChatService.init()
 	Players.PlayerRemoving:Connect(function(player)
 		buckets[player] = nil
 		canChatCache[player.UserId] = nil
+		-- their lines stay a while, for anyone reporting them just after they left
+		local id = player.UserId
+		task.delay(600, function()
+			if not Players:GetPlayerByUserId(id) then
+				said[id] = nil
+			end
+		end)
 	end)
 end
 

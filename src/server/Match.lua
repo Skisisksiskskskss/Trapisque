@@ -234,6 +234,12 @@ function Match:_makeEngine(mapId: string)
 		opts.firstSeat = human
 	end
 	self.engine = Engine.new(opts)
+	-- everyone stands on the base they've earned with the character they ended up with
+	for seat, info in self.seats do
+		if info.player and info.look then
+			info.look.base = DataService.baseFor(info.player, self.engine.players[seat].character)
+		end
+	end
 end
 
 function Match:humans(): { Player }
@@ -794,6 +800,7 @@ function Match:dropIn(player: Player): (boolean, string?)
 	self.feats[seat] = {}
 	self.clock:activity(seat, os.clock())
 	local events = self.engine:takeSeat(seat, { id = "u" .. player.UserId, userId = player.UserId, name = player.DisplayName })
+	info.look.base = DataService.baseFor(player, self.engine.players[seat].character)
 	-- the newcomer gets the whole board first, then everyone sees them arrive
 	local payload = self:resync(player)
 	if payload then

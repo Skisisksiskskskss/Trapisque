@@ -1,9 +1,11 @@
 --[[
 	CharacterSelect
 	Pick the character you take into matches. Each one shows its card (tap or hover it to
-	read its passive and ability), your mastery level with them, and the title you're
-	working towards. Playing a character levels up their mastery (Meta/Progress). Four
-	are free; the rest unlock as your level goes up (Config.CharacterUnlocks).
+	read its passive and ability), your mastery level with them, and what you're working
+	towards: titles, and the character's own base to stand on in matches (at mastery 5,
+	gold at 10; the little stand by MASTERY shows it). Playing a character levels up
+	their mastery (Meta/Progress). Four are free; the rest unlock as your level goes up
+	(Config.CharacterUnlocks).
 
 		CharacterSelect.open(popups)
 		CharacterSelect.strip(parent, opts) -> { root, destroy }  -- the lobby's "your character" bar
@@ -22,6 +24,7 @@ local Icons = require(UI.Icons)
 local Widgets = require(UI.Widgets)
 local Cards = require(UI.Cards)
 local CardStyle = require(UI.CardStyle)
+local BaseArt = require(UI.BaseArt)
 
 local Client = UI.Parent
 local Net = require(Client.Net)
@@ -52,6 +55,26 @@ local function nextTitle(level: number): (number?, string?)
 		return nil, nil
 	end
 	return best, Progress.masteryTitleName[bestTier :: string]
+end
+
+-- What mastery brings next for this character: a title, their base, the gold base.
+local function nextReward(name: string, level: number): string
+	local at, titleName = nextTitle(level)
+	local baseAt, gold = nil, false
+	for i, l in Progress.baseLevels do
+		if level < l then
+			baseAt, gold = l, i == #Progress.baseLevels
+			break
+		end
+	end
+	if baseAt and at and baseAt == at then
+		return string.format("%s title + gold base at %d", tostring(titleName), at)
+	elseif baseAt and (not at or baseAt < at) then
+		return string.format("%s %s at level %d", name, if gold then "gold base" else "base", baseAt)
+	elseif at then
+		return string.format("%s %s title at level %d", name, tostring(titleName), at)
+	end
+	return "Max mastery!"
 end
 
 function CharacterSelect.open(popups: Instance)
@@ -161,6 +184,13 @@ function CharacterSelect.open(popups: Instance)
 			sizeUDim = UDim2.new(1, -12, 0, 18),
 			position = UDim2.fromOffset(6, y),
 		})
+		-- their base: faint until mastery 5 earns it
+		BaseArt.preview(cell, def.id, Progress.baseTier(level), {
+			AnchorPoint = Vector2.new(1, 0.5),
+			Position = UDim2.new(1, -3, 0, y + 9),
+			Size = UDim2.fromOffset(30, 30),
+			ZIndex = 4,
+		})
 		local bar = Widgets.progress(cell, {
 			size = UDim2.new(1, -24, 0, 10),
 			position = UDim2.fromOffset(12, y + 22),
@@ -168,9 +198,8 @@ function CharacterSelect.open(popups: Instance)
 			color = color,
 		})
 		local _ = bar
-		local at, titleName = nextTitle(level)
 		Widgets.label(cell, {
-			text = if at then (def.name .. " " .. titleName .. " title at level " .. at) else "Max mastery!",
+			text = nextReward(def.name, level),
 			font = "heavy",
 			size = 11,
 			color = C.textFaint,

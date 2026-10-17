@@ -63,6 +63,8 @@ local ChatPanel = require(UI.ChatPanel)
 local StaffPanel = require(UI.StaffPanel)
 local Shop = require(script.Parent.Shop)
 local Results = require(script.Parent.Results)
+local FishingRod = require(script.Parent.FishingRod)
+local Coach = require(script.Parent.Coach)
 
 local Client = UI.Parent
 local Net = require(Client.Net)
@@ -70,6 +72,8 @@ local State = require(Client.State)
 local Sound = require(Client.Sound)
 local Chat = require(Client.Chat)
 local Voice = require(Client.Voice)
+local Gamepad = require(Client.Gamepad)
+local Fishing = require(Shared.Meta.Fishing)
 
 local C = Theme.C
 local Rules = Config.Rules
@@ -132,6 +136,9 @@ function MatchScreen.show(payload)
 	active = self
 	self.id = payload.id
 	self.mySeat = payload.seat
+	-- seat 0: watching a friend's match (no hand, no turn of my own)
+	self.spectating = payload.spectating == true or payload.seat == 0
+	self.tutorial = payload.tutorial == true
 	self.kind = payload.kind
 	self.mode = Modes.get(payload.mode)
 	self.isTeam = self.mode ~= nil and self.mode.isTeam == true
@@ -202,6 +209,43 @@ function MatchScreen.show(payload)
 			self:_showResults(data)
 		end
 	end))
+	-- someone else landed a fish between turns
+	self.maid:add(Net.on("fish.caught", function(data)
+		if self.alive and self.board and type(data) == "table" and data.seat then
+			local def = Fishing.byId[data.catch or ""]
+			if def and def.rarity ~= "junk" then
+				self.board:floatText(self:_pawnWorld(data.seat), (if data.catch == "coin" then "FISHED A COIN!" else ("CAUGHT A " .. string.upper(def.name) .. "!")), C.sky, 18)
+			end
+		end
+	end))
+	-- a controller's shortcuts
+	self.maid:add(Gamepad.on("chat", function()
+		if self.alive then
+			self:_emotePicker()
+		end
+	end))
+	self.maid:add(Gamepad.on("ability", function()
+		if self.alive and self:_myTurn() then
+			self:_abilityClicked()
+		end
+	end))
+	self.maid:add(Gamepad.on("zoomIn", function()
+		if self.alive and self.board then
+			self.board:zoomBy(1.25)
+		end
+	end))
+	self.maid:add(Gamepad.on("zoomOut", function()
+		if self.alive and self.board then
+			self.board:zoomBy(1 / 1.25)
+		end
+	end))
+	if payload.droppedIn then
+		local def = Characters.get(payload.droppedIn.character or "")
+		Widgets.toast(string.format("You took over %s's seat: you're the %s!", tostring(payload.droppedIn.from or "a bot"), if def then def.name else "pirate"), "reward")
+	end
+	if self.spectating then
+		Widgets.toast("You're watching. Leave any time from the menu.", "info")
+	end
 
 	if payload.resync then
 		self:_reconcile(payload)
@@ -385,6 +429,13 @@ function MatchScreen:_build(container: Frame)
 	self.feed = Feed.new(self.hud)
 	self.info = Util.frame(self.hud, { Name = "Info" })
 	self.buttons = Util.frame(self.hud, { Name = "Buttons" })
+	-- fishing between turns (not while watching, nor in the guided match)
+	if not self.spectating and not self.tutorial then
+		self.rod = FishingRod.new(self.hud)
+	end
+	if self.tutorial then
+		self.coach = Coach.new(self)
+	end
 
 	self.maid:add(Root.onResize(function(_vw, _vh, m)
 		if self.alive then
@@ -569,6 +620,12 @@ function MatchScreen:_relayout(m)
 	self.hand:layout(L.hand)
 	self.dock:layout(L.ability, L.roll, m.form)
 	self.feed:layout(L.feed)
+	if self.rod then
+		self.rod:layout(L.fish)
+	end
+	if self.coach then
+		self.coach:layout(L)
+	end
 	self:_layoutTop(L, m)
 	self:_refresh()
 	if self.cancelTarget and self.hintLayout then
@@ -713,6 +770,14 @@ function MatchScreen:_destroy()
 	self.maid:clean()
 	if self.tip then
 		self.tip:destroy()
+	end
+	if self.rod then
+		self.rod:destroy()
+		self.rod = nil
+	end
+	if self.coach then
+		self.coach:destroy()
+		self.coach = nil
 	end
 	if self.board then
 		self.board:destroy()
@@ -895,6 +960,9 @@ function MatchScreen:_refresh()
 		})
 	end
 	self.hand:setSpent(v.current == self.mySeat and v.phase ~= "over" and self:_cardsLeft() <= 0)
+	if self.rod then
+		self.rod:setAllowed(v.phase ~= "over" and v.phase ~= "setup" and v.current ~= nil and v.current ~= self.mySeat)
+	end
 	-- a tip that's open says what a click does now (that changes with the turn)
 	local tf = self.tipFor
 	if tf and self.tip and self.tip.visible then
@@ -1157,6 +1225,9 @@ function MatchScreen:_play(e)
 	local board = self.board
 	local feed = self.feed
 	local v = self.view
+	if self.coach then
+		self.coach:event(e)
+	end
 
 	if t == "setup" then
 		-- one of each character per match: say so if someone else got yours first
@@ -1876,6 +1947,9 @@ function MatchScreen:_previewDie(key: any)
 	if not plan or #plan.path == 0 then
 		self.board:showPath(nil)
 		return
+	end
+	if self.coach then
+		self.coach:trigger("previewed")
 	end
 	local me = self:_player(self.mySeat)
 	local tags = self:_outcome(plan)
@@ -3060,7 +3134,7 @@ function MatchScreen:_menu()
 				height = 230,
 			})
 			Widgets.label(confirm, {
-				text = if self.kind == "practice" then "End this practice game?" else "A bot will take your seat for the rest of the game.",
+				text = if self.spectating then "Stop watching and go back to the lobby?" elseif self.tutorial then "Skip the guided match? You can play it any time from How to Play." elseif self.kind == "practice" then "End this practice game?" else "A bot will take your seat for the rest of the game.",
 				font = "heavy",
 				size = 18,
 				color = C.text,
@@ -3077,6 +3151,9 @@ function MatchScreen:_menu()
 				position = UDim2.new(0.5, 0, 1, 0),
 				onClick = function()
 					closeConfirm()
+					if self.tutorial then
+						Net.request("tutorial.skip")
+					end
 					local ok, err = Net.request("match.leave")
 					if not ok then
 						Widgets.toast(tostring(err), "error")

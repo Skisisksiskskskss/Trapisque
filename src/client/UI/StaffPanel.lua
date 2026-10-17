@@ -4,6 +4,7 @@
 	The server (AdminService) checks every action again: this only draws it.
 
 	  Players   everyone on this server; Manage opens their sheet
+	  Reports   chat reports from players (on every server), with the person's last lines
 	  Find      anyone by username, online or not (gifts wait for them to join)
 	  Server    announcements; the owner's gem rain, chest rain, weekly event, shutdown
 	  Admins    (owner) who's an admin
@@ -385,6 +386,7 @@ end
 
 local TABS = {
 	{ id = "players", text = "PLAYERS" },
+	{ id = "reports", text = "REPORTS" },
 	{ id = "find", text = "FIND" },
 	{ id = "server", text = "SERVER" },
 	{ id = "admins", text = "ADMINS", owner = true },
@@ -502,6 +504,55 @@ function StaffPanel.open(layer: Instance)
 		end
 		if #players == 0 then
 			note(list, "No one's here.", 1)
+		end
+	end
+
+	function pages.reports()
+		local list = Widgets.scroll(page, { gap = 10, padding = 6, hAlign = "Left" })
+		local reports = state and state.reports or {}
+		note(list, "What players reported from the chat, newest first, with that person's last few lines (filtered). Deal with it from MANAGE, then dismiss the report.", 0)
+		if #reports == 0 then
+			note(list, "No reports. Nice and quiet.", 1)
+		end
+		for i, r in reports do
+			local card = Util.new("Frame", {
+				Name = "Report" .. i,
+				BackgroundColor3 = C.panelRaised,
+				BorderSizePixel = 0,
+				Size = UDim2.new(1, -10, 0, 0),
+				AutomaticSize = Enum.AutomaticSize.Y,
+				LayoutOrder = i,
+				Parent = list,
+			})
+			Util.corner(card, 8)
+			Util.stroke(card, C.panelEdge, 1.5)
+			Util.pad(card, 10, 8, 10, 10)
+			Util.list(card, "y", 6, "Left", "Top").SortOrder = Enum.SortOrder.LayoutOrder
+			heading(card, string.format("%s  ·  %s", r.target or "?", r.reason or "?"), 1)
+			note(card, string.format("reported by %s  ·  %s  ·  %s", r.by or "?", os.date("%b %d %H:%M", r.t or 0), if r.where == "match" then "in a match" else "in the lobby"), 2)
+			local lines = r.lines or {}
+			for j, l in lines do
+				note(card, os.date("%H:%M", l.t or 0) .. "   " .. tostring(l.text or ""), 2 + j)
+			end
+			if #lines == 0 then
+				note(card, "(nothing they said is on record)", 3)
+			end
+			buttons(card, {
+				{ text = "MANAGE", style = "blue", onClick = function()
+					local who = nil
+					for _, p in state and state.players or {} do
+						if p.userId == r.targetId then
+							who = p
+						end
+					end
+					sheet(layer, role, who or { userId = r.targetId, name = r.target, username = r.target, online = false }, refresh)
+				end },
+				{ text = "DISMISS", onClick = function()
+					if act({ action = "dismissReport", id = r.id }) then
+						refresh()
+					end
+				end },
+			}, 100)
 		end
 	end
 
@@ -689,9 +740,17 @@ function StaffPanel.open(layer: Instance)
 			note(page, "Loading...", 1)
 			return
 		end
+		local count = #(state.reports or {})
+		tabButtons.reports:setText(if count > 0 then ("REPORTS " .. count) else "REPORTS")
 		pages[tab]()
 	end
 
+	local shown = 0
+	for _, t in TABS do
+		if not (t.owner and role ~= "owner") then
+			shown += 1
+		end
+	end
 	for i, t in TABS do
 		if t.owner and role ~= "owner" then
 			continue
@@ -699,9 +758,9 @@ function StaffPanel.open(layer: Instance)
 		tabButtons[t.id] = Widgets.button(tabs, {
 			text = t.text,
 			style = "panel",
-			textSize = if narrow then 14 else 17,
+			textSize = if narrow then 13 else 16,
 			depth = 3,
-			size = UDim2.new(0, if narrow then 92 else 130, 1, 0),
+			size = UDim2.new(1 / shown, -8 * (shown - 1) / shown, 1, 0),
 			layoutOrder = i,
 			onClick = function()
 				tab = t.id

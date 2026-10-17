@@ -131,6 +131,7 @@ end
 		buttons  { rect, size, gap, count }
 		feed     { rect, lines, align }
 		hint     rect (the "pick a tile" strip)
+		fish     rect (the fishing rod between turns: the board's bottom-right corner)
 		popup    rect (modals and sheets stay inside this)
 	}
 ]]
@@ -200,6 +201,7 @@ function Layout.match(m, players: number)
 			L.feed = { rect = rect(x1 - feedW, top, feedW, 3 * 30), lines = 3, align = "right" }
 		end
 		L.hint = rect(L.focus.x + (L.focus.w - math.min(560, L.focus.w - 20)) / 2, top, math.min(560, L.focus.w - 20), 52)
+		L.fish = rect(L.focus.x + L.focus.w - 74, L.focus.y + L.focus.h - 74, 66, 66)
 		return L
 	end
 
@@ -265,6 +267,8 @@ function Layout.match(m, players: number)
 			L.feed = { rect = rect(L.focus.x + (L.focus.w - feedW) / 2, top, feedW, 24), lines = 1, align = "center" }
 		end
 		L.hint = rect(L.focus.x + 4, top, L.focus.w - 8, 44)
+		local fs = math.max(52, minButton)
+		L.fish = rect(L.focus.x + L.focus.w - fs - 6, L.focus.y + L.focus.h - fs - 6, fs, fs)
 		return L
 	end
 
@@ -314,6 +318,8 @@ function Layout.match(m, players: number)
 	-- no spare room on an upright phone: the newest line only, briefly, over the board's top
 	L.feed = { rect = rect(x0, focusTop, rowW, 24), lines = 1, align = "center" }
 	L.hint = rect(x0, focusTop, rowW, 48)
+	local fs = math.max(52, minButton)
+	L.fish = rect(L.focus.x + L.focus.w - fs - 4, L.focus.y + L.focus.h - fs - 4, fs, fs)
 	return L
 end
 

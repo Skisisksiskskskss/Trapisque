@@ -13,7 +13,7 @@ lettering). Only the characters have faces.
 | --- | --- | --- |
 | ![Match on a PC](docs/previews/pc-match.png) | ![Lobby on a PC](docs/previews/pc-lobby.png) | ![Match on an upright phone](docs/previews/upright-match.png) |
 
-More in [docs/previews](docs/previews): the three maps, the character picker, the
+More in [docs/previews](docs/previews): the maps, the character picker, the
 locker, results, and phones held both ways. They're real screenshots of the game,
 rendered offline (see [Screenshots](#screenshots)).
 
@@ -27,26 +27,46 @@ rendered offline (see [Screenshots](#screenshots)).
 - **Hidden traps.** Trap cards hide near you where only your team can see them. Guess
   where rivals will land; when one steps on yours: GOTCHA! (coins and Power for you).
 - **Bonks.** Land on a rival and they fly back 2 tiles. BOING.
-- **Six characters, all fair.** Mage, Trapper, Fire Starter, Naturalist, Warper and
-  Overseer, each with a passive and a Power ability, tuned with thousands of bot games
-  per map so each one wins about as often as the others (see
-  [docs/DESIGN.md](docs/DESIGN.md)).
+- **Eight characters, all fair.** Mage, Trapper, Fire Starter and Naturalist are free;
+  Warper, Overseer, Gambler and Cannoneer unlock at levels 3, 5, 7 and 10. Each has a
+  passive and a Power ability, tuned with thousands of bot games per map so each one
+  wins about as often as the others (see [docs/DESIGN.md](docs/DESIGN.md)).
 - **Cards you plan around.** One card per turn: traps, boosts that change which tiles
   you can reach, board pieces (teleporters, trampolines, conveyor belts) and potions
   from the Potion Seller.
-- **Three maps**, each a place the trail winds through: Blissful Tricks (a tropical
+- **Five maps**, each a place the trail winds through: Blissful Tricks (a tropical
   island cut by two rivers), Junction Dungeon (a rocky sea fortress with locked gates
-  and secret tunnels for its shortcuts) and Slimy Snares (a swamp boardwalk spiralling
-  in to the treasure, past slime pools). Each has its own hazard. **Five modes**: Chaos (free-for-all), Assist (2 vs 2), Factions (three
-  teams of 2), World War Four (3 vs 3) and a **Weekly Event** with a twist on the
-  rules (Trap Frenzy, Bonk Bonanza, Power Surge, Triple Dice). See
-  [docs/RULES.md](docs/RULES.md) for the rules as played.
-- **Reasons to come back.** Character mastery (levels, Gems and titles), three daily
+  and secret tunnels for its shortcuts), Slimy Snares (a swamp boardwalk spiralling
+  in to the treasure, past slime pools), Haunted Hollow (a graveyard where two ghosts
+  drift back along the trail every round and scare anyone they meet) and Mount Kaboom
+  (a volcano that erupts every third round, scorching anyone standing in its lava
+  streams). Each has its own hazard, and its own card that shrugs it off (the Lantern,
+  the Fire Cloak...). **Six modes**: Chaos (free-for-all), **Blitz** (first treasure
+  wins, 30-second turns), Assist (2 vs 2), Factions (three teams of 2), World War Four
+  (3 vs 3) and a **Weekly Event** with a twist on the rules (Trap Frenzy, Bonk
+  Bonanza, Power Surge, Triple Dice). See [docs/RULES.md](docs/RULES.md) for the rules
+  as played.
+- **A guided first match.** New players are offered a short Blitz game against gentle
+  bots, with the Overseer pointing at the dice, the cards and the ability as each one
+  comes up (scripted for a first win, and 100 Gems). It's in How to Play any time.
+- **Something to do between turns.** A fishing rod in the board's corner: cast, wait
+  for the bite, tap fast to reel. Fish go in your fish log (ten catches, one golden),
+  and now and then you land a coin for the match.
+- **Watch a friend.** Friends in a match show up under WATCH in the party panel; you
+  see the board the way every player does (no one's hand, no hidden traps).
+- **Badges.** Twenty Roblox badges for moments, not grinding: a Gotcha Hat Trick, Snake
+  Eyes, getting scared by a ghost, the Golden Fish, playing with the owner... with a
+  Collection page for your badges and fish log.
+- **Reasons to come back.** Character mastery (levels, Gems, titles, and the
+  character's own base to stand on in matches at mastery 5, gilded at 10), three daily
   quests (with a free swap and a bonus chest), a 7-day login streak, trophies and ranks
-  from Quick Play with a trophy leaderboard.
+  from Quick Play with a trophy leaderboard, and four daily deals in the Shop (cosmetics
+  for Gems, a new set every day).
 - **Match lengths.** Quick (2 treasures), Standard (3) and Classic (4).
 - **Quick Play matchmaking.** Queue for any mode on your own or as a party. Queues are
-  shared by every server, and bots fill empty seats if you wait long enough.
+  shared by every server, and bots fill empty seats if you wait long enough. Every
+  Quick Play match opens with a vote between three maps, and in its first few rounds
+  someone new in the queue can drop into a bot's seat.
 - **Parties.** Create a party and invite friends with Roblox invites, or share its
   6-letter code. A party can be open to its code or invite-only. Joining a party on
   another server takes you to that server.
@@ -82,15 +102,23 @@ rendered offline (see [Screenshots](#screenshots)).
   quick lines ("Ahoy!", "Good luck!", "GG!") are free for everyone, whatever their
   Roblox chat settings. Typing anything else is the Chat pass, and still needs chat
   switched on in your Roblox settings: every typed line goes through Roblox's filter
-  for each person who reads it. Voices and bubbles can be switched off in Settings,
-  and you can tap a name in the chat to hide that person's lines.
+  for each person who reads it. Voices and bubbles can be switched off in Settings.
+  Tap someone's line to hide their lines (just for you), block them on Roblox, or
+  report them to the game's staff with their last few lines. People you've blocked on
+  Roblox never show up in the chat.
 - **Owner and admin panels.** The game's owner (and the admins they pick) get a panel
   from Settings or the match menu: mute, kick, ban (admins for up to 3 days, the owner
   for good), end a stuck match, announce to the server; and for the owner, give anyone
   gamepasses, Gems, free chests, any item or the whole collection (online or not: gifts
   wait for them), make or remove admins, announce to every server, rain Gems or chests
   on a server, switch the weekly event and shut every server down for an update.
-  Every action is checked on the server and logged.
+  Chat reports from every server wait in its REPORTS tab. Every action is checked on
+  the server and logged.
+- **Controllers.** On Xbox, PlayStation or a pad, the left stick moves a cursor and A
+  clicks; B closes the window on top, X opens the chat, Y uses your ability and L1 / R1
+  zoom the board.
+- **Join the group.** Joining the game's Roblox group is worth 150 Gems, once (the
+  Shop's Community card).
 - **Any screen.** The layout follows the device: the board fills the screen on a PC,
   phones held sideways keep the cards under your left thumb and the dice under your
   right, and phones held upright stand the board up. Nothing sits over Roblox's own
@@ -199,6 +227,7 @@ code (no outside or generated images; `tools/shots.sh art store` redraws them):
 | `store-icon.png` (512 x 512) | **Configure → Basic info → Icon** |
 | `store-banner.png` (1920 x 1080) | the first **Thumbnail** (Configure → Basic info), and anywhere you share the game |
 | `store-lobby.png`, `store-match.png`, `store-match-bubble.png`, `store-characters.png`, `store-chest-reveal.png` (1920 x 1080) | the other thumbnails, in that order |
+| `badges/*.png` (512 x 512) | one badge each (below); `tools/shots.sh badges` redraws them |
 
 Before switching the experience to **Public**:
 
@@ -212,19 +241,30 @@ Before switching the experience to **Public**:
    real money buys a random item.
 4. **Configure → Places → Server size**: 20 is a good lobby size (matches run on their
    own reserved servers).
-5. **Configure → Basic info**: genre *Strategy* (or *Party & Casual*), devices: computer,
-   phone and tablet. Name, description and tags below.
-6. Set the experience to **Public**.
+5. **Configure → Basic info**: genre *Strategy* (or *Party & Casual*), devices:
+   computer, phone, tablet and console (the game plays with a controller; console
+   needs the questionnaire above). Name, description and tags below.
+6. **Badges** (**Engagement → Badges**): create the 20 badges in
+   `src/shared/Meta/Badges.lua` with the picture of the same name from
+   `docs/store/badges` and its text as the description, and paste each id into
+   `Config.Badges`. Roblox gives a few free badges a day and charges Robux for more,
+   so this can be spread over a few days: a badge left at 0 is still earned and shown
+   in the game, just not on Roblox.
+7. **The group**: make a Roblox group for the game (or publish the game under one) and
+   put its id in `Config.Community.GroupId`. Left at 0, a group-owned game uses its own
+   group; a game owned by a person has no group to join until you set one.
+8. Set the experience to **Public**.
 
 Store text to paste:
 
 > **Trapisque: a pirate board game for 2 to 6 players.** Race along the trail to the
 > treasure chest, roll two dice and pick one every turn, hide traps only your crew can
-> see, and bonk your rivals off their tiles. Six pirates, each with their own power:
-> freeze the table, charge with a boar stampede, warp past the leader... Quick 10-minute
-> games, team modes, a weekly event with a twist on the rules, daily quests and
-> Treasure Chests full of cosmetics. Play with friends in a party, or jump into Quick
-> Play.
+> see, and bonk your rivals off their tiles. Eight pirates, each with their own power:
+> freeze the table, charge with a boar stampede, warp past the leader, fire yourself
+> out of a cannon... Five maps, from a tropical island to a haunted graveyard and an
+> erupting volcano. Quick 10-minute games, 5-minute Blitz, team modes, a weekly event
+> with a twist on the rules, daily quests, badges and Treasure Chests full of
+> cosmetics. Play with friends in a party, or jump into Quick Play.
 
 ## Gamepasses
 
@@ -307,7 +347,7 @@ argument counts.
 `tools/shots.sh` takes real screenshots of the game without Studio: it plays the smoke
 test (below) on the fake Roblox and draws what's on screen at a few moments (the
 lobby and its pages, the character picker, a match, the results) on a PC and on
-phones held both ways; `tools/shots.sh boards` draws just the three maps. The fake
+phones held both ways; `tools/shots.sh boards` draws just the maps. The fake
 measures text with the game's real fonts (`tests/fake/fonts.luau`, from
 `tools/gen_font_metrics.py`), so layouts wrap and truncate as they do in Roblox. It
 needs Python 3 with Pillow and the Bangers and Oswald fonts from Google Fonts in
@@ -321,8 +361,9 @@ LUAU=/path/to/luau OUT=docs/previews tools/shots.sh pc phone upright boards
 
 `tools/smoke.sh` plays the whole game (server and client) on a fake Roblox in
 `tests/fake`: a scripted player tours the lobby and plays a match to the end with the
-real controls on a PC, on phones held both ways, in a team mode, in the weekly event
-and through Quick Play (going idle until a bot takes over, then coming back). Any Lua
+real controls on a PC, on phones held both ways, in a team mode, in the weekly event,
+through Quick Play (its map vote, then going idle until a bot takes over and coming
+back) and through the guided first match (which has to end in a win). Any Lua
 error, warning, table Roblox would mangle on a remote or in a DataStore, or work left
 running after the match fails it. It takes about two minutes:
 
@@ -342,7 +383,7 @@ the same kit:
   light lettering always outlined in it
 - a short list of flat pirate inks from `Theme` (no purple, no gradients, no glow);
   hard ink shadows down and to the right, never blurred ones
-- only the six characters have faces; everything else is a plain object
+- only the characters have faces; everything else is a plain object
 - a character's colour is its player's colour, everywhere
 - two fonts: Bangers for anything loud, Oswald for reading
 - the same sticker drawing wherever a thing appears (card, board, effects, menus)

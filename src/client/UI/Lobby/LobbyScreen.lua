@@ -47,6 +47,7 @@ local LobbyScreen = {}
 
 local player = Players.LocalPlayer
 local screen = nil -- { root, popups, invites, maid }
+local welcomed = false -- the guided match was offered this session
 local tab = "play" -- upright phones: the panel on show
 
 local function place(f: GuiObject, r)
@@ -604,6 +605,19 @@ function LobbyScreen.show()
 		end
 		State.set("pendingInvites", {})
 
+		-- new here: offer the guided first match
+		if not welcomed then
+			local profile = State.get("profile")
+			if profile and profile.tutorialDone == false then
+				welcomed = true
+				task.delay(0.9, function()
+					if screen and screen.root == root then
+						LobbyScreen.welcome(popups)
+					end
+				end)
+			end
+		end
+
 		return function()
 			maid:clean()
 			if screen and screen.root == root then
@@ -611,6 +625,67 @@ function LobbyScreen.show()
 			end
 		end
 	end)
+end
+
+-- Welcome aboard: the guided first match (or not now; it's in How to Play).
+function LobbyScreen.welcome(popups: Instance)
+	local _, _, narrow = Widgets.room()
+	local content, close = Widgets.modal(popups, {
+		title = "Welcome Aboard!",
+		titleWidth = 320,
+		width = 560,
+		height = if narrow then 400 else 360,
+		closeOnBackdrop = false,
+	})
+	local face = Util.frame(content, {
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0, 0),
+		Size = UDim2.fromOffset(96, 96),
+	})
+	Icons.medallion(face, "overseer", Theme.Character.overseer, { Size = UDim2.fromScale(1, 1) })
+	Widgets.label(content, {
+		text = "New to Trapisque? Race me to the treasure in a quick guided match: I'll show you the dice, the traps and your Power as we go. It takes about 3 minutes.",
+		font = "heavy",
+		size = 17,
+		color = C.text,
+		align = "center",
+		wrap = true,
+		sizeUDim = UDim2.new(1, 0, 0, if narrow then 110 else 80),
+		position = UDim2.fromOffset(0, 104),
+	})
+	local row = Util.frame(content, {
+		AnchorPoint = Vector2.new(0, 1),
+		Position = UDim2.fromScale(0, 1),
+		Size = UDim2.new(1, 0, 0, 54),
+	})
+	Util.list(row, "x", 12, "Center", "Center")
+	Widgets.button(row, {
+		text = "NOT NOW",
+		style = "panel",
+		textSize = 18,
+		size = UDim2.fromOffset(160, 50),
+		layoutOrder = 1,
+		onClick = function()
+			close()
+			Net.request("tutorial.skip")
+		end,
+	})
+	Widgets.button(row, {
+		text = "LET'S GO!",
+		icon = "play",
+		style = "green",
+		textSize = 20,
+		size = UDim2.fromOffset(220, 50),
+		layoutOrder = 2,
+		onClick = function()
+			local ok, err = Net.request("match.tutorial")
+			if ok then
+				close()
+			else
+				Widgets.toast(tostring(err), "error")
+			end
+		end,
+	})
 end
 
 -- A party invite card that waits for Accept / Decline (or runs out).

@@ -416,6 +416,20 @@ function Results.show(layer: Instance, data, mySeat: number, isTeam: boolean, on
 		for i, b in reward.bonus or {} do
 			Widgets.badge(chips, { text = b, color = C.good, height = 26, textSize = 14, layoutOrder = 10 + i })
 		end
+		-- a level-up that unlocked someone new to play
+		for i, id in reward.unlocked or {} do
+			local cdef = Characters.get(id)
+			if cdef then
+				task.delay(1 + i * 0.8, function()
+					Widgets.toast("New character unlocked: the " .. cdef.name .. "! Pick them in the lobby.", "reward")
+				end)
+			end
+		end
+		if reward.tutorialGems then
+			task.delay(0.8, function()
+				Widgets.toast("Guided match complete! +" .. tostring(reward.tutorialGems) .. " Gems. Now go Find a Match!", "reward")
+			end)
+		end
 	end
 	local leave = Widgets.button(bottom, {
 		text = "LOBBY",

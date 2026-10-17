@@ -491,8 +491,17 @@ function DataService.publicLook(player: Player)
 		level = data.level,
 		vip = vip,
 		-- the base your character stands on: earned with mastery (Progress.baseTier)
-		base = Progress.baseTier(Progress.masteryLevel(data.mastery[DataService.selectedCharacter(player)] or 0)),
+		base = DataService.baseFor(player, DataService.selectedCharacter(player)),
 	}
+end
+
+-- The base `character` stands on for this player: 0 none yet, 1 their base, 2 gilded.
+function DataService.baseFor(player: Player, character: string?): number
+	local data = DataService.get(player)
+	if not data or not character then
+		return 0
+	end
+	return Progress.baseTier(Progress.masteryLevel(data.mastery[character] or 0))
 end
 
 -- A catch for the fish log; returns how many of it they have now.
@@ -550,13 +559,8 @@ function DataService.claimCommunity(player: Player): (boolean, string?)
 		return false, "There's no group to join yet."
 	end
 	local ok, member = pcall(function()
-		return (player :: any):IsInGroupAsync(groupId)
+		return player:IsInGroupAsync(groupId)
 	end)
-	if not ok then
-		ok, member = pcall(function()
-			return player:IsInGroup(groupId)
-		end)
-	end
 	if not ok then
 		return false, "Couldn't check right now. Try again in a moment."
 	end

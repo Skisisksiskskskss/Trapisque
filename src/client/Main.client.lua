@@ -31,6 +31,9 @@ local StaffPanel = require(Client.UI.StaffPanel)
 local _Chat = require(Client.Chat) -- starts listening for chat lines straight away
 local LobbyScreen = require(Client.UI.Lobby.LobbyScreen)
 local MatchScreen = require(Client.UI.Match.MatchScreen)
+local MapVote = require(Client.UI.Match.MapVote)
+local BadgeToast = require(Client.UI.BadgeToast)
+local Gamepad = require(Client.Gamepad)
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Progress = require(ReplicatedStorage.Shared.Meta.Progress)
@@ -70,6 +73,7 @@ parkCamera()
 workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(parkCamera)
 
 Root.init()
+Gamepad.init()
 
 ---------------------------------------------------------------------------
 -- server pushes
@@ -111,10 +115,26 @@ end)
 Net.on("match.waiting", function(data)
 	Root.curtain(string.format("Waiting for players... %d / %d", data.arrived or 0, data.expected or 0))
 end)
+Net.on("match.vote", function(data)
+	Root.curtain(nil)
+	State.set("queue", nil)
+	MapVote.show(Root.popups, data)
+end)
+Net.on("match.voted", function(data)
+	if type(data) == "table" and data.map then
+		MapVote.result(data.map)
+	end
+end)
 Net.on("match.start", function(payload)
 	Root.curtain(nil)
 	State.set("queue", nil)
+	MapVote.close()
 	MatchScreen.show(payload)
+end)
+Net.on("badge", function(data)
+	if type(data) == "table" and data.key then
+		BadgeToast.show(Root.toasts, data.key)
+	end
 end)
 Net.on("match.closed", function()
 	if MatchScreen.current() then

@@ -20,8 +20,9 @@ declare -A SCENARIOS=(
 	[teams]='name = "teams", w = 1366, h = 768, mode = "assist", map = "Blissful Tricks", seed = 3'
 	[event]='name = "event", w = 1920, h = 1080, mode = "event", map = "Junction Dungeon", bots = 3, seed = 9'
 	[quickplay]='name = "quickplay", w = 1280, h = 800, mode = "chaos", quickplay = true, idle = true, seed = 13'
+	[tutorial]='name = "tutorial", w = 1280, h = 720, tutorial = true, seed = 21'
 )
-ORDER=(pc phone upright teams event quickplay)
+ORDER=(pc phone upright teams event quickplay tutorial)
 if [ $# -gt 0 ]; then
 	ORDER=("$@")
 fi

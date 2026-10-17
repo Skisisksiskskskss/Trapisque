@@ -1012,6 +1012,10 @@ function Widgets.modal(layer: Instance, o: { [string]: any })
 			return
 		end
 		closed = true
+		local i = table.find(Widgets.openModals, close)
+		if i then
+			table.remove(Widgets.openModals, i)
+		end
 		Sound.play("close")
 		Util.tween(dim, 0.15, { BackgroundTransparency = 1 })
 		Util.tween(Util.scaler(panel), 0.15, { Scale = 0.8 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
@@ -1039,8 +1043,23 @@ function Widgets.modal(layer: Instance, o: { [string]: any })
 				close()
 			end
 		end)
+		-- (a controller's B button closes the top one: Widgets.closeTop)
+		table.insert(Widgets.openModals, close)
 	end
 	return content, close, panel
+end
+
+-- The close functions of the open modals, oldest first.
+Widgets.openModals = {} :: { () -> () }
+
+-- Closes the modal on top (a controller's B, Escape). Returns whether there was one.
+function Widgets.closeTop(): boolean
+	local close = Widgets.openModals[#Widgets.openModals]
+	if close then
+		close()
+		return true
+	end
+	return false
 end
 
 local toastHolder: Frame? = nil

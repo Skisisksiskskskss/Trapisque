@@ -143,8 +143,11 @@ drinks an X-Ray Potion). Rivals just see a puff of smoke next to you.
 | Bridge | Works by itself | Carries you across one river. |
 | Key | Works by itself | Opens one locked gate or gated shortcut. |
 | Boots | Works by itself | Carries you through one slime pool. |
+| Lantern | Works by itself | Shines one ghost out of your way, so it can't scare you. **(digital)** |
+| Fire Cloak | Works by itself | Carries you across one lava stream, or keeps you safe from one eruption. **(digital)** |
 
-The Assist wheel's Bridge / Key / Boots slot gives the current map's counter card.
+The Assist wheel's counter-card slot gives the current map's counter card (Bridge,
+Key, Boots, Lantern or Fire Cloak).
 
 ## Board pieces
 
@@ -182,9 +185,12 @@ Each map has its own hazard; the Naturalist walks straight through all of them.
 | Blissful Tricks (36 tiles, 2 rivers) | River (counter: Bridge) | It stops you. |
 | Junction Dungeon (46 tiles, 3 gates) | Locked gate (counter: Key) | It stops you. A Key also opens a gated shortcut, which you take automatically. |
 | Slimy Snares (43 tiles, 3 pools) | Slime pool (counter: Boots) | It eats 5 of your steps; with 5 or fewer left you're stuck in it. **(digital)** |
+| Haunted Hollow (40 tiles, 2 ghosts) | Ghost (counter: Lantern) | Walking into a ghost stops you: BOO! You run 1 tile back the way you came. At the end of every round each ghost drifts 2 tiles back along the trail (from the start it wraps round to just before the Treasure). **(digital)** |
+| Mount Kaboom (42 tiles, 2 lava streams) | Lava stream (counter: Fire Cloak) | It stops you, like a river. The volcano erupts at the end of every 3rd round: anyone standing in a stream is set Burning and scrambles 2 tiles back (a Fire Cloak saves you). The board rumbles the round before. **(digital)** |
 
-The counter card is used up when it carries you past. The Naturalist ignores all
-hazards.
+The counter card is used up when it carries you past (or saves you). The Naturalist
+walks through every hazard, but an eruption still catches anyone standing in a stream
+when it goes off. A Gambler's Double Down leaps over all of them.
 
 ## Characters
 
@@ -196,12 +202,18 @@ hazards.
 | Naturalist | **Wild Walker:** rivers, locked gates and slime never stop or slow you. | **Stampede (12):** charge 2 tiles forward with a herd of wild boars; every rival on those tiles (or where you land) is knocked back 2 tiles. **(digital)** |
 | Warper | **Slippery:** can't be swapped by anyone else. | **Warp (10):** swap places with a player up to 7 tiles away. |
 | Overseer | **All-Seeing:** sees every hidden trap. | **Nudge (4):** move any player, even yourself, 2 tiles forward or back. |
+| Gambler | **Loaded Dice:** your dice never roll a 1. | **Double Down (17):** this turn your move counts double, and you leap right over rivers, gates, slime, ghosts and lava. **(digital)** |
+| Cannoneer | **Broadside:** your bonks knock rivals back 3 tiles instead of 2. | **Cannonball (8):** fire yourself at the nearest rival up to 6 tiles ahead and bonk them; with nobody there you still fly 3 tiles. **(digital)** |
+
+Mage, Trapper, Fire Starter and Naturalist are free. The others unlock with your
+account level: Warper at 3, Overseer at 5, Gambler at 7, Cannoneer at 10. **(digital)**
 
 ## Modes
 
 | Mode | Players | Teams |
 | --- | --- | --- |
 | Chaos Trapisque | 2 to 6 | Free-for-all |
+| Blitz | 2 to 6 | Free-for-all: the first treasure wins, 30-second turns **(digital)** |
 | Assist Trapisque | 4 | 2 vs 2 (pooled treasures) |
 | Factions | 6 | Three teams of 2 (pooled) |
 | Weekly Event | 2 to 6 | Free-for-all with this week's twist **(digital)** |
@@ -220,7 +232,11 @@ a teammate a card (it counts as your card for the turn).
 | Triple Dice | Roll three dice and pick one; the best leftover charges Power. |
 
 Bots fill empty seats in Quick Play when a human has waited long enough, and in
-practice matches.
+practice matches. Every Quick Play match opens with a 10-second vote between three
+maps (the most votes wins; a tie or no votes picks one of the tied at random). In a
+free-for-all Quick Play match, for its first 6 rounds and before anyone has found a
+treasure, someone new in the queue can drop into a bot's seat (the one furthest
+along) and play on from there.
 
 ## Outside the match (digital)
 
@@ -237,6 +253,21 @@ practice matches.
   winner gains the most, last place loses a few, new players lose less). Ranks: Wood,
   Bronze (100), Silver (300), Gold (600), Diamond (1000), Legend (1600). There's a
   trophy leaderboard.
+- **Mastery bases:** at mastery 5 a character gets their own base to stand on in
+  matches (embers for the Fire Starter, a poker chip for the Gambler...), and it turns
+  gold at mastery 10. They can't be bought.
+- **Fishing between turns:** while someone else plays, cast the rod in the board's
+  corner and tap fast when it bites. Catches fill your fish log; a coin catch (once a
+  round at most) adds a coin for this match. It never changes anything else.
+- **The guided first match:** a Blitz game on Blissful Tricks against gentle bots,
+  with the Overseer explaining each part as it comes up. It's scripted so you win,
+  pays 100 Gems the first time, and can be replayed from How to Play.
+- **Badges:** 20 Roblox badges for moments in matches and around them (listed in the
+  Collection, with your fish log).
+- **Daily deals:** four cosmetics for Gems in the Shop, a new set every day (00:00 UTC).
+- **The group:** joining the game's Roblox group pays 150 Gems, once.
+- **Watching:** you can watch a friend's match; spectators see only what every player
+  sees.
 - Practice matches pay half rewards. Cosmetics (pawns, dice, trails, emotes, titles)
   never change how a match plays.
 
@@ -262,3 +293,5 @@ practice matches.
     Removed: Mud, Shifting Sands, Regeneration.
 13. **Moving tokens:** a used token jumps to a random free tile.
 14. **Timers, away bots and leavers** replaced by bots.
+15. **Two more maps** (Haunted Hollow's drifting ghosts, Mount Kaboom's eruptions), two
+    more characters (Gambler, Cannoneer) and Blitz (first treasure wins).

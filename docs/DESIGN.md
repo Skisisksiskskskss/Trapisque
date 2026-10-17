@@ -145,15 +145,72 @@ Power and pushed the Overseer to 31% in 4-player games; as a move-only die with 
 doubles total away (backwards only) was tried first and dropped the Naturalist to 13
 to 17%, so doubles keep the total as a choice.
 
+**With eight characters and five maps** (the Gambler, the Cannoneer, Haunted Hollow
+and Mount Kaboom added; each game seats a random set of characters, so each one plays
+about half the 4-player games). 4-player Quick, 1000 games per map, about ±4 points
+is noise:
+
+| 4 players, Quick | Mage | Trapper | Fire Starter | Naturalist | Warper | Overseer | Gambler | Cannoneer |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Blissful Tricks | 22.1% | 23.2% | 25.0% | 24.6% | 26.2% | 24.8% | 26.6% | 27.6% |
+| Junction Dungeon | 22.3% | 22.2% | 25.8% | 28.0% | 24.2% | 22.0% | 31.3% | 24.3% |
+| Slimy Snares | 24.1% | 29.5% | 25.0% | 25.2% | 25.0% | 22.0% | 26.6% | 22.5% |
+| Haunted Hollow | 25.6% | 22.4% | 21.1% | 30.7% | 24.4% | 22.8% | 29.5% | 23.5% |
+| Mount Kaboom | 21.9% | 25.9% | 26.2% | 28.3% | 25.2% | 20.4% | 27.4% | 24.5% |
+
+2 players (500 games per map; each character plays about a quarter of them, so about
+±9 points is noise) and 6 players (400 games per map, about ±4 points):
+
+| 2 players, Quick (fair 50%) | Mage | Trapper | Fire Starter | Naturalist | Warper | Overseer | Gambler | Cannoneer |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Blissful Tricks | 48.4% | 32.3% | 58.7% | 47.2% | 44.3% | 50.8% | 63.2% | 54.0% |
+| Junction Dungeon | 51.6% | 41.7% | 57.1% | 50.4% | 37.4% | 44.3% | 62.4% | 53.2% |
+| Slimy Snares | 59.5% | 43.3% | 50.8% | 48.8% | 37.4% | 49.2% | 57.1% | 52.4% |
+| Haunted Hollow | 48.4% | 47.2% | 47.6% | 51.2% | 47.8% | 43.4% | 54.1% | 59.7% |
+| Mount Kaboom | 46.0% | 46.5% | 50.0% | 59.8% | 41.7% | 54.1% | 47.4% | 54.0% |
+
+| 6 players, Quick (fair 16.7%) | Mage | Trapper | Fire Starter | Naturalist | Warper | Overseer | Gambler | Cannoneer |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Blissful Tricks | 18.8% | 14.3% | 15.1% | 16.8% | 22.1% | 16.3% | 18.6% | 11.2% |
+| Junction Dungeon | 14.5% | 13.6% | 14.8% | 16.5% | 23.8% | 16.3% | 18.3% | 15.6% |
+| Slimy Snares | 13.9% | 16.3% | 15.8% | 19.8% | 23.2% | 10.3% | 22.9% | 11.2% |
+| Haunted Hollow | 12.5% | 16.6% | 15.4% | 17.8% | 19.8% | 14.6% | 24.3% | 12.2% |
+| Mount Kaboom | 14.5% | 18.3% | 15.8% | 18.8% | 19.1% | 13.0% | 18.6% | 15.3% |
+
+How the new pieces were tuned:
+
+- **Gambler.** Its first ability, High Roller, left it winning 5 to 13%. **Double
+  Down** started as just a doubled move, which was strong where hazards are few and
+  weak where they stop you; leaping every hazard on the way made it the same on every
+  map, and 17 Power (the most of anyone) brought it into line. Loaded Dice (never a 1)
+  stays modest because you still choose which die to move with.
+- **Cannoneer.** Broadside (bonks push 3, not 2) plus **Cannonball** (fly up to 6 at
+  the nearest rival and bonk them, or fly 3) for 8 Power. A move and a bonk in one, so
+  it's useful whether you're behind or ahead. It's the weakest with 6 players (11 to
+  16%), where bonks help the other four as much as you.
+- **Haunted Hollow.** Ghosts drift 2 tiles back every round and scare you 1 tile back.
+  More ghosts or a bigger scare handed the map to the Naturalist (who walks through
+  them); 2 ghosts with a 1-tile scare keep everyone close.
+- **Mount Kaboom.** Several designs were tried: a molten wall that only the Naturalist
+  could cross (98% Naturalist), lava you wade through slowly, and finally two lava
+  streams that stop you like rivers, with an eruption every third round that scorches
+  anyone standing in one (Burning, 2 tiles back). The eruption is what stops the
+  Naturalist from treating the streams as free: she can still be standing in one when
+  it goes off.
+
 **Still worth watching:**
 
 - **2 players** stays the widest (38 to 61%): with one rival, the Trapper's hidden
   traps have one target who can often play around them, and the Overseer's vision
   matters most. Buffing the Trapper's bounty to 3 tiles barely helped with 2 players
   but pushed the Trapper to 31 to 43% with 4, so it stays.
-- **Warper with 6 players** (20 to 22% vs 16.7%): with six on the board someone is
+- **Warper with 6 players** (20 to 24% vs 16.7%): with six on the board someone is
   always within 7 tiles ahead. Raising Warp to 11 Power helped there but made the
   Warper weak in 4-player Standard games (19 to 22%).
+- **Gambler** sits at the top of most tables (and 62 to 63% with 2 players on the
+  first two maps); if real games agree, Double Down's cost (`Config.Characters.gambler`)
+  is the dial. The **Cannoneer** and the **Overseer** are the ones to lift for 6
+  players.
 - These are bot-vs-bot numbers. Real players will find different lines; the balance
   report (`tests/balance.luau`) is the tool to re-check after any tuning, and every
   number lives in `Config.Characters` / `Config.Rules`.
@@ -167,6 +224,12 @@ to 17%, so doubles keep the total as a choice.
 | Login streak | 30 → 150 Gems over a week, a chest on day 7. | Toast on login, QUESTS page |
 | Trophies and ranks | Quick Play results move your trophies (placement-based, gentle for new players); Wood to Legend; a trophy leaderboard. The long-term goal for older players. | Profile chip, results, Top Players |
 | Weekly event | A rotating twist (Trap Frenzy, Bonk Bonanza, Power Surge, Triple Dice) with its own queue, so the game feels different week to week without changing the core. | Play panel, How to Play |
+| Character unlocks | Four characters free, four unlocked at levels 3, 5, 7 and 10: a reason to keep playing the first week, and fewer rules to learn at once. | Character picker |
+| Mastery bases | The character's own base under them on the board at mastery 5, gold at 10. Not for sale, so it says "I know this one" to everyone in the match. | `UI/BaseArt`, `Meta/Progress` |
+| Badges | 20 Roblox badges for funny or rare moments (Snake Eyes, getting scared by a ghost, the Golden Fish, playing with the owner), never for grinding. They show on players' Roblox profiles, which brings their friends. | `Meta/Badges`, Collection |
+| Fishing | Something to do on other players' turns that never changes the match (one coin a round at most): a fish log to fill and the golden fish to chase. | `Meta/Fishing`, `Match/FishingRod` |
+| Daily deals | Four cosmetics for Gems, new every day, so there's always a reason to open the Shop. | `Meta/DailyShop`, Shop |
+| The first match | A guided Blitz game with the Overseer as coach, scripted for a win. New players learn the dice, the cards and the Power bar by doing, in five minutes. | `Meta/Tutorial`, `Match/Coach` |
 
 None of it touches fairness inside a match: mastery and trophies are cosmetic and
 social, Gems buy cosmetics only.
@@ -235,6 +298,11 @@ chat at all, so the game has its own:
   quick lines load once per voice and replay, and a line that can't get a voice in
   time is babbled (one squeaky syllable per word, pitched by its vowels). In the lobby
   only your own and your party's lines speak, or a full lobby would be a racket.
+- **Safe to be around.** Tap anyone's line to hide them (just for you), block them
+  through Roblox's own block prompt, or report them. People you've blocked on Roblox
+  never appear in the chat, bubbles included. A report carries that person's last
+  few lines (filtered for everyone, never the raw text) to the staff panel on every
+  server, and the thank-you points players at Roblox's own Report for anything serious.
 
 The owner and admin panels exist so the game can be run without opening Studio:
 moderation (mutes, kicks, timed bans, ending a stuck match) for admins, and gifts,

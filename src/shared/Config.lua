@@ -176,6 +176,10 @@ Config.Staff = {
 	AdminMaxBanHours = 72, -- admins can ban for up to this long; only the owner bans for good
 	StoreName = "TrapisqueStaff_v1",
 	Topic = "TrapisqueStaff",
+	-- chat reports (a player taps someone's line in the chat > REPORT)
+	ReportLines = 8, -- how many of the reported person's latest lines come with it
+	Reports = 60, -- reports kept for the panel (oldest drop off)
+	ReportCooldown = 30, -- seconds between one player's reports
 }
 
 -- Badges: create each one on the Creator Dashboard (the experience > Engagement >

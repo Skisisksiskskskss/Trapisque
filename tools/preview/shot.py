@@ -367,6 +367,7 @@ def render(shot, out_dir, scale=1.0):
             print("  skipped", op.get("c"), op.get("n"), e, file=sys.stderr)
     img = canvas.resize((int(W * scale), int(H * scale)), Image.LANCZOS).convert("RGB")
     path = os.path.join(out_dir, shot["name"] + ".png")
+    os.makedirs(os.path.dirname(path), exist_ok=True)
     img.save(path)
     return path
 

@@ -1,7 +1,8 @@
 --[[
 	Pages
-	The smaller lobby windows: the gamepass Shop, How to Play and Settings (volumes,
-	the chat's voices and bubbles, your voice, and the staff panel for staff).
+	The smaller lobby windows: the Shop (today's deals for Gems, free Gems for joining
+	the group, the gamepasses), How to Play and Settings (volumes, the chat's voices and
+	bubbles, your voice, and the staff panel for staff).
 
 		Pages.shop(popupLayer)
 		Pages.rules(popupLayer)
@@ -19,6 +20,8 @@ local Characters = require(Shared.Game.Characters)
 local Modes = require(Shared.Game.Modes)
 local Progress = require(Shared.Meta.Progress)
 local Voices = require(Shared.Meta.Voices)
+local Cosmetics = require(Shared.Meta.Cosmetics)
+local Config = require(Shared.Config)
 
 local UI = script.Parent.Parent
 local Util = require(UI.Util)
@@ -26,6 +29,7 @@ local Theme = require(UI.Theme)
 local Icons = require(UI.Icons)
 local Widgets = require(UI.Widgets)
 local VolumeRows = require(UI.VolumeRows)
+local CosmeticArt = require(UI.CosmeticArt)
 local LeaderboardPanel = require(script.Parent.LeaderboardPanel)
 local StaffPanel = require(UI.StaffPanel)
 
@@ -59,7 +63,7 @@ function Pages.shop(layer: Instance): () -> ()
 	})
 	task.spawn(Net.request, "shop.refresh")
 	Widgets.label(content, {
-		text = "Passes never change how a match plays: they're cosmetics and faster collecting.",
+		text = "Today's deals change every day. Passes never change how a match plays.",
 		font = "heavy",
 		size = if narrow then 13 else 16,
 		color = C.textSoft,
@@ -86,6 +90,155 @@ function Pages.shop(layer: Instance): () -> ()
 		end
 	end
 	local profile = State.get("profile")
+	-- today's deals: cosmetics for Gems, no random rolls
+	for i, deal in (profile and profile.deals and profile.deals.items) or {} do
+		local def = Cosmetics.get(deal.id)
+		if def then
+			local rarity = Cosmetics.rarityById[def.rarity]
+			local color = if rarity then hex(string.sub(rarity.color, 2)) else C.sun
+			local card = Util.new("Frame", {
+				Name = "Deal_" .. deal.id,
+				BackgroundColor3 = C.panelRaised,
+				BorderSizePixel = 0,
+				LayoutOrder = i,
+				Parent = row,
+			})
+			Util.corner(card, 14)
+			Util.stroke(card, color, 3)
+			Widgets.badge(card, { text = "TODAY'S DEAL", color = color, height = 24, textSize = 13, position = UDim2.fromOffset(10, 10) })
+			CosmeticArt.preview(card, deal.id, nil, {
+				AnchorPoint = Vector2.new(0.5, 0),
+				Position = UDim2.new(0.5, 0, 0, 44),
+				Size = UDim2.fromOffset(150, 150),
+			})
+			Widgets.label(card, {
+				text = def.name,
+				font = "chunky",
+				size = 24,
+				color = C.text,
+				align = "center",
+				scaled = true,
+				sizeUDim = UDim2.new(1, -20, 0, 30),
+				position = UDim2.fromOffset(10, 206),
+			})
+			Widgets.label(card, {
+				text = (if rarity then rarity.name else def.rarity) .. " " .. string.lower(def.category),
+				font = "heavy",
+				size = 15,
+				color = color,
+				align = "center",
+				sizeUDim = UDim2.new(1, -20, 0, 20),
+				position = UDim2.fromOffset(10, 238),
+			})
+			local buy = Widgets.button(card, {
+				text = Util.commas(deal.price) .. " GEMS",
+				icon = "gem",
+				style = "brass",
+				textSize = 18,
+				size = UDim2.new(1, -28, 0, 50),
+				anchor = Vector2.new(0.5, 1),
+				position = UDim2.new(0.5, 0, 1, -14),
+				onClick = function()
+					local ok, err = Net.request("shop.deal", { id = deal.id })
+					if ok then
+						Widgets.toast("It's yours: " .. def.name .. "! Wear it from the LOCKER.", "reward")
+					else
+						Widgets.toast(tostring(err), "error")
+					end
+				end,
+			})
+			table.insert(cards, {
+				update = function(p)
+					local owned = p ~= nil and table.find(p.owned or {}, deal.id) ~= nil
+					if owned then
+						buy:setText("OWNED")
+						buy:setEnabled(false)
+					end
+				end,
+			})
+		end
+	end
+	-- free Gems for joining the group (and liking the game)
+	if profile and not profile.groupReward then
+		local card = Util.new("Frame", {
+			Name = "Community",
+			BackgroundColor3 = C.panelRaised,
+			BorderSizePixel = 0,
+			LayoutOrder = 5,
+			Parent = row,
+		})
+		Util.corner(card, 14)
+		Util.stroke(card, C.mint, 3)
+		local icon = Util.frame(card, { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 14), Size = UDim2.fromOffset(86, 86) })
+		Icons.medallion(icon, "people", C.mint, { Size = UDim2.fromScale(1, 1) })
+		Widgets.label(card, {
+			text = "FREE " .. Config.Community.Gems .. " GEMS",
+			font = "chunky",
+			size = 26,
+			color = C.text,
+			align = "center",
+			scaled = true,
+			sizeUDim = UDim2.new(1, -20, 0, 32),
+			position = UDim2.fromOffset(10, 108),
+		})
+		Widgets.label(card, {
+			text = "Like the game (the thumbs up on its page) and join our Roblox group, then claim your Gems. Once per player.",
+			font = "body",
+			size = 15,
+			color = C.text,
+			wrap = true,
+			align = "center",
+			sizeUDim = UDim2.new(1, -28, 0, 110),
+			position = UDim2.fromOffset(14, 146),
+		})
+		local function groupId(): number
+			local id = Config.Community.GroupId or 0
+			if id == 0 and game.CreatorType == Enum.CreatorType.Group then
+				id = game.CreatorId
+			end
+			return id
+		end
+		Widgets.button(card, {
+			text = "JOIN GROUP",
+			icon = "people",
+			style = "blue",
+			textSize = 17,
+			size = UDim2.new(1, -28, 0, 46),
+			anchor = Vector2.new(0.5, 1),
+			position = UDim2.new(0.5, 0, 1, -72),
+			onClick = function()
+				local id = groupId()
+				if id == 0 then
+					Widgets.toast("There's no group to join yet.", "info")
+					return
+				end
+				local ok = pcall(function()
+					(game:GetService("GroupService") :: any):PromptJoinAsync(id)
+				end)
+				if not ok then
+					Widgets.toast("Search for the game's group on Roblox and join it there, then claim!", "info")
+				end
+			end,
+		})
+		Widgets.button(card, {
+			text = "CLAIM",
+			icon = "gem",
+			style = "green",
+			textSize = 18,
+			size = UDim2.new(1, -28, 0, 46),
+			anchor = Vector2.new(0.5, 1),
+			position = UDim2.new(0.5, 0, 1, -14),
+			onClick = function()
+				local ok, data = Net.request("community.claim")
+				if ok then
+					Widgets.toast("Welcome to the crew! +" .. tostring(data and data.gems or Config.Community.Gems) .. " Gems", "reward")
+					card:Destroy()
+				else
+					Widgets.toast(tostring(data), "info")
+				end
+			end,
+		})
+	end
 	for i, pass in Passes.list do
 		if pass.randomItems and profile and profile.restricted then
 			continue -- paid random-item boosts are hidden where they're restricted
@@ -96,7 +249,7 @@ function Pages.shop(layer: Instance): () -> ()
 			BackgroundColor3 = C.panelRaised,
 			BorderSizePixel = 0,
 			Size = UDim2.new(0.25, -12, 1, 0),
-			LayoutOrder = i,
+			LayoutOrder = 10 + i,
 			Parent = row,
 		})
 		Util.corner(card, 14)
@@ -229,7 +382,7 @@ local RULES = {
 	{
 		icon = "river_trap",
 		title = "Hazards",
-		text = "Every map has its own hazard. Rivers stop you on Blissful Tricks (a Bridge carries you across), locked gates stop you on Junction Dungeon (a Key opens them and the gated shortcuts), and slime pools eat 5 of your steps on Slimy Snares (Boots get you through).",
+		text = "Every map has its own hazard. Rivers stop you on Blissful Tricks (a Bridge carries you across), locked gates stop you on Junction Dungeon (a Key opens them and the gated shortcuts), and slime pools eat 5 of your steps on Slimy Snares (Boots get you through).\n\nOn Haunted Hollow two ghosts drift down the trail every round: walk into one and you stop and jump back a tile (a Lantern shines it away). On Mount Kaboom lava streams stop you (a Fire Cloak carries you across), and every 3 rounds the volcano erupts: anyone standing in a stream is scorched.",
 	},
 	{
 		icon = "map",
@@ -244,7 +397,7 @@ local RULES = {
 	{
 		icon = "people",
 		title = "Modes",
-		text = "In team modes your treasures add up, your traps never catch teammates, you can't bonk them, and you can give a teammate a card (it's your card for the turn). The Weekly Event changes every Thursday.",
+		text = "Blitz is a quick race to ONE treasure. In team modes your treasures add up, your traps never catch teammates, you can't bonk them, and you can give a teammate a card (it's your card for the turn). The Weekly Event changes every Thursday.\n\nWhile someone else takes their turn, tap the fishing rod in the board's corner to fish: wait for the bite, then reel it in fast. Fill your fish log, and now and then you'll hook a gold coin.",
 		modes = true,
 	},
 	{
@@ -264,6 +417,43 @@ function Pages.rules(layer: Instance): () -> ()
 		height = math.min(600, roomH),
 	})
 	local scroll = Widgets.scroll(content, { gap = 12, hAlign = "Left" })
+	-- learn by playing: the guided match, any time
+	local guided = Util.new("Frame", {
+		Name = "Guided",
+		BackgroundColor3 = C.mine,
+		BorderSizePixel = 0,
+		Size = UDim2.new(1, -16, 0, 74),
+		LayoutOrder = 0,
+		Parent = scroll,
+	})
+	Util.corner(guided, 12)
+	Util.stroke(guided, C.sun, 3)
+	Widgets.label(guided, {
+		text = "Rather learn by playing? Take the 3-minute guided match.",
+		font = "heavy",
+		size = 17,
+		color = C.text,
+		wrap = true,
+		sizeUDim = UDim2.new(1, -230, 1, 0),
+		position = UDim2.fromOffset(16, 0),
+	})
+	Widgets.button(guided, {
+		text = "GUIDED MATCH",
+		icon = "play",
+		style = "green",
+		textSize = 17,
+		size = UDim2.fromOffset(200, 50),
+		anchor = Vector2.new(1, 0.5),
+		position = UDim2.new(1, -12, 0.5, 0),
+		onClick = function()
+			local ok, err = Net.request("match.tutorial")
+			if ok then
+				close()
+			else
+				Widgets.toast(tostring(err), "error")
+			end
+		end,
+	})
 	for i, section in RULES do
 		local text = section.text
 		if section.modes then

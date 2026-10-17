@@ -47,6 +47,7 @@ local Theme = require(UI.Theme)
 local Shapes = require(UI.Shapes)
 local Icons = require(UI.Icons)
 local CosmeticArt = require(UI.CosmeticArt)
+local BaseArt = require(UI.BaseArt)
 local Widgets = require(UI.Widgets)
 local BoardLayout = require(script.Parent.BoardLayout)
 local MapArt = require(script.Parent.MapArt)
@@ -1178,6 +1179,11 @@ function BoardView:addPawn(seat: number, info, tile: number)
 	})
 	Util.corner(shadow, 0.5)
 	local lift = Util.frame(root, { Name = "Lift" })
+	-- the base their mastery earned, under their feet (it hops along with them)
+	local tier = info.look and info.look.base
+	if type(tier) == "number" and tier > 0 then
+		BaseArt.draw(lift, info.character or "mage", tier, { ZIndex = 2 })
+	end
 	local pawn = {
 		frame = root,
 		lift = lift,

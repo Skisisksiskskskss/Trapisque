@@ -18,6 +18,7 @@ local Util = require(UI.Util)
 local Theme = require(UI.Theme)
 local Icons = require(UI.Icons)
 local Widgets = require(UI.Widgets)
+local Collection = require(script.Parent.Collection)
 
 local Client = UI.Parent
 local Net = require(Client.Net)
@@ -191,7 +192,7 @@ function Quests.open(popups: Instance)
 		title = "Daily Quests",
 		titleWidth = 300,
 		width = width,
-		height = if narrow then 610 else 570,
+		height = if narrow then 670 else 630,
 	})
 	local body = Util.frame(content, { Name = "Body" })
 	local maid = Util.maid()
@@ -264,6 +265,35 @@ function Quests.open(popups: Instance)
 			align = "center",
 			sizeUDim = UDim2.new(1, 0, 0, 18),
 			position = UDim2.fromOffset(0, streakTop + 106),
+		})
+		-- the badges and the fish log
+		local earned = 0
+		for _ in profile and profile.badges or {} do
+			earned += 1
+		end
+		local more = Util.frame(body, { Name = "More", Position = UDim2.fromOffset(0, streakTop + 132), Size = UDim2.new(1, 0, 0, 46) })
+		Util.list(more, "x", 10, "Center", "Center")
+		Widgets.button(more, {
+			text = "BADGES " .. earned,
+			icon = "star",
+			style = "brass",
+			textSize = 17,
+			size = UDim2.new(0.5, -6, 1, 0),
+			layoutOrder = 1,
+			onClick = function()
+				Collection.open(popups, "badges")
+			end,
+		})
+		Widgets.button(more, {
+			text = "FISH LOG",
+			icon = "rod",
+			style = "blue",
+			textSize = 17,
+			size = UDim2.new(0.5, -6, 1, 0),
+			layoutOrder = 2,
+			onClick = function()
+				Collection.open(popups, "fish")
+			end,
 		})
 	end
 	build()

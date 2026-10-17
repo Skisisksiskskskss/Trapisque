@@ -20,6 +20,7 @@ local Theme = require(UI.Theme)
 local Icons = require(UI.Icons)
 local Widgets = require(UI.Widgets)
 local Avatars = require(UI.Avatars)
+local Spectate = require(script.Parent.Spectate)
 
 local Client = UI.Parent
 local Net = require(Client.Net)
@@ -155,9 +156,22 @@ function PartyPanel:_renderEmpty()
 		icon = "people",
 		style = "blue",
 		textSize = if compact then 16 else 18,
-		size = UDim2.new(1, 0, 0, smallH),
+		size = UDim2.new(1, -126, 0, smallH),
 		position = UDim2.fromOffset(0, y),
 		onClick = inviteFriends,
+	})
+	-- watch a friend's match
+	Widgets.button(c, {
+		text = "WATCH",
+		icon = "eye",
+		style = "panel",
+		textSize = if compact then 15 else 17,
+		size = UDim2.fromOffset(118, smallH),
+		anchor = Vector2.new(1, 0),
+		position = UDim2.new(1, 0, 0, y),
+		onClick = function()
+			Spectate.open(self.popups)
+		end,
 	})
 	y += smallH + (if compact then 8 else 14)
 	-- join by code

@@ -17,11 +17,16 @@
 	Every action is checked here (the client only shows buttons), logged (the last 100
 	are kept), and shared with the other servers over MessagingService.
 
+	Players report someone from the chat ("chat.report" { userId, reason }): the report
+	keeps that person's latest lines (filtered, ChatService.recent) and waits in the
+	panel's REPORTS tab, on every server, until staff dismiss it.
+
 	Requests: "staff.state" -> what the panel shows; "staff.do" { action, target?, ... }
 ]]
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local HttpService = game:GetService("HttpService")
 local DataStoreService = game:GetService("DataStoreService")
 local MessagingService = game:GetService("MessagingService")
 local TextService = game:GetService("TextService")
@@ -46,6 +51,9 @@ local store: DataStore? = nil
 local admins: { [string]: { name: string, by: string, at: number } } = {} -- keyed by tostring(userId)
 local bans: { [string]: { name: string, reason: string, by: string, at: number, untilT: number } } = {}
 local log: { any } = {}
+local reports: { any } = {} -- newest first
+local reportsStale = false -- another server took a report: read them again when the panel asks
+local lastReport: { [Player]: number } = {}
 local groupOwner: { [Player]: boolean } = {}
 local groupOwnerId: number? = nil
 
@@ -239,6 +247,15 @@ local function onMessage(message)
 		if p then
 			task.spawn(applyPending, p)
 		end
+	elseif m.kind == "reports" then
+		reportsStale = true
+	elseif m.kind == "report" then
+		reportsStale = true
+		for _, p in Players:GetPlayers() do
+			if AdminService.role(p) then
+				Net.push(p, "toast", { text = string.format("New chat report: %s reported %s.", tostring(m.by), tostring(m.target)), kind = "info" })
+			end
+		end
 	elseif m.kind == "shutdown" then
 		local text = if type(m.text) == "string" then m.text else "Trapisque is updating. Rejoin in a minute!"
 		announceHere(text, nil)
@@ -260,6 +277,77 @@ local function target(payload): (Player?, number?)
 		return nil, nil
 	end
 	return Players:GetPlayerByUserId(id), id
+end
+
+---------------------------------------------------------------------------
+-- chat reports
+---------------------------------------------------------------------------
+
+local REASONS = {
+	mean = "Being mean",
+	rude = "Rude words",
+	scam = "Scam or asking for info",
+	spam = "Spam",
+	other = "Something else",
+}
+
+local function currentReports(): { any }
+	if reportsStale and store then
+		reportsStale = false
+		reports = load("reports", reports)
+	end
+	return reports
+end
+
+local function saveReports(change: ({ any }) -> ())
+	change(reports)
+	update("reports", function(old)
+		local list = old or {}
+		change(list)
+		return list
+	end)
+end
+
+local function report(player: Player, payload): (boolean, any)
+	if type(payload) ~= "table" then
+		return false, "Bad request."
+	end
+	local userId = tonumber(payload.userId)
+	local reason = REASONS[payload.reason]
+	if not userId or userId == player.UserId or not reason then
+		return false, "Pick what they did."
+	end
+	local now = os.time()
+	if lastReport[player] and now - lastReport[player] < S.ReportCooldown then
+		return false, "You just sent a report. Give it a moment."
+	end
+	lastReport[player] = now
+	local said, lines = ChatService.recent(userId)
+	local who = Players:GetPlayerByUserId(userId)
+	local entry = {
+		id = HttpService:GenerateGUID(false),
+		t = now,
+		by = player.Name,
+		byId = player.UserId,
+		target = if who then who.Name else (said or tostring(userId)),
+		targetId = userId,
+		reason = reason,
+		lines = lines,
+		where = if MatchService.get(player) then "match" else "lobby",
+	}
+	saveReports(function(list)
+		table.insert(list, 1, entry)
+		while #list > S.Reports do
+			table.remove(list)
+		end
+	end)
+	publish({ kind = "report", by = entry.by, target = entry.target })
+	for _, p in Players:GetPlayers() do
+		if p ~= player and AdminService.role(p) then
+			Net.push(p, "toast", { text = string.format("New chat report: %s reported %s.", entry.by, entry.target), kind = "info" })
+		end
+	end
+	return true
 end
 
 local function stateFor(player: Player)
@@ -291,6 +379,7 @@ local function stateFor(player: Player)
 		bans = banList,
 		admins = adminList,
 		log = log,
+		reports = currentReports(),
 		event = Progress.eventOverride,
 		maxBanHours = if role == "owner" then 0 else S.AdminMaxBanHours,
 	}
@@ -306,6 +395,7 @@ local ACCESS = {
 	announce = "admin",
 	endMatch = "admin",
 	lookup = "admin",
+	dismissReport = "admin",
 	givePass = "owner",
 	gems = "owner",
 	chests = "owner",
@@ -352,6 +442,23 @@ local function act(player: Player, payload): (boolean, any)
 			return false, "No player called " .. name .. "."
 		end
 		return true, { userId = id, name = name, online = Players:GetPlayerByUserId(id) ~= nil, banned = banned(id) ~= nil }
+	elseif action == "dismissReport" then
+		local id = payload.id
+		if type(id) ~= "string" then
+			return false, "Pick a report."
+		end
+		local gone = nil
+		saveReports(function(list)
+			for i = #list, 1, -1 do
+				if list[i].id == id then
+					gone = gone or list[i]
+					table.remove(list, i)
+				end
+			end
+		end)
+		publish({ kind = "reports" })
+		record(player, "dismissReport", if gone then gone.target else nil, if gone then gone.reason else nil)
+		return true
 	elseif action == "kick" then
 		if not userId then
 			return false, "Pick a player."
@@ -565,6 +672,10 @@ function AdminService.init()
 		return true, stateFor(player)
 	end)
 	Net.handle("staff.do", act)
+	Net.handle("chat.report", report)
+	Players.PlayerRemoving:Connect(function(player)
+		lastReport[player] = nil
+	end)
 
 	-- The stored lists and the line to the other servers come in the background:
 	-- DataStores and MessagingService can be slow, or missing altogether in Studio.
@@ -584,6 +695,7 @@ function AdminService.init()
 				admins = load("admins", {})
 				bans = load("bans", {})
 				log = load("log", {})
+				reports = load("reports", {})
 				-- whoever got here before the lists did
 				for _, p in Players:GetPlayers() do
 					local b = banned(p.UserId)

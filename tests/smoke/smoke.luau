@@ -463,7 +463,12 @@ local lobbyCount = F.count(Root.gui)
 say("lobby load: %d frame connections, %d tweens, %d waiting threads, %d GUI objects", lobbyLoad.frameConns, lobbyLoad.tweens, lobbyLoad.waiting, lobbyCount)
 
 local mode = cfg.mode or "chaos"
-if cfg.quickplay then
+if cfg.tutorial then
+	-- the guided first match, from How to Play
+	check(openNav("rules"), "the rules page didn't open")
+	local top = modals()
+	check(press(top[#top], "GUIDED MATCH"), "no GUIDED MATCH button")
+elseif cfg.quickplay then
 	-- Quick Play: queue, and bots fill the empty seats after a while
 	local tile = visibleNamed(Root.screens, mode)
 	check(tile ~= nil, "no tile for mode " .. mode)
@@ -503,6 +508,13 @@ end), "the match never started")
 local screen = MatchScreen.current()
 say("match started at %.1fs (seat %d, %s)", F.now, screen.mySeat, screen.mapDef.id)
 noProblems("starting the match")
+if cfg.tutorial then
+	check(screen.coach ~= nil, "no coach in the guided match")
+	check(F.run(10, function()
+		return screen.coach.root.Visible
+	end), "the coach never spoke")
+	shot("tutorial-coach")
+end
 
 -- say something: the say button, a quick line, a bubble over my character
 do
@@ -759,6 +771,11 @@ if not finished then
 end
 say("match over at %.1fs: %d moves, %d cards, %d abilities, %d tiles, %d buys, %d refused", F.now, stats.moves, stats.cards, stats.abilities, stats.tiles, stats.buys, stats.refused)
 noProblems("the match")
+if cfg.tutorial then
+	-- the guided match is scripted for a first win
+	local me = screen:_player(screen.mySeat)
+	check(me ~= nil and (me.treasures or 0) >= (screen.target or 1), "the guided match wasn't won: " .. tostring(me and me.treasures) .. " treasures")
+end
 
 -- the results, then back to the lobby
 check(F.run(12, function()
@@ -786,6 +803,9 @@ check(afterCount <= lobbyCount * 1.25 + 50, string.format("the lobby has %d GUI 
 -- the profile saw the match
 local profile = State.get("profile")
 check(profile ~= nil and profile.stats ~= nil and (profile.stats.games or 0) + (profile.stats.practice or 0) >= 1, "the profile doesn't count the match")
+if cfg.tutorial then
+	check(profile.tutorialDone == true, "the guided match didn't count as done")
+end
 local played = screen.view.players[screen.mySeat].character
 check((profile.mastery and profile.mastery[played] or 0) > 0, "no mastery for " .. tostring(played) .. " after playing them")
 

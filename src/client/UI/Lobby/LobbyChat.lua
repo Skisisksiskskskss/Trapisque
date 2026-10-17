@@ -23,6 +23,7 @@ local ChatPanel = require(UI.ChatPanel)
 local Client = UI.Parent
 local Chat = require(Client.Chat)
 local Sound = require(Client.Sound)
+local Gamepad = require(Client.Gamepad)
 
 local C = Theme.C
 
@@ -68,9 +69,14 @@ function LobbyChat.build(parent: Instance, maid, r, popups: Instance)
 	else
 		button = Widgets.iconButton(parent, opts)
 	end
-	-- T opens it from the keyboard
+	-- T opens it from the keyboard (X on a controller)
 	maid:add(UserInputService.InputBegan:Connect(function(input, processed)
 		if not processed and input.KeyCode == Enum.KeyCode.T and button.root.Parent then
+			openChat()
+		end
+	end))
+	maid:add(Gamepad.on("chat", function()
+		if button.root.Parent then
 			openChat()
 		end
 	end))

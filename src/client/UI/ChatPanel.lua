@@ -5,6 +5,9 @@
 	a box to type your own. Without the pass the box is a BUY button; with chat off in
 	your Roblox settings (or while muted) it says so, and quick lines still work.
 
+	Tap someone's line for what you can do about them: hide their lines (just for you),
+	block them on Roblox, or report them to the game's staff.
+
 		ChatPanel.open(layer, { title?, emotes = { id }?, colorOf = fn(line) -> Color3,
 			closeOnSend?, onClose? }) -> close
 ]]
@@ -45,6 +48,92 @@ end
 
 local function hexOf(c: Color3): string
 	return string.format("%02X%02X%02X", math.floor(c.R * 255 + 0.5), math.floor(c.G * 255 + 0.5), math.floor(c.B * 255 + 0.5))
+end
+
+local REASONS = {
+	{ id = "mean", text = "BEING MEAN" },
+	{ id = "rude", text = "RUDE WORDS" },
+	{ id = "scam", text = "SCAM / ASKING FOR INFO" },
+	{ id = "spam", text = "SPAM" },
+	{ id = "other", text = "SOMETHING ELSE" },
+}
+
+-- What you can do about someone in the chat.
+local function personMenu(layer: Instance, line)
+	local roomW = Widgets.room()
+	local name = line.name or "them"
+	local content, close = Widgets.modal(layer, {
+		title = name,
+		titleWidth = 260,
+		width = math.min(480, roomW),
+		height = 430,
+	})
+	local body = Util.frame(content, { Name = "Body" })
+	Util.list(body, "y", 10, "Center", "Top").SortOrder = Enum.SortOrder.LayoutOrder
+	local function text(t: string, order: number, h: number?)
+		Widgets.label(body, {
+			text = t,
+			font = "heavy",
+			size = 16,
+			minSize = 11,
+			color = C.textSoft,
+			align = "center",
+			wrap = true,
+			scaled = true,
+			sizeUDim = UDim2.new(1, -8, 0, h or 44),
+			layoutOrder = order,
+		})
+	end
+	local function button(t: string, style: string, order: number, onClick: () -> ())
+		Widgets.button(body, {
+			text = t,
+			style = style,
+			textSize = 18,
+			font = "heavy",
+			depth = 3,
+			size = UDim2.new(1, -40, 0, 50),
+			layoutOrder = order,
+			onClick = onClick,
+		})
+	end
+	local function reportStep()
+		Util.clear(body, true)
+		text("What did they do? Our crew sees your report with their last few lines.", 1)
+		for i, r in REASONS do
+			Widgets.button(body, {
+				text = r.text,
+				style = "panel",
+				textSize = 16,
+				font = "heavy",
+				depth = 3,
+				size = UDim2.new(1, -40, 0, 38),
+				layoutOrder = 1 + i,
+				onClick = function()
+					local ok, err = Chat.report(line.from, r.id)
+					if ok then
+						close()
+						Widgets.toast("Thanks for telling us! For anything serious, report them to Roblox too, from the Roblox menu.", "info")
+					else
+						Widgets.toast(tostring(err), "error")
+					end
+				end,
+			})
+		end
+	end
+	local hidden = Chat.isMuted(line.from)
+	text("Only you see what you pick here.", 1, 26)
+	button(if hidden then "SHOW THEIR LINES" else "HIDE THEIR LINES", "panel", 2, function()
+		Chat.mute(line.from, not hidden)
+		close()
+		Widgets.toast(if hidden then ("Showing " .. name .. "'s lines again.") else ("You won't see " .. name .. "'s lines any more."), "info")
+	end)
+	button("BLOCK ON ROBLOX", "orange", 3, function()
+		close()
+		if not Chat.block(line.from) then
+			Widgets.toast(name .. " has left. You can block them from their Roblox profile.", "info")
+		end
+	end)
+	button("REPORT", "red", 4, reportStep)
 end
 
 local function lineText(line, color: Color3): string
@@ -168,7 +257,7 @@ function ChatPanel.open(layer: Instance, o: { [string]: any })
 			layoutOrder = count,
 		})
 		label.AutomaticSize = Enum.AutomaticSize.Y
-		-- tap a name to hide (or show again) that person's lines, just for you
+		-- tap someone's line: hide, block or report them
 		if line.from and line.from ~= 0 and line.from ~= player.UserId then
 			local hit = Util.new("TextButton", {
 				Text = "",
@@ -177,9 +266,7 @@ function ChatPanel.open(layer: Instance, o: { [string]: any })
 				Parent = label,
 			})
 			hit.Activated:Connect(function()
-				local on = not Chat.isMuted(line.from)
-				Chat.mute(line.from, on)
-				Widgets.toast(if on then ("You won't see " .. (line.name or "them") .. "'s lines any more.") else ("Showing " .. (line.name or "their") .. " lines again."), "info")
+				personMenu(layer, line)
 			end)
 		end
 		local kids = log:GetChildren()
