@@ -4,6 +4,13 @@
 	timers and away players (Shared/Game/TurnClock), and streams events + snapshots to
 	every player. Each batch says when it starts and ends on the server's clock, so a
 	screen that falls behind (lag, a slow device) speeds up instead of drifting.
+
+	Around the game itself:
+		vote        Quick Play matches open with a map vote (three maps, a few seconds)
+		drop-in     someone searching for Quick Play can take over a bot's seat early on
+		spectators  friends can watch: they get what everyone may see, and no hand
+		fishing     between your turns you can fish off the board (Meta/Fishing)
+		tutorial    the guided first match: scripted dice and cards, the human goes first
 ]]
 
 local Players = game:GetService("Players")
@@ -21,10 +28,13 @@ local TurnClock = require(Shared.Game.TurnClock)
 local Cosmetics = require(Shared.Meta.Cosmetics)
 local Progress = require(Shared.Meta.Progress)
 local QuickChat = require(Shared.Meta.QuickChat)
+local Fishing = require(Shared.Meta.Fishing)
+local Tutorial = require(Shared.Meta.Tutorial)
 
 local Net = require(script.Parent.Net)
 local DataService = require(script.Parent.DataService)
 local LeaderboardService = require(script.Parent.LeaderboardService)
+local BadgeService = require(script.Parent.BadgeService)
 
 local T = Config.Timing
 
@@ -66,16 +76,20 @@ local function botLook()
 		title = "title_none",
 		level = random:NextInteger(1, 12),
 		vip = false,
+		-- a few bots have played their character a lot
+		base = if random:NextNumber() < 0.2 then 1 else 0,
 	}
 end
 
 --[[
 	spec = {
 		mode, map ("random" ok), length, kind ("public" | "private" | "practice"),
-		humans = { { player = Player, team = number? } },
+		humans = { { player = Player, team = number?, character = string? } },
 		bots = { { team = number? } },
 		teamsPreset = boolean, -- teams given for every seat
 		parties = { { leader, members, settings } }, -- restored after reserved matches
+		vote = boolean,        -- open with a map vote (Quick Play)
+		tutorial = boolean,    -- the guided first match
 	}
 ]]
 function Match.new(spec, hooks)
@@ -91,11 +105,15 @@ function Match.new(spec, hooks)
 	self.kind = spec.kind or "private"
 	self.mode = mode
 	self.mapId = mapId
-	self.length = spec.length or "quick"
+	self.length = mode.length or spec.length or "quick"
 	self.parties = spec.parties or {}
+	self.tutorial = spec.tutorial == true
 	self.closed = false
 	self.finished = false
 	self.phase = "intro"
+	self.spectators = {} -- [Player] = true
+	self.fishing = {} -- [seat] = { state, biteAt, token, coinRound }
+	self.feats = {} -- [seat] = badge-worthy moments this match (BadgeService)
 
 	-- seat order: by team when teams are preset, humans before bots otherwise
 	local entries = {}
@@ -153,28 +171,35 @@ function Match.new(spec, hooks)
 			team = e.team,
 			character = character,
 		}
+		self.feats[seat] = {}
 	end
+	self.enginePlayers = enginePlayers
+	self.teamsPreset = spec.teamsPreset == true
 
 	-- the weekly event queue plays with the week's twist on the rules
-	local mutator = nil
 	if mode.isEvent then
 		local event = Progress.eventById(spec.event) or Progress.currentEvent()
 		self.event = event.id
-		mutator = event.mutator
+		self.mutator = event.mutator
 	end
 
-	self.engine = Engine.new({
-		mode = mode.id,
-		map = mapId,
-		players = enginePlayers,
-		seed = random:NextInteger(1, 2 ^ 30),
-		target = Modes.targetFor(mode, self.length),
-		length = self.length,
-		teamsPreset = spec.teamsPreset == true,
-		mutator = mutator,
-	})
+	-- Quick Play opens with a vote between three maps
+	if spec.vote then
+		local pool = {}
+		for _, m in Maps.list do
+			table.insert(pool, m.id)
+		end
+		for i = #pool, 2, -1 do
+			local j = random:NextInteger(1, i)
+			pool[i], pool[j] = pool[j], pool[i]
+		end
+		self.voteOptions = { pool[1], pool[2], pool[3] }
+		self.votes = {} -- [seat] = map id
+	else
+		self:_makeEngine(mapId)
+	end
 	-- practice games have no turn timer (nobody is waiting on you)
-	self.clock = TurnClock.new({ timed = self.kind ~= "practice" })
+	self.clock = TurnClock.new({ timed = self.kind ~= "practice", turnTime = mode.turnTime })
 	self.lastEmote = {}
 	self.busyUntil = 0
 	self.lastTurn = -1
@@ -182,6 +207,33 @@ function Match.new(spec, hooks)
 	self.botAt = nil
 	self.botSteps = 0
 	return self
+end
+
+function Match:_makeEngine(mapId: string)
+	self.mapId = mapId
+	local opts = {
+		mode = self.mode.id,
+		map = mapId,
+		players = self.enginePlayers,
+		seed = random:NextInteger(1, 2 ^ 30),
+		target = Modes.targetFor(self.mode, self.length),
+		length = self.length,
+		teamsPreset = self.teamsPreset,
+		mutator = self.mutator,
+	}
+	if self.tutorial then
+		-- the guided match: the human goes first with scripted dice and cards
+		local human = 1
+		for seat, info in self.seats do
+			if not info.isBot then
+				human = seat
+			end
+		end
+		opts.rig = Tutorial.dice(human, #self.seats)
+		opts.hands = { [human] = table.clone(Tutorial.hand) }
+		opts.firstSeat = human
+	end
+	self.engine = Engine.new(opts)
 end
 
 function Match:humans(): { Player }
@@ -194,18 +246,30 @@ function Match:humans(): { Player }
 	return out
 end
 
+-- Everyone watching: the humans playing and the spectators.
+function Match:audience(): { Player }
+	local out = self:humans()
+	for player in self.spectators do
+		if player.Parent == Players then
+			table.insert(out, player)
+		end
+	end
+	return out
+end
+
 function Match:seatList()
 	local list = {}
 	for seat, info in self.seats do
-		local p = self.engine.players[seat]
+		local p = self.engine and self.engine.players[seat]
+		local ep = self.enginePlayers[seat]
 		table.insert(list, {
 			seat = seat,
 			name = info.name,
 			username = info.username,
 			userId = info.userId,
 			isBot = info.isBot,
-			team = p.team,
-			character = p.character,
+			team = if p then p.team else ep.team,
+			character = if p then p.character else ep.character,
 			look = info.look,
 		})
 	end
@@ -223,19 +287,132 @@ end
 -- `timing` = { startAt, endAt }: when this batch starts and stops playing, server time.
 -- Each seat only gets what it may know: rivals' hidden traps, other players' cards and
 -- the like are left out or replaced by counts (Engine:eventsFor and Engine:snapshot).
+-- Seat 0 is a spectator: only what everyone may see.
 function Match:_payloadFor(seat: number, events, timing)
 	return {
 		id = self.id,
 		events = self.engine:eventsFor(seat, events),
-		snapshot = self.engine:snapshot(seat),
+		snapshot = self.engine:snapshot(if seat > 0 then seat else nil),
 		deadline = serverTime(self.clock.deadline),
-		auto = self.clock:isAway(seat),
+		auto = seat > 0 and self.clock:isAway(seat),
 		startAt = timing and timing.startAt,
 		endAt = timing and timing.endAt,
 	}
 end
 
+-- The fields every "match.start" / resync payload has.
+function Match:_describe(payload, seat: number)
+	payload.seat = seat
+	payload.kind = self.kind
+	payload.mode = self.mode.id
+	payload.map = self.mapId
+	payload.length = self.length
+	payload.target = self.engine.target
+	payload.seats = self:seatList()
+	payload.tutorial = self.tutorial or nil
+	payload.spectating = seat == 0 or nil
+	return payload
+end
+
 function Match:start()
+	if self.voteOptions and not self.engine then
+		task.spawn(function()
+			self:_runVote()
+			if not self.closed then
+				self:_begin()
+			end
+		end)
+		return
+	end
+	self:_begin()
+end
+
+---------------------------------------------------------------------------
+-- the map vote
+---------------------------------------------------------------------------
+
+function Match:_votePayload()
+	local votes = {}
+	for seat, mapId in self.votes do
+		votes[tostring(seat)] = mapId
+	end
+	return {
+		id = self.id,
+		options = self.voteOptions,
+		votes = votes,
+		deadline = self.voteDeadline,
+		seats = self:seatList(),
+		mode = self.mode.id,
+	}
+end
+
+function Match:_pushVote()
+	local payload = self:_votePayload()
+	for _, p in self:audience() do
+		local data = table.clone(payload)
+		data.seat = self.seatOf[p] or 0
+		Net.push(p, "match.vote", data)
+	end
+end
+
+function Match:_runVote()
+	self.phase = "vote"
+	self.voteDeadline = workspace:GetServerTimeNow() + T.VoteTime
+	self:_pushVote()
+	local ends = os.clock() + T.VoteTime
+	while os.clock() < ends and not self.closed do
+		task.wait(0.2)
+		local all = true
+		for _, p in self:humans() do
+			if not self.votes[self.seatOf[p]] then
+				all = false
+			end
+		end
+		if all and #self:humans() > 0 then
+			task.wait(0.8) -- everyone's in: a moment to see the result
+			break
+		end
+	end
+	-- the most votes wins; a tie (or no votes) is settled at random among the leaders
+	local count = {}
+	for _, mapId in self.votes do
+		count[mapId] = (count[mapId] or 0) + 1
+	end
+	local best, leaders = 0, {}
+	for _, mapId in self.voteOptions do
+		local n = count[mapId] or 0
+		if n > best then
+			best, leaders = n, { mapId }
+		elseif n == best then
+			table.insert(leaders, mapId)
+		end
+	end
+	local chosen = leaders[random:NextInteger(1, #leaders)]
+	self:_makeEngine(chosen)
+	for _, p in self:audience() do
+		Net.push(p, "match.voted", { id = self.id, map = chosen })
+	end
+	task.wait(1.2)
+end
+
+function Match:vote(player: Player, mapId: any)
+	local seat = self.seatOf[player]
+	if not seat or self.phase ~= "vote" then
+		return false, "Voting is over."
+	end
+	if type(mapId) ~= "string" or not table.find(self.voteOptions, mapId) then
+		return false, "Pick one of the maps."
+	end
+	self.votes[seat] = mapId
+	self:_pushVote()
+	return true
+end
+
+---------------------------------------------------------------------------
+-- playing
+---------------------------------------------------------------------------
+
+function Match:_begin()
 	local events = self.engine:start()
 	self.phase = "playing"
 	local now = os.clock()
@@ -245,40 +422,34 @@ function Match:start()
 	self.lastPhase = engine.phase
 	self.clock:begin(engine.current, engine.phase, self.busyUntil, engine.turnCount)
 	local timing = { startAt = serverTime(now + T.IntroTime), endAt = serverTime(self.busyUntil) }
-	local seats = self:seatList()
 	for seat, info in self.seats do
 		if info.player then
-			local payload = self:_payloadFor(seat, events, timing)
-			payload.seat = seat
-			payload.kind = self.kind
-			payload.mode = self.mode.id
-			payload.map = self.mapId
-			payload.length = self.length
-			payload.target = self.engine.target
-			payload.seats = seats
+			local payload = self:_describe(self:_payloadFor(seat, events, timing), seat)
 			payload.intro = T.IntroTime
 			Net.push(info.player, "match.start", payload)
 		end
 	end
+	for player in self.spectators do
+		local payload = self:_describe(self:_payloadFor(0, events, timing), 0)
+		payload.intro = T.IntroTime
+		Net.push(player, "match.start", payload)
+	end
+	self:_scanFeats(events)
 	task.spawn(function()
 		self:_loop()
 	end)
 end
 
--- Full state for a client that needs to resync.
+-- Full state for a client that needs to resync (or a spectator who just arrived).
 function Match:resync(player: Player)
-	local seat = self.seatOf[player]
+	if not self.engine or self.phase == "vote" then
+		return nil
+	end
+	local seat = self.seatOf[player] or (if self.spectators[player] then 0 else nil)
 	if not seat then
 		return nil
 	end
-	local payload = self:_payloadFor(seat, {})
-	payload.seat = seat
-	payload.kind = self.kind
-	payload.mode = self.mode.id
-	payload.map = self.mapId
-	payload.length = self.length
-	payload.target = self.engine.target
-	payload.seats = self:seatList()
+	local payload = self:_describe(self:_payloadFor(seat, {}), seat)
 	payload.intro = 0
 	payload.resync = true
 	return payload
@@ -299,6 +470,8 @@ function Match:_broadcast(events)
 		self.clock:begin(engine.current, engine.phase, self.busyUntil, engine.turnCount)
 		self.botAt = nil
 		self.botSteps = 0
+		-- whoever's turn it is now puts their rod away
+		self:_stopFishing(engine.current)
 	else
 		self.clock:extend(self.busyUntil)
 	end
@@ -308,9 +481,61 @@ function Match:_broadcast(events)
 			Net.push(info.player, "match.events", self:_payloadFor(seat, events, timing))
 		end
 	end
+	if next(self.spectators) then
+		local public = self:_payloadFor(0, events, timing)
+		for player in self.spectators do
+			Net.push(player, "match.events", public)
+		end
+	end
+	self:_scanFeats(events)
 	self:_botReactions(events)
 	if engine:isOver() then
 		self:_finish()
+	end
+end
+
+-- Notes the moments badges care about (BadgeService.matchFeats).
+function Match:_scanFeats(events)
+	local bonksBy = {}
+	for _, e in events do
+		local f = e.p and self.feats[e.p]
+		if e.t == "bonk" then
+			bonksBy[e.p] = (bonksBy[e.p] or 0) + 1
+			if self.lastAbility and self.lastAbility.seat == e.p and self.lastAbility.id == "cannonball" then
+				self.feats[e.p].cannonBonk = true
+			end
+		elseif e.t == "roll" and f and not e.reroll then
+			local d = e.dice or {}
+			if #d == 2 and d[1] == 1 and d[2] == 1 then
+				f.snakeEyes = true
+			elseif #d == 2 and d[1] == 6 and d[2] == 6 then
+				f.boxcars = true
+			end
+		elseif e.t == "grog" and f and e.survived then
+			f.grog = true
+		elseif e.t == "phoenix" and f then
+			f.phoenix = true
+		elseif e.t == "boo" and f then
+			f.scared = (f.scared or 0) + 1
+		elseif e.t == "scorch" and f and e.lava then
+			f.scorched = true
+		elseif e.t == "ability" then
+			self.lastAbility = { seat = e.p, id = e.ability }
+		elseif e.t == "doubleDown" and f then
+			f.doubleDown = true
+		elseif e.t == "treasure" and f and f.doubleDown then
+			f.jackpot = true
+		elseif e.t == "turn" then
+			self.lastAbility = nil
+			for _, ff in self.feats do
+				ff.doubleDown = nil
+			end
+		end
+	end
+	for seat, n in bonksBy do
+		if n >= 2 and self.feats[seat] then
+			self.feats[seat].multiBonk = true
+		end
 	end
 end
 
@@ -357,12 +582,12 @@ end
 function Match:_botSay(seat: number, quickId: string)
 	local q = QuickChat.get(quickId)
 	local info = self.seats[seat]
-	if self.closed or not q or not info then
+	if self.closed or not q or not info or not info.isBot then
 		return
 	end
 	local p = self.engine.players[seat]
 	local line = { from = 0, name = info.name, seat = seat, text = q.text, quick = q.id, voice = "auto", character = p and p.character }
-	for _, h in self:humans() do
+	for _, h in self:audience() do
 		Net.push(h, "chat.line", line)
 	end
 end
@@ -373,7 +598,7 @@ function Match:_sendEmote(seat: number, emoteId: string)
 	end
 	local info = self.seats[seat]
 	local voice = if info and info.player then DataService.voiceOf(info.player) else "auto"
-	for _, p in self:humans() do
+	for _, p in self:audience() do
 		Net.push(p, "match.emote", { id = self.id, seat = seat, emote = emoteId, voice = voice })
 	end
 end
@@ -460,7 +685,8 @@ function Match:_botStep(seat: number)
 	local engine = self.engine
 	self.botSteps += 1
 	local ok, err, events
-	if self.botSteps <= 15 then
+	-- the guided match's bots are gentle: no cards, no abilities, just a move
+	if self.botSteps <= 15 and not (self.tutorial and self.seats[seat].player == nil) then
 		local cmd = Bot.decide(engine, seat)
 		if cmd then
 			ok, err, events = engine:command(seat, cmd)
@@ -521,6 +747,191 @@ function Match:_loop()
 	end
 end
 
+---------------------------------------------------------------------------
+-- drop-in: a Quick Play searcher takes over a bot
+---------------------------------------------------------------------------
+
+-- The bot seat a newcomer would take (the one furthest along), or nil when this match
+-- can't take anyone: only public free-for-alls, early on, before any treasure.
+function Match:dropInSeat(): number?
+	if self.closed or self.finished or self.kind ~= "public" or self.mode.isTeam or self.tutorial then
+		return nil
+	end
+	local engine = self.engine
+	if not engine or self.phase ~= "playing" or engine:isOver() or engine.round > Config.Matchmaking.DropInRounds then
+		return nil
+	end
+	local best, bestProgress = nil, -math.huge
+	for seat, info in self.seats do
+		local p = engine.players[seat]
+		if p.treasures > 0 then
+			return nil
+		end
+		if info.isBot and info.player == nil and not info.left then
+			local pr = engine:progress(p)
+			if pr > bestProgress then
+				best, bestProgress = seat, pr
+			end
+		end
+	end
+	return best
+end
+
+function Match:dropIn(player: Player): (boolean, string?)
+	local seat = self:dropInSeat()
+	if not seat then
+		return false, "That match is full or nearly over."
+	end
+	local info = self.seats[seat]
+	local was = info.name
+	info.player = player
+	info.userId = player.UserId
+	info.name = player.DisplayName
+	info.username = player.Name
+	info.isBot = false
+	info.look = DataService.publicLook(player)
+	self.seatOf[player] = seat
+	self.feats[seat] = {}
+	self.clock:activity(seat, os.clock())
+	local events = self.engine:takeSeat(seat, { id = "u" .. player.UserId, userId = player.UserId, name = player.DisplayName })
+	-- the newcomer gets the whole board first, then everyone sees them arrive
+	local payload = self:resync(player)
+	if payload then
+		payload.droppedIn = { from = was, character = self.engine.players[seat].character }
+		Net.push(player, "match.start", payload)
+	end
+	self:_broadcast(events)
+	return true
+end
+
+---------------------------------------------------------------------------
+-- spectators
+---------------------------------------------------------------------------
+
+function Match:addSpectator(player: Player): boolean
+	if self.closed or self.finished or self.seatOf[player] then
+		return false
+	end
+	self.spectators[player] = true
+	if self.phase == "vote" then
+		local data = self:_votePayload()
+		data.seat = 0
+		Net.push(player, "match.vote", data)
+	else
+		local payload = self:resync(player)
+		if payload then
+			Net.push(player, "match.start", payload)
+		end
+	end
+	return true
+end
+
+function Match:removeSpectator(player: Player)
+	self.spectators[player] = nil
+end
+
+function Match:isSpectator(player: Player): boolean
+	return self.spectators[player] == true
+end
+
+---------------------------------------------------------------------------
+-- fishing between turns
+---------------------------------------------------------------------------
+
+function Match:_stopFishing(seat: number?)
+	local f = seat and self.fishing[seat]
+	if f and f.state ~= "idle" then
+		f.state = "idle"
+		f.token = nil
+		local info = self.seats[seat :: number]
+		if info and info.player then
+			Net.push(info.player, "fish.state", { state = "idle", reason = "turn" })
+		end
+	end
+end
+
+-- action: "cast" | "reel". A bite comes a few seconds after a cast; reel within the
+-- window to land it.
+function Match:fish(player: Player, action: any)
+	local seat = self.seatOf[player]
+	if not seat or self.phase ~= "playing" or self.engine:isOver() then
+		return false, "No fishing right now."
+	end
+	if seat == self.engine.current then
+		return false, "It's your turn!"
+	end
+	local f = self.fishing[seat]
+	if not f then
+		f = { state = "idle" }
+		self.fishing[seat] = f
+	end
+	local now = os.clock()
+	if action == "cast" then
+		if f.state ~= "idle" then
+			return false, "Your line is already in the water."
+		end
+		local token = {}
+		f.state = "cast"
+		f.token = token
+		local wait = Fishing.BiteMin + random:NextNumber() * (Fishing.BiteMax - Fishing.BiteMin)
+		task.delay(wait, function()
+			if f.token == token and f.state == "cast" and not self.closed then
+				f.state = "bite"
+				f.biteAt = os.clock()
+				Net.push(player, "fish.state", { state = "bite", window = Fishing.Window })
+				task.delay(Fishing.Window + Fishing.Grace + 0.2, function()
+					if f.token == token and f.state == "bite" then
+						f.state = "idle"
+						f.token = nil
+						Net.push(player, "fish.state", { state = "idle", reason = "late" })
+					end
+				end)
+			end
+		end)
+		return true, { state = "cast" }
+	elseif action == "reel" then
+		if f.state == "cast" then
+			-- too soon: it wasn't biting yet
+			f.state = "idle"
+			f.token = nil
+			return true, { state = "idle", result = "early" }
+		elseif f.state ~= "bite" then
+			return true, { state = "idle", result = "nothing" }
+		end
+		f.state = "idle"
+		f.token = nil
+		if now - (f.biteAt or 0) > Fishing.Window + Fishing.Grace then
+			return true, { state = "idle", result = "late" }
+		end
+		-- landed it: what's on the hook?
+		local round = self.engine.round
+		local coinOk = f.coinRound ~= round
+		local catch = Fishing.roll(random:NextNumber(), random:NextNumber(), coinOk)
+		local def = Fishing.byId[catch]
+		if catch == "coin" then
+			f.coinRound = round
+			local events = self.engine:grantCoins(seat, 1, "fishing")
+			self:_broadcast(events)
+		end
+		local logged = DataService.addCatch(player, catch)
+		if def and def.rarity == "legendary" then
+			BadgeService.award(player, "golden_fish")
+		end
+		-- the others see what you landed
+		for _, p in self:audience() do
+			if p ~= player then
+				Net.push(p, "fish.caught", { seat = seat, catch = catch })
+			end
+		end
+		return true, { state = "idle", result = "caught", catch = catch, new = logged == 1 }
+	end
+	return false, "Cast or reel."
+end
+
+---------------------------------------------------------------------------
+-- the end
+---------------------------------------------------------------------------
+
 function Match:_finish()
 	if self.finished then
 		return
@@ -554,15 +965,23 @@ function Match:_finish()
 			table.insert(parade, seat)
 		end
 	end
+	-- someone from the crew (the owner or an admin) played in this match
+	local staffAboard = false
+	for _, info in self.seats do
+		if info.player and BadgeService.isStaff(info.player) then
+			staffAboard = true
+		end
+	end
 	local wait = math.max(0, self.busyUntil - os.clock())
 	task.delay(wait, function()
 		for seat, info in self.seats do
 			local player = info.player
 			if player and player.Parent == Players then
 				local p = engine.players[seat]
+				local won = p.team == engine.winnerTeam
 				local reward = DataService.applyMatchResult(player, {
 					treasures = p.treasures,
-					won = p.team == engine.winnerTeam,
+					won = won,
 					practice = self.kind == "practice",
 					ranked = self.kind == "public" and not self.mode.isTeam and not self.mode.isEvent,
 					place = table.find(engine.ranking or {}, seat) or #self.seats,
@@ -571,6 +990,15 @@ function Match:_finish()
 					mode = self.mode.id,
 					event = self.event,
 					stats = table.clone(p.stats),
+					tutorial = self.tutorial,
+				})
+				BadgeService.matchFeats(player, {
+					won = won,
+					stats = p.stats,
+					feats = self.feats[seat] or {},
+					tutorial = self.tutorial,
+					staffAboard = staffAboard and not BadgeService.isStaff(player),
+					partySize = self:_partySizeOf(player),
 				})
 				LeaderboardService.submit(player, DataService.get(player))
 				Net.push(player, "match.end", {
@@ -583,10 +1011,24 @@ function Match:_finish()
 					kind = self.kind,
 					resultsTime = T.ResultsTime,
 					parade = parade,
+					tutorial = self.tutorial or nil,
 				})
 				DataService.pushProfile(player)
 				task.spawn(DataService.save, player, false)
 			end
+		end
+		for player in self.spectators do
+			Net.push(player, "match.end", {
+				id = self.id,
+				ranking = engine.ranking,
+				winnerTeam = engine.winnerTeam,
+				reason = engine.endReason,
+				results = results,
+				kind = self.kind,
+				resultsTime = T.ResultsTime,
+				parade = parade,
+				spectating = true,
+			})
 		end
 		task.delay(T.ResultsTime, function()
 			self:close("results")
@@ -594,20 +1036,47 @@ function Match:_finish()
 	end)
 end
 
+-- How many of a player's party played this match with them (them included).
+function Match:_partySizeOf(player: Player): number
+	for _, party in self.parties do
+		if table.find(party.members, player.UserId) then
+			local n = 0
+			for _, info in self.seats do
+				if info.player and table.find(party.members, info.userId) then
+					n += 1
+				end
+			end
+			return n
+		end
+	end
+	return 1
+end
+
 function Match:playerLeft(player: Player)
+	self.spectators[player] = nil
 	local seat = self.seatOf[player]
 	if not seat then
 		return
 	end
 	self.seatOf[player] = nil
+	self:_stopFishing(seat)
 	local info = self.seats[seat]
 	info.player = nil
+	-- (a seat someone left stays a bot: nobody drops into it)
+	info.left = true
 	if not self.finished then
 		info.isBot = true
 		info.name ..= " (bot)"
-		self.engine.players[seat].isBot = true
-		self.engine.players[seat].name = info.name
-		self:_broadcast({ { t = "left", p = seat, name = info.name } })
+		if self.engine then
+			self.engine.players[seat].isBot = true
+			self.engine.players[seat].name = info.name
+			if self.phase == "playing" then
+				self:_broadcast({ { t = "left", p = seat, name = info.name } })
+			end
+		else
+			self.enginePlayers[seat].isBot = true
+			self.enginePlayers[seat].name = info.name
+		end
 	end
 	if #self:humans() == 0 then
 		self:close("empty")

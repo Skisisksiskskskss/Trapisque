@@ -110,6 +110,7 @@ Config.Timing = {
 	TurnBanner = 0.4, -- the banner keeps sliding while the dice roll
 	IntroTime = 4.5,
 	ResultsTime = 25, -- results screen before the server sends everyone home
+	VoteTime = 10, -- Quick Play's map vote
 }
 
 ---------------------------------------------------------------------------
@@ -137,6 +138,9 @@ Config.Matchmaking = {
 	ChaosWait = 25,
 	-- (digital) if a human waits this long, empty seats are filled with bots
 	BotFillAfter = 45,
+	-- a free-for-all searcher can drop into a bot's seat in a running Quick Play match
+	-- up to this round (and only before anyone has banked a treasure)
+	DropInRounds = 6,
 	AssignmentTTL = 60,
 	MatchInfoTTL = 600,
 }
@@ -172,6 +176,47 @@ Config.Staff = {
 	AdminMaxBanHours = 72, -- admins can ban for up to this long; only the owner bans for good
 	StoreName = "TrapisqueStaff_v1",
 	Topic = "TrapisqueStaff",
+}
+
+-- Badges: create each one on the Creator Dashboard (the experience > Engagement >
+-- Badges, with its icon from docs/store/badges) and paste its id here. A badge left at
+-- 0 is still earned and shown in the game (the BADGES page); it just isn't awarded on
+-- Roblox. See Shared/Meta/Badges for what each one is for.
+Config.Badges = {
+	first_voyage = 0,
+	walk_the_plank = 0,
+	bowling = 0,
+	hat_trick = 0,
+	comeback = 0,
+	snake_eyes = 0,
+	boxcars = 0,
+	untouchable = 0,
+	boo_who = 0,
+	hot_feet = 0,
+	phoenix = 0,
+	grog_dodger = 0,
+	jackpot = 0,
+	human_cannonball = 0,
+	golden_fish = 0,
+	captains_table = 0,
+	full_crew = 0,
+	hoarder = 0,
+	meet_the_crew = 0,
+	master = 0,
+}
+
+-- The community reward: join the game's Roblox group (and like the game) for Gems,
+-- once. GroupId 0 uses the group that owns the game, if a group does.
+Config.Community = {
+	GroupId = 0,
+	Gems = 150,
+}
+
+-- The daily deals in the Shop: four chest cosmetics sold straight for Gems, new every
+-- day (the same everywhere, 00:00 UTC).
+Config.DailyShop = {
+	Slots = { "common", "rare", "epic", "legendary" },
+	Prices = { common = 120, rare = 280, epic = 650, legendary = 1400, mythic = 3000 },
 }
 
 -- The game chat (ChatService): quick lines for everyone, typed lines with the Chat pass.

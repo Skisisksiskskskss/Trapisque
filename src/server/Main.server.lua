@@ -26,6 +26,7 @@ local MatchService = require(script.Parent.MatchService)
 local LeaderboardService = require(script.Parent.LeaderboardService)
 local ChatService = require(script.Parent.ChatService)
 local AdminService = require(script.Parent.AdminService)
+local BadgeService = require(script.Parent.BadgeService)
 
 Net.init()
 
@@ -86,6 +87,7 @@ start("MatchmakingService", MatchmakingService.init)
 start("MatchService", MatchService.init)
 start("ChatService", ChatService.init)
 start("AdminService", AdminService.init)
+BadgeService.roleOf = AdminService.role
 
 TeleportUtil.Failed:Connect(function(player, message)
 	Net.push(player, "teleporting", nil)

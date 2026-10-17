@@ -24,6 +24,8 @@ local Gacha = require(Shared.Meta.Gacha)
 local Voices = require(Shared.Meta.Voices)
 local Passes = require(Shared.Meta.Passes)
 local Progress = require(Shared.Meta.Progress)
+local DailyShop = require(Shared.Meta.DailyShop)
+local Tutorial = require(Shared.Meta.Tutorial)
 local Characters = require(Shared.Game.Characters)
 
 local ServerInfo = require(script.Parent.ServerInfo)
@@ -70,6 +72,11 @@ local function newProfile()
 		chestsOpened = 0,
 		lastDaily = 0,
 		settings = { sfx = true, music = true, sfxVolume = 1, musicVolume = 0.7, autoRoll = false, fastAnim = false, voices = true, bubbles = true, voice = "auto" },
+		badges = {}, -- [badge key] = when it was earned (Meta/Badges)
+		fish = {}, -- [catch id] = how many (the fish log, Meta/Fishing)
+		tutorialDone = false, -- finished (or skipped) the guided first match
+		groupReward = false, -- claimed the join-the-group Gems
+		deals = { day = -1, bought = {} }, -- today's daily deals already bought
 	}
 end
 
@@ -346,7 +353,25 @@ function DataService.view(player: Player)
 		streak = { count = data.streak.count, day = data.streak.day, today = Progress.today() },
 		trophies = data.trophies,
 		bestTrophies = data.bestTrophies,
+		badges = table.clone(data.badges),
+		fish = table.clone(data.fish),
+		tutorialDone = data.tutorialDone,
+		groupReward = data.groupReward,
+		deals = DataService.dealsView(data),
 	}
+end
+
+-- Today's daily deals, with the ones already bought marked.
+function DataService.dealsView(data)
+	local today = DailyShop.today()
+	if data.deals.day ~= today then
+		data.deals = { day = today, bought = {} }
+	end
+	local items = {}
+	for _, d in DailyShop.deals(today) do
+		table.insert(items, { id = d.id, price = d.price, bought = data.deals.bought[d.id] == true })
+	end
+	return { day = today, items = items, endsIn = DailyShop.secondsLeft() }
 end
 
 -- Today's quests (made fresh on a new day).
@@ -465,7 +490,82 @@ function DataService.publicLook(player: Player)
 		emotes = table.clone(data.equipped.emotes),
 		level = data.level,
 		vip = vip,
+		-- the base your character stands on: earned with mastery (Progress.baseTier)
+		base = Progress.baseTier(Progress.masteryLevel(data.mastery[DataService.selectedCharacter(player)] or 0)),
 	}
+end
+
+-- A catch for the fish log; returns how many of it they have now.
+function DataService.addCatch(player: Player, catchId: string): number
+	local data = DataService.get(player)
+	if not data or catchId == "coin" then
+		return 0
+	end
+	data.fish[catchId] = (data.fish[catchId] or 0) + 1
+	return data.fish[catchId]
+end
+
+-- Buy one of today's daily deals.
+function DataService.buyDeal(player: Player, itemId: any): (boolean, string?)
+	local data = DataService.get(player)
+	if not data then
+		return false, "Your profile is still loading."
+	end
+	local view = DataService.dealsView(data)
+	local deal = nil
+	for _, d in view.items do
+		if d.id == itemId then
+			deal = d
+		end
+	end
+	if not deal then
+		return false, "That deal is gone. New deals every day!"
+	end
+	if data.owned[deal.id] then
+		return false, "You already have that one."
+	end
+	if data.gems < deal.price then
+		return false, "Not enough Gems."
+	end
+	data.gems -= deal.price
+	data.owned[deal.id] = true
+	data.deals.bought[deal.id] = true
+	return true, nil
+end
+
+-- The join-the-group reward, once.
+function DataService.claimCommunity(player: Player): (boolean, string?)
+	local data = DataService.get(player)
+	if not data then
+		return false, "Your profile is still loading."
+	end
+	if data.groupReward then
+		return false, "You already got this reward. Thanks for being in the crew!"
+	end
+	local groupId = Config.Community.GroupId
+	if (groupId or 0) == 0 and game.CreatorType == Enum.CreatorType.Group then
+		groupId = game.CreatorId
+	end
+	if (groupId or 0) == 0 then
+		return false, "There's no group to join yet."
+	end
+	local ok, member = pcall(function()
+		return (player :: any):IsInGroupAsync(groupId)
+	end)
+	if not ok then
+		ok, member = pcall(function()
+			return player:IsInGroup(groupId)
+		end)
+	end
+	if not ok then
+		return false, "Couldn't check right now. Try again in a moment."
+	end
+	if not member then
+		return false, "Join the group first, then claim!"
+	end
+	data.groupReward = true
+	data.gems += Config.Community.Gems
+	return true, nil
 end
 
 -- Fires (player) when a profile has loaded.
@@ -745,9 +845,17 @@ function DataService.applyMatchResult(player: Player, result)
 	end
 	gems = math.floor(gems)
 	xp = math.floor(xp)
+	-- the guided first match pays once
+	local tutorialGems = 0
+	if result.tutorial and not data.tutorialDone then
+		data.tutorialDone = true
+		tutorialGems = Tutorial.Gems
+		data.gems += tutorialGems
+	end
 
 	data.gems += gems
 	data.xp += xp
+	local levelBefore = data.level
 	local levelsGained = 0
 	while data.xp >= Config.xpForLevel(data.level) do
 		data.xp -= Config.xpForLevel(data.level)
@@ -775,8 +883,16 @@ function DataService.applyMatchResult(player: Player, result)
 	local quests = applyQuests(player, data, result)
 	local trophies = applyTrophies(data, result)
 
+	-- characters that unlocked with this level-up
+	local unlocked = {}
+	for _, def in Characters.list do
+		if def.unlockLevel and levelBefore < def.unlockLevel and data.level >= def.unlockLevel then
+			table.insert(unlocked, def.id)
+		end
+	end
+
 	return {
-		gems = gems + levelsGained * R.LevelUpGems,
+		gems = gems + levelsGained * R.LevelUpGems + tutorialGems,
 		xp = xp,
 		levelsGained = levelsGained,
 		level = data.level,
@@ -784,6 +900,8 @@ function DataService.applyMatchResult(player: Player, result)
 		mastery = mastery,
 		quests = quests,
 		trophies = trophies,
+		unlocked = unlocked,
+		tutorialGems = if tutorialGems > 0 then tutorialGems else nil,
 	}
 end
 
@@ -958,6 +1076,34 @@ function DataService.init()
 	Net.handle("shop.refresh", function(player)
 		refreshPasses(player)
 		DataService.pushProfile(player)
+		return true
+	end)
+
+	Net.handle("shop.deal", function(player, payload)
+		local ok2, err = DataService.buyDeal(player, payload.id)
+		if not ok2 then
+			return false, err
+		end
+		DataService.pushProfile(player)
+		return true
+	end)
+
+	Net.handle("community.claim", function(player)
+		local ok2, err = DataService.claimCommunity(player)
+		if not ok2 then
+			return false, err
+		end
+		DataService.pushProfile(player)
+		return true, { gems = Config.Community.Gems }
+	end)
+
+	-- skipping the guided match counts as done (it stays in How to Play)
+	Net.handle("tutorial.skip", function(player)
+		local data = DataService.get(player)
+		if data then
+			data.tutorialDone = true
+			DataService.pushProfile(player)
+		end
 		return true
 	end)
 end

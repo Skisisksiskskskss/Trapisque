@@ -2,11 +2,15 @@
 	MatchService
 	Starts and tracks matches.
 
-	Lobby servers run Practice (you vs bots) and Private (your party + bots) matches
-	right on the server, plus public matches when testing in Studio.
-	Reserved match servers read their match setup from MemoryStore (written by the
-	matchmaker), wait for everyone to arrive, play, then send everyone back to a lobby
-	with their party intact.
+	Lobby servers run Practice (you vs bots), the guided first match and Private (your
+	party + bots) matches right on the server, plus public matches when testing in
+	Studio. Reserved match servers read their match setup from MemoryStore (written by
+	the matchmaker), wait for everyone to arrive, play, then send everyone back to a
+	lobby with their party intact.
+
+	Two MemoryStore maps let other servers find running matches:
+		TrapisqueOpen_<mode>  public matches with a bot seat someone could drop into
+		TrapisqueWhere        which match each player is in (so friends can watch)
 ]]
 
 local Players = game:GetService("Players")
@@ -16,6 +20,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage.Shared
 local Modes = require(Shared.Game.Modes)
 local Maps = require(Shared.Game.Maps)
+local Tutorial = require(Shared.Meta.Tutorial)
 
 local Net = require(script.Parent.Net)
 local ServerInfo = require(script.Parent.ServerInfo)
@@ -28,8 +33,11 @@ local Match = require(script.Parent.Match)
 
 local MatchService = {}
 
+local OPEN_PREFIX = "TrapisqueOpen_"
+local WHERE_MAP = "TrapisqueWhere"
+
 local matches = {} -- [id] = Match
-local matchOf = {} -- [Player] = Match
+local matchOf = {} -- [Player] = Match (playing or watching)
 local reserved = { waiting = true, expected = {}, info = nil }
 
 function MatchService.get(player: Player)
@@ -85,22 +93,32 @@ local function sendHome(players: { Player }, match)
 	end
 end
 
+local function forget(userId: number)
+	if ServerInfo.canTeleport then
+		task.spawn(MemoryUtil.remove, WHERE_MAP, tostring(userId))
+	end
+end
+
 local function onClosed(match, _reason)
 	matches[match.id] = nil
-	local humans = {}
+	local people = {}
 	for player, m in matchOf do
 		if m == match then
 			matchOf[player] = nil
-			table.insert(humans, player)
+			table.insert(people, player)
+			forget(player.UserId)
 		end
 	end
+	if ServerInfo.canTeleport and match.kind == "public" then
+		task.spawn(MemoryUtil.remove, OPEN_PREFIX .. match.mode.id, game.PrivateServerId)
+	end
 	if ServerInfo.isReserved then
-		if #humans > 0 then
-			sendHome(humans, match)
+		if #people > 0 then
+			sendHome(people, match)
 		end
 		return
 	end
-	for _, player in humans do
+	for _, player in people do
 		Net.push(player, "match.closed", { id = match.id })
 		local party = PartyService.get(player)
 		if party and party.state == "playing" then
@@ -174,7 +192,7 @@ local function checkSettings(modeId, mapId, length)
 	return mode, nil
 end
 
-function MatchService.practice(player: Player, payload)
+local function canStartHere(player: Player): (boolean, string?)
 	if ServerInfo.role ~= "lobby" then
 		return false, "Finish this match first."
 	end
@@ -183,6 +201,14 @@ function MatchService.practice(player: Player, payload)
 	end
 	if MatchmakingService.isQueued(player) then
 		return false, "Cancel your search first."
+	end
+	return true, nil
+end
+
+function MatchService.practice(player: Player, payload)
+	local ok, why = canStartHere(player)
+	if not ok then
+		return false, why
 	end
 	local party = PartyService.get(player)
 	if party and #party.members > 1 then
@@ -211,6 +237,27 @@ function MatchService.practice(player: Player, payload)
 		humans = humans,
 		bots = bots,
 		teamsPreset = mode.isTeam,
+	})
+	return true
+end
+
+-- The guided first match: a short game against two gentle bots with the coach on.
+function MatchService.tutorial(player: Player)
+	local ok, why = canStartHere(player)
+	if not ok then
+		return false, why
+	end
+	local party = PartyService.get(player)
+	if party and #party.members > 1 then
+		return false, "Leave your party first: the guided match is just you and two bots."
+	end
+	MatchService.start({
+		mode = Tutorial.mode,
+		map = Tutorial.map,
+		kind = "practice",
+		humans = { { player = player, character = Tutorial.character } },
+		bots = { {}, {} },
+		tutorial = true,
 	})
 	return true
 end
@@ -267,8 +314,177 @@ function MatchService.private(player: Player)
 		humans = humans,
 		bots = bots,
 		teamsPreset = mode.isTeam,
+		parties = { { leader = party.leader, members = party.members, settings = party.settings } },
 	})
 	return true
+end
+
+---------------------------------------------------------------------------
+-- drop-in and spectating
+---------------------------------------------------------------------------
+
+-- A match running on this server that `players` could drop into right now.
+local function localDropIn(modeId: string, count: number)
+	for _, match in matches do
+		if match.mode.id == modeId and match.kind == "public" and match:dropInSeat() ~= nil then
+			local open = 0
+			for _, info in match.seats do
+				if info.isBot and not info.left then
+					open += 1
+				end
+			end
+			if open >= count then
+				return match
+			end
+		end
+	end
+	return nil
+end
+
+-- Drops `players` (a solo searcher or a small party) into a running match, if one
+-- here has room. Returns true when they're in.
+local function dropInHere(players: { Player }, modeId: string): boolean
+	local match = localDropIn(modeId, #players)
+	if not match then
+		return false
+	end
+	for _, p in players do
+		if match:dropIn(p) then
+			matchOf[p] = match
+			local party = PartyService.get(p)
+			if party then
+				PartyService.setState(party, "playing")
+			end
+		end
+	end
+	return true
+end
+
+-- Start watching a friend's match on this server.
+local function watchHere(player: Player, userId: number): (boolean, string?)
+	local friend = Players:GetPlayerByUserId(userId)
+	local match = friend and matchOf[friend]
+	if not match or match.closed or match.finished then
+		return false, "That match has ended."
+	end
+	if matchOf[player] then
+		return false, "You're already in a match."
+	end
+	if match:addSpectator(player) then
+		matchOf[player] = match
+		return true, nil
+	end
+	return false, "Can't watch that match."
+end
+
+-- Which of these friends are in a match someone could watch: { [userId] = info }.
+function MatchService.findWatchable(player: Player, userIds: any)
+	local out = {}
+	if type(userIds) ~= "table" then
+		return out
+	end
+	local count = 0
+	for _, id in userIds do
+		count += 1
+		if count > 30 then
+			break
+		end
+		local userId = tonumber(id)
+		if userId then
+			local here = Players:GetPlayerByUserId(userId)
+			local match = here and matchOf[here]
+			if match and not match.finished and not match:isSpectator(here) then
+				out[tostring(userId)] = { map = match.mapId, mode = match.mode.id, here = true }
+			elseif ServerInfo.canTeleport then
+				local ok, where = MemoryUtil.get(WHERE_MAP, tostring(userId))
+				if ok and type(where) == "table" then
+					out[tostring(userId)] = { map = where.map, mode = where.mode }
+				end
+			end
+		end
+	end
+	local _ = player
+	return out
+end
+
+function MatchService.watch(player: Player, userId: any): (boolean, string?)
+	local id = tonumber(userId)
+	if not id then
+		return false, "Pick a friend to watch."
+	end
+	if ServerInfo.role ~= "lobby" then
+		return false, "Finish this match first."
+	end
+	if MatchmakingService.isQueued(player) then
+		return false, "Cancel your search first."
+	end
+	if Players:GetPlayerByUserId(id) then
+		return watchHere(player, id)
+	end
+	if not ServerInfo.canTeleport then
+		return false, "That match isn't on this server."
+	end
+	local ok, where = MemoryUtil.get(WHERE_MAP, tostring(id))
+	if not ok or type(where) ~= "table" then
+		return false, "That match has ended."
+	end
+	Net.push(player, "teleporting", { reason = "Rowing over to watch..." })
+	DataService.save(player, true)
+	task.spawn(function()
+		local tpOk, err
+		if where.code then
+			local options = Instance.new("TeleportOptions")
+			options.ReservedServerAccessCode = where.code
+			options:SetTeleportData({ match = where.psid, spectate = id })
+			tpOk, err = TeleportUtil.teleport({ player }, game.PlaceId, options)
+		elseif where.job then
+			local options = Instance.new("TeleportOptions")
+			options.ServerInstanceId = where.job
+			options:SetTeleportData({ spectate = id })
+			tpOk, err = TeleportUtil.teleport({ player }, game.PlaceId, options)
+		end
+		if not tpOk then
+			Net.push(player, "teleporting", nil)
+			Net.push(player, "toast", { text = "Couldn't get to that match (" .. tostring(err) .. ").", kind = "error" })
+		end
+	end)
+	return true, nil
+end
+
+-- Keeps the cross-server maps up to date: who plays where, and open drop-in seats.
+local function advertise()
+	if not ServerInfo.canTeleport then
+		return
+	end
+	for _, match in matches do
+		if not match.closed then
+			local where = { mode = match.mode.id, map = match.mapId }
+			if ServerInfo.isReserved then
+				where.psid = game.PrivateServerId
+				where.code = reserved.info and reserved.info.code
+			else
+				where.job = game.JobId
+			end
+			for _, p in match:humans() do
+				MemoryUtil.set(WHERE_MAP, tostring(p.UserId), where, 90)
+			end
+			if ServerInfo.isReserved and match.kind == "public" and reserved.info and reserved.info.code then
+				local seat = match:dropInSeat()
+				local key = OPEN_PREFIX .. match.mode.id
+				if seat then
+					local open = 0
+					for _, info in match.seats do
+						if info.isBot and not info.left then
+							open += 1
+						end
+					end
+					MemoryUtil.set(key, game.PrivateServerId, { psid = game.PrivateServerId, code = reserved.info.code, seats = open, round = match.engine.round }, 20)
+				else
+					MemoryUtil.remove(key, game.PrivateServerId)
+				end
+			end
+		end
+	end
 end
 
 ---------------------------------------------------------------------------
@@ -360,7 +576,34 @@ local function bootReserved()
 		bots = bots,
 		teamsPreset = mode ~= nil and mode.isTeam,
 		parties = info.parties,
+		vote = info.vote == true,
 	})
+end
+
+-- Someone arrived after the match started: a drop-in, a spectator, or a straggler.
+local function lateArrival(player: Player)
+	local data = player:GetJoinData().TeleportData
+	local match = nil
+	for _, m in matches do
+		match = m
+	end
+	if match and type(data) == "table" then
+		if data.dropIn then
+			DataService.waitFor(player, 10)
+			if match:dropIn(player) then
+				matchOf[player] = match
+				return
+			end
+		elseif data.spectate then
+			if match:addSpectator(player) then
+				matchOf[player] = match
+				return
+			end
+		end
+	end
+	task.wait(3)
+	Net.push(player, "toast", { text = "That match already started. Sending you back to the lobby.", kind = "info" })
+	sendHome({ player }, { parties = {} })
 end
 
 ---------------------------------------------------------------------------
@@ -371,6 +614,7 @@ function MatchService.init()
 	MatchmakingService.startLocalMatch = function(spec)
 		MatchService.start(spec)
 	end
+	MatchmakingService.tryDropIn = dropInHere
 
 	Players.PlayerRemoving:Connect(function(player)
 		local match = matchOf[player]
@@ -378,10 +622,33 @@ function MatchService.init()
 			matchOf[player] = nil
 			match:playerLeft(player)
 		end
+		forget(player.UserId)
+	end)
+
+	-- arriving on a lobby server to watch a friend's match here
+	Players.PlayerAdded:Connect(function(player)
+		if ServerInfo.isReserved then
+			return
+		end
+		local data = player:GetJoinData().TeleportData
+		if type(data) == "table" and tonumber(data.spectate) then
+			task.delay(4, function()
+				if player.Parent == Players and not matchOf[player] then
+					local ok, err = watchHere(player, tonumber(data.spectate) :: number)
+					if not ok then
+						Net.push(player, "toast", { text = tostring(err), kind = "info" })
+					end
+				end
+			end)
+		end
 	end)
 
 	Net.handle("match.practice", function(player, payload)
 		return MatchService.practice(player, payload)
+	end)
+
+	Net.handle("match.tutorial", function(player)
+		return MatchService.tutorial(player)
 	end)
 
 	Net.handle("match.private", function(player)
@@ -394,6 +661,22 @@ function MatchService.init()
 			return false, "You're not in a match."
 		end
 		return match:command(player, payload.cmd)
+	end)
+
+	Net.handle("match.vote", function(player, payload)
+		local match = matchOf[player]
+		if not match then
+			return false, "You're not in a match."
+		end
+		return match:vote(player, payload.map)
+	end)
+
+	Net.handle("match.fish", function(player, payload)
+		local match = matchOf[player]
+		if not match then
+			return false, "You're not in a match."
+		end
+		return match:fish(player, payload.action)
 	end)
 
 	Net.handle("match.emote", function(player, payload)
@@ -421,6 +704,14 @@ function MatchService.init()
 		return true, match:resync(player)
 	end)
 
+	Net.handle("spectate.find", function(player, payload)
+		return true, MatchService.findWatchable(player, payload.userIds)
+	end)
+
+	Net.handle("spectate.watch", function(player, payload)
+		return MatchService.watch(player, payload.userId)
+	end)
+
 	Net.handle("match.leave", function(player)
 		local match = matchOf[player]
 		if ServerInfo.isReserved then
@@ -433,6 +724,7 @@ function MatchService.init()
 		end
 		if match then
 			matchOf[player] = nil
+			forget(player.UserId)
 			match:playerLeft(player)
 			local party = PartyService.get(player)
 			if party and party.state == "playing" then
@@ -456,15 +748,19 @@ function MatchService.init()
 			if reserved.info and not reserved.waiting then
 				local expected = table.find(reserved.expected, player.UserId)
 				if not expected or not matchOf[player] then
-					-- late or unexpected arrival: the match already started
-					task.wait(3)
-					Net.push(player, "toast", { text = "That match already started. Sending you back to the lobby.", kind = "info" })
-					sendHome({ player }, { parties = {} })
+					lateArrival(player)
 				end
 			end
 		end)
 		task.spawn(bootReserved)
 	end
+
+	task.spawn(function()
+		while true do
+			task.wait(5)
+			pcall(advertise)
+		end
+	end)
 end
 
 function MatchService.status(player: Player)

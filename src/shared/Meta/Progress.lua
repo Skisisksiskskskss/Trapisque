@@ -43,6 +43,18 @@ Progress.masteryMax = #Progress.masteryLevels
 Progress.masteryTitles = { [3] = "fan", [6] = "pro", [10] = "legend" }
 Progress.masteryTitleName = { fan = "Fan", pro = "Pro", legend = "Legend" }
 
+-- Each character's own base (the stand under them on the board): it appears at
+-- mastery 5 and turns gold at mastery 10. 0 = none yet, 1 = the base, 2 = gilded.
+Progress.baseLevels = { 5, 10 }
+function Progress.baseTier(level: number): number
+	if level >= Progress.baseLevels[2] then
+		return 2
+	elseif level >= Progress.baseLevels[1] then
+		return 1
+	end
+	return 0
+end
+
 function Progress.masteryGems(level: number): number
 	return 20 + level * 10
 end

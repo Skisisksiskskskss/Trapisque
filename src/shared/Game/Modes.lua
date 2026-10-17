@@ -23,6 +23,19 @@ local defs = {
 		target = Config.Rules.TreasuresToWin,
 	},
 	{
+		-- a short free-for-all: one treasure wins, about 5 minutes (good on a phone)
+		id = "blitz",
+		name = "Blitz",
+		short = "Blitz",
+		blurb = "Free-for-all race to ONE treasure. About 5 minutes.",
+		minPlayers = 2,
+		maxPlayers = 6,
+		teamSize = 1,
+		target = 1,
+		turnTime = 30,
+		length = "blitz",
+	},
+	{
 		id = "assist",
 		name = "Assist Trapisque",
 		short = "Assist",
@@ -43,19 +56,6 @@ local defs = {
 		teams = 3,
 		teamSize = 2,
 		target = Config.Rules.TreasuresToWin,
-	},
-	{
-		-- a short free-for-all: one treasure wins, about 5 minutes (good on a phone)
-		id = "blitz",
-		name = "Blitz",
-		short = "Blitz",
-		blurb = "Free-for-all race to ONE treasure. About 5 minutes.",
-		minPlayers = 2,
-		maxPlayers = 6,
-		teamSize = 1,
-		target = 1,
-		turnTime = 30,
-		length = "blitz",
 	},
 	{
 		-- free-for-all with the week's twist on the rules (Meta/Progress events)

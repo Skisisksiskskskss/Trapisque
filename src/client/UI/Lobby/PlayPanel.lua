@@ -102,8 +102,9 @@ function PlayPanel.new(parent: Instance, popups: Instance, opts: { [string]: any
 	end
 	local grid = Util.frame(content, { Name = "Modes", Position = UDim2.fromOffset(0, top), Size = UDim2.new(1, 0, 1, -(buttonsH + 12 + top)) })
 	local inRow = if compact then #classic + (if eventMode then 1 else 0) else 2
+	local rows = if compact then 1 else math.ceil(#classic / 2)
 	Util.new("UIGridLayout", {
-		CellSize = if compact then UDim2.new(1 / inRow, -12 * (inRow - 1) / inRow, 1, 0) else UDim2.new(0.5, -6, 0.5, -6),
+		CellSize = if compact then UDim2.new(1 / inRow, -12 * (inRow - 1) / inRow, 1, 0) else UDim2.new(0.5, -6, 1 / rows, -12 * (rows - 1) / rows),
 		CellPadding = UDim2.fromOffset(12, 12),
 		SortOrder = Enum.SortOrder.LayoutOrder,
 		Parent = grid,
@@ -282,7 +283,7 @@ function PlayPanel:_modeTile(grid: Frame, mode, order: number, event: any?)
 		Position = UDim2.fromOffset(pad, pad),
 		Size = UDim2.fromOffset(iconSize, iconSize),
 	})
-	Icons.medallion(icon, if mode.isEvent then "star" elseif mode.isTeam then "people" else "bolt", if mode.isEvent then C.pink else C.sun, { Size = UDim2.fromScale(1, 1) })
+	Icons.medallion(icon, if mode.isEvent then "star" elseif mode.isTeam then "people" elseif mode.id == "blitz" then "hourglass" else "bolt", if mode.isEvent then C.pink else C.sun, { Size = UDim2.fromScale(1, 1) })
 	local textX = pad + iconSize + 8
 	Widgets.label(tile, {
 		text = if event then (if compact then "Event" else event.name) elseif compact then mode.short else mode.name,

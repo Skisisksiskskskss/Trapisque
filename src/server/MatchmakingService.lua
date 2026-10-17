@@ -8,6 +8,11 @@
 		        assignment for each ticket; the ticket's own server teleports its players.
 		local   an in-server queue. Used in Studio (teleports don't work there) and as a
 		        fallback if MemoryStore is down. Matches run right on this server.
+
+	Free-for-all searches drop into a running match first when one has a bot seat
+	early enough in the game (Match:dropInSeat): on this server straight away, or on a
+	match server the matchmaker finds in TrapisqueOpen_<mode>. New Quick Play matches
+	open with a map vote.
 ]]
 
 local Players = game:GetService("Players")
@@ -18,7 +23,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage.Shared
 local Config = require(Shared.Config)
 local Modes = require(Shared.Game.Modes)
-local Maps = require(Shared.Game.Maps)
 local Matchmaker = require(Shared.Meta.Matchmaker)
 
 local Net = require(script.Parent.Net)
@@ -35,13 +39,16 @@ local QUEUE_PREFIX = "TrapisqueQ_"
 local ASSIGN_MAP = "TrapisqueAssign"
 local MATCH_MAP = "TrapisqueMatch"
 local LOCK_MAP = "TrapisqueLock"
+local OPEN_PREFIX = "TrapisqueOpen_"
 
 local tickets = {} -- [ticketId] = ticket (tickets owned by this server)
 local ticketOfUser = {} -- [userId] = ticketId
 local queueSizes = {} -- [modeId] = players searching (best guess)
 
--- set by Main: function(spec) that starts a match on this server
+-- set by MatchService: function(spec) that starts a match on this server, and
+-- function(players, modeId) -> boolean that drops players into one running here
 MatchmakingService.startLocalMatch = nil
+MatchmakingService.tryDropIn = nil :: ((players: { Player }, modeId: string) -> boolean)?
 
 local function useGlobal(): boolean
 	return ServerInfo.canTeleport and ServerInfo.role == "lobby" and not MemoryUtil.unhealthy()
@@ -130,6 +137,7 @@ function MatchmakingService.queue(player: Player, modeId: any)
 			return false, "Your party is too big for this mode."
 		end
 	end
+	local players = {}
 	for _, userId in users do
 		if ticketOfUser[userId] then
 			return false, "Someone in your party is already searching."
@@ -138,6 +146,16 @@ function MatchmakingService.queue(player: Player, modeId: any)
 		if not p then
 			return false, "Everyone in the party must be on this server."
 		end
+		table.insert(players, p)
+	end
+
+	-- a free-for-all match running right here with a free seat: hop straight in
+	local tryDropIn = MatchmakingService.tryDropIn
+	if not mode.isTeam and tryDropIn and tryDropIn(players, mode.id) then
+		for _, p in players do
+			Net.push(p, "queue", { state = "idle" })
+		end
+		return true
 	end
 
 	local now = os.time()
@@ -231,6 +249,7 @@ local function startLocal(match, mode)
 		humans = humans,
 		bots = bots,
 		teamsPreset = mode.isTeam,
+		vote = true,
 	})
 	if not ok then
 		warn("[Trapisque] failed to start local match: " .. tostring(err))
@@ -239,11 +258,18 @@ end
 
 local function localTick()
 	local now = os.time()
+	local tryDropIn = MatchmakingService.tryDropIn
 	for _, mode in Modes.list do
 		local list = {}
 		for _, t in tickets do
 			if not t.global and t.mode == mode.id then
-				table.insert(list, t)
+				-- a match here may have opened up a seat since they started searching
+				local players = ticketPlayers(t)
+				if not mode.isTeam and tryDropIn and #players == t.size and tryDropIn(players, mode.id) then
+					clearTicket(t, "matched")
+				else
+					table.insert(list, t)
+				end
 			end
 		end
 		local count = 0
@@ -303,6 +329,43 @@ local function formGlobal(mode)
 	if #list == 0 then
 		return
 	end
+	-- free-for-alls: fill bot seats in running matches first (oldest searchers first)
+	if not mode.isTeam then
+		local okOpen, open = MemoryUtil.range(OPEN_PREFIX .. mode.id, 20)
+		if okOpen and type(open) == "table" then
+			local waiting = {}
+			for _, t in list do
+				local placed = false
+				for _, entry in open do
+					local v = entry.value
+					if not placed and type(v) == "table" and (v.seats or 0) >= t.size then
+						local took = false
+						MemoryUtil.update(OPEN_PREFIX .. mode.id, entry.key, function(old)
+							if type(old) ~= "table" or (old.seats or 0) < t.size then
+								return nil
+							end
+							old.seats -= t.size
+							took = true
+							return old
+						end, 20)
+						if took then
+							v.seats -= t.size
+							placed = true
+							MemoryUtil.set(ASSIGN_MAP, t.id, { code = v.code, psid = v.psid, dropIn = true }, MM.AssignmentTTL)
+							MemoryUtil.remove(QUEUE_PREFIX .. mode.id, t.key)
+						end
+					end
+				end
+				if not placed then
+					table.insert(waiting, t)
+				end
+			end
+			list = waiting
+			if #list == 0 then
+				return
+			end
+		end
+	end
 	local matches = Matchmaker.form(mode, list, os.time(), MM)
 	for _, match in matches do
 		local reserved, accessCode, privateServerId = pcall(function()
@@ -312,7 +375,6 @@ local function formGlobal(mode)
 			warn("[Trapisque] ReserveServer failed: " .. tostring(accessCode))
 			return
 		end
-		local mapDef = Maps.list[math.random(1, #Maps.list)]
 		local parties = {}
 		for _, t in match.tickets do
 			if t.party then
@@ -321,13 +383,15 @@ local function formGlobal(mode)
 		end
 		local info = {
 			mode = mode.id,
-			map = mapDef.id,
+			map = "random", -- the players vote when they arrive
+			vote = true,
 			length = "quick",
 			kind = "public",
 			seats = match.seats,
 			bots = match.bots,
 			parties = parties,
 			created = os.time(),
+			code = accessCode, -- so the match server can offer its bot seats to drop-ins
 		}
 		local wrote = MemoryUtil.set(MATCH_MAP, privateServerId, info, MM.MatchInfoTTL)
 		if wrote then
@@ -349,12 +413,12 @@ local function pollAssignments()
 				clearTicket(ticket, "matched")
 				if #players > 0 then
 					for _, p in players do
-						Net.push(p, "teleporting", { reason = "Match found! Heading to the board..." })
+						Net.push(p, "teleporting", { reason = if assignment.dropIn then "Joining a match in progress..." else "Match found! Heading to the board..." })
 						DataService.save(p, true)
 					end
 					local options = Instance.new("TeleportOptions")
 					options.ReservedServerAccessCode = assignment.code
-					options:SetTeleportData({ match = assignment.psid, info = assignment.info })
+					options:SetTeleportData({ match = assignment.psid, info = assignment.info, dropIn = assignment.dropIn })
 					task.spawn(function()
 						local tpOk, err = TeleportUtil.teleport(players, game.PlaceId, options)
 						if not tpOk then

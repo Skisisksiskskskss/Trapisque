@@ -33,6 +33,7 @@
 		rig     { [seat] = { { a, b }, ... } } the dice those seats roll, in order (the
 		        guided first match), then random dice again
 		hands   { [seat] = { item, ... } } starting cards instead of the random ones
+		firstSeat  this seat takes the first turn
 ]]
 
 local Config = require(script.Parent.Parent.Config)
@@ -142,6 +143,7 @@ function Engine.new(opts)
 	self.maxRounds = if type(caps) == "table" then (caps[self.length] or caps.classic) else caps
 	self.rig = opts.rig or {}
 	self.startHands = opts.hands
+	self.firstSeat = opts.firstSeat
 	self.events = {}
 	self.phase = "setup"
 	self.round = 0
@@ -333,12 +335,16 @@ function Engine:start()
 		end
 	end
 
-	-- turn order: shuffled
+	-- turn order: shuffled (the guided match puts its player first)
 	local order = {}
 	for _, p in self.players do
 		table.insert(order, p.index)
 	end
 	rng:shuffle(order)
+	local first = self.firstSeat and table.find(order, self.firstSeat)
+	if first then
+		table.insert(order, 1, table.remove(order, first))
+	end
 	self.turnOrder = order
 
 	-- natural hazards and map traps
