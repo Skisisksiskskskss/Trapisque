@@ -136,7 +136,7 @@ function Spectate.open(popups: Instance)
 					position = UDim2.fromOffset(64, 34),
 				}).TextTruncate = Enum.TextTruncate.AtEnd
 				Widgets.button(row, {
-					text = "WATCH",
+					text = "Watch",
 					icon = "eye",
 					style = "green",
 					textSize = 17,

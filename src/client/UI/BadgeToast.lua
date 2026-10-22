@@ -54,7 +54,7 @@ local function showNext(layer: Instance)
 		ZIndex = 261,
 	})
 	Widgets.label(card, {
-		text = "BADGE EARNED!",
+		text = "Badge earned",
 		font = "chunky",
 		size = 15,
 		color = C.sun,

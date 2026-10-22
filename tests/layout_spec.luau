@@ -62,7 +62,7 @@ for _, def in Maps.list do
 		end)
 
 		test(name .. ": props stand clear of the trail, the tiles and each other", function()
-			truthy(#L.props >= 12, "expected a lived-in map, got " .. #L.props .. " props")
+			truthy(#L.props >= 6 and #L.props <= 14, "expected a few props, not a cluttered map: got " .. #L.props)
 			for i, p in L.props do
 				truthy(MapScenes ~= nil and p.size > 0, "prop size")
 				if not p.ground then

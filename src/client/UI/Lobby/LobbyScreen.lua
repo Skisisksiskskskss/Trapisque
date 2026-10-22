@@ -113,15 +113,15 @@ local function profileChip(parent: Instance, maid, r): Frame
 		Parent = parent,
 	})
 	place(chip, r)
-	Util.corner(chip, 14)
-	Util.stroke(chip, C.line, 3)
+	Util.corner(chip, 16)
+	Util.stroke(chip, C.line, 2)
 	local h = r.h
 	local avatar = h - 20
 	Avatars.portrait(chip, { userId = player.UserId, name = player.DisplayName }, {
 		AnchorPoint = Vector2.new(0, 0.5),
 		Position = UDim2.new(0, 10, 0.5, 0),
 		Size = UDim2.fromOffset(avatar, avatar),
-	}, { ring = C.sun, ringPx = 3 })
+	}, { ring = C.line, ringPx = 2 })
 	local x = avatar + 20
 	local name = Widgets.label(chip, {
 		text = player.DisplayName,
@@ -134,17 +134,17 @@ local function profileChip(parent: Instance, maid, r): Frame
 	name.TextTruncate = Enum.TextTruncate.AtEnd
 	local titleHolder = Util.frame(chip, { Position = UDim2.fromOffset(x, h / 2 - 6), Size = UDim2.new(1, -(x + 150), 0, 18) })
 	local level = Widgets.label(chip, {
-		text = "LV 1",
+		text = "Level 1",
 		font = "chunky",
 		size = 14,
-		color = C.skyDark,
-		sizeUDim = UDim2.fromOffset(40, 16),
+		color = C.textSoft,
+		sizeUDim = UDim2.fromOffset(62, 16),
 		position = UDim2.fromOffset(x, h / 2 + 13),
 	})
 	local xp = Widgets.progress(chip, {
-		size = UDim2.new(1, -(x + 44 + 150), 0, 8),
-		position = UDim2.fromOffset(x + 44, h / 2 + 17),
-		color = C.info,
+		size = UDim2.new(1, -(x + 66 + 150), 0, 8),
+		position = UDim2.fromOffset(x + 66, h / 2 + 17),
+		color = C.orange,
 	})
 	local gems = gemCounter(chip, 22, maid)
 	gems.Position = UDim2.new(1, -16, 0.32, 0)
@@ -173,7 +173,8 @@ local function profileChip(parent: Instance, maid, r): Frame
 			return
 		end
 		local rank = Progress.rank(p.trophies or 0)
-		trophyText.Text = rank.name .. "  " .. Util.commas(p.trophies or 0)
+		-- (the first rank isn't worth a name: just the count)
+		trophyText.Text = if (p.trophies or 0) > 0 then (rank.name .. "  " .. Util.commas(p.trophies or 0)) else "0"
 		if shownRank ~= rank.id then
 			shownRank = rank.id
 			Util.clear(trophyIcon)
@@ -201,7 +202,7 @@ local function profileChip(parent: Instance, maid, r): Frame
 				})
 			end
 		end
-		level.Text = "LV " .. tostring(p.level or 1)
+		level.Text = "Level " .. tostring(p.level or 1)
 		xp:set((p.xp or 0) / math.max(1, p.xpNext or 100))
 	end, true))
 	return chip
@@ -235,10 +236,10 @@ local function compactChip(parent: Instance, maid, r): Frame
 	})
 	name.TextTruncate = Enum.TextTruncate.AtEnd
 	local level = Widgets.label(chip, {
-		text = "LV 1",
+		text = "Level 1",
 		font = "chunky",
 		size = 14,
-		color = C.skyDark,
+		color = C.textSoft,
 		align = "right",
 		anchor = Vector2.new(1, 0.5),
 		sizeUDim = UDim2.fromOffset(52, 20),
@@ -249,7 +250,7 @@ local function compactChip(parent: Instance, maid, r): Frame
 	gems.Position = UDim2.new(1, -12, 0.5, 0)
 	maid:add(State.watch("profile", function(p)
 		if p then
-			level.Text = "LV " .. tostring(p.level or 1)
+			level.Text = "Level " .. tostring(p.level or 1)
 		end
 	end, true))
 	return chip
@@ -260,13 +261,13 @@ end
 ---------------------------------------------------------------------------
 
 local NAV = {
-	{ id = "chests", text = "CHESTS", short = "CHESTS", icon = "chest", style = "brass" },
-	{ id = "quests", text = "QUESTS", short = "QUESTS", icon = "star", style = "orange" },
-	{ id = "locker", text = "LOCKER", short = "LOCKER", icon = "hanger", style = "wood" },
-	{ id = "shop", text = "SHOP", short = "SHOP", icon = "bag", style = "wood" },
-	{ id = "leaders", text = "TOP PLAYERS", short = "TOP", icon = "crown", style = "wood" },
-	{ id = "rules", text = "HOW TO PLAY", short = "RULES", icon = "book", style = "wood" },
-	{ id = "settings", text = "SETTINGS", short = "SETTINGS", icon = "gear", style = "wood" },
+	{ id = "chests", text = "Chests", short = "Chests", icon = "chest", style = "wood" },
+	{ id = "quests", text = "Quests", short = "Quests", icon = "star", style = "wood" },
+	{ id = "locker", text = "Locker", short = "Locker", icon = "hanger", style = "wood" },
+	{ id = "shop", text = "Shop", short = "Shop", icon = "bag", style = "wood" },
+	{ id = "leaders", text = "Top players", short = "Top", icon = "crown", style = "wood" },
+	{ id = "rules", text = "How to play", short = "Rules", icon = "book", style = "wood" },
+	{ id = "settings", text = "Settings", short = "Settings", icon = "gear", style = "wood" },
 }
 
 local function openPage(id: string, popups: Instance)
@@ -289,8 +290,8 @@ end
 
 --[[
 	The menu: wide buttons with words (PC), shorter words (phones sideways), or icons
-	with a small caption under each (phones upright). The Chests button turns green
-	with a count while a free chest is waiting. Nothing here loops: a menu that keeps
+	with a small caption under each (phones upright). All alike, except the Chests
+	button, which turns orange with a count while a free chest is waiting. Nothing here loops: a menu that keeps
 	moving gets tiring, so a chest that becomes free just hops once.
 ]]
 local function buildNav(parent: Instance, maid, spec, popups: Instance, withLeaders: boolean)
@@ -351,7 +352,7 @@ local function buildNav(parent: Instance, maid, spec, popups: Instance, withLead
 				text = if spec.kind == "full" then item.text else item.short,
 				icon = item.icon,
 				style = item.style,
-				textSize = if spec.kind == "full" then 19 elseif n >= 7 then 13 else 15,
+				textSize = if spec.kind == "full" then 18 elseif n >= 7 then 13 else 15,
 				size = UDim2.new(1 / n, -gap * (n - 1) / n, 1, 0),
 				layoutOrder = i,
 				onClick = onClick,
@@ -377,9 +378,9 @@ local function buildNav(parent: Instance, maid, spec, popups: Instance, withLead
 		end
 		local count = freeChests(p)
 		local free = count > 0
-		chest.button:setStyle(if free then "green" else "brass")
+		chest.button:setStyle(if free then "brass" else "wood")
 		if not chest.icon then
-			chest.button:setText(if free then "FREE CHEST!" else "CHESTS")
+			chest.button:setText(if free then "Free chest" else "Chests")
 		end
 		chest.button:setBadge(if free then tostring(count) else nil)
 		if free and wasFree == false then
@@ -465,11 +466,9 @@ local function build(frame: Frame, maid, L, popups: Instance)
 			name = "Title",
 			text = "Trapisque",
 			font = "display",
-			size = math.floor(math.min(60, r.h * 0.86)),
-			color = C.sun,
+			size = math.floor(math.min(54, r.h * 0.8)),
+			color = C.textLight,
 			align = if L.form == "tall" then "center" else "left",
-			outline = C.line,
-			outlineThickness = if r.h >= 60 then 3 else 2,
 		})
 		place(title, r)
 		titleLabel = title
@@ -660,7 +659,7 @@ function LobbyScreen.welcome(popups: Instance)
 	})
 	Util.list(row, "x", 12, "Center", "Center")
 	Widgets.button(row, {
-		text = "NOT NOW",
+		text = "Not now",
 		style = "panel",
 		textSize = 18,
 		size = UDim2.fromOffset(160, 50),
@@ -671,7 +670,7 @@ function LobbyScreen.welcome(popups: Instance)
 		end,
 	})
 	Widgets.button(row, {
-		text = "LET'S GO!",
+		text = "Let's go!",
 		icon = "play",
 		style = "green",
 		textSize = 20,
@@ -747,7 +746,7 @@ function LobbyScreen.invite(data)
 		end
 	end
 	Widgets.button(card, {
-		text = "JOIN",
+		text = "Join",
 		style = "green",
 		textSize = 17,
 		size = UDim2.new(0.5, -18, 0, 38),
@@ -758,7 +757,7 @@ function LobbyScreen.invite(data)
 		end,
 	})
 	Widgets.button(card, {
-		text = "NO THANKS",
+		text = "No thanks",
 		style = "parchment",
 		textSize = 17,
 		size = UDim2.new(0.5, -18, 0, 38),

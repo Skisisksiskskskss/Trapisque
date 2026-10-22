@@ -40,6 +40,7 @@ local Rng = require(Shared.Game.Rng)
 local Config = require(Shared.Config)
 local Pacing = require(Shared.Game.Pacing)
 local Items = require(Shared.Game.Items)
+local Engine = require(Shared.Game.Engine)
 
 local UI = script.Parent.Parent
 local Util = require(UI.Util)
@@ -73,10 +74,10 @@ local TOP = {
 	teleporter = hex("8FB3E8"),
 	spore_warper = hex("A6D98F"),
 	conveyor = hex("B8BDC7"),
-	trampoline = hex("F3A6CF"),
+	sands = hex("E8C77E"),
 	embers = hex("F5B26B"),
 }
-local NEUTRAL_ITEMS = { teleporter = true, spore_warper = true, conveyor = true, trampoline = true }
+local NEUTRAL_ITEMS = { teleporter = true, spore_warper = true, conveyor = true, sands = true }
 
 local BoardView = {}
 BoardView.__index = BoardView
@@ -97,6 +98,7 @@ function BoardView.new(parent: Frame, mapId: string, opts: { [string]: any }?)
 	self.board = Board.get(def)
 	self.layout = BoardLayout.build(self.board, def, Rng, { rotate = opts ~= nil and opts.rotate == true })
 	self.mySeat = opts and opts.mySeat
+	self.round = 1 -- Shifting Sands show which way they slide this round
 	-- the scene's inks for the tiles
 	local col = {}
 	for k, v in self.layout.scene.colors do
@@ -275,7 +277,7 @@ function BoardView:boo(tile: number)
 			end)
 		end
 	end
-	self:floatText(self:tileWorld(tile), "BOO!", C.white, 34)
+	self:floatText(self:tileWorld(tile), "Boo!", C.white, 34)
 end
 
 -- Where the volcano stands (its landmark), if this map has one.
@@ -297,7 +299,7 @@ function BoardView:erupt(speed: number?)
 	Sound.play("fire")
 	local at = self:volcanoWorld()
 	if at then
-		self:floatText(at, "KABOOM!", C.orange, 40)
+		self:floatText(at, "Kaboom!", C.orange, 40)
 		for i = 1, 8 do
 			local a = (i / 8) * math.pi * 2
 			local rock = Util.new("Frame", {
@@ -628,13 +630,14 @@ function BoardView:_buildTiles()
 		})
 		local local0 = Vector2.new(U, U)
 		local r = S.tileR * U * (t.scale or 1)
-		local side = self:_tileShape(root, local0 + Vector2.new(0.1, S.tileDepth) * U, r, C.line, 1, "Side", t.angle)
+		-- the tile's edge is a darker shade of the tile, not an outline
+		local side = self:_tileShape(root, local0 + Vector2.new(0, S.tileDepth) * U, r, Util.shade(self.tileColors.normal, -0.32), 1, "Side", t.angle)
 		local top = self:_tileShape(root, local0, r, self.tileColors.normal, 3, "Top", t.angle)
-		Util.stroke(top, C.line, 0.075 * U)
+		-- every fifth tile carries its number, small: enough to count by, not a wall of digits
 		local label = Widgets.label(root, {
 			text = tostring(t.id),
 			font = "chunky",
-			size = math.floor(0.42 * U),
+			size = math.floor(0.36 * U),
 			color = self.inks.number or C.textFaint,
 			align = "center",
 			sizeUDim = UDim2.fromOffset(U, 0.5 * U),
@@ -642,7 +645,8 @@ function BoardView:_buildTiles()
 			position = UDim2.fromOffset(U, U),
 			z = 8,
 		})
-		local parts = { root = root, side = side, top = top, label = label, kind = t.kind, branch = t.branch, angle = t.angle }
+		label.Visible = t.id % 5 == 0
+		local parts = { root = root, side = side, top = top, label = label, kind = t.kind, branch = t.branch, angle = t.angle, numbered = t.id % 5 == 0 }
 		self.tileParts[t.id] = parts
 		self:_paintTile(t.id)
 	end
@@ -778,6 +782,30 @@ function BoardView:_paintTile(tile: number)
 	elseif entry and not (entry.item == "conveyor" and beltAngle) then
 		-- (a belt's first tile shows the belt itself, not a plaque on top of it)
 		parts.plaque = plaque(root, entry.item, entry.owner, mid, 0.86 * U, 6)
+		if entry.item == "sands" then
+			-- which way it slides you this round: +3 or -3
+			local fwd = Engine.sandsForward(self.round)
+			local way = Util.new("Frame", {
+				Name = "Way",
+				BackgroundColor3 = if fwd then C.lime else C.coral,
+				BorderSizePixel = 0,
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				Position = UDim2.fromScale(0.86, 0.86),
+				Size = UDim2.fromScale(0.66, 0.42),
+				ZIndex = 9,
+				Parent = parts.plaque,
+			})
+			Util.corner(way, 0.5)
+			Widgets.label(way, {
+				text = (if fwd then "+" else "-") .. tostring(Config.Rules.SandsSlide),
+				font = "chunky",
+				size = math.floor(0.3 * U),
+				color = C.white,
+				align = "center",
+				sizeUDim = UDim2.fromScale(1, 1),
+				z = 10,
+			})
+		end
 	end
 	local busyCenter = natural ~= nil or entry ~= nil
 	if traps and traps[1] then
@@ -818,7 +846,7 @@ function BoardView:_paintTile(tile: number)
 		parts.ember = flame
 	end
 	local busy = parts.skin ~= nil or parts.icon ~= nil or parts.inlay ~= nil or parts.plaque ~= nil or parts.trap ~= nil
-	parts.label.Visible = not busy and (self.cover[tile] or 0) == 0
+	parts.label.Visible = parts.numbered and not busy and (self.cover[tile] or 0) == 0
 end
 
 -- Invisible square buttons for picking tiles (rotated frames don't take clicks well).
@@ -908,6 +936,19 @@ function BoardView:setNatural(tile: number, kind: string?)
 	local parts = self.tileParts[tile]
 	if kind and parts and parts.skin then
 		Util.popIn(parts.skin, 0.35, 0.4)
+	end
+end
+
+-- A new round: Shifting Sands turn around.
+function BoardView:setRound(round: number)
+	if self.round == round then
+		return
+	end
+	self.round = round
+	for tile, entry in self.placed do
+		if entry.item == "sands" then
+			self:_paintTile(tile)
+		end
 	end
 end
 
@@ -1273,7 +1314,7 @@ function BoardView:_arrange(instant: boolean?)
 		if (self.cover[tile] or 0) ~= n then
 			self.cover[tile] = n
 			local busy = parts.skin ~= nil or parts.icon ~= nil or parts.inlay ~= nil or parts.plaque ~= nil or parts.trap ~= nil
-			parts.label.Visible = not busy and n == 0
+			parts.label.Visible = parts.numbered and not busy and n == 0
 		end
 	end
 end
@@ -1487,14 +1528,14 @@ function BoardView:say(seat: number, text: string, opts: { [string]: any }?)
 	local emote = o.emote == true
 	local size = if emote then 24 else 20
 	local maxW = if emote then 220 else 240
-	local bounds = TextService:GetTextSize(text, size, Enum.Font.Oswald, Vector2.new(maxW / 1.12, 1000))
+	local bounds = TextService:GetTextSize(text, size, Enum.Font.Nunito, Vector2.new(maxW / 1.12, 1000))
 	local textW = math.clamp(math.ceil(bounds.X * 1.12) + 2, 40, maxW)
 	local textH = math.max(size + 2, math.ceil(bounds.Y) + 2)
 	local name = o.name or ""
 	if o.staff then
 		name = name .. "  ·  " .. o.staff
 	end
-	local tabW = math.min(maxW, math.ceil(TextService:GetTextSize(name, 14, Enum.Font.Oswald, Vector2.new(1000, 40)).X) + 22)
+	local tabW = math.min(maxW, math.ceil(TextService:GetTextSize(name, 14, Enum.Font.Nunito, Vector2.new(1000, 40)).X) + 22)
 	local bodyW = math.max(textW + 26, tabW + 20)
 	local bodyH = textH + 22
 	local tail = 12
@@ -1675,7 +1716,7 @@ function BoardView:hop(seat: number, path: { number }, kind: string, trailId: st
 		-- knocked back, launched or sliding: the pawn zips along the path
 		local fstep = Pacing.FastStep * pace
 		local total = fstep * #path
-		local arc = kind == "blast" or kind == "trampoline"
+		local arc = kind == "blast"
 		if arc then
 			Util.tween(pawn.lift, total * 0.5, { Position = UDim2.fromOffset(0, -1.6 * U) }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 			task.delay(total * 0.5, function()

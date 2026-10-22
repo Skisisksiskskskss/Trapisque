@@ -1,8 +1,8 @@
 --[[
 	Cards
-	Trapisque's sticker cards. The front is a candy slab in the card's category colour
-	with its illustration (StickerArt) in a cream window and the name in outlined
-	lettering; the back is cream paper with the rules.
+	Trapisque's cards. The front is white card stock: the name on a band of the card's
+	category colour, its illustration (StickerArt) on a light tint of that colour, and
+	the kind of card along the bottom. The back is the same stock with the rules.
 
 	Cards.item(parent, itemId, props)        -> card object (front, can flip to back)
 	Cards.character(parent, characterId, props)
@@ -26,11 +26,11 @@ local C = Theme.C
 local Cards = {}
 
 local CATEGORY_LABEL = {
-	trap = "TRAP",
-	assist = "ASSIST",
-	neutral = "BOARD PIECE",
-	potion = "POTION",
-	coin = "COIN",
+	trap = "Trap",
+	assist = "Assist",
+	neutral = "Board piece",
+	potion = "Potion",
+	coin = "Coin",
 }
 Cards.CATEGORY_LABEL = CATEGORY_LABEL
 
@@ -79,37 +79,48 @@ end
 
 local TEXT = CardStyle.text
 
--- The candy slab every card is made of: a darker lip under a coloured face.
-local function slab(parent: Instance, color: Color3): (Frame, Frame)
+-- The card stock: a white face with a thin border of the card's colour, on a darker
+-- edge of stock. With `band`, the top of the face is a band of that colour.
+local function slab(parent: Instance, color: Color3, band: boolean?): (Frame, Frame)
 	local holder = Util.frame(parent, { Name = "Slab" })
 	local lip = Util.new("Frame", {
 		Name = "Lip",
-		BackgroundColor3 = color:Lerp(Color3.new(0, 0, 0), 0.4),
+		BackgroundColor3 = Util.shade(color, -0.3),
 		BorderSizePixel = 0,
 		Size = UDim2.fromScale(1, 1),
 		Parent = holder,
 	})
 	Util.new("UICorner", { CornerRadius = UDim.new(CardStyle.corner, 0), Parent = lip })
-	Util.scaledStroke(lip, C.line, CardStyle.outline, 3)
 	local face = Util.new("Frame", {
 		Name = "Face",
-		BackgroundColor3 = color,
+		BackgroundColor3 = C.panelRaised,
 		BorderSizePixel = 0,
+		ClipsDescendants = true,
 		Size = UDim2.fromScale(1, 1 - CardStyle.lip),
 		ZIndex = 2,
 		Parent = holder,
 	})
 	Util.new("UICorner", { CornerRadius = UDim.new(CardStyle.corner, 0), Parent = face })
-	Util.scaledStroke(face, C.line, CardStyle.outline, 3)
+	Util.scaledStroke(face, color, CardStyle.outline, 2)
+	if band then
+		Util.new("Frame", {
+			Name = "Band",
+			BackgroundColor3 = color,
+			BorderSizePixel = 0,
+			Size = UDim2.fromScale(1, CardStyle.band.h),
+			ZIndex = 3,
+			Parent = face,
+		})
+	end
 	return holder, face
 end
 
--- The cream window, and the art in it.
+-- The tinted window, and the art in it.
 local function window(face: Frame, color: Color3, ops: { any }?)
 	local W = CardStyle.window
 	local win = Util.new("Frame", {
 		Name = "Window",
-		BackgroundColor3 = C.cream,
+		BackgroundColor3 = C.panelRaised:Lerp(color, 0.1),
 		BorderSizePixel = 0,
 		Position = UDim2.fromScale(W.x, W.y),
 		Size = UDim2.fromScale(W.w, W.h),
@@ -117,9 +128,6 @@ local function window(face: Frame, color: Color3, ops: { any }?)
 		Parent = face,
 	})
 	Util.new("UICorner", { CornerRadius = UDim.new(W.corner, 0), Parent = win })
-	Util.scaledStroke(win, C.line, 0.025, 2)
-	-- the window is tinted with the card's colour (no spotlight disc behind the art)
-	win.BackgroundColor3 = C.cream:Lerp(color, 0.12)
 	if ops then
 		local I = CardStyle.icon
 		local art = Icons.sticker(face, ops, {
@@ -135,72 +143,68 @@ local function window(face: Frame, color: Color3, ops: { any }?)
 	return win
 end
 
-local function topTag(face: Frame, text: string, card: GuiObject)
+-- The kind of card (or a character's ability), small, along the bottom.
+local function topTag(face: Frame, text: string, card: GuiObject, color: Color3)
 	local T = CardStyle.tag
 	local label = Widgets.label(face, {
 		name = "Tag",
 		text = text,
 		font = "chunky",
 		size = 20,
-		color = C.white,
+		color = Theme.inkOf(color),
 		align = "center",
 		sizeUDim = UDim2.fromScale(0.86, T.h),
 		anchor = Vector2.new(0.5, 0.5),
 		position = UDim2.fromScale(0.5, T.y),
-		outline = C.line,
-		outlineThickness = 2,
 		z = 6,
 	})
-	cardText(label, card, TEXT.tag, 6, 0.014)
+	cardText(label, card, TEXT.tag, 6)
 	return label
 end
 
-local function nameLine(face: Frame, text: string, card: GuiObject, short: string?)
+-- The name, in the coloured band across the top.
+local function nameLine(face: Frame, text: string, card: GuiObject, color: Color3, short: string?)
 	local N = CardStyle.name
 	local label = Widgets.label(face, {
 		name = "Name",
-		text = string.upper(text),
+		text = text,
 		font = "chunky",
 		size = 30,
-		color = C.white,
+		color = Theme.textOn(color),
 		align = "center",
 		sizeUDim = UDim2.fromScale(0.9, N.h),
 		anchor = Vector2.new(0.5, 0.5),
 		position = UDim2.fromScale(0.5, N.y),
-		outline = C.line,
-		outlineThickness = 2.5,
 		z = 6,
 	})
-	cardText(label, card, TEXT.name, 7, 0.02, if short then string.upper(short) else nil)
+	cardText(label, card, TEXT.name, 7, nil, short)
 	return label
 end
 
--- Cream paper back with the card's rules.
+-- The back: the same card stock, with the card's rules.
 local function backFace(parent: Instance, color: Color3, title: string, tag: string, sections: { { string } }, footer: string?)
 	local card = parent.Parent :: GuiObject -- the card root (parent is its flipper)
 	local holder, face = slab(parent, color)
 	holder.Name = "Back"
 	local paper = Util.new("Frame", {
 		Name = "Paper",
-		BackgroundColor3 = C.cream,
+		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.5),
-		Size = UDim2.new(0.86, 0, 1 - 0.14 * CardStyle.aspect, 0),
+		Size = UDim2.new(0.9, 0, 1 - 0.1 * CardStyle.aspect, 0),
 		ZIndex = 5,
 		Parent = face,
 	})
-	Util.new("UICorner", { CornerRadius = UDim.new(0.07, 0), Parent = paper })
-	Util.scaledStroke(paper, C.line, 0.02, 2)
 	local list = Util.frame(paper, { Name = "List", ZIndex = 6 })
 	Util.pad(list, 6)
 	local layout = Util.list(list, "y", 2, "Center", "Top")
 	layout.Padding = UDim.new(0.012, 0)
 	cardText(Widgets.label(list, {
-		text = string.upper(title),
+		text = title,
 		font = "chunky",
 		size = 34,
-		color = C.line,
+		color = C.text,
 		align = "center",
 		sizeUDim = UDim2.fromScale(1, 0.11),
 		layoutOrder = 1,
@@ -238,7 +242,7 @@ local function backFace(parent: Instance, color: Color3, title: string, tag: str
 			text = sec[2],
 			font = "heavy",
 			size = 22,
-			color = C.line,
+			color = C.text,
 			align = "left",
 			valign = "top",
 			wrap = true,
@@ -260,20 +264,17 @@ local function backFace(parent: Instance, color: Color3, title: string, tag: str
 			Parent = paper,
 		})
 		Util.new("UICorner", { CornerRadius = UDim.new(0.5, 0), Parent = pill })
-		Util.scaledStroke(pill, C.line, 0.04, 2)
 		cardText(Widgets.label(pill, {
 			text = footer,
 			font = "heavy",
 			size = 18,
-			color = C.white,
+			color = Theme.textOn(color),
 			align = "center",
 			sizeUDim = UDim2.fromScale(0.94, 0.8),
 			anchor = Vector2.new(0.5, 0.5),
 			position = UDim2.fromScale(0.5, 0.5),
-			outline = C.line,
-			outlineThickness = 1.5,
 			z = 8,
-		}), card, TEXT.footer, 6, 0.01)
+		}), card, TEXT.footer, 6)
 	end
 	return holder
 end
@@ -343,14 +344,14 @@ function Cards.item(parent: Instance?, itemId: string, props: { [string]: any }?
 	local color = Theme.Category[category] or C.panelHi
 
 	-- front
-	local front, face = slab(flipper, color)
+	local front, face = slab(flipper, color, true)
 	front.Name = "Front"
-	topTag(face, CATEGORY_LABEL[category] or "", root)
+	topTag(face, CATEGORY_LABEL[category] or "", root, color)
 	window(face, color, Cards.art(itemId))
-	nameLine(face, def.name, root, def.nick)
+	nameLine(face, def.name, root, color, def.nick)
 
 	-- back
-	local tag = (CATEGORY_LABEL[category] or "") .. (if category == "trap" and def.hidden then " · HIDDEN" else "")
+	local tag = (CATEGORY_LABEL[category] or "") .. (if category == "trap" and def.hidden then " · hidden" else "")
 	local back = backFace(flipper, color, def.name, tag, { { "", def.text } }, CardStyle.howToPlay(def))
 
 	return makeCardObject(root, flipper, front, back)
@@ -363,16 +364,16 @@ function Cards.character(parent: Instance?, characterId: string, props: { [strin
 	root.Name = "Character_" .. characterId
 	local color = Theme.Character[characterId] or C.panelHi
 
-	local front, face = slab(flipper, color)
+	local front, face = slab(flipper, color, true)
 	front.Name = "Front"
-	topTag(face, if def.ability then string.upper(def.ability.name) else "", root)
+	topTag(face, if def.ability then def.ability.name else "", root, color)
 	window(face, color, StickerArt.mascot(characterId))
-	nameLine(face, def.name, root)
+	nameLine(face, def.name, root, color)
 
-	local sections = { { string.upper(def.passiveName or "Passive"), def.passive, "0.24" } }
+	local sections = { { def.passiveName or "Passive", def.passive, "0.24" } }
 	if def.ability then
 		table.insert(sections, {
-			string.upper(def.ability.name) .. " · " .. def.ability.cost .. " POWER",
+			def.ability.name .. " · " .. def.ability.cost .. " Power",
 			def.ability.text,
 			"0.27",
 		})

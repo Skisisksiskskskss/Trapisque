@@ -129,7 +129,7 @@ local function row(list: Frame, i: number, r, mine: boolean, isTeam: boolean, na
 	end
 	if r.won and not narrow then
 		Widgets.badge(f, {
-			text = "WINNER",
+			text = "Winner",
 			color = C.sun,
 			stroke = C.line,
 			textColor = C.textOnLight,
@@ -250,7 +250,7 @@ function Results.show(layer: Instance, data, mySeat: number, isTeam: boolean, on
 			Icons.medallion(ic, mastery.character, Theme.Character[mastery.character] or C.grape, { Size = UDim2.fromScale(1, 1) })
 			local up = (mastery.levelsGained or 0) > 0
 			Widgets.label(f, {
-				text = (if cdef then cdef.name else "") .. " Lv " .. tostring(mastery.level) .. (if up then "  LEVEL UP!" else ""),
+				text = (if cdef then cdef.name else "") .. " Lv " .. tostring(mastery.level) .. (if up then "  Level up!" else ""),
 				font = "chunky",
 				size = if narrow then 15 else 17,
 				color = if up then C.sun else C.text,
@@ -309,7 +309,7 @@ function Results.show(layer: Instance, data, mySeat: number, isTeam: boolean, on
 			local tx = if narrow then 46 else 56
 			local lines = {}
 			for _, q in changed do
-				table.insert(lines, (if q.done then "DONE! " else "") .. q.text .. "  " .. tostring(q.progress) .. "/" .. tostring(q.goal) .. (if q.done then ("  +" .. q.gems) else ""))
+				table.insert(lines, (if q.done then "Done: " else "") .. q.text .. "  " .. tostring(q.progress) .. "/" .. tostring(q.goal) .. (if q.done then ("  +" .. q.gems) else ""))
 			end
 			if #lines == 0 then
 				table.insert(lines, "No quest progress this time")
@@ -318,7 +318,7 @@ function Results.show(layer: Instance, data, mySeat: number, isTeam: boolean, on
 				table.insert(lines, 1, "ALL QUESTS DONE: free Explorer Chest!")
 			end
 			Widgets.label(f, {
-				text = "DAILY QUESTS",
+				text = "Daily quests",
 				font = "chunky",
 				size = if narrow then 13 else 15,
 				color = C.text,
@@ -349,10 +349,10 @@ function Results.show(layer: Instance, data, mySeat: number, isTeam: boolean, on
 			local head, sub
 			if trophies then
 				local d = trophies.delta or 0
-				head = (if d >= 0 then "+" else "") .. tostring(d) .. " TROPHIES"
-				sub = tostring(trophies.total) .. "  ·  " .. (if rankDef then rankDef.name else "") .. (if trophies.rankUp then "  RANK UP!" else "")
+				head = (if d >= 0 then "+" else "") .. tostring(d) .. " trophies"
+				sub = tostring(trophies.total) .. "  ·  " .. (if rankDef then rankDef.name else "") .. (if trophies.rankUp then "  Rank up!" else "")
 			else
-				head = "TROPHIES"
+				head = "Trophies"
 				sub = if data.kind == "public" then "Team and event games aren't ranked" else "Only Quick Play counts"
 			end
 			Widgets.label(f, {
@@ -432,7 +432,7 @@ function Results.show(layer: Instance, data, mySeat: number, isTeam: boolean, on
 		end
 	end
 	local leave = Widgets.button(bottom, {
-		text = "LOBBY",
+		text = "Lobby",
 		icon = "back",
 		style = "green",
 		textSize = 22,
@@ -449,7 +449,7 @@ function Results.show(layer: Instance, data, mySeat: number, isTeam: boolean, on
 	task.spawn(function()
 		while leave.root.Parent do
 			local left = math.max(0, math.ceil(endsAt - os.clock()))
-			leave:setText("LOBBY (" .. left .. ")")
+			leave:setText("Lobby (" .. left .. ")")
 			task.wait(0.5)
 		end
 	end)

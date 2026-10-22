@@ -380,19 +380,12 @@ function Layout.lobby(m)
 		out.profile = { rect = profile, kind = "full" }
 		out.title = rect(x0, y0 - 6, math.min(420, profile.x - 16 - x0), 70)
 		local body = rect(x0, y0 + 96, x1 - x0, nav.y - 14 - (y0 + 96))
-		if body.w >= 1180 then
-			local G = 16
-			local playW = math.floor((body.w - 2 * G) * 0.42)
-			local partyW = math.floor((body.w - 2 * G) * 0.29)
-			out.play = rect(body.x, body.y, playW, body.h)
-			out.party = rect(body.x + playW + G, body.y, partyW, body.h)
-			out.leaders = rect(body.x + playW + partyW + 2 * G, body.y, body.w - playW - partyW - 2 * G, body.h)
-		else
-			local G = 24
-			local playW = math.floor((body.w - G) * 0.55)
-			out.play = rect(body.x, body.y, playW, body.h)
-			out.party = rect(body.x + playW + G, body.y, body.w - playW - G, body.h)
-		end
+		-- two columns: playing gets the room, the party sits beside it (the leaderboard
+		-- is a page in the menu: an empty third column helped nobody)
+		local G = 20
+		local playW = math.floor((body.w - G) * 0.6)
+		out.play = rect(body.x, body.y, playW, body.h)
+		out.party = rect(body.x + playW + G, body.y, body.w - playW - G, body.h)
 		out.compact = false
 		out.nav = { rect = nav, kind = "full" }
 		out.invites = rect(x1 - 380, body.y, 380, nav.y - 12 - body.y)

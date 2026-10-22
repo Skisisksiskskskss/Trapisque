@@ -95,7 +95,7 @@ function PlayPanel.new(parent: Instance, popups: Instance, opts: { [string]: any
 		end
 	end
 	if eventMode and not compact then
-		local bannerH = 66
+		local bannerH = 58
 		local holder = Util.frame(content, { Name = "Event", Position = UDim2.fromOffset(0, top), Size = UDim2.new(1, 0, 0, bannerH) })
 		self.tiles[eventMode.id] = self:_eventTile(holder, eventMode, event)
 		top += bannerH + 12
@@ -125,11 +125,10 @@ function PlayPanel.new(parent: Instance, popups: Instance, opts: { [string]: any
 	})
 	self.findButton = Widgets.button(row, {
 		name = "Find",
-		text = "FIND A MATCH",
+		text = "Find a match",
 		icon = "play",
-		style = "green",
-		textSize = if compact then 22 else 26,
-		depth = 6,
+		style = "brass",
+		textSize = if compact then 20 else 22,
 		size = UDim2.new(1, 0, 0, findH),
 		onClick = function()
 			self:_find()
@@ -137,10 +136,10 @@ function PlayPanel.new(parent: Instance, popups: Instance, opts: { [string]: any
 	})
 	self.practiceButton = Widgets.button(row, {
 		name = "Practice",
-		text = "PRACTICE",
+		text = "Practice",
 		icon = "dice",
 		style = "wood",
-		textSize = if compact then 16 else 19,
+		textSize = if compact then 16 else 18,
 		size = UDim2.new(0.5, -6, 0, smallH),
 		position = UDim2.new(0, 0, 1, -smallH),
 		onClick = function()
@@ -149,10 +148,10 @@ function PlayPanel.new(parent: Instance, popups: Instance, opts: { [string]: any
 	})
 	self.privateButton = Widgets.button(row, {
 		name = "Private",
-		text = if compact then "PRIVATE" else "PRIVATE MATCH",
+		text = if compact then "Private" else "Private match",
 		icon = "people",
-		style = "blue",
-		textSize = if compact then 16 else 19,
+		style = "wood",
+		textSize = if compact then 16 else 18,
 		size = UDim2.new(0.5, -6, 0, smallH),
 		position = UDim2.new(0.5, 6, 1, -smallH),
 		onClick = function()
@@ -219,39 +218,28 @@ function PlayPanel:_eventTile(holder: Frame, mode, event)
 		Parent = holder,
 	})
 	Util.corner(tile, 12)
-	local stroke = Util.stroke(tile, C.line, 2.5)
-	-- a stripe of the event's colour down the left, inside the tile's rounded corners
-	local stripe = Util.new("Frame", {
-		Name = "Stripe",
-		BackgroundColor3 = color,
-		BorderSizePixel = 0,
-		Position = UDim2.fromOffset(6, 8),
-		Size = UDim2.new(0, 7, 1, -16),
-		Parent = tile,
-	})
-	Util.corner(stripe, 0.5)
-	local ic = Util.frame(tile, { AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 20, 0.5, 0), Size = UDim2.fromOffset(40, 40) })
+	local stroke = Util.stroke(tile, C.line, 2)
+	local ic = Util.frame(tile, { AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 12, 0.5, 0), Size = UDim2.fromOffset(34, 34) })
 	Icons.medallion(ic, "star", color, { Size = UDim2.fromScale(1, 1) })
 	Widgets.label(tile, {
-		text = "WEEKLY EVENT: " .. string.upper(event.name),
+		text = "This week: " .. event.name,
 		font = "chunky",
-		size = 19,
-		color = color,
-		outline = C.line,
-		sizeUDim = UDim2.new(1, -80, 0, 22),
-		position = UDim2.fromOffset(70, 8),
+		size = 18,
+		color = C.text,
+		sizeUDim = UDim2.new(1, -66, 0, 22),
+		position = UDim2.fromOffset(56, 7),
 	}).TextTruncate = Enum.TextTruncate.AtEnd
 	Widgets.label(tile, {
 		text = event.blurb .. "  ·  " .. playerRange(mode),
 		font = "body",
 		size = 14,
 		minSize = 9,
-		color = C.text,
+		color = C.textSoft,
 		wrap = true,
 		valign = "top",
 		scaled = true,
-		sizeUDim = UDim2.new(1, -80, 1, -36),
-		position = UDim2.fromOffset(70, 32),
+		sizeUDim = UDim2.new(1, -66, 1, -34),
+		position = UDim2.fromOffset(56, 30),
 	})
 	tile.Activated:Connect(function()
 		if self.mode ~= mode.id then
@@ -275,35 +263,37 @@ function PlayPanel:_modeTile(grid: Frame, mode, order: number, event: any?)
 		Parent = grid,
 	})
 	Util.corner(tile, 12)
-	local stroke = Util.stroke(tile, C.line, 2.5)
+	local stroke = Util.stroke(tile, C.line, 2)
 	local compact = self.compact
 	local pad = if compact then 8 else 12
-	local iconSize = if compact then 24 else 34
+	local iconSize = if compact then 24 else 28
 	local icon = Util.frame(tile, {
 		Position = UDim2.fromOffset(pad, pad),
 		Size = UDim2.fromOffset(iconSize, iconSize),
 	})
 	Icons.medallion(icon, if mode.isEvent then "star" elseif mode.isTeam then "people" elseif mode.id == "blitz" then "hourglass" else "bolt", if mode.isEvent then C.pink else C.sun, { Size = UDim2.fromScale(1, 1) })
-	local textX = pad + iconSize + 8
-	Widgets.label(tile, {
+	local textX = pad + iconSize + 10
+	-- the name, with the player count beside it on a wide tile (under it on a narrow one)
+	local name = Widgets.label(tile, {
 		text = if event then (if compact then "Event" else event.name) elseif compact then mode.short else mode.name,
 		font = "chunky",
-		size = if compact then 17 else 20,
+		size = if compact then 17 else 18,
 		color = C.text,
-		sizeUDim = UDim2.new(1, -(textX + pad), 0, if compact then 22 else 24),
-		position = UDim2.fromOffset(textX, if compact then 8 else 10),
+		sizeUDim = UDim2.new(1, -(textX + pad + (if compact then 0 else 76)), 0, if compact then 22 else 24),
+		position = UDim2.fromOffset(textX, if compact then 8 else pad + (iconSize - 24) / 2),
 		scaled = true,
 	})
-	-- compact tiles are narrow: the player count gets its own line under the name
 	local count = Widgets.label(tile, {
 		text = playerRange(mode),
 		font = "heavy",
 		size = if compact then 12 else 13,
 		color = C.textSoft,
-		sizeUDim = if compact then UDim2.new(1, -2 * pad, 0, 16) else UDim2.new(1, -(textX + pad), 0, 16),
-		position = UDim2.fromOffset(if compact then pad else textX, if compact then 36 else 34),
+		align = if compact then "left" else "right",
+		sizeUDim = if compact then UDim2.new(1, -2 * pad, 0, 16) else UDim2.fromOffset(72, 24),
+		anchor = if compact then Vector2.zero else Vector2.new(1, 0),
+		position = if compact then UDim2.fromOffset(pad, 36) else UDim2.new(1, -pad, 0, pad + (iconSize - 24) / 2),
 	})
-	local top = if compact then 56 else 58
+	local top = if compact then 56 else pad + iconSize + 8
 	local blurb = Widgets.label(tile, {
 		text = if event then event.blurb else mode.blurb,
 		font = "body",
@@ -324,6 +314,13 @@ function PlayPanel:_modeTile(grid: Frame, mode, order: number, event: any?)
 		blurb.Visible = h >= top + pad + 30
 		-- (and a very short compact tile has room for the name only)
 		count.Visible = not compact or h >= 36 + 16 + 2
+		if not compact then
+			-- a one-line tile keeps its row centred; a tall one starts at the top
+			local y = if blurb.Visible then pad else math.max(2, math.floor((h - iconSize) / 2))
+			icon.Position = UDim2.fromOffset(pad, y)
+			name.Position = UDim2.fromOffset(textX, y + (iconSize - 24) / 2)
+			count.Position = UDim2.new(1, -pad, 0, y + (iconSize - 24) / 2)
+		end
 	end
 	tile:GetPropertyChangedSignal("AbsoluteSize"):Connect(fit)
 	task.defer(fit)
@@ -342,15 +339,15 @@ function PlayPanel:refresh()
 	for id, t in self.tiles do
 		local on = id == self.mode
 		t.frame.BackgroundColor3 = if on then C.mine else C.panelRaised
-		t.stroke.Color = if on then C.sun else C.line
-		t.stroke.Thickness = if on then 3.5 else 2.5
+		t.stroke.Color = if on then C.orange else C.line
+		t.stroke.Thickness = 2
 	end
 	local party = State.get("party")
 	local queue = State.get("queue")
 	local searching = queue ~= nil and queue.state == "searching"
 	local isLeader = party == nil or party.leader == player.UserId
 	if searching then
-		self.findButton:setText("CANCEL SEARCH")
+		self.findButton:setText("Cancel search")
 		self.findButton:setStyle("red")
 		self.findButton:setIcon("close")
 		self.findButton:setEnabled(true)
@@ -358,8 +355,8 @@ function PlayPanel:refresh()
 			self.searchStart = os.clock() - (queue.elapsed or 0)
 		end
 	else
-		self.findButton:setText("FIND A MATCH")
-		self.findButton:setStyle("green")
+		self.findButton:setText("Find a match")
+		self.findButton:setStyle("brass")
 		self.findButton:setIcon("play")
 		self.findButton:setEnabled(isLeader)
 	end
@@ -468,7 +465,7 @@ function PlayPanel:_practice()
 		end)
 	end
 	Widgets.button(content, {
-		text = "START",
+		text = "Start",
 		icon = "play",
 		style = "green",
 		textSize = 22,
@@ -557,7 +554,7 @@ function PlayPanel:_private()
 		layoutOrder = 5,
 	})
 	Widgets.button(content, {
-		text = "START MATCH",
+		text = "Start match",
 		icon = "play",
 		style = "green",
 		textSize = 22,

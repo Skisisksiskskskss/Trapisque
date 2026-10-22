@@ -3,7 +3,7 @@
 	The single ScreenGui everything lives in. It hides Roblox's own UI, sizes a virtual
 	stage for the screen it's on (Layout.metrics: PC, landscape phone or upright phone),
 	measures the safe area and Roblox's top bar so nothing sits under them, draws the
-	open sea (with printed wave marks) behind everything and switches between screens
+	table colour behind everything and switches between screens
 	with animated transitions.
 
 	Layers (bottom to top): Background, Screens, Overlay, Popups, Toasts
@@ -39,25 +39,11 @@ local function layer(name: string, z: number): Frame
 	return Util.frame(Root.stage, { Name = name, ZIndex = z })
 end
 
--- The table is the open sea: deep blue with printed wave marks, like the sea on an old
--- chart (the loading screen draws the same, so the hand-over is seamless).
+-- The table: one flat colour behind everything (the loading screen uses the same, so
+-- the hand-over is seamless).
 local function buildBackground(bg: Frame)
 	bg.BackgroundTransparency = 0
 	bg.BackgroundColor3 = C.bg
-	local Shapes = require(script.Parent.Shapes)
-	for i = 0, 27 do
-		local size = 0.07 + (i % 3) * 0.025
-		local holder = Util.frame(bg, {
-			Name = "Wave",
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.fromScale(((i * 37 + 11) % 100) / 100, ((i * 61 + 13) % 100) / 100),
-			Size = UDim2.fromScale(size, size),
-			SizeConstraint = Enum.SizeConstraint.RelativeYY,
-			ZIndex = 1,
-		})
-		local c = Shapes.canvas(holder)
-		Shapes.wave(c, 0.5, 0.5, 1, 0.07, C.skyDark)
-	end
 end
 
 -- A full-screen frame in its own ScreenGui with the given insets, to read where the

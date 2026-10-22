@@ -15,7 +15,7 @@
 	           add: extra land { x, y, r }
 	islets     little islands { x, y, r }
 	props      what grows or stands around: { kind, weight } lists for the land and the
-	           water, and how many to place on each
+	           water, and how many to place on each (a few: the board is for playing on)
 	landmarks  fixed props: { kind, x, y, size } or { kind, tile, dx, dy, size }; one that
 	           doesn't fit (on the trail, a tile, the wrong side of the coast) is left out
 	colors     the map's inks (the outline is always the UI's ink)
@@ -34,7 +34,7 @@ MapScenes.blissful = {
 	},
 	land = {
 		r = 2.5,
-		jitter = 0.3,
+		jitter = 0.12,
 		beach = 1.05,
 		fill = 3,
 		add = {
@@ -46,9 +46,9 @@ MapScenes.blissful = {
 	rivers = true,
 	props = {
 		land = { { "palm", 6 }, { "bush", 3 }, { "rock", 2 }, { "hut", 1 } },
-		landCount = 22,
+		landCount = 6,
 		water = { { "rock", 3 }, { "barrel", 1 }, { "gull", 2 } },
-		waterCount = 7,
+		waterCount = 2,
 	},
 	landmarks = {
 		{ "dock", tile = 1, size = 3.2 },
@@ -86,7 +86,7 @@ MapScenes.junction = {
 	},
 	land = {
 		r = 2.4,
-		jitter = 0.22,
+		jitter = 0.12,
 		beach = 0.95,
 		fill = 1.5,
 		add = {
@@ -97,9 +97,9 @@ MapScenes.junction = {
 	islets = { { 1.4, 2.2, 1.1 }, { 30.4, 9.4, 1.2 }, { 21, 19.2, 1.0 } },
 	props = {
 		land = { { "barrel", 4 }, { "crate", 4 }, { "torch", 3 }, { "cannon", 2 }, { "rock", 1 } },
-		landCount = 18,
+		landCount = 6,
 		water = { { "rock", 4 }, { "barrel", 1 } },
-		waterCount = 7,
+		waterCount = 2,
 	},
 	landmarks = {
 		{ "dock", tile = 1, size = 3 },
@@ -135,7 +135,7 @@ MapScenes.slimy = {
 	},
 	land = {
 		r = 2.2,
-		jitter = 0.4,
+		jitter = 0.12,
 		beach = 0.9,
 		fill = 2,
 		add = { { 13.6, 9.4, 1.4 }, { 7.6, 6.6, 1.5 } },
@@ -144,9 +144,9 @@ MapScenes.slimy = {
 	pools = true,
 	props = {
 		land = { { "mangrove", 4 }, { "reeds", 4 }, { "log", 2 }, { "stump", 2 } },
-		landCount = 20,
+		landCount = 6,
 		water = { { "lily", 6 }, { "reeds", 2 }, { "bubbles", 2 } },
-		waterCount = 12,
+		waterCount = 2,
 	},
 	landmarks = {
 		{ "dock", tile = 1, size = 3 },
@@ -180,7 +180,7 @@ MapScenes.haunted = {
 	},
 	land = {
 		r = 2.4,
-		jitter = 0.3,
+		jitter = 0.12,
 		beach = 0.9,
 		fill = 2.4,
 		add = { { 30.2, 8.8, 2.2 }, { 14.6, 13.4, 1.6 }, { 9.4, 7.2, 1.5 }, { 20.6, 7.2, 1.5 } },
@@ -188,9 +188,9 @@ MapScenes.haunted = {
 	islets = { { 1.4, 2.2, 1.1 }, { 29.8, 17.4, 1.0 }, { 13.2, 19.2, 0.9 } },
 	props = {
 		land = { { "grave", 6 }, { "pumpkin", 3 }, { "deadtree", 2 }, { "lamp", 2 }, { "fence", 2 }, { "rock", 1 } },
-		landCount = 22,
+		landCount = 6,
 		water = { { "rock", 4 }, { "mist", 3 }, { "barrel", 1 } },
-		waterCount = 8,
+		waterCount = 2,
 	},
 	landmarks = {
 		{ "dock", tile = 1, size = 3 },
@@ -222,7 +222,7 @@ MapScenes.volcano = {
 	},
 	land = {
 		r = 2.4,
-		jitter = 0.32,
+		jitter = 0.12,
 		beach = 0.9,
 		fill = 2.4,
 		add = { { 27.2, 6.4, 3.6 }, { 24.4, 7.4, 2.2 }, { 15, 14.4, 1.4 } },
@@ -231,9 +231,9 @@ MapScenes.volcano = {
 	lava = true,
 	props = {
 		land = { { "palm", 3 }, { "lavarock", 4 }, { "charred", 3 }, { "vent", 2 }, { "rock", 2 } },
-		landCount = 20,
+		landCount = 6,
 		water = { { "rock", 4 }, { "barrel", 1 }, { "gull", 1 } },
-		waterCount = 7,
+		waterCount = 2,
 	},
 	landmarks = {
 		{ "dock", tile = 1, size = 3 },

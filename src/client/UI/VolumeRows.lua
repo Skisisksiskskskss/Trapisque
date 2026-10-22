@@ -60,7 +60,7 @@ function VolumeRows.build(parent: Instance, order: number)
 			position = UDim2.fromScale(1, 0),
 		})
 		local function showPct(v: number)
-			pct.Text = if v <= 0 then "OFF" else (tostring(math.floor(v * 100 + 0.5)) .. "%")
+			pct.Text = if v <= 0 then "Off" else (tostring(math.floor(v * 100 + 0.5)) .. "%")
 		end
 		local start = r.get()
 		showPct(start)

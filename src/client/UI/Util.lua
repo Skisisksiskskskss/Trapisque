@@ -72,10 +72,17 @@ function Util.corner(inst: Instance, radius: number?): UICorner
 	})
 end
 
+-- The UI's border colour (Theme sets it): borders in it stay thin, whatever was asked.
+Util.border = nil :: Color3?
+
 function Util.stroke(inst: Instance, color: Color3, thickness: number?, transparency: number?): UIStroke
+	local th = thickness or 2
+	if Util.border and color == Util.border then
+		th = math.min(th, 2)
+	end
 	return Util.new("UIStroke", {
 		Color = color,
-		Thickness = thickness or 2,
+		Thickness = th,
 		Transparency = transparency or 0,
 		ApplyStrokeMode = if inst:IsA("TextLabel") or inst:IsA("TextButton") or inst:IsA("TextBox")
 			then Enum.ApplyStrokeMode.Contextual

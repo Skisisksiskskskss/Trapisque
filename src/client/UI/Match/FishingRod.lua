@@ -94,7 +94,7 @@ function FishingRod.new(parent: Instance, opts: { [string]: any }?)
 	Util.corner(cap, 0.5)
 	self.bobber = bobber
 	self.tag = Widgets.label(root, {
-		text = "FISH",
+		text = "Fish",
 		font = "chunky",
 		size = 13,
 		color = C.textLight,
@@ -141,7 +141,7 @@ function FishingRod:_set(state: string)
 	self.state = state
 	self.bobber.Visible = state ~= "idle"
 	self.icon.Visible = state == "idle"
-	self.tag.Text = if state == "idle" then "FISH" elseif state == "cast" then "WAIT..." else "REEL!"
+	self.tag.Text = if state == "idle" then "Fish" elseif state == "cast" then "Wait..." else "Reel!"
 	self.tag.TextColor3 = if state == "bite" then C.sun else C.textLight
 	self.rim.Color = if state == "bite" then C.sun else C.line
 	self.rim.Thickness = if state == "bite" then 5 else 3
@@ -182,7 +182,7 @@ function FishingRod:_show(catchId: string, new: boolean)
 	Icons.sticker(pop, FishArt.ops(catchId), { ZIndex = 42 }, 0.06)
 	Util.popIn(pop, 0.35, 0.3)
 	local name = if def then def.name else catchId
-	local text = if catchId == "coin" then "+1 COIN!" elseif catchId == "boot" then "An old boot..." else ((if new then "NEW! " else "") .. name)
+	local text = if catchId == "coin" then "+1 coin" elseif catchId == "boot" then "An old boot..." else ((if new then "New: " else "") .. name)
 	self:_say(text, if def and def.rarity == "legendary" then C.sun elseif new then C.mint else C.textLight)
 	Util.tween(pop, 1.4, { Position = UDim2.new(0.5, 0, 0, -30) }, Enum.EasingStyle.Quad)
 	task.delay(1.5, function()

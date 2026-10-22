@@ -1,19 +1,22 @@
 --[[
 	Theme
-	Trapisque's look: a pirate board game, printed simply like a 1970s box (flat colour,
-	a short list of inks, cream card stock) and inked like a comic (one heavy dark
-	outline around everything, hard shadows, punchy lettering). The table is the open
-	sea; panels, cards and buttons are cream card and flat paint on top of it.
+	Trapisque's look: a tabletop game, drawn flat. Paper-white cards and panels on a
+	deep blue table, one warm orange for the thing you should press, and each
+	character's colour for its player. Rounded shapes, light borders, a darker bottom
+	edge on anything you can press, and no decoration that doesn't say something.
 
-	Two fonts: Bangers for anything loud (titles, buttons, numbers, BONK!) and Oswald
-	for reading. Every colour and font comes from here; the illustrations (StickerArt,
-	the maps) draw from the same inks.
+	Two fonts: Nunito for everything you read or press, and Fredoka One only for the
+	logo and the big moments of a match (YOUR TURN, TREASURE!). Every colour and font
+	comes from here; the illustrations (StickerArt, the maps) draw from the same set.
 
 	UI code uses the semantic colours (bg, panel..., text...). Panels are light, so
-	`text` is dark ink; `textLight` is for lettering on the sea or on a dark button.
-	The older material names (brass, wood, parchment, ink...) still exist so nothing
-	breaks, but point at the pirate inks.
+	`text` is dark; `textLight` is for lettering on the table or on a dark fill. `line`
+	is the light border between surfaces; `ink` is the dark outline the illustrations
+	keep. The older material names (brass, wood, parchment...) still exist so nothing
+	breaks, but point at this palette.
 ]]
+
+local Util = require(script.Parent.Util)
 
 local Theme = {}
 
@@ -23,78 +26,79 @@ end
 Theme.hex = hex
 
 local C = {
-	-- the ink outline and the hard shadow under everything
-	line = hex("1C1A24"),
-	shadow = hex("1C1A24"),
+	-- the light border between surfaces, the illustrations' outline, and shadows
+	line = hex("DDD3C3"),
+	ink = hex("2A2830"),
+	shadow = hex("0E1A24"),
 
-	-- surfaces: the sea behind, cream card on top
-	bg = hex("17435F"), -- the open sea, behind everything
-	bgDeep = hex("0F2F44"),
-	panel = hex("F3E6C8"), -- panels and dialogs: cream card
-	panelDeep = hex("E0CCA0"), -- wells, tracks, inputs pressed into a panel
-	panelRaised = hex("FBF4E2"), -- rows and tiles sitting on a panel
-	panelHi = hex("FFE7A3"), -- hovered or picked rows
-	panelEdge = hex("C9AE7C"), -- quiet borders between surfaces
-	panelLine = hex("D8C39A"), -- dividers
+	-- surfaces: the table behind, paper on top
+	bg = hex("203646"), -- the table, behind everything
+	bgDeep = hex("172836"),
+	panel = hex("F7F3EC"), -- panels and dialogs
+	panelDeep = hex("ECE5D8"), -- wells, tracks, inputs pressed into a panel
+	panelRaised = hex("FFFFFF"), -- rows and tiles sitting on a panel
+	panelHi = hex("FFF1D6"), -- hovered or picked rows
+	panelEdge = hex("E3DACB"), -- quiet borders between surfaces
+	panelLine = hex("ECE4D6"), -- dividers
 
-	-- text (on cream card unless it says otherwise)
-	text = hex("1C1A24"), -- ink
-	textSoft = hex("5C4A36"), -- brown ink
-	textFaint = hex("8C7A62"),
-	textOnLight = hex("1C1A24"),
-	textLight = hex("FFF8E7"), -- bone white: on the sea and on dark paint
-	textLightSoft = hex("BFD8E4"),
+	-- text (on paper unless it says otherwise)
+	text = hex("23262D"),
+	textSoft = hex("625D57"),
+	textFaint = hex("958E85"),
+	textOnLight = hex("23262D"),
+	textLight = hex("F7F5F0"), -- on the table and on dark fills
+	textLightSoft = hex("A9BBC8"),
 	white = hex("FFFFFF"),
 	black = hex("000000"),
-	cream = hex("FFF8E7"),
+	cream = hex("FFF9EF"),
 
-	-- inks
-	coral = hex("D7263D"), -- pirate red
-	coralDark = hex("9E1B2C"),
-	orange = hex("F08A24"),
-	orangeDark = hex("B8601A"),
-	sun = hex("F5B700"), -- gold
-	sunLight = hex("FFD75E"),
-	sunDark = hex("C98F00"),
-	lime = hex("4FA548"), -- jungle green
-	limeDark = hex("357A30"),
-	sky = hex("2E8FB3"), -- sea blue
-	skyDark = hex("1F6A8A"),
-	grape = hex("2B4C7E"), -- navy (no purple anywhere)
-	grapeDark = hex("1C3459"),
-	pink = hex("D94C9C"),
-	pinkDark = hex("A1336F"),
-	mint = hex("2A9D8F"), -- teal
-	mintDark = hex("1E7068"),
-	steel = hex("B8BDC7"),
-	steelDark = hex("7D8592"),
+	-- colours
+	coral = hex("D64545"), -- red: danger, traps
+	coralDark = hex("A83434"),
+	orange = hex("E8643C"), -- the accent: the button that matters
+	orangeDark = hex("B94A27"),
+	sun = hex("E7B023"), -- gold: treasure, coins, rewards
+	sunLight = hex("F4CF6B"),
+	sunDark = hex("B88A12"),
+	lime = hex("3E9F5B"), -- green
+	limeDark = hex("2E7744"),
+	sky = hex("3C82C4"), -- blue
+	skyDark = hex("2B6299"),
+	grape = hex("2F4C6E"), -- navy
+	grapeDark = hex("22384F"),
+	pink = hex("D35A9C"),
+	pinkDark = hex("A43F77"),
+	mint = hex("2C9C8F"), -- teal
+	mintDark = hex("1F7369"),
+	steel = hex("B7BEC8"),
+	steelDark = hex("7E8794"),
 
 	-- feedback
-	good = hex("3B9E4A"),
-	bad = hex("D7263D"),
-	info = hex("2E8FB3"),
-	infoSoft = hex("8FD0E6"),
-	goodSoft = hex("A6D98F"),
-	badSoft = hex("F09AA4"),
-	mine = hex("FFE7A3"), -- your own row (with a gold edge)
-	dim = hex("0B1E2B"),
-	vip = hex("F5B700"),
+	good = hex("3E9F5B"),
+	bad = hex("D64545"),
+	info = hex("3C82C4"),
+	infoSoft = hex("A9CBEA"),
+	goodSoft = hex("B5DCC0"),
+	badSoft = hex("F2B5B5"),
+	mine = hex("FFF1D6"), -- your own row
+	dim = hex("0B1620"),
+	vip = hex("E7B023"),
 
-	-- the sea and the land, for maps and backgrounds
-	seaDeep = hex("15405A"),
-	sea = hex("1F6A8A"),
-	seaLight = hex("2E8FB3"),
-	shallows = hex("74C7D9"),
-	foam = hex("E8F7F7"),
-	sand = hex("F2C879"),
-	sandDark = hex("D9A54A"),
-	jungle = hex("3E8E41"),
-	jungleDark = hex("2B6431"),
-	rock = hex("8A8478"),
-	rockDark = hex("5E5A52"),
-	plank = hex("B87333"),
-	plankDark = hex("7A4A1F"),
-	bone = hex("FFF8E7"),
+	-- the water and the land, for maps and backgrounds
+	seaDeep = hex("1E4660"),
+	sea = hex("2A5C7A"),
+	seaLight = hex("3C7A9C"),
+	shallows = hex("7FB9CC"),
+	foam = hex("E6F2F3"),
+	sand = hex("EBD3A0"),
+	sandDark = hex("D2B47A"),
+	jungle = hex("4C8A55"),
+	jungleDark = hex("3A6B42"),
+	rock = hex("8C877E"),
+	rockDark = hex("625E57"),
+	plank = hex("B98A5A"),
+	plankDark = hex("85603C"),
+	bone = hex("FFF9EF"),
 }
 
 -- The older material names, pointed at the pirate inks.
@@ -107,7 +111,6 @@ C.parchmentMid = hex("EBDAB4")
 C.parchmentDark = C.panelDeep
 C.parchmentEdge = C.panelEdge
 C.burn = hex("6E4520")
-C.ink = C.line
 C.inkSoft = C.textSoft
 C.inkFaint = C.textFaint
 C.inkRed = C.coralDark
@@ -131,7 +134,7 @@ C.slime = hex("9BCF2E")
 C.stone = C.rock
 C.stoneDark = C.rockDark
 C.iron = C.steelDark
-C.textDark = C.line
+C.textDark = C.text
 
 -- card categories
 C.trap = C.coral
@@ -143,18 +146,21 @@ C.coin = C.sun
 
 Theme.C = C
 
+-- Borders drawn in `line` stay thin, whatever thickness the caller asked for.
+Util.border = C.line
+
 -- The characters' colours: a character's colour is its player's colour everywhere
 -- (the piece on the board, the name, the Power bar, the feed), so there's one of each
 -- character in a match.
 Theme.Character = {
-	mage = hex("1E7FD6"), -- blue
-	trapper = hex("F08A24"), -- orange
-	fire_starter = hex("D7263D"), -- red
-	naturalist = hex("43A047"), -- green
-	warper = hex("D94C9C"), -- pink
-	overseer = hex("F5B700"), -- gold
-	gambler = hex("13A398"), -- teal
-	cannoneer = hex("8B5A2B"), -- brown
+	mage = hex("2F7FD0"), -- blue
+	trapper = hex("EE8A2E"), -- orange
+	fire_starter = hex("D64545"), -- red
+	naturalist = hex("3E9F5B"), -- green
+	warper = hex("D35A9C"), -- pink
+	overseer = hex("E7B023"), -- gold
+	gambler = hex("22A094"), -- teal
+	cannoneer = hex("93633A"), -- brown
 }
 Theme.CharacterName = {
 	mage = "Blue",
@@ -231,9 +237,9 @@ end
 
 -- Teams fly a flag, so team colours stay off the players: navy, red and teal crews.
 Theme.Team = {
-	hex("2B4C7E"),
-	hex("D7263D"),
-	hex("2A9D8F"),
+	hex("2F4C6E"),
+	hex("D64545"),
+	hex("2C9C8F"),
 }
 Theme.TeamName = { "Navy Crew", "Red Crew", "Teal Crew" }
 
@@ -254,14 +260,13 @@ Theme.CategoryName = {
 	coin = "Coin",
 }
 
-local oswald = Font.fromEnum(Enum.Font.Oswald)
-local bangers = Font.fromEnum(Enum.Font.Bangers)
+local nunito = Font.fromEnum(Enum.Font.Nunito)
 Theme.Font = {
-	Display = bangers, -- titles
-	Chunky = bangers, -- buttons, numbers
-	Body = Font.new(oswald.Family, Enum.FontWeight.Medium),
-	BodyHeavy = Font.new(oswald.Family, Enum.FontWeight.SemiBold),
-	BodyRegular = Font.new(oswald.Family, Enum.FontWeight.Regular),
+	Display = Font.fromEnum(Enum.Font.FredokaOne), -- the logo and big match moments only
+	Chunky = Font.new(nunito.Family, Enum.FontWeight.ExtraBold), -- buttons, headings, numbers
+	Body = Font.new(nunito.Family, Enum.FontWeight.SemiBold),
+	BodyHeavy = Font.new(nunito.Family, Enum.FontWeight.Bold),
+	BodyRegular = Font.new(nunito.Family, Enum.FontWeight.Regular),
 }
 
 -- Colour for a player's name on a panel: VIPs get gold.

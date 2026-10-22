@@ -33,7 +33,7 @@ local TRAP_SOUND = {
 	teleporter = { "teleport", 1 },
 	spore_warper = { "teleport", 0.8 },
 	conveyor = { "whoosh", 0.9 },
-	trampoline = { "whoosh", 1.3 },
+	sands = { "whoosh", 0.7 },
 }
 
 -- each ability's colour
@@ -143,8 +143,8 @@ end
 Effects.popSticker = popSticker
 
 --[[
-	Comic lettering over the board ("BOING!", "GOTCHA!"): a candy word with the thick
-	outline, tilted, that punches in and floats off. Sized for the screen, not the map.
+	A word over the board ("Boing!", "Gotcha!") that pops in and floats off. Sized for
+	the screen, not the map.
 ]]
 local function shoutAt(view, at: Vector2, text: string, color: Color3, size: number?)
 	view:floatText(at - Vector2.new(0, 0.3 * view.UNIT), text, color, size or 30)
@@ -192,7 +192,7 @@ function Effects.hide(view, seat: number)
 			burst(view, at, hex("B8BDC7"), 7, 0.9 + i * 0.2, 0.26, 0.5)
 		end)
 	end
-	shoutAt(view, at, "SHH...", C.textSoft, 24)
+	shoutAt(view, at, "Shh...", C.textSoft, 24)
 end
 
 function Effects.trap(view, item: string, tile: number)
@@ -240,15 +240,15 @@ function Effects.trap(view, item: string, tile: number)
 		end
 	elseif item == "spore_warper" then
 		burst(view, at, hex("8FB3E8"), 12, 1.3, 0.2, 0.7)
-	elseif item == "trampoline" then
-		ring(view, at, C.pink, 0.5, 2.2, 0.5, 6)
+	elseif item == "sands" then
+		burst(view, at, hex("E8C77E"), 10, 1.2, 0.18, 0.6)
 	end
 end
 
 function Effects.blocked(view, tile: number)
 	local at = view:tileWorld(tile)
 	popSticker(view, at, "wall", 1.2, 0.8)
-	shoutAt(view, at, "BLOCKED!", C.sun)
+	shoutAt(view, at, "Blocked!", C.sun)
 	Sound.play("place", 0.7)
 end
 
@@ -263,18 +263,18 @@ function Effects.natural(view, kind: string, tile: number, drag: number?)
 			end)
 		end
 		burst(view, at - Vector2.new(0, 0.3 * view.UNIT), C.sky, 10, 1, 0.16, 0.6)
-		shoutAt(view, at, "SPLASH!", C.sky)
+		shoutAt(view, at, "Splash!", C.sky)
 	elseif kind == "gate" then
 		Sound.play("trap", 0.7)
-		shoutAt(view, at, "LOCKED!", C.steel)
+		shoutAt(view, at, "Locked!", C.steel)
 	elseif kind == "slime" then
 		Sound.play("slime")
 		burst(view, at, C.slime, 12, 1, 0.2, 0.6)
-		shoutAt(view, at, if drag then ("SLIMED -" .. drag) else "SLIMED!", C.slime)
+		shoutAt(view, at, if drag then ("Slimed -" .. drag) else "Slimed!", C.slime)
 	elseif kind == "lava" then
 		Sound.play("fire")
 		burst(view, at, C.orange, 12, 1, 0.18, 0.6)
-		shoutAt(view, at, "TOO HOT!", C.orange)
+		shoutAt(view, at, "Too hot!", C.orange)
 	end
 end
 
@@ -287,7 +287,7 @@ function Effects.bonk(view, attacker: number, victim: number)
 	local at = view:pawnWorld(victim)
 	Sound.play("death", 1.35)
 	boom(view, at, C.sun, 2)
-	shoutAt(view, at, "BOING!", C.sun, 36)
+	shoutAt(view, at, "Boing!", C.sun, 36)
 	burst(view, at, C.white, 8, 1.2, 0.14, 0.45)
 	view:shake(0.12, 0.25)
 	view:setMood(victim, "dizzy", 1.8)
@@ -299,7 +299,7 @@ function Effects.gotcha(view, owner: number, victim: number)
 	local at = view:pawnWorld(victim)
 	Sound.play("reveal", 0.9)
 	boom(view, at, C.coral, 2.2)
-	shoutAt(view, at, "GOTCHA!", C.coral, 34)
+	shoutAt(view, at, "Gotcha!", C.coral, 34)
 	view:setMood(victim, "shock", 1.6)
 	view:setMood(owner, "smug", 1.8)
 	-- a bolt of Power flies to the trap's owner
@@ -322,7 +322,7 @@ function Effects.parade(view, seat: number)
 	local U = view.UNIT
 	Sound.play("win", 1.06)
 	Sound.play("treasure")
-	shoutAt(view, at, "VICTORY PARADE!", C.sun, 40)
+	shoutAt(view, at, "Victory parade!", C.sun, 40)
 	view:setMood(seat, "happy", 3)
 	for i, side in { -1, 1, -1, 1 } do
 		task.delay((i - 1) * 0.35, function()
@@ -350,7 +350,7 @@ function Effects.death(view, seat: number)
 	Sound.play("death")
 	burst(view, at, Theme.seatColor(seat), 10, 1.2, 0.2, 0.6)
 	burst(view, at, C.white, 6, 0.8, 0.12, 0.5)
-	shoutAt(view, at, "BACK TO START!", C.coral, 26)
+	shoutAt(view, at, "Back to start!", C.coral, 26)
 	view:setMood(seat, "sad", 2.2)
 	Util.shake(pawn.lift, 6, 0.3)
 end
@@ -360,7 +360,7 @@ function Effects.phoenix(view, seat: number)
 	Sound.play("magic", 0.8)
 	ring(view, at, C.orange, 0.5, 2.6, 0.7, 8)
 	burst(view, at, C.coral, 14, 1.6, 0.18, 0.7)
-	shoutAt(view, at, "PHOENIX!", C.orange)
+	shoutAt(view, at, "Phoenix!", C.orange)
 	view:setMood(seat, "happy", 1.6)
 end
 
@@ -382,7 +382,7 @@ function Effects.shield(view, seat: number)
 	Util.stroke(disc, C.sky, 0.08 * U)
 	Util.popIn(bubble, 0.3, 0.3)
 	fadeOut(bubble, 0.7)
-	shoutAt(view, at, "BLOCKED!", C.sky)
+	shoutAt(view, at, "Blocked!", C.sky)
 	view:setMood(seat, "smug", 1.4)
 end
 
@@ -397,7 +397,7 @@ function Effects.treasure(view, tile: number, seat: number)
 		end)
 	end
 	ring(view, at, C.sunLight, 0.6, 3, 0.8, 8)
-	shoutAt(view, at - Vector2.new(0, 0.6 * U), "+1 TREASURE", C.sun)
+	shoutAt(view, at - Vector2.new(0, 0.6 * U), "+1 treasure", C.sun)
 	view:setMood(seat, "happy", 2.4)
 end
 
@@ -406,20 +406,20 @@ function Effects.status(view, seat: number, status: string)
 	if status == "burning" then
 		Sound.play("fire", 1.1)
 		popSticker(view, at, "flame", 1, 0.9)
-		shoutAt(view, at, "BURNING!", C.orange)
+		shoutAt(view, at, "Burning!", C.orange)
 		view:setMood(seat, "shock", 1.4)
 	elseif status == "frozen" then
 		Sound.play("ice")
 		popSticker(view, at, "snowflake", 1, 0.9)
-		shoutAt(view, at, "FROZEN!", hex("8FD3FF"))
+		shoutAt(view, at, "Frozen!", hex("8FD3FF"))
 	end
 end
 
--- A Snare: you'll miss a turn.
+-- A Snare: next turn you roll to break free.
 function Effects.snared(view, seat: number)
 	local at = view:pawnWorld(seat)
 	popSticker(view, at, "zzz", 1, 1)
-	shoutAt(view, at, "SNARED!", C.textSoft)
+	shoutAt(view, at, "Snared!", C.textSoft)
 	view:setMood(seat, "dizzy", 1.6)
 end
 
@@ -427,7 +427,7 @@ end
 function Effects.drop(view, seat: number)
 	local at = view:pawnWorld(seat)
 	Sound.play("card", 0.8)
-	shoutAt(view, at, "DROPPED A CARD!", C.sun, 22)
+	shoutAt(view, at, "Dropped a card!", C.sun, 22)
 end
 
 ---------------------------------------------------------------------------
@@ -488,7 +488,7 @@ function Effects.blast(view, seat: number)
 	local at = view:pawnWorld(seat)
 	Sound.play("fire", 0.8)
 	boom(view, at, C.orange, 2.4)
-	shoutAt(view, at, "BLAST OFF!", C.coral, 30)
+	shoutAt(view, at, "Blast off!", C.coral, 30)
 	burst(view, at, C.coral, 14, 1.6, 0.2, 0.6)
 end
 
@@ -505,7 +505,7 @@ end
 function Effects.scorch(view, seat: number)
 	local at = view:pawnWorld(seat)
 	Sound.play("fire", 1.2)
-	shoutAt(view, at, "OUCH! HOT!", C.orange, 24)
+	shoutAt(view, at, "Ouch, hot!", C.orange, 24)
 	view:setMood(seat, "shock", 1.4)
 end
 
@@ -513,7 +513,7 @@ end
 function Effects.bounty(view, seat: number)
 	local at = view:pawnWorld(seat)
 	Sound.play("coin", 1.2)
-	shoutAt(view, at, "BOUNTY!", C.sun, 24)
+	shoutAt(view, at, "Bounty!", C.sun, 24)
 	burst(view, at, C.sun, 8, 1, 0.14, 0.45)
 end
 
@@ -521,7 +521,7 @@ end
 function Effects.stampede(view, seat: number)
 	local at = view:pawnWorld(seat)
 	Sound.play("bonk", 0.8)
-	shoutAt(view, at, "STAMPEDE!", C.lime, 30)
+	shoutAt(view, at, "Stampede!", C.lime, 30)
 	burst(view, at, hex("C9A26B"), 14, 1.6, 0.22, 0.6)
 	view:shake(0.12, 0.35)
 end
@@ -537,9 +537,16 @@ function Effects.xray(view, seat: number, tiles: { number })
 	end
 end
 
+-- Snared at the start of the turn: the roll to break free.
+function Effects.snareRoll(view, tile: number, roll: number, free: boolean)
+	local at = view:tileWorld(tile)
+	Sound.play("dice")
+	shoutAt(view, at - Vector2.new(0, 0.4 * view.UNIT), "Rolled " .. roll .. (if free then ": free!" else ": stuck"), if free then C.good else C.bad, 24)
+end
+
 function Effects.grogRoll(view, tile: number, roll: number, survived: boolean)
 	local at = view:tileWorld(tile)
-	shoutAt(view, at - Vector2.new(0, 0.4 * view.UNIT), "ROLLED " .. roll .. (if survived then " - ESCAPED!" else " - CHOMP!"), if survived then C.good else C.bad, 24)
+	shoutAt(view, at - Vector2.new(0, 0.4 * view.UNIT), "Rolled " .. roll .. (if survived then ": escaped!" else ": chomp!"), if survived then C.good else C.bad, 24)
 end
 
 function Effects.recall(view, seat: number)

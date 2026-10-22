@@ -60,7 +60,7 @@ function Chests.art(parent: Instance, look, props: { [string]: any }?)
 
 	local lid = Shapes.canvas(root, { Name = "Lid", ZIndex = 2 })
 	Shapes.rect(lid, 0.5, 0.375, 0.8 + o, 0.22 + o, C.line, { r = 0.4 })
-	Shapes.rect(lid, 0.5, 0.43, 0.8 + o, 0.11 + o * 0.6, C.line)
+	Shapes.rect(lid, 0.5, 0.43, 0.8 + o, 0.11 + o * 0.6, C.ink)
 	Shapes.rect(lid, 0.5, 0.375, 0.8, 0.22, body, { r = 0.4 })
 	Shapes.rect(lid, 0.5, 0.43, 0.8, 0.11, body)
 	Shapes.rect(lid, 0.27, 0.375, 0.09, 0.22, trim)
@@ -366,7 +366,7 @@ function Chests.open(layer: Instance): () -> ()
 			end,
 		})
 		Widgets.button(card, {
-			text = "SEE ODDS",
+			text = "See odds",
 			style = "parchment",
 			textSize = 15,
 			size = UDim2.fromOffset(140, 36),
@@ -380,7 +380,7 @@ function Chests.open(layer: Instance): () -> ()
 			update = function(profile)
 				local free = profile and profile.freeChests and profile.freeChests[chest.id] or 0
 				if free > 0 then
-					one:setText("OPEN FREE")
+					one:setText("Open free")
 					one:setStyle("green")
 					one:setIcon("chest")
 				else
@@ -510,7 +510,7 @@ local function resultLines(parent: Instance, r, z: number, y: number)
 	local def = Cosmetics.get(r.item)
 	local color = rarityColor(r.rarity)
 	Widgets.label(parent, {
-		text = string.upper(rarityName(r.rarity)),
+		text = rarityName(r.rarity),
 		font = "chunky",
 		size = 30,
 		color = color,
@@ -594,7 +594,7 @@ function Chests._revealOne(layer: Instance, chest, r, done: () -> ())
 	Util.tween(s, 0.2, { Scale = 1 })
 	resultLines(stage, r, 312, 40)
 	Widgets.button(stage, {
-		text = "COLLECT",
+		text = "Collect",
 		style = "green",
 		textSize = 22,
 		size = UDim2.fromOffset(220, 54),
@@ -669,7 +669,7 @@ function Chests._revealMany(layer: Instance, chest, results, done: () -> ())
 			z = 306,
 		})
 		Widgets.label(inner, {
-			text = if r.new then "NEW!" else ("+" .. r.refund .. " Gems"),
+			text = if r.new then "New!" else ("+" .. r.refund .. " Gems"),
 			font = "chunky",
 			size = 15,
 			color = if r.new then C.gold else color,
@@ -718,7 +718,7 @@ function Chests._revealMany(layer: Instance, chest, results, done: () -> ())
 			z = 302,
 		})
 		Widgets.button(stage, {
-			text = "COLLECT",
+			text = "Collect",
 			style = "green",
 			textSize = 22,
 			size = UDim2.fromOffset(220, 54),

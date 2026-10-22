@@ -183,8 +183,9 @@ local function landingValue(game, p, tile: number, viewer: any?): number
 			if partner then
 				v += (board.dist[tile] or 0) - (board.dist[partner] or 0)
 			end
-		elseif piece.item == "trampoline" then
-			v += Rules.TrampolineForward
+		elseif piece.item == "sands" then
+			-- it slides whoever lands this turn: forward in even rounds, back in odd ones
+			v += if Engine.sandsForward(game.round) then Rules.SandsSlide else -Rules.SandsSlide
 		elseif piece.item == "spore_warper" and p.character ~= "warper" then
 			-- swaps with the nearest player: usually a coin flip, worth a little if they're ahead
 			v += 0
@@ -422,19 +423,27 @@ end
 
 local function bestNeutralPlay(game, p, item: string)
 	local board = game.board
-	if item == "trampoline" then
-		-- just ahead of me, where I might land next turn
-		local best, bestV = nil, 0
-		for _, tile in candidateTiles(game, p, item) do
-			local ahead = (board.dist[p.tile] or 0) - (board.dist[tile] or 0)
-			if ahead >= 3 and ahead <= 6 then
-				local v = 0.9
-				if v > bestV then
-					best, bestV = tile, v
+	if item == "sands" then
+		if Engine.sandsForward(game.round + 1) then
+			-- next round they slide forward: just ahead of me, where I might land next turn
+			local best, bestV = nil, 0
+			for _, tile in candidateTiles(game, p, item) do
+				local ahead = (board.dist[p.tile] or 0) - (board.dist[tile] or 0)
+				if ahead >= 3 and ahead <= 6 then
+					local v = 0.9
+					if v > bestV then
+						best, bestV = tile, v
+					end
 				end
 			end
+			return if best then { type = "play", item = item, tile = best } else nil, bestV
 		end
-		return if best then { type = "play", item = item, tile = best } else nil, bestV
+		-- next round they slide back: where a rival is likely to land
+		local tile, v = bestTrapTile(game, p, "mudslide")
+		if tile then
+			return { type = "play", item = item, tile = tile }, v * 0.6
+		end
+		return nil, 0
 	elseif item == "conveyor" then
 		local tile, v = bestTrapTile(game, p, "mudslide")
 		if tile and game:canPlace(p, item, tile, "back") then
@@ -494,6 +503,30 @@ local function bestCardPlay(game, p)
 			elseif use == "reroll" then
 				local v = expectedRollValue(game, p, #dice == 1)
 				consider({ type = "play", item = item }, v - baseV - 1.4)
+			elseif use == "compass" and not game.turn.frozen then
+				-- try every number on every die
+				for i, was in dice do
+					for value = 1, 6 do
+						if value ~= was then
+							local set = table.clone(dice)
+							set[i] = value
+							local _, v = bestMove(game, p, set, nil, nil, gold)
+							consider({ type = "play", item = item, die = i, value = value }, v - baseV - 1.6)
+						end
+					end
+				end
+			elseif use == "steal" then
+				-- from whoever holds the most cards (the leader if it's a tie)
+				local lead = leader(game, opponents(game, p))
+				local mark = nil
+				for _, o in opponents(game, p) do
+					if #o.hand > 0 and (mark == nil or #o.hand > #mark.hand or (#o.hand == #mark.hand and o == lead)) then
+						mark = o
+					end
+				end
+				if mark then
+					consider({ type = "play", item = item, target = mark.index }, 0.4 + #mark.hand * 0.3 + (if mark == lead then 0.4 else 0))
+				end
 			elseif use == "juice" then
 				local cap = Engine.powerCap(p)
 				if p.power < cap and not game.turn.abilityUsed then
@@ -708,7 +741,7 @@ local function shopCommand(game, p)
 			table.insert(wants, "time_potion")
 		end
 		table.insert(wants, "jeopardy_potion")
-		table.insert(wants, "speed_potion")
+		table.insert(wants, "thief_potion")
 		for _, item in wants do
 			local def = Items.get(item)
 			if p.coins >= def.price and (game.stock[item] or 0) > 0 then

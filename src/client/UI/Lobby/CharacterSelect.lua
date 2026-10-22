@@ -117,7 +117,7 @@ function CharacterSelect.open(popups: Instance)
 			local picked = id == current
 			local open = (profile and profile.unlockAll) or Characters.unlocked(id, level)
 			local def = Characters.get(id)
-			b.button:setText(if not open then ("LEVEL " .. tostring(def and def.unlockLevel or 0)) elseif picked then "PICKED" else "PICK")
+			b.button:setText(if not open then ("Level " .. tostring(def and def.unlockLevel or 0)) elseif picked then "Picked" else "Pick")
 			b.button:setStyle(if not open then "dark" elseif picked then "green" else "brass")
 			b.rim.Color = if picked then C.sun else C.line
 			b.rim.Thickness = if picked then 4 else 2.5
@@ -171,7 +171,7 @@ function CharacterSelect.open(popups: Instance)
 		local level, into, need = masteryOf(profile, def.id)
 		local y = 8 + math.floor(cardW / CardStyle.aspect) + 6
 		Widgets.label(cell, {
-			text = "MASTERY " .. level,
+			text = "Mastery " .. level,
 			font = "chunky",
 			size = 15,
 			color = C.text,
@@ -204,7 +204,7 @@ function CharacterSelect.open(popups: Instance)
 			position = UDim2.fromOffset(6, y + 36),
 		}).TextTruncate = Enum.TextTruncate.AtEnd
 		local button = Widgets.button(cell, {
-			text = "PICK",
+			text = "Pick",
 			style = "brass",
 			textSize = 16,
 			size = UDim2.new(1, -20, 0, 36),
@@ -280,7 +280,7 @@ function CharacterSelect.strip(parent: Instance, opts: { [string]: any }?)
 	-- (the short strip's bar is a plain line: an outline would run into the text above)
 	local bar = Widgets.progress(root, { value = 0, size = UDim2.fromOffset(100, 8), plain = compact })
 	local change = Widgets.button(root, {
-		text = "CHANGE",
+		text = "Change",
 		style = "purple",
 		textSize = if compact then 13 else 16,
 		depth = 3,
@@ -324,8 +324,8 @@ function CharacterSelect.strip(parent: Instance, opts: { [string]: any }?)
 			Icons.medallion(portrait, id, Theme.Character[id] or C.grape, { Size = UDim2.fromScale(1, 1) })
 		end
 		local level, into, need = masteryOf(profile, id)
-		name.Text = string.upper(if def then def.name else id)
-		sub.Text = "Mastery " .. level .. (if need then string.format("  ·  %d / %d XP", into, need) else "  ·  MAX")
+		name.Text = if def then def.name else id
+		sub.Text = "Mastery " .. level .. (if need then string.format("  ·  %d / %d XP", into, need) else "  ·  max")
 		bar:set(if need then into / math.max(1, need) else 1)
 		local fill = bar.fill :: Frame
 		fill.BackgroundColor3 = Theme.Character[id] or C.sun

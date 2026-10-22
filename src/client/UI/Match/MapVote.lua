@@ -104,7 +104,7 @@ local function card(parent: Instance, mapId: string, onPick: () -> ())
 		}, 0.07)
 	end
 	Widgets.label(root, {
-		text = string.upper(def.name),
+		text = def.name,
 		font = "chunky",
 		size = 22,
 		color = C.text,

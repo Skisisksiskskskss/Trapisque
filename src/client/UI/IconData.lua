@@ -239,9 +239,10 @@ local function bottle(symbol)
 	return ops
 end
 
-I.speed_potion = bottle({
-	{ "chevron", 0.44, 0.66, 0.22, 0.07, dir = 90, c = "bg" },
-	{ "chevron", 0.58, 0.66, 0.22, 0.07, dir = 90, c = "bg" },
+I.thief_potion = bottle({
+	{ "pill", 0.5, 0.68, 0.34, 0.13, c = "bg" },
+	{ "circle", 0.42, 0.68, 0.06 },
+	{ "circle", 0.58, 0.68, 0.06 },
 })
 I.phoenix_potion = bottle({
 	{ "taper", { { 0.5, 0.8 }, { 0.54, 0.68 }, { 0.47, 0.6 }, { 0.51, 0.52 } }, 0.16, 0.02, c = "bg" },

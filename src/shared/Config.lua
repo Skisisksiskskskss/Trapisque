@@ -27,6 +27,7 @@ Config.Rules = {
 	BonkChain = false, -- only your own move bonks; being knocked onto someone doesn't
 	WallPassMin = 5, -- you can't move past a wall unless you move 5 or more
 	GrogSurviveMin = 4, -- roll 4+ or the Grog gets you
+	SnareEscapeMin = 4, -- snared: roll 4+ at the start of your turn or lose it
 	TeleporterMinDistance = 8, -- teleporters must be 8+ tiles from the treasure
 	ConveyorLength = 3, -- a conveyor covers 3 tiles
 	MudslideBack = 3,
@@ -35,7 +36,7 @@ Config.Rules = {
 	-- Underdog: whoever is clearly last (behind everyone else by this many tiles, a whole
 	-- lap counting for every treasure) rolls an extra die on their turn
 	UnderdogGap = 8,
-	TrampolineForward = 3,
+	SandsSlide = 3, -- Shifting Sands: forward in even rounds, back in odd ones
 	-- Haunted Hollow: ghosts drift this many tiles toward the Start at the end of every
 	-- round; walking into one stops you and scares you back this many tiles
 	GhostDrift = 2,
@@ -55,7 +56,7 @@ Config.Rules = {
 	PlacedUses = {
 		wall = 1,
 		conveyor = 3,
-		trampoline = 2,
+		sands = 3,
 	},
 
 	-- safety valve per match length; the highest score wins if it's reached

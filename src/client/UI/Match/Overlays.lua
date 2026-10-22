@@ -110,7 +110,7 @@ function Overlays.spin(layer: Frame, wheel: string, segments: { string }, index:
 	-- hard shadow, outline, sun-yellow rim, then the disc
 	local canvas = Shapes.canvas(holder)
 	Shapes.circle(canvas, 0.5, 0.535, 1, C.shadow)
-	Shapes.circle(canvas, 0.5, 0.5, 1, C.line)
+	Shapes.circle(canvas, 0.5, 0.5, 1, C.ink)
 	Shapes.circle(canvas, 0.5, 0.5, 0.955, C.sun)
 	local spinFrame = Util.frame(holder, {
 		Name = "Spinner",
@@ -120,12 +120,12 @@ function Overlays.spin(layer: Frame, wheel: string, segments: { string }, index:
 		ZIndex = 72,
 	})
 	local disc = Shapes.canvas(spinFrame)
-	Shapes.circle(disc, 0.5, 0.5, 1, C.line)
+	Shapes.circle(disc, 0.5, 0.5, 1, C.ink)
 	Shapes.circle(disc, 0.5, 0.5, 0.96, C.panel)
 	for i = 1, n do
 		-- spokes between segments
 		local a = math.rad((i - 0.5) * 360 / n - 90)
-		Shapes.line(disc, 0.5, 0.5, 0.5 + math.cos(a) * 0.47, 0.5 + math.sin(a) * 0.47, 0.016, C.line)
+		Shapes.line(disc, 0.5, 0.5, 0.5 + math.cos(a) * 0.47, 0.5 + math.sin(a) * 0.47, 0.016, C.ink)
 		-- segment pocket with its prize
 		local b = math.rad((i - 1) * 360 / n - 90)
 		local px, py = 0.5 + math.cos(b) * 0.33, 0.5 + math.sin(b) * 0.33
@@ -145,7 +145,7 @@ function Overlays.spin(layer: Frame, wheel: string, segments: { string }, index:
 		})
 		Icons.medallion(pocket, seg, pocketColor, { Size = UDim2.fromScale(1, 1) })
 	end
-	Shapes.circle(disc, 0.5, 0.5, 0.2, C.line)
+	Shapes.circle(disc, 0.5, 0.5, 0.2, C.ink)
 	Shapes.circle(disc, 0.5, 0.5, 0.17, C.sun)
 	-- pointer at the top
 	local pointer = Util.frame(holder, {
@@ -158,7 +158,7 @@ function Overlays.spin(layer: Frame, wheel: string, segments: { string }, index:
 	local pc = Shapes.canvas(pointer)
 	Shapes.tri(pc, 0.5, 0.24, 1, C.line, { dir = 180 })
 	Shapes.tri(pc, 0.5, 0.2, 0.84, C.coral, { dir = 180 })
-	Shapes.circle(pc, 0.5, 0.18, 0.36, C.line)
+	Shapes.circle(pc, 0.5, 0.18, 0.36, C.ink)
 	Shapes.circle(pc, 0.5, 0.18, 0.3, C.sun)
 
 	-- spin: several turns, landing with segment `index` under the pointer
@@ -505,7 +505,7 @@ function Overlays.abilityBanner(layer: Frame, character: string, abilityName: st
 	})
 	card.root.Rotation = -8
 	Widgets.label(wrap, {
-		text = string.upper(abilityName) .. "!",
+		text = abilityName .. "!",
 		font = "chunky",
 		size = 54,
 		color = C.white,

@@ -105,7 +105,7 @@ function Pages.shop(layer: Instance): () -> ()
 			})
 			Util.corner(card, 14)
 			Util.stroke(card, color, 3)
-			Widgets.badge(card, { text = "TODAY'S DEAL", color = color, height = 24, textSize = 13, position = UDim2.fromOffset(10, 10) })
+			Widgets.badge(card, { text = "Today's deal", color = color, height = 24, textSize = 13, position = UDim2.fromOffset(10, 10) })
 			CosmeticArt.preview(card, deal.id, nil, {
 				AnchorPoint = Vector2.new(0.5, 0),
 				Position = UDim2.new(0.5, 0, 0, 44),
@@ -131,7 +131,7 @@ function Pages.shop(layer: Instance): () -> ()
 				position = UDim2.fromOffset(10, 238),
 			})
 			local buy = Widgets.button(card, {
-				text = Util.commas(deal.price) .. " GEMS",
+				text = Util.commas(deal.price) .. " Gems",
 				icon = "gem",
 				style = "brass",
 				textSize = 18,
@@ -151,7 +151,7 @@ function Pages.shop(layer: Instance): () -> ()
 				update = function(p)
 					local owned = p ~= nil and table.find(p.owned or {}, deal.id) ~= nil
 					if owned then
-						buy:setText("OWNED")
+						buy:setText("Owned")
 						buy:setEnabled(false)
 					end
 				end,
@@ -172,7 +172,7 @@ function Pages.shop(layer: Instance): () -> ()
 		local icon = Util.frame(card, { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 14), Size = UDim2.fromOffset(86, 86) })
 		Icons.medallion(icon, "people", C.mint, { Size = UDim2.fromScale(1, 1) })
 		Widgets.label(card, {
-			text = "FREE " .. Config.Community.Gems .. " GEMS",
+			text = "Free " .. Config.Community.Gems .. " Gems",
 			font = "chunky",
 			size = 26,
 			color = C.text,
@@ -199,7 +199,7 @@ function Pages.shop(layer: Instance): () -> ()
 			return id
 		end
 		Widgets.button(card, {
-			text = "JOIN GROUP",
+			text = "Join group",
 			icon = "people",
 			style = "blue",
 			textSize = 17,
@@ -221,7 +221,7 @@ function Pages.shop(layer: Instance): () -> ()
 			end,
 		})
 		Widgets.button(card, {
-			text = "CLAIM",
+			text = "Claim",
 			icon = "gem",
 			style = "green",
 			textSize = 18,
@@ -291,7 +291,7 @@ function Pages.shop(layer: Instance): () -> ()
 		end
 		local id = Passes.id(pass.key)
 		local buy = Widgets.button(card, {
-			text = "BUY",
+			text = "Buy",
 			icon = "bag",
 			style = "green",
 			textSize = 20,
@@ -325,10 +325,10 @@ function Pages.shop(layer: Instance): () -> ()
 			update = function(p)
 				local owned = p ~= nil and table.find(p.passes or {}, pass.key) ~= nil
 				if owned then
-					buy:setText("OWNED")
+					buy:setText("Owned")
 					buy:setEnabled(false)
 				elseif id == 0 then
-					buy:setText("SOON")
+					buy:setText("Soon")
 					buy:setEnabled(false)
 				end
 			end,
@@ -362,12 +362,12 @@ local RULES = {
 	{
 		icon = "bolt",
 		title = "Power",
-		text = "Every character has a Power bar as long as their ability costs. The die you don't move with fills it, a hidden trap of yours catching someone adds 2, and a Juice Box fills it up. When it's full, use your ability: then it starts again from empty. Frozen players charge no Power.",
+		text = "Every character has a Power bar as long as their ability costs. The die you don't move with fills it, a hidden trap of yours catching someone adds 2, and a Regeneration card fills it up. When it's full, use your ability: then it starts again from empty. Frozen players charge no Power.",
 	},
 	{
 		icon = "spike",
 		title = "Hidden traps",
-		text = "Trap cards are hidden: only your team can see them (and the Overseer). Hide one within 5 tiles of you, then think about where your rivals will land. When someone steps on it: GOTCHA! You get a coin and 2 Power. You can keep 3 out (the Trapper 4).\n\nSpike and Grog send them back to the start, Fire burns them and Ice freezes them for 2 turns, a Snare skips their turn, Mudslide and Banana Peel push them back. A Wall is out in the open: only moves of 5 or more get past it. A Shield in your hand blocks one trap or bonk.",
+		text = "Trap cards are hidden: only your team can see them (and the Overseer). Hide one within 5 tiles of you, then think about where your rivals will land. When someone steps on it: GOTCHA! You get a coin and 2 Power. You can keep 3 out (the Trapper 4).\n\nSpike and Grog send them back to the start, Fire burns them and Ice freezes them for 2 turns, a Snare makes them roll 4+ next turn or lose it, Mudslide and Banana Peel push them back. A Wall is out in the open: only moves of 5 or more get past it. A Shield in your hand blocks one trap or bonk.",
 	},
 	{
 		icon = "star",
@@ -377,7 +377,7 @@ local RULES = {
 	{
 		icon = "token_trap",
 		title = "Tokens",
-		text = "Land on a token to spin its wheel. Red Trap tokens give traps, green Assist tokens give helpful cards and navy Board Piece tokens give teleporters, trampolines and other pieces. A wheel can also land on a coin. The orange Potion Seller sells potions for coins. Once used, a token jumps to a new spot. You hold up to 5 cards.",
+		text = "Land on a token to spin its wheel. Red Trap tokens give traps, green Assist tokens give helpful cards and navy Board Piece tokens give teleporters, shifting sands and other pieces. A wheel can also land on a coin. The orange Potion Seller sells potions for coins. Once used, a token jumps to a new spot. You hold up to 5 cards.",
 	},
 	{
 		icon = "river_trap",
@@ -438,7 +438,7 @@ function Pages.rules(layer: Instance): () -> ()
 		position = UDim2.fromOffset(16, 0),
 	})
 	Widgets.button(guided, {
-		text = "GUIDED MATCH",
+		text = "Guided match",
 		icon = "play",
 		style = "green",
 		textSize = 17,
@@ -658,7 +658,7 @@ function Pages.settings(layer: Instance): () -> ()
 	end
 	if staff then
 		Widgets.button(list, {
-			text = if staff == "owner" then "OWNER PANEL" else "ADMIN PANEL",
+			text = if staff == "owner" then "Owner panel" else "Admin panel",
 			icon = "crown",
 			style = "brass",
 			textSize = 20,

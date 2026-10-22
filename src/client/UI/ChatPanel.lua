@@ -51,11 +51,11 @@ local function hexOf(c: Color3): string
 end
 
 local REASONS = {
-	{ id = "mean", text = "BEING MEAN" },
-	{ id = "rude", text = "RUDE WORDS" },
-	{ id = "scam", text = "SCAM / ASKING FOR INFO" },
-	{ id = "spam", text = "SPAM" },
-	{ id = "other", text = "SOMETHING ELSE" },
+	{ id = "mean", text = "Being mean" },
+	{ id = "rude", text = "Rude words" },
+	{ id = "scam", text = "Scam, or asking for info" },
+	{ id = "spam", text = "Spam" },
+	{ id = "other", text = "Something else" },
 }
 
 -- What you can do about someone in the chat.
@@ -122,18 +122,18 @@ local function personMenu(layer: Instance, line)
 	end
 	local hidden = Chat.isMuted(line.from)
 	text("Only you see what you pick here.", 1, 26)
-	button(if hidden then "SHOW THEIR LINES" else "HIDE THEIR LINES", "panel", 2, function()
+	button(if hidden then "Show their lines" else "Hide their lines", "panel", 2, function()
 		Chat.mute(line.from, not hidden)
 		close()
 		Widgets.toast(if hidden then ("Showing " .. name .. "'s lines again.") else ("You won't see " .. name .. "'s lines any more."), "info")
 	end)
-	button("BLOCK ON ROBLOX", "orange", 3, function()
+	button("Block on Roblox", "panel", 3, function()
 		close()
 		if not Chat.block(line.from) then
 			Widgets.toast(name .. " has left. You can block them from their Roblox profile.", "info")
 		end
 	end)
-	button("REPORT", "red", 4, reportStep)
+	button("Report", "red", 4, reportStep)
 end
 
 local function lineText(line, color: Color3): string
@@ -344,7 +344,7 @@ function ChatPanel.open(layer: Instance, o: { [string]: any })
 			box.TextXAlignment = Enum.TextXAlignment.Left
 			Util.pad(box, 12, 0, 12, 0)
 			Widgets.button(input, {
-				text = "SEND",
+				text = "Send",
 				style = "green",
 				textSize = 19,
 				size = UDim2.new(0, 108, 1, 0),
@@ -370,7 +370,7 @@ function ChatPanel.open(layer: Instance, o: { [string]: any })
 		if hasBuy then
 			local id = Passes.id("Chat")
 			local buy = Widgets.button(input, {
-				text = if id == 0 then "SOON" else "R$ 10",
+				text = if id == 0 then "Soon" else "R$ 10",
 				icon = "bubble",
 				style = "green",
 				textSize = 18,

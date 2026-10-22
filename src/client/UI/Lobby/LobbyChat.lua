@@ -62,7 +62,7 @@ function LobbyChat.build(parent: Instance, maid, r, popups: Instance)
 		onClick = openChat,
 	}
 	if wide then
-		opts.text = "CHAT"
+		opts.text = "Chat"
 		opts.textSize = math.clamp(math.floor(r.h * 0.42), 14, 22)
 		opts.depth = 4
 		button = Widgets.button(parent, opts)
@@ -98,11 +98,11 @@ function LobbyChat.build(parent: Instance, maid, r, popups: Instance)
 		local color = Theme.playerColor(line.character)
 		local size = 18
 		local maxW = W - 64
-		local bounds = TextService:GetTextSize(line.text, size, Enum.Font.Oswald, Vector2.new(maxW / 1.12, 1000))
+		local bounds = TextService:GetTextSize(line.text, size, Enum.Font.Nunito, Vector2.new(maxW / 1.12, 1000))
 		local textW = math.clamp(math.ceil(bounds.X * 1.12) + 2, 40, maxW)
 		local textH = math.max(size + 2, math.ceil(bounds.Y) + 2)
 		local name = (line.name or "?") .. (if line.staff then ("  ·  " .. line.staff) else "")
-		local tabW = math.min(maxW, math.ceil(TextService:GetTextSize(name, 14, Enum.Font.Oswald, Vector2.new(1000, 40)).X) + 22)
+		local tabW = math.min(maxW, math.ceil(TextService:GetTextSize(name, 14, Enum.Font.Nunito, Vector2.new(1000, 40)).X) + 22)
 		local bodyW = math.max(textW + 24, tabW + 16)
 		local h = textH + 20
 		local row = Util.frame(stack, {

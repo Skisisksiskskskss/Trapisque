@@ -98,7 +98,7 @@ local function questRow(list: Frame, q, order: number, canSwap: boolean)
 	})
 	Util.list(reward, "x", 4, "Right", "Center")
 	if q.done then
-		Widgets.badge(reward, { text = "DONE!", color = C.lime, height = 26, textSize = 15, layoutOrder = 1 })
+		Widgets.badge(reward, { text = "Done", color = C.lime, height = 26, textSize = 15, layoutOrder = 1 })
 	else
 		local gem = Util.frame(reward, { Size = UDim2.fromOffset(26, 26), LayoutOrder = 1 })
 		Icons.medallion(gem, "gem", C.neutral, { Size = UDim2.fromScale(1, 1) })
@@ -113,7 +113,7 @@ local function questRow(list: Frame, q, order: number, canSwap: boolean)
 	end
 	if canSwap and not q.done then
 		Widgets.button(row, {
-			text = "SWAP",
+			text = "Swap",
 			style = "purple",
 			textSize = 14,
 			depth = 3,
@@ -157,7 +157,7 @@ local function streakRow(parent: Frame, profile)
 		Util.corner(box, 10)
 		Util.stroke(box, if isToday then C.white else C.line, if isToday then 3 else 2)
 		Widgets.label(box, {
-			text = "DAY " .. i,
+			text = "Day " .. i,
 			font = "chunky",
 			size = 12,
 			color = if got then C.textOnLight else C.textSoft,
@@ -245,7 +245,7 @@ function Quests.open(popups: Instance)
 		local streakTop = 28 + 3 * 64 + 2 * 8 + 10 + 44 + 16
 		local streak = profile and profile.streak or {}
 		Widgets.label(body, {
-			text = "LOGIN STREAK: " .. tostring(streak.count or 0) .. (if (streak.count or 0) == 1 then " DAY" else " DAYS"),
+			text = "Login streak: " .. tostring(streak.count or 0) .. (if (streak.count or 0) == 1 then " day" else " days"),
 			font = "chunky",
 			size = 18,
 			color = C.text,
@@ -274,7 +274,7 @@ function Quests.open(popups: Instance)
 		local more = Util.frame(body, { Name = "More", Position = UDim2.fromOffset(0, streakTop + 132), Size = UDim2.new(1, 0, 0, 46) })
 		Util.list(more, "x", 10, "Center", "Center")
 		Widgets.button(more, {
-			text = "BADGES " .. earned,
+			text = "Badges " .. earned,
 			icon = "star",
 			style = "brass",
 			textSize = 17,
@@ -285,7 +285,7 @@ function Quests.open(popups: Instance)
 			end,
 		})
 		Widgets.button(more, {
-			text = "FISH LOG",
+			text = "Fish log",
 			icon = "rod",
 			style = "blue",
 			textSize = 17,

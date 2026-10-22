@@ -39,11 +39,11 @@ local GAP = 10
 local MARGIN = 8 -- room around the tip for outlines (its CanvasGroup clips)
 
 local CATEGORY_LABEL = {
-	trap = "TRAP",
-	assist = "ASSIST",
-	neutral = "BOARD PIECE",
-	potion = "POTION",
-	natural = "HAZARD",
+	trap = "Trap",
+	assist = "Assist",
+	neutral = "Board piece",
+	potion = "Potion",
+	natural = "Hazard",
 }
 
 function CardTip.new(layer: Instance)

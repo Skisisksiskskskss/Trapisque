@@ -112,6 +112,11 @@ local function aName(name: string): string
 	return (if an then "an " else "a ") .. name
 end
 
+-- "hide" -> "Hide"
+local function cap(word: string): string
+	return string.upper(string.sub(word, 1, 1)) .. string.sub(word, 2)
+end
+
 local function copy(list)
 	local out = {}
 	for i, v in list or {} do
@@ -214,7 +219,7 @@ function MatchScreen.show(payload)
 		if self.alive and self.board and type(data) == "table" and data.seat then
 			local def = Fishing.byId[data.catch or ""]
 			if def and def.rarity ~= "junk" then
-				self.board:floatText(self:_pawnWorld(data.seat), (if data.catch == "coin" then "FISHED A COIN!" else ("CAUGHT A " .. string.upper(def.name) .. "!")), C.sky, 18)
+				self.board:floatText(self:_pawnWorld(data.seat), (if data.catch == "coin" then "Fished a coin!" else ("Caught " .. aName(def.name) .. "!")), C.sky, 18)
 			end
 		end
 	end))
@@ -707,10 +712,13 @@ function MatchScreen:_layoutTop(L, m)
 end
 
 function MatchScreen:_updateRound()
+	local round = math.max(1, self.view.round or 1)
+	if self.board then
+		self.board:setRound(round)
+	end
 	if not self.roundLabel then
 		return
 	end
-	local round = math.max(1, self.view.round or 1)
 	local modeName = if self.mode then self.mode.short else ""
 	local event = self.mode and self.mode.isEvent and Progress.currentEvent()
 	if event then
@@ -1291,17 +1299,35 @@ function MatchScreen:_play(e)
 			board:follow(p.tile)
 		end
 		self:_refresh()
+	elseif t == "snareRoll" then
+		-- snared: the roll to break free (a "skip" follows if it fails)
+		local p = self:_player(e.p)
+		self.snareRoll = e.roll
+		Effects.snareRoll(board, if p then p.tile else 1, e.roll, e.free == true)
+		if e.free then
+			if p then
+				p.skip = math.max(0, (p.skip or 0) - 1)
+				board:setStatus(e.p, "skip", p.skip > 0)
+			end
+			feed:add(self:_tag(e.p) .. " rolled a " .. e.roll .. " and broke free of the snare", nil, "snare", C.good)
+		end
 	elseif t == "skip" then
 		local p = self:_player(e.p)
 		if p then
 			p.skip = math.max(0, (p.skip or 0) - 1)
 			board:setStatus(e.p, "skip", p.skip > 0)
 		end
-		feed:add(self:_tag(e.p) .. " skip" .. self:_s(e.p) .. " a turn (snared)", nil, "zzz", C.grape)
-		board:floatText(self:_pawnWorld(e.p), "ZZZ... SKIP!", C.textSoft)
+		local roll = self.snareRoll
+		self.snareRoll = nil
+		if roll then
+			feed:add(self:_tag(e.p) .. " rolled a " .. roll .. " and lose" .. self:_s(e.p) .. " the turn to the snare", nil, "snare", C.trap)
+		else
+			feed:add(self:_tag(e.p) .. " skip" .. self:_s(e.p) .. " a turn", nil, "snare", C.trap)
+			board:floatText(self:_pawnWorld(e.p), "Stuck!", C.textSoft)
+		end
 	elseif t == "burn" then
 		self:_patch(e.p, "burning", e.left)
-		board:floatText(self:_pawnWorld(e.p), "HOT HOT HOT!", C.orange)
+		board:floatText(self:_pawnWorld(e.p), "Hot!", C.orange)
 	elseif t == "roll" then
 		v.dice = copy(e.dice)
 		v.gold = e.gold
@@ -1313,11 +1339,11 @@ function MatchScreen:_play(e)
 		end
 		if e.underdog and not e.reroll then
 			-- clearly last: an extra die to pick from
-			board:floatText(self:_pawnWorld(e.p) + Vector2.new(0, -0.45 * BoardView.UNIT), "UNDERDOG: GOLD DIE!", C.sun, 20)
+			board:floatText(self:_pawnWorld(e.p) + Vector2.new(0, -0.45 * BoardView.UNIT), "Underdog: gold die!", C.sun, 20)
 			feed:add(self:_tag(e.p) .. (if e.p == self.mySeat then " are" else " is") .. " the underdog: an extra gold die!", nil, "dice", C.sun)
 		end
 		if #e.dice == 2 and e.dice[1] == e.dice[2] then
-			board:floatText(self:_pawnWorld(e.p), "DOUBLES!", C.sun)
+			board:floatText(self:_pawnWorld(e.p), "Doubles!", C.sun)
 		end
 		self:_refreshDice()
 	elseif t == "choose" then
@@ -1333,7 +1359,7 @@ function MatchScreen:_play(e)
 			p.power = e.power
 		end
 		if (e.gain or 0) > 0 then
-			board:floatText(self:_pawnWorld(e.p) + Vector2.new(0, -0.3 * BoardView.UNIT), "+" .. e.gain .. " POWER", C.sun, 20)
+			board:floatText(self:_pawnWorld(e.p) + Vector2.new(0, -0.3 * BoardView.UNIT), "+" .. e.gain .. " Power", C.sun, 20)
 		end
 		self.chips:update(v.players)
 		if e.p == self.mySeat then
@@ -1369,11 +1395,11 @@ function MatchScreen:_play(e)
 			end))
 		end
 	elseif t == "handFull" then
-		board:floatText(self:_pawnWorld(e.p), "HAND FULL", C.bad)
+		board:floatText(self:_pawnWorld(e.p), "Hand full", C.bad)
 		feed:add(self:_poss(e.p, true) .. " hand is full (" .. Rules.HandLimit .. " cards)")
 	elseif t == "coin" then
 		Sound.play("coin")
-		board:floatText(self:_pawnWorld(e.p), "+" .. tostring(e.gain or 1) .. " COIN", C.sun)
+		board:floatText(self:_pawnWorld(e.p), "+" .. tostring(e.gain or 1) .. " coin", C.sun)
 		Overlays.flyIcon(self.fly, "coin", C.sun, self:_pawnSpot(e.p), self:_chipSpot(e.p), speed, self:_landing(function()
 			self:_patch(e.p, "coins", e.coins)
 		end))
@@ -1484,14 +1510,14 @@ function MatchScreen:_play(e)
 		feed:add("KABOOM! The volcano erupts: anyone in a lava stream gets scorched", C.orange, "volcano", C.orange)
 	elseif t == "doubleDown" then
 		v.double = true
-		board:floatText(self:_pawnWorld(e.p), "DOUBLE DOWN!", C.sun, 26)
+		board:floatText(self:_pawnWorld(e.p), "Double down!", C.sun, 26)
 		if e.p == self.mySeat then
 			self:_refresh()
 		end
 	elseif t == "cannon" then
 		board:shake(0.12, 0.3)
 		Sound.play("bonk", 0.7)
-		board:floatText(self:_pawnWorld(e.p), if e.hit then "CANNONBALL!" else "BOOM!", C.orange, 26)
+		board:floatText(self:_pawnWorld(e.p), if e.hit then "Cannonball!" else "Boom!", C.orange, 26)
 	elseif t == "joined" then
 		local p = self:_player(e.p)
 		if p then
@@ -1519,7 +1545,7 @@ function MatchScreen:_play(e)
 			self.chips:update(v.players)
 		end
 		Effects.snared(board, e.p)
-		feed:add(self:_tag(e.p) .. " is snared and will skip a turn", nil, "snare", C.trap)
+		feed:add(self:_tag(e.p) .. (if e.p == self.mySeat then " are" else " is") .. " caught in a snare: next turn, roll 4+ to break free", nil, "snare", C.trap)
 	elseif t == "drop" then
 		self:_lose(e.p, e.item)
 		Effects.drop(board, e.p)
@@ -1534,7 +1560,7 @@ function MatchScreen:_play(e)
 			feed:add(self:_tag(e.p) .. (if e.status == "burning" then " is burning" else " is frozen") .. " (" .. turns .. " turn" .. (if turns == 1 then "" else "s") .. ")", nil, if e.status == "burning" then "flame" else "snowflake", if e.status == "burning" then C.orange else C.sky)
 		end
 	elseif t == "immune" then
-		board:floatText(self:_pawnWorld(e.p), "IMMUNE!", C.info)
+		board:floatText(self:_pawnWorld(e.p), "Immune!", C.info)
 	elseif t == "place" then
 		self:_playPlace(e, speed)
 	elseif t == "hide" then
@@ -1602,6 +1628,31 @@ function MatchScreen:_play(e)
 		end
 		self.chips:update(v.players)
 		feed:add(self:_tag(e.a) .. " and " .. self:_tag(e.b) .. " swapped hands!", nil, "jeopardy_potion", C.potion)
+	elseif t == "compass" then
+		v.dice = copy(e.dice)
+		self:_refreshDice()
+		self.dock:bumpDie(e.die)
+		board:floatText(self:_pawnWorld(e.p), e.from .. " to " .. e.value, C.assist, 22)
+	elseif t == "steal" then
+		-- a card changes hands: only the two of them know which one
+		self:_lose(e.target, e.item)
+		local to = if e.p == self.mySeat then self:_handSpot(nil) else self:_chipSpot(e.p)
+		Overlays.flyIcon(self.fly, "book", C.coral, self:_chipSpot(e.target), to, speed, self:_landing(function()
+			if e.p == self.mySeat and e.item then
+				self:_handAdd(e.item)
+			else
+				self:_handCount(e.p, 1)
+			end
+		end))
+		local def = e.item and Items.get(e.item)
+		local what = if def then def.name else "a card"
+		if e.p == self.mySeat then
+			feed:add("You stole " .. what .. " from " .. self:_tag(e.target), nil, "thief_potion", C.potion)
+		elseif e.target == self.mySeat then
+			feed:add(self:_tag(e.p) .. " stole your " .. what, nil, "thief_potion", C.potion)
+		else
+			feed:add(self:_tag(e.p) .. " stole a card from " .. self:_tag(e.target), nil, "thief_potion", C.potion)
+		end
 	elseif t == "give" then
 		self:_lose(e.p, e.item)
 		if e.p == v.current then
@@ -1682,7 +1733,7 @@ function MatchScreen:_play(e)
 		feed:add(self:_tag(e.a) .. " and " .. self:_tag(e.b) .. " swapped places", nil, "warper", C.neutral)
 		board:swap(e.a, e.b, e.ta, e.tb)
 	elseif t == "fizzle" then
-		board:floatText(board:tileWorld(e.tile), "FIZZLE", C.textSoft)
+		board:floatText(board:tileWorld(e.tile), "Fizzle", C.textSoft)
 	elseif t == "buy" then
 		local def = Items.get(e.item)
 		self:_patch(e.p, "coins", e.coins)
@@ -1880,25 +1931,25 @@ function MatchScreen:_outcome(plan): { any }
 		table.insert(tags, { text = text, color = color })
 	end
 	if plan.result == "treasure" then
-		add("TREASURE!", C.sun)
+		add("Treasure!", C.sun)
 		return tags
 	end
 	if plan.result == "blocked" then
-		add("WALL!", C.coral)
+		add("Wall", C.coral)
 	elseif plan.result == "stopped" then
-		add(string.upper(plan.hazard or "hazard") .. " STOPS YOU", C.sky)
+		add(cap(plan.hazard or "hazard") .. " stops you", C.sky)
 	elseif plan.result == "scared" then
-		add("GHOST! BACK " .. tostring(Rules.GhostScare or 0), C.white)
+		add("Ghost: back " .. tostring(Rules.GhostScare or 0), C.white)
 	end
 	if v.erupting and v.natural[tile] == "lava" and not Engine.hasCard({ hand = v.hand }, "cloak") then
-		add("ERUPTION!", C.orange)
+		add("Eruption!", C.orange)
 	end
 	if plan.slowed then
-		add("SLIME -" .. tostring(Rules.SlimeDrag or 0), C.slime)
+		add("Slime -" .. tostring(Rules.SlimeDrag or 0), C.slime)
 	end
 	for _, u in plan.uses or {} do
 		local def = Items.get(u.item)
-		add("USES " .. string.upper(if def then def.name else u.item), C.mint)
+		add("Uses " .. (if def then def.name else u.item), C.mint)
 	end
 	if tile == board.start then
 		return tags
@@ -1906,30 +1957,31 @@ function MatchScreen:_outcome(plan): { any }
 	-- rivals there get bonked
 	for _, p in v.players do
 		if p.seat ~= self.mySeat and p.tile == tile and p.team ~= me.team then
-			add("BONK " .. string.upper(p.name) .. "!", C.sun)
+			add("Bonk " .. p.name .. "!", C.sun)
 		end
 	end
 	for _, tr in v.traps do
 		if tr.tile == tile and (tr.public or tr.team ~= me.team) then
-			add("TRAP!", C.coral)
+			add("Trap!", C.coral)
 			break
 		end
 	end
 	local embers = v.embers[tile]
 	if embers and embers ~= self.mySeat then
-		add("HOT!", C.orange)
+		add("Hot!", C.orange)
 	end
 	local piece = v.placed[tile]
 	if piece then
-		local names = { teleporter = "TELEPORT", trampoline = "BOING +" .. Rules.TrampolineForward, spore_warper = "SWAP!", wall = "WALL" }
+		local slide = if Engine.sandsForward(v.round or 1) then ("Sands +" .. Rules.SandsSlide) else ("Sands -" .. Rules.SandsSlide)
+		local names = { teleporter = "Teleport", sands = slide, spore_warper = "Swap", wall = "Wall" }
 		local def = Items.get(piece.item)
-		add(names[piece.item] or string.upper(if def then def.name else piece.item), C.grape)
+		add(names[piece.item] or (if def then def.name else piece.item), C.grape)
 	end
 	local token = v.tokens[tile]
 	if token == "potion" then
-		add("SHOP", C.orange)
+		add("Shop", C.orange)
 	elseif token then
-		add("+CARD", Theme.Category[token] or C.lime)
+		add("+1 card", Theme.Category[token] or C.lime)
 	end
 	return tags
 end
@@ -1956,7 +2008,7 @@ function MatchScreen:_previewDie(key: any)
 	local _, gain, backDie = self:_moveOption(key)
 	local mult = (self.view.mutator and self.view.mutator.powerMult) or 1
 	if backDie then
-		table.insert(tags, 1, { text = "BACKWARDS", color = C.coral })
+		table.insert(tags, 1, { text = "Backwards", color = C.coral })
 	end
 	if (gain or 0) > 0 then
 		table.insert(tags, { text = "+" .. tostring((gain :: number) * mult) .. " POWER", color = C.sun })
@@ -2350,9 +2402,9 @@ function MatchScreen:_placeFlow(itemId: string, opts: { [string]: any }?): boole
 		onSelect = function(tile)
 			local spot: Vector2 = self:_tileSpot(tile)
 			held:hoverAt(spot)
-			setConfirm(string.upper(verb) .. " " .. def.name .. " here?", function()
+			setConfirm(cap(verb) .. " " .. def.name .. " here?", function()
 				commit(tile)
-			end, string.upper(verb))
+			end, cap(verb))
 		end,
 	})
 	if o.drag then
@@ -2503,6 +2555,13 @@ function MatchScreen:_cardHint(itemId: string): (string, boolean)
 		return click .. " to fill your Power bar.", true
 	elseif def.use == "reroll" then
 		return click .. " to roll your dice again.", true
+	elseif def.use == "compass" then
+		if #(self.view.dice or {}) <= 1 then
+			return "You're Frozen: the needle won't move.", false
+		end
+		return click .. " to set one of your dice to any number.", true
+	elseif def.use == "steal" then
+		return click .. " to steal a random card from a rival.", true
 	elseif def.use == "anchor" then
 		return click .. " to drop your time anchor here. RECALL brings you back.", true
 	elseif def.use == "telepathy" then
@@ -2760,6 +2819,38 @@ function MatchScreen:_cardActions(itemId: string, index: number?): { any }
 				Inspector.choose(self.popups, "Telepathy", "Move " .. self:_name(seat) .. " back (-) or forward (+)", options, function(n)
 					play({ target = seat, steps = n })
 				end)
+			end)
+		end })
+	elseif use == "compass" then
+		local dice = v.dice or {}
+		table.insert(actions, { text = "Set a die", style = "brass", disabled = #dice <= 1, onClick = function()
+			local function pickValue(i: number)
+				local options = {}
+				for n = 1, 6 do
+					table.insert(options, { text = tostring(n), value = n, style = "green", width = 56, disabled = n == dice[i] })
+				end
+				Inspector.choose(self.popups, "Compass", "Turn your " .. tostring(dice[i]) .. " into...", options, function(n)
+					play({ die = i, value = n })
+				end)
+			end
+			local options = {}
+			for i, d in dice do
+				table.insert(options, { text = tostring(d), value = i, style = "panel", width = 66 })
+			end
+			Inspector.choose(self.popups, "Compass", "Which die do you want to set?", options, pickValue)
+		end })
+	elseif use == "steal" then
+		local me = self:_player(self.mySeat)
+		local marks = {}
+		for _, seat in self:_allSeats(true) do
+			local p = self:_player(seat)
+			if p and (p.handCount or 0) > 0 and (me == nil or p.team ~= me.team) then
+				table.insert(marks, seat)
+			end
+		end
+		table.insert(actions, { text = if #marks > 0 then "Pick a rival" else "No rival has a card", style = "red", disabled = #marks == 0, onClick = function()
+			self:_pickPlayer("Thief Potion: steal from who?", marks, function(seat)
+				play({ target = seat })
 			end)
 		end })
 	elseif use == "jeopardy" then

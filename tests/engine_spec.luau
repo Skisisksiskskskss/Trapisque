@@ -294,7 +294,7 @@ test("lucky clover rerolls your dice", function()
 	eq(g.turn.dice[2], 4)
 end)
 
-test("juice box fills your Power bar", function()
+test("regeneration fills your Power bar", function()
 	local g = newGame()
 	g.players[1].hand = { "juice" }
 	cmd(g, 1, { type = "play", item = "juice" })
@@ -460,11 +460,22 @@ test("burning hops you back at the start of your turn", function()
 	eq(g.players[2].status.burning, 1)
 end)
 
-test("a snare skips your next turn", function()
+test("a snare: roll 4+ to break free, or lose your turn", function()
 	local g = newGame({ characters = { "mage", "warper", "overseer" } })
 	g.players[2].status.skip = 1
+	g.rng:push(3)
 	move(g, 1, 1, 1, 1)
-	eq(g.current, 3, "seat 2 was skipped")
+	eq(g.current, 3, "seat 2 rolled a 3 and lost the turn")
+	eq(g.players[2].status.skip, 0)
+	g = newGame({ characters = { "mage", "warper", "overseer" } })
+	g.players[2].status.skip = 1
+	g.rng:push(4)
+	local events = move(g, 1, 1, 1, 1)
+	eq(g.current, 2, "seat 2 rolled a 4 and broke free")
+	eq(g.players[2].status.skip, 0)
+	truthy(findEvent(events, "snareRoll", function(e)
+		return e.free == true
+	end))
 end)
 
 test("the phoenix potion survives a knockout", function()
@@ -836,11 +847,55 @@ test("conveyor belts carry you off the end", function()
 	eq(g.players[1].tile, 8)
 end)
 
-test("trampolines bounce you ahead", function()
+test("shifting sands slide you forward in even rounds and back in odd ones", function()
 	local g = newGame()
-	g:_addPlaced(5, "trampoline", 2)
+	g.round = 2
+	g:_addPlaced(5, "sands", 2)
 	move(g, 1, 1, 4, 1)
-	eq(g.players[1].tile, 5 + R.TrampolineForward)
+	eq(g.players[1].tile, 5 + R.SandsSlide)
+	g = newGame()
+	g.round = 1
+	g:_addPlaced(5, "sands", 2)
+	move(g, 1, 1, 4, 1)
+	eq(g.players[1].tile, 5 - R.SandsSlide)
+	eq(g.placed[5].uses, R.PlacedUses.sands - 1, "it sinks a little with every slide")
+end)
+
+test("the compass turns a die to any number", function()
+	local g = newGame()
+	dice(g, 2, 5)
+	g.players[1].hand = { "compass" }
+	falsy(g:command(1, { type = "play", item = "compass", die = 3, value = 4 }), "there's no third die")
+	falsy(g:command(1, { type = "play", item = "compass", die = 1, value = 7 }), "1 to 6 only")
+	local events = cmd(g, 1, { type = "play", item = "compass", die = 1, value = 6 })
+	eq(g.turn.dice[1], 6)
+	eq(g.turn.dice[2], 5)
+	truthy(findEvent(events, "compass"))
+	eq(#g.players[1].hand, 0)
+	local f = newGame()
+	f.turn.frozen = true
+	dice(f, 2)
+	f.players[1].hand = { "compass" }
+	falsy(f:command(1, { type = "play", item = "compass", die = 1, value = 6 }), "the needle won't move while Frozen")
+end)
+
+test("the thief potion steals a card, and only the two of them see which", function()
+	local g = newGame({ characters = { "mage", "trapper", "warper" } })
+	g.players[1].hand = { "thief_potion" }
+	falsy(g:command(1, { type = "play", item = "thief_potion", target = 2 }), "nothing to steal")
+	falsy(g:command(1, { type = "play", item = "thief_potion", target = 1 }), "not from yourself")
+	g.players[2].hand = { "shield", "spike" }
+	g.rng:push(2)
+	local events = cmd(g, 1, { type = "play", item = "thief_potion", target = 2 })
+	eq(table.concat(g.players[1].hand, ","), "spike")
+	eq(table.concat(g.players[2].hand, ","), "shield")
+	local function stolen(seat)
+		return findEvent(g:eventsFor(seat, events), "steal")
+	end
+	eq(stolen(1).item, "spike")
+	eq(stolen(2).item, "spike")
+	truthy(stolen(3), "a bystander sees a card change hands...")
+	eq(stolen(3).item, nil, "...but not which one")
 end)
 
 -- tokens and the shop -----------------------------------------------------------
@@ -860,8 +915,8 @@ test("the potion seller opens on your own move, and sells for coins", function()
 	g.players[1].coins = 3
 	move(g, 1, 1, 4, 1)
 	eq(g.phase, "shop")
-	cmd(g, 1, { type = "buy", item = "speed_potion" })
-	eq(g.players[1].coins, 2)
+	cmd(g, 1, { type = "buy", item = "thief_potion" })
+	eq(g.players[1].coins, 1)
 	falsy(g:command(1, { type = "move", die = 1 }), "finish shopping first")
 	cmd(g, 1, { type = "shopDone" })
 	eq(g.current, 2)

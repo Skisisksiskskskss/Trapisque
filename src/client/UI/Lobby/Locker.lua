@@ -195,9 +195,9 @@ function Locker._fill(_maid, content: Frame, category: string)
 		}).TextTruncate = Enum.TextTruncate.AtEnd
 		local status
 		if isEquipped then
-			status = if category == "emote" then ("SLOT " .. emoteSlots[def.id]) else "EQUIPPED"
+			status = if category == "emote" then ("Slot " .. emoteSlots[def.id]) else "Equipped"
 		elseif isOwned then
-			status = string.upper(rarity and rarity.name or "")
+			status = rarity and rarity.name or ""
 		else
 			status = if def.source and SOURCE_TEXT[def.source] then SOURCE_TEXT[def.source] else "In Treasure Chests"
 		end

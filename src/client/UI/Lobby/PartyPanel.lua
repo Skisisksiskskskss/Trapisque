@@ -137,9 +137,9 @@ function PartyPanel:_renderEmpty()
 	local bigH = if compact then 44 else 50
 	local smallH = if compact then 42 else 46
 	Widgets.button(c, {
-		text = "CREATE PARTY",
+		text = "Create party",
 		icon = "plus",
-		style = "green",
+		style = "wood",
 		textSize = if compact then 18 else 20,
 		size = UDim2.new(1, 0, 0, bigH),
 		position = UDim2.fromOffset(0, y),
@@ -152,7 +152,7 @@ function PartyPanel:_renderEmpty()
 	})
 	y += bigH + (if compact then 6 else 10)
 	Widgets.button(c, {
-		text = "INVITE FRIENDS",
+		text = "Invite friends",
 		icon = "people",
 		style = "blue",
 		textSize = if compact then 16 else 18,
@@ -162,7 +162,7 @@ function PartyPanel:_renderEmpty()
 	})
 	-- watch a friend's match
 	Widgets.button(c, {
-		text = "WATCH",
+		text = "Watch",
 		icon = "eye",
 		style = "panel",
 		textSize = if compact then 15 else 17,
@@ -206,8 +206,8 @@ function PartyPanel:_renderEmpty()
 		end,
 	})
 	Widgets.button(c, {
-		text = "JOIN",
-		style = "brass",
+		text = "Join",
+		style = "wood",
 		textSize = 20,
 		size = UDim2.fromOffset(118, smallH),
 		anchor = Vector2.new(1, 0),
@@ -235,7 +235,7 @@ function PartyPanel:_renderParty(party)
 	Util.stroke(codeBox, C.panelEdge, 2)
 	local inviteOnly = party.privacy == "invite"
 	Widgets.label(codeBox, {
-		text = if inviteOnly then "INVITE ONLY" else "PARTY CODE",
+		text = if inviteOnly then "Invite only" else "Party code",
 		font = "heavy",
 		size = if compact then 11 else 13,
 		color = C.textSoft,
@@ -295,7 +295,7 @@ function PartyPanel:_renderParty(party)
 		Size = UDim2.new(1, 0, 0, buttonsH),
 	})
 	Widgets.button(row, {
-		text = "INVITE",
+		text = "Invite",
 		icon = "plus",
 		style = "blue",
 		textSize = 18,
@@ -305,7 +305,7 @@ function PartyPanel:_renderParty(party)
 		end,
 	})
 	Widgets.button(row, {
-		text = "LEAVE",
+		text = "Leave",
 		icon = "exit",
 		style = "red",
 		textSize = 18,
@@ -405,7 +405,7 @@ function PartyPanel:_invitePicker()
 		height = 470,
 	})
 	Widgets.button(content, {
-		text = "INVITE ROBLOX FRIENDS",
+		text = "Invite Roblox friends",
 		icon = "people",
 		style = "blue",
 		textSize = 18,
@@ -485,7 +485,7 @@ function PartyPanel:_invitePicker()
 				}).TextTruncate = Enum.TextTruncate.AtEnd
 			end
 			local b = Widgets.button(row, {
-				text = if p.inMyParty then "IN PARTY" else "INVITE",
+				text = if p.inMyParty then "In party" else "Invite",
 				style = "green",
 				textSize = 16,
 				size = UDim2.fromOffset(120, 36),
@@ -499,7 +499,7 @@ function PartyPanel:_invitePicker()
 				end
 				local ok2 = request("party.invite", { userId = p.userId })
 				if ok2 then
-					b:setText("SENT")
+					b:setText("Sent")
 					b:setEnabled(false)
 				end
 			end)

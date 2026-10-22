@@ -181,7 +181,7 @@ function Collection.open(popups: Instance, tab: string?)
 				position = UDim2.fromOffset(6, 96),
 			})
 			Widgets.label(cell, {
-				text = string.upper(c.rarity) .. (if n > 0 then ("  ·  x" .. n) else ""),
+				text = string.upper(string.sub(c.rarity, 1, 1)) .. string.sub(c.rarity, 2) .. (if n > 0 then ("  ·  x" .. n) else ""),
 				font = "heavy",
 				size = 12,
 				color = RARITY_COLOR[c.rarity] or C.textSoft,
@@ -204,7 +204,7 @@ function Collection.open(popups: Instance, tab: string?)
 			badgesTab()
 		end
 	end
-	for i, t in { { "badges", "BADGES", "star" }, { "fish", "FISH LOG", "rod" } } do
+	for i, t in { { "badges", "Badges", "star" }, { "fish", "Fish log", "rod" } } do
 		buttons[t[1]] = Widgets.button(tabs, {
 			text = t[2],
 			icon = t[3],

@@ -8,6 +8,8 @@
 		            passive   - stays in your hand and works by itself (Shield, Bridge...)
 		            juice     - fills your Power bar
 		            reroll    - roll your dice again
+		            compass   - turn one of your dice to any number
+		            steal     - Thief Potion: take a random card from someone's hand
 		            anchor    - Time Travel: drop an anchor where you stand
 		            telepathy - move any player 1-3 tiles
 		            jeopardy  - Double Jeopardy
@@ -61,8 +63,8 @@ local defs = {
 		category = "trap",
 		use = "place",
 		hidden = true,
-		short = "Skip a turn",
-		text = "Hide it near you. Whoever lands here skips their next turn.",
+		short = "Roll 4+ or lose a turn",
+		text = "Hide it near you. Whoever lands here is caught: at the start of their next turn they roll a die, and on 1 to 3 they lose that turn.",
 	},
 	{
 		id = "mudslide",
@@ -133,13 +135,21 @@ local defs = {
 		text = "Don't like your dice? Roll them again.",
 	},
 	{
+		id = "compass",
+		name = "Compass",
+		category = "assist",
+		use = "compass",
+		short = "Set a die to any number",
+		text = "Turn one of your dice to any number you like. The needle won't move while you're Frozen.",
+	},
+	{
 		id = "juice",
-		name = "Juice Box",
-		nick = "Juice", -- on cards too small for the whole name
+		name = "Regeneration",
+		nick = "Regen", -- on cards too small for the whole name
 		category = "assist",
 		use = "juice",
-		short = "Fill your Power",
-		text = "Fills your Power bar, so your ability is ready right now.",
+		short = "Refill your Power",
+		text = "Refills your Power bar, so your ability is ready right now.",
 	},
 	{
 		id = "shield",
@@ -219,26 +229,25 @@ local defs = {
 		text = "Place a 3-tile belt near you, facing forward or back. Anyone landing on it rides it off the end. It wears out after 3 rides.",
 	},
 	{
-		id = "trampoline",
-		name = "Trampoline",
+		id = "sands",
+		name = "Shifting Sands",
+		nick = "Sands", -- on cards too small for the whole name
 		category = "neutral",
 		use = "place",
-		short = "Bounce ahead 3",
-		text = "Place it near you. Whoever lands here bounces 3 tiles forward. It wears out after 2 bounces.",
+		short = "Slide 3, forward or back",
+		text = "Place it near you. Whoever lands here slides 3 tiles: forward in even rounds, backwards in odd rounds. It sinks after 3 slides.",
 	},
 
 	-- Potions (Potion Seller) ---------------------------------------------------------
 	{
-		id = "speed_potion",
-		name = "Speed Potion",
-		nick = "Speed", -- on cards too small for the whole name
+		id = "thief_potion",
+		name = "Thief Potion",
+		nick = "Thief", -- on cards too small for the whole name
 		category = "potion",
-		use = "boost",
-		boost = "plus",
-		amount = 2,
-		price = 1,
-		short = "+2 to your move",
-		text = "Play before you move: move 2 extra tiles.",
+		use = "steal",
+		price = 2,
+		short = "Steal a card",
+		text = "Drink it to steal a random card from another player's hand.",
 	},
 	{
 		id = "phoenix_potion",
@@ -315,11 +324,11 @@ end
 -- Lantern or Fire Cloak).
 Items.wheels = {
 	trap = { "spike", "grog", "fire", "ice", "snare", "mudslide", "banana", "wall", "coin" },
-	assist = { "speed_boost", "bounce_pad", "moonwalk", "clover", "juice", "shield", "bkb", "coin" },
-	neutral = { "teleporter", "spore_warper", "conveyor", "trampoline", "coin" },
+	assist = { "speed_boost", "bounce_pad", "moonwalk", "clover", "compass", "juice", "shield", "bkb", "coin" },
+	neutral = { "teleporter", "spore_warper", "conveyor", "sands", "coin" },
 }
 
-Items.potions = { "speed_potion", "phoenix_potion", "xray_potion", "telepathy_potion", "time_potion", "jeopardy_potion" }
+Items.potions = { "thief_potion", "phoenix_potion", "xray_potion", "telepathy_potion", "time_potion", "jeopardy_potion" }
 
 Items.trapIds = { "spike", "grog", "fire", "ice", "snare", "mudslide", "banana", "wall" }
 

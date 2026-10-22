@@ -329,7 +329,7 @@ function HandView:_refresh()
 		if passive and not root:FindFirstChild("AutoTag") then
 			Widgets.badge(root, {
 				name = "AutoTag",
-				text = "AUTO",
+				text = "Auto",
 				color = C.mint,
 				height = 16,
 				textSize = 11,

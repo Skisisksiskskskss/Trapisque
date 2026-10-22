@@ -503,10 +503,16 @@ function Engine:_beginTurn(): boolean
 	self:_emit({ t = "turn", p = seat, round = self.round, n = self.turnCount })
 	self:_clearEmbers(seat)
 	if p.status.skip > 0 then
+		-- Snared: roll to break free, or lose the turn
 		p.status.skip -= 1
-		self:_emit({ t = "skip", p = seat })
-		self.turn = nil
-		return false
+		local roll = self.rng:int(1, 6)
+		local free = roll >= Rules.SnareEscapeMin
+		self:_emit({ t = "snareRoll", p = seat, roll = roll, free = free })
+		if not free then
+			self:_emit({ t = "skip", p = seat })
+			self.turn = nil
+			return false
+		end
 	end
 	if p.status.burning > 0 then
 		-- Burning: hop back a tile (it can land you on something nasty)
@@ -1607,7 +1613,12 @@ function Engine:_trapEffect(p, item: string, by: number?)
 	end
 end
 
--- Visible pieces: teleporters, spore warpers, trampolines.
+-- Shifting Sands slide you forward in even rounds and backwards in odd ones.
+function Engine.sandsForward(round: number): boolean
+	return round % 2 == 0
+end
+
+-- Visible pieces: teleporters, spore warpers, shifting sands.
 function Engine:_triggerPiece(p, tile: number, piece)
 	local item = piece.item
 	self:_emit({ t = "trigger", p = p.index, tile = tile, item = item, owner = piece.owner })
@@ -1633,9 +1644,13 @@ function Engine:_triggerPiece(p, tile: number, piece)
 				self:_emit({ t = "fizzle", p = p.index, item = item, tile = tile })
 			end
 		end
-	elseif item == "trampoline" then
+	elseif item == "sands" then
 		self:_usePlaced(tile)
-		self:_shiftForward(p, Rules.TrampolineForward, "trampoline")
+		if Engine.sandsForward(self.round) then
+			self:_shiftForward(p, Rules.SandsSlide, "sands")
+		else
+			self:_shiftBack(p, Rules.SandsSlide, "sands")
+		end
 		self:_land(p, true, false)
 	end
 end
@@ -1939,6 +1954,25 @@ function Engine:_cmdPlay(p, cmd)
 		self:_emit({ t = "play", p = p.index, item = item })
 		self:_roll(p, true)
 		return true
+	elseif use == "compass" then
+		if self.turn.frozen then
+			return false, "You're Frozen: the needle won't move."
+		end
+		local i = tonumber(cmd.die)
+		local value = tonumber(cmd.value)
+		if not i or self.turn.dice[i] == nil then
+			return false, "Pick one of your dice."
+		end
+		if not value or value ~= math.floor(value) or value < 1 or value > 6 then
+			return false, "Pick a number from 1 to 6."
+		end
+		removeCard(p, item)
+		self:_spend(p, item)
+		self:_emit({ t = "play", p = p.index, item = item })
+		local from = self.turn.dice[i]
+		self.turn.dice[i] = value
+		self:_emit({ t = "compass", p = p.index, die = i, from = from, value = value, dice = copyList(self.turn.dice) })
+		return true
 	elseif use == "anchor" then
 		if p.anchor then
 			return false, "You already have a time anchor."
@@ -1989,6 +2023,32 @@ function Engine:_cmdPlay(p, cmd)
 		self:_land(t, true)
 		self:_shiftForward(p, Rules.JeopardySteps, "jeopardy")
 		self:_land(p, true)
+		return true
+	elseif use == "steal" then
+		local t, why = self:_validTarget(p, cmd.target, false)
+		if not t then
+			return false, why
+		end
+		if t.team == p.team then
+			return false, "Steal from a rival, not a teammate."
+		end
+		if #t.hand == 0 then
+			return false, "They have no cards to steal."
+		end
+		removeCard(p, item)
+		self:_spend(p, item)
+		self:_emit({ t = "play", p = p.index, item = item, target = t.index })
+		local taken = table.remove(t.hand, self.rng:int(1, #t.hand))
+		table.insert(p.hand, taken)
+		-- only the two of them see which card it was
+		self:_emit({
+			t = "steal",
+			p = p.index,
+			target = t.index,
+			item = taken,
+			secret = { seats = { [p.index] = true, [t.index] = true } },
+			alt = { t = "steal", p = p.index, target = t.index },
+		})
 		return true
 	elseif use == "xray" then
 		removeCard(p, item)

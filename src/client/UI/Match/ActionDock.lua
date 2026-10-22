@@ -167,7 +167,7 @@ function ActionDock:_buildPower(r, form: string)
 	local function abilityButton(x: number, y: number, w: number, h: number, textSize: number)
 		return Widgets.button(box, {
 			name = "AbilityButton",
-			text = if ability then string.upper(ability.name) else "",
+			text = if ability then ability.name else "",
 			style = ABILITY_STYLE[self.character] or "wood",
 			textSize = textSize,
 			size = UDim2.fromOffset(w, h),
@@ -189,7 +189,7 @@ function ActionDock:_buildPower(r, form: string)
 		local tx = ps + 20
 		Widgets.label(box, {
 			name = "Name",
-			text = if def then string.upper(def.name) else "",
+			text = if def then def.name else "",
 			font = "chunky",
 			size = 19,
 			color = C.text,
@@ -331,7 +331,7 @@ function ActionDock:setPower(power: number, cap: number, o)
 	end
 	if self.powerLabel then
 		local ab = self.abilityDef
-		self.powerLabel.Text = if not ab then "" elseif full then "POWER FULL!" else string.format("Power %d / %d", power, cap)
+		self.powerLabel.Text = if not ab then "" elseif full then "Power full!" else string.format("Power %d / %d", power, cap)
 		self.powerLabel.TextColor3 = if full then C.sun else C.textSoft
 	end
 	local btn = self.abilityButton
@@ -340,7 +340,7 @@ function ActionDock:setPower(power: number, cap: number, o)
 		btn:setEnabled(usable)
 		btn:pulse(usable)
 		if self.form == "tall" and self.abilityDef then
-			btn:setText(string.upper(self.abilityDef.name) .. (if full then "!" else string.format(" %d/%d", power, cap)))
+			btn:setText(self.abilityDef.name .. (if full then "!" else string.format(" %d/%d", power, cap)))
 		end
 	end
 end
@@ -402,7 +402,7 @@ function ActionDock:_buildTray(r, form: string)
 	end
 	self.sumButton = Widgets.button(if footH > 0 then self.foot else box, {
 		name = "Total",
-		text = "TOTAL",
+		text = "Total",
 		style = "brass",
 		textSize = if form == "wide" then 16 else 13,
 		depth = 3,
@@ -424,7 +424,7 @@ function ActionDock:_buildTray(r, form: string)
 	end)
 	self.recallButton = Widgets.button(if footH > 0 then self.foot else box, {
 		name = "Recall",
-		text = "RECALL",
+		text = "Recall",
 		icon = "time_potion",
 		style = "purple",
 		textSize = if form == "wide" then 15 else 12,
@@ -569,13 +569,13 @@ function ActionDock:_buildDice(n: number)
 		tag.Visible = false
 		local keyHint = nil
 		if not self.touch and self.form == "wide" then
-			-- its keyboard key, on a little key cap
+			-- its keyboard key, on a little key cap at its lower corner
 			keyHint = Util.new("Frame", {
 				Name = "Key",
 				BackgroundColor3 = C.panelRaised,
 				BorderSizePixel = 0,
 				AnchorPoint = Vector2.new(0.5, 0.5),
-				Position = UDim2.fromOffset(2, 2),
+				Position = UDim2.new(0, 2, 1, -2),
 				Size = UDim2.fromOffset(18, 18),
 				ZIndex = 9,
 				Parent = lift,
@@ -595,7 +595,7 @@ function ActionDock:_buildDice(n: number)
 		-- the second die of doubles goes the other way: a BACK flag on its top edge
 		local back = Widgets.badge(lift, {
 			name = "BackTag",
-			text = "BACK",
+			text = "Back",
 			color = C.coral,
 			height = math.max(16, math.floor(size * 0.26)),
 			textSize = math.max(11, math.floor(size * 0.19)),
@@ -606,7 +606,7 @@ function ActionDock:_buildDice(n: number)
 		back.Visible = false
 		local gold = Widgets.badge(lift, {
 			name = "GoldTag",
-			text = "GOLD",
+			text = "Gold",
 			color = C.sun,
 			height = math.max(16, math.floor(size * 0.26)),
 			textSize = math.max(11, math.floor(size * 0.19)),
@@ -728,7 +728,7 @@ function ActionDock:setDice(info)
 			local label = w.tag:FindFirstChildWhichIsA("TextLabel", true)
 			if label then
 				-- small dice (phones) have room for the number only
-				label.Text = "+" .. tostring(power) .. (if w.size >= 64 then " POWER" else "")
+				label.Text = "+" .. tostring(power) .. (if w.size >= 64 then " Power" else "")
 			end
 		end
 		if w.key then
@@ -738,15 +738,15 @@ function ActionDock:setDice(info)
 	end
 	if self.caption then
 		if info.over then
-			self.caption.Text = "GAME OVER"
+			self.caption.Text = "Game over"
 		elseif #dice == 0 then
-			self.caption.Text = if info.mine then "YOUR DICE" else ""
+			self.caption.Text = if info.mine then "Your dice" else ""
 		elseif info.mine then
-			self.caption.Text = if info.chosen ~= nil then "GO!" elseif info.frozen then "FROZEN! ONE DIE" else "PICK A DIE"
+			self.caption.Text = if info.chosen ~= nil then "Go!" elseif info.frozen then "Frozen: one die" else "Pick a die"
 		else
-			self.caption.Text = string.upper((info.owner or "") .. "'S DICE")
+			self.caption.Text = (info.owner or "") .. "'s dice"
 		end
-		self.caption.TextColor3 = if info.mine then C.coral else C.textSoft
+		self.caption.TextColor3 = if info.mine and info.frozen then C.sky elseif info.mine then C.text else C.textSoft
 	end
 	if info.chosen == nil and not self:_canPick() then
 		self.selected = nil
@@ -765,7 +765,7 @@ function ActionDock:_updateFoot()
 		self.sumButton.root.Visible = showSum
 		if showSum then
 			local dice = info.dice
-			self.sumButton:setText("TOTAL " .. tostring((dice[1] or 0) + (dice[2] or 0)) .. (if self.selected == "sum" then "  GO!" else ""))
+			self.sumButton:setText("Total " .. tostring((dice[1] or 0) + (dice[2] or 0)) .. (if self.selected == "sum" then "  Go!" else ""))
 			self.sumButton:setEnabled(true)
 		end
 	end
@@ -840,6 +840,15 @@ function ActionDock:rollDice(dice: { number }, frozen: boolean, speed: number)
 			Util.bump(w.lift, 0.2)
 		end
 		Sound.play("reveal")
+	end
+end
+
+-- One die changed by itself (a Compass): it hops.
+function ActionDock:bumpDie(i: number)
+	local w = self.dieWidgets and self.dieWidgets[i]
+	if w then
+		Util.bump(w.lift, 0.25)
+		Sound.play("diceLand")
 	end
 end
 

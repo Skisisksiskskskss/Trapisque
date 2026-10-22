@@ -28,6 +28,10 @@ Icons.data = IconData
 -- How thick a sticker outline is (fraction of the canvas): one look everywhere.
 Icons.OUTLINE = 0.045
 
+-- Every outline is drawn at this share of what was asked: a thin, even line, not a
+-- heavy comic one.
+Icons.OUTLINE_SCALE = 0.6
+
 local function resolve(colors, c: any): Color3
 	if c == nil then
 		return colors.ink
@@ -441,8 +445,9 @@ end
 function Icons.draw(canvas: Instance, ops: { any }, colors, outline: number?)
 	local flat = flatten(ops)
 	if outline and outline > 0 then
+		local w = outline * Icons.OUTLINE_SCALE
 		for _, op in flat do
-			local big = inflate(op, outline)
+			local big = inflate(op, w)
 			if big then
 				drawOne(canvas, big, colors)
 			end
@@ -456,7 +461,7 @@ end
 -- Colours for sticker art (it carries its own; these fill in the roles it uses).
 function Icons.stickerColors()
 	local C = Theme.C
-	return { ink = C.line, line = C.line, bg = C.cream, acc = C.sun, acc2 = C.sun, hi = C.white }
+	return { ink = C.ink, line = C.ink, bg = C.cream, acc = C.sun, acc2 = C.sun, hi = C.white }
 end
 
 -- A new square canvas with sticker art `ops` on it, outlined.
@@ -533,7 +538,7 @@ function Icons.medallion(parent: Instance, id: string, color: Color3, props: { [
 		end
 	end
 	Util.corner(disc, 0.5)
-	Util.scaledStroke(disc, Theme.C.line, 0.07, 2)
+	Util.scaledStroke(disc, Theme.C.line, 0.035, 2)
 	disc.Parent = parent
 	if StickerArt.bodyColor[id] then
 		-- a character: a real portrait on a pale disc of their colour, cropped to the circle
@@ -562,11 +567,11 @@ function Icons.medallion(parent: Instance, id: string, color: Color3, props: { [
 		}, 0.055)
 		s.ZIndex = disc.ZIndex + 1
 	else
-		Icons.make(disc, id, { ink = Color3.new(1, 1, 1), bg = color, acc = Theme.C.sunLight, acc2 = Theme.C.sunLight, hi = color, line = Theme.C.line }, {
-			Size = UDim2.fromScale(0.62, 0.62),
+		Icons.make(disc, id, { ink = Color3.new(1, 1, 1), bg = color, acc = Theme.C.sunLight, acc2 = Theme.C.sunLight, hi = color, line = color }, {
+			Size = UDim2.fromScale(0.56, 0.56),
 			SizeConstraint = Enum.SizeConstraint.RelativeYY,
 			ZIndex = disc.ZIndex + 1,
-		}, 0.07)
+		})
 	end
 	return disc
 end

@@ -11,7 +11,6 @@
 local UI = script.Parent.Parent
 local Util = require(UI.Util)
 local Theme = require(UI.Theme)
-local Shapes = require(UI.Shapes)
 local Icons = require(UI.Icons)
 local MapProps = require(UI.MapProps)
 local BoardLayout = require(script.Parent.BoardLayout)
@@ -97,32 +96,24 @@ function MapArt.draw(layers: { [string]: Frame }, L, U: number)
 		ZIndex = 1,
 		Parent = layers.Water,
 	})
-	for _, w in L.waves do
-		local holder = Util.frame(layers.Water, {
-			Name = "Wave",
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.fromOffset((w.x - L.x0) * U, (w.y - L.y0) * U),
-			Size = UDim2.fromOffset(w.w * U, w.w * U),
-			ZIndex = 2,
-		})
-		Shapes.wave(Shapes.canvas(holder), 0.5, 0.5, 1, 0.09, col.waterMark)
-	end
+	-- (flat water: no wave marks)
 	water.Name = "Water"
 
-	-- the land: shallows, the inked coast, the ground, the inner ground with its own line
+	-- the land: shallows, the coast (a darker band of the ground), the ground, the
+	-- inner ground. Edges are darker shades of what they edge, never a black line.
 	local land = layers.Land
 	for _, c in L.land do
 		disc(land, L, U, c.x, c.y, c.r + 0.75, col.shallows, 1, "Shallows")
 	end
 	for _, c in L.land do
-		disc(land, L, U, c.x, c.y, c.r + 0.1, C.line, 2, "Coast")
+		disc(land, L, U, c.x, c.y, c.r + 0.1, Util.shade(col.land, -0.22), 2, "Coast")
 	end
 	for _, c in L.land do
 		disc(land, L, U, c.x, c.y, c.r, col.land, 3, "Ground")
 	end
 	for _, c in L.land do
 		if c.inner and c.inner > 0.3 then
-			disc(land, L, U, c.x, c.y, c.inner + 0.07, C.line, 4, "InnerEdge")
+			disc(land, L, U, c.x, c.y, c.inner + 0.07, Util.shade(col.inner, -0.16), 4, "InnerEdge")
 		end
 	end
 	for _, c in L.land do
@@ -133,7 +124,7 @@ function MapArt.draw(layers: { [string]: Frame }, L, U: number)
 
 	-- patches of jungle, rock or moss, away from the trail
 	for _, c in L.patches or {} do
-		disc(land, L, U, c.x, c.y, c.r + 0.07, C.line, 6, "PatchEdge")
+		disc(land, L, U, c.x, c.y, c.r + 0.07, Util.shade(col.inner, -0.16), 6, "PatchEdge")
 	end
 	for _, c in L.patches or {} do
 		disc(land, L, U, c.x, c.y, c.r, col.inner, 7, "Patch")
@@ -143,7 +134,7 @@ function MapArt.draw(layers: { [string]: Frame }, L, U: number)
 	local trail = layers.Trail
 	local W = S.trailW
 	for _, s in L.trail do
-		band(trail, L, U, s.x1, s.y1, s.x2, s.y2, W + 0.2, C.line, 1, "TrailEdge")
+		band(trail, L, U, s.x1, s.y1, s.x2, s.y2, W + 0.2, Util.shade(col.trail, -0.25), 1, "TrailEdge")
 	end
 	for _, s in L.trail do
 		local c = if s.branch and col.tunnel then col.tunnel else col.trail
@@ -175,12 +166,12 @@ function MapArt.draw(layers: { [string]: Frame }, L, U: number)
 		for i = 1, #pts - 1 do
 			local a, b = pts[i], pts[i + 1]
 			if depth(a[1], a[2]) > -0.05 or depth(b[1], b[2]) > -0.05 then
-				band(trail, L, U, a[1], a[2], b[1], b[2], 1.15, C.line, 4, "RiverBank")
+				band(trail, L, U, a[1], a[2], b[1], b[2], 1.15, Util.shade(col.shallows, -0.3), 4, "RiverBank")
 			end
 		end
 		for _, e in { { r.endA, pts[1] }, { r.endB, pts[#pts] } } do
 			if e[1] == "pond" then
-				disc(trail, L, U, e[2][1], e[2][2], 0.85, C.line, 4, "PondEdge")
+				disc(trail, L, U, e[2][1], e[2][2], 0.85, Util.shade(col.shallows, -0.3), 4, "PondEdge")
 			end
 		end
 		for i = 1, #pts - 1 do
@@ -203,11 +194,11 @@ function MapArt.draw(layers: { [string]: Frame }, L, U: number)
 		local lava = col.lava or C.coral
 		for i = 1, #pts - 1 do
 			local a, b = pts[i], pts[i + 1]
-			band(trail, L, U, a[1], a[2], b[1], b[2], 1.2, C.line, 4, "LavaBank")
+			band(trail, L, U, a[1], a[2], b[1], b[2], 1.2, Util.shade(lava, -0.4), 4, "LavaBank")
 		end
 		for _, e in { { r.endA, pts[1] }, { r.endB, pts[#pts] } } do
 			if e[1] == "pond" then
-				disc(trail, L, U, e[2][1], e[2][2], 0.9, C.line, 4, "LavaPoolEdge")
+				disc(trail, L, U, e[2][1], e[2][2], 0.9, Util.shade(lava, -0.4), 4, "LavaPoolEdge")
 			end
 		end
 		for i = 1, #pts - 1 do
@@ -229,7 +220,7 @@ function MapArt.draw(layers: { [string]: Frame }, L, U: number)
 		end
 	end
 	for _, p in L.pools do
-		disc(trail, L, U, p.x, p.y, p.r + 0.1, C.line, 7, "PoolEdge")
+		disc(trail, L, U, p.x, p.y, p.r + 0.1, Util.shade(col.pool or C.lime, -0.3), 7, "PoolEdge")
 	end
 	for _, p in L.pools do
 		disc(trail, L, U, p.x, p.y, p.r, col.pool or C.lime, 8, "Pool")
