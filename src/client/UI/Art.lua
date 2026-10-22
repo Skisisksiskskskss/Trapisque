@@ -1,13 +1,20 @@
 --[[
 	Art
 	The game's image art: the illustrations in art/ (in the repository), built by
-	tools/art.py into a few sheets that are uploaded to Roblox once. Art.image draws one
-	sprite from those sheets; Art.has says whether it can. Until a sheet's id is in
-	ArtAssets, or if Roblox can't load it, callers draw their code-built version instead.
+	tools/art.py into a few sheets. Art.image draws one sprite from those sheets; Art.has
+	says whether it can.
+
+	Each sheet comes from one of two places:
+	  - its uploaded image, once its id is in ArtAssets (works everywhere), or
+	  - the sheet built in the game itself, from its pixels in ArtData, as an
+	    EditableImage. That needs nothing uploaded: it works in Studio, and in a published
+	    game once "Allow Mesh / Image APIs" is on (Experience Settings > Security).
+	When neither works, callers draw their code-built version instead (and Art.problem
+	says why, in the Output too).
 
 		Art.has(name) -> boolean                         -- "props/palm", "pieces/paint_mage"
 		Art.image(parent, name, props) -> Frame?         -- nil when it can't
-		Art.preload(timeout?)                            -- loads the sheets, notes failures
+		Art.preload(timeout?)                            -- builds / loads the sheets
 
 	Art.image's frame is the sprite's whole canvas (props size and place it; it keeps the
 	canvas's shape); the image inside covers just the part that's drawn (the sheets hold
@@ -23,29 +30,76 @@ local Art = {}
 
 -- Offline (the test suite's fake Roblox draws its screenshots from the sheet files).
 Art.localSheets = false
+-- Build sheets that have no upload from ArtData (the fake Roblox can't).
+Art.builtIn = true
+-- Why the built-in sheets couldn't be made, if they couldn't.
+Art.problem = nil :: string?
 
+type Source = { image: string?, content: Content? }
+
+local sources: { [string]: Source } = {}
 local failed: { [string]: boolean } = {}
+local keep: { EditableImage } = {} -- the built sheets, held so they stay alive
 
-local function idOf(sheet: string): string?
-	if Art.localSheets then
-		return "art:" .. sheet
-	end
+local function uploadedId(sheet: string): number?
 	local id = (ArtAssets :: any)[sheet]
-	if type(id) == "number" and id > 0 and not failed[sheet] then
-		return "rbxassetid://" .. tostring(id)
+	if type(id) == "number" and id > 0 then
+		return id
 	end
+	return nil
+end
+
+local function sourceOf(sheet: string): Source?
+	if Art.localSheets then
+		return { image = "art:" .. sheet }
+	end
+	local id = uploadedId(sheet)
+	if id and not failed[sheet] then
+		return { image = "rbxassetid://" .. tostring(id) }
+	end
+	return sources[sheet]
+end
+
+-- The sheet as an EditableImage, from its pixels in ArtData.
+local function build(sheet: string): Content?
+	local folder = script.Parent:FindFirstChild("ArtData")
+	local module = folder and folder:FindFirstChild(sheet)
+	if not (module and module:IsA("ModuleScript")) then
+		return nil
+	end
+	local ok, result = pcall(function(): Content
+		local data = require(module) :: any
+		local EncodingService = game:GetService("EncodingService")
+		local image = game:GetService("AssetService"):CreateEditableImage({ Size = Vector2.new(data.width, data.height) })
+		if not image then
+			error("not enough image memory on this device")
+		end
+		-- strip by strip, top to bottom
+		for i, chunks in data.strips do
+			local top = (i - 1) * data.strip
+			local packed = EncodingService:Base64Decode(buffer.fromstring(table.concat(chunks)))
+			local pixels = EncodingService:DecompressBuffer(packed, Enum.CompressionAlgorithm.Zstd)
+			image:WritePixelsBuffer(Vector2.new(0, top), Vector2.new(data.width, math.min(data.strip, data.height - top)), pixels)
+		end
+		table.insert(keep, image)
+		return Content.fromObject(image)
+	end)
+	if ok then
+		return result
+	end
+	Art.problem = tostring(result)
 	return nil
 end
 
 function Art.has(name: string): boolean
 	local s = ArtAtlas.sprites[name]
-	return s ~= nil and idOf(s.sheet) ~= nil
+	return s ~= nil and sourceOf(s.sheet) ~= nil
 end
 
 function Art.image(parent: Instance?, name: string, props: { [string]: any }?): Frame?
 	local s = ArtAtlas.sprites[name]
-	local id = s and idOf(s.sheet)
-	if not s or not id then
+	local source = s and sourceOf(s.sheet)
+	if not s or not source then
 		return nil
 	end
 	local box = Instance.new("Frame")
@@ -63,7 +117,11 @@ function Art.image(parent: Instance?, name: string, props: { [string]: any }?): 
 	img.Name = "Image"
 	img.BackgroundTransparency = 1
 	img.BorderSizePixel = 0
-	img.Image = id
+	if source.content then
+		img.ImageContent = source.content
+	else
+		img.Image = source.image or ""
+	end
 	img.ImageRectOffset = Vector2.new(s.x, s.y)
 	img.ImageRectSize = Vector2.new(s.w, s.h)
 	img.ScaleType = Enum.ScaleType.Stretch
@@ -75,18 +133,38 @@ function Art.image(parent: Instance?, name: string, props: { [string]: any }?): 
 	return box
 end
 
--- Loads the sheets that have ids (with a time limit). One Roblox can't load (still in
--- moderation, or removed) falls back to the code-built art from then on.
+-- Builds the sheets that weren't uploaded, then loads the uploaded ones (with a time
+-- limit). An uploaded one Roblox can't load (still in moderation, or removed) falls back
+-- to the code-built art from then on.
 function Art.preload(timeout: number?)
 	if Art.localSheets then
 		return
 	end
+	if Art.builtIn then
+		for _, sheet in ArtAtlas.sheets do
+			if not uploadedId(sheet) then
+				local content = build(sheet)
+				if content then
+					sources[sheet] = { content = content }
+				end
+			end
+		end
+		if Art.problem then
+			warn(
+				"[Trapisque] The illustrations couldn't be built in the game ("
+					.. Art.problem
+					.. "), so plainer stand-ins are drawn. In a published game, turn on Experience Settings > "
+					.. "Security > Allow Mesh / Image APIs, or upload the art sheets (art/README.md)."
+			)
+		end
+	end
 	local list, sheetOf = {}, {}
 	for _, sheet in ArtAtlas.sheets do
-		local id = idOf(sheet)
+		local id = uploadedId(sheet)
 		if id then
-			table.insert(list, id)
-			sheetOf[id] = sheet
+			local uri = "rbxassetid://" .. tostring(id)
+			table.insert(list, uri)
+			sheetOf[uri] = sheet
 		end
 	end
 	if #list == 0 then

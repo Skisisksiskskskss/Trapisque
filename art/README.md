@@ -2,7 +2,8 @@
 
 The board's playing pieces, the map props and landmarks, and the eight character
 portraits are illustrations. They're drawn as SVG by the scripts in this folder and
-packed into four image sheets that the game loads from Roblox:
+packed into four image sheets, which the game builds itself from data shipped in the
+place (or loads from Roblox, once you upload them):
 
 | File | What it draws |
 | --- | --- |
@@ -29,18 +30,32 @@ still built from UI frames in code, so it stays sharp at any zoom.
 python3 tools/art.py
 ```
 
-It needs Python 3 with `cairosvg` and Pillow (`pip install cairosvg pillow`). It writes:
+It needs Python 3 with `cairosvg`, Pillow and `zstandard`
+(`pip install cairosvg pillow zstandard`). It writes:
 
-- `art/sheets/*.png`: the sheets to upload (1024 x 1024 each)
+- `art/sheets/*.png`: the four sheets (1024 x 1024 each)
 - `art/contact.png`: every sprite at a glance, for review
 - `src/client/UI/ArtAtlas.lua`: where each sprite sits in the sheets
-- `src/client/UI/ArtAssets.lua`: one line per sheet for its Roblox image id (ids
+- `src/client/UI/ArtAssets.lua`: one line per sheet for an uploaded image id (ids
   already filled in are kept)
+- `src/client/UI/ArtData/<sheet>.lua`: the pixels of each sheet that has no id, so
+  the game can build it itself
 
-## Uploading the sheets
+## How the game gets the art
 
-Do this once, and again after the art changes (the sprites move around the sheets, so
-the old ids no longer fit):
+Nothing has to be uploaded. When the game starts, it builds each sheet from its pixels
+in `ArtData` as an `EditableImage`:
+
+- **In Studio** this just works: press Play.
+- **In a published game** Roblox blocks `EditableImage` until the owner turns it on:
+  in Studio, **File → Experience Settings → Security → Allow Mesh / Image APIs** (or
+  on the Creator Dashboard: the experience's **Configure → Settings → Enable Mesh /
+  Image APIs**). Roblox asks for an age- and ID-verified account for that.
+
+If the images can't be built (that setting is off, or a phone is short of memory), the
+game draws plainer stand-ins and says why in the Output window.
+
+**Or upload the sheets** (works everywhere, with no setting to turn on):
 
 1. Open the place in Studio and open **View → Asset Manager**.
 2. Click **Bulk Import** and pick the four files in `art/sheets/`
@@ -48,13 +63,12 @@ the old ids no longer fit):
 3. In the Asset Manager's **Images** folder, right-click each one and choose
    **Copy Asset ID**.
 4. Put each id next to its sheet's name in `src/client/UI/ArtAssets.lua`, for example
-   `pieces_1 = 1234567890,`. You can do this in the repository, or in Studio
-   (`StarterPlayer → StarterPlayerScripts → Client → UI → ArtAssets`). Edits made only
-   in Studio are overwritten by the next place file built from the repository.
+   `pieces_1 = 1234567890,`, then run `tools/art.py` again: it drops the pixels of the
+   uploaded sheets from the place, since they're no longer needed. Edits made only in
+   Studio are overwritten by the next place file built from the repository.
 
-Until a sheet has an id, or if Roblox can't load it, the game draws its code-built
-versions instead (plainer pieces, the older props and portraits), so nothing breaks
-while the images are uploading or in moderation.
+Uploaded sheets are used first. Upload them again after the art changes: the sprites
+move around the sheets, so the old ids no longer fit.
 
 ## Previews offline
 

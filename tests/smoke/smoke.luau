@@ -39,8 +39,10 @@ end
 -- must still let everyone in
 F.messagingHangs = true
 -- screenshots draw the image art from the sheet files (art/sheets); plain smoke runs
--- keep the code-built art, like a place whose sheets aren't uploaded yet
+-- keep the code-built art, as when Roblox can't build the sheets (the fake has no
+-- EditableImage)
 requireModule("Client/UI/Art").localSheets = cfg.shots == true
+requireModule("Client/UI/Art").builtIn = false
 
 F.setScreen({
 	w = cfg.w or 1280,

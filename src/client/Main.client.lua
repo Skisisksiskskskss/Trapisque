@@ -186,7 +186,7 @@ State.set("staff", data.staff)
 if data.profile and data.profile.settings then
 	Sound.applySettings(data.profile.settings)
 end
--- the art sheets (once they're uploaded): loaded before the first screen draws them
+-- the art sheets: built (or loaded, once uploaded) before the first screen draws them
 loading(0.9, "Setting out the pieces...")
 Art.preload(8)
 -- sounds and music load in the background; the lobby shows how far along they are

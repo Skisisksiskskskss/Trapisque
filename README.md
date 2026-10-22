@@ -5,10 +5,10 @@ started as a board game, and this repository is its Roblox version: a purely top
 2D game that uses the Roblox engine but doesn't look like a Roblox game. There is no 3D
 world. Each player is a playing piece on the board, like a set of chess pieces in
 their character's colour. The pieces, the props and landmarks on the maps and the
-character portraits are illustrations (drawn in [art/](art), uploaded as four image
-sheets). Everything else is built from plain UI frames, in one calm tabletop look: flat
-colours with light borders, one rounded font in sentence case, one orange accent for
-the main action on a screen. Only the characters have faces.
+character portraits are illustrations (drawn in [art/](art), built into four image
+sheets the game makes itself). Everything else is built from plain UI frames, in one
+calm tabletop look: flat colours with light borders, one rounded font in sentence case,
+one orange accent for the main action on a screen. Only the characters have faces.
 
 | Match (PC) | Lobby (PC) | Match (upright phone) |
 | --- | --- | --- |
@@ -203,9 +203,11 @@ In Studio:
    all work in a published experience without extra setup.
 3. Create the gamepasses (next section) and paste their ids into
    `src/shared/Config.lua`.
-4. Upload the four art sheets (`art/sheets/*.png`) with Studio's Asset Manager and put
-   their ids in `src/client/UI/ArtAssets.lua`: see [art/README.md](art/README.md).
-   Until then the game draws plainer stand-ins for the pieces, props and portraits.
+4. Turn on **File → Experience Settings → Security → Allow Mesh / Image APIs**: the
+   game builds its illustrations (pieces, props, portraits) itself, and Roblox blocks
+   that in published games until it's on (it needs an age- and ID-verified owner).
+   Without it, the game draws plainer stand-ins. Or upload the four art sheets instead,
+   which needs no setting: see [art/README.md](art/README.md).
 5. The owner panel is yours automatically: the game's creator (the group's owner, for
    a group game) is the owner. Add more owners by user id in `Config.Staff.OwnerIds`;
    admins are picked in the panel itself. Staff lists, bans and gifts for offline
@@ -390,8 +392,8 @@ by `art/*.py` and built into image sheets by `tools/art.py` (`Art`, `PieceArt`; 
 [art/README.md](art/README.md) for their style). Everything else is built from Frames
 with `UICorner` and `UIStroke`: card art, tokens, hazards and the maps themselves are
 data (`StickerArt`, `MapScenes`, `IconData`) drawn by `Icons`, `Shapes` and `MapArt`,
-and the code-drawn props (`MapProps`) and portraits stand in until the sheets are
-uploaded. The style has a few strict rules so every screen comes out of the same kit:
+and the code-drawn props (`MapProps`) and portraits stand in when the sheets can't be
+built or loaded. The style has a few strict rules so every screen comes out of the same kit:
 
 - one UI font (Nunito, `Theme.Font`), Fredoka One only for the logo and big moments;
   sentence case, no outlined lettering
