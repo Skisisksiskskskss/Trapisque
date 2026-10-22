@@ -53,7 +53,7 @@ at most** (oldest replaced). That turns "throw a trap anywhere" into a small puz
 - Catching someone pays you (**GOTCHA!** +1 coin, +2 Power), so good placement snowballs
   into your ability.
 
-Visible tools stayed visible (Wall, Teleporter, Conveyor Belt, Trampoline, Spore
+Visible tools stayed visible (Wall, Teleporter, Conveyor Belt, Shifting Sands, Spore
 Warper): they're about shaping the board, not ambushes. The Overseer sees every hidden
 trap and the X-Ray Potion reveals them for a turn, so hidden information has counters.
 
@@ -227,33 +227,36 @@ How the new pieces were tuned:
 | Character unlocks | Four characters free, four unlocked at levels 3, 5, 7 and 10: a reason to keep playing the first week, and fewer rules to learn at once. | Character picker |
 | Mastery bases | The character's own base under them on the board at mastery 5, gold at 10. Not for sale, so it says "I know this one" to everyone in the match. | `UI/BaseArt`, `Meta/Progress` |
 | Badges | 20 Roblox badges for funny or rare moments (Snake Eyes, getting scared by a ghost, the Golden Fish, playing with the owner), never for grinding. They show on players' Roblox profiles, which brings their friends. | `Meta/Badges`, Collection |
-| Fishing | Something to do on other players' turns that never changes the match (one coin a round at most): a fish log to fill and the golden fish to chase. | `Meta/Fishing`, `Match/FishingRod` |
+| Fishing | Something to do on other players' turns that never changes the match (one coin a round at most). Each map has its own waters (three local fish, a few shared), so the log is a reason to play every map; a shadow hints at the size, nibbles punish an early pull, rarer fish give less time to reel, and the log keeps your biggest of each. | `Meta/Fishing`, `Match/FishingRod` |
+| Rematch | The results screen's Rematch: when everyone still at the table asks, the same players start again on the same map. A good table stays together instead of scattering back to the queue. | `Match:voteRematch`, `MatchService` |
 | Daily deals | Four cosmetics for Gems, new every day, so there's always a reason to open the Shop. | `Meta/DailyShop`, Shop |
 | The first match | A guided Blitz game with the Overseer as coach, scripted for a win. New players learn the dice, the cards and the Power bar by doing, in five minutes. | `Meta/Tutorial`, `Match/Coach` |
 
 None of it touches fairness inside a match: mastery and trophies are cosmetic and
 social, Gems buy cosmetics only.
 
-## 5. One look: pirates, printed simply, inked like a comic
+## 5. One look: a calm tabletop
 
-The candy-night look (purple table, faces on everything) read as generic. The new
-direction is a pirate board game, printed simply like an old game box and inked like a
-comic, with a few strict rules so every screen comes out of the same kit:
+The comic look before this one read as machine-made: outlined lettering everywhere,
+a tilted ribbon on every panel, thick ink and hard shadows, a rainbow of button
+colours, a number on every tile, faces on objects. Every screen was loud in the same
+way. The current look is the one a small studio would ship, with a few strict rules
+so every screen comes out of the same kit:
 
-- **One ink line** (`#1C1A24`) around everything: tiles, cards, buttons, art, the
-  coastlines. Light lettering is always outlined in it, so it reads on cream card and
-  on the sea alike.
-- **A short list of flat inks** (sea blue, pirate red, gold, jungle green, cream card;
-  no purple, no gradients, no glow) with hard ink shadows down and to the right.
-- **Only the characters have faces.** Traps, tokens and hazards are plain objects. Each
-  character has **one colour**, and that colour is its player's everywhere: on the
-  board, the player list, the feed. There are no pawns and no colour rings; the
-  character stands on its tile itself, and one of each plays per match.
-- **Accessory packs instead of pawn skins:** two pieces a pack, drawn on the character
-  (a monocle and moustache; a tricorn and a hook; a parrot and an eye patch). The epic
-  and better ones move in simple, physical ways (a spinning propeller, a rain cloud,
-  bubbles from a pipe, a waving octopus, circling gulls), never rainbow or glowing.
-- **Two fonts:** Bangers for anything loud, Oswald for reading.
+- **One UI font** (Nunito), with Fredoka One only for the logo and the big moments.
+  Sentence case everywhere: no outlined lettering, no all-caps.
+- **Flat colours and light borders.** Cream panels with a thin warm border, white
+  cards; a button's edge is a darker shade of its own face. No gradients, no glow,
+  no hard shadows.
+- **One accent.** Orange marks the main action on a screen (Find a match, Rematch).
+  Secondary buttons are white with a border, green means done, red means danger.
+- **Only the characters have faces.** Cards, tokens and hazards are plain objects in
+  two tones at most, with a thin outline. Each character has **one colour**, and that
+  colour is its player's everywhere: on the board, the player list, the feed.
+- **Less on the board.** A handful of props per map, a number on every fifth tile
+  only, no stray islets or decorative marks.
+- **Accessory packs instead of pawn skins:** two pieces a pack, drawn on the character.
+  The rarer ones move in simple, physical ways, never rainbow or glowing.
 
 **The maps are places, not grids.** Each map's route is a hand-drawn winding curve
 (`MapScenes`); the tiles are spaced evenly along it and the land grows around the

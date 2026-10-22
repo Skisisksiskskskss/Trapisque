@@ -4,9 +4,11 @@
 	and what you earned: Gems and XP, your character's mastery, daily quests that moved,
 	and trophies from ranked games.
 
-		local close = Results.show(layer, data, mySeat, isTeam, onLeave)
+		local close = Results.show(layer, data, mySeat, isTeam, onLeave, onRematch?)
 	data is the server's "match.end" payload. On a narrow screen the rows drop the
-	WINNER badge for a sun rim and the rewards stack above the Lobby button.
+	WINNER badge for a sun rim and the rewards stack above the buttons. onRematch: the
+	Rematch button asks for the same table again (it starts once everyone still there
+	has asked; the button counts the votes).
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -23,6 +25,7 @@ local Widgets = require(UI.Widgets)
 local Avatars = require(UI.Avatars)
 local Layout = require(UI.Layout)
 local Sound = require(UI.Parent.Sound)
+local Net = require(UI.Parent.Net)
 
 local C = Theme.C
 
@@ -143,7 +146,7 @@ local function row(list: Frame, i: number, r, mine: boolean, isTeam: boolean, na
 	return f
 end
 
-function Results.show(layer: Instance, data, mySeat: number, isTeam: boolean, onLeave: () -> ()): () -> ()
+function Results.show(layer: Instance, data, mySeat: number, isTeam: boolean, onLeave: () -> (), onRematch: (() -> ())?): () -> ()
 	local me = nil
 	for _, r in data.results do
 		if r.seat == mySeat then
@@ -387,7 +390,7 @@ function Results.show(layer: Instance, data, mySeat: number, isTeam: boolean, on
 	if reward then
 		-- beside the Lobby button, or above it on a narrow screen
 		local chips = Util.frame(bottom, {
-			Size = if narrow then UDim2.new(1, 0, 0, 48) else UDim2.new(1, -230, 1, 0),
+			Size = if narrow then UDim2.new(1, 0, 0, 48) else UDim2.new(1, if onRematch then -440 else -230, 1, 0),
 		})
 		Util.list(chips, "x", 10, if narrow then "Center" else "Left", "Center")
 		local function chip(order: number, iconId: string, color: Color3, text: string)
@@ -431,19 +434,47 @@ function Results.show(layer: Instance, data, mySeat: number, isTeam: boolean, on
 			end)
 		end
 	end
+	-- the buttons: Lobby, and Rematch beside it
+	local both = onRematch ~= nil
+	local bw = if narrow and both then 150 else (if both then 200 else 210)
 	local leave = Widgets.button(bottom, {
 		text = "Lobby",
 		icon = "back",
-		style = "green",
+		style = if both then "panel" else "brass",
 		textSize = 22,
-		size = UDim2.fromOffset(210, 52),
-		anchor = if narrow then Vector2.new(0.5, 1) else Vector2.new(1, 0.5),
-		position = if narrow then UDim2.new(0.5, 0, 1, 0) else UDim2.new(1, 0, 0.5, 0),
+		size = UDim2.fromOffset(bw, 52),
+		anchor = if narrow then (if both then Vector2.new(0, 1) else Vector2.new(0.5, 1)) else Vector2.new(1, 0.5),
+		position = if narrow then UDim2.new(0.5, if both then 6 else 0, 1, 0) else UDim2.new(1, 0, 0.5, 0),
 		onClick = function()
 			close()
 			onLeave()
 		end,
 	})
+	if onRematch then
+		local again
+		again = Widgets.button(bottom, {
+			text = "Rematch",
+			icon = "play",
+			style = "brass",
+			textSize = 22,
+			size = UDim2.fromOffset(bw, 52),
+			anchor = if narrow then Vector2.new(1, 1) else Vector2.new(1, 0.5),
+			position = if narrow then UDim2.new(0.5, -6, 1, 0) else UDim2.new(1, -(bw + 10), 0.5, 0),
+			onClick = function()
+				again:setEnabled(false)
+				again:setText("Waiting...")
+				onRematch()
+			end,
+		})
+		local stop
+		stop = Net.on("match.rematch", function(info)
+			if not again.root.Parent then
+				stop()
+			elseif type(info) == "table" and info.votes and info.needed then
+				again:setText(string.format("Rematch %d/%d", info.votes, info.needed))
+			end
+		end)
+	end
 	-- the server sends everyone home after a while; show how long
 	local endsAt = os.clock() + (data.resultsTime or 25)
 	task.spawn(function()

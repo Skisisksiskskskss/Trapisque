@@ -74,6 +74,7 @@ local function newProfile()
 		settings = { sfx = true, music = true, sfxVolume = 1, musicVolume = 0.7, autoRoll = false, fastAnim = false, voices = true, bubbles = true, voice = "auto" },
 		badges = {}, -- [badge key] = when it was earned (Meta/Badges)
 		fish = {}, -- [catch id] = how many (the fish log, Meta/Fishing)
+		fishBest = {}, -- [catch id] = the biggest one landed, in centimetres
 		tutorialDone = false, -- finished (or skipped) the guided first match
 		groupReward = false, -- claimed the join-the-group Gems
 		deals = { day = -1, bought = {} }, -- today's daily deals already bought
@@ -383,6 +384,7 @@ function DataService.view(player: Player)
 		bestTrophies = data.bestTrophies,
 		badges = table.clone(data.badges),
 		fish = table.clone(data.fish),
+		fishBest = table.clone(data.fishBest),
 		tutorialDone = data.tutorialDone,
 		groupReward = data.groupReward,
 		deals = DataService.dealsView(data),
@@ -567,14 +569,23 @@ function DataService.baseFor(player: Player, character: string?): number
 	return Progress.baseTier(Progress.masteryLevel(data.mastery[character] or 0))
 end
 
--- A catch for the fish log; returns how many of it they have now.
-function DataService.addCatch(player: Player, catchId: string): number
+-- A catch for the fish log; returns how many of it they have now, and whether it's
+-- bigger than any they'd landed before.
+function DataService.addCatch(player: Player, catchId: string, size: number?): (number, boolean)
 	local data = DataService.get(player)
 	if not data or catchId == "coin" then
-		return 0
+		return 0, false
 	end
 	data.fish[catchId] = (data.fish[catchId] or 0) + 1
-	return data.fish[catchId]
+	local record = false
+	if size and size > 0 then
+		local best = data.fishBest[catchId]
+		record = best ~= nil and size > best
+		if best == nil or size > best then
+			data.fishBest[catchId] = size
+		end
+	end
+	return data.fish[catchId], record
 end
 
 -- Buy one of today's daily deals.

@@ -12,8 +12,8 @@ local Fishing = require(ReplicatedStorage.Shared.Meta.Fishing)
 
 local FishArt = {}
 
-local INK = "#1C1A24"
-local CREAM = "#FFF8E7"
+local INK = "#2A2830"
+local CREAM = "#FFF9EF"
 
 local function fish(body: string, fin: string, kind: string)
 	if kind == "slim" then
@@ -60,6 +60,41 @@ local function fish(body: string, fin: string, kind: string)
 			{ "line", 0.7, 0.48, 0.98, 0.42, 0.03, c = fin },
 			{ "tri", 0.44, 0.32, 0.2, dir = 0, c = fin, ol = false },
 			{ "circle", 0.64, 0.46, 0.045, c = INK, ol = false },
+		}
+	elseif kind == "eel" then
+		return {
+			{ "path", { { 0.08, 0.62 }, { 0.28, 0.46 }, { 0.48, 0.6 }, { 0.68, 0.46 }, { 0.84, 0.5 } }, 0.15, c = body },
+			{ "circle", 0.85, 0.5, 0.2, c = body },
+			{ "line", 0.3, 0.45, 0.46, 0.57, 0.03, c = fin, ol = false },
+			{ "circle", 0.88, 0.46, 0.045, c = INK, ol = false },
+		}
+	elseif kind == "cat" then
+		return {
+			{ "tri", 0.16, 0.5, 0.26, dir = 90, c = fin },
+			{ "pill", 0.54, 0.52, 0.7, 0.32, c = body },
+			{ "tri", 0.5, 0.35, 0.14, dir = 0, c = fin, ol = false },
+			{ "line", 0.86, 0.57, 0.98, 0.68, 0.02, c = INK, ol = false },
+			{ "line", 0.86, 0.55, 0.99, 0.52, 0.02, c = INK, ol = false },
+			{ "circle", 0.76, 0.46, 0.05, c = INK, ol = false },
+		}
+	elseif kind == "angler" then
+		return {
+			{ "tri", 0.18, 0.56, 0.26, dir = 90, c = body },
+			{ "line", 0.62, 0.34, 0.8, 0.16, 0.025, c = body },
+			{ "circle", 0.56, 0.58, 0.56, c = body },
+			{ "circle", 0.82, 0.14, 0.11, c = fin },
+			{ "tri", 0.78, 0.68, 0.08, dir = 180, c = CREAM, ol = false },
+			{ "circle", 0.68, 0.5, 0.06, c = CREAM, ol = false },
+		}
+	elseif kind == "crab" then
+		return {
+			{ "line", 0.32, 0.62, 0.16, 0.8, 0.04, c = body },
+			{ "line", 0.68, 0.62, 0.84, 0.8, 0.04, c = body },
+			{ "circle", 0.2, 0.34, 0.2, c = fin },
+			{ "circle", 0.8, 0.34, 0.2, c = fin },
+			{ "pill", 0.5, 0.56, 0.6, 0.36, c = body },
+			{ "circle", 0.42, 0.48, 0.05, c = CREAM, ol = false },
+			{ "circle", 0.58, 0.48, 0.05, c = CREAM, ol = false },
 		}
 	elseif kind == "boot" then
 		return {

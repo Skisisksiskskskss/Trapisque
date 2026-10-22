@@ -672,7 +672,7 @@ function LobbyScreen.welcome(popups: Instance)
 	Widgets.button(row, {
 		text = "Let's go!",
 		icon = "play",
-		style = "green",
+		style = "brass",
 		textSize = 20,
 		size = UDim2.fromOffset(220, 50),
 		layoutOrder = 2,

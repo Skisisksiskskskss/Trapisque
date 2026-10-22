@@ -801,6 +801,8 @@ if not finished then
 end
 say("match over at %.1fs: %d moves, %d cards, %d abilities, %d tiles, %d buys, %d refused", F.now, stats.moves, stats.cards, stats.abilities, stats.tiles, stats.buys, stats.refused)
 noProblems("the match")
+-- (the screen's autopilot stops here: the results are pressed below, on purpose)
+table.remove(F.onFrame, table.find(F.onFrame, think))
 if cfg.tutorial then
 	-- the guided match is scripted for a first win
 	local me = screen:_player(screen.mySeat)
@@ -813,12 +815,30 @@ check(F.run(12, function()
 end), "the results never showed a LOBBY button")
 F.run(3)
 shot("results")
-press(Root.gui, "^LOBBY")
+if cfg.tutorial then
+	check(#F.buttons(Root.gui, "^REMATCH") == 0, "the guided match offers a rematch")
+	press(Root.gui, "^LOBBY")
+else
+	-- a rematch: with nobody else at the table it starts at once, the same table again
+	check(press(Root.gui, "^REMATCH$"), "the results have no REMATCH button")
+	local again = F.run(15, function()
+		local s = MatchScreen.current()
+		return s ~= nil and s ~= screen
+	end)
+	check(again, "REMATCH didn't start a new match")
+	if again then
+		local s = MatchScreen.current()
+		check(s.mapDef == screen.mapDef and s.mode == screen.mode, "the rematch changed the map or the mode")
+		F.run(3)
+		task.spawn(Net.request, "match.leave")
+	else
+		press(Root.gui, "^LOBBY")
+	end
+end
 check(F.run(20, function()
 	return Root.currentName() == "lobby"
 end), "never got back to the lobby")
 F.run(3)
-table.remove(F.onFrame, table.find(F.onFrame, think))
 noProblems("going back to the lobby")
 
 -- nothing from the match keeps running

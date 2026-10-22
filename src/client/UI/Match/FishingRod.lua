@@ -1,9 +1,10 @@
 --[[
 	FishingRod
 	Fishing between turns (Shared/Meta/Fishing): a round button in the board's corner
-	while someone else is playing. Tap it to cast; the bobber floats, and when it dips
-	("BITE!") tap again fast to reel it in. What you land pops up (a new fish for your
-	log, now and then a gold coin for this match, or an old boot). Put away on your turn.
+	while someone else is playing. Tap it to cast; a shadow under the bobber shows how
+	big the fish is. It nibbles (leave it), then bites hard ("Reel!"): tap fast. What you
+	land pops up with its size (a new fish for your log, a record, now and then a gold
+	coin for this match, or an old boot). Put away on your turn.
 
 		local rod = FishingRod.new(parent, { onCaught = fn(catchId, new) })
 		rod:layout(rect)
@@ -65,6 +66,21 @@ function FishingRod.new(parent: Instance, opts: { [string]: any }?)
 	})
 	Util.corner(water, 0.5)
 	self.water = water
+	-- the fish's shadow under the surface: how big it is (shown once the line is in)
+	local shadow = Util.new("Frame", {
+		Name = "Shadow",
+		BackgroundColor3 = C.bgDeep,
+		BackgroundTransparency = 0.55,
+		BorderSizePixel = 0,
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.6),
+		Size = UDim2.fromScale(0.4, 0.22),
+		ZIndex = 32,
+		Visible = false,
+		Parent = water,
+	})
+	Util.corner(shadow, 0.5)
+	self.shadow = shadow
 	self.icon = Icons.make(water, "rod", Icons.flatColors(C.textLight, C.sky), {
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.5),
@@ -98,7 +114,7 @@ function FishingRod.new(parent: Instance, opts: { [string]: any }?)
 		font = "chunky",
 		size = 13,
 		color = C.textLight,
-		outline = C.line,
+		outline = C.ink,
 		align = "center",
 		anchor = Vector2.new(0.5, 0),
 		sizeUDim = UDim2.new(1.6, 0, 0, 16),
@@ -112,7 +128,11 @@ function FishingRod.new(parent: Instance, opts: { [string]: any }?)
 		if type(data) ~= "table" then
 			return
 		end
-		if data.state == "bite" and self.state == "cast" then
+		if data.state == "nibble" and self.state == "cast" then
+			-- a little dip: not yet!
+			self.nibbleAt = os.clock()
+			Sound.play("click", 1.5)
+		elseif data.state == "bite" and self.state == "cast" then
 			self:_set("bite")
 			Sound.play("splash", 1.4)
 		elseif data.state == "idle" and self.state ~= "idle" then
@@ -128,7 +148,9 @@ function FishingRod.new(parent: Instance, opts: { [string]: any }?)
 		while root.Parent do
 			t += task.wait(0.05)
 			if self.state == "cast" then
-				bobber.Position = UDim2.fromScale(0.5, 0.5 + math.sin(t * 3) * 0.05)
+				local nibble = self.nibbleAt and os.clock() - self.nibbleAt < 0.25
+				bobber.Position = UDim2.fromScale(0.5, (if nibble then 0.57 else 0.5) + math.sin(t * 3) * 0.05)
+				shadow.Position = UDim2.fromScale(0.5 + math.sin(t * 0.9) * 0.08, 0.62)
 			elseif self.state == "bite" then
 				bobber.Position = UDim2.fromScale(0.5 + math.sin(t * 40) * 0.04, 0.62)
 			end
@@ -137,8 +159,16 @@ function FishingRod.new(parent: Instance, opts: { [string]: any }?)
 	return self
 end
 
-function FishingRod:_set(state: string)
+local SHADOW_SIZE = { small = 0.3, medium = 0.46, large = 0.64 }
+
+function FishingRod:_set(state: string, shadow: string?)
 	self.state = state
+	if state == "cast" then
+		local w = SHADOW_SIZE[shadow or "small"] or SHADOW_SIZE.small
+		self.shadow.Size = UDim2.fromScale(w, w * 0.5)
+		self.nibbleAt = nil
+	end
+	self.shadow.Visible = state ~= "idle"
 	self.bobber.Visible = state ~= "idle"
 	self.icon.Visible = state == "idle"
 	self.tag.Text = if state == "idle" then "Fish" elseif state == "cast" then "Wait..." else "Reel!"
@@ -156,7 +186,7 @@ function FishingRod:_say(text: string, color: Color3)
 		font = "chunky",
 		size = 16,
 		color = color,
-		outline = C.line,
+		outline = C.ink,
 		align = "right",
 		anchor = Vector2.new(1, 1),
 		sizeUDim = UDim2.fromOffset(240, 20),
@@ -169,8 +199,8 @@ function FishingRod:_say(text: string, color: Color3)
 	end)
 end
 
--- What came up: the catch's picture and name rise out of the water for a moment.
-function FishingRod:_show(catchId: string, new: boolean)
+-- What came up: the catch's picture, name and size rise out of the water for a moment.
+function FishingRod:_show(catchId: string, new: boolean, size: number?, record: boolean?)
 	local def = Fishing.byId[catchId]
 	local pop = Util.frame(self.root, {
 		Name = "Catch",
@@ -183,7 +213,10 @@ function FishingRod:_show(catchId: string, new: boolean)
 	Util.popIn(pop, 0.35, 0.3)
 	local name = if def then def.name else catchId
 	local text = if catchId == "coin" then "+1 coin" elseif catchId == "boot" then "An old boot..." else ((if new then "New: " else "") .. name)
-	self:_say(text, if def and def.rarity == "legendary" then C.sun elseif new then C.mint else C.textLight)
+	if size and size > 0 and catchId ~= "boot" then
+		text ..= ", " .. Fishing.sizeText(size) .. (if record then " (your biggest!)" else "")
+	end
+	self:_say(text, if def and def.rarity == "legendary" then C.sun elseif new or record then C.mint else C.textLight)
 	Util.tween(pop, 1.4, { Position = UDim2.new(0.5, 0, 0, -30) }, Enum.EasingStyle.Quad)
 	task.delay(1.5, function()
 		pop:Destroy()
@@ -199,7 +232,7 @@ function FishingRod:_tap()
 	if self.state == "idle" then
 		local ok, data = Net.request("match.fish", { action = "cast" })
 		if ok then
-			self:_set("cast")
+			self:_set("cast", type(data) == "table" and data.shadow or nil)
 			Sound.play("whoosh", 1.2)
 		elseif data then
 			Widgets.toast(tostring(data), "info")
@@ -209,12 +242,12 @@ function FishingRod:_tap()
 		self:_set("idle")
 		if ok and type(data) == "table" then
 			if data.result == "caught" and data.catch then
-				self:_show(data.catch, data.new == true)
+				self:_show(data.catch, data.new == true, tonumber(data.size), data.record == true)
 				if self.opts.onCaught then
 					self.opts.onCaught(data.catch, data.new == true)
 				end
 			elseif data.result == "early" then
-				self:_say("Too soon! Wait for the bite.", C.textFaint)
+				self:_say("Too soon! It was only nibbling.", C.textFaint)
 			elseif data.result == "late" then
 				self:_say("It got away!", C.textFaint)
 			end

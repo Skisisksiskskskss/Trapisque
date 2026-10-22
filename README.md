@@ -32,8 +32,9 @@ rendered offline (see [Screenshots](#screenshots)).
   passive and a Power ability, tuned with thousands of bot games per map so each one
   wins about as often as the others (see [docs/DESIGN.md](docs/DESIGN.md)).
 - **Cards you plan around.** One card per turn: traps, boosts that change which tiles
-  you can reach, board pieces (teleporters, trampolines, conveyor belts) and potions
-  from the Potion Seller.
+  you can reach, a Compass that sets a die to any number, board pieces (teleporters,
+  the original game's Shifting Sands, conveyor belts) and potions from the Potion
+  Seller (a Thief Potion steals a card from a rival).
 - **Five maps**, each a place the trail winds through: Blissful Tricks (a tropical
   island cut by two rivers), Junction Dungeon (a rocky sea fortress with locked gates
   and secret tunnels for its shortcuts), Slimy Snares (a swamp boardwalk spiralling
@@ -49,9 +50,13 @@ rendered offline (see [Screenshots](#screenshots)).
 - **A guided first match.** New players are offered a short Blitz game against gentle
   bots, with the Overseer pointing at the dice, the cards and the ability as each one
   comes up (scripted for a first win, and 100 Gems). It's in How to Play any time.
-- **Something to do between turns.** A fishing rod in the board's corner: cast, wait
-  for the bite, tap fast to reel. Fish go in your fish log (ten catches, one golden),
-  and now and then you land a coin for the match.
+- **Something to do between turns.** A fishing rod in the board's corner: cast, watch
+  the shadow under the bobber (how big it is), leave the nibbles alone and tap fast on
+  the real bite. Every map has its own fish (three each, plus a few found anywhere and
+  the Golden Fish); the fish log keeps your biggest of each and shows where each one
+  lives. Now and then you land a coin for the match.
+- **Rematch.** The results screen has a Rematch button: once everyone still at the
+  table asks, the same players go again on the same map, straight away.
 - **Watch a friend.** Friends in a match show up under WATCH in the party panel; you
   see the board the way every player does (no one's hand, no hidden traps).
 - **Badges.** Twenty Roblox badges for moments, not grinding: a Gotcha Hat Trick, Snake
@@ -353,7 +358,7 @@ lobby and its pages, the character picker, a match, the results) on a PC and on
 phones held both ways; `tools/shots.sh boards` draws just the maps. The fake
 measures text with the game's real fonts (`tests/fake/fonts.luau`, from
 `tools/gen_font_metrics.py`), so layouts wrap and truncate as they do in Roblox. It
-needs Python 3 with Pillow and the Bangers and Oswald fonts from Google Fonts in
+needs Python 3 with Pillow and the Nunito and Fredoka One fonts from Google Fonts in
 `tools/preview/fonts` (or a folder named by `TRAPISQUE_FONTS`):
 
 ```sh
@@ -382,14 +387,16 @@ accessories, tokens, hazards, map props and the maps themselves are data
 `Shapes` and `MapArt`. The style has a few strict rules so every screen comes out of
 the same kit:
 
-- one ink line (`Theme.C.line`) around everything, drawn as a real outline pass, and
-  light lettering always outlined in it
-- a short list of flat pirate inks from `Theme` (no purple, no gradients, no glow);
-  hard ink shadows down and to the right, never blurred ones
-- only the characters have faces; everything else is a plain object
+- one UI font (Nunito, `Theme.Font`), Fredoka One only for the logo and big moments;
+  sentence case, no outlined lettering
+- flat colours from `Theme` with light borders (`Theme.C.line`); a button's edge is a
+  darker shade of its face; no gradients, glow or hard shadows
+- one accent: orange for the main action on a screen (`Widgets` style `primary`),
+  white secondary buttons, green for done, red for danger
+- only the characters have faces; everything else is a plain object in two tones,
+  with a thin outline (`Theme.C.ink`)
 - a character's colour is its player's colour, everywhere
-- two fonts: Bangers for anything loud, Oswald for reading
-- the same sticker drawing wherever a thing appears (card, board, effects, menus)
+- the same drawing wherever a thing appears (card, board, effects, menus)
 
 The fonts are built into Roblox, and the sounds and music are free Roblox audio
 library assets (listed in `src/client/Sound.lua`), so the game needs no uploads.

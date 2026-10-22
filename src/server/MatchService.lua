@@ -99,14 +99,18 @@ local function forget(userId: number)
 	end
 end
 
-local function onClosed(match, _reason)
+local function onClosed(match, reason)
 	matches[match.id] = nil
 	local people = {}
+	-- a rematch: the players stay right here for the next one
+	local staying = if reason == "rematch" then (match.staying or {}) else {}
 	for player, m in matchOf do
 		if m == match then
 			matchOf[player] = nil
-			table.insert(people, player)
-			forget(player.UserId)
+			if not staying[player] then
+				table.insert(people, player)
+				forget(player.UserId)
+			end
 		end
 	end
 	if ServerInfo.canTeleport and match.kind == "public" then
@@ -131,13 +135,20 @@ end
 -- starting
 ---------------------------------------------------------------------------
 
+local rematch -- (below: it starts a match too)
+
 function MatchService.start(spec)
 	for _, h in spec.humans do
 		if matchOf[h.player] then
 			error("player already in a match")
 		end
 	end
-	local match = Match.new(spec, { closed = onClosed })
+	local match = Match.new(spec, {
+		closed = onClosed,
+		rematch = function(m)
+			rematch(m)
+		end,
+	})
 	matches[match.id] = match
 	for _, h in spec.humans do
 		matchOf[h.player] = match
@@ -148,6 +159,23 @@ function MatchService.start(spec)
 	end
 	match:start()
 	return match
+end
+
+-- Everyone still at the table asked for a rematch: the same table again, right here.
+rematch = function(match)
+	if match.closed then
+		return
+	end
+	local spec = match:rematchSpec()
+	if #spec.humans == 0 then
+		return
+	end
+	match.staying = {}
+	for _, h in spec.humans do
+		match.staying[h.player] = true
+	end
+	match:close("rematch")
+	MatchService.start(spec)
 end
 
 local function teamFill(mode, humans: { Player }, together: boolean)
@@ -669,6 +697,14 @@ function MatchService.init()
 			return false, "You're not in a match."
 		end
 		return match:vote(player, payload.map)
+	end)
+
+	Net.handle("match.rematch", function(player)
+		local match = matchOf[player]
+		if not match then
+			return false, "That match is over."
+		end
+		return match:voteRematch(player)
 	end)
 
 	Net.handle("match.fish", function(player, payload)

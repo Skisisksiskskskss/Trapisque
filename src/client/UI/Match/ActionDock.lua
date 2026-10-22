@@ -507,8 +507,10 @@ function ActionDock:_buildDice(n: number)
 	local ah = if area.Y > 0 then area.Y / k else (self.trayRect.h - 40)
 	local gap = if self.form == "wide" then 12 else 8
 	-- the +POWER tag hangs under each die: leave room for it inside the dice area
-	local size = math.floor(math.min((ah - 6) / 1.16, (aw - (n - 1) * gap) / n, 84))
+	-- (and the hover ring sticks out above it: room for that too, under the caption)
+	local size = math.floor(math.min((ah - 8) / 1.24, (aw - (n - 1) * gap) / n, 84))
 	local overhang = math.floor(size * 0.16)
+	local ringTop = math.ceil(size * 0.08) + 2
 	local total = n * size + (n - 1) * gap
 	for i = 1, n do
 		local x = (aw - total) / 2 + (i - 1) * (size + gap)
@@ -517,7 +519,7 @@ function ActionDock:_buildDice(n: number)
 			Text = "",
 			AutoButtonColor = false,
 			BackgroundTransparency = 1,
-			Position = UDim2.fromOffset(x, math.max(0, (ah - size - overhang) / 2)),
+			Position = UDim2.fromOffset(x, math.max(ringTop, (ah - size - overhang) / 2)),
 			Size = UDim2.fromOffset(size, size),
 			ZIndex = 4,
 			Parent = self.diceArea,

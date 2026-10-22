@@ -24,7 +24,6 @@ local Icons = require(UI.Icons)
 local Widgets = require(UI.Widgets)
 local Cards = require(UI.Cards)
 local CardStyle = require(UI.CardStyle)
-local BaseArt = require(UI.BaseArt)
 
 local Client = UI.Parent
 local Net = require(Client.Net)
@@ -118,9 +117,9 @@ function CharacterSelect.open(popups: Instance)
 			local open = (profile and profile.unlockAll) or Characters.unlocked(id, level)
 			local def = Characters.get(id)
 			b.button:setText(if not open then ("Level " .. tostring(def and def.unlockLevel or 0)) elseif picked then "Picked" else "Pick")
-			b.button:setStyle(if not open then "dark" elseif picked then "green" else "brass")
-			b.rim.Color = if picked then C.sun else C.line
-			b.rim.Thickness = if picked then 4 else 2.5
+			b.button:setStyle(if not open then "dark" elseif picked then "green" else "panel")
+			b.rim.Color = if picked then C.orange else C.line
+			b.rim.Thickness = if picked then 3 else 2
 			b.lock.Visible = not open
 		end
 	end
@@ -180,13 +179,6 @@ function CharacterSelect.open(popups: Instance)
 			sizeUDim = UDim2.new(1, -12, 0, 18),
 			position = UDim2.fromOffset(6, y),
 		})
-		-- their base: faint until mastery 5 earns it
-		BaseArt.preview(cell, def.id, if profile and profile.unlockAll then 2 else Progress.baseTier(level), {
-			AnchorPoint = Vector2.new(1, 0.5),
-			Position = UDim2.new(1, -3, 0, y + 9),
-			Size = UDim2.fromOffset(30, 30),
-			ZIndex = 4,
-		})
 		local bar = Widgets.progress(cell, {
 			size = UDim2.new(1, -24, 0, 10),
 			position = UDim2.fromOffset(12, y + 22),
@@ -205,7 +197,7 @@ function CharacterSelect.open(popups: Instance)
 		}).TextTruncate = Enum.TextTruncate.AtEnd
 		local button = Widgets.button(cell, {
 			text = "Pick",
-			style = "brass",
+			style = "panel",
 			textSize = 16,
 			size = UDim2.new(1, -20, 0, 36),
 			anchor = Vector2.new(0.5, 1),

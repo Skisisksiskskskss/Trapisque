@@ -687,7 +687,7 @@ function MatchScreen:_layoutTop(L, m)
 				self.board:fit()
 			end
 		end, key = "fit" },
-		{ icon = "bubble", style = "brass", onClick = function()
+		{ icon = "bubble", style = "panel", onClick = function()
 			self:_emotePicker()
 		end, key = "emote" },
 		{ icon = "gear", style = "panel", onClick = function()
@@ -1424,7 +1424,7 @@ function MatchScreen:_play(e)
 		self.chips:flash(e.p, C.coral)
 		self.chips:shake(e.target)
 		local def = Items.get(e.item)
-		feed:add("GOTCHA! " .. self:_tag(e.p) .. " caught " .. self:_tag(e.target) .. " with " .. aName(if def then def.name else "trap") .. " (+1 coin, +" .. Rules.PowerPerGotcha .. " Power)", C.sun, e.item, C.trap)
+		feed:add("Gotcha! " .. self:_tag(e.p) .. " caught " .. self:_tag(e.target) .. " with " .. aName(if def then def.name else "trap") .. " (+1 coin, +" .. Rules.PowerPerGotcha .. " Power)", C.sun, e.item, C.trap)
 	elseif t == "bounty" then
 		Effects.bounty(board, e.p)
 	elseif t == "shield" then
@@ -3278,9 +3278,19 @@ function MatchScreen:_showResults(data)
 				return
 			end
 		end
+		-- the same table again (not after the guided match, nor for someone watching)
+		local rematch = nil
+		if not self.tutorial and not self.spectating and data.spectating ~= true then
+			rematch = function()
+				local ok, err = Net.request("match.rematch")
+				if not ok and err then
+					Widgets.toast(tostring(err), "info")
+				end
+			end
+		end
 		Results.show(self.popups, data, self.mySeat, self.isTeam, function()
 			Net.request("match.leave")
-		end)
+		end, rematch)
 	end)
 end
 

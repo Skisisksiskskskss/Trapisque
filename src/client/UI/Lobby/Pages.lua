@@ -352,7 +352,7 @@ local RULES = {
 	{
 		icon = "dice",
 		title = "Your turn",
-		text = "Your two dice are rolled for you. Pick one to move with: the OTHER die charges your Power bar. Rolled doubles? Three ways to go: forwards with the first die, BACKWARDS with the second (grab a token you just passed, or bonk someone right behind you), or the TOTAL of both (that charges no Power).\n\nBefore you move you may play ONE card, and use your ability if your Power bar is full. Hover a die (tap it on a phone) to see exactly where it takes you and what happens there.",
+		text = "Your two dice are rolled for you. Pick one to move with, and the other die charges your Power bar. Rolled doubles? Three ways to go: forwards with the first die, backwards with the second (grab a token you just passed, or bonk someone right behind you), or the total of both (that charges no Power).\n\nBefore you move you may play one card, and use your ability if your Power bar is full. Hover a die (tap it on a phone) to see exactly where it takes you and what happens there.",
 	},
 	{
 		icon = "dice",
@@ -397,7 +397,7 @@ local RULES = {
 	{
 		icon = "people",
 		title = "Modes",
-		text = "Blitz is a quick race to ONE treasure. In team modes your treasures add up, your traps never catch teammates, you can't bonk them, and you can give a teammate a card (it's your card for the turn). The Weekly Event changes every Thursday.\n\nWhile someone else takes their turn, tap the fishing rod in the board's corner to fish: wait for the bite, then reel it in fast. Fill your fish log, and now and then you'll hook a gold coin.",
+		text = "Blitz is a quick race to a single treasure. In team modes your treasures add up, your traps never catch teammates, you can't bonk them, and you can give a teammate a card (it's your card for the turn). The Weekly Event changes every Thursday.\n\nWhile someone else takes their turn, tap the fishing rod in the board's corner to fish. Don't pull on a nibble: wait for the real bite, then reel it in fast. Every map has its own fish, and now and then you'll hook a gold coin.",
 		modes = true,
 	},
 	{
@@ -440,7 +440,7 @@ function Pages.rules(layer: Instance): () -> ()
 	Widgets.button(guided, {
 		text = "Guided match",
 		icon = "play",
-		style = "green",
+		style = "brass",
 		textSize = 17,
 		size = UDim2.fromOffset(200, 50),
 		anchor = Vector2.new(1, 0.5),

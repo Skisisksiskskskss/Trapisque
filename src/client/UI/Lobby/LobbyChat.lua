@@ -56,7 +56,7 @@ function LobbyChat.build(parent: Instance, maid, r, popups: Instance)
 	local opts = {
 		name = "Chat",
 		icon = "bubble",
-		style = "brass",
+		style = "panel",
 		size = UDim2.fromOffset(r.w, r.h),
 		position = UDim2.fromOffset(r.x, r.y),
 		onClick = openChat,

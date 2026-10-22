@@ -312,3 +312,50 @@ test("chat lines are made speakable: numbers, slang and letter-words", function(
 	eq(Speech.number(0), "zero")
 	eq(Speech.number(1000000), "one million")
 end)
+
+-- fishing -------------------------------------------------------------------------
+
+local Fishing = requireModule("Shared/Meta/Fishing")
+local Maps = requireModule("Shared/Game/Maps")
+
+test("every map has its own fish, and a few turn up anywhere", function()
+	for _, map in { "blissful", "junction", "slimy", "haunted", "volcano" } do
+		truthy(Maps.get(map), "map " .. map)
+		local seen, local_ = {}, 0
+		for i = 0, 999 do
+			local id = Fishing.roll(map, (i + 0.5) / 1000, 0.5, true)
+			seen[id] = true
+			truthy(Fishing.livesIn(id, map), id .. " doesn't live in " .. map)
+		end
+		for id in seen do
+			if Fishing.byId[id].where ~= "any" then
+				local_ += 1
+			end
+		end
+		truthy(local_ >= 3, map .. " should have at least 3 fish of its own, has " .. local_)
+		truthy(seen.sardine and seen.coin, map .. ": the shared catches bite too")
+	end
+	falsy(Fishing.livesIn("snapper", "slimy"), "a reef fish in the swamp")
+end)
+
+test("fishing: at most one coin a round, sizes in range, rarer fish bite faster", function()
+	for i = 0, 199 do
+		local id = Fishing.roll("blissful", (i + 0.5) / 200, (i * 7 % 200 + 0.5) / 200, false)
+		truthy(id ~= "coin", "a second coin in a round")
+	end
+	for _, c in Fishing.catches do
+		if c.size then
+			for _, r in { 0, 0.5, 0.999 } do
+				local cm = Fishing.sizeOf(c.id, r)
+				truthy(cm >= c.size[1] and cm <= c.size[2], c.id .. " size " .. cm)
+			end
+		else
+			eq(Fishing.sizeOf(c.id, 0.5), 0)
+		end
+	end
+	truthy(Fishing.window("golden") < Fishing.window("swordfish"))
+	truthy(Fishing.window("swordfish") < Fishing.window("sardine"))
+	eq(Fishing.shadow("gar"), "large")
+	eq(Fishing.sizeText(54), "54 cm")
+	eq(Fishing.sizeText(150), "1.5 m")
+end)

@@ -344,8 +344,8 @@ function HandView:_refresh()
 		if dim and not shade then
 			local f = Util.new("Frame", {
 				Name = "Spent",
-				BackgroundColor3 = C.bgDeep,
-				BackgroundTransparency = 0.4,
+				BackgroundColor3 = C.panel,
+				BackgroundTransparency = 0.35,
 				BorderSizePixel = 0,
 				Size = UDim2.fromScale(1, 1),
 				ZIndex = 42,

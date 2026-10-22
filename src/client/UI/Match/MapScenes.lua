@@ -13,7 +13,7 @@
 	           the coast is (inner ground grows in patches away from the trail);
 	           fill: water narrower than about twice this, between bends, becomes land;
 	           add: extra land { x, y, r }
-	islets     little islands { x, y, r }
+	islets     little islands { x, y, r } (none for now: a bare islet reads as a stray shape)
 	props      what grows or stands around: { kind, weight } lists for the land and the
 	           water, and how many to place on each (a few: the board is for playing on)
 	landmarks  fixed props: { kind, x, y, size } or { kind, tile, dx, dy, size }; one that
@@ -42,7 +42,6 @@ MapScenes.blissful = {
 			{ 15.6, 6.6, 1.6 }, { 24.6, 7.4, 1.7 }, { 23.4, 15.6, 1.4 },
 		},
 	},
-	islets = { { 3.4, 3.4, 1.3 }, { 29.2, 15.4, 1.1 }, { 18.6, 18.4, 1.0 } },
 	rivers = true,
 	props = {
 		land = { { "palm", 6 }, { "bush", 3 }, { "rock", 2 }, { "hut", 1 } },
@@ -94,7 +93,6 @@ MapScenes.junction = {
 			{ 30.4, 14.6, 1.9 },
 		},
 	},
-	islets = { { 1.4, 2.2, 1.1 }, { 30.4, 9.4, 1.2 }, { 21, 19.2, 1.0 } },
 	props = {
 		land = { { "barrel", 4 }, { "crate", 4 }, { "torch", 3 }, { "cannon", 2 }, { "rock", 1 } },
 		landCount = 6,
@@ -140,12 +138,11 @@ MapScenes.slimy = {
 		fill = 2,
 		add = { { 13.6, 9.4, 1.4 }, { 7.6, 6.6, 1.5 } },
 	},
-	islets = { { 26.6, 16.2, 1.2 }, { 27.4, 2.4, 1.0 }, { 1.6, 2.6, 1.1 }, { 14.6, 18.6, 0.9 } },
 	pools = true,
 	props = {
 		land = { { "mangrove", 4 }, { "reeds", 4 }, { "log", 2 }, { "stump", 2 } },
 		landCount = 6,
-		water = { { "lily", 6 }, { "reeds", 2 }, { "bubbles", 2 } },
+		water = { { "lily", 6 }, { "reeds", 2 } },
 		waterCount = 2,
 	},
 	landmarks = {
@@ -185,7 +182,6 @@ MapScenes.haunted = {
 		fill = 2.4,
 		add = { { 30.2, 8.8, 2.2 }, { 14.6, 13.4, 1.6 }, { 9.4, 7.2, 1.5 }, { 20.6, 7.2, 1.5 } },
 	},
-	islets = { { 1.4, 2.2, 1.1 }, { 29.8, 17.4, 1.0 }, { 13.2, 19.2, 0.9 } },
 	props = {
 		land = { { "grave", 6 }, { "pumpkin", 3 }, { "deadtree", 2 }, { "lamp", 2 }, { "fence", 2 }, { "rock", 1 } },
 		landCount = 6,
@@ -227,7 +223,6 @@ MapScenes.volcano = {
 		fill = 2.4,
 		add = { { 27.2, 6.4, 3.6 }, { 24.4, 7.4, 2.2 }, { 15, 14.4, 1.4 } },
 	},
-	islets = { { 30.6, 16.8, 1.1 }, { 1.2, 2.6, 1.2 }, { 12.6, 20.4, 0.9 } },
 	lava = true,
 	props = {
 		land = { { "palm", 3 }, { "lavarock", 4 }, { "charred", 3 }, { "vent", 2 }, { "rock", 2 } },

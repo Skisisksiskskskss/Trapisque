@@ -857,8 +857,8 @@ function Match:_stopFishing(seat: number?)
 	end
 end
 
--- action: "cast" | "reel". A bite comes a few seconds after a cast; reel within the
--- window to land it.
+-- action: "cast" | "reel". The fish is chosen when the line goes in (its shadow shows
+-- under the bobber); it nibbles a time or two, then bites. Reel within its window.
 function Match:fish(player: Player, action: any)
 	local seat = self.seatOf[player]
 	if not seat or self.phase ~= "playing" or self.engine:isOver() then
@@ -880,13 +880,26 @@ function Match:fish(player: Player, action: any)
 		local token = {}
 		f.state = "cast"
 		f.token = token
+		-- what's down there, this map's waters (at most one coin a round)
+		f.catch = Fishing.roll(self.engine.map.id, random:NextNumber(), random:NextNumber(), f.coinRound ~= self.engine.round)
 		local wait = Fishing.BiteMin + random:NextNumber() * (Fishing.BiteMax - Fishing.BiteMin)
+		-- a nibble or two first: pulling on one scares it off
+		local nibbles = random:NextInteger(Fishing.Nibbles[1], Fishing.Nibbles[2])
+		for i = 1, nibbles do
+			local at = wait * i / (nibbles + 1) + (random:NextNumber() - 0.5) * 0.5
+			task.delay(at, function()
+				if f.token == token and f.state == "cast" and not self.closed then
+					Net.push(player, "fish.state", { state = "nibble" })
+				end
+			end)
+		end
+		local window = Fishing.window(f.catch)
 		task.delay(wait, function()
 			if f.token == token and f.state == "cast" and not self.closed then
 				f.state = "bite"
 				f.biteAt = os.clock()
-				Net.push(player, "fish.state", { state = "bite", window = Fishing.Window })
-				task.delay(Fishing.Window + Fishing.Grace + 0.2, function()
+				Net.push(player, "fish.state", { state = "bite", window = window })
+				task.delay(window + Fishing.Grace + 0.2, function()
 					if f.token == token and f.state == "bite" then
 						f.state = "idle"
 						f.token = nil
@@ -895,10 +908,10 @@ function Match:fish(player: Player, action: any)
 				end)
 			end
 		end)
-		return true, { state = "cast" }
+		return true, { state = "cast", shadow = Fishing.shadow(f.catch) }
 	elseif action == "reel" then
 		if f.state == "cast" then
-			-- too soon: it wasn't biting yet
+			-- too soon: it was only nibbling, and now it's gone
 			f.state = "idle"
 			f.token = nil
 			return true, { state = "idle", result = "early" }
@@ -907,30 +920,29 @@ function Match:fish(player: Player, action: any)
 		end
 		f.state = "idle"
 		f.token = nil
-		if now - (f.biteAt or 0) > Fishing.Window + Fishing.Grace then
+		local catch = f.catch or "sardine"
+		if now - (f.biteAt or 0) > Fishing.window(catch) + Fishing.Grace then
 			return true, { state = "idle", result = "late" }
 		end
-		-- landed it: what's on the hook?
-		local round = self.engine.round
-		local coinOk = f.coinRound ~= round
-		local catch = Fishing.roll(random:NextNumber(), random:NextNumber(), coinOk)
+		-- landed it
 		local def = Fishing.byId[catch]
 		if catch == "coin" then
-			f.coinRound = round
+			f.coinRound = self.engine.round
 			local events = self.engine:grantCoins(seat, 1, "fishing")
 			self:_broadcast(events)
 		end
-		local logged = DataService.addCatch(player, catch)
+		local size = Fishing.sizeOf(catch, random:NextNumber())
+		local logged, record = DataService.addCatch(player, catch, size)
 		if def and def.rarity == "legendary" then
 			BadgeService.award(player, "golden_fish")
 		end
 		-- the others see what you landed
 		for _, p in self:audience() do
 			if p ~= player then
-				Net.push(p, "fish.caught", { seat = seat, catch = catch })
+				Net.push(p, "fish.caught", { seat = seat, catch = catch, size = size })
 			end
 		end
-		return true, { state = "idle", result = "caught", catch = catch, new = logged == 1 }
+		return true, { state = "idle", result = "caught", catch = catch, size = size, new = logged == 1, record = record }
 	end
 	return false, "Cast or reel."
 end
@@ -1088,6 +1100,66 @@ function Match:playerLeft(player: Player)
 	if #self:humans() == 0 then
 		self:close("empty")
 	end
+end
+
+---------------------------------------------------------------------------
+-- rematch: once everyone still at the table asks, the same table plays again
+---------------------------------------------------------------------------
+
+function Match:voteRematch(player: Player)
+	if self.phase ~= "results" or self.closed then
+		return false, "Too late for a rematch."
+	end
+	if self.tutorial then
+		return false, "The guided match is a one-off. Find a match!"
+	end
+	if not self.seatOf[player] then
+		return false, "Only the players can ask for a rematch."
+	end
+	self.rematch = self.rematch or {}
+	self.rematch[player] = true
+	local votes, needed = 0, 0
+	for _, info in self.seats do
+		if info.player and info.player.Parent == Players then
+			needed += 1
+			if self.rematch[info.player] then
+				votes += 1
+			end
+		end
+	end
+	for _, info in self.seats do
+		if info.player and info.player.Parent == Players then
+			Net.push(info.player, "match.rematch", { id = self.id, votes = votes, needed = needed })
+		end
+	end
+	if votes >= needed and self.hooks.rematch then
+		task.defer(self.hooks.rematch, self)
+	end
+	return true, { votes = votes, needed = needed }
+end
+
+-- The same table again: the same people in the same teams, on the same map with the
+-- same settings (a seat someone left goes to a bot).
+function Match:rematchSpec()
+	local humans, bots = {}, {}
+	for _, info in self.seats do
+		if info.player and info.player.Parent == Players then
+			table.insert(humans, { player = info.player, team = info.team })
+		else
+			table.insert(bots, { team = info.team })
+		end
+	end
+	return {
+		kind = self.kind,
+		mode = self.mode.id,
+		map = self.mapId,
+		length = self.length,
+		parties = self.parties,
+		event = self.event,
+		humans = humans,
+		bots = bots,
+		teamsPreset = true,
+	}
 end
 
 function Match:close(reason: string)

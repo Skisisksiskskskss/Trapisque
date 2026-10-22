@@ -73,8 +73,8 @@ Instead of moving you may **Recall** to a Time Travel anchor you dropped earlier
 ### Power
 
 Each character has a **Power bar** as long as their ability costs (4 to 10). The die
-you don't move with adds its pips, a trap you hid catching someone adds 2, and a Juice
-Box fills it. When it's full you may use your ability (once a turn); using it empties
+you don't move with adds its pips, a trap you hid catching someone adds 2, and a
+Regeneration card fills it. When it's full you may use your ability (once a turn); using it empties
 the bar. Frozen players charge no Power.
 
 ### Landing
@@ -84,7 +84,7 @@ deal with what's there, in this order:
 
 1. **Hidden traps** of other teams go off (your own team's never catch you).
 2. **Embers** from a Blast Off set you Burning.
-3. A **board piece** works: Teleporter, Spore Warper, Trampoline, Conveyor Belt; a
+3. A **board piece** works: Teleporter, Spore Warper, Shifting Sands, Conveyor Belt; a
    Wall crumbles if you land right on it.
 4. **Bonk:** if you moved there yourself and rivals are standing there, each of them
    is knocked back 2 tiles and you bounce 1 forward. A Shield blocks a bonk. No bonks
@@ -125,7 +125,7 @@ drinks an X-Ray Potion). Rivals just see a puff of smoke next to you.
 | Grog | Rolls a die: 1 to 3 and the Grog eats them (back to the Start). |
 | Fire | Burning: hops back 1 tile at the start of their next 2 turns. |
 | Ice | Frozen: their next 2 turns they roll one die, halved (rounded up), and charge no Power. |
-| Snare | Skips their next turn. |
+| Snare | Caught: at the start of their next turn they roll a die, and on 1 to 3 they lose that turn. |
 | Mudslide | Slides back 3 tiles. |
 | Banana Peel | Slips back 2 tiles and drops a random card. |
 | Wall | Not hidden: everyone sees it. Nobody gets past unless they move 5 or more; it crumbles once someone gets over it. |
@@ -138,7 +138,8 @@ drinks an X-Ray Potion). Rivals just see a puff of smoke next to you.
 | Bounce Pad | Play before moving | Move 3 extra tiles. |
 | Moonwalk | Play before moving | This turn you move backwards (along the way you came). |
 | Lucky Clover | Play | Roll your dice again. |
-| Juice Box | Play | Fills your Power bar. |
+| Compass | Play | Turn one of your dice to any number (not while Frozen). **(digital)** |
+| Regeneration | Play | Fills your Power bar. |
 | Shield | Works by itself | Blocks the next trap or bonk that would hit you. |
 | Bridge | Works by itself | Carries you across one river. |
 | Key | Works by itself | Opens one locked gate or gated shortcut. |
@@ -158,7 +159,7 @@ Placed within 5 tiles of you, where everyone can see them.
 | Teleporter | At least 8 tiles from the Treasure. Teleporters link in pairs: landing on one sends you to its partner. |
 | Spore Warper | Whoever lands here swaps places with the nearest other player (Warpers can't be swapped). Used once. |
 | Conveyor Belt | A 3-tile belt facing forward or back; landing on it rides you off the end. Wears out after 3 rides. |
-| Trampoline | Bounces whoever lands here 3 tiles forward. Wears out after 2 bounces. |
+| Shifting Sands | Slides whoever lands here 3 tiles: forward in even rounds, backwards in odd rounds (the piece shows +3 or -3). Sinks after 3 slides. |
 
 ## Potions
 
@@ -167,7 +168,7 @@ from treasures (2), gotchas (1) and the wheels' coin slots.
 
 | Potion | Price | Effect |
 | --- | --- | --- |
-| Speed Potion | 1 | Play before moving: move 2 extra tiles. |
+| Thief Potion | 2 | Steal a random card from a rival's hand (only the two of you see which). |
 | Phoenix Potion | 2 | Works by itself: the next time you'd be knocked out, you survive instead. |
 | X-Ray Potion | 2 | See every hidden trap on the board right now. |
 | Telepathy Potion | 3 | Move any player 1 to 3 tiles forward or back. |
@@ -289,8 +290,9 @@ along) and play on from there.
 9. **Round cap** of 40 / 60 / 80 rounds.
 10. **Coins:** start with 1, 2 per treasure, 1 per gotcha.
 11. **Hand limit** of 5 cards; potions stock 6 of each.
-12. **New cards:** Banana Peel, Lucky Clover, Juice Box, Trampoline, X-Ray Potion.
-    Removed: Mud, Shifting Sands, Regeneration.
+12. **New cards:** Banana Peel, Lucky Clover, Compass, X-Ray Potion, Thief Potion.
+    Removed: Mud. The Snare gives you a roll to break free instead of always costing
+    the turn.
 13. **Moving tokens:** a used token jumps to a random free tile.
 14. **Timers, away bots and leavers** replaced by bots.
 15. **Two more maps** (Haunted Hollow's drifting ghosts, Mount Kaboom's eruptions), two

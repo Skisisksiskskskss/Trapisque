@@ -12,6 +12,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage.Shared
 local Badges = require(Shared.Meta.Badges)
 local Fishing = require(Shared.Meta.Fishing)
+local Maps = require(Shared.Game.Maps)
 
 local UI = script.Parent.Parent
 local Util = require(UI.Util)
@@ -146,10 +147,11 @@ function Collection.open(popups: Instance, tab: string?)
 			sizeUDim = UDim2.new(1, 0, 0, if narrow then 34 else 20),
 		})
 		local top = if narrow then 40 else 26
+		local best = profile and profile.fishBest or {}
 		local grid = Widgets.scroll(body, {
 			position = UDim2.fromOffset(0, top),
 			size = UDim2.new(1, 0, 1, -top),
-			grid = UDim2.new(1 / cols, -10, 0, 150),
+			grid = UDim2.new(1 / cols, -10, 0, 168),
 			gap = 10,
 			padding = 4,
 		})
@@ -189,6 +191,26 @@ function Collection.open(popups: Instance, tab: string?)
 				sizeUDim = UDim2.new(1, -12, 0, 16),
 				position = UDim2.fromOffset(6, 122),
 			})
+			-- where it lives (so you know where to look), and your biggest
+			local where = "Any map"
+			if c.where ~= "any" then
+				local names = {}
+				for _, mapId in c.where do
+					local m = Maps.get(mapId)
+					table.insert(names, if m then m.name else mapId)
+				end
+				where = table.concat(names, ", ")
+			end
+			local big = best[c.id]
+			Widgets.label(cell, {
+				text = where .. (if big and c.id ~= "boot" then ("  ·  best " .. Fishing.sizeText(big)) else ""),
+				font = "body",
+				size = 11,
+				color = C.textFaint,
+				align = "center",
+				sizeUDim = UDim2.new(1, -12, 0, 14),
+				position = UDim2.fromOffset(6, 140),
+			}).TextTruncate = Enum.TextTruncate.AtEnd
 		end
 	end
 
