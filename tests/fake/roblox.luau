@@ -752,7 +752,16 @@ ColorSequenceKeypoint = {
 }
 local CS = immutable("ColorSequence", { Keypoints = true })
 CS.__eq = function(a, b)
-	return a == b
+	local ka, kb = rawget(a, "_Keypoints"), rawget(b, "_Keypoints")
+	if #ka ~= #kb then
+		return false
+	end
+	for i, k in ka do
+		if k.Time ~= kb[i].Time or k.Value ~= kb[i].Value then
+			return false
+		end
+	end
+	return true
 end
 local function checkKeypoints(kps, what: string)
 	if #kps < 2 then

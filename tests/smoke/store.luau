@@ -1,6 +1,6 @@
 --[[
 	The experience's store art, drawn by the game's own UI code (no outside images):
-	  store-icon     512 x 512    the Mage and the Fire Starter, and the name
+	  store-icon     512 x 512    the Mage and the Fire Starter, face to face, and the name
 	  store-banner   1920 x 1080  the island map, the title, the whole crew and a treasure
 	  badges/<key>   512 x 512    each badge's medal (Shared/Meta/Badges), for the Creator
 	                              Dashboard (Roblox shows a badge's picture in a circle)
@@ -78,20 +78,11 @@ if not badgesOnly then
 	F.setScreen({ w = 512, h = 512, inset = 0 })
 	local gui = screenGui("Icon")
 	local bg = sea(gui, 512, 512, 10)
-	-- the Fire Starter (behind, right) and the Mage (in front, left), big enough to read
-	-- at the size Roblox shows icons, their shoulders running off the bottom
-	Art.image(bg, "portraits/fire_starter", {
-		AnchorPoint = Vector2.new(0.5, 1),
-		Position = UDim2.fromOffset(418, 560),
-		Size = UDim2.fromOffset(470, 470),
-		ZIndex = 5,
-	})
-	Art.image(bg, "portraits/mage", {
-		AnchorPoint = Vector2.new(0.5, 1),
-		Position = UDim2.fromOffset(176, 600),
-		Size = UDim2.fromOffset(560, 560),
-		ZIndex = 8,
-	})
+	-- the Fire Starter (behind, right) and the Mage (in front, left, turned to face him),
+	-- big enough to read at the size Roblox shows icons, their shoulders running off the
+	-- bottom
+	Art.label(bg, "portraits/fire_starter", Vector2.new(392, 300), 470, false, { ZIndex = 5 })
+	Art.label(bg, "portraits/mage", Vector2.new(168, 316), 540, true, { ZIndex = 8 })
 	-- a band of shade the name sits on
 	Util.new("Frame", {
 		Name = "Band",

@@ -13,7 +13,7 @@ playing pieces that art/pieces.py writes) is rendered to PNG and packed into a f
 
 Each SVG says its own pixel size with width= and height= (the viewBox is whatever was
 easiest to draw in). A sprite's name is its group and file name: "props/palm",
-"portraits/mage", "pieces/paint_mage". Needs cairosvg, Pillow and zstandard
+"ground/tuft", "portraits/mage", "pieces/paint_mage". Needs cairosvg, Pillow and zstandard
 (pip install cairosvg pillow zstandard).
 
 Sprites are trimmed to what's drawn (the atlas keeps where that sits in the full
@@ -40,9 +40,10 @@ PAD = 4  # transparent pixels around every sprite, so filtering never bleeds a n
 STRIP = 256  # rows per strip of a sheet's pixels in ArtData (each unpacks to 1 MB at most)
 
 # the groups (a folder of SVGs and/or a generator, art/<group>.py), and which share runs of
-# sheets: the props and portraits together, the pieces on their own
-GROUPS = ["props", "portraits", "pieces"]
-RUNS = [("scenery", ["props", "portraits"]), ("pieces", ["pieces"])]
+# sheets: the props, the ground's little things and the portraits together, the pieces on
+# their own
+GROUPS = ["props", "ground", "portraits", "pieces"]
+RUNS = [("scenery", ["props", "ground", "portraits"]), ("pieces", ["pieces"])]
 
 
 def svg_size(svg: str):

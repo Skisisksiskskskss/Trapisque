@@ -4,11 +4,15 @@ Trapisque is a race to the treasure across a trap-filled board, for 2 to 6 playe
 started as a board game, and this repository is its Roblox version: a purely top-down
 2D game that uses the Roblox engine but doesn't look like a Roblox game. There is no 3D
 world. Each player is a playing piece on the board, like a set of chess pieces in
-their character's colour. The pieces, the props and landmarks on the maps and the
-character portraits are illustrations (drawn in [art/](art), built into four image
-sheets the game makes itself). Everything else is built from plain UI frames, in one
-calm tabletop look: flat colours with light borders, one rounded font in sentence case,
-one orange accent for the main action on a screen. Only the characters have faces.
+their character's colour. The board is seen a little from above and in front, like the
+pieces: each map is a slab of land with a cliff along the edges that face you and foam
+where it meets the sea, the tiles are stones with some thickness, and the trail is worn
+into the ground. The pieces, the props and landmarks on the maps, the stones' faces,
+the little things lying about and the character portraits are illustrations (drawn in
+[art/](art), built into four image sheets the game makes itself). Everything else is
+built from plain UI frames, in one calm tabletop look: flat colours with light borders,
+one rounded font in sentence case, one orange accent for the main action on a screen.
+Only the characters have faces.
 
 | Match (PC) | Lobby (PC) | Match (upright phone) |
 | --- | --- | --- |
@@ -158,7 +162,7 @@ src/server/          ServerScriptService.Server: data, parties, matchmaking, mat
 src/client/          StarterPlayerScripts.Client: all screens and the art library
   UI/                Icons, Cards, Shapes, Widgets... plus Lobby/ and Match/ screens
 src/first/           ReplicatedFirst loading screen
-art/                 the illustrations (pieces, props, portraits) and their sheets
+art/                 the illustrations (pieces, props, ground, portraits) and their sheets
 tests/               rules, simulation, meta and board-layout tests (plain Luau)
 tools/               test bundler, type-check, art builder, smoke test and screenshot scripts
 docs/                rules, design notes (balance tables) and screenshots
@@ -387,13 +391,16 @@ LUAU=/path/to/luau tools/smoke.sh
 
 ### Art rules
 
-The playing pieces, the map props and the portraits are illustrations, drawn as SVG
-by `art/*.py` and built into image sheets by `tools/art.py` (`Art`, `PieceArt`; see
+The playing pieces, the map props, the ground's sprites (soft shading, tufts, pebbles,
+the stones' worn faces) and the portraits are illustrations, drawn as SVG by `art/*.py`
+and built into image sheets by `tools/art.py` (`Art`, `PieceArt`; see
 [art/README.md](art/README.md) for their style). Everything else is built from Frames
 with `UICorner` and `UIStroke`: card art, tokens, hazards and the maps themselves are
-data (`StickerArt`, `MapScenes`, `IconData`) drawn by `Icons`, `Shapes` and `MapArt`,
-and the code-drawn props (`MapProps`) and portraits stand in when the sheets can't be
-built or loaded. The style has a few strict rules so every screen comes out of the same kit:
+data (`StickerArt`, `MapScenes`, `IconData`) drawn by `Icons`, `Shapes` and `MapArt`
+(the land as layers of discs: the ground, its lit lip, the cliff under it, the
+waterline and foam), and the code-drawn props (`MapProps`) and portraits stand in when
+the sheets can't be built or loaded. The style has a few strict rules so every screen
+comes out of the same kit:
 
 - one UI font (Nunito, `Theme.Font`), Fredoka One only for the logo and big moments;
   sentence case, no outlined lettering

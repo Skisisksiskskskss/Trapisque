@@ -293,6 +293,28 @@ the little holes where three discs nearly meet are plugged, small lagoons are sh
 all over, and the jungle patches became groves of the map's own trees.
 `tools/shots.sh` renders real screenshots offline for review.
 
+**One point of view for everything on the board.** The props and pieces are drawn a
+little from above and in front, so a perfectly flat map under them looked like a
+sticker sheet. The map is now seen the same way: the land is a slab, with a cliff
+under the edges that face you (darker at its foot), a waterline and foam where it
+meets the sea, a lit lip along the edges that face the light, and soft lighter water
+in the shallows round it; lagoons show their far bank. The trail and the rivers, lava
+and slime are worn into the ground, so their far banks are in shadow. Tiles are stones
+with a side, a bevel and a soft shadow, their faces worn (each turned its own way).
+Soft patches of lighter and darker ground and a few small things (tufts, pebbles,
+shells, leaves) keep the land from being one colour. Props sit in the ground with a
+rounded foot instead of a flat, cut-off bottom, and every prop stands wholly inside
+what the camera shows, so none is cut in half by the edge of the screen. The land's
+disc copies that the ground hides completely are left out, so the richer map costs
+no more UI objects than the flat one did.
+
+**Portraits of people, not one face in eight hats.** The first illustrated portraits
+shared a single front-on face with the costume changed. Each pirate now has their own
+head, nose, eyes, brows and mouth, an expression (the Fire Starter's wink and grin,
+the Trapper's squint and smirk, the Overseer's stern brow), a pose and something in
+their hands (a match, a card, a cannonball, a parrot on the Naturalist's shoulder),
+turned three-quarters and cel-shaded.
+
 ## 6. Talking at the table
 
 A board game is loud. Players can't see each other here, and many can't use Roblox's

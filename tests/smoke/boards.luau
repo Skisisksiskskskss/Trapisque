@@ -1,7 +1,8 @@
 --[[
 	The maps on their own (no match): every map, lying down and stood up for upright
 	phones, with a few tokens, hazards and pieces on it (in a few finishes, two on their
-	mastery stands). For checking the map art quickly: tools/shots.sh boards.
+	mastery stands). For checking the map art quickly: tools/shots.sh boards. SMOKE.only
+	picks one map and SMOKE.orient ("flat", "upright" or "both") which way it lies.
 ]]
 
 local F = Fake
@@ -25,7 +26,8 @@ local Theme = requireModule("Client/UI/Theme")
 local characters = { "mage", "trapper", "fire_starter", "naturalist", "warper", "overseer", "gambler", "cannoneer" }
 for _, def in Maps.list do
 	for _, rotate in { false, true } do
-		if cfg.only == nil or cfg.only == def.id then
+		local orient = cfg.orient or "both"
+		if (cfg.only == nil or cfg.only == def.id) and (orient == "both" or (orient == "upright") == rotate) then
 			local w, h = if rotate then 520 else (cfg.w or 1600), if rotate then 900 else (cfg.h or 900)
 			F.setScreen({ w = w, h = h })
 			local holder = Instance.new("Frame")

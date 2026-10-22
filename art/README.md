@@ -9,20 +9,33 @@ place (or loads from Roblox, once you upload them):
 | --- | --- |
 | `pieces.py` | the playing pieces (every character in every finish), and the mastery stands |
 | `props.py` | everything that stands around the trail on the five maps, and the landmarks |
+| `ground.py` | what lies on the ground: the soft spot used for the shallows, patches and shadows, tufts, pebbles, shells, flowers, leaves, swells on the sea, and the worn faces of the tile stones |
 | `portraits.py` | the eight pirates, head and shoulders |
 
-Everything else (the land, the water, the trail, the tiles, cards, icons, the UI) is
-still built from UI frames in code, so it stays sharp at any zoom.
+The shapes of the land, the water, the trail and the tiles are still built from UI
+frames in code (`MapArt`, `BoardView`), so they stay sharp at any zoom: the land is a
+slab seen a little from above and in front, the way the props and pieces are drawn,
+with a cliff under the edges that face you, foam at the waterline and a lit lip along
+the edges that face the light; the trail is worn into it; the tiles are stones with a
+side, a bevel and a shadow.
 
 ## One style
 
 - smooth shapes, lit from the upper left (each shape's fill runs light to dark)
 - a thin outline in a darker shade of each part's own colour, never black
+- things that stand on the ground sit in it: a rounded foot and a shadow, never a flat
+  cut-off bottom
 - a soft shadow on the ground under things that stand; foam or ripples where something
   meets the water
 - no faces on objects; only the pirates have them
 - as little detail as reads at the size it's shown: a prop is often 50 to 100 pixels
   tall on screen
+
+The portraits go a step further, so the crew reads as eight people rather than one face
+in eight hats: each has their own head (long, round, square, heart-shaped), nose, eyes,
+brows and mouth, the face they pull, a pose and something in their hands. Heads are
+turned three-quarters, and the shading is cel-style: flat colour and one hard-edged
+shadow per part, with a heavier line round the outside of a shape than inside it.
 
 ## Building the sheets
 

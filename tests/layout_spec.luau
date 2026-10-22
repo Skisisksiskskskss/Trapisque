@@ -103,6 +103,25 @@ for _, def in Maps.list do
 			end
 		end)
 
+		test(name .. ": every prop is wholly in view; the ground's little things lie on the land, off the trail", function()
+			local box = L.tileBounds
+			for _, p in L.props do
+				if not p.ground then
+					local h = p.size * 0.48
+					truthy(p.x - h >= box.x0 - EPS and p.x + h <= box.x1 + EPS and p.y - h >= box.y0 - EPS and p.y + h <= box.y1 + EPS, p.kind .. " is cut off by the edge of the view")
+				end
+			end
+			for _, d in L.details do
+				truthy(L.landDepth(d.x, d.y) > 0.5, d.kind .. " lies in the water")
+				for _, s in L.trail do
+					truthy(segDist(d.x, d.y, s.x1, s.y1, s.x2, s.y2) >= S.trailW / 2 + 0.3, d.kind .. " lies on the trail")
+				end
+			end
+			if MapScenes[def.id].details then
+				truthy(#L.details >= 6, "expected a few things on the ground, got " .. #L.details)
+			end
+		end)
+
 		test(name .. ": the camera box holds every tile, the map holds everything", function()
 			local box = L.tileBounds
 			for _, t in L.tiles do
@@ -174,7 +193,7 @@ test("smoothing plugs the hole left where three discs nearly meet", function()
 	truthy(covered, "the hole is still open")
 end)
 
-test("every prop, piece, stand and portrait has its art in the sheets", function()
+test("every prop, ground sprite, piece, stand and portrait has its art in the sheets", function()
 	local ArtAtlas = requireModule("Client/UI/ArtAtlas")
 	local Cosmetics = requireModule("Shared/Meta/Cosmetics")
 	local Characters = requireModule("Shared/Game/Characters")
@@ -196,6 +215,16 @@ test("every prop, piece, stand and portrait has its art in the sheets", function
 	end
 	for kind in kinds do
 		truthy(ArtAtlas.sprites["props/" .. kind], "no art for the " .. kind)
+	end
+	for _, scene in MapScenes do
+		if type(scene) == "table" and scene.details then
+			for _, w in scene.details.kinds do
+				truthy(ArtAtlas.sprites["ground/" .. w[1]], "no art for the " .. w[1] .. " on the ground")
+			end
+		end
+	end
+	for _, name in { "soft", "wave", "stone", "slab" } do
+		truthy(ArtAtlas.sprites["ground/" .. name], "no ground/" .. name)
 	end
 	for _, id in Characters.ids do
 		truthy(ArtAtlas.sprites["portraits/" .. id], "no portrait of the " .. id)

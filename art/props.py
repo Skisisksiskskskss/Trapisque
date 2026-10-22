@@ -173,48 +173,59 @@ def palm(units=1.9):
     return a.svg()
 
 
+def _leaf(x0, y0, x1, y1, w):
+    """A pointed leaf from (x0, y0) out to its tip at (x1, y1), `w` wide."""
+    dx, dy = x1 - x0, y1 - y0
+    n = (dx * dx + dy * dy) ** 0.5 or 1
+    nx, ny = -dy / n * w, dx / n * w
+    mx, my = x0 + dx * 0.45, y0 + dy * 0.45
+    return f"M {x0} {y0} Q {mx + nx:.1f} {my + ny:.1f} {x1} {y1} Q {mx - nx:.1f} {my - ny:.1f} {x0} {y0} Z"
+
+
 def bush(units=1.1):
+    """A low tropical shrub: long pointed leaves fanning out from its foot."""
     a = Art(160, units)
-    a.shadow(50, 93, 33, 4)
-    a.shape("M 17 92 C 9 91, 8 79, 17 76 C 14 65, 27 58, 36 65 C 38 52, 57 50, 61 61 C 67 52, 84 56, 83 69 C 93 71, 93 90, 82 92 Z", LEAF, 0.3, 0.3)
-    a.line("M 36 65 C 35 70, 37 74, 41 76 M 61 61 C 60 66, 62 70, 66 71", LEAF_D, a.ow * 0.8, 0.7)
-    for cx, cy, rx, ry, rot in ((30, 70, 4, 2.2, -30), (50, 59, 4.5, 2.4, -20), (71, 62, 3.6, 2, -35)):
-        a.parts.append(f'<ellipse cx="{cx}" cy="{cy}" rx="{rx}" ry="{ry}" transform="rotate({rot} {cx} {cy})" fill="{LEAF_L}" fill-opacity="0.85"/>')
+    a.shadow(50, 90, 36, 5, 0.28)
+    for tips, color, light in (
+        (((16, 50), (84, 48), (50, 26)), LEAF_D, 0.15),
+        (((26, 36), (74, 34), (8, 68), (92, 66)), LEAF, 0.3),
+        (((36, 46), (64, 44), (22, 78), (78, 78), (50, 52)), mix(LEAF, LEAF_L, 0.5), 0.35),
+    ):
+        for tx, ty in tips:
+            a.shape(_leaf(50, 89, tx, ty, 7.5), color, light, 0.25)
+            a.line(f"M 50 89 L {50 + (tx - 50) * 0.8:.1f} {89 + (ty - 89) * 0.8:.1f}", mix(color, INK, 0.35), a.ow * 0.6, 0.6)
     return a.svg()
 
 
-def _boulder(a, body, top, side):
-    a.shape(body, STONE, 0.22, 0.3)
-    a.fill(top, STONE_L, 0.9)
-    a.fill(side, STONE_D, 0.45)
+def _rocks(a, foot=0.0):
+    """A boulder and a smaller one in front of it: a lit top, a shaded flank, feet that
+    curve with the ground."""
+    y = foot
+    a.shape(f"M 14 {84 + y} C 11 {74 + y}, 15 {62 + y}, 25 {55 + y} C 31 {50 + y}, 38 {45 + y}, 48 {44 + y} C 58 {43 + y}, 68 {46 + y}, 75 {53 + y} "
+            f"C 80 {58 + y}, 82 {66 + y}, 81 {74 + y} C 80 {80 + y}, 78 {84 + y}, 76 {87 + y} C 60 {93 + y}, 30 {93 + y}, 14 {84 + y} Z", STONE, 0.22, 0.3)
+    a.fill(f"M 25 {55 + y} C 31 {50 + y}, 38 {45 + y}, 48 {44 + y} C 58 {43 + y}, 68 {46 + y}, 75 {53 + y} C 66 {57 + y}, 52 {59 + y}, 38 {60 + y} C 32 {60 + y}, 28 {58 + y}, 25 {55 + y} Z", STONE_L, 0.85)
+    a.fill(f"M 75 {53 + y} C 80 {58 + y}, 82 {66 + y}, 81 {74 + y} C 80 {80 + y}, 78 {84 + y}, 76 {87 + y} C 72 {88.6 + y}, 69 {89.5 + y}, 66 {90 + y} C 70 {80 + y}, 71 {66 + y}, 68 {56 + y} Z", STONE_D, 0.45)
+    a.line(f"M 46 {61 + y} L 43 {70 + y} L 47 {78 + y}", STONE_D, a.ow * 0.8, 0.55)
+    a.shape(f"M 64 {90 + y} C 62 {83 + y}, 66 {76 + y}, 74 {74 + y} C 82 {72 + y}, 90 {76 + y}, 91 {83 + y} C 92 {88 + y}, 89 {91 + y}, 85 {92 + y} C 78 {94 + y}, 69 {94 + y}, 64 {90 + y} Z", STONE, 0.22, 0.3)
+    a.fill(f"M 66 {79 + y} C 69 {75 + y}, 76 {73 + y}, 82 {74 + y} C 86 {75 + y}, 89 {77 + y}, 90 {80 + y} C 84 {81 + y}, 74 {81 + y}, 66 {79 + y} Z", STONE_L, 0.85)
+    a.fill(f"M 88 {78 + y} C 91 {81 + y}, 92 {86 + y}, 89 {90 + y} C 87 {91.5 + y}, 85 {92 + y}, 83 {92.5 + y} C 86 {88 + y}, 87 {83 + y}, 88 {78 + y} Z", STONE_D, 0.45)
 
 
 def rock(units=1.0):
     a = Art(160, units)
-    a.shadow(50, 92, 36, 4.5)
-    _boulder(
-        a,
-        "M 22 92 C 18 80, 24 66, 36 60 C 45 53, 62 51, 72 57 C 82 63, 88 78, 84 92 Z",
-        "M 36 60 C 45 53.5, 61 52, 71 57.5 C 64 62, 50 63.5, 38 65.5 Z",
-        "M 72 57 C 82 63, 88 78, 84 92 L 73 92 C 76 80, 76 68, 72 57 Z",
-    )
-    # a pebble at its foot
-    a.shape("M 10 93 C 9 88, 13 85, 18 86 C 22 87, 23 90, 22 93 Z", STONE, 0.22, 0.3)
+    a.shadow(54, 90, 42, 6, 0.3)
+    _rocks(a)
     return a.svg()
 
 
 def rock_sea(units=1.0):
+    """The same rocks standing in the sea, the water lapping white round their feet."""
     a = Art(160, units)
-    _boulder(
-        a,
-        "M 22 88 C 20 78, 28 68, 40 64 C 50 61, 64 62, 72 68 C 79 73, 81 82, 79 88 Z",
-        "M 40 64 C 50 61.5, 63 62.5, 71 67.5 C 63 70, 50 70.5, 41 71 Z",
-        "M 72 68 C 79 73, 81 82, 79 88 L 70 88 C 72 81, 72 74, 72 68 Z",
-    )
-    a.shape("M 80 89 C 80 85, 84 83, 87 84 C 90 85, 91 87, 90 89 Z", STONE, 0.22, 0.3)
-    foam(a, 16, 94, 89, 5)
+    _rocks(a, -3)
+    a.line("M 9 85 C 12 90, 22 92.5, 32 92.6 M 40 92.4 C 50 93, 58 92.8, 64 92.2", FOAM, a.ow * 1.6, 0.9)
+    a.line("M 66 89.5 C 74 91.4, 84 91, 92 87", FOAM, a.ow * 1.6, 0.9)
+    a.line("M 4 92 C 8 95, 16 96.5, 24 96.6 M 74 96 C 82 95.6, 90 94, 95 91", FOAM, a.ow * 1.1, 0.6)
     return a.svg()
-
 
 def _barrel_upright(a, base_y):
     t = base_y - 58
@@ -278,20 +289,49 @@ def hut(units=1.8):
 
 
 def skullrock(units=2.4):
+    """A crag the sea and wind have worn into a skull: a lumpy dome with a ledge for a
+    brow, two hollows for eyes, a notch for a nose and a low cave of a mouth hung with
+    rock teeth; sand heaped at its foot."""
     a = Art(320, units)
-    a.shadow(50, 94, 44, 5)
-    a.shape("M 10 93 C 6 76, 11 52, 24 38 C 32 29, 43 23, 54 24 C 67 25, 79 32, 86 45 C 93 58, 93 78, 89 93 Z", STONE, 0.25, 0.32)
-    a.fill("M 24 38 C 32 29.5, 43 24, 54 24.5 C 64 25, 72 28, 78 34 C 64 33, 44 35, 28 43 Z", STONE_L, 0.9)
-    a.fill("M 86 45 C 93 58, 93 78, 89 93 L 80 93 C 84 76, 84 58, 80 41 Z", STONE_D, 0.4)
-    # two caves for eyes, one for the nose, a wide one for the mouth
-    a.shape("M 26 55 C 25 46, 32 41, 39 43 C 45 45, 47 53, 43 59 C 39 64, 27 63, 26 55 Z", CAVE, 0.08, 0.1)
-    a.shape("M 57 47 C 62 41, 72 42, 75 49 C 78 57, 72 63, 65 62 C 58 61, 53 53, 57 47 Z", CAVE, 0.08, 0.1)
-    a.shape("M 46 68 C 47 64, 49 62, 50.5 62 C 52 62, 54 65, 55 68 C 53 70, 48 70, 46 68 Z", CAVE, 0.08, 0.1)
-    a.shape("M 29 78 C 39 83, 61 83, 73 77 C 72 85, 66 91, 60 93 L 40 93 C 34 91, 30 85, 29 78 Z", CAVE, 0.08, 0.1)
-    for x0, w, h in ((37, 6, 5.5), (48, 6.5, 6), (59, 6, 5)):
-        a.fill(f"M {x0} 81 L {x0 + w} 81.4 C {x0 + w - 0.8} {81 + h}, {x0 + 0.8} {81 + h}, {x0} 81 Z", STONE_L, 0.95)
+    sand, sand_d = "#E9C27A", "#C99A52"
+    a.shadow(52, 91, 48, 7, 0.32)
+    body = ("M 9 88 C 5 79, 6 68, 11 60 C 12 52, 16 45, 21 40 C 23 33, 29 26, 37 23 C 43 19, 50 17, 57 18 "
+            "C 64 18, 70 20, 75 24 C 81 27, 86 33, 88 40 C 91 44, 93 50, 93 56 C 95 64, 95 74, 92 81 "
+            "C 92 84, 91 86, 90 88 C 72 95.5, 28 95.5, 9 88 Z")
+    a.shape(body, STONE, 0.22, 0.3)
+    a.group(clip=body)
+    # the lit dome, the shaded flank, the brow ledge and the cheek under each eye
+    a.fill("M 11 60 C 12 52, 16 45, 21 40 C 23 33, 29 26, 37 23 C 43 19, 50 17, 57 18 C 64 18, 70 20, 75 24 "
+           "C 81 27, 86 33, 88 40 C 72 35, 50 35, 30 41 C 22 44, 15 50, 11 60 Z", STONE_L, 0.75)
+    a.fill("M 88 40 C 91 44, 93 50, 93 56 C 95 64, 95 74, 92 81 C 91 85, 88 89, 80 92 C 85 78, 87 60, 83 46 Z", STONE_D, 0.42)
+    a.fill("M 12 58 C 28 49, 70 47, 92 55 L 92 58.5 C 70 51.5, 30 53, 12 62.5 Z", STONE_D, 0.3)
+    a.line("M 14 56.5 C 30 48, 70 46, 91 53.5", STONE_L, a.ow * 1.0, 0.7)
+    a.fill("M 20 76 C 26 73, 36 74, 42 77 C 36 78.5, 26 78.5, 20 76 Z M 58 74.5 C 64 72, 72 72, 78 74 C 72 76, 64 76.5, 58 74.5 Z", STONE_L, 0.35)
+    # weathering
+    a.line("M 60 21 L 57 29 L 61 35 L 58 41", STONE_D, a.ow * 0.9, 0.55)
+    a.line("M 84 62 L 87 70 L 85 77", STONE_D, a.ow * 0.8, 0.45)
+    a.end()
+    # the hollows: darkest at the top, under the brow
+    hollow = mix(STONE, INK, 0.72)
+    for d in (
+        "M 21 64 C 19 58, 24 53.5, 30 54 L 37 53 C 42 54, 46 58, 45 63 C 45 68, 42 72, 36 73 L 29 72.5 C 24 71, 22 68, 21 64 Z",
+        "M 55 61 C 55 56, 59 52.5, 65 52.5 L 71 53.5 C 76 55, 78.5 59, 77 64 C 76 68.5, 72 71, 67 71 L 61 70.5 C 57 69.5, 55 65.5, 55 61 Z",
+        "M 45.5 77 C 46 73.5, 48.5 71, 50.2 71 C 52 71, 54.4 73.6, 55 77 C 52.5 78.6, 48 78.6, 45.5 77 Z",
+    ):
+        a.shape(d, "#3A322B", 0.12, 0.6, outline=hollow, x1=0, y1=1, x2=0, y2=0)
+    # the mouth, and its teeth: rock hanging into it, no two alike
+    a.shape("M 25 85 C 35 81.5, 64 80.5, 77 84.5 C 75 88.6, 70 90.8, 64 91.4 L 37 91.8 C 31 90.8, 27 88.4, 25 85 Z", "#3A322B", 0.12, 0.6, outline=hollow, x1=0, y1=1, x2=0, y2=0)
+    for x0, w, h in ((32, 5.5, 3.6), (39.5, 6.5, 6.4), (48.5, 5, 4.2), (55, 7, 6.8), (64.5, 5.5, 4.4), (71, 4, 2.6)):
+        a.shape(f"M {x0} 83.4 L {x0 + w} 83.1 C {x0 + w * 0.7:.1f} {83.2 + h * 0.6:.1f}, {x0 + w * 0.6:.1f} {83.3 + h:.1f}, {x0 + w * 0.45:.1f} {83.3 + h:.1f} C {x0 + w * 0.3:.1f} {83.3 + h * 0.6:.1f}, {x0 + 0.4} 84.5, {x0} 83.4 Z",
+                mix(STONE, STONE_L, 0.3), 0.15, 0.3)
+    # moss on the dome
+    a.fill("M 32 27 C 38 22, 48 20, 56 21 C 50 24, 42 26, 36 30 C 34 30, 32 29, 32 27 Z", "#7CB257", 0.9)
+    a.fill("M 74 27 C 78 29, 82 32, 84 36 C 80 34, 76 32, 73 30 Z", "#7CB257", 0.8)
+    # sand heaped against its foot, and a stone or two
+    a.shape("M 0 92 C 4 85, 14 83, 22 88 C 18 93, 6 94, 0 92 Z", sand, 0.25, 0.2, outline=sand_d)
+    a.shape("M 80 92 C 84 86, 94 85, 100 89 C 98 94, 86 95, 80 92 Z", sand, 0.25, 0.2, outline=sand_d)
+    a.shape("M 88 95 C 87 92, 90 90, 93 90.5 C 96 91, 97 93.5, 96 95.5 C 93 96.5, 90 96.5, 88 95 Z", STONE, 0.22, 0.3)
     return a.svg()
-
 
 def _rigged_ship(a, hull, sail, flag, tatter=False, sail_opacity=1.0):
     a.shape("M 37.5 70 L 37.5 13 L 40.5 13 L 40.5 70 Z", WOOD_D, 0.2, 0.2)
@@ -350,14 +390,19 @@ def wreck(units=3.0):
 
 
 def dock(units=3.2):
-    """Seen from above (it lies flat): planks across, posts down both sides."""
+    """Seen from above (it lies flat): weathered planks across two beams, a post at each
+    corner and one halfway."""
     a = Art(320, units)
-    a.shape("M 0 31 L 100 31 L 100 69 L 0 69 Z", WOOD_L, 0.18, 0.25, x1=0, y1=0, x2=0, y2=1)
-    for x in range(8, 100, 9):
-        a.line(f"M {x} 32 L {x} 68", WOOD_D, a.ow * 0.9, 0.55)
-    for x in (5, 50, 95):
+    a.shape("M 0 33 L 100 33 L 100 67 L 0 67 Z", WOOD_D, 0.05, 0.2)
+    for i, x in enumerate(range(1, 99, 7)):
+        tone = mix(WOOD_L, WOOD, (0.0, 0.35, 0.15)[i % 3])
+        nudge = (0.0, 0.8, -0.6, 0.4)[i % 4]
+        a.shape(f"M {x} {30.5 + nudge} L {x + 6} {30.5 + nudge} L {x + 6} {69.5 + nudge} L {x} {69.5 + nudge} Z", tone, 0.2, 0.25, outline=mix(WOOD_D, INK, 0.25))
+        a.fill(circ(x + 3, 35 + nudge, 0.7) + " " + circ(x + 3, 65 + nudge, 0.7), WOOD_D, 0.8)
+    for x in (4, 50, 96):
         for y in (27.5, 72.5):
-            a.shape(circ(x, y, 4.6), WOOD_D, 0.3, 0.25)
+            a.shape(circ(x, y, 4.8), WOOD, 0.35, 0.3)
+            a.parts.append(f'<circle cx="{x}" cy="{y}" r="2.6" fill="none" stroke="{WOOD_D}" stroke-width="{a.ow * 0.7:.2f}" stroke-opacity="0.6"/>')
     return a.svg()
 
 
@@ -441,20 +486,39 @@ def flag(units=2.0):
 # ---------------------------------------------------------------------------
 
 
+def _clump(cx, cy, r, n=7, phase=0.0):
+    """A clump of leaves: a round shape with a scalloped, leafy edge."""
+    import math
+
+    pts = []
+    for k in range(n):
+        a0 = phase + k * 2 * math.pi / n
+        a1 = a0 + math.pi / n
+        pts.append(((cx + math.cos(a0) * r, cy + math.sin(a0) * r), (cx + math.cos(a1) * r * 1.22, cy + math.sin(a1) * r * 1.22)))
+    d = f"M {pts[0][0][0]:.1f} {pts[0][0][1]:.1f}"
+    for k in range(n):
+        (_, (qx, qy)), ((nx, ny), _) = pts[k], pts[(k + 1) % n]
+        d += f" Q {qx:.1f} {qy:.1f} {nx:.1f} {ny:.1f}"
+    return d + " Z"
+
+
 def mangrove(units=2.0):
     a = Art(256, units)
-    a.shadow(50, 94, 34, 4)
-    # stilt roots arching into the mud, the trunk, then the canopy over it all
+    a.shadow(50, 93, 34, 5, 0.3)
+    # stilt roots arching into the mud, the trunk, then the canopy: clumps of leaves,
+    # the ones behind darker, each lit from the upper left
     for d in ("M 47 66 C 38 68, 28 78, 24 93", "M 48 70 C 42 76, 39 84, 38 93", "M 52 70 C 58 76, 61 84, 62 93", "M 53 66 C 62 68, 72 78, 76 93"):
         a.line(d, mix(BARK, INK, 0.55), a.ow * 3.4)
         a.line(d, BARK, a.ow * 1.6)
     a.shape("M 45 72 C 46 60, 46 50, 44 40 L 56 40 C 54 50, 54 60, 55 72 Z", BARK, 0.25, 0.3, x1=0, y1=0.5, x2=1, y2=0.5)
-    a.shape("M 14 46 C 8 40, 12 30, 21 30 C 21 20, 33 14, 42 19 C 47 10, 62 10, 66 19 C 76 15, 88 22, 86 32 C 94 35, 94 46, 86 49 C 82 55, 70 56, 64 51 C 58 56, 44 56, 38 51 C 30 56, 18 53, 14 46 Z", SWAMP, 0.28, 0.32)
-    a.line("M 42 19 C 40 24, 41 28, 44 31 M 66 19 C 67 24, 66 28, 62 31 M 38 51 C 40 47, 44 45, 48 45", SWAMP_D, a.ow * 0.8, 0.6)
-    for cx, cy, rx, ry, rot in ((26, 34, 4.5, 2.4, -25), (50, 20, 5, 2.6, -10), (74, 26, 4, 2.2, -30)):
-        a.parts.append(f'<ellipse cx="{cx}" cy="{cy}" rx="{rx}" ry="{ry}" transform="rotate({rot} {cx} {cy})" fill="{SWAMP_L}" fill-opacity="0.8"/>')
+    for cx, cy, r, tone, light in (
+        (28, 34, 12, SWAMP_D, 0.15), (72, 32, 13, SWAMP_D, 0.15), (50, 22, 13, SWAMP_D, 0.15),
+        (18, 46, 10, SWAMP, 0.3), (82, 46, 10, SWAMP, 0.3), (38, 30, 13, SWAMP, 0.3), (62, 28, 13, SWAMP, 0.3),
+        (34, 47, 12, SWAMP, 0.35), (66, 46, 12, SWAMP, 0.35), (50, 40, 14, mix(SWAMP, SWAMP_L, 0.35), 0.35),
+    ):
+        a.shape(_clump(cx, cy, r, 7, cx * 0.07), tone, light, 0.3)
+        a.fill(ell(cx - r * 0.3, cy - r * 0.38, r * 0.42, r * 0.24), SWAMP_L, 0.55)
     return a.svg()
-
 
 def _reeds(a, base):
     for d in (
@@ -663,44 +727,65 @@ def ghostship(units=3.8):
 
 
 def lavarock(units=1.0):
+    """Two chunks of basalt, split by glowing cracks."""
     a = Art(160, units)
-    a.glow(52, 91, 42, 7, LAVA, 0.45)
-    body = "M 20 92 C 16 80, 22 66, 34 60 C 44 53, 62 52, 72 58 C 82 64, 88 78, 84 92 Z"
-    a.shape(body, BASALT, 0.25, 0.32)
-    a.fill("M 34 60 C 44 54, 61 53, 71 58.5 C 63 63, 49 64, 36 66 Z", BASALT_L, 0.8)
-    # split by one glowing seam
-    seam = "M 12 82 C 26 77, 40 80, 50 76.5 C 60 73, 72 76, 92 70"
-    a.group(clip=body)
-    a.line(seam, LAVA, a.ow * 1.8)
-    a.line(seam, LAVA_GLOW, a.ow * 0.7)
+    a.glow(52, 90, 44, 7, LAVA, 0.38)
+    big = "M 16 86 L 13 71 L 23 57 L 41 50 L 58 54 L 67 66 L 65 82 L 59 89 C 45 92.5, 27 91.5, 16 86 Z"
+    a.shape(big, BASALT, 0.25, 0.3)
+    a.group(clip=big)
+    a.fill("M 23 57 L 41 50 L 58 54 L 51 60.5 L 30 62.5 Z", BASALT_L, 0.75)
+    a.fill("M 58 54 L 67 66 L 65 82 L 59 89 L 55 74 L 51 60.5 Z", BASALT_D, 0.55)
+    for d in ("M 12 74 L 22 71 L 29 76 L 38 73 L 46 78 L 54 75", "M 30 62.5 L 33 68 L 29 76"):
+        a.line(d, LAVA, a.ow * 1.9)
+        a.line(d, LAVA_GLOW, a.ow * 0.7)
+    a.end()
+    small = "M 60 90 L 62 77 L 72 69 L 84 71 L 91 80 L 87 90 C 79 93, 67 93, 60 90 Z"
+    a.shape(small, BASALT, 0.25, 0.3)
+    a.group(clip=small)
+    a.fill("M 62 77 L 72 69 L 84 71 L 78 76 L 66 78.5 Z", BASALT_L, 0.75)
+    a.fill("M 84 71 L 91 80 L 87 90 L 81 91.5 L 82 80 L 78 76 Z", BASALT_D, 0.55)
+    a.line("M 64 84 L 71 82 L 76 86 L 82 84", LAVA, a.ow * 1.6)
+    a.line("M 64 84 L 71 82 L 76 86 L 82 84", LAVA_GLOW, a.ow * 0.6)
     a.end()
     return a.svg()
 
 
 def charred(units=1.4):
+    """A tree the lava burnt: a blackened trunk, two snapped branches, embers at the ends."""
     a = Art(192, units)
-    a.shadow(50, 94, 20, 3)
-    coal = "#3A3330"
-    a.shape(
-        "M 43 94 C 45 86, 46 76, 46 64 C 46 56, 44 48, 40 40 L 36 33 L 39 31 L 44 38 C 45 32, 45 26, 43 18 L 46 17 "
-        "C 49 25, 50 32, 49 40 C 52 36, 56 33, 61 30 L 63 33 C 58 36, 54 40, 52 46 C 52 58, 53 76, 57 94 Z",
-        coal, 0.3, 0.3,
-    )
-    a.line("M 48 60 L 48 80", "#5A4E48", a.ow * 0.8, 0.7)
-    # still smouldering at the broken tips
-    a.fill(circ(44.5, 17.5, 1.8) + " " + circ(62, 31.5, 1.6), LAVA)
-    a.glow(44.5, 17.5, 6, 6, LAVA_GLOW, 0.5)
+    a.shadow(50, 91, 22, 4, 0.3)
+    coal, coal_l = "#3A3330", "#5E524C"
+    trunk = ("M 36 91 C 40 88, 43 82, 44 72 C 45 60, 44 50, 40 40 L 33 31 L 38 28 L 45 37 "
+             "C 46 30, 46 24, 44 16 L 49 15 C 52 23, 53 31, 52 40 C 55 35, 59 31, 65 27 L 68 31 "
+             "C 62 35, 58 41, 56 48 C 55 60, 56 76, 59 84 C 61 88, 64 90, 67 91 C 57 93.5, 45 93.5, 36 91 Z")
+    a.shape(trunk, coal, 0.3, 0.3)
+    a.group(clip=trunk)
+    a.fill("M 36 91 C 40 88, 43 82, 44 72 C 45 60, 44 50, 41 42 L 46 44 C 48 54, 48 64, 47 74 C 46 84, 43 89, 40 92 Z", coal_l, 0.7)
+    a.line("M 50 50 L 49 60 M 52 66 L 51 78 M 47 30 L 48 38", "#6E625A", a.ow * 0.8, 0.6)
+    a.end()
+    # still smouldering where the branches broke
+    for cx, cy in ((35.5, 29.5), (46.5, 15.5), (66.5, 29)):
+        a.glow(cx, cy, 6, 6, LAVA_GLOW, 0.5)
+        a.fill(circ(cx, cy, 1.7), LAVA)
     return a.svg()
 
 
 def vent(units=1.1):
+    """A smoking vent: a low cone of ash with a glowing mouth."""
     a = Art(160, units)
-    a.shadow(50, 92, 34, 4)
-    for cx, cy, r, op in ((50, 46, 13, 0.6), (44, 32, 11, 0.45), (52, 20, 9, 0.3)):
+    a.shadow(50, 90, 40, 5, 0.3)
+    for cx, cy, r, op in ((52, 50, 14, 0.55), (46, 35, 12, 0.42), (54, 22, 10, 0.3)):
         a.glow(cx, cy, r, r, "#F4F1EC", op)
-    a.shape("M 18 92 C 22 82, 32 74, 42 72 L 58 72 C 68 74, 78 82, 82 92 Z", BASALT, 0.28, 0.32)
-    a.shape(ell(50, 73, 9, 3), "#1E1816", 0.05, 0.1)
-    a.fill(ell(50, 73.6, 5, 1.4), LAVA, 0.9)
+    cone = "M 10 88 C 18 80, 30 72, 40 67 L 60 67 C 70 72, 82 80, 90 88 C 72 94.5, 28 94.5, 10 88 Z"
+    a.shape(cone, BASALT, 0.25, 0.3)
+    a.group(clip=cone)
+    a.fill("M 40 67 C 30 72, 18 80, 10 88 C 14 89.6, 19 90.8, 25 91.6 C 29 82, 35 74, 43 69 Z", BASALT_L, 0.55)
+    a.fill("M 60 67 C 70 72, 82 80, 90 88 C 86 89.4, 81 90.6, 75 91.5 C 72 82, 66 74, 58 69 Z", BASALT_D, 0.5)
+    a.end()
+    a.glow(50, 66, 14, 6, LAVA_GLOW, 0.5)
+    a.shape(ell(50, 67, 10.5, 3.4), "#1E1816", 0.0, 0.1, outline=mix(BASALT, INK, 0.6))
+    a.fill(ell(50, 67.6, 6.4, 1.8), LAVA, 0.95)
+    a.fill(ell(50, 67.8, 3.2, 0.9), LAVA_GLOW)
     return a.svg()
 
 

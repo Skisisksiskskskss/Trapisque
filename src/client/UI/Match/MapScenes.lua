@@ -18,7 +18,14 @@
 	           grove: the prop that stands in the widest open ground (groveCount of them)
 	landmarks  fixed props: { kind, x, y, size } or { kind, tile, dx, dy, size }; one that
 	           doesn't fit (on the trail, a tile, the wrong side of the coast) is left out
-	colors     the map's inks (the outline is always the UI's ink)
+	details    the little things lying about on the land (the ground sprites: tuft,
+	           pebbles, shell, flowers, leaves): { kind, weight } list, how many, and
+	           the colour each grey one is tinted
+	mottle     soft patches of lighter and darker ground: how many, and their colours
+	colors     the map's inks: water; shallows (soft, around the land); foam (where the land
+	           meets the water); land (the ground) and lip (its edges lit from the upper
+	           left); cliff and cliffDark (the land's side, upper and lower) and cliffLine
+	           (the waterline under it); trail; tile...
 	tile       stone = round stepping stones, slab = square slabs turned along the trail
 	lava       its lava tiles get lava streams (like rivers, in the scene's lava inks)
 ]]
@@ -56,8 +63,15 @@ MapScenes.blissful = {
 		{ "wreck", x = 27.4, y = 16.4, size = 3 },
 		{ "skullrock", x = 16.6, y = 12.2, size = 2.4 },
 	},
+	details = { kinds = { { "tuft", 3 }, { "shell", 2 }, { "pebbles", 2 }, { "flowers", 2 } }, count = 18, tint = { tuft = "#7DB85A", pebbles = "#EAD5A8" } },
+	mottle = { count = 12, light = "#FBDFA6", dark = "#E3B067" },
 	colors = {
 		water = "#2A8FBF",
+		foam = "#F2FBF8",
+		lip = "#FFE4AC",
+		cliff = "#E0A45C",
+		cliffDark = "#C08244",
+		cliffLine = "#8A5A2E",
 		waterMark = "#1F74A0",
 		shallows = "#6CC9DB",
 		land = "#F2C879",
@@ -91,7 +105,6 @@ MapScenes.junction = {
 		fill = 1.5,
 		add = {
 			{ 16.6, 12.4, 2.6 }, { 6.2, 5.8, 1.9 }, { 24.4, 8.4, 1.8 }, { 13.6, 12.6, 1.5 },
-			{ 30.4, 14.6, 1.9 },
 		},
 	},
 	props = {
@@ -103,14 +116,21 @@ MapScenes.junction = {
 	},
 	landmarks = {
 		{ "dock", tile = 1, size = 3 },
-		{ "keep", x = 30.5, y = 14.2, size = 2.6 },
+		{ "keep", x = 16.6, y = 12.2, size = 2.6 },
 		{ "ship", x = 4, y = 18.6, size = 3.8 },
-		{ "flag", x = 16.8, y = 12.4, size = 2 },
+		{ "flag", x = 6.2, y = 5.8, size = 2 },
 	},
 	gates = true,
 	tunnels = true,
+	details = { kinds = { { "pebbles", 4 }, { "tuft", 2 } }, count = 16, tint = { pebbles = "#C9C1AF", tuft = "#8FA36A" } },
+	mottle = { count = 12, light = "#B7B0A1", dark = "#8E8778" },
 	colors = {
 		water = "#1D5E80",
+		foam = "#D9E9EF",
+		lip = "#C6BEAE",
+		cliff = "#867E70",
+		cliffDark = "#676055",
+		cliffLine = "#3E3933",
 		waterMark = "#174C68",
 		shallows = "#3F86A0",
 		land = "#A39B8B",
@@ -153,8 +173,15 @@ MapScenes.slimy = {
 		{ "sunken", x = 27.2, y = 9.6, size = 3.2 },
 		{ "deadtree", x = 13.4, y = 9.2, size = 2.2 },
 	},
+	details = { kinds = { { "tuft", 5 }, { "flowers", 2 }, { "pebbles", 2 } }, count = 20, tint = { tuft = "#6E9A45", pebbles = "#A28E64" } },
+	mottle = { count = 12, light = "#9E8852", dark = "#71603A" },
 	colors = {
 		water = "#3D6E5C",
+		foam = "#CBE0D1",
+		lip = "#A9925D",
+		cliff = "#6F5B34",
+		cliffDark = "#574729",
+		cliffLine = "#33291A",
 		waterMark = "#2F5A4B",
 		shallows = "#5F927A",
 		land = "#8A7442",
@@ -183,7 +210,7 @@ MapScenes.haunted = {
 		jitter = 0.12,
 		beach = 0.9,
 		fill = 2.4,
-		add = { { 30.2, 8.8, 2.2 }, { 14.6, 13.4, 1.6 }, { 9.4, 7.2, 1.5 }, { 20.6, 7.2, 1.5 } },
+		add = { { 14.6, 13.4, 1.6 }, { 9.4, 7.2, 1.5 }, { 20.6, 7.2, 1.5 } },
 	},
 	props = {
 		land = { { "grave", 6 }, { "pumpkin", 3 }, { "deadtree", 2 }, { "lamp", 2 }, { "fence", 2 }, { "rock", 1 } },
@@ -194,12 +221,19 @@ MapScenes.haunted = {
 	},
 	landmarks = {
 		{ "dock", tile = 1, size = 3 },
-		{ "crypt", x = 30.2, y = 8.8, size = 2.8 },
+		{ "crypt", x = 20.6, y = 7.2, size = 2.6 },
 		{ "ghostship", x = 6.6, y = 19.6, size = 3.8 },
 		{ "deadtree", x = 14.6, y = 13.4, size = 2.2 },
 	},
+	details = { kinds = { { "tuft", 4 }, { "leaves", 2 }, { "pebbles", 2 } }, count = 18, tint = { tuft = "#8E9470", leaves = "#8C6A44", pebbles = "#A3A594" } },
+	mottle = { count = 12, light = "#8B9079", dark = "#676C59" },
 	colors = {
 		water = "#1E3A55",
+		foam = "#B7CAD6",
+		lip = "#969B84",
+		cliff = "#5F6353",
+		cliffDark = "#4A4D41",
+		cliffLine = "#2A2C25",
 		waterMark = "#172E45",
 		shallows = "#2F5674",
 		land = "#7A7F6A",
@@ -240,8 +274,15 @@ MapScenes.volcano = {
 		{ "volcano", x = 27.2, y = 6.6, size = 5.2 },
 		{ "ship", x = 9, y = 1.4, size = 3.6 },
 	},
+	details = { kinds = { { "pebbles", 4 }, { "tuft", 1 } }, count = 14, tint = { pebbles = "#5C4D45", tuft = "#7F8A4E" } },
+	mottle = { count = 12, light = "#7B695D", dark = "#58493F" },
 	colors = {
 		water = "#24839F",
+		foam = "#E4F3F5",
+		lip = "#86735F",
+		cliff = "#54463E",
+		cliffDark = "#3F342E",
+		cliffLine = "#211A17",
 		waterMark = "#1C6A82",
 		shallows = "#58B7C9",
 		land = "#6B5A50",

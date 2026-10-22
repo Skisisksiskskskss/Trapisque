@@ -20,6 +20,8 @@
 		tunnels = { { points } },  pools = { { x, y, r } },
 		props = { { kind, x, y, size, flip, ground, angle } },
 		waves = { { x, y, w } },
+		details = { { kind, x, y, size, flip } },     -- tufts, pebbles... lying on the land
+		mottle = { { x, y, r, light } },              -- soft lighter / darker patches of it
 	}
 ]]
 
@@ -29,7 +31,7 @@ local BoardLayout = {}
 
 BoardLayout.Style = {
 	tileR = 0.8, -- a tile's radius
-	tileDepth = 0.15, -- its hard shadow, down and to the right
+	tileDepth = 0.22, -- how thick it is: its side shows below its top
 	trailW = 1.75, -- the trail under the tiles
 	margin = 18, -- open water around the map: the camera never finds its edge
 	pawn = 1.45, -- a character's size on a tile of its own
@@ -278,47 +280,57 @@ function BoardLayout.fillets(discs: { any }, ball: number, grows: { number }, ho
 			if d > math.abs(a.r - b.r) and d < a.r + b.r then
 				plug(i, a, b, d)
 			end
-			local Ra, Rb = a.r + ball, b.r + ball
-			-- the ball touches both where the circles of radius r + ball cross
-			local along = if d > 1e-6 then (Ra * Ra - Rb * Rb + d * d) / (2 * d) else 0
-			local h2 = Ra * Ra - along * along
-			if d > 1e-6 and d < Ra + Rb and d > math.abs(a.r - b.r) and h2 > 0 then
-				local h = math.sqrt(h2)
-				local ux, uy = (b.x - a.x) / d, (b.y - a.y) / d
-				for _, side in { 1, -1 } do
+			if d <= 1e-6 or d <= math.abs(a.r - b.r) then
+				continue
+			end
+			local ux, uy = (b.x - a.x) / d, (b.y - a.y) / d
+			for _, side in { 1, -1 } do
+				-- the biggest ball that fits the corner (a tight one, in a little lagoon,
+				-- gets a smaller ball, so it's still rounded instead of left as a spike)
+				for _, size in { ball, ball * 0.6, ball * 0.35 } do
+					local Ra, Rb = a.r + size, b.r + size
+					-- the ball touches both where the circles of radius r + ball cross
+					local along = (Ra * Ra - Rb * Rb + d * d) / (2 * d)
+					local h2 = Ra * Ra - along * along
+					if d >= Ra + Rb or h2 <= 0 then
+						continue
+					end
+					local h = math.sqrt(h2)
 					local qx, qy = a.x + ux * along - uy * h * side, a.y + uy * along + ux * h * side
-					if not touches(i, qx, qy, ball - 1e-3, j) then
-						local ta = math.atan2(a.y - qy, a.x - qx)
-						local sweep = (math.atan2(b.y - qy, b.x - qx) - ta + math.pi) % (2 * math.pi) - math.pi
-						for gi, g in grows do
-							local bg = ball - g
-							local ra, rb = a.r + g, b.r + g
-							-- the corner's tip: where the widened discs cross on this side
-							-- (or halfway across the gap between them)
-							local px, py, past
-							if d < ra + rb then
-								local al = (ra * ra - rb * rb + d * d) / (2 * d)
-								local hh = math.sqrt(math.max(0, ra * ra - al * al))
-								px, py = a.x + ux * al - uy * hh * side, a.y + uy * al + ux * hh * side
-								past = math.min(0.8, hh * 1.8)
-							else
-								local t = (ra + (d - ra - rb) / 2) / d
-								px, py = a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t
-								past = 0.05
-							end
-							local depth = dist(px, py, qx, qy) - bg
-							if bg > 0.05 and depth > 0.05 then
-								-- a chain of discs along the ball's edge, each touching it,
-								-- from inside one disc to inside the other
-								local s = math.min(math.max(depth / 2 + 0.03, 0.25), (depth + past) / 2)
-								local steps = math.clamp(math.ceil(math.abs(sweep) * (bg + s) / s), 1, 40)
-								for k = 0, steps do
-									local t = ta + sweep * k / steps
-									table.insert(out[gi], { x = qx + math.cos(t) * (bg + s), y = qy + math.sin(t) * (bg + s), r = s })
-								end
+					if touches(i, qx, qy, size - 1e-3, j) then
+						continue
+					end
+					local ta = math.atan2(a.y - qy, a.x - qx)
+					local sweep = (math.atan2(b.y - qy, b.x - qx) - ta + math.pi) % (2 * math.pi) - math.pi
+					for gi, g in grows do
+						local bg = size - g
+						local ra, rb = a.r + g, b.r + g
+						-- the corner's tip: where the widened discs cross on this side
+						-- (or halfway across the gap between them)
+						local px, py, past
+						if d < ra + rb then
+							local al = (ra * ra - rb * rb + d * d) / (2 * d)
+							local hh = math.sqrt(math.max(0, ra * ra - al * al))
+							px, py = a.x + ux * al - uy * hh * side, a.y + uy * al + ux * hh * side
+							past = math.min(0.8, hh * 1.8)
+						else
+							local t = (ra + (d - ra - rb) / 2) / d
+							px, py = a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t
+							past = 0.05
+						end
+						local depth = dist(px, py, qx, qy) - bg
+						if bg > 0.05 and depth > 0.05 then
+							-- a chain of discs along the ball's edge, each touching it,
+							-- from inside one disc to inside the other
+							local s = math.min(math.max(depth / 2 + 0.03, 0.25), (depth + past) / 2)
+							local steps = math.clamp(math.ceil(math.abs(sweep) * (bg + s) / s), 1, 40)
+							for k = 0, steps do
+								local t = ta + sweep * k / steps
+								table.insert(out[gi], { x = qx + math.cos(t) * (bg + s), y = qy + math.sin(t) * (bg + s), r = s })
 							end
 						end
 					end
+					break
 				end
 			end
 		end
@@ -350,6 +362,8 @@ function BoardLayout.build(board, mapDef, Rng, opts: { [string]: any }?)
 		pools = {},
 		props = {},
 		waves = {},
+		details = {},
+		mottle = {},
 	}
 
 	-- tiles along the route, then along each shortcut
@@ -582,10 +596,21 @@ function BoardLayout.build(board, mapDef, Rng, opts: { [string]: any }?)
 	end
 
 	-- landmarks: each one only where it fits (on land or at sea as it should be, clear
-	-- of the trail, the tiles and each other); the dock runs from the Start out to the
-	-- nearest water
+	-- of the trail, the tiles and each other, inside the view), moved a little if that's
+	-- what it takes; the dock runs from the Start out to the nearest water
 	local props = layout.props
 	local WATER = { ship = true, wreck = true, sunken = true, ghostship = true }
+	-- what the camera fits (the tiles and a margin): a prop stands wholly inside it, so
+	-- none is cut in half by the edge of the screen
+	local vx0, vy0, vx1, vy1 = math.huge, math.huge, -math.huge, -math.huge
+	for _, t in layout.tiles do
+		vx0, vx1 = math.min(vx0, t.x - 1.25), math.max(vx1, t.x + 1.25)
+		vy0, vy1 = math.min(vy0, t.y - 1.25), math.max(vy1, t.y + 1.25)
+	end
+	local function inView(x: number, y: number, size: number): boolean
+		local h = size * 0.48
+		return x - h >= vx0 and x + h <= vx1 and y - h >= vy0 and y + h <= vy1
+	end
 	for _, m in scene.landmarks or {} do
 		local kind = m[1]
 		local size = m.size or BoardLayout.PropSize[kind] or 1.5
@@ -625,21 +650,37 @@ function BoardLayout.build(board, mapDef, Rng, opts: { [string]: any }?)
 			end
 		else
 			local reach = size * S.reach
-			local depth = landDepth(x, y)
-			if WATER[kind] then
-				fits = depth <= -(reach * 0.6)
-			else
-				fits = depth >= reach * 0.3
-			end
-			fits = fits and nearTrail(x, y) >= S.trailW / 2 + reach * 0.85
-			for _, t in layout.tiles do
-				if dist(x, y, t.x, t.y) < S.tileR * (t.scale or 1) + reach * 0.85 then
-					fits = false
+			local function fitsAt(px: number, py: number): boolean
+				local depth = landDepth(px, py)
+				local ok = if WATER[kind] then depth <= -(reach * 0.6) else depth >= reach * 0.3
+				if not (ok and inView(px, py, size) and nearTrail(px, py) >= S.trailW / 2 + reach * 0.85) then
+					return false
 				end
+				for _, t in layout.tiles do
+					if dist(px, py, t.x, t.y) < S.tileR * (t.scale or 1) + reach * 0.85 then
+						return false
+					end
+				end
+				for _, q in props do
+					if not q.ground and dist(px, py, q.x, q.y) < reach + q.size * S.reach then
+						return false
+					end
+				end
+				return true
 			end
-			for _, q in props do
-				if not q.ground and dist(x, y, q.x, q.y) < reach + q.size * S.reach then
-					fits = false
+			fits = fitsAt(x, y)
+			-- or the nearest spot close by where it does fit (inside the view, say)
+			for ring = 1, 8 do
+				if fits then
+					break
+				end
+				for k = 0, 11 do
+					local a = k * math.pi / 6
+					local qx, qy = x + math.cos(a) * ring * 0.4, y + math.sin(a) * ring * 0.4
+					if fitsAt(qx, qy) then
+						x, y, fits = qx, qy, true
+						break
+					end
 				end
 			end
 		end
@@ -710,7 +751,7 @@ function BoardLayout.build(board, mapDef, Rng, opts: { [string]: any }?)
 			local kind = rng:weighted(weights)
 			local size = (BoardLayout.PropSize[kind] or 1) * (0.85 + rng:float() * 0.3)
 			local reach = size * S.reach
-			local ok = nearTrail(c[1], c[2]) >= trailClear + reach
+			local ok = inView(c[1], c[2], size) and nearTrail(c[1], c[2]) >= trailClear + reach
 			if ok and onLand then
 				ok = c[3] >= reach * 0.75
 			elseif ok then
@@ -753,7 +794,7 @@ function BoardLayout.build(board, mapDef, Rng, opts: { [string]: any }?)
 			if placed >= (P.groveCount or 3) then
 				break
 			end
-			local free = clearOfFeatures(c[1], c[2], size * S.reach + 1)
+			local free = inView(c[1], c[2], size) and clearOfFeatures(c[1], c[2], size * S.reach + 1)
 			if free then
 				table.insert(props, { kind = P.grove, x = c[1], y = c[2], size = size, flip = rng:float() < 0.5 })
 				placed += 1
@@ -788,6 +829,53 @@ function BoardLayout.build(board, mapDef, Rng, opts: { [string]: any }?)
 		end
 	end
 
+	-- the little things lying about on the land (tufts, pebbles, shells...), spread out
+	-- and off the trail, the rivers, the pools and the props; and soft patches of lighter
+	-- and darker ground, so the land isn't one flat colour
+	local D = scene.details
+	if D then
+		local cands = {}
+		local yy = minY
+		while yy <= maxY do
+			local xx = minX
+			while xx <= maxX do
+				local x, y = xx + (rng:float() - 0.5) * 0.4, yy + (rng:float() - 0.5) * 0.4
+				if landDepth(x, y) > 0.6 and nearTrail(x, y) >= S.trailW / 2 + 0.4 and clearOfFeatures(x, y, 0.3) then
+					table.insert(cands, { x, y })
+				end
+				xx += 0.7
+			end
+			yy += 0.7
+		end
+		rng:shuffle(cands)
+		for _, c in cands do
+			if #layout.details >= (D.count or 16) then
+				break
+			end
+			local free = true
+			for _, q in layout.details do
+				if dist(c[1], c[2], q.x, q.y) < 1.7 then
+					free = false
+					break
+				end
+			end
+			if free then
+				table.insert(layout.details, { kind = rng:weighted(D.kinds), x = c[1], y = c[2], size = 0.75 + rng:float() * 0.25, flip = rng:float() < 0.5 })
+			end
+		end
+	end
+	local M = scene.mottle
+	if M then
+		local tries = 0
+		while #layout.mottle < (M.count or 10) and tries < 500 do
+			tries += 1
+			local x, y = minX + rng:float() * (maxX - minX), minY + rng:float() * (maxY - minY)
+			if landDepth(x, y) > 1 then
+				table.insert(layout.mottle, { x = x, y = y, r = 1.4 + rng:float() * 1.4, light = rng:float() < 0.5 })
+			end
+		end
+	end
+
 	-- stand it up for upright screens: a quarter turn clockwise
 	if rotate then
 		local function turn(x: number, y: number): (number, number)
@@ -801,7 +889,7 @@ function BoardLayout.build(board, mapDef, Rng, opts: { [string]: any }?)
 			s.x1, s.y1 = turn(s.x1, s.y1)
 			s.x2, s.y2 = turn(s.x2, s.y2)
 		end
-		for _, list in { layout.land, layout.pools, layout.props, layout.waves } do
+		for _, list in { layout.land, layout.pools, layout.props, layout.waves, layout.details, layout.mottle } do
 			for _, c in list do
 				c.x, c.y = turn(c.x, c.y)
 				if c.angle then
@@ -819,10 +907,8 @@ function BoardLayout.build(board, mapDef, Rng, opts: { [string]: any }?)
 				r.points = pts
 			end
 		end
-		local depth = landDepth
-		layout.landDepth = function(x: number, y: number): number
-			return depth(y, -x)
-		end
+		-- (landDepth reads the land discs, which have just turned with everything else,
+		-- so it already answers for the upright map)
 	end
 
 	-- bounds: the tiles (what the camera fits) and the whole map (open water included)

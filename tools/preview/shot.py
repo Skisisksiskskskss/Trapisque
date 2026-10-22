@@ -293,9 +293,14 @@ def draw_art(layer, img, x0, y0, w, h, alpha):
         _sheet_cache[name] = sheet
     ox, oy = img.get("ro") or (0, 0)
     sw, sh = img.get("rs") or (0, 0)
+    mirror = sw < 0  # a negative width reads the rect right to left: the sprite mirrored
+    if mirror:
+        ox, sw = ox + sw, -sw
     if sw <= 0 or sh <= 0:
         sw, sh = sheet.size
     sprite = sheet.crop((int(ox), int(oy), int(ox + sw), int(oy + sh)))
+    if mirror:
+        sprite = sprite.transpose(Image.FLIP_LEFT_RIGHT)
     if img.get("scale") == "Fit":
         k = min(w / sw, h / sh)
         tw, th = max(1, int(round(sw * k))), max(1, int(round(sh * k)))

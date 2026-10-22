@@ -14,6 +14,7 @@
 
 		Art.has(name) -> boolean                         -- "props/palm", "pieces/paint_mage"
 		Art.image(parent, name, props) -> Frame?         -- nil when it can't
+		Art.label(parent, name, center, size, flip?, props?) -> ImageLabel?   -- just the image
 		Art.preload(timeout?)                            -- builds / loads the sheets
 
 	Art.image's frame is the sprite's whole canvas (props size and place it; it keeps the
@@ -131,6 +132,48 @@ function Art.image(parent: Instance?, name: string, props: { [string]: any }?): 
 	img.Parent = box
 	box.Parent = parent
 	return box
+end
+
+-- One ImageLabel and nothing else: sprite `name` with its whole canvas `size` pixels
+-- across, centred on `center`. For the many small things on a map, where a frame round
+-- each would only cost. `flip` mirrors it left to right by reading the rect backwards
+-- (a negative ImageRectSize); only the offline store art uses that so far.
+function Art.label(parent: Instance?, name: string, center: Vector2, size: number, flip: boolean?, props: { [string]: any }?): ImageLabel?
+	local s = ArtAtlas.sprites[name]
+	local source = s and sourceOf(s.sheet)
+	if not s or not source then
+		return nil
+	end
+	local k = size / math.max(s.ow, s.oh)
+	local img = Instance.new("ImageLabel")
+	img.Name = string.match(name, "[^/]+$") or name
+	img.BackgroundTransparency = 1
+	img.BorderSizePixel = 0
+	if source.content then
+		img.ImageContent = source.content
+	else
+		img.Image = source.image or ""
+	end
+	-- where the drawn part's middle is, from the canvas's middle
+	local mx, my = (s.ox + s.w / 2 - s.ow / 2) * k, (s.oy + s.h / 2 - s.oh / 2) * k
+	if flip then
+		-- the rect read right to left
+		img.ImageRectOffset = Vector2.new(s.x + s.w, s.y)
+		img.ImageRectSize = Vector2.new(-s.w, s.h)
+		mx = -mx
+	else
+		img.ImageRectOffset = Vector2.new(s.x, s.y)
+		img.ImageRectSize = Vector2.new(s.w, s.h)
+	end
+	img.ScaleType = Enum.ScaleType.Stretch
+	img.AnchorPoint = Vector2.new(0.5, 0.5)
+	img.Position = UDim2.fromOffset(center.X + mx, center.Y + my)
+	img.Size = UDim2.fromOffset(s.w * k, s.h * k)
+	for key, v in props or {} do
+		(img :: any)[key] = v
+	end
+	img.Parent = parent
+	return img
 end
 
 -- Builds the sheets that weren't uploaded, then loads the uploaded ones (with a time

@@ -66,6 +66,7 @@ local PIECE_H = 1.04 -- the piece's height, in that square
 local PIECE_FOOT = 0.95 -- where its foot is (on its own; a mastery stand lifts it)
 local MAX_ZOOM = 3
 local HIT = 1.55 -- a tile's click area: a square this many map units wide
+local BEVEL = 0.075 -- the lit / shaded rim round a tile's top (map units)
 
 -- the top colour of a tile with something on it
 local TOP = {
@@ -633,9 +634,34 @@ function BoardView:_buildTiles()
 		})
 		local local0 = Vector2.new(U, U)
 		local r = S.tileR * U * (t.scale or 1)
-		-- the tile's edge is a darker shade of the tile, not an outline
-		local side = self:_tileShape(root, local0 + Vector2.new(0, S.tileDepth) * U, r, Util.shade(self.tileColors.normal, -0.32), 1, "Side", t.angle)
+		-- a stone with some thickness, like the pieces' stands: its soft shadow on the
+		-- ground, its side, and its top lit from the upper left (whichever way a slab is
+		-- turned) with a bevel round the edge: light where it faces the light, dark
+		-- where it faces away. No outline.
+		local turn = if self.tileShape == "slab" then (t.angle or 0) else 0
+		local shadow = MapArt.sprite(root, { x0 = -1, y0 = -1 }, U, "ground/soft", 0.1, 0.26, 2.7 * r / U, 1, C.black, 0.6)
+		if shadow then
+			shadow.Name = "Shadow"
+		end
+		local side = self:_tileShape(root, local0 + Vector2.new(0, S.tileDepth) * U, r, Util.shade(self.tileColors.normal, -0.34), 2, "Side", t.angle)
+		Util.grad(side, { Color3.new(1, 1, 1), Color3.new(0.74, 0.74, 0.74) }, -turn)
 		local top = self:_tileShape(root, local0, r, self.tileColors.normal, 3, "Top", t.angle)
+		Util.grad(top, { Color3.new(1, 1, 1), Color3.new(0.6, 0.6, 0.6) }, 45 - turn)
+		-- the face inside the bevel: worn stone (tinted the tile's colour), or plain
+		local faceR = r - BEVEL * U
+		local face: GuiObject
+		local worn = MapArt.sprite(root, { x0 = -1, y0 = -1 }, U, if self.tileShape == "slab" then "ground/slab" else "ground/stone", 0, 0, 2 * faceR / U, 4, self.tileColors.normal)
+		local spin = 0
+		if worn then
+			-- each stone turned its own way, so they don't all wear the same pattern
+			spin = if self.tileShape == "slab" then 90 * (t.id % 4) else (t.id * 137) % 360
+			worn.Name = "Face"
+			worn.Rotation = turn + spin
+			face = worn
+		else
+			face = self:_tileShape(root, local0, faceR, self.tileColors.normal, 4, "Face", t.angle)
+		end
+		Util.grad(face, { Color3.new(1, 1, 1), Color3.new(0.9, 0.9, 0.9) }, 45 - turn - spin)
 		-- every fifth tile carries its number, small: enough to count by, not a wall of digits
 		local label = Widgets.label(root, {
 			text = tostring(t.id),
@@ -646,10 +672,10 @@ function BoardView:_buildTiles()
 			sizeUDim = UDim2.fromOffset(U, 0.5 * U),
 			anchor = Vector2.new(0.5, 0.5),
 			position = UDim2.fromOffset(U, U),
-			z = 8,
+			z = 9,
 		})
 		label.Visible = t.id % 5 == 0
-		local parts = { root = root, side = side, top = top, label = label, kind = t.kind, branch = t.branch, angle = t.angle, numbered = t.id % 5 == 0 }
+		local parts = { root = root, side = side, top = top, face = face, label = label, kind = t.kind, branch = t.branch, angle = t.angle, numbered = t.id % 5 == 0 }
 		self.tileParts[t.id] = parts
 		self:_paintTile(t.id)
 	end
@@ -751,7 +777,12 @@ function BoardView:_paintTile(tile: number)
 	elseif ember then
 		topColor = TOP.embers
 	end
-	parts.top.BackgroundColor3 = topColor
+	parts.top.BackgroundColor3 = Util.shade(topColor, 0.4)
+	if parts.face:IsA("ImageLabel") then
+		parts.face.ImageColor3 = topColor
+	else
+		parts.face.BackgroundColor3 = topColor
+	end
 
 	local root = parts.root
 	local mid = UDim2.fromOffset(U, U)
@@ -767,7 +798,7 @@ function BoardView:_paintTile(tile: number)
 
 	if beltAngle then
 		-- a steel band with chevrons pointing the way the belt carries you
-		local h = holder("Skin", 1.6, 4)
+		local h = holder("Skin", 1.6, 5)
 		parts.skin = h
 		local c = Shapes.canvas(h, { Rotation = beltAngle })
 		local band = Shapes.rect(c, 0.5, 0.5, 0.82, 0.36, hex("8792AD"), { r = 0.2 })
@@ -778,13 +809,13 @@ function BoardView:_paintTile(tile: number)
 	if natural then
 		local art = StickerArt.hazards[natural]
 		if art then
-			local icon = holder("Icon", 1.2, 6)
+			local icon = holder("Icon", 1.2, 7)
 			Icons.sticker(icon, art, nil, 0.06)
 			parts.icon = icon
 		end
 	elseif entry and not (entry.item == "conveyor" and beltAngle) then
 		-- (a belt's first tile shows the belt itself, not a plaque on top of it)
-		parts.plaque = plaque(root, entry.item, entry.owner, mid, 0.86 * U, 6)
+		parts.plaque = plaque(root, entry.item, entry.owner, mid, 0.86 * U, 7)
 		if entry.item == "sands" then
 			-- which way it slides you this round: +3 or -3
 			local fwd = Engine.sandsForward(self.round)
@@ -815,11 +846,11 @@ function BoardView:_paintTile(tile: number)
 		-- a token on the same tile keeps the middle; the trap tucks into the corner
 		local small = busyCenter or token ~= nil
 		local at = if small then UDim2.fromOffset(U + 0.42 * U, U - 0.36 * U) else mid
-		parts.trap = trapMark(root, traps[1], at, (if small then 0.48 else 0.8) * U, 7)
+		parts.trap = trapMark(root, traps[1], at, (if small then 0.48 else 0.8) * U, 8)
 	end
 	if not busyCenter and token then
 		-- tokens: a bold coloured disc with its symbol, easy to spot across the board
-		local inlay = holder("Token", 0.9, 5)
+		local inlay = holder("Token", 0.9, 6)
 		local color = Theme.Category[token] or C.panelRaised
 		local disc = Util.new("Frame", {
 			Name = "Disc",
@@ -838,12 +869,12 @@ function BoardView:_paintTile(tile: number)
 		parts.inlay = inlay
 	elseif not busyCenter and (kind == "start" or kind == "treasure" or kind == "shortcutGate") then
 		local art = if kind == "start" then StickerArt.misc.flag elseif kind == "treasure" then StickerArt.misc.chest else StickerArt.hazards.gate
-		local icon = holder("Icon", if kind == "treasure" then 1.25 else 1, 6)
+		local icon = holder("Icon", if kind == "treasure" then 1.25 else 1, 7)
 		Icons.sticker(icon, art, nil, 0.06)
 		parts.icon = icon
 	end
 	if ember then
-		local flame = holder("Ember", 0.62, 8)
+		local flame = holder("Ember", 0.62, 9)
 		flame.Position = UDim2.fromOffset(U - 0.42 * U, U - 0.3 * U)
 		Icons.sticker(flame, StickerArt.misc.flame, nil, 0.08)
 		parts.ember = flame
