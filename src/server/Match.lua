@@ -635,6 +635,7 @@ function Match:command(player: Player, cmd)
 		steps = cmd.steps,
 		option = cmd.option,
 		die = cmd.die,
+		value = cmd.value,
 		index = cmd.index,
 	}
 	local ok, err, events = engine:command(seat, clean)

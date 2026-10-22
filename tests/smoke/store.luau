@@ -1,6 +1,6 @@
 --[[
 	The experience's store art, drawn by the game's own UI code (no outside images):
-	  store-icon     512 x 512    the Mage and the Fire Starter over the sea, title ribbon
+	  store-icon     512 x 512    the Mage and the Fire Starter over the sea, and the name
 	  store-banner   1920 x 1080  the island map, the title, the whole crew and a treasure
 	  badges/<key>   512 x 512    each badge's medal (Shared/Meta/Badges), for the Creator
 	                              Dashboard (Roblox shows a badge's picture in a circle)
@@ -33,25 +33,15 @@ local function screenGui(name: string)
 	return gui
 end
 
--- the sea with its printed wave marks
-local function sea(parent: Instance, w: number, h: number, marks: number)
-	local bg = Util.new("Frame", {
+-- the plain sea the game's menus sit on
+local function sea(parent: Instance, _w: number, _h: number, _marks: number)
+	return Util.new("Frame", {
 		Name = "Sea",
 		BackgroundColor3 = C.bg,
 		BorderSizePixel = 0,
 		Size = UDim2.fromScale(1, 1),
 		Parent = parent,
 	})
-	for i = 0, marks - 1 do
-		local holder = Util.frame(bg, {
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.fromOffset(((i * 37) % 100) / 100 * w, ((i * 61 + 13) % 100) / 100 * h),
-			Size = UDim2.fromOffset(h * 0.08, h * 0.08),
-		})
-		local shapes = requireModule("Client/UI/Shapes")
-		shapes.wave(shapes.canvas(holder), 0.5, 0.5, 1, 0.09, C.skyDark)
-	end
-	return bg
 end
 
 -- big title lettering (Roblox caps text at 100px, so it's scaled up as a whole)
@@ -61,7 +51,6 @@ local function title(parent: Instance, text: string, cx: number, cy: number, sca
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromOffset(cx, cy),
 		Size = UDim2.fromOffset(620, 120),
-		Rotation = -3,
 		ZIndex = z or 20,
 	})
 	Util.new("UIScale", { Scale = scale, Parent = holder })
@@ -69,11 +58,9 @@ local function title(parent: Instance, text: string, cx: number, cy: number, sca
 		text = text,
 		font = "display",
 		size = 100,
-		color = C.sun,
+		color = C.textLight,
 		align = "center",
 		sizeUDim = UDim2.fromScale(1, 1),
-		outline = C.line,
-		outlineThickness = 6,
 		z = (z or 20) + 1,
 	})
 	return holder
@@ -110,16 +97,8 @@ if not badgesOnly then
 		ZIndex = 12,
 	})
 	CosmeticArt.preview(die, "dice_doubloon", nil, { Size = UDim2.fromScale(1, 1), ZIndex = 12 })
-	-- the name on a red ribbon along the bottom
-	local band = Util.frame(bg, {
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromOffset(256, 452),
-		Size = UDim2.fromOffset(240, 46),
-		ZIndex = 30,
-	})
-	Util.new("UIScale", { Scale = 1.95, Parent = band })
-	local ribbon = Widgets.ribbon(band, "Trapisque", { width = 240 })
-	ribbon.Position = UDim2.fromScale(0.5, 0.5)
+	-- the name along the bottom, as on the loading screen
+	title(bg, "Trapisque", 256, 456, 0.9, 30)
 	F.run(0.5)
 	F.shot("store-icon")
 	gui:Destroy()
@@ -163,26 +142,16 @@ if not badgesOnly then
 		ZIndex = 10,
 		Parent = root,
 	})
-	title(root, "TRAPISQUE", W / 2, 170, 2.25, 40)
-	local tag = Util.new("Frame", {
-		Name = "Tagline",
-		BackgroundColor3 = C.line,
-		BorderSizePixel = 0,
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromOffset(W / 2, 352),
-		Size = UDim2.fromOffset(1040, 74),
-		ZIndex = 40,
-		Parent = root,
-	})
-	Util.corner(tag, 12)
-	Widgets.label(tag, {
-		text = "Race to the treasure.  Hide traps.  Bonk your friends!",
+	title(root, "Trapisque", W / 2, 180, 2.25, 40)
+	Widgets.label(root, {
+		text = "Race to the treasure. Hide traps. Bonk your friends.",
 		font = "heavy",
 		size = 44,
-		color = C.cream,
+		color = C.textLightSoft,
 		align = "center",
-		sizeUDim = UDim2.fromScale(1, 1),
-		outline = false,
+		anchor = Vector2.new(0.5, 0.5),
+		position = UDim2.fromOffset(W / 2, 352),
+		sizeUDim = UDim2.fromOffset(1200, 60),
 		z = 41,
 	})
 	-- the treasure, with two dice

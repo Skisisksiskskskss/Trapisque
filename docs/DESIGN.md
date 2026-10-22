@@ -152,11 +152,16 @@ is noise:
 
 | 4 players, Quick | Mage | Trapper | Fire Starter | Naturalist | Warper | Overseer | Gambler | Cannoneer |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Blissful Tricks | 22.1% | 23.2% | 25.0% | 24.6% | 26.2% | 24.8% | 26.6% | 27.6% |
-| Junction Dungeon | 22.3% | 22.2% | 25.8% | 28.0% | 24.2% | 22.0% | 31.3% | 24.3% |
-| Slimy Snares | 24.1% | 29.5% | 25.0% | 25.2% | 25.0% | 22.0% | 26.6% | 22.5% |
-| Haunted Hollow | 25.6% | 22.4% | 21.1% | 30.7% | 24.4% | 22.8% | 29.5% | 23.5% |
-| Mount Kaboom | 21.9% | 25.9% | 26.2% | 28.3% | 25.2% | 20.4% | 27.4% | 24.5% |
+| Blissful Tricks | 20.7% | 22.4% | 26.6% | 27.0% | 29.2% | 21.2% | 26.4% | 26.6% |
+| Junction Dungeon | 24.7% | 22.0% | 27.6% | 25.0% | 26.6% | 21.0% | 31.5% | 21.7% |
+| Slimy Snares | 20.3% | 25.0% | 24.1% | 29.5% | 28.6% | 20.2% | 29.5% | 22.9% |
+| Haunted Hollow | 27.4% | 21.4% | 22.5% | 28.7% | 24.6% | 22.6% | 29.1% | 23.7% |
+| Mount Kaboom | 20.9% | 23.2% | 24.3% | 28.3% | 29.2% | 20.2% | 29.9% | 24.1% |
+
+(This table is from after the card rework: Shifting Sands for the Trampoline, the
+Snare's roll to break free, the Compass and the Thief Potion. The spread is the same
+as before it, 20 to 32%; the Mage and the Overseer sit lowest and the Gambler highest,
+worth watching. The 2- and 6-player tables below are from before the rework.)
 
 2 players (500 games per map; each character plays about a quarter of them, so about
 ±9 points is noise) and 6 players (400 games per map, about ±4 points):

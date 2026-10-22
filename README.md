@@ -4,10 +4,10 @@ Trapisque is a race to the treasure across a trap-filled board, for 2 to 6 playe
 started as a board game, and this repository is its Roblox version: a purely top-down
 2D game that uses the Roblox engine but doesn't look like a Roblox game. There is no 3D
 world. Apart from players' own Roblox avatar headshots, everything you see is drawn
-from plain UI frames, with no uploaded images, in one pirate look: printed simply like
-an old board-game box (flat colour, a short list of inks, cream card on the open sea)
-and inked like a comic (one heavy ink line around everything, hard shadows, punchy
-lettering). Only the characters have faces.
+from plain UI frames, with no uploaded images, in one calm tabletop look: flat colours
+with light borders, one rounded font in sentence case, one orange accent for the main
+action on a screen, and simple shapes with a thin outline. Only the characters have
+faces.
 
 | Match (PC) | Lobby (PC) | Match (upright phone) |
 | --- | --- | --- |

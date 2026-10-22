@@ -396,6 +396,7 @@ do
 				return #F.buttons(Root.gui, "^COLLECT$") > 0
 			end)
 			F.run(0.6)
+			shot("chest-reveal")
 			press(Root.gui, "^COLLECT$")
 			F.run(1.5)
 		end
@@ -452,9 +453,10 @@ do
 	say("character: %s", tostring(profile and profile.character))
 end
 
--- the owner's unlock-all switch (offline, everyone is the owner): a locked character can
--- be picked while it's on, and switching it off goes back to real progress
-do
+-- the owner's unlock-all switch (offline, the tester is the owner; not in the store
+-- screenshots): a locked character can be picked while it's on, and switching it off
+-- goes back to real progress
+if not cfg.store then
 	local before = State.get("profile").character
 	local function ask(list)
 		local done = false
@@ -874,7 +876,12 @@ check(moves >= 3, "the screen sent only " .. moves .. " moves")
 -- and never offered something the server then refused
 for _, c in commands do
 	if not c.ok then
-		fail(string.format("the server refused a %s command the screen sent at %.1fs: %s", c.cmd.type, c.t, tostring(c.err)))
+		local fields = {}
+		for k, v in c.cmd do
+			table.insert(fields, tostring(k) .. "=" .. tostring(v))
+		end
+		table.sort(fields)
+		fail(string.format("the server refused a %s command the screen sent at %.1fs (%s): %s", c.cmd.type, c.t, table.concat(fields, ", "), tostring(c.err)))
 	end
 end
 

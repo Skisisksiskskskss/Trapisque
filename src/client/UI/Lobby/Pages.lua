@@ -411,7 +411,7 @@ local RULES = {
 function Pages.rules(layer: Instance): () -> ()
 	local roomW, roomH = Widgets.room()
 	local content, close = Widgets.modal(layer, {
-		title = "How to Play",
+		title = "How to play",
 		titleWidth = 280,
 		width = math.min(860, roomW),
 		height = math.min(600, roomH),
@@ -660,7 +660,7 @@ function Pages.settings(layer: Instance): () -> ()
 		Widgets.button(list, {
 			text = if staff == "owner" then "Owner panel" else "Admin panel",
 			icon = "crown",
-			style = "brass",
+			style = "panel",
 			textSize = 20,
 			size = UDim2.fromOffset(280, 50),
 			layoutOrder = 8,
@@ -690,7 +690,7 @@ function Pages.leaderboard(layer: Instance): () -> ()
 	local panel = nil
 	local roomW, roomH = Widgets.room()
 	local content, close = Widgets.modal(layer, {
-		title = "Top Players",
+		title = "Top players",
 		titleWidth = 240,
 		width = math.min(520, roomW),
 		height = math.min(600, roomH),

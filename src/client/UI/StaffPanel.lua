@@ -401,7 +401,7 @@ function StaffPanel.open(layer: Instance)
 	end
 	local roomW, roomH, narrow = Widgets.room()
 	local content, close = Widgets.modal(layer, {
-		title = if role == "owner" then "Owner Panel" else "Admin Panel",
+		title = if role == "owner" then "Owner panel" else "Admin panel",
 		titleWidth = 300,
 		width = math.min(960, roomW),
 		height = math.min(640, roomH),

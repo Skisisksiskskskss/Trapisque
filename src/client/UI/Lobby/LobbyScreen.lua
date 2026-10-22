@@ -630,7 +630,7 @@ end
 function LobbyScreen.welcome(popups: Instance)
 	local _, _, narrow = Widgets.room()
 	local content, close = Widgets.modal(popups, {
-		title = "Welcome Aboard!",
+		title = "Welcome aboard!",
 		titleWidth = 320,
 		width = 560,
 		height = if narrow then 400 else 360,

@@ -189,10 +189,10 @@ function Quests.open(popups: Instance)
 	local roomW, _, narrow = Widgets.room()
 	local width = math.min(620, roomW)
 	local content, close = Widgets.modal(popups, {
-		title = "Daily Quests",
+		title = "Daily quests",
 		titleWidth = 300,
 		width = width,
-		height = if narrow then 670 else 630,
+		height = if narrow then 610 else 570,
 	})
 	local body = Util.frame(content, { Name = "Body" })
 	local maid = Util.maid()
@@ -276,7 +276,7 @@ function Quests.open(popups: Instance)
 		Widgets.button(more, {
 			text = "Badges " .. earned,
 			icon = "star",
-			style = "brass",
+			style = "panel",
 			textSize = 17,
 			size = UDim2.new(0.5, -6, 1, 0),
 			layoutOrder = 1,
@@ -287,7 +287,7 @@ function Quests.open(popups: Instance)
 		Widgets.button(more, {
 			text = "Fish log",
 			icon = "rod",
-			style = "blue",
+			style = "panel",
 			textSize = 17,
 			size = UDim2.new(0.5, -6, 1, 0),
 			layoutOrder = 2,

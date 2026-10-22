@@ -205,7 +205,7 @@ function Chests.open(layer: Instance): () -> ()
 	-- side by side on wide screens; stacked in a scrolling list on an upright phone
 	local roomW, roomH, narrow = Widgets.room()
 	local content, close = Widgets.modal(layer, {
-		title = "Treasure Chests",
+		title = "Treasure chests",
 		titleWidth = math.min(320, roomW - 60),
 		width = if narrow then roomW else 900,
 		height = if narrow then math.min(720, roomH) else 580,

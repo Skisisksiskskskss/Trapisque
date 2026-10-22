@@ -2011,7 +2011,7 @@ function MatchScreen:_previewDie(key: any)
 		table.insert(tags, 1, { text = "Backwards", color = C.coral })
 	end
 	if (gain or 0) > 0 then
-		table.insert(tags, { text = "+" .. tostring((gain :: number) * mult) .. " POWER", color = C.sun })
+		table.insert(tags, { text = "+" .. tostring((gain :: number) * mult) .. " Power", color = C.sun })
 	end
 	self.board:showPath(plan.path, { character = me and me.character, color = C.sun, badges = tags })
 	self.board:follow(plan.tile)

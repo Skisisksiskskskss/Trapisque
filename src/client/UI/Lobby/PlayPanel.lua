@@ -496,7 +496,7 @@ function PlayPanel:_private()
 	local s = table.clone(party.settings or {})
 	local roomW, _, narrow = Widgets.room()
 	local content, close = Widgets.modal(self.popups, {
-		title = "Private Match",
+		title = "Private match",
 		titleWidth = 280,
 		width = math.min(640, roomW),
 		height = if narrow then 560 else 430,

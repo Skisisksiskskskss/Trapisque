@@ -154,11 +154,14 @@ function Results.show(layer: Instance, data, mySeat: number, isTeam: boolean, on
 		end
 	end
 	local won = me ~= nil and me.won
-	local title = if won then "Victory!" elseif data.kind == "practice" then "Practice Over" else "Game Over"
+	local title = if won then "Victory!" elseif data.kind == "practice" then "Practice over" else "Game over"
 
 	local m = Widgets.metrics
 	local width = math.min(760, Layout.safeRect(m, if m.form == "wide" then 16 else 6).w)
 	local narrow = width < 600
+	-- the rewards get a row of their own above the buttons: on a narrow screen, or when
+	-- there are two buttons (Rematch and Lobby)
+	local stack = narrow or onRematch ~= nil
 	local seats = #data.results
 	local reward = data.reward
 	local cardsH = if reward then (if narrow then 3 * 46 + 12 else 104) else 0
@@ -166,7 +169,7 @@ function Results.show(layer: Instance, data, mySeat: number, isTeam: boolean, on
 		title = title,
 		titleWidth = math.min(300, width - 60),
 		width = width,
-		height = (if narrow then 260 else 190) + seats * 58 + cardsH,
+		height = (if narrow then 260 elseif stack then 246 else 190) + seats * 58 + cardsH,
 		noClose = true,
 	})
 	-- (the win or lose jingle already played as the game ended)
@@ -385,14 +388,14 @@ function Results.show(layer: Instance, data, mySeat: number, isTeam: boolean, on
 		Name = "Rewards",
 		AnchorPoint = Vector2.new(0, 1),
 		Position = UDim2.fromScale(0, 1),
-		Size = UDim2.new(1, 0, 0, if narrow then 112 else 56),
+		Size = UDim2.new(1, 0, 0, if stack then 112 else 56),
 	})
 	if reward then
 		-- beside the Lobby button, or above it on a narrow screen
 		local chips = Util.frame(bottom, {
-			Size = if narrow then UDim2.new(1, 0, 0, 48) else UDim2.new(1, if onRematch then -440 else -230, 1, 0),
+			Size = if stack then UDim2.new(1, 0, 0, 48) else UDim2.new(1, -230, 1, 0),
 		})
-		Util.list(chips, "x", 10, if narrow then "Center" else "Left", "Center")
+		Util.list(chips, "x", 10, if stack then "Center" else "Left", "Center")
 		local function chip(order: number, iconId: string, color: Color3, text: string)
 			local holder = Util.frame(chips, { Size = UDim2.fromOffset(0, 40), AutomaticSize = Enum.AutomaticSize.X, LayoutOrder = order })
 			Util.list(holder, "x", 6, "Left", "Center")
@@ -436,15 +439,15 @@ function Results.show(layer: Instance, data, mySeat: number, isTeam: boolean, on
 	end
 	-- the buttons: Lobby, and Rematch beside it
 	local both = onRematch ~= nil
-	local bw = if narrow and both then 150 else (if both then 200 else 210)
+	local bw = if narrow and both then 150 else 210
 	local leave = Widgets.button(bottom, {
 		text = "Lobby",
 		icon = "back",
 		style = if both then "panel" else "brass",
 		textSize = 22,
 		size = UDim2.fromOffset(bw, 52),
-		anchor = if narrow then (if both then Vector2.new(0, 1) else Vector2.new(0.5, 1)) else Vector2.new(1, 0.5),
-		position = if narrow then UDim2.new(0.5, if both then 6 else 0, 1, 0) else UDim2.new(1, 0, 0.5, 0),
+		anchor = if stack then (if both then Vector2.new(0, 1) else Vector2.new(0.5, 1)) else Vector2.new(1, 0.5),
+		position = if stack then UDim2.new(0.5, if both then 6 else 0, 1, 0) else UDim2.new(1, 0, 0.5, 0),
 		onClick = function()
 			close()
 			onLeave()
@@ -458,8 +461,8 @@ function Results.show(layer: Instance, data, mySeat: number, isTeam: boolean, on
 			style = "brass",
 			textSize = 22,
 			size = UDim2.fromOffset(bw, 52),
-			anchor = if narrow then Vector2.new(1, 1) else Vector2.new(1, 0.5),
-			position = if narrow then UDim2.new(0.5, -6, 1, 0) else UDim2.new(1, -(bw + 10), 0.5, 0),
+			anchor = Vector2.new(1, 1),
+			position = UDim2.new(0.5, -6, 1, 0),
 			onClick = function()
 				again:setEnabled(false)
 				again:setText("Waiting...")

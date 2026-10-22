@@ -50,7 +50,8 @@ function Feed:layout(spec)
 		elseif self.align == "left" then Enum.HorizontalAlignment.Left
 		else Enum.HorizontalAlignment.Right
 	self.maxW = r.w
-	self.maxH = r.h + 30
+	-- (no spilling past its slot: on a phone the ability panel sits right under it)
+	self.maxH = r.h
 	self.textSize = if r.w < 340 then 13 else 15
 	while #self.lines > self.max do
 		local old = table.remove(self.lines)

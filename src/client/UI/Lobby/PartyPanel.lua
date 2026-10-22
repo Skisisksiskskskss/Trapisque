@@ -376,7 +376,7 @@ function PartyPanel:_member(list: Instance, i: number, m, isLeader: boolean, par
 		Util.list(tools, "x", 6, "Right", "Center")
 		Widgets.iconButton(tools, {
 			icon = "crown",
-			style = "brass",
+			style = "panel",
 			size = UDim2.fromOffset(38, bh),
 			layoutOrder = 1,
 			onClick = function()
