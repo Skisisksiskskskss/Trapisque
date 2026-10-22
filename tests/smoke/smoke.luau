@@ -38,6 +38,9 @@ end
 -- MessagingService never answers (as in Studio with an unpublished place): the game
 -- must still let everyone in
 F.messagingHangs = true
+-- screenshots draw the image art from the sheet files (art/sheets); plain smoke runs
+-- keep the code-built art, like a place whose sheets aren't uploaded yet
+requireModule("Client/UI/Art").localSheets = cfg.shots == true
 
 F.setScreen({
 	w = cfg.w or 1280,
@@ -609,7 +612,8 @@ local function think()
 		local options = {}
 		for _, b in buttons do
 			local text = F.textOf(b):upper()
-			if text ~= "" and not text:find("CLOSE") and not text:find("LEAVE") and not text:find("MENU") then
+			-- (a greyed-out button does nothing: Fill Power on a full bar)
+			if text ~= "" and b.Active and not text:find("CLOSE") and not text:find("LEAVE") and not text:find("MENU") then
 				table.insert(options, { b = b, text = text })
 			end
 		end
@@ -641,6 +645,12 @@ local function think()
 			return
 		end
 		-- nothing useful in it: close it
+		for _, b in buttons do
+			if F.textOf(b):upper():find("CLOSE") then
+				F.click(b)
+				return
+			end
+		end
 		if panel ~= s.popups then
 			F.click(panel)
 		end
@@ -720,7 +730,8 @@ local function think()
 					-- the card's action buttons in its tip
 					for _, b in F.buttons(s.root) do
 						local text = F.textOf(b):upper()
-						if text:find("^PLAY") or text:find("^HIDE") or text:find("^PLACE") or text:find("^USE") or text:find("^THROW") then
+						local verb = text:find("^PLAY") or text:find("^HIDE") or text:find("^PLACE") or text:find("^USE") or text:find("^THROW") or text:find("^FILL")
+						if verb and b.Active then
 							F.click(b)
 							break
 						end

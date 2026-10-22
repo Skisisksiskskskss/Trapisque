@@ -1,6 +1,6 @@
 --[[
 	Icons
-	Draws IconData / StickerArt / MapProps / AccessoryArt instruction lists with Shapes.
+	Draws IconData / StickerArt / MapProps instruction lists with Shapes.
 
 	Icons.draw(parent, ops, colors, outline?)   -- into an existing square canvas
 	Icons.make(parent, id, colors, props, outline?) -- new square canvas with that icon
@@ -21,6 +21,7 @@ local Util = require(script.Parent.Util)
 local Theme = require(script.Parent.Theme)
 local IconData = require(script.Parent.IconData)
 local StickerArt = require(script.Parent.StickerArt)
+local Art = require(script.Parent.Art)
 
 local Icons = {}
 Icons.data = IconData
@@ -551,11 +552,14 @@ function Icons.medallion(parent: Instance, id: string, color: Color3, props: { [
 			Parent = disc,
 		})
 		Util.corner(crop, 0.5)
-		local s = Icons.sticker(crop, StickerArt.mascot(id, nil, { crop = true }), {
-			Size = UDim2.fromScale(1, 1),
-			ZIndex = disc.ZIndex + 1,
-		}, 0.045)
-		s.ZIndex = disc.ZIndex + 1
+		-- their illustrated portrait (Art), or the drawing from code shapes
+		if not Art.image(crop, "portraits/" .. id, { ZIndex = disc.ZIndex + 1 }) then
+			local s = Icons.sticker(crop, StickerArt.mascot(id, nil, { crop = true }), {
+				Size = UDim2.fromScale(1, 1),
+				ZIndex = disc.ZIndex + 1,
+			}, 0.045)
+			s.ZIndex = disc.ZIndex + 1
+		end
 		return disc
 	end
 	local art = Icons.stickerFor(id)

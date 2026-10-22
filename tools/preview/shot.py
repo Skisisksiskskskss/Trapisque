@@ -237,7 +237,9 @@ def draw_op(canvas, op, scale):
     img = op.get("img")
     if img and img.get("id"):
         ia = (1 - img.get("t", 0)) * a
-        if ia > 0.003 and "rbxthumb" in img["id"]:
+        if ia > 0.003 and img["id"].startswith("art:"):
+            draw_art(layer, img, x0, y0, w, h, ia)
+        elif ia > 0.003 and "rbxthumb" in img["id"]:
             # an avatar headshot: a stand-in head
             cx, cy, r = (x0 + x1) / 2, (y0 + y1) / 2, min(w, h) * 0.42
             d.ellipse([cx - r, cy - r * 0.95, cx + r, cy + r * 0.95], fill=(245, 205, 60, int(255 * ia)))
@@ -273,6 +275,42 @@ def draw_op(canvas, op, scale):
         ImageDraw.Draw(mask).rounded_rectangle([rx0 - cx0, ry0 - cy0, rx1 - cx0 - 1, ry1 - cy0 - 1], radius=max(0, rad), fill=255)
         piece.putalpha(ImageChops.multiply(piece.getchannel("A"), mask))
     canvas.alpha_composite(piece, (int(cx0), int(cy0)))
+
+
+ART_SHEETS = os.path.join(os.path.dirname(os.path.dirname(HERE)), "art", "sheets")
+_sheet_cache = {}
+
+
+def draw_art(layer, img, x0, y0, w, h, alpha):
+    """A sprite from one of the art sheets (art/sheets/<name>.png), the way Roblox fits it."""
+    name = img["id"][4:]
+    sheet = _sheet_cache.get(name)
+    if sheet is None:
+        path = os.path.join(ART_SHEETS, name + ".png")
+        if not os.path.exists(path):
+            return
+        sheet = Image.open(path).convert("RGBA")
+        _sheet_cache[name] = sheet
+    ox, oy = img.get("ro") or (0, 0)
+    sw, sh = img.get("rs") or (0, 0)
+    if sw <= 0 or sh <= 0:
+        sw, sh = sheet.size
+    sprite = sheet.crop((int(ox), int(oy), int(ox + sw), int(oy + sh)))
+    if img.get("scale") == "Fit":
+        k = min(w / sw, h / sh)
+        tw, th = max(1, int(round(sw * k))), max(1, int(round(sh * k)))
+    else:
+        tw, th = max(1, int(round(w))), max(1, int(round(h)))
+    sprite = sprite.resize((tw, th), Image.LANCZOS)
+    color = img.get("color") or [255, 255, 255]
+    if tuple(color) != (255, 255, 255) or alpha < 0.999:
+        r, g, b, a_ = sprite.split()
+        r = r.point(lambda v: v * color[0] // 255)
+        g = g.point(lambda v: v * color[1] // 255)
+        b = b.point(lambda v: v * color[2] // 255)
+        a_ = a_.point(lambda v: int(v * alpha))
+        sprite = Image.merge("RGBA", (r, g, b, a_))
+    layer.alpha_composite(sprite, (int(round(x0 + (w - tw) / 2)), int(round(y0 + (h - th) / 2))))
 
 
 def _mul(a, b):

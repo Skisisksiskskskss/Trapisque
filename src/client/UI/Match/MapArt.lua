@@ -1,9 +1,10 @@
 --[[
 	MapArt
-	Paints a map's scene (BoardLayout) under the tiles: the open water with its wave
-	marks, the land the trail runs through (shallows, an inked coast, beach, inner
-	ground), the trail itself, rivers / tunnels / slime pools, and the props. Flat inks
-	and one heavy ink line, like the rest of the game.
+	Paints a map's scene (BoardLayout) under the tiles: the open water, the land the
+	trail runs through (shallows, a darker coast, the ground; every edge smoothed where
+	its discs meet), the trail itself, rivers / tunnels / slime pools, and the props: the
+	illustrations (Art) once their sheets are uploaded, the code-drawn stickers (MapProps)
+	until then.
 
 		MapArt.draw(layers, layout, U)   -- layers = { Water, Land, Trail, Props }
 ]]
@@ -13,6 +14,7 @@ local Util = require(UI.Util)
 local Theme = require(UI.Theme)
 local Icons = require(UI.Icons)
 local MapProps = require(UI.MapProps)
+local Art = require(UI.Art)
 local BoardLayout = require(script.Parent.BoardLayout)
 
 local C = Theme.C
@@ -58,10 +60,15 @@ end
 MapArt.disc = disc
 MapArt.band = band
 
--- A prop: its sticker on a square holder standing at (x, y).
+-- A prop on a square holder standing at (x, y): its illustration (the one for standing
+-- in the water, if it has one), or its sticker.
 local function prop(parent: Instance, L, U: number, p, z: number)
+	local name = "props/" .. p.kind
+	if p.water and Art.has(name .. "_sea") then
+		name ..= "_sea"
+	end
 	local art = MapProps[p.kind]
-	if not art then
+	if not art and not Art.has(name) then
 		return
 	end
 	local size = p.size * U
@@ -73,11 +80,24 @@ local function prop(parent: Instance, L, U: number, p, z: number)
 		Rotation = if p.ground and p.angle then p.angle else 0,
 		ZIndex = z,
 	})
+	if Art.image(holder, name, { ZIndex = z }) then
+		return
+	end
 	local ops = art
 	if p.flip then
 		ops = { { "group", fx = true, ops = art } }
 	end
 	Icons.sticker(holder, ops, nil, Icons.OUTLINE)
+end
+
+-- Discs plus the ones that round off the corners where they meet (BoardLayout.fillets).
+local function smooth(parent: Instance, L, U: number, discs, fill, grow: number, color: Color3, z: number, name: string)
+	for _, c in discs do
+		disc(parent, L, U, c.x, c.y, c.r + grow, color, z, name)
+	end
+	for _, c in fill do
+		disc(parent, L, U, c.x, c.y, c.r, color, z, name)
+	end
 end
 
 function MapArt.draw(layers: { [string]: Frame }, L, U: number)
@@ -99,36 +119,19 @@ function MapArt.draw(layers: { [string]: Frame }, L, U: number)
 	-- (flat water: no wave marks)
 	water.Name = "Water"
 
-	-- the land: shallows, the coast (a darker band of the ground), the ground, the
-	-- inner ground. Edges are darker shades of what they edge, never a black line.
+	-- the land: shallows, the coast (a darker band of the ground), the ground. Edges are
+	-- darker shades of what they edge, never a black line, and they run smooth: the
+	-- corners where two discs meet are filled in. The shallows get their own pass, which
+	-- also fills the deep water left in the middle of a small lagoon (it's shallow all over).
 	local land = layers.Land
-	for _, c in L.land do
-		disc(land, L, U, c.x, c.y, c.r + 0.75, col.shallows, 1, "Shallows")
+	local shallows = {}
+	for i, c in L.land do
+		shallows[i] = { x = c.x, y = c.y, r = c.r + 0.75 }
 	end
-	for _, c in L.land do
-		disc(land, L, U, c.x, c.y, c.r + 0.1, Util.shade(col.land, -0.22), 2, "Coast")
-	end
-	for _, c in L.land do
-		disc(land, L, U, c.x, c.y, c.r, col.land, 3, "Ground")
-	end
-	for _, c in L.land do
-		if c.inner and c.inner > 0.3 then
-			disc(land, L, U, c.x, c.y, c.inner + 0.07, Util.shade(col.inner, -0.16), 4, "InnerEdge")
-		end
-	end
-	for _, c in L.land do
-		if c.inner and c.inner > 0.3 then
-			disc(land, L, U, c.x, c.y, c.inner, col.inner, 5, "Inner")
-		end
-	end
-
-	-- patches of jungle, rock or moss, away from the trail
-	for _, c in L.patches or {} do
-		disc(land, L, U, c.x, c.y, c.r + 0.07, Util.shade(col.inner, -0.16), 6, "PatchEdge")
-	end
-	for _, c in L.patches or {} do
-		disc(land, L, U, c.x, c.y, c.r, col.inner, 7, "Patch")
-	end
+	smooth(land, L, U, shallows, BoardLayout.fillets(shallows, 0.6, { 0 }, 1.6)[1], 0, col.shallows, 1, "Shallows")
+	local fill = BoardLayout.fillets(L.land, 1.1, { 0.1, 0 })
+	smooth(land, L, U, L.land, fill[1], 0.1, Util.shade(col.land, -0.22), 2, "Coast")
+	smooth(land, L, U, L.land, fill[2], 0, col.land, 3, "Ground")
 
 	-- the trail (a shortcut runs through a dark tunnel), then what crosses it
 	local trail = layers.Trail
@@ -183,10 +186,6 @@ function MapArt.draw(layers: { [string]: Frame }, L, U: number)
 				disc(trail, L, U, e[2][1], e[2][2], 0.75, col.shallows, 5, "Pond")
 			end
 		end
-		for i = 3, #pts - 2, 4 do
-			local a, b = pts[i], pts[i + 1]
-			band(trail, L, U, a[1], a[2], a[1] + (b[1] - a[1]) * 0.6, a[2] + (b[2] - a[2]) * 0.6, 0.12, C.white, 6, "Ripple")
-		end
 	end
 	-- lava streams (Mount Kaboom): a glowing band with a dark crust, pooling at the ends
 	for _, r in L.lava or {} do
@@ -210,21 +209,15 @@ function MapArt.draw(layers: { [string]: Frame }, L, U: number)
 				disc(trail, L, U, e[2][1], e[2][2], 0.8, lava, 5, "LavaPool")
 			end
 		end
-		for i = 2, #pts - 2, 3 do
+		-- its hottest line down the middle
+		for i = 1, #pts - 1 do
 			local a, b = pts[i], pts[i + 1]
-			band(trail, L, U, a[1], a[2], a[1] + (b[1] - a[1]) * 0.7, a[2] + (b[2] - a[2]) * 0.7, 0.22, col.lavaGlow or C.sun, 6, "LavaGlow")
-		end
-		for i = 4, #pts - 2, 5 do
-			local q = pts[i]
-			disc(trail, L, U, q[1], q[2], 0.16, col.lavaCrust or C.coralDark, 6, "Crust")
+			band(trail, L, U, a[1], a[2], b[1], b[2], 0.34, col.lavaGlow or C.sun, 6, "LavaGlow")
 		end
 	end
-	for _, p in L.pools do
-		disc(trail, L, U, p.x, p.y, p.r + 0.1, Util.shade(col.pool or C.lime, -0.3), 7, "PoolEdge")
-	end
-	for _, p in L.pools do
-		disc(trail, L, U, p.x, p.y, p.r, col.pool or C.lime, 8, "Pool")
-	end
+	local pfill = BoardLayout.fillets(L.pools, 0.5, { 0.1, 0 })
+	smooth(trail, L, U, L.pools, pfill[1], 0.1, Util.shade(col.pool or C.lime, -0.3), 7, "PoolEdge")
+	smooth(trail, L, U, L.pools, pfill[2], 0, col.pool or C.lime, 8, "Pool")
 	for i, p in L.pools do
 		if i % 2 == 0 then
 			local ring = disc(trail, L, U, p.x + p.r * 0.45, p.y - p.r * 0.35, 0.16, C.white, 9, "Bubble")

@@ -1,7 +1,7 @@
 --[[
-	The three maps on their own (no match): every map, lying down and stood up for
-	upright phones, with a few tokens, hazards and characters on it. For checking the map
-	art quickly: tools/shots.sh boards.
+	The maps on their own (no match): every map, lying down and stood up for upright
+	phones, with a few tokens, hazards and pieces on it (in a few finishes, two on their
+	mastery stands). For checking the map art quickly: tools/shots.sh boards.
 ]]
 
 local F = Fake
@@ -16,12 +16,13 @@ gui.Name = "Boards"
 gui.IgnoreGuiInset = true
 gui.Parent = player:FindFirstChild("PlayerGui")
 
+requireModule("Client/UI/Art").localSheets = true
 local BoardView = requireModule("Client/UI/Match/BoardView")
 local Maps = requireModule("Shared/Game/Maps")
 local Board = requireModule("Shared/Game/Board")
 local Theme = requireModule("Client/UI/Theme")
 
-local characters = { "mage", "trapper", "fire_starter", "naturalist", "warper", "overseer" }
+local characters = { "mage", "trapper", "fire_starter", "naturalist", "warper", "overseer", "gambler", "cannoneer" }
 for _, def in Maps.list do
 	for _, rotate in { false, true } do
 		if cfg.only == nil or cfg.only == def.id then
@@ -38,7 +39,7 @@ for _, def in Maps.list do
 			local snap = { players = {}, tokens = {}, placed = {}, natural = {}, embers = {} }
 			local seats = {}
 			for i = 1, 4 do
-				seats[i] = characters[((i + #def.id) % 6) + 1]
+				seats[i] = characters[((i + #def.id) % 8) + 1]
 			end
 			Theme.setSeatCharacters(seats)
 			for i, spot in board.tokenSpots do
@@ -53,8 +54,9 @@ for _, def in Maps.list do
 			for i = 1, 4 do
 				table.insert(snap.players, { seat = i, character = seats[i], tile = ({ 1, 1, 5, 14 })[i], name = "P" .. i })
 			end
+			local looks = { { finish = "fin_gold", base = 2 }, { finish = "fin_marble", base = 1 }, {}, { finish = "fin_glass" } }
 			for i, pl in snap.players do
-				view:addPawn(i, { character = pl.character, name = pl.name, tagName = if i == 1 then "You" else pl.name }, pl.tile)
+				view:addPawn(i, { character = pl.character, name = pl.name, tagName = if i == 1 then "You" else pl.name, look = looks[i] }, pl.tile)
 			end
 			view:applySnapshot(snap)
 			view:setCurrent(1)

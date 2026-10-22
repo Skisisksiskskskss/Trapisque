@@ -20,7 +20,7 @@
 		view:highlight(tiles, color, onPick, opts) -- let the player pick a tile
 		view:showPath(path, opts)            -- where a die would take you (nil clears)
 		view:setTraps(map) / addTrap / removeTrap -- the hidden traps you can see
-		view:setMood(seat, mood, seconds)    -- a character pulls a face
+		view:setMood(seat, mood, seconds)    -- a piece reacts (a hop, a shake, a wobble)
 		view:tileWorld(tile) -> Vector2     -- centre of a tile in world pixels
 		view:toStage(world) -> Vector2      -- world pixels -> stage pixels (for overlays)
 		view:buildIntro()                   -- tiles drop into place one by one
@@ -49,6 +49,7 @@ local Shapes = require(UI.Shapes)
 local Icons = require(UI.Icons)
 local CosmeticArt = require(UI.CosmeticArt)
 local BaseArt = require(UI.BaseArt)
+local PieceArt = require(UI.PieceArt)
 local Widgets = require(UI.Widgets)
 local BoardLayout = require(script.Parent.BoardLayout)
 local MapArt = require(script.Parent.MapArt)
@@ -60,7 +61,9 @@ local hex = Theme.hex
 
 local U = 46 -- world pixels per map unit
 local S = BoardLayout.Style
-local PAWN = S.pawn -- a character's size (map units) when it has a tile to itself
+local PAWN = S.pawn -- a piece's square (map units) when it has a tile to itself
+local PIECE_H = 1.04 -- the piece's height, in that square
+local PIECE_FOOT = 0.95 -- where its foot is (on its own; a mastery stand lifts it)
 local MAX_ZOOM = 3
 local HIT = 1.55 -- a tile's click area: a square this many map units wide
 
@@ -153,7 +156,7 @@ function BoardView.new(parent: Frame, mapId: string, opts: { [string]: any }?)
 	self.natural = {} -- [tile] = kind
 	self.traps = {} -- [tile] = { { item, owner, team, public } } hidden traps I can see
 	self.embers = {} -- [tile] = owner seat
-	self.pawns = {} -- [seat] = { frame, lift, share, tile, ring, seat, info, mascot }
+	self.pawns = {} -- [seat] = { frame, lift, share, tile, ring, seat, info, mascot (the piece), foot }
 	self.seatInfo = {}
 
 	-- camera
@@ -1197,8 +1200,8 @@ end
 ---------------------------------------------------------------------------
 
 function BoardView:addPawn(seat: number, info, tile: number)
-	-- the character is the piece: it stands on its tile in its own colour (that colour is
-	-- its player's everywhere), with a hard ink shadow under its feet
+	-- each player is a playing piece in their character's colour (that colour is their
+	-- player's everywhere), with a soft shadow under it
 	local color = Theme.playerColor(info.character)
 	local root = Util.frame(self.layers.Pawns, {
 		Name = "Pawn" .. seat,
@@ -1207,24 +1210,28 @@ function BoardView:addPawn(seat: number, info, tile: number)
 		ZIndex = seat,
 	})
 	local share = Util.new("UIScale", { Name = "ShareScale", Parent = root })
+	local lift = Util.frame(root, { Name = "Lift" })
+	-- the stand their mastery earned, under the piece (it hops along with it)
+	local tier = info.look and info.look.base
+	local foot = PIECE_FOOT
+	local onStand = false
+	if type(tier) == "number" and tier > 0 then
+		local _, standFoot = BaseArt.draw(lift, info.character or "mage", tier, { ZIndex = 2 })
+		foot = standFoot or foot
+		onStand = true
+	end
 	local shadow = Util.new("Frame", {
 		Name = "Shadow",
 		BackgroundColor3 = C.shadow,
-		BackgroundTransparency = 0.35,
+		BackgroundTransparency = 0.55,
 		BorderSizePixel = 0,
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.56, 0.84),
-		Size = UDim2.fromScale(0.78, 0.3),
+		Position = UDim2.fromScale(0.54, if onStand then 0.95 else foot - 0.03),
+		Size = UDim2.fromScale(if onStand then 0.9 else 0.66, if onStand then 0.24 else 0.18),
 		ZIndex = 0,
 		Parent = root,
 	})
 	Util.corner(shadow, 0.5)
-	local lift = Util.frame(root, { Name = "Lift" })
-	-- the base their mastery earned, under their feet (it hops along with them)
-	local tier = info.look and info.look.base
-	if type(tier) == "number" and tier > 0 then
-		BaseArt.draw(lift, info.character or "mage", tier, { ZIndex = 2 })
-	end
 	local pawn = {
 		frame = root,
 		lift = lift,
@@ -1234,46 +1241,28 @@ function BoardView:addPawn(seat: number, info, tile: number)
 		seat = seat,
 		info = info,
 		color = color,
+		foot = foot,
 	}
 	self.pawns[seat] = pawn
 	self.seatInfo[seat] = info
-	self:_drawMascot(pawn, nil)
+	pawn.mascot = PieceArt.stand(lift, info.character or "mage", info.look and info.look.finish, {
+		Position = UDim2.fromScale(0.5, foot),
+		Size = UDim2.fromScale(2 * PIECE_H, 2 * PIECE_H),
+		ZIndex = 3,
+	})
 	self:_arrange(true)
 	return root
 end
 
--- The character, pulling `mood`'s face (nil: its usual one), wearing its accessories.
-function BoardView:_drawMascot(pawn, mood: string?)
-	if pawn.mascot then
-		pawn.mascot:Destroy()
-	end
-	pawn.mascot = CosmeticArt.character(pawn.lift, pawn.info.character or "mage", pawn.info.look and pawn.info.look.accessory, {
-		Name = "Mascot",
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.42),
-		Size = UDim2.fromScale(0.96, 0.96),
-		ZIndex = 3,
-	}, mood)
-end
-
 --[[
-	A pawn's mascot reacts: "happy" (treasure, a gotcha), "shock" (a trap), "dizzy"
-	(bonked), "sad" (sent home), "angry"... for `seconds`, then back to normal.
+	A pawn's piece reacts: "happy" (treasure, a gotcha) hops, "shock" (a trap) jumps
+	and shakes, "dizzy" (bonked) wobbles, "sad" (sent home) droops, "angry" shakes.
 ]]
-function BoardView:setMood(seat: number, mood: string, seconds: number?)
+function BoardView:setMood(seat: number, mood: string, _seconds: number?)
 	local pawn = self.pawns[seat]
-	if not pawn then
-		return
+	if pawn and pawn.mascot then
+		PieceArt.react(pawn.mascot, mood)
 	end
-	pawn.moodToken = (pawn.moodToken or 0) + 1
-	local token = pawn.moodToken
-	self:_drawMascot(pawn, mood)
-	Util.bump(pawn.lift, 0.12)
-	task.delay(seconds or 1.6, function()
-		if pawn.moodToken == token and pawn.frame.Parent then
-			self:_drawMascot(pawn, nil)
-		end
-	end)
 end
 
 local SLOTS = BoardLayout.PawnSlots
@@ -1330,11 +1319,11 @@ function BoardView:setCurrent(seat: number?)
 			task.spawn(function()
 				while self.currentSeat == s and pawn.frame.Parent do
 					if not pawn.moving then
-						Util.tween(pawn.mascot, 0.35, { Position = UDim2.fromScale(0.5, 0.34) }, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
+						Util.tween(pawn.mascot, 0.35, { Position = UDim2.fromScale(0.5, pawn.foot - 0.08) }, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
 					end
 					task.wait(0.35)
 					if pawn.mascot then
-						Util.tween(pawn.mascot, 0.35, { Position = UDim2.fromScale(0.5, 0.42) }, Enum.EasingStyle.Sine, Enum.EasingDirection.In)
+						Util.tween(pawn.mascot, 0.35, { Position = UDim2.fromScale(0.5, pawn.foot) }, Enum.EasingStyle.Sine, Enum.EasingDirection.In)
 					end
 					task.wait(0.35)
 				end
@@ -1456,7 +1445,7 @@ function BoardView:_statusMarks(seat: number)
 		return holder
 	end)
 	mark("Frozen", pawn.frozen == true, function()
-		-- a see-through block of ice over the mascot, with a snowflake on it
+		-- a see-through block of ice over the piece, with a snowflake on it
 		local holder = Util.frame(nil, {
 			AnchorPoint = Vector2.new(0.5, 0.5),
 			Position = UDim2.fromScale(0.5, 0.42),
@@ -1881,8 +1870,8 @@ end
 
 --[[
 	Where a move would take you: a trail of dots along the path, a ghost of your
-	mascot on the tile it ends on, and what happens there as little tags over it.
-		o = { character, color, badges = { { text, color } } }
+	piece on the tile it ends on, and what happens there as little tags over it.
+		o = { character, finish, color, badges = { { text, color } } }
 	nil (or an empty path) clears it.
 ]]
 function BoardView:showPath(path: { number }?, o: { [string]: any }?)
@@ -1938,7 +1927,7 @@ function BoardView:showPath(path: { number }?, o: { [string]: any }?)
 			task.wait(0.4)
 		end
 	end)
-	-- a ghost of your mascot standing there
+	-- a ghost of your piece standing there
 	if opts.character then
 		local ghost = Util.new("CanvasGroup", {
 			Name = "Ghost",
@@ -1950,7 +1939,10 @@ function BoardView:showPath(path: { number }?, o: { [string]: any }?)
 			ZIndex = 34,
 			Parent = layer,
 		})
-		Icons.sticker(ghost, StickerArt.mascot(opts.character, "happy"), { Size = UDim2.fromScale(0.9, 0.9) }, 0.05)
+		PieceArt.stand(ghost, opts.character, opts.finish, {
+			Position = UDim2.fromScale(0.5, PIECE_FOOT),
+			Size = UDim2.fromScale(2 * PIECE_H, 2 * PIECE_H),
+		})
 		local sc = Util.scaler(ghost)
 		sc.Scale = 0.6
 		Util.tween(sc, 0.2, { Scale = 1 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out, math.min(0.25, #path * 0.025))

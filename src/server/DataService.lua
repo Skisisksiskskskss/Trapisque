@@ -60,7 +60,7 @@ local function newProfile()
 		bestTrophies = 0,
 		owned = owned,
 		equipped = {
-			accessory = Cosmetics.defaults.accessory,
+			finish = Cosmetics.defaults.finish,
 			dice = Cosmetics.defaults.dice,
 			trail = Cosmetics.defaults.trail,
 			title = Cosmetics.defaults.title,
@@ -110,6 +110,9 @@ local function reconcile(data)
 		end
 	end
 	data.equipped.pawn = nil
+	-- accessory packs became piece finishes (a second pack that became the same finish
+	-- is paid back as a duplicate)
+	data.gems = (data.gems or 0) + Cosmetics.migratePacks(data.owned, data.equipped, Gacha.dupeRefund)
 	-- drop ids that no longer exist
 	for id in data.owned do
 		if Cosmetics.get(id) == nil then
@@ -117,7 +120,7 @@ local function reconcile(data)
 		end
 	end
 	-- (with the owner's unlock-all on, what they wear needn't be owned)
-	for _, cat in { "accessory", "dice", "trail", "title" } do
+	for _, cat in { "finish", "dice", "trail", "title" } do
 		local id = data.equipped[cat]
 		if id == nil or not (data.owned[id] or data.unlockAll) or Cosmetics.get(id) == nil then
 			data.equipped[cat] = Cosmetics.defaults[cat]
@@ -358,7 +361,7 @@ function DataService.view(player: Player)
 		stats = table.clone(data.stats),
 		owned = owned,
 		equipped = {
-			accessory = data.equipped.accessory,
+			finish = data.equipped.finish,
 			dice = data.equipped.dice,
 			trail = data.equipped.trail,
 			title = data.equipped.title,
@@ -483,7 +486,7 @@ function DataService.setUnlockAll(player: Player, on: boolean): (boolean, string
 	end
 	data.unlockAll = on
 	if not on then
-		for _, cat in { "accessory", "dice", "trail", "title" } do
+		for _, cat in { "finish", "dice", "trail", "title" } do
 			if not data.owned[data.equipped[cat]] then
 				data.equipped[cat] = Cosmetics.defaults[cat]
 			end
@@ -542,10 +545,10 @@ function DataService.publicLook(player: Player)
 	local data = DataService.get(player)
 	local vip = DataService.hasPass(player, "VIP")
 	if not data then
-		return { accessory = Cosmetics.defaults.accessory, dice = Cosmetics.defaults.dice, trail = Cosmetics.defaults.trail, title = Cosmetics.defaults.title, level = 1, vip = false }
+		return { finish = Cosmetics.defaults.finish, dice = Cosmetics.defaults.dice, trail = Cosmetics.defaults.trail, title = Cosmetics.defaults.title, level = 1, vip = false }
 	end
 	return {
-		accessory = data.equipped.accessory,
+		finish = data.equipped.finish,
 		dice = data.equipped.dice,
 		trail = data.equipped.trail,
 		title = data.equipped.title,
@@ -776,7 +779,7 @@ function DataService.equip(player: Player, category: string, value: any)
 		data.equipped.emotes = list
 		return true
 	end
-	if category ~= "accessory" and category ~= "dice" and category ~= "trail" and category ~= "title" then
+	if category ~= "finish" and category ~= "dice" and category ~= "trail" and category ~= "title" then
 		return false, "Unknown slot."
 	end
 	local def = type(value) == "string" and Cosmetics.get(value)

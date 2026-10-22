@@ -3,11 +3,12 @@
 Trapisque is a race to the treasure across a trap-filled board, for 2 to 6 players. It
 started as a board game, and this repository is its Roblox version: a purely top-down
 2D game that uses the Roblox engine but doesn't look like a Roblox game. There is no 3D
-world. Apart from players' own Roblox avatar headshots, everything you see is drawn
-from plain UI frames, with no uploaded images, in one calm tabletop look: flat colours
-with light borders, one rounded font in sentence case, one orange accent for the main
-action on a screen, and simple shapes with a thin outline. Only the characters have
-faces.
+world. Each player is a playing piece on the board, like a set of chess pieces in
+their character's colour. The pieces, the props and landmarks on the maps and the
+character portraits are illustrations (drawn in [art/](art), uploaded as four image
+sheets). Everything else is built from plain UI frames, in one calm tabletop look: flat
+colours with light borders, one rounded font in sentence case, one orange accent for
+the main action on a screen. Only the characters have faces.
 
 | Match (PC) | Lobby (PC) | Match (upright phone) |
 | --- | --- | --- |
@@ -86,15 +87,14 @@ rendered offline (see [Screenshots](#screenshots)).
 - **Cards you can feel.** Hover a card to lift it out of your hand with its rules
   beside it. Click it to play it, or drag it onto the board: a trap rides on the
   pointer over the tiles you may hide it on, and is slapped down with a thud.
-- **Your character is your colour.** Each of the six characters has one colour, and
+- **Your character is your colour.** Each of the eight characters has one colour, and
   it's its player's colour everywhere (on the board, the player list, the feed). One of
   each character per match: if two players want the same one, a random one of them
   gets it and the other gets a free pick.
-- **Treasure Chests.** A cosmetic-only collection: accessory packs your character
-  wears on the board (a monocle and moustache, a captain's hat and hook, a parrot on
-  your shoulder; the epic ones move, like a spinning propeller cap or a little cloud
-  raining on you), dice, trails, emotes and titles. You open chests with Gems, which
-  you earn by playing.
+- **Treasure Chests.** A cosmetic-only collection: finishes for your playing piece
+  (oak, clay, marble, sea glass, obsidian, solid gold, crystal, glowstone; always in
+  your character's colour), dice, trails, emotes and titles. You open chests with
+  Gems, which you earn by playing.
 - **Gamepasses** that never touch gameplay (see below).
 - **Chat that everyone can see.** The gold CHAT button (or T on a keyboard) opens it,
   in the lobby and in matches. Lines pop up as big speech bubbles over the speaker's
@@ -158,8 +158,9 @@ src/server/          ServerScriptService.Server: data, parties, matchmaking, mat
 src/client/          StarterPlayerScripts.Client: all screens and the art library
   UI/                Icons, Cards, Shapes, Widgets... plus Lobby/ and Match/ screens
 src/first/           ReplicatedFirst loading screen
+art/                 the illustrations (pieces, props, portraits) and their sheets
 tests/               rules, simulation, meta and board-layout tests (plain Luau)
-tools/               test bundler, type-check, smoke test and screenshot scripts
+tools/               test bundler, type-check, art builder, smoke test and screenshot scripts
 docs/                rules, design notes (balance tables) and screenshots
 trapisquebooklet.html  the original rulebook
 ```
@@ -202,7 +203,10 @@ In Studio:
    all work in a published experience without extra setup.
 3. Create the gamepasses (next section) and paste their ids into
    `src/shared/Config.lua`.
-4. The owner panel is yours automatically: the game's creator (the group's owner, for
+4. Upload the four art sheets (`art/sheets/*.png`) with Studio's Asset Manager and put
+   their ids in `src/client/UI/ArtAssets.lua`: see [art/README.md](art/README.md).
+   Until then the game draws plainer stand-ins for the pieces, props and portraits.
+5. The owner panel is yours automatically: the game's creator (the group's owner, for
    a group game) is the owner. Add more owners by user id in `Config.Staff.OwnerIds`;
    admins are picked in the panel itself. Staff lists, bans and gifts for offline
    players live in the `TrapisqueStaff_v1` DataStore and reach every server through
@@ -227,8 +231,8 @@ until they're restarted (Creator Hub > Configure > Server Management > Restart S
 
 ## Going public
 
-Everything the experience page needs is in `docs/store/`, drawn by the game's own UI
-code (no outside or generated images; `tools/shots.sh art store` redraws them):
+Everything the experience page needs is in `docs/store/`, drawn by the game's own art
+and UI code (no outside images; `tools/shots.sh art store` redraws them):
 
 | File | Where it goes |
 | --- | --- |
@@ -281,14 +285,14 @@ Create these on the Creator Dashboard (**Monetization → Passes**) and put thei
 
 | Key | Name | What it gives |
 | --- | --- | --- |
-| `VIP` | VIP | +25% Gems from every match, a free Explorer Chest every day, the Royal Crown accessory and VIP title, and a gold name in parties and matches. |
+| `VIP` | VIP | +25% Gems from every match, a free Explorer Chest every day, the Royal finish for your piece and the VIP title, and a gold name in parties and matches. |
 | `DoubleGems` | 2x Gems | Double Gems from every match (stacks with VIP). |
 | `LuckyCharm` | Lucky Charm | Legendary and Mythic chest odds ×1.5, and the chest screens show your boosted odds. Hidden for players whose region doesn't allow paid random items. |
 | `EmotePack` | Emote Pack | 6 extra emotes, and up to 6 emotes equipped in matches. |
 | `Chat` | Chat | Type your own lines in the game chat (set its price to 10 Robux). Quick lines are free for everyone. |
 | `VoicePack` | Voice Pack | Pick the voice your chat bubbles speak in (Grumbly, Salty, Captain, Dandy, Chipper, Squeaky, Parrot, Ghostly, Clockwork); without it you speak in your character's own voice. |
 | `VictoryParade` | Victory Parade | Cannons, streamers and a fanfare over your character when you win, seen by everyone in the match. |
-| `CaptainsChest` | Captain's Chest | The Admiralty accessory pack, the Golden Doubloon dice and the Captain title. |
+| `CaptainsChest` | Captain's Chest | The Admiralty finish for your piece, the Golden Doubloon dice and the Captain title. |
 
 None of them changes how a match plays. They only speed up or add to the cosmetic
 collection, or add ways to talk and show off.
@@ -381,16 +385,19 @@ LUAU=/path/to/luau tools/smoke.sh
 
 ### Art rules
 
-Everything is built from Frames with `UICorner` and `UIStroke`. Card art, characters,
-accessories, tokens, hazards, map props and the maps themselves are data
-(`StickerArt`, `AccessoryArt`, `MapProps`, `MapScenes`, `IconData`) drawn by `Icons`,
-`Shapes` and `MapArt`. The style has a few strict rules so every screen comes out of
-the same kit:
+The playing pieces, the map props and the portraits are illustrations, drawn as SVG
+by `art/*.py` and built into image sheets by `tools/art.py` (`Art`, `PieceArt`; see
+[art/README.md](art/README.md) for their style). Everything else is built from Frames
+with `UICorner` and `UIStroke`: card art, tokens, hazards and the maps themselves are
+data (`StickerArt`, `MapScenes`, `IconData`) drawn by `Icons`, `Shapes` and `MapArt`,
+and the code-drawn props (`MapProps`) and portraits stand in until the sheets are
+uploaded. The style has a few strict rules so every screen comes out of the same kit:
 
 - one UI font (Nunito, `Theme.Font`), Fredoka One only for the logo and big moments;
   sentence case, no outlined lettering
 - flat colours from `Theme` with light borders (`Theme.C.line`); a button's edge is a
-  darker shade of its face; no gradients, glow or hard shadows
+  darker shade of its face; no gradients, glow or hard shadows in the UI (the
+  illustrations are lit softly from the upper left)
 - one accent: orange for the main action on a screen (`Widgets` style `primary`),
   white secondary buttons, green for done, red for danger
 - only the characters have faces; everything else is a plain object in two tones,

@@ -3,11 +3,11 @@
 	Everything players can collect from Treasure Chests. Purely visual: nothing here
 	changes how a match plays.
 
-	Every cosmetic is drawn in code from UI shapes (see client/UI/CosmeticArt.lua), so the
-	`look` tables below are drawing instructions, not image ids. Colors are hex strings
-	so this module stays plain data.
+	The `look` tables below say how each one is drawn (client/UI/CosmeticArt.lua, and
+	PieceArt for finishes), not image ids. Colors are hex strings so this module stays
+	plain data.
 
-	category  accessory | dice | trail | emote | title
+	category  finish | dice | trail | emote | title
 	rarity    common | rare | epic | legendary | mythic
 	source    nil = in chests, "default" = everyone owns it, "vip" / "emotepack" / "captain"
 	          = gamepass,
@@ -29,7 +29,7 @@ for _, r in Cosmetics.rarities do
 end
 
 Cosmetics.categories = {
-	{ id = "accessory", name = "Accessories", single = "Accessory" },
+	{ id = "finish", name = "Finishes", single = "Finish" },
 	{ id = "dice", name = "Dice", single = "Dice" },
 	{ id = "trail", name = "Trails", single = "Trail" },
 	{ id = "emote", name = "Emotes", single = "Emote" },
@@ -41,49 +41,23 @@ Cosmetics.EmoteSlots = 6
 
 local defs = {
 	-------------------------------------------------------------------------
-	-- Accessories: packs your character wears on the board (two pieces each; the
-	-- epic and better ones move). look.pieces names client/UI/AccessoryArt pieces.
+	-- Finishes: what your playing piece is made of (the same piece, the same colour:
+	-- your character's). look.finish names its art in art/pieces.py.
 	-------------------------------------------------------------------------
-	{ id = "acc_none", category = "accessory", name = "Nothing", rarity = "common", source = "default",
-		look = { pieces = {} } },
-	{ id = "acc_gentleman", category = "accessory", name = "Gentleman", rarity = "common",
-		look = { pieces = { "monocle", "moustache" } } },
-	{ id = "acc_deckhand", category = "accessory", name = "Deckhand", rarity = "common",
-		look = { pieces = { "bandana", "neckerchief" } } },
-	{ id = "acc_beach", category = "accessory", name = "Beach Day", rarity = "common",
-		look = { pieces = { "shades", "lei" } } },
-	{ id = "acc_cook", category = "accessory", name = "Ship's Cook", rarity = "common",
-		look = { pieces = { "chefhat", "moustache" } } },
-	{ id = "acc_captain", category = "accessory", name = "Captain", rarity = "rare",
-		look = { pieces = { "tricorn", "hook" } } },
-	{ id = "acc_parrot", category = "accessory", name = "Parrot Pal", rarity = "rare",
-		look = { pieces = { "parrot", "eyepatch" } } },
-	{ id = "acc_diver", category = "accessory", name = "Deep Diver", rarity = "rare",
-		look = { pieces = { "mask", "lifebuoy" } } },
-	{ id = "acc_lookout", category = "accessory", name = "Lookout", rarity = "rare",
-		look = { pieces = { "sailorcap", "spyglass" } } },
-	{ id = "acc_propeller", category = "accessory", name = "Propeller Cap", rarity = "epic",
-		look = { pieces = { "propeller", "bowtie" }, animated = true } },
-	{ id = "acc_gloomy", category = "accessory", name = "Gloomy Day", rarity = "epic",
-		look = { pieces = { "raincloud", "umbrella" }, animated = true } },
-	{ id = "acc_oldsalt", category = "accessory", name = "Old Salt", rarity = "epic",
-		look = { pieces = { "beard", "pipe" }, animated = true } },
-	{ id = "acc_nightwatch", category = "accessory", name = "Night Watch", rarity = "epic",
-		look = { pieces = { "nightcap", "lantern" }, animated = true } },
-	{ id = "acc_kraken", category = "accessory", name = "Kraken Hat", rarity = "legendary",
-		look = { pieces = { "kraken", "pearls" }, animated = true } },
-	{ id = "acc_ghost", category = "accessory", name = "Ghost Crew", rarity = "legendary",
-		look = { pieces = { "ghost", "eyepatch" }, animated = true } },
-	{ id = "acc_kingpin", category = "accessory", name = "Pirate King", rarity = "legendary",
-		look = { pieces = { "crownGlint", "goldchain" }, animated = true } },
-	{ id = "acc_cannon", category = "accessory", name = "Cannon Cap", rarity = "mythic",
-		look = { pieces = { "cannon", "goldchain" }, animated = true } },
-	{ id = "acc_gulls", category = "accessory", name = "Gull Squad", rarity = "mythic",
-		look = { pieces = { "gulls", "admiral" }, animated = true } },
-	{ id = "acc_royal", category = "accessory", name = "Royal Crown", rarity = "legendary", source = "vip",
-		look = { pieces = { "crown", "cape" } } },
-	{ id = "acc_admiralty", category = "accessory", name = "Admiralty", rarity = "legendary", source = "captain",
-		look = { pieces = { "admiral", "goldchain" } } },
+	{ id = "fin_paint", category = "finish", name = "Painted", rarity = "common", source = "default", look = { finish = "paint" } },
+	{ id = "fin_oak", category = "finish", name = "Oak", rarity = "common", look = { finish = "oak" } },
+	{ id = "fin_clay", category = "finish", name = "Clay", rarity = "common", look = { finish = "clay" } },
+	{ id = "fin_pearl", category = "finish", name = "Pearl", rarity = "common", look = { finish = "pearl" } },
+	{ id = "fin_marble", category = "finish", name = "Marble", rarity = "rare", look = { finish = "marble" } },
+	{ id = "fin_glass", category = "finish", name = "Sea Glass", rarity = "rare", look = { finish = "glass" } },
+	{ id = "fin_porcelain", category = "finish", name = "Porcelain", rarity = "rare", look = { finish = "porcelain" } },
+	{ id = "fin_metallic", category = "finish", name = "Metallic", rarity = "epic", look = { finish = "metallic" } },
+	{ id = "fin_obsidian", category = "finish", name = "Obsidian", rarity = "epic", look = { finish = "obsidian" } },
+	{ id = "fin_gold", category = "finish", name = "Solid Gold", rarity = "legendary", look = { finish = "gold" } },
+	{ id = "fin_crystal", category = "finish", name = "Crystal", rarity = "legendary", look = { finish = "crystal" } },
+	{ id = "fin_glow", category = "finish", name = "Glowstone", rarity = "mythic", look = { finish = "glow" } },
+	{ id = "fin_royal", category = "finish", name = "Royal", rarity = "legendary", source = "vip", look = { finish = "royal" } },
+	{ id = "fin_admiralty", category = "finish", name = "Admiralty", rarity = "legendary", source = "captain", look = { finish = "admiralty" } },
 
 	-------------------------------------------------------------------------
 	-- Dice: how your die looks when you roll
@@ -231,7 +205,7 @@ for i, def in defs do
 end
 
 Cosmetics.defaults = {
-	accessory = "acc_none",
+	finish = "fin_paint",
 	dice = "dice_ivory",
 	trail = "trail_none",
 	title = "title_none",
@@ -265,6 +239,58 @@ Cosmetics.retired = {
 	pawn_prism = "mythic",
 	pawn_crest = "mythic",
 }
+
+-- The accessory packs that finishes replaced: the finish each one became, and its
+-- rarity (a second pack that became the same finish is paid back as a duplicate of that
+-- rarity: DataService).
+Cosmetics.retiredPacks = {
+	acc_none = { "fin_paint" },
+	acc_gentleman = { "fin_oak", "common" },
+	acc_deckhand = { "fin_clay", "common" },
+	acc_beach = { "fin_pearl", "common" },
+	acc_cook = { "fin_oak", "common" },
+	acc_captain = { "fin_marble", "rare" },
+	acc_parrot = { "fin_glass", "rare" },
+	acc_diver = { "fin_porcelain", "rare" },
+	acc_lookout = { "fin_marble", "rare" },
+	acc_propeller = { "fin_metallic", "epic" },
+	acc_gloomy = { "fin_obsidian", "epic" },
+	acc_oldsalt = { "fin_metallic", "epic" },
+	acc_nightwatch = { "fin_obsidian", "epic" },
+	acc_kraken = { "fin_crystal", "legendary" },
+	acc_ghost = { "fin_crystal", "legendary" },
+	acc_kingpin = { "fin_gold", "legendary" },
+	acc_cannon = { "fin_glow", "mythic" },
+	acc_gulls = { "fin_glow", "mythic" },
+	acc_royal = { "fin_royal" },
+	acc_admiralty = { "fin_admiralty" },
+}
+
+--[[
+	A save's accessory packs become finishes: `owned` loses the packs and gains what they
+	became, and the finish worn is the one the worn pack became. A pack that became a
+	finish already owned is paid back as a duplicate of its rarity (`refund`: rarity ->
+	Gems). Returns the Gems to add.
+]]
+function Cosmetics.migratePacks(owned: { [string]: boolean }, equipped: { [string]: any }, refund: { [string]: number }): number
+	local gems = 0
+	for id, to in Cosmetics.retiredPacks do
+		if owned[id] then
+			owned[id] = nil
+			if owned[to[1]] then
+				gems += refund[to[2] or ""] or 0
+			else
+				owned[to[1]] = true
+			end
+		end
+	end
+	local worn = Cosmetics.retiredPacks[equipped.accessory or ""]
+	if worn then
+		equipped.finish = worn[1]
+	end
+	equipped.accessory = nil
+	return gems
+end
 
 -- Items that can drop from chests, grouped by rarity.
 function Cosmetics.chestPool()

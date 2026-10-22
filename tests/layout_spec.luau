@@ -138,3 +138,76 @@ test("shared-tile pawn slots never overlap and stay on the tile", function()
 		end
 	end
 end)
+
+test("smoothing fills the corner where two discs meet, and stays out of the water", function()
+	local discs = { { x = 0, y = 0, r = 2 }, { x = 3, y = 0, r = 2 } }
+	local fill = BoardLayout.fillets(discs, 1, { 0 })[1]
+	truthy(#fill > 0, "corners filled")
+	-- the ball that rolls into each corner sits 3 from both centres; nothing fills it
+	local qy = math.sqrt(9 - 2.25)
+	for _, c in fill do
+		for _, side in { 1, -1 } do
+			truthy(dist(c.x, c.y, 1.5, side * qy) >= 1 + c.r - 1e-6, "a fill disc pokes into the water")
+		end
+	end
+	-- and each corner's tip, where the two circles cross, is covered
+	local py = math.sqrt(4 - 2.25)
+	for _, side in { 1, -1 } do
+		local covered = false
+		for _, c in fill do
+			covered = covered or dist(c.x, c.y, 1.5, side * py) < c.r
+		end
+		truthy(covered, "the corner's tip is left open")
+	end
+end)
+
+test("smoothing plugs the hole left where three discs nearly meet", function()
+	local discs = { { x = 0, y = 0, r = 1.05 }, { x = 2, y = 0, r = 1.05 }, { x = 1, y = math.sqrt(3), r = 1.05 } }
+	local cx, cy = 1, math.sqrt(3) / 3
+	for _, c in discs do
+		truthy(dist(cx, cy, c.x, c.y) > c.r, "the middle is a hole to begin with")
+	end
+	local covered = false
+	for _, c in BoardLayout.fillets(discs, 1, { 0 })[1] do
+		covered = covered or dist(cx, cy, c.x, c.y) < c.r
+	end
+	truthy(covered, "the hole is still open")
+end)
+
+test("every prop, piece, stand and portrait has its art in the sheets", function()
+	local ArtAtlas = requireModule("Client/UI/ArtAtlas")
+	local Cosmetics = requireModule("Shared/Meta/Cosmetics")
+	local Characters = requireModule("Shared/Game/Characters")
+	local kinds = {}
+	for _, scene in MapScenes do
+		if type(scene) == "table" and scene.props then
+			for _, list in { scene.props.land or {}, scene.props.water or {} } do
+				for _, w in list do
+					kinds[w[1]] = true
+				end
+			end
+			if scene.props.grove then
+				kinds[scene.props.grove] = true
+			end
+			for _, m in scene.landmarks or {} do
+				kinds[m[1]] = true
+			end
+		end
+	end
+	for kind in kinds do
+		truthy(ArtAtlas.sprites["props/" .. kind], "no art for the " .. kind)
+	end
+	for _, id in Characters.ids do
+		truthy(ArtAtlas.sprites["portraits/" .. id], "no portrait of the " .. id)
+		truthy(ArtAtlas.sprites["pieces/plinth_" .. id], "no stand for the " .. id)
+		for _, def in Cosmetics.byCategory.finish do
+			truthy(ArtAtlas.sprites["pieces/" .. def.look.finish .. "_" .. id], "no " .. def.id .. " " .. id)
+		end
+	end
+	truthy(ArtAtlas.sprites["pieces/plinth_gold"], "no gold stand")
+	for name, sp in ArtAtlas.sprites do
+		truthy(table.find(ArtAtlas.sheets, sp.sheet), name .. "'s sheet isn't listed")
+		truthy(sp.x >= 0 and sp.y >= 0 and sp.x + sp.w <= 1024 and sp.y + sp.h <= 1024, name .. " runs off its sheet")
+		truthy(sp.ox >= 0 and sp.oy >= 0 and sp.ox + sp.w <= sp.ow and sp.oy + sp.h <= sp.oh, name .. " runs off its canvas")
+	end
+end)

@@ -69,8 +69,8 @@ local function botLook()
 		return options[random:NextInteger(1, #options)]
 	end
 	return {
-		-- about half the bots dress up
-		accessory = if random:NextNumber() < 0.5 then pick("accessory", "rare") else Cosmetics.defaults.accessory,
+		-- about half the bots have a finer piece than the painted one
+		finish = if random:NextNumber() < 0.5 then pick("finish", "rare") else Cosmetics.defaults.finish,
 		dice = pick("dice", "rare"),
 		trail = pick("trail", "rare"),
 		title = "title_none",

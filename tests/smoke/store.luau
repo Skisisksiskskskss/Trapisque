@@ -1,6 +1,6 @@
 --[[
 	The experience's store art, drawn by the game's own UI code (no outside images):
-	  store-icon     512 x 512    the Mage and the Fire Starter over the sea, and the name
+	  store-icon     512 x 512    the Mage and the Fire Starter, and the name
 	  store-banner   1920 x 1080  the island map, the title, the whole crew and a treasure
 	  badges/<key>   512 x 512    each badge's medal (Shared/Meta/Badges), for the Creator
 	                              Dashboard (Roblox shows a badge's picture in a circle)
@@ -19,6 +19,9 @@ local Icons = requireModule("Client/UI/Icons")
 local Widgets = requireModule("Client/UI/Widgets")
 local StickerArt = requireModule("Client/UI/StickerArt")
 local CosmeticArt = requireModule("Client/UI/CosmeticArt")
+local Art = requireModule("Client/UI/Art")
+-- the illustrations come straight from the sheet files (art/sheets)
+Art.localSheets = true
 local BoardView = requireModule("Client/UI/Match/BoardView")
 local Board = requireModule("Shared/Game/Board")
 local Maps = requireModule("Shared/Game/Maps")
@@ -75,24 +78,36 @@ if not badgesOnly then
 	F.setScreen({ w = 512, h = 512, inset = 0 })
 	local gui = screenGui("Icon")
 	local bg = sea(gui, 512, 512, 10)
-	-- the Fire Starter (behind, right) and the Mage (in front, left), grinning
-	Icons.sticker(bg, StickerArt.mascot("fire_starter", "cheeky", { bust = true }), {
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromOffset(330, 220),
-		Size = UDim2.fromOffset(300, 300),
+	-- the Fire Starter (behind, right) and the Mage (in front, left), big enough to read
+	-- at the size Roblox shows icons, their shoulders running off the bottom
+	Art.image(bg, "portraits/fire_starter", {
+		AnchorPoint = Vector2.new(0.5, 1),
+		Position = UDim2.fromOffset(418, 560),
+		Size = UDim2.fromOffset(470, 470),
 		ZIndex = 5,
-	}, 0.04)
-	Icons.sticker(bg, StickerArt.mascot("mage", "happy", { bust = true }), {
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromOffset(190, 230),
-		Size = UDim2.fromOffset(320, 320),
+	})
+	Art.image(bg, "portraits/mage", {
+		AnchorPoint = Vector2.new(0.5, 1),
+		Position = UDim2.fromOffset(176, 600),
+		Size = UDim2.fromOffset(560, 560),
 		ZIndex = 8,
-	}, 0.04)
-	-- a gold die tumbling between them
+	})
+	-- a band of shade the name sits on
+	Util.new("Frame", {
+		Name = "Band",
+		BackgroundColor3 = C.bgDeep,
+		BackgroundTransparency = 0.2,
+		BorderSizePixel = 0,
+		Position = UDim2.fromOffset(0, 404),
+		Size = UDim2.fromOffset(512, 108),
+		ZIndex = 25,
+		Parent = bg,
+	})
+	-- a gold die tumbling in the corner
 	local die = Util.frame(bg, {
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromOffset(268, 360),
-		Size = UDim2.fromOffset(92, 92),
+		Position = UDim2.fromOffset(446, 70),
+		Size = UDim2.fromOffset(84, 84),
 		Rotation = 14,
 		ZIndex = 12,
 	})
@@ -161,7 +176,7 @@ if not badgesOnly then
 		Size = UDim2.fromOffset(300, 300),
 		ZIndex = 45,
 	}, 0.05)
-	for i, at in { { W / 2 - 205, 820, -16 }, { W / 2 + 205, 830, 12 } } do
+	for i, at in { { W / 2 - 200, 610, -16 }, { W / 2 + 200, 620, 12 } } do
 		local die = Util.frame(root, {
 			AnchorPoint = Vector2.new(0.5, 0.5),
 			Position = UDim2.fromOffset(at[1], at[2]),
@@ -171,23 +186,20 @@ if not badgesOnly then
 		})
 		CosmeticArt.preview(die, if i == 1 then "dice_doubloon" else "dice_ivory", nil, { Size = UDim2.fromScale(1, 1), ZIndex = 46 })
 	end
-	-- the whole crew, three either side
-	local crew = {
-		{ "mage", "happy", nil, 250 },
-		{ "trapper", "cheeky", nil, 520 },
-		{ "fire_starter", "happy", "acc_parrot", 770 },
-		{ "naturalist", "happy", nil, 1150 },
-		{ "warper", "smug", nil, 1400 },
-		{ "overseer", "happy", nil, 1670 },
-	}
-	for i, c in crew do
-		local size = 380
-		CosmeticArt.character(root, c[1], c[3], {
+	-- the whole crew along the bottom, four either side of the treasure (the back row a
+	-- little higher)
+	local crew = { "mage", "trapper", "fire_starter", "naturalist", "warper", "overseer", "gambler", "cannoneer" }
+	for i, id in crew do
+		local left = i <= 4
+		local k = if left then i - 1 else i - 5
+		local x = if left then 130 + k * 190 else W - 130 - (3 - k) * 190
+		local back = k % 2 == 1
+		Art.image(root, "portraits/" .. id, {
 			AnchorPoint = Vector2.new(0.5, 1),
-			Position = UDim2.fromOffset(c[4], H - 18 + (if i == 2 or i == 5 then 14 else 0)),
-			Size = UDim2.fromOffset(size, size),
-			ZIndex = 50 + i,
-		}, c[2])
+			Position = UDim2.fromOffset(x, H + (if back then 20 else 60)),
+			Size = UDim2.fromOffset(if back then 340 else 380, if back then 340 else 380),
+			ZIndex = if back then 50 else 60,
+		})
 	end
 	F.run(0.5)
 	F.shot("store-banner")

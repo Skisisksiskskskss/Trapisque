@@ -10,12 +10,12 @@
 	           main-route tiles are spaced evenly along a smooth curve through them
 	branches   extra bend points for each gated shortcut, between its two main tiles
 	land       r: how far the land reaches either side of the trail; jitter: how ragged
-	           the coast is (inner ground grows in patches away from the trail);
-	           fill: water narrower than about twice this, between bends, becomes land;
-	           add: extra land { x, y, r }
+	           the coast is; fill: water narrower than about twice this, between bends,
+	           becomes land; add: extra land { x, y, r }
 	islets     little islands { x, y, r } (none for now: a bare islet reads as a stray shape)
 	props      what grows or stands around: { kind, weight } lists for the land and the
-	           water, and how many to place on each (a few: the board is for playing on)
+	           water, and how many to place on each (a few: the board is for playing on);
+	           grove: the prop that stands in the widest open ground (groveCount of them)
 	landmarks  fixed props: { kind, x, y, size } or { kind, tile, dx, dy, size }; one that
 	           doesn't fit (on the trail, a tile, the wrong side of the coast) is left out
 	colors     the map's inks (the outline is always the UI's ink)
@@ -46,6 +46,7 @@ MapScenes.blissful = {
 	props = {
 		land = { { "palm", 6 }, { "bush", 3 }, { "rock", 2 }, { "hut", 1 } },
 		landCount = 6,
+		grove = "palm",
 		water = { { "rock", 3 }, { "barrel", 1 }, { "gull", 2 } },
 		waterCount = 2,
 	},
@@ -96,6 +97,7 @@ MapScenes.junction = {
 	props = {
 		land = { { "barrel", 4 }, { "crate", 4 }, { "torch", 3 }, { "cannon", 2 }, { "rock", 1 } },
 		landCount = 6,
+		grove = "rock",
 		water = { { "rock", 4 }, { "barrel", 1 } },
 		waterCount = 2,
 	},
@@ -142,6 +144,7 @@ MapScenes.slimy = {
 	props = {
 		land = { { "mangrove", 4 }, { "reeds", 4 }, { "log", 2 }, { "stump", 2 } },
 		landCount = 6,
+		grove = "mangrove",
 		water = { { "lily", 6 }, { "reeds", 2 } },
 		waterCount = 2,
 	},
@@ -185,6 +188,7 @@ MapScenes.haunted = {
 	props = {
 		land = { { "grave", 6 }, { "pumpkin", 3 }, { "deadtree", 2 }, { "lamp", 2 }, { "fence", 2 }, { "rock", 1 } },
 		landCount = 6,
+		grove = "deadtree",
 		water = { { "rock", 4 }, { "mist", 3 }, { "barrel", 1 } },
 		waterCount = 2,
 	},
@@ -227,6 +231,7 @@ MapScenes.volcano = {
 	props = {
 		land = { { "palm", 3 }, { "lavarock", 4 }, { "charred", 3 }, { "vent", 2 }, { "rock", 2 } },
 		landCount = 6,
+		grove = "charred",
 		water = { { "rock", 4 }, { "barrel", 1 }, { "gull", 1 } },
 		waterCount = 2,
 	},
@@ -249,7 +254,6 @@ MapScenes.volcano = {
 		start = "#7FD1E0",
 		lava = "#F2541B",
 		lavaGlow = "#FFB000",
-		lavaCrust = "#7A1E0C",
 	},
 	tile = "stone",
 }

@@ -2013,7 +2013,7 @@ function MatchScreen:_previewDie(key: any)
 	if (gain or 0) > 0 then
 		table.insert(tags, { text = "+" .. tostring((gain :: number) * mult) .. " Power", color = C.sun })
 	end
-	self.board:showPath(plan.path, { character = me and me.character, color = C.sun, badges = tags })
+	self.board:showPath(plan.path, { character = me and me.character, finish = me and me.look and me.look.finish, color = C.sun, badges = tags })
 	self.board:follow(plan.tile)
 end
 

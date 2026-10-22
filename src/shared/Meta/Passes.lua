@@ -19,7 +19,7 @@ Passes.list = {
 		perks = {
 			"+25% Gems from every match",
 			"A free Explorer Chest every day",
-			"Exclusive Royal Crown accessory and VIP title",
+			"The exclusive Royal finish for your piece, and the VIP title",
 			"Gold name in parties and matches",
 		},
 	},
@@ -91,7 +91,7 @@ Passes.list = {
 		color = "#2B4C7E",
 		icon = "chest",
 		perks = {
-			"The Admiral accessory pack (bicorne and medals)",
+			"The Admiralty finish for your piece (navy and gold)",
 			"The Golden Doubloon dice and the Captain title",
 		},
 	},

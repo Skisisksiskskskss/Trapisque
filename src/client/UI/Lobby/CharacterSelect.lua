@@ -146,12 +146,13 @@ function CharacterSelect.open(popups: Instance)
 				return Cards.character(parent, def.id, props)
 			end)
 		end)
-		-- locked: a padlock over the card until your level reaches it
+		-- locked: a padlock badge in the corner of their picture until your level reaches it
+		-- (their face stays in view)
 		local lock = Util.frame(cell, {
 			Name = "Lock",
 			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.new(0.5, 0, 0, 8 + cardW / CardStyle.aspect * 0.5),
-			Size = UDim2.fromOffset(cardW * 0.46, cardW * 0.46),
+			Position = UDim2.new(0.5, cardW * 0.3, 0, 8 + cardW / CardStyle.aspect * 0.74),
+			Size = UDim2.fromOffset(cardW * 0.26, cardW * 0.26),
 			ZIndex = 20,
 			Visible = false,
 		})

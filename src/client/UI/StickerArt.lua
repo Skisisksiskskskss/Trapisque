@@ -550,7 +550,7 @@ StickerArt.misc = {
 	The crew: eight cartoon pirates, each one a clear silhouette in its own colour (the
 	player's colour everywhere): a big head with a big nose, dot eyes and brows (no
 	googly eyes, no blush), a coat in the character's colour and one thing in the left
-	hand. All six share the same head and hands, so accessories fit everyone:
+	hand. All of them share the same head and hands:
 		head  centre (0.5, 0.38), 0.34 across; eyes at y 0.36 (x 0.425 / 0.575);
 		      nose (0.52, 0.42); mouth y 0.49; hats sit on y 0.25
 		body  0.55 to 0.89 (collar y 0.57); hands (0.25, 0.83) left, (0.75, 0.83) right
@@ -639,8 +639,8 @@ end
 
 -- What makes each one themselves, and nothing more: the coat's colour, a hat you can
 -- tell from across the board, hair or a beard where it's part of who they are, and one
--- thing in their hand. (An accessory hat replaces their own.) No buttons, buckles,
--- lashes or trims: at the size a piece stands on the board they're only noise.
+-- thing in their hand. No buttons, buckles, lashes or trims: at the size a portrait
+-- shows they're only noise.
 local CREW = {
 	mage = {
 		skin = "#F2C9A0",
@@ -870,8 +870,7 @@ plain(StickerArt.misc)
 
 --[[
 	A character, pulling a face: mood = idle | happy | shock | sad | dizzy | smug |
-	angry | cheeky (nil = their usual one). opts.hat: they wear a hat (an accessory),
-	so their own comes off. opts.bust: just the head and shoulders (portraits);
+	angry | cheeky (nil = their usual one). opts.bust: just the head and shoulders (portraits);
 	opts.crop: a bust for a round portrait that crops it (Icons.medallion), whose coat
 	runs off the bottom and whose hat stays inside the circle.
 ]]
@@ -901,10 +900,8 @@ function StickerArt.mascot(characterId: string, moodName: string?, opts: { [stri
 	else
 		ops = figure(table.clone(crew))
 	end
-	if not (opts and opts.hat) then
-		for _, op in crew.hat or {} do
-			table.insert(ops, op)
-		end
+	for _, op in crew.hat or {} do
+		table.insert(ops, op)
 	end
 	-- the face goes on last: brows, eyes and a mouth
 	table.insert(ops, { "brows", 0.5, 0.3, 0.15, 0.06, mood = mood.brows, c = crew.browColor })

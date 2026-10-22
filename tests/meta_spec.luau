@@ -159,6 +159,22 @@ test("every chest rarity has items and no exclusive items drop", function()
 	end
 end)
 
+test("accessory packs become finishes, and a second pack of one finish pays Gems", function()
+	local owned = { acc_none = true, fin_paint = true, acc_gentleman = true, acc_cook = true, acc_kraken = true, dice_ivory = true }
+	local equipped = { accessory = "acc_cook", dice = "dice_ivory" }
+	local gems = Cosmetics.migratePacks(owned, equipped, Gacha.dupeRefund)
+	truthy(owned.fin_oak and owned.fin_crystal and owned.fin_paint and owned.dice_ivory, "the finishes (and the rest) are owned")
+	eq(owned.acc_gentleman or owned.acc_cook or owned.acc_kraken or owned.acc_none, nil, "no packs left")
+	eq(gems, Gacha.dupeRefund.common, "the Cook's pack, a second Oak, is paid back as a common")
+	eq(equipped.finish, "fin_oak", "the worn pack's finish is worn")
+	eq(equipped.accessory, nil, "no accessory slot left")
+	for id, to in Cosmetics.retiredPacks do
+		local def = Cosmetics.get(to[1])
+		truthy(def and def.category == "finish", id .. " becomes a finish")
+		truthy(to[2] == nil or Cosmetics.rarityById[to[2]] ~= nil, id .. "'s rarity")
+	end
+end)
+
 ---------------------------------------------------------------------------
 -- Progress: mastery, quests, streak, trophies, events
 ---------------------------------------------------------------------------

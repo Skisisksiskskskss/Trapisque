@@ -179,6 +179,154 @@ BoardLayout.spline = spline
 BoardLayout.spaced = spaced
 
 ---------------------------------------------------------------------------
+-- smooth edges
+---------------------------------------------------------------------------
+
+--[[
+	Smooths a union of discs (a morphological closing): every corner of water caught
+	where two discs meet is filled with a curve of radius `ball`, as if the sea had worn
+	the coast round. For each of `grows` (the discs widened by that much first, and the
+	curve narrowed by it, so a layer's edge stays parallel to the land's), returns the
+	extra discs that fill those corners: draw them in the same ink as that layer. Holes
+	narrower than `holes` (0.6 if not given) left where three discs nearly meet are
+	filled too.
+]]
+function BoardLayout.fillets(discs: { any }, ball: number, grows: { number }, holes: number?): { { { x: number, y: number, r: number } } }
+	local reach = holes or 0.6
+	local out = {}
+	for gi in grows do
+		out[gi] = {}
+	end
+	-- each disc's neighbours: every disc close enough to share a corner, a ball or a hole
+	-- with it (found through buckets, so not every pair is compared)
+	local CELL = 4
+	local buckets: { [string]: { number } } = {}
+	local maxR = 0
+	for i, c in discs do
+		local key = math.floor(c.x / CELL) .. ":" .. math.floor(c.y / CELL)
+		buckets[key] = buckets[key] or {}
+		table.insert(buckets[key], i)
+		maxR = math.max(maxR, c.r)
+	end
+	local margin = math.max(2 * ball, reach)
+	local span = math.ceil((2 * maxR + margin) / CELL)
+	local near: { { number } } = {}
+	for i, a in discs do
+		local list = {}
+		local bx, by = math.floor(a.x / CELL), math.floor(a.y / CELL)
+		for gx = bx - span, bx + span do
+			for gy = by - span, by + span do
+				for _, k in buckets[gx .. ":" .. gy] or {} do
+					local c = discs[k]
+					if k ~= i and dist(a.x, a.y, c.x, c.y) < a.r + c.r + margin then
+						table.insert(list, k)
+					end
+				end
+			end
+		end
+		near[i] = list
+	end
+	-- is there a disc near i (other than j) within `pad` of (qx, qy)?
+	local function touches(i: number, qx: number, qy: number, pad: number, j: number?): boolean
+		for _, k in near[i] do
+			local c = discs[k]
+			if k ~= j and dist(qx, qy, c.x, c.y) < c.r + pad then
+				return true
+			end
+		end
+		return false
+	end
+	-- the little holes left where three discs nearly meet: from each corner of one, a
+	-- disc across to the land on its far side
+	local function plug(i: number, a, b, d: number)
+		local al = (a.r * a.r - b.r * b.r + d * d) / (2 * d)
+		local h2 = a.r * a.r - al * al
+		if h2 <= 0 then
+			return
+		end
+		local ux, uy = (b.x - a.x) / d, (b.y - a.y) / d
+		for _, side in { 1, -1 } do
+			local h = math.sqrt(h2) * side
+			local vx, vy = a.x + ux * al - uy * h, a.y + uy * al + ux * h
+			if not touches(i, vx, vy, -1e-3) then
+				-- heading out of the land, between the two
+				local ox, oy = (vx - a.x) / a.r + (vx - b.x) / b.r, (vy - a.y) / a.r + (vy - b.y) / b.r
+				local len = math.sqrt(ox * ox + oy * oy)
+				if len > 1e-6 then
+					ox, oy = ox / len, oy / len
+					local t = 0.05
+					while t <= reach do
+						if touches(i, vx + ox * t, vy + oy * t, 0) then
+							for gi, g in grows do
+								table.insert(out[gi], { x = vx + ox * t / 2, y = vy + oy * t / 2, r = t / 2 + 0.06 + g })
+							end
+							break
+						end
+						t += 0.05
+					end
+				end
+			end
+		end
+	end
+	for i, a in discs do
+		for _, j in near[i] do
+			if j <= i then
+				continue
+			end
+			local b = discs[j]
+			local d = dist(a.x, a.y, b.x, b.y)
+			if d > math.abs(a.r - b.r) and d < a.r + b.r then
+				plug(i, a, b, d)
+			end
+			local Ra, Rb = a.r + ball, b.r + ball
+			-- the ball touches both where the circles of radius r + ball cross
+			local along = if d > 1e-6 then (Ra * Ra - Rb * Rb + d * d) / (2 * d) else 0
+			local h2 = Ra * Ra - along * along
+			if d > 1e-6 and d < Ra + Rb and d > math.abs(a.r - b.r) and h2 > 0 then
+				local h = math.sqrt(h2)
+				local ux, uy = (b.x - a.x) / d, (b.y - a.y) / d
+				for _, side in { 1, -1 } do
+					local qx, qy = a.x + ux * along - uy * h * side, a.y + uy * along + ux * h * side
+					if not touches(i, qx, qy, ball - 1e-3, j) then
+						local ta = math.atan2(a.y - qy, a.x - qx)
+						local sweep = (math.atan2(b.y - qy, b.x - qx) - ta + math.pi) % (2 * math.pi) - math.pi
+						for gi, g in grows do
+							local bg = ball - g
+							local ra, rb = a.r + g, b.r + g
+							-- the corner's tip: where the widened discs cross on this side
+							-- (or halfway across the gap between them)
+							local px, py, past
+							if d < ra + rb then
+								local al = (ra * ra - rb * rb + d * d) / (2 * d)
+								local hh = math.sqrt(math.max(0, ra * ra - al * al))
+								px, py = a.x + ux * al - uy * hh * side, a.y + uy * al + ux * hh * side
+								past = math.min(0.8, hh * 1.8)
+							else
+								local t = (ra + (d - ra - rb) / 2) / d
+								px, py = a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t
+								past = 0.05
+							end
+							local depth = dist(px, py, qx, qy) - bg
+							if bg > 0.05 and depth > 0.05 then
+								-- a chain of discs along the ball's edge, each touching it,
+								-- from inside one disc to inside the other
+								local s = math.min(math.max(depth / 2 + 0.03, 0.25), (depth + past) / 2)
+								local steps = math.clamp(math.ceil(math.abs(sweep) * (bg + s) / s), 1, 40)
+								for k = 0, steps do
+									local t = ta + sweep * k / steps
+									table.insert(out[gi], { x = qx + math.cos(t) * (bg + s), y = qy + math.sin(t) * (bg + s), r = s })
+								end
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+	return out
+end
+
+---------------------------------------------------------------------------
 -- the layout
 ---------------------------------------------------------------------------
 
@@ -508,57 +656,6 @@ function BoardLayout.build(board, mapDef, Rng, opts: { [string]: any }?)
 		end
 	end
 
-	-- ground patches (jungle, rock, moss) in the wide parts of the land, well away from
-	-- the trail: a few overlapping discs each, like the woods on an old map
-	layout.patches = {}
-	do
-		local cands = {}
-		local y0, y1, x0, x1 = math.huge, -math.huge, math.huge, -math.huge
-		for _, c in layout.land do
-			x0, x1 = math.min(x0, c.x - c.r), math.max(x1, c.x + c.r)
-			y0, y1 = math.min(y0, c.y - c.r), math.max(y1, c.y + c.r)
-		end
-		local yy = y0
-		while yy <= y1 do
-			local xx = x0
-			while xx <= x1 do
-				local depth = landDepth(xx, yy)
-				local room = nearTrail(xx, yy)
-				if depth >= 1.5 and room >= 2.3 then
-					table.insert(cands, { xx, yy, math.min(depth - 0.5, room - 1.3) })
-				end
-				xx += 0.8
-			end
-			yy += 0.8
-		end
-		table.sort(cands, function(a, b)
-			return a[3] > b[3]
-		end)
-		local centres = {}
-		for _, c in cands do
-			local free = true
-			for _, q in centres do
-				if dist(c[1], c[2], q[1], q[2]) < 2.6 then
-					free = false
-					break
-				end
-			end
-			if free and #centres < (scene.patchCount or 7) then
-				table.insert(centres, c)
-				local r0 = math.min(1.3, c[3])
-				table.insert(layout.patches, { x = c[1], y = c[2], r = r0 })
-				for k = 1, 3 do
-					local a = rng:float() * math.pi * 2
-					local px, py = c[1] + math.cos(a) * r0 * 0.75, c[2] + math.sin(a) * r0 * 0.75
-					local r = math.min(r0 * (0.55 + rng:float() * 0.25), landDepth(px, py) - 0.45, nearTrail(px, py) - 1.3)
-					if r > 0.35 then
-						table.insert(layout.patches, { x = px, y = py, r = r })
-					end
-				end
-			end
-		end
-	end
-
 	-- the scatter: props on the land and on the water, none on the trail, a tile, a
 	-- river, a pool, or each other
 	local function clearOfFeatures(x: number, y: number, reach: number): boolean
@@ -628,7 +725,42 @@ function BoardLayout.build(board, mapDef, Rng, opts: { [string]: any }?)
 			end
 		end
 	end
+
+	-- groves: the scene's grove prop (palms on the island, mangroves in the swamp...) in
+	-- the widest parts of the land, well away from the trail, so open ground isn't bare
 	local P = scene.props or {}
+	if P.grove then
+		local cands = {}
+		local yy = minY
+		while yy <= maxY do
+			local xx = minX
+			while xx <= maxX do
+				local depth = landDepth(xx, yy)
+				local room = nearTrail(xx, yy)
+				if depth >= 1.5 and room >= 2.3 then
+					table.insert(cands, { xx, yy, math.min(depth - 0.5, room - 1.3) })
+				end
+				xx += 0.8
+			end
+			yy += 0.8
+		end
+		table.sort(cands, function(a, b)
+			return a[3] > b[3]
+		end)
+		local size = (BoardLayout.PropSize[P.grove] or 1.5) * 1.15
+		local placed = 0
+		for _, c in cands do
+			if placed >= (P.groveCount or 3) then
+				break
+			end
+			local free = clearOfFeatures(c[1], c[2], size * S.reach + 1)
+			if free then
+				table.insert(props, { kind = P.grove, x = c[1], y = c[2], size = size, flip = rng:float() < 0.5 })
+				placed += 1
+			end
+		end
+	end
+
 	if P.land then
 		scatter(P.land, P.landCount or 16, true)
 	end
@@ -669,7 +801,7 @@ function BoardLayout.build(board, mapDef, Rng, opts: { [string]: any }?)
 			s.x1, s.y1 = turn(s.x1, s.y1)
 			s.x2, s.y2 = turn(s.x2, s.y2)
 		end
-		for _, list in { layout.land, layout.pools, layout.props, layout.waves, layout.patches } do
+		for _, list in { layout.land, layout.pools, layout.props, layout.waves } do
 			for _, c in list do
 				c.x, c.y = turn(c.x, c.y)
 				if c.angle then

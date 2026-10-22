@@ -116,7 +116,14 @@ local function opFor(inst, alpha: number, clip)
 			}
 		end
 	elseif inst:IsA("ImageLabel") or inst:IsA("ImageButton") then
-		op.img = { id = inst.Image, color = rgb(inst.ImageColor3), t = inst.ImageTransparency }
+		op.img = {
+			id = inst.Image,
+			color = rgb(inst.ImageColor3),
+			t = inst.ImageTransparency,
+			ro = { inst.ImageRectOffset.X, inst.ImageRectOffset.Y },
+			rs = { inst.ImageRectSize.X, inst.ImageRectSize.Y },
+			scale = inst.ScaleType.Name,
+		}
 	end
 	return op
 end

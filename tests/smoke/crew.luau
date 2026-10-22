@@ -1,6 +1,7 @@
 --[[
-	The six characters in a row (and a few wearing accessory packs), large: for checking
-	the character art quickly. tools/shots.sh crew.
+	The eight playing pieces and portraits, large: for checking the character art
+	quickly. Each column: the painted piece, the same piece in a finish, the round
+	portrait, and the piece at the size it stands on the board. tools/shots.sh crew.
 ]]
 
 local F = Fake
@@ -17,19 +18,20 @@ bg.Size = UDim2.fromScale(1, 1)
 bg.BackgroundColor3 = Color3.fromHex("F3E6C8")
 bg.Parent = gui
 
-local CosmeticArt = requireModule("Client/UI/CosmeticArt")
+requireModule("Client/UI/Art").localSheets = true
+local PieceArt = requireModule("Client/UI/PieceArt")
 local Icons = requireModule("Client/UI/Icons")
-local ids = { "mage", "trapper", "fire_starter", "naturalist", "warper", "overseer" }
-local packs = { "acc_gentleman", "acc_captain", "acc_parrot", "acc_propeller", "acc_kraken", "acc_gulls" }
-local moods = { "happy", "shock", "angry", "sad", "dizzy", "smug" }
+local Theme = requireModule("Client/UI/Theme")
+local Cosmetics = requireModule("Shared/Meta/Cosmetics")
+local ids = { "mage", "trapper", "fire_starter", "naturalist", "warper", "overseer", "gambler", "cannoneer" }
+local finishes = Cosmetics.byCategory.finish
 for i, id in ids do
-	local x = 20 + (i - 1) * 245
-	CosmeticArt.character(bg, id, nil, { Position = UDim2.fromOffset(x, 10), Size = UDim2.fromOffset(230, 230) })
-	CosmeticArt.character(bg, id, packs[i], { Position = UDim2.fromOffset(x, 260), Size = UDim2.fromOffset(150, 150) })
-	CosmeticArt.character(bg, id, nil, { Position = UDim2.fromOffset(x + 140, 300) , Size = UDim2.fromOffset(100, 100) }, moods[i])
-	Icons.medallion(bg, id, Color3.fromHex("2B4C7E"), { AnchorPoint = Vector2.zero, Position = UDim2.fromOffset(x + 60, 440), Size = UDim2.fromOffset(90, 90) })
+	local x = 20 + (i - 1) * 184
+	PieceArt.icon(bg, id, nil, { Position = UDim2.fromOffset(x + 10, 10), Size = UDim2.fromOffset(160, 200) })
+	PieceArt.icon(bg, id, finishes[(i % #finishes) + 2].id, { Position = UDim2.fromOffset(x + 40, 230), Size = UDim2.fromOffset(100, 125) })
+	Icons.medallion(bg, id, Theme.Character[id], { AnchorPoint = Vector2.zero, Position = UDim2.fromOffset(x + 20, 380), Size = UDim2.fromOffset(140, 140) })
 	-- board size
-	CosmeticArt.character(bg, id, nil, { Position = UDim2.fromOffset(x + 70, 560), Size = UDim2.fromOffset(60, 60) })
+	PieceArt.icon(bg, id, nil, { Position = UDim2.fromOffset(x + 66, 560), Size = UDim2.fromOffset(48, 60) })
 end
 F.run(0.3)
 F.shot("crew")

@@ -19,6 +19,7 @@ local Icons = require(script.Parent.Icons)
 local Widgets = require(script.Parent.Widgets)
 local CardStyle = require(script.Parent.CardStyle)
 local StickerArt = require(script.Parent.StickerArt)
+local Art = require(script.Parent.Art)
 local Sound = require(script.Parent.Parent.Sound)
 
 local C = Theme.C
@@ -367,7 +368,24 @@ function Cards.character(parent: Instance?, characterId: string, props: { [strin
 	local front, face = slab(flipper, color, true)
 	front.Name = "Front"
 	topTag(face, if def.ability then def.ability.name else "", root, color)
-	window(face, color, StickerArt.mascot(characterId))
+	local portrait = "portraits/" .. characterId
+	local win = window(face, color, if Art.has(portrait) then nil else StickerArt.mascot(characterId))
+	if Art.has(portrait) then
+		-- their illustrated portrait, cropped to the window
+		local crop = Util.new("CanvasGroup", {
+			Name = "Portrait",
+			BackgroundTransparency = 1,
+			Size = UDim2.fromScale(1, 1),
+			ZIndex = 4,
+			Parent = win,
+		})
+		Util.new("UICorner", { CornerRadius = UDim.new(CardStyle.window.corner, 0), Parent = crop })
+		Art.image(crop, portrait, {
+			AnchorPoint = Vector2.new(0.5, 1),
+			Position = UDim2.fromScale(0.5, 1),
+			ZIndex = 4,
+		})
+	end
 	nameLine(face, def.name, root, color)
 
 	local sections = { { def.passiveName or "Passive", def.passive, "0.24" } }

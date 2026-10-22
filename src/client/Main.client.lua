@@ -26,6 +26,7 @@ local Net = require(Client.Net)
 local State = require(Client.State)
 local Sound = require(Client.Sound)
 local Root = require(Client.UI.Root)
+local Art = require(Client.UI.Art)
 local Widgets = require(Client.UI.Widgets)
 local StaffPanel = require(Client.UI.StaffPanel)
 local _Chat = require(Client.Chat) -- starts listening for chat lines straight away
@@ -185,6 +186,9 @@ State.set("staff", data.staff)
 if data.profile and data.profile.settings then
 	Sound.applySettings(data.profile.settings)
 end
+-- the art sheets (once they're uploaded): loaded before the first screen draws them
+loading(0.9, "Setting out the pieces...")
+Art.preload(8)
 -- sounds and music load in the background; the lobby shows how far along they are
 Sound.preload(function(done, total)
 	State.set("loadingRest", if done >= total then nil else done / math.max(1, total))

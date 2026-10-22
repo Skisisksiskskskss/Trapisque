@@ -260,8 +260,16 @@ so every screen comes out of the same kit:
   colour is its player's everywhere: on the board, the player list, the feed.
 - **Less on the board.** A handful of props per map, a number on every fifth tile
   only, no stray islets or decorative marks.
-- **Accessory packs instead of pawn skins:** two pieces a pack, drawn on the character.
-  The rarer ones move in simple, physical ways, never rainbow or glowing.
+- **Playing pieces, not figures.** Each player is a piece shaped like a pawn, in their
+  character's colour, with the character's emblem on top (the Mage's hat, the
+  Trapper's trap, the Fire Starter's flame...). It reads from across the board the way
+  a real board game's pieces do, and a mastery stand goes under it at mastery 5 (gold
+  at 10). The pirates themselves stay on the cards, the portraits and the results.
+- **Finishes instead of accessory packs:** what your piece is made of (oak, clay,
+  pearl, marble, sea glass, porcelain, metallic, obsidian, solid gold, crystal,
+  glowstone; Royal and Admiralty from the passes), always in your character's colour,
+  so the board stays readable. Saves that owned packs got the finishes they became,
+  and a second pack that became the same finish was paid back in Gems.
 
 **The maps are places, not grids.** Each map's route is a hand-drawn winding curve
 (`MapScenes`); the tiles are spaced evenly along it and the land grows around the
@@ -272,8 +280,18 @@ that spirals in to the treasure past bubbling slime pools. Props (palms, huts, s
 cannons, mangroves) are placed clear of the trail. The board graph (tile count,
 shortcuts, hazards) is the rulebook's, so none of this touches balance.
 
-Everything is still drawn from UI frames at runtime (no uploaded images), so it stays
-crisp at any size. `tools/shots.sh` renders real screenshots offline for review.
+**Illustrations where shapes from code looked machine-made.** The pieces, the props
+and landmarks, and the portraits used to be assembled at runtime from circles and
+rectangles; up close they looked like it (a coastline of scalloped discs, a palm made
+of three ellipses, flat green circles for jungle). They're now illustrations in one
+style (smooth shapes lit from the upper left, outlines in a darker shade of each
+part's colour, a soft shadow; `art/README.md`), drawn as SVG and uploaded as four image
+sheets. The land, water, trail and tiles are still built from UI frames so they stay
+sharp at any zoom, but the coast is smoothed: wherever two of the land's discs meet,
+the corner is filled with a curve (`BoardLayout.fillets`, a morphological closing),
+the little holes where three discs nearly meet are plugged, small lagoons are shallow
+all over, and the jungle patches became groves of the map's own trees.
+`tools/shots.sh` renders real screenshots offline for review.
 
 ## 6. Talking at the table
 
