@@ -31,6 +31,7 @@ local TILE = Vector2.new(150, 172)
 
 local SOURCE_TEXT = {
 	vip = "VIP pass",
+	season = "Ranked seasons",
 	emotepack = "Emote Pack",
 }
 
@@ -100,7 +101,13 @@ function Locker._fill(_maid, content: Frame, category: string)
 		oldCount:Destroy()
 	end
 
-	local items = table.clone(Cosmetics.byCategory[category] or {})
+	-- (some, like season titles, only show once you have them)
+	local items = {}
+	for _, def in Cosmetics.byCategory[category] or {} do
+		if not def.hidden or owned[def.id] then
+			table.insert(items, def)
+		end
+	end
 	table.sort(items, function(a, b)
 		local oa, ob = owned[a.id] == true, owned[b.id] == true
 		if oa ~= ob then

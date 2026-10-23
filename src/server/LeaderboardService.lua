@@ -13,9 +13,15 @@
 		LeaderboardService.init(profileOf)       -- profileOf(player) -> saved profile
 		LeaderboardService.submit(player, data)  -- after a match (data = saved profile)
 
-	Client request: "leaderboard.get" { board = "trophies" | "wins" | "treasures" | "level" } ->
+	Client request: "leaderboard.get" { board = "trophies" | "wins" | "treasures" | "level",
+	scope = "friends"? } ->
 		{ board, live, entries = { { rank, userId, name, username, value } },
-		  me = { rank?, value } }
+		  me = { rank?, value }, friends = true?, rival = { name, target, done }? }
+
+	The friends view ranks you among your Roblox friends (up to FRIENDS_MAX of them:
+	each one's score is a DataStore read, cached for a few minutes). On the trophies
+	board the friend just ahead of you is your rival for the week: pass them for Gems
+	(DataService.rival).
 ]]
 
 local Players = game:GetService("Players")
@@ -58,6 +64,8 @@ local BOARDS: { [string]: Board } = {
 
 local TOP = 50
 local CACHE_TIME = 60
+local FRIENDS_MAX = 25
+local FRIEND_TIME = 300 -- how long a friend's score is cached
 
 local stores: { [string]: OrderedDataStore } = {}
 local cache: { [string]: { at: number, entries: { any } } } = {}
@@ -65,6 +73,12 @@ local fetching: { [string]: boolean } = {}
 local names: { [number]: { name: string, username: string? } } = {}
 local offline: { [string]: { [number]: number } } = {} -- Studio: [board][userId] = value
 local profileOf: ((Player) -> any)? = nil
+local friendIds: { [number]: { at: number, ids: { number } } } = {} -- [userId] = their friends
+local friendScores: { [string]: { [number]: { at: number, value: number } } } = {} -- [board][userId]
+LeaderboardService.hooks = {
+	-- rival(player, entries) -> the weekly rival to show (DataService picks and keeps it)
+	rival = nil :: ((Player, { any }) -> any)?,
+}
 
 -- Display names for everyone on a board (one UserService call for the unknown ones).
 local function resolveNames(entries)
@@ -165,6 +179,89 @@ local function fetch(board: string): { any }
 	return entries
 end
 
+-- Up to FRIENDS_MAX of a player's Roblox friends (cached ten minutes).
+local function friendsOf(player: Player): { number }
+	local c = friendIds[player.UserId]
+	if c and os.clock() - c.at < 600 then
+		return c.ids
+	end
+	local ids = {}
+	pcall(function()
+		local pages = Players:GetFriendsAsync(player.UserId)
+		while #ids < FRIENDS_MAX do
+			for _, f in pages:GetCurrentPage() do
+				if #ids < FRIENDS_MAX then
+					table.insert(ids, f.Id)
+					if not names[f.Id] then
+						names[f.Id] = { name = f.DisplayName or f.Username, username = f.Username }
+					end
+				end
+			end
+			if pages.IsFinished then
+				break
+			end
+			pages:AdvanceToNextPageAsync()
+		end
+	end)
+	friendIds[player.UserId] = { at = os.clock(), ids = ids }
+	return ids
+end
+
+-- Someone's score on a board: from their profile when they're on this server, else from
+-- the board's store (cached; skipped when this server is low on DataStore reads).
+local function scoreOf(board: string, userId: number): number
+	local here = Players:GetPlayerByUserId(userId)
+	if here then
+		return valueFor(here, board)
+	end
+	friendScores[board] = friendScores[board] or {}
+	local c = friendScores[board][userId]
+	if c and os.clock() - c.at < FRIEND_TIME then
+		return c.value
+	end
+	local value = 0
+	local store = stores[board]
+	if store then
+		local budget = 100
+		pcall(function()
+			budget = DataStoreService:GetRequestBudgetForRequestType(Enum.DataStoreRequestType.GetAsync)
+		end)
+		if budget < 20 then
+			return if c then c.value else 0
+		end
+		local ok, v = pcall(function()
+			return store:GetAsync(tostring(userId))
+		end)
+		if ok and type(v) == "number" then
+			value = v
+		end
+	else
+		value = (offline[board] or {})[userId] or 0
+	end
+	friendScores[board][userId] = { at = os.clock(), value = value }
+	return value
+end
+
+-- A player and their friends on a board, best first.
+local function friendsBoard(player: Player, board: string): { any }
+	names[player.UserId] = { name = player.DisplayName, username = player.Name }
+	local entries = { { userId = player.UserId, value = valueFor(player, board) } }
+	for _, id in friendsOf(player) do
+		local v = scoreOf(board, id)
+		if v > 0 then
+			table.insert(entries, { userId = id, value = v })
+		end
+	end
+	table.sort(entries, function(a, b)
+		if a.value ~= b.value then
+			return a.value > b.value
+		end
+		return a.userId < b.userId
+	end)
+	resolveNames(entries)
+	return entries
+end
+
 function LeaderboardService.submit(player: Player, data)
 	if not data then
 		return
@@ -218,7 +315,8 @@ function LeaderboardService.init(getProfile: (Player) -> any)
 		if not BOARDS[board] then
 			return false, "There's no such leaderboard."
 		end
-		local entries = fetch(board)
+		local friends = type(payload) == "table" and payload.scope == "friends"
+		local entries = if friends then friendsBoard(player, board) else fetch(board)
 		local out = {}
 		local myRank = nil
 		for i, e in entries do
@@ -234,11 +332,17 @@ function LeaderboardService.init(getProfile: (Player) -> any)
 				myRank = i
 			end
 		end
+		local rival = nil
+		if friends and board == "trophies" and LeaderboardService.hooks.rival then
+			rival = LeaderboardService.hooks.rival(player, out)
+		end
 		return true, {
 			board = board,
 			live = stores[board] ~= nil,
 			entries = out,
 			me = { rank = myRank, value = valueFor(player, board) },
+			friends = friends or nil,
+			rival = rival,
 		}
 	end)
 end

@@ -34,6 +34,7 @@ local LobbyScreen = require(Client.UI.Lobby.LobbyScreen)
 local MatchScreen = require(Client.UI.Match.MatchScreen)
 local MapVote = require(Client.UI.Match.MapVote)
 local RejoinOffer = require(Client.UI.Lobby.RejoinOffer)
+local SeasonNews = require(Client.UI.Lobby.SeasonNews)
 local BadgeToast = require(Client.UI.BadgeToast)
 local Gamepad = require(Client.Gamepad)
 
@@ -207,6 +208,16 @@ else
 	if data.rejoin then
 		task.delay(1.5, RejoinOffer.show, Root.popups, data.rejoin)
 	end
+end
+-- a ranked season ended since you last played: how it went
+do
+	local shown = false
+	State.watch("profile", function(p)
+		if p and p.seasonNews and not shown and not MatchScreen.current() then
+			shown = true
+			task.delay(2.5, SeasonNews.show, Root.popups, p.seasonNews)
+		end
+	end, true)
 end
 loading(1, "Land ho!")
 

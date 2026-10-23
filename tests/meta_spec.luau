@@ -375,3 +375,52 @@ test("fishing: at most one coin a round, sizes in range, rarer fish bite faster"
 	eq(Fishing.sizeText(54), "54 cm")
 	eq(Fishing.sizeText(150), "1.5 m")
 end)
+
+test("ranked seasons: four weeks each, half the trophies carry over, a title for every rank", function()
+	local Progress = requireModule("Shared/Meta/Progress")
+	-- 23 October 2026 (Season 1 runs 22 October to 19 November)
+	local launch = 20749 * 86400 + 12 * 3600
+	eq(Progress.season(launch), 1)
+	local ends = Progress.seasonEnds(1)
+	eq(ends, 20776 * 86400, "Season 1 ends on 19 November")
+	eq(Progress.season(ends - 1), 1)
+	eq(Progress.season(ends), 2)
+	eq(Progress.seasonEnds(2) - Progress.seasonEnds(1), 28 * 86400)
+	eq(Progress.seasonCarry(1201), 600)
+	eq(Progress.seasonCarry(0), 0)
+	local pools = Cosmetics.chestPool()
+	local inChests = {}
+	for _, ids in pools do
+		for _, id in ids do
+			inChests[id] = true
+		end
+	end
+	for season = 1, Progress.SeasonTitles do
+		for _, r in Progress.ranks do
+			local def = Cosmetics.get(Progress.seasonTitleId(season, r.id))
+			if r.id == "wood" then
+				eq(def, nil, "no title for Wood")
+			else
+				truthy(def ~= nil and def.category == "title" and def.hidden, "season " .. season .. " " .. r.id .. " title")
+				falsy(inChests[def.id], "a season title in a chest")
+				eq(Progress.seasonGems[r.id] > 0, true)
+			end
+		end
+	end
+end)
+
+test("the beat-a-friend quest only comes up for players who play with friends", function()
+	local Progress = requireModule("Shared/Meta/Progress")
+	local sawFriend = false
+	for day = 1, 400 do
+		for _, q in Progress.dailyQuests(77, day, nil, false) do
+			truthy(q.id ~= "friend", "a friend quest for someone who plays alone")
+		end
+		for _, q in Progress.dailyQuests(77, day, nil, true) do
+			sawFriend = sawFriend or q.id == "friend"
+		end
+	end
+	truthy(sawFriend, "the friend quest never came up")
+	local q = Progress.questById.friend
+	eq(Progress.questGain(q, { stats = { friendsBeaten = 2 } }), 2)
+end)

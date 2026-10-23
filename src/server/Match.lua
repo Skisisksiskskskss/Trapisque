@@ -1059,11 +1059,32 @@ function Match:_finish()
 	end
 	local wait = math.max(0, self.busyUntil - os.clock())
 	task.delay(wait, function()
+		-- the Roblox friends who played this match, and how many you finished ahead of
+		local friends, beaten = {}, {}
+		local function placeOf(seat: number): number
+			return table.find(engine.ranking or {}, seat) or #self.seats
+		end
+		for seat, info in self.seats do
+			friends[seat], beaten[seat] = 0, 0
+			for other, them in self.seats do
+				if seat ~= other and info.player and them.player then
+					local ok, isFriend = pcall(info.player.IsFriendsWith, info.player, them.player.UserId)
+					if ok and isFriend then
+						friends[seat] += 1
+						if placeOf(seat) < placeOf(other) then
+							beaten[seat] += 1
+						end
+					end
+				end
+			end
+		end
 		for seat, info in self.seats do
 			local player = info.player
 			if player and player.Parent == Players then
 				local p = engine.players[seat]
 				local won = p.team == engine.winnerTeam
+				local stats = table.clone(p.stats)
+				stats.friendsBeaten = beaten[seat]
 				local reward = DataService.applyMatchResult(player, {
 					treasures = p.treasures,
 					won = won,
@@ -1074,9 +1095,10 @@ function Match:_finish()
 					character = p.character,
 					mode = self.mode.id,
 					event = self.event,
-					stats = table.clone(p.stats),
+					stats = stats,
 					tutorial = self.tutorial,
 					award = if awards[seat] then awards[seat].id else nil,
+					friends = friends[seat],
 				})
 				BadgeService.matchFeats(player, {
 					won = won,

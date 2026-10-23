@@ -1,6 +1,7 @@
 --[[
 	LeaderboardPanel
-	The top players: most trophies, most wins, most treasures found, highest level. Each row
+	The top players: most trophies (this season), most wins, most treasures found, highest
+	level, among everyone or just you and your friends (with a rival to pass each week). Each row
 	shows the player's avatar, display name and @username; your own row is gold, and
 	the footer says where you stand even when you're not in the top 50.
 
@@ -20,6 +21,7 @@ local Avatars = require(UI.Avatars)
 
 local Client = UI.Parent
 local Net = require(Client.Net)
+local State = require(Client.State)
 
 local C = Theme.C
 local hex = Theme.hex
@@ -40,7 +42,18 @@ local CACHE_TIME = 30
 
 -- shared between panels (the lobby rebuilds them when the screen changes shape)
 local selected = "trophies"
-local cache = {} -- [board] = { at, data }
+local scope = "everyone" -- or "friends": you and your Roblox friends
+local cache = {} -- [board .. scope] = { at, data }
+
+-- "12d 4h" / "5h 20m" until a Unix time
+local function timeLeft(ends: number): string
+	local left = math.max(0, ends - os.time())
+	local d, h, m = left // 86400, (left % 86400) // 3600, (left % 3600) // 60
+	if d > 0 then
+		return d .. "d " .. h .. "h"
+	end
+	return h .. "h " .. m .. "m"
+end
 
 local function boardDef(id: string)
 	for _, b in BOARDS do
@@ -92,10 +105,23 @@ function LeaderboardPanel.new(parent: Instance, opts)
 			self:load(v)
 		end,
 	})
+	-- everyone, or just you and your friends
+	self.scope = Widgets.choice(content, {
+		name = "Scope",
+		options = { { text = "Everyone", value = "everyone" }, { text = "Friends", value = "friends" } },
+		value = scope,
+		size = UDim2.new(1, 0, 0, 30),
+		position = UDim2.fromOffset(0, 44),
+		textSize = 14,
+		onChange = function(v)
+			scope = v
+			self:load(selected)
+		end,
+	})
 	self.list = Widgets.scroll(content, {
 		name = "Rows",
-		position = UDim2.fromOffset(0, 46),
-		size = UDim2.new(1, 0, 1, -46 - 40),
+		position = UDim2.fromOffset(0, 80),
+		size = UDim2.new(1, 0, 1, -80 - 40),
 		gap = 5,
 		padding = 2,
 	})
@@ -134,24 +160,25 @@ function LeaderboardPanel:_note(text: string)
 end
 
 function LeaderboardPanel:load(board: string)
-	self.loadingBoard = board
-	local c = cache[board]
+	local key = board .. ":" .. scope
+	self.loadingBoard = key
+	local c = cache[key]
 	if c and os.clock() - c.at < CACHE_TIME then
 		self:_render(c.data)
 		return
 	end
-	self:_note("Unrolling the scroll...")
+	self:_note(if scope == "friends" then "Looking for your friends..." else "Unrolling the scroll...")
 	self.footer.Text = ""
 	task.spawn(function()
-		local ok, data = Net.request("leaderboard.get", { board = board })
-		if not self.alive or self.loadingBoard ~= board then
+		local ok, data = Net.request("leaderboard.get", { board = board, scope = if scope == "friends" then "friends" else nil })
+		if not self.alive or self.loadingBoard ~= key then
 			return
 		end
 		if not ok or type(data) ~= "table" then
 			self:_note("Couldn't load the leaderboard right now. Try again in a bit!")
 			return
 		end
-		cache[board] = { at = os.clock(), data = data }
+		cache[key] = { at = os.clock(), data = data }
 		self:_render(data)
 	end)
 end
@@ -165,12 +192,30 @@ function LeaderboardPanel:_render(data)
 	for i, e in data.entries do
 		self:_row(i, e, def)
 	end
+	if data.friends and #data.entries <= 1 then
+		self:_note("None of your Roblox friends are on this board yet. Invite them to a match!")
+	end
 	local me = data.me or {}
 	local mine = valueText(def, me.value or 0) .. (if def.units ~= "" then (" " .. (if me.value == 1 then def.unit else def.units)) else "")
-	if me.rank then
+	if data.friends then
+		-- this week's rival: the friend who was just ahead
+		local rival = data.rival
+		if rival and rival.done then
+			self.footer.Text = "This week you passed " .. tostring(rival.name) .. "! (+" .. tostring(rival.gems) .. " Gems)"
+		elseif rival then
+			self.footer.Text = "This week's rival: " .. tostring(rival.name) .. ". Get past their " .. Util.commas(rival.target or 0) .. " trophies for " .. tostring(rival.gems) .. " Gems!"
+		else
+			self.footer.Text = "You're #" .. tostring(me.rank or 1) .. " of " .. #data.entries .. " with " .. mine
+		end
+	elseif me.rank then
 		self.footer.Text = "You're #" .. me.rank .. " with " .. mine
 	else
 		self.footer.Text = "You: " .. mine .. "  ·  top 50 shown"
+	end
+	-- (trophies are per season)
+	local profile = State.get("profile")
+	if data.board == "trophies" and not data.friends and profile and profile.season and profile.season.ends then
+		self.footer.Text ..= "  ·  Season " .. tostring(profile.season.id) .. " ends in " .. timeLeft(profile.season.ends)
 	end
 	if data.live == false then
 		self.footer.Text ..= "  (this server only while testing)"

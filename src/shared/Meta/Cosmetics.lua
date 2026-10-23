@@ -188,6 +188,29 @@ for _, charId in { "mage", "trapper", "fire_starter", "naturalist", "warper", "o
 	end
 end
 
+-- Season titles: "Season 3 Gold"... for the best rank reached in a ranked season (ids
+-- match Progress.seasonTitleId; the Locker only shows the ones you've won)
+for season = 1, 24 do
+	for _, r in {
+		{ "bronze", "Bronze", "common", "#E0874A" },
+		{ "silver", "Silver", "rare", "#C9D3E6" },
+		{ "gold", "Gold", "epic", "#FFD23F" },
+		{ "diamond", "Diamond", "legendary", "#45C3FF" },
+		{ "legend", "Legend", "mythic", "#FF6FB8" },
+	} do
+		local text = "Season " .. season .. " " .. r[2]
+		table.insert(defs, {
+			id = "title_s" .. season .. "_" .. r[1],
+			category = "title",
+			name = text,
+			rarity = r[3],
+			source = "season",
+			hidden = true,
+			look = { text = text, color = r[4], rainbow = r[1] == "legend" or nil },
+		})
+	end
+end
+
 Cosmetics.byId = {}
 Cosmetics.list = {}
 Cosmetics.byCategory = {}

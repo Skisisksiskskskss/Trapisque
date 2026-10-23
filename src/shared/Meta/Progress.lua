@@ -6,6 +6,8 @@
 		Quests    three daily goals ("Bonk 5 rivals"), new every day, one free reroll
 		Streak    log in on consecutive days for a bigger reward each day (a chest on day 7)
 		Trophies  Quick Play results move your trophy count; trophies set your rank
+		Seasons   ranked play runs in four-week seasons: the best rank you reach pays
+		          out (and leaves you a title), then trophies carry over at half
 		Events    a weekly twist on the rules, with its own Quick Play queue
 
 	DataService applies these to profiles; the lobby shows them.
@@ -116,6 +118,8 @@ Progress.questPool = {
 	{ id = "spins", text = "Spin %d token wheels", stat = "spins", goal = 6, gems = 35 },
 	{ id = "doubles", text = "Roll doubles %d times", stat = "doubles", goal = 3, gems = 35 },
 	{ id = "bought", text = "Buy %d potions", stat = "bought", goal = 2, gems = 40 },
+	-- (only for players who've played with friends)
+	{ id = "friend", text = "Finish ahead of a friend in a match", stat = "friendsBeaten", goal = 1, gems = 50, friends = true },
 	{ id = "char_mage", text = "Play a match as the Mage", stat = "char:mage", goal = 1, gems = 35 },
 	{ id = "char_trapper", text = "Play a match as the Trapper", stat = "char:trapper", goal = 1, gems = 35 },
 	{ id = "char_fire_starter", text = "Play a match as the Fire Starter", stat = "char:fire_starter", goal = 1, gems = 35 },
@@ -137,8 +141,9 @@ function Progress.questText(q): string
 end
 
 -- Today's quests for a player: three different ones, at most one "play as" quest, and
--- only for a character they can pick (`canPlay(characterId)`, if given).
-function Progress.dailyQuests(userId: number, day: number, canPlay: ((string) -> boolean)?): { any }
+-- only for a character they can pick (`canPlay(characterId)`, if given). Quests about
+-- friends only come up for players who play with friends (`withFriends`).
+function Progress.dailyQuests(userId: number, day: number, canPlay: ((string) -> boolean)?, withFriends: boolean?): { any }
 	local rand = lcg(userId * 7919 + day * 104729 + 17)
 	local picked, out = {}, {}
 	local charQuest = false
@@ -147,7 +152,7 @@ function Progress.dailyQuests(userId: number, day: number, canPlay: ((string) ->
 		guard += 1
 		local q = Progress.questPool[rand(#Progress.questPool)]
 		local isChar = string.sub(q.stat, 1, 5) == "char:"
-		local playable = not isChar or canPlay == nil or canPlay(string.sub(q.stat, 6))
+		local playable = (not isChar or canPlay == nil or canPlay(string.sub(q.stat, 6))) and (not q.friends or withFriends == true)
 		if not picked[q.id] and not (isChar and charQuest) and playable then
 			picked[q.id] = true
 			charQuest = charQuest or isChar
@@ -158,7 +163,7 @@ function Progress.dailyQuests(userId: number, day: number, canPlay: ((string) ->
 end
 
 -- A replacement for quest slot `index` that isn't one of today's.
-function Progress.rerollQuest(list, index: number, seed: number, canPlay: ((string) -> boolean)?)
+function Progress.rerollQuest(list, index: number, seed: number, canPlay: ((string) -> boolean)?, withFriends: boolean?)
 	local rand = lcg(seed)
 	local have = {}
 	for _, q in list do
@@ -167,7 +172,7 @@ function Progress.rerollQuest(list, index: number, seed: number, canPlay: ((stri
 	for _ = 1, 100 do
 		local q = Progress.questPool[rand(#Progress.questPool)]
 		local isChar = string.sub(q.stat, 1, 5) == "char:"
-		if not have[q.id] and (not isChar or canPlay == nil or canPlay(string.sub(q.stat, 6))) then
+		if not have[q.id] and (not isChar or canPlay == nil or canPlay(string.sub(q.stat, 6))) and (not q.friends or withFriends == true) then
 			return { id = q.id, progress = 0, done = false }
 		end
 	end
@@ -256,6 +261,50 @@ function Progress.trophyDelta(place: number, players: number, won: boolean, team
 		delta = math.ceil(delta / 2)
 	end
 	return math.max(delta, -trophies)
+end
+
+-- The friend just ahead of you on the trophies board is your rival for the week (weeks
+-- start on Thursday): pass them for this many Gems, once a week.
+Progress.RivalGems = 100
+
+function Progress.week(now: number?): number
+	return (now or os.time()) // (7 * DAY)
+end
+
+---------------------------------------------------------------------------
+-- Ranked seasons
+---------------------------------------------------------------------------
+
+--[[
+	Ranked Quick Play runs in seasons of four weeks, Thursday to Thursday. When one ends,
+	the best rank you reached in it pays out: Gems, a free chest from Gold up, and a
+	title to wear ("Season 2 Gold"). Your trophies drop to half for the next one.
+]]
+Progress.SeasonDays = 28
+-- The 28-day block (counted from 1 January 1970, a Thursday) that is Season 1.
+Progress.FirstSeasonBlock = 741
+-- Seasons with titles made for them (Cosmetics: title_s<season>_<rank>).
+Progress.SeasonTitles = 24
+Progress.seasonGems = { wood = 0, bronze = 50, silver = 100, gold = 200, diamond = 350, legend = 500 }
+Progress.seasonChest = { gold = "explorer", diamond = "explorer", legend = "royal" }
+
+function Progress.season(now: number?): number
+	local block = (now or os.time()) // (Progress.SeasonDays * DAY)
+	return math.max(1, block - Progress.FirstSeasonBlock + 1)
+end
+
+-- When season `n` ends (Unix time).
+function Progress.seasonEnds(n: number): number
+	return (Progress.FirstSeasonBlock + n) * Progress.SeasonDays * DAY
+end
+
+function Progress.seasonTitleId(n: number, rankId: string): string
+	return "title_s" .. n .. "_" .. rankId
+end
+
+-- The trophies you take into the next season.
+function Progress.seasonCarry(trophies: number): number
+	return math.floor(trophies / 2)
 end
 
 ---------------------------------------------------------------------------

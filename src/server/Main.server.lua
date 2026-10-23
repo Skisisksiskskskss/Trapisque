@@ -83,6 +83,7 @@ start("TeleportUtil", TeleportUtil.init)
 start("DataService", DataService.init)
 start("LeaderboardService", function()
 	LeaderboardService.init(DataService.get)
+	LeaderboardService.hooks.rival = DataService.rival
 end)
 start("GachaService", GachaService.init)
 start("PartyService", PartyService.init)

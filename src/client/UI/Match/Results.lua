@@ -399,6 +399,10 @@ function Results.show(layer: Instance, data, mySeat: number, isTeam: boolean, on
 				local d = trophies.delta or 0
 				head = (if d >= 0 then "+" else "") .. tostring(d) .. " trophies"
 				sub = tostring(trophies.total) .. "  ·  " .. (if rankDef then rankDef.name else "") .. (if trophies.rankUp then "  Rank up!" else "")
+				if trophies.rival then
+					-- (passed this week's rival on the friends board)
+					sub ..= "  ·  Passed " .. tostring(trophies.rival.name) .. "! +" .. tostring(trophies.rival.gems)
+				end
 			else
 				head = "Trophies"
 				sub = if data.kind == "public" then "Team and event games aren't ranked" else "Only Quick Play counts"
@@ -415,7 +419,7 @@ function Results.show(layer: Instance, data, mySeat: number, isTeam: boolean, on
 				text = sub,
 				font = "heavy",
 				size = if narrow then 11 else 13,
-				color = if trophies and trophies.rankUp then C.sun else C.textSoft,
+				color = if trophies and (trophies.rankUp or trophies.rival) then C.sun else C.textSoft,
 				wrap = true,
 				valign = "top",
 				sizeUDim = UDim2.new(1, -(tx + 6), 1, if narrow then -22 else -32),

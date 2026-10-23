@@ -51,7 +51,8 @@ local function newProfile()
 		gems = Config.Rewards.StartingGems,
 		xp = 0,
 		level = 1,
-		stats = { games = 0, wins = 0, treasures = 0, deaths = 0, placed = 0, practice = 0, bonks = 0, gotchas = 0 },
+		stats = { games = 0, wins = 0, treasures = 0, deaths = 0, placed = 0, practice = 0, bonks = 0, gotchas = 0, friendGames = 0 },
+		rival = { week = -1, userId = 0, name = "", target = 0, done = false }, -- this week's friend to pass (Progress.RivalGems)
 		character = Characters.ids[1], -- the character you play in matches
 		mastery = {}, -- [characterId] = mastery XP
 		awards = {}, -- [awardId] = how many times you've won it (Shared/Game/Awards)
@@ -59,6 +60,8 @@ local function newProfile()
 		streak = { day = -10, count = 0 },
 		trophies = 0,
 		bestTrophies = 0,
+		season = { id = 0, best = 0 }, -- the ranked season your trophies are in, and your best in it
+		seasonNews = nil, -- how the last season you played ended, until you've seen it
 		owned = owned,
 		equipped = {
 			finish = Cosmetics.defaults.finish,
@@ -386,6 +389,9 @@ function DataService.view(player: Player)
 		streak = { count = data.streak.count, day = data.streak.day, today = Progress.today() },
 		trophies = data.trophies,
 		bestTrophies = data.bestTrophies,
+		season = { id = data.season.id, best = data.season.best, ends = Progress.seasonEnds(data.season.id) },
+		seasonNews = data.seasonNews,
+		awards = table.clone(data.awards),
 		badges = table.clone(data.badges),
 		fish = table.clone(data.fish),
 		fishBest = table.clone(data.fishBest),
@@ -417,7 +423,7 @@ local function ensureQuests(player: Player, data)
 			day = today,
 			list = Progress.dailyQuests(player.UserId, today, function(id)
 				return Characters.unlocked(id, data.level)
-			end),
+			end, (data.stats.friendGames or 0) > 0),
 			rerolled = false,
 			bonus = false,
 		}
@@ -525,7 +531,7 @@ function DataService.rerollQuest(player: Player, index: any)
 	end
 	local fresh = Progress.rerollQuest(quests.list, index, player.UserId + quests.day * 31 + index, function(id)
 		return Characters.unlocked(id, data.level)
-	end)
+	end, (data.stats.friendGames or 0) > 0)
 	if not fresh then
 		return false, "No other quests to swap in."
 	end
@@ -890,12 +896,23 @@ local function applyTrophies(data, result)
 	if not result.ranked or result.practice then
 		return nil
 	end
+	-- (a season can end mid-session)
+	DataService.seasonRollover(data)
 	local before = data.trophies
 	local delta = Progress.trophyDelta(result.place or result.players or 1, result.players or 1, result.won == true, result.team == true, before)
 	data.trophies = math.max(0, before + delta)
 	data.bestTrophies = math.max(data.bestTrophies, data.trophies)
+	data.season.best = math.max(data.season.best or 0, data.trophies)
 	local oldRank, newRank = Progress.rank(before), Progress.rank(data.trophies)
-	return { delta = delta, total = data.trophies, rank = newRank.id, rankUp = newRank.min > oldRank.min }
+	-- passed this week's rival (the friend who was just ahead)
+	local passed = nil
+	local rival = data.rival
+	if rival.week == Progress.week() and not rival.done and rival.userId ~= 0 and data.trophies > rival.target then
+		rival.done = true
+		data.gems += Progress.RivalGems
+		passed = { name = rival.name, gems = Progress.RivalGems }
+	end
+	return { delta = delta, total = data.trophies, rank = newRank.id, rankUp = newRank.min > oldRank.min, rival = passed }
 end
 
 --[[
@@ -961,6 +978,9 @@ function DataService.applyMatchResult(player: Player, result)
 		end
 	end
 	s.treasures += result.treasures
+	if (result.friends or 0) > 0 then
+		s.friendGames += 1
+	end
 	s.deaths += stats.deaths or 0
 	s.placed += stats.placed or 0
 	s.bonks += stats.bonks or 0
@@ -1029,6 +1049,75 @@ local function loginStreak(player: Player)
 	end)
 end
 
+--[[
+	A new ranked season (Progress.season): the last one you played pays out by the best
+	rank you reached in it, and your trophies carry over at half. The lobby shows how it
+	went (data.seasonNews) until you've seen it.
+]]
+local function seasonRollover(data)
+	local now = Progress.season()
+	local s = data.season
+	if s.id == now then
+		return
+	end
+	if (s.id or 0) <= 0 or s.id > now then
+		-- (a new profile, or one from before seasons: it starts in this one)
+		data.season = { id = now, best = data.trophies }
+		return
+	end
+	local rank = Progress.rank(math.max(s.best or 0, data.trophies))
+	local news = { season = s.id, rank = rank.id, gems = Progress.seasonGems[rank.id] or 0 }
+	data.gems += news.gems
+	if rank.id ~= "wood" then
+		local title = Progress.seasonTitleId(s.id, rank.id)
+		if Cosmetics.get(title) then
+			data.owned[title] = true
+			news.title = title
+		end
+	end
+	local chest = Progress.seasonChest[rank.id]
+	if chest then
+		data.freeChests[chest] = (data.freeChests[chest] or 0) + 1
+		news.chest = chest
+	end
+	news.trophiesBefore = data.trophies
+	data.trophies = Progress.seasonCarry(data.trophies)
+	news.trophies = data.trophies
+	data.season = { id = now, best = data.trophies }
+	data.seasonNews = news
+end
+DataService.seasonRollover = seasonRollover
+
+--[[
+	This week's rival (the friends trophies board): the friend just ahead of you when you
+	first look this week, and the trophies to pass. `entries` is the board, best first.
+]]
+function DataService.rival(player: Player, entries)
+	local data = DataService.get(player)
+	if not data then
+		return nil
+	end
+	local week = Progress.week()
+	local r = data.rival
+	if r.week ~= week or r.userId == 0 then
+		r = { week = week, userId = 0, name = "", target = 0, done = false }
+		local above = nil
+		for _, e in entries do
+			if e.userId ~= player.UserId and e.value > data.trophies then
+				above = e -- (the list is best first: the last one above is the closest)
+			end
+		end
+		if above then
+			r.userId, r.name, r.target = above.userId, above.name, above.value
+		end
+		data.rival = r
+	end
+	if r.userId == 0 then
+		return nil
+	end
+	return { name = r.name, target = r.target, done = r.done, gems = Progress.RivalGems }
+end
+
 local function onPlayerAdded(player: Player)
 	local data, temp = loadData(player)
 	if not data or player.Parent ~= Players then
@@ -1039,6 +1128,7 @@ local function onPlayerAdded(player: Player)
 	prof.restricted = checkPolicy(player)
 	refreshPasses(player)
 	loginStreak(player)
+	seasonRollover(data)
 	loadedSignal:Fire(player)
 	DataService.pushProfile(player)
 	if temp and store then
@@ -1126,6 +1216,16 @@ function DataService.init()
 
 	Net.handle("profile.get", function(player)
 		return true, DataService.view(player)
+	end)
+
+	-- the end-of-season news has been seen
+	Net.handle("season.seen", function(player)
+		local data = DataService.get(player)
+		if data and data.seasonNews then
+			data.seasonNews = nil
+			DataService.pushProfile(player)
+		end
+		return true
 	end)
 
 	Net.handle("locker.equip", function(player, payload)
