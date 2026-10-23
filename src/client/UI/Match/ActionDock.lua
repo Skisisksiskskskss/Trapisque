@@ -149,7 +149,7 @@ function ActionDock:_buildPower(r, form: string)
 			ZIndex = 2,
 			Parent = box,
 		})
-		Icons.medallion(p, self.character or "info", color, { Size = UDim2.fromScale(1, 1), ZIndex = 2 })
+		Icons.medallion(p, self.portrait or self.character or "info", color, { Size = UDim2.fromScale(1, 1), ZIndex = 2 })
 		p.Activated:Connect(function()
 			if self.onPortrait then
 				self.onPortrait()

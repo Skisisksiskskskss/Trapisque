@@ -467,5 +467,95 @@ PORTRAITS = [
 ]
 
 
+# ---------------------------------------------------------------------------
+# outfits: the same eight in another set of clothes (Cosmetics "outfit"), made by
+# recolouring each portrait, so they keep exactly the same shapes and faces
+# ---------------------------------------------------------------------------
+
+import colorsys
+import re
+
+# each pirate's skin (the face, its line and its shadow stay as they are in gold)
+SKIN = {
+    "mage": "#F2CBAE", "trapper": "#F6CFA8", "fire_starter": "#8C5A3A", "naturalist": "#C68A5E",
+    "warper": "#F2D2B8", "overseer": "#6E4630", "gambler": "#F4D0B4", "cannoneer": "#D99C70",
+}
+
+
+def _lum(c):
+    r, g, b = (v / 255 for v in _rgb(c))
+    return 0.299 * r + 0.587 * g + 0.114 * b
+
+
+def _recolor(svg, fn):
+    return re.sub(r"#[0-9A-Fa-f]{6}", lambda m: fn(m.group(0).upper()), svg)
+
+
+def _extra(svg, parts):
+    return svg.replace("</svg>", "".join(parts) + "</svg>")
+
+
+def ghost(name, svg):
+    """Ghost Crew: see-through sea-green spirits, the colour washed out of their clothes,
+    lines gone deep teal, and a few wisps curling up off their shoulders."""
+    skin = SKIN[name]
+    face = {skin.upper(), ink(skin).upper(), dark(skin).upper()}
+
+    def fn(c):
+        if c in face:
+            return {skin.upper(): "#CDEFE0", ink(skin).upper(): "#3C7A72", dark(skin).upper(): "#A9DCC9"}[c]
+        if c == EYE.upper() or c == MOUTH.upper():
+            return "#1E4A4E"
+        if c == CHEEK.upper():
+            return "#9FD8D0"
+        if _lum(c) < 0.3:
+            return mix(c, "#1F4F55", 0.8)
+        h, l, sat = colorsys.rgb_to_hls(*(v / 255 for v in _rgb(c)))
+        rgb = colorsys.hls_to_rgb(h, 0.55 + l * 0.38, sat * 0.22)
+        return mix(_hex(tuple(v * 255 for v in rgb)), "#BDEBE4", 0.35)
+
+    out = _recolor(svg, fn)
+    wisps = []
+    for x, y, flip in ((14, 92, 1), (86, 90, -1), (24, 74, 1)):
+        d = (f"M {x} {y} C {x + 4 * flip} {y - 8}, {x - 3 * flip} {y - 13}, {x + 2 * flip} {y - 19} "
+             f"C {x + 5 * flip} {y - 15}, {x + 7 * flip} {y - 9}, {x + 3 * flip} {y - 2} Z")
+        wisps.append(f'<path d="{d}" fill="#E6FFF6" fill-opacity="0.7" stroke="#7FC9BC" stroke-width="1.1"/>')
+    return _extra(out, wisps)
+
+
+def gilded(name, svg):
+    """Gilded: every stitch of their clothes (hats, hair and gear too) in shining gold,
+    faces left as they are, and a glint or two."""
+    skin = SKIN[name]
+    keep = {skin.upper(), ink(skin).upper(), dark(skin).upper(), EYE.upper(), MOUTH.upper(), CHEEK.upper()}
+
+    def fn(c):
+        if c in keep:
+            return c
+        l = _lum(c)
+        if l < 0.3:
+            return mix("#6A4310", "#3E2608", 1 - l / 0.3)
+        if l < 0.62:
+            return mix("#B8800F", "#E7B023", (l - 0.3) / 0.32)
+        return mix("#F2C94A", "#FFF3BF", (l - 0.62) / 0.38)
+
+    out = _recolor(svg, fn)
+    glints = []
+    for x, y, r in ((22, 84, 3.2), (78, 30, 2.6), (70, 92, 2.2)):
+        d = (f"M {x} {y - r} Q {x + r * 0.22} {y - r * 0.22}, {x + r} {y} Q {x + r * 0.22} {y + r * 0.22}, {x} {y + r} "
+             f"Q {x - r * 0.22} {y + r * 0.22}, {x - r} {y} Q {x - r * 0.22} {y - r * 0.22}, {x} {y - r} Z")
+        glints.append(f'<path d="{d}" fill="#FFFFFF"/>')
+    return _extra(out, glints)
+
+
+OUTFITS = [("ghost", ghost), ("gilded", gilded)]
+
+
 def sprites():
-    return [(name, draw()) for name, draw in PORTRAITS]
+    out = []
+    for name, draw in PORTRAITS:
+        svg = draw()
+        out.append((name, svg))
+        for outfit, dress in OUTFITS:
+            out.append((name + "_" + outfit, dress(name, svg)))
+    return out

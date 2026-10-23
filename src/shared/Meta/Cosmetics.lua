@@ -7,7 +7,7 @@
 	PieceArt for finishes), not image ids. Colors are hex strings so this module stays
 	plain data.
 
-	category  finish | dice | trail | emote | title
+	category  finish | dice | trail | emote | title | outfit
 	rarity    common | rare | epic | legendary | mythic
 	source    nil = in chests, "default" = everyone owns it, "vip" / "emotepack" / "captain"
 	          = gamepass,
@@ -34,6 +34,7 @@ Cosmetics.categories = {
 	{ id = "trail", name = "Trails", single = "Trail" },
 	{ id = "emote", name = "Emotes", single = "Emote" },
 	{ id = "title", name = "Titles", single = "Title" },
+	{ id = "outfit", name = "Outfits", single = "Outfit" },
 }
 
 -- How many emotes can be equipped at once (the emote wheel in matches)
@@ -188,6 +189,30 @@ for _, charId in { "mage", "trapper", "fire_starter", "naturalist", "warper", "o
 	end
 end
 
+-- Outfits: a character's portrait in another set of clothes (worn per character: your
+-- Mage can be Ghostly while your Trapper is Gilded). Classic is the one everyone has;
+-- the Ghost Crew is in Treasure Chests; Gilded comes with character mastery
+-- (Progress.OutfitMastery). art/portraits.py makes the art: portraits/<character>_<set>.
+Cosmetics.outfitSets = {
+	{ id = "classic", name = "Classic", rarity = "common", source = "default" },
+	{ id = "ghost", name = "Ghostly", rarity = "epic" },
+	{ id = "gilded", name = "Gilded", rarity = "legendary", source = "mastery" },
+}
+for _, charId in { "mage", "trapper", "fire_starter", "naturalist", "warper", "overseer", "gambler", "cannoneer" } do
+	for _, set in Cosmetics.outfitSets do
+		table.insert(defs, {
+			id = "outfit_" .. charId .. "_" .. set.id,
+			category = "outfit",
+			character = charId,
+			set = set.id,
+			name = set.name .. " " .. masteryNames[charId],
+			rarity = set.rarity,
+			source = set.source,
+			look = { portrait = if set.id == "classic" then charId else (charId .. ":" .. set.id) },
+		})
+	end
+end
+
 -- Season titles: "Season 3 Gold"... for the best rank reached in a ranked season (ids
 -- match Progress.seasonTitleId; the Locker only shows the ones you've won)
 for season = 1, 24 do
@@ -237,6 +262,16 @@ Cosmetics.defaults = {
 
 function Cosmetics.get(id: string)
 	return Cosmetics.byId[id]
+end
+
+-- The outfit `character` wears in `outfits` ([character] = outfit id; Classic if none).
+function Cosmetics.outfitOf(outfits: { [string]: string }?, character: string): string
+	local id = outfits and outfits[character]
+	local def = id and Cosmetics.byId[id]
+	if def and def.category == "outfit" and def.character == character then
+		return id :: string
+	end
+	return "outfit_" .. character .. "_classic"
 end
 
 -- The pawn skins that accessories replaced, by rarity: saves that own them get the

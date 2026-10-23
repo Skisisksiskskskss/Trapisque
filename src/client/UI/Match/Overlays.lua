@@ -427,7 +427,8 @@ end
 ---------------------------------------------------------------------------
 
 -- "Pip's turn" ribbon that sweeps across the top of the board.
-function Overlays.turnBanner(layer: Frame, text: string, seatColor: Color3, mine: boolean, speed: number)
+-- (`portrait`: whose turn it is, in their outfit, on the banner)
+function Overlays.turnBanner(layer: Frame, text: string, seatColor: Color3, mine: boolean, speed: number, portrait: string?)
 	local banner = Util.new("Frame", {
 		Name = "TurnBanner",
 		BackgroundColor3 = if mine then C.brass else C.panel,
@@ -444,20 +445,31 @@ function Overlays.turnBanner(layer: Frame, text: string, seatColor: Color3, mine
 	if k < 1 then
 		Util.new("UIScale", { Name = "Fit", Scale = k, Parent = banner })
 	end
-	-- the player's seat colour as a pawn-like dot, inset from the edge
-	local dotSize = if mine then 26 else 22
-	local dot = Util.new("Frame", {
-		Name = "SeatDot",
-		BackgroundColor3 = seatColor,
-		BorderSizePixel = 0,
-		AnchorPoint = Vector2.new(0, 0.5),
-		Position = UDim2.new(0, 16, 0.5, 0),
-		Size = UDim2.fromOffset(dotSize, dotSize),
-		ZIndex = 86,
-		Parent = banner,
-	})
-	Util.corner(dot, 0.5)
-	Util.stroke(dot, C.ink, 2)
+	-- their character's portrait (or just their seat colour), inset from the edge
+	local dotSize = if portrait then (if mine then 44 else 38) else (if mine then 26 else 22)
+	if portrait then
+		local holder = Util.frame(banner, {
+			Name = "SeatDot",
+			AnchorPoint = Vector2.new(0, 0.5),
+			Position = UDim2.new(0, 10, 0.5, 0),
+			Size = UDim2.fromOffset(dotSize, dotSize),
+			ZIndex = 86,
+		})
+		Icons.medallion(holder, portrait, seatColor, { Size = UDim2.fromScale(1, 1), ZIndex = 86 })
+	else
+		local dot = Util.new("Frame", {
+			Name = "SeatDot",
+			BackgroundColor3 = seatColor,
+			BorderSizePixel = 0,
+			AnchorPoint = Vector2.new(0, 0.5),
+			Position = UDim2.new(0, 16, 0.5, 0),
+			Size = UDim2.fromOffset(dotSize, dotSize),
+			ZIndex = 86,
+			Parent = banner,
+		})
+		Util.corner(dot, 0.5)
+		Util.stroke(dot, C.ink, 2)
+	end
 	Widgets.label(banner, {
 		text = text,
 		font = "chunky",
@@ -483,7 +495,9 @@ function Overlays.turnBanner(layer: Frame, text: string, seatColor: Color3, mine
 end
 
 -- Character card swoops in with the ability name.
-function Overlays.abilityBanner(layer: Frame, character: string, abilityName: string, playerName: string, speed: number)
+-- (`portraitId`: their character, in the outfit they wear: "mage:ghost")
+function Overlays.abilityBanner(layer: Frame, portraitId: string, abilityName: string, playerName: string, speed: number)
+	local character = Icons.splitPortrait(portraitId)
 	local color = Theme.Character[character] or C.brass
 	local outer = fitted(layer, "AbilityBanner", 520, 180, 0.5, 0.42, 88)
 	local wrap = Util.frame(outer, { Name = "Inner", ZIndex = 88 })
@@ -498,7 +512,7 @@ function Overlays.abilityBanner(layer: Frame, character: string, abilityName: st
 		Parent = wrap,
 	})
 	Util.stroke(band, C.ink, 3)
-	local card = Cards.character(wrap, character, {
+	local card = Cards.character(wrap, portraitId, {
 		Position = UDim2.new(0.18, 0, 0.5, 0),
 		Size = UDim2.fromOffset(120, 120 / 0.72),
 		ZIndex = 90,
@@ -687,7 +701,7 @@ function Overlays.reveal(layer: Frame, seats, duration: number)
 	local cards = {}
 	for i, info in seats do
 		local slot = Util.frame(row, { Size = UDim2.fromOffset(130, 250), LayoutOrder = i })
-		local card = Cards.character(slot, info.character or "mage", {
+		local card = Cards.character(slot, info.portrait or info.character or "mage", {
 			Position = UDim2.fromScale(0.5, 0.42),
 			Size = UDim2.fromOffset(124, 124 / 0.72),
 		})

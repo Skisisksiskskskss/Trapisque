@@ -334,6 +334,9 @@ function Results.show(layer: Instance, data, mySeat: number, isTeam: boolean, on
 					table.insert(extra, "New title!")
 					local _ = id
 				end
+				if mastery.outfit then
+					table.insert(extra, "Gilded outfit!")
+				end
 				Widgets.label(f, {
 					text = if #extra > 0 then table.concat(extra, "  ·  ") else "Character mastery",
 					font = "heavy",

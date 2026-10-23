@@ -69,6 +69,7 @@ local function newProfile()
 			trail = Cosmetics.defaults.trail,
 			title = Cosmetics.defaults.title,
 			emotes = table.clone(Cosmetics.defaults.emotes),
+			outfits = {}, -- [characterId] = outfit id (none: Classic)
 		},
 		pity = { explorer = {}, royal = {} },
 		granted = {}, -- [passKey] = true: passes the owner gave this player
@@ -370,6 +371,7 @@ function DataService.view(player: Player)
 			trail = data.equipped.trail,
 			title = data.equipped.title,
 			emotes = table.clone(data.equipped.emotes),
+			outfits = table.clone(data.equipped.outfits or {}),
 		},
 		pity = {
 			explorer = table.clone(data.pity.explorer or {}),
@@ -560,6 +562,7 @@ function DataService.publicLook(player: Player)
 		trail = data.equipped.trail,
 		title = data.equipped.title,
 		emotes = table.clone(data.equipped.emotes),
+		outfits = table.clone(data.equipped.outfits or {}),
 		level = data.level,
 		vip = vip,
 		-- the base your character stands on: earned with mastery (Progress.baseTier)
@@ -786,6 +789,18 @@ function DataService.equip(player: Player, category: string, value: any)
 		data.equipped.emotes = list
 		return true
 	end
+	if category == "outfit" then
+		-- (worn by one character)
+		local def = type(value) == "string" and Cosmetics.get(value)
+		if not def or def.category ~= "outfit" then
+			return false, "That item doesn't fit there."
+		end
+		if not hasItem(player, data, value) then
+			return false, "You don't own that yet."
+		end
+		data.equipped.outfits[def.character] = if def.set == "classic" then nil else value
+		return true
+	end
 	if category ~= "finish" and category ~= "dice" and category ~= "trail" and category ~= "title" then
 		return false, "Unknown slot."
 	end
@@ -834,6 +849,7 @@ local function applyMastery(data, result)
 	data.mastery[charId] = after
 	local oldLevel, newLevel = Progress.masteryLevel(before), Progress.masteryLevel(after)
 	local gems, titles = 0, {}
+	local outfit = nil
 	for level = oldLevel + 1, newLevel do
 		gems += Progress.masteryGems(level)
 		local tier = Progress.masteryTitles[level]
@@ -842,6 +858,14 @@ local function applyMastery(data, result)
 			if Cosmetics.get(id) and not data.owned[id] then
 				data.owned[id] = true
 				table.insert(titles, id)
+			end
+		end
+		if level == Progress.OutfitMastery then
+			-- their Gilded outfit
+			local id = "outfit_" .. charId .. "_gilded"
+			if Cosmetics.get(id) and not data.owned[id] then
+				data.owned[id] = true
+				outfit = id
 			end
 		end
 	end
@@ -856,6 +880,7 @@ local function applyMastery(data, result)
 		need = need,
 		gems = gems,
 		titles = titles,
+		outfit = outfit,
 	}
 end
 

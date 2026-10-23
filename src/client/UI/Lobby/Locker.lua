@@ -9,6 +9,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage.Shared
+local Characters = require(ReplicatedStorage.Shared.Game.Characters)
 local Cosmetics = require(Shared.Meta.Cosmetics)
 
 local UI = script.Parent.Parent
@@ -32,6 +33,7 @@ local TILE = Vector2.new(150, 172)
 local SOURCE_TEXT = {
 	vip = "VIP pass",
 	season = "Ranked seasons",
+	mastery = "Character mastery",
 	emotepack = "Emote Pack",
 }
 
@@ -108,7 +110,18 @@ function Locker._fill(_maid, content: Frame, category: string)
 			table.insert(items, def)
 		end
 	end
+	local charOrder = {}
+	for i, id in Characters.ids do
+		charOrder[id] = i
+	end
 	table.sort(items, function(a, b)
+		if category == "outfit" then
+			-- (a row of outfits for each character)
+			if a.character ~= b.character then
+				return (charOrder[a.character] or 99) < (charOrder[b.character] or 99)
+			end
+			return a.order < b.order
+		end
 		local oa, ob = owned[a.id] == true, owned[b.id] == true
 		if oa ~= ob then
 			return oa
@@ -155,7 +168,10 @@ function Locker._fill(_maid, content: Frame, category: string)
 
 	for i, def in items do
 		local isOwned = owned[def.id] == true
-		local isEquipped = if category == "emote" then emoteSlots[def.id] ~= nil else equipped[category] == def.id
+		local isEquipped = if category == "emote"
+			then emoteSlots[def.id] ~= nil
+			elseif category == "outfit" then Cosmetics.outfitOf(equipped.outfits, def.character) == def.id
+			else equipped[category] == def.id
 		local rarity = Cosmetics.rarityById[def.rarity]
 		local rimColor = if rarity then hex(string.sub(rarity.color, 2)) else C.textFaint
 		local tile = Util.new("TextButton", {

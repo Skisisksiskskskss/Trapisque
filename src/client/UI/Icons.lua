@@ -519,9 +519,31 @@ function Icons.stickerFor(id: string): { any }?
 	return StickerArt.misc[id]
 end
 
+-- A character's portrait id: "mage", or "mage:ghost" in an outfit (Cosmetics outfits).
+function Icons.splitPortrait(id: string): (string, string?)
+	local char, set = string.match(id, "^([%w_]+):([%w_]+)$")
+	if char then
+		return char, set
+	end
+	return id, nil
+end
+
+-- Its picture: portraits/mage_ghost (the Classic one if that outfit has no art).
+function Icons.portraitSprite(id: string): string
+	local char, set = Icons.splitPortrait(id)
+	if set then
+		local name = "portraits/" .. char .. "_" .. set
+		if Art.has(name) then
+			return name
+		end
+	end
+	return "portraits/" .. char
+end
+
 --[[
 	An icon on a coloured disc with the sticker outline (tokens, badges, portraits).
-	Cards and characters show their sticker art; anything else is a white glyph.
+	Cards and characters show their sticker art; anything else is a white glyph. A
+	character can come in an outfit: "mage:ghost".
 ]]
 function Icons.medallion(parent: Instance, id: string, color: Color3, props: { [string]: any }?): Frame
 	local disc = Util.new("Frame", {
@@ -541,7 +563,8 @@ function Icons.medallion(parent: Instance, id: string, color: Color3, props: { [
 	Util.corner(disc, 0.5)
 	Util.scaledStroke(disc, Theme.C.line, 0.035, 2)
 	disc.Parent = parent
-	if StickerArt.bodyColor[id] then
+	local character = Icons.splitPortrait(id)
+	if StickerArt.bodyColor[character] then
 		-- a character: a real portrait on a pale disc of their colour, cropped to the circle
 		disc.BackgroundColor3 = color:Lerp(Theme.C.cream, 0.62)
 		local crop = Util.new("CanvasGroup", {
@@ -553,8 +576,8 @@ function Icons.medallion(parent: Instance, id: string, color: Color3, props: { [
 		})
 		Util.corner(crop, 0.5)
 		-- their illustrated portrait (Art), or the drawing from code shapes
-		if not Art.image(crop, "portraits/" .. id, { ZIndex = disc.ZIndex + 1 }) then
-			local s = Icons.sticker(crop, StickerArt.mascot(id, nil, { crop = true }), {
+		if not Art.image(crop, Icons.portraitSprite(id), { ZIndex = disc.ZIndex + 1 }) then
+			local s = Icons.sticker(crop, StickerArt.mascot(character, nil, { crop = true }), {
 				Size = UDim2.fromScale(1, 1),
 				ZIndex = disc.ZIndex + 1,
 			}, 0.045)

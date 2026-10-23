@@ -66,6 +66,15 @@ function CosmeticArt.characterBadge(parent: Instance, character: string, props: 
 	return Icons.medallion(parent, character, color, props)
 end
 
+--[[
+	The portrait to draw for `character` in someone's outfit: "mage", or "mage:ghost".
+	`outfits` is their equipped outfits ([character] = outfit id), from a look or a profile.
+]]
+function CosmeticArt.portraitId(character: string, outfits: { [string]: string }?): string
+	local def = Cosmetics.get(Cosmetics.outfitOf(outfits, character))
+	return if def and def.look and def.look.portrait then def.look.portrait else character
+end
+
 ---------------------------------------------------------------------------
 -- Dice
 ---------------------------------------------------------------------------
@@ -327,6 +336,12 @@ function CosmeticArt.preview(parent: Instance, itemId: string, _seatColor: Color
 		})
 	elseif def.category == "dice" then
 		CosmeticArt.die(holder, itemId, 5, { Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromScale(0.7, 0.7) })
+	elseif def.category == "outfit" then
+		-- the character in it
+		Icons.medallion(holder, def.look.portrait, Theme.Character[def.character] or Theme.C.grape, {
+			Position = UDim2.fromScale(0.5, 0.5),
+			Size = UDim2.fromScale(0.82, 0.82),
+		})
 	elseif def.category == "trail" then
 		local look = def.look
 		local color = hex(look.color, Theme.C.white)

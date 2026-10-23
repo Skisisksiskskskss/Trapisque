@@ -45,6 +45,7 @@ local Util = require(UI.Util)
 local Theme = require(UI.Theme)
 local Widgets = require(UI.Widgets)
 local Icons = require(UI.Icons)
+local CosmeticArt = require(UI.CosmeticArt)
 local Avatars = require(UI.Avatars)
 local Layout = require(UI.Layout)
 local Root = require(UI.Root)
@@ -421,6 +422,7 @@ function MatchScreen:_build(container: Frame)
 	self.tip = CardTip.new(self.popups)
 	self.dock = ActionDock.new(self.hud, {
 		character = me and me.character,
+		portrait = me and me.character and CosmeticArt.portraitId(me.character, me.look and me.look.outfits),
 		touch = touch,
 		diceSkin = me and me.look and me.look.dice,
 	})
@@ -438,7 +440,7 @@ function MatchScreen:_build(container: Frame)
 	end
 	self.dock.onPortrait = function()
 		if me and me.character then
-			Inspector.character(self.popups, me.character)
+			Inspector.character(self.popups, self:_portraitOf(self.mySeat))
 		end
 	end
 	self.feed = Feed.new(self.hud)
@@ -764,12 +766,21 @@ function MatchScreen:_seatList()
 			team = p.team,
 			character = p.character,
 			look = info.look,
+			portrait = self:_portraitOf(p.seat),
 		})
 	end
 	table.sort(list, function(a, b)
 		return a.seat < b.seat
 	end)
 	return list
+end
+
+-- The portrait for a seat's character, in the outfit they wear ("mage:ghost").
+function MatchScreen:_portraitOf(seat: number): string
+	local p = self:_player(seat)
+	local info = self.seats[seat]
+	local character = (p and p.character) or (info and info.character) or "mage"
+	return CosmeticArt.portraitId(character, info and info.look and info.look.outfits)
 end
 
 function MatchScreen:_destroy()
@@ -1329,7 +1340,7 @@ function MatchScreen:_play(e)
 		self.chips:setCurrent(e.p, nil)
 		self.dock:clearSelection()
 		local mine = e.p == self.mySeat
-		Overlays.turnBanner(self.fx, if mine then "Your turn!" else (self:_name(e.p) .. "'s turn"), self:_seatColor(e.p), mine, speed)
+		Overlays.turnBanner(self.fx, if mine then "Your turn!" else (self:_name(e.p) .. "'s turn"), self:_seatColor(e.p), mine, speed, self:_portraitOf(e.p))
 		local p = self:_player(e.p)
 		if p then
 			board:follow(p.tile)
@@ -1802,7 +1813,7 @@ function MatchScreen:_play(e)
 		if e.p == v.current then
 			v.abilityUsed = true
 		end
-		Overlays.abilityBanner(self.fx, p and p.character or "mage", ab and ab.name or "Ability", self:_name(e.p), speed)
+		Overlays.abilityBanner(self.fx, self:_portraitOf(e.p), ab and ab.name or "Ability", self:_name(e.p), speed)
 		if e.ability ~= "blizzard" and e.ability ~= "blast" then
 			Effects.ability(board, e.ability, e.p, e.target)
 			if e.ability == "stampede" then

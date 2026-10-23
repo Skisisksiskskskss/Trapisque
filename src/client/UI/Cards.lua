@@ -358,7 +358,9 @@ function Cards.item(parent: Instance?, itemId: string, props: { [string]: any }?
 	return makeCardObject(root, flipper, front, back)
 end
 
-function Cards.character(parent: Instance?, characterId: string, props: { [string]: any }?)
+-- (`portraitId` is a character, or one in an outfit: "mage:ghost")
+function Cards.character(parent: Instance?, portraitId: string, props: { [string]: any }?)
+	local characterId = Icons.splitPortrait(portraitId)
 	local def = Characters.get(characterId)
 	assert(def, "Cards: unknown character " .. tostring(characterId))
 	local root, flipper = newCard(parent, props)
@@ -368,7 +370,7 @@ function Cards.character(parent: Instance?, characterId: string, props: { [strin
 	local front, face = slab(flipper, color, true)
 	front.Name = "Front"
 	topTag(face, if def.ability then def.ability.name else "", root, color)
-	local portrait = "portraits/" .. characterId
+	local portrait = Icons.portraitSprite(portraitId)
 	local win = window(face, color, if Art.has(portrait) then nil else StickerArt.mascot(characterId))
 	if Art.has(portrait) then
 		-- their illustrated portrait, cropped to the window
