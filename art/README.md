@@ -1,7 +1,7 @@
 # The art
 
-The board's playing pieces, the map props and landmarks, and the eight character
-portraits are illustrations. They're drawn as SVG by the scripts in this folder and
+The board's playing pieces, the map props and landmarks, what the board shows on its
+tiles, and the eight character portraits are illustrations. They're drawn as SVG by the scripts in this folder and
 packed into four image sheets, which the game builds itself from data shipped in the
 place (or loads from Roblox, once you upload them):
 
@@ -10,14 +10,26 @@ place (or loads from Roblox, once you upload them):
 | `pieces.py` | the playing pieces (every character in every finish), and the mastery stands |
 | `props.py` | everything that stands around the trail on the five maps, and the landmarks |
 | `ground.py` | what lies on the ground: the soft spot used for the shallows, patches and shadows, tufts, pebbles, shells, flowers, leaves, swells on the sea, and the worn faces of the tile stones |
+| `items.py` | what's on a tile, as the thing itself: things standing on it (a banana peel, spikes, a Grog in its hole, a campfire, a snare, a wall, a locked gate, a mushroom, the treasure chest, the start flag) and covers over its top (ice, mud, water, lava, slime, sand, a portal, embers, a stretch of conveyor belt) |
 | `portraits.py` | the eight pirates, head and shoulders |
 
-The shapes of the land, the water, the trail and the tiles are still built from UI
-frames in code (`MapArt`, `BoardView`), so they stay sharp at any zoom: the land is a
-slab seen a little from above and in front, the way the props and pieces are drawn,
-with a cliff under the edges that face you, foam at the waterline and a lit lip along
-the edges that face the light; the trail is worn into it; the tiles are stones with a
-side, a bevel and a shadow.
+The shapes of the land, the water, the trail and the tiles are still built in code
+(`MapArt`, `BoardView`) from plain shapes (`ground.py`'s white disc and rounded square,
+stretched and tinted), so they stay sharp at any zoom. The board is seen a little from
+the side, the way the props and pieces are drawn: the ground is squashed top to bottom
+(`BoardLayout.Style.squash`), so a round tile is an ellipse, and what stands on it
+stands straight up, its foot on its spot. The land is a slab with a cliff under the
+edges that face you, foam at the waterline and a lit lip along the edges that face the
+light; the trail is worn into it; rivers, lava streams and slime pools are cut into it
+like the coast (a low bank in the land's own cliff colours along the far side, foam or
+a dark crust at the water, the near side's lit lip), and a river that reaches the cliff
+pours off it. The tiles are low stones with a short side, a bevel and a shadow.
+
+What's on a tile sits on it like a prop: a standing thing's foot is at (50, 80) of its
+canvas, put on the tile's middle; a cover is drawn from straight above and squashed onto
+the tile's top. A hidden trap shows only to whoever may see it (its owner, a teammate,
+X-Ray), see-through and ringed in its owner's colour; for everyone else the tile is
+untouched.
 
 ## One style
 
@@ -31,11 +43,12 @@ side, a bevel and a shadow.
 - as little detail as reads at the size it's shown: a prop is often 50 to 100 pixels
   tall on screen
 
-The portraits go a step further, so the crew reads as eight people rather than one face
-in eight hats: each has their own head (long, round, square, heart-shaped), nose, eyes,
-brows and mouth, the face they pull, a pose and something in their hands. Heads are
-turned three-quarters, and the shading is cel-style: flat colour and one hard-edged
-shadow per part, with a heavier line round the outside of a shape than inside it.
+The portraits are simpler still: a flat cartoon style of big chunky shapes, each one
+flat colour with a line in a dark shade of its own colour, and at most one flat shadow
+on a big part (under a hat's brim, under the chin). No gradients, no eye whites or
+shine: dot eyes (a line or an arc when they're lidded, shut or winking), bar brows, a
+plain nose and mouth, faces front on. The eight are told apart by the shape of their
+head, their hat and hair, and the one thing each of them carries.
 
 ## Building the sheets
 

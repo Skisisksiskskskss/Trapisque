@@ -308,12 +308,30 @@ what the camera shows, so none is cut in half by the edge of the screen. The lan
 disc copies that the ground hides completely are left out, so the richer map costs
 no more UI objects than the flat one did.
 
-**Portraits of people, not one face in eight hats.** The first illustrated portraits
-shared a single front-on face with the costume changed. Each pirate now has their own
-head, nose, eyes, brows and mouth, an expression (the Fire Starter's wink and grin,
-the Trapper's squint and smirk, the Overseer's stern brow), a pose and something in
-their hands (a match, a card, a cannonball, a parrot on the Naturalist's shoulder),
-turned three-quarters and cel-shaded.
+**Seen a little from the side, like the pieces.** Even shaded as a slab, a map seen
+straight from above didn't sit with props and pieces drawn from the front. The ground
+is now foreshortened (squashed top to bottom), so the tiles are ellipses, low stones
+with a short side, and what stands on the board stands up off it, its foot on its
+spot: a piece's base sits on its tile's middle, and a prop is kept from standing in
+front of a tile (or whoever is on it), where it would hide it. Rivers, lava streams
+and slime pools are cut into the ground the way the coast is cut into the sea, in the
+land's own cliff colours, narrow where they rise and wider toward the sea; an inland
+end is a small lake, and a river that reaches a cliff pours off it.
+
+**What's on a tile is the thing itself.** A banana peel lies on its tile, spikes stick
+out of it, a Grog peers out of its hole, a wall stands across it, ice freezes it over,
+mud and lava and slime spill over it, a portal glows on it, a belt runs over three of
+them; tokens are chips standing over their tiles. A card on the board is ringed in its
+owner's colour. A hidden trap shows only to whoever may see it (see-through, in its
+owner's ring); for everyone else its tile is untouched.
+
+**Portraits: simple and flat.** The first illustrated portraits shared one face with
+the costume changed; a detailed three-quarter redraw read as more realistic rather than
+more fun. They're now a flat cartoon style: chunky shapes in flat colour, dot eyes, bar
+brows, at most one flat shadow, front on. The eight are told apart by their head's
+shape, their hat and hair, a face (the Fire Starter's wink and grin, the Trapper's
+squint and smirk, the Overseer's stern brow) and what they carry (a match, a card, a
+cannonball, a parrot on the Naturalist's shoulder).
 
 ## 6. Talking at the table
 

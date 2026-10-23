@@ -446,6 +446,10 @@ StickerArt.tokens = {
 		{ "half", 0.5, 0.64, 0.46, dir = 180, c = P.pink, ol = false },
 		{ "rect", 0.5, 0.64, 0.46, 0.04, c = P.pink, ol = false },
 	},
+	coin = {
+		{ "circle", 0.5, 0.5, 0.66, c = P.cream },
+		{ "star", 0.5, 0.5, 0.36, c = P.sunDark, ol = false },
+	},
 }
 
 StickerArt.hazards = {

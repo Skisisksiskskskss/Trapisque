@@ -15,9 +15,7 @@ F.run(0.2)
 
 local Theme = requireModule("Client/UI/Theme")
 local Util = requireModule("Client/UI/Util")
-local Icons = requireModule("Client/UI/Icons")
 local Widgets = requireModule("Client/UI/Widgets")
-local StickerArt = requireModule("Client/UI/StickerArt")
 local CosmeticArt = requireModule("Client/UI/CosmeticArt")
 local Art = requireModule("Client/UI/Art")
 -- the illustrations come straight from the sheet files (art/sheets)
@@ -78,11 +76,11 @@ if not badgesOnly then
 	F.setScreen({ w = 512, h = 512, inset = 0 })
 	local gui = screenGui("Icon")
 	local bg = sea(gui, 512, 512, 10)
-	-- the Fire Starter (behind, right) and the Mage (in front, left, turned to face him),
-	-- big enough to read at the size Roblox shows icons, their shoulders running off the
-	-- bottom
-	Art.label(bg, "portraits/fire_starter", Vector2.new(392, 300), 470, false, { ZIndex = 5 })
-	Art.label(bg, "portraits/mage", Vector2.new(168, 316), 540, true, { ZIndex = 8 })
+	-- the Fire Starter (behind, right) and the Mage (in front, left, his staff on the
+	-- outside), big enough to read at the size Roblox shows icons, their shoulders running
+	-- off the bottom
+	Art.label(bg, "portraits/fire_starter", Vector2.new(400, 300), 470, false, { ZIndex = 5 })
+	Art.label(bg, "portraits/mage", Vector2.new(196, 316), 540, true, { ZIndex = 8 })
 	-- a band of shade the name sits on
 	Util.new("Frame", {
 		Name = "Band",
@@ -161,12 +159,7 @@ if not badgesOnly then
 		z = 41,
 	})
 	-- the treasure, with two dice
-	Icons.sticker(root, StickerArt.misc.chest, {
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromOffset(W / 2, 690),
-		Size = UDim2.fromOffset(300, 300),
-		ZIndex = 45,
-	}, 0.05)
+	Art.label(root, "items/chest", Vector2.new(W / 2, 650), 380, false, { ZIndex = 45 })
 	for i, at in { { W / 2 - 200, 610, -16 }, { W / 2 + 200, 620, 12 } } do
 		local die = Util.frame(root, {
 			AnchorPoint = Vector2.new(0.5, 0.5),

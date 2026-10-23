@@ -15,6 +15,7 @@
 		Art.has(name) -> boolean                         -- "props/palm", "pieces/paint_mage"
 		Art.image(parent, name, props) -> Frame?         -- nil when it can't
 		Art.label(parent, name, center, size, flip?, props?) -> ImageLabel?   -- just the image
+		                                                 -- (size: px, or a Vector2 to stretch)
 		Art.preload(timeout?)                            -- builds / loads the sheets
 
 	Art.image's frame is the sprite's whole canvas (props size and place it; it keeps the
@@ -135,16 +136,23 @@ function Art.image(parent: Instance?, name: string, props: { [string]: any }?): 
 end
 
 -- One ImageLabel and nothing else: sprite `name` with its whole canvas `size` pixels
--- across, centred on `center`. For the many small things on a map, where a frame round
--- each would only cost. `flip` mirrors it left to right by reading the rect backwards
--- (a negative ImageRectSize); only the offline store art uses that so far.
-function Art.label(parent: Instance?, name: string, center: Vector2, size: number, flip: boolean?, props: { [string]: any }?): ImageLabel?
+-- across (a Vector2 stretches it: an ellipse from a circle), centred on `center`. For
+-- the many small things on a map, where a frame round each would only cost. `flip`
+-- mirrors it left to right by reading the rect backwards (a negative ImageRectSize);
+-- only the offline store art uses that so far.
+function Art.label(parent: Instance?, name: string, center: Vector2, size: number | Vector2, flip: boolean?, props: { [string]: any }?): ImageLabel?
 	local s = ArtAtlas.sprites[name]
 	local source = s and sourceOf(s.sheet)
 	if not s or not source then
 		return nil
 	end
-	local k = size / math.max(s.ow, s.oh)
+	local kx, ky
+	if typeof(size) == "Vector2" then
+		kx, ky = size.X / s.ow, size.Y / s.oh
+	else
+		kx = (size :: number) / math.max(s.ow, s.oh)
+		ky = kx
+	end
 	local img = Instance.new("ImageLabel")
 	img.Name = string.match(name, "[^/]+$") or name
 	img.BackgroundTransparency = 1
@@ -155,7 +163,7 @@ function Art.label(parent: Instance?, name: string, center: Vector2, size: numbe
 		img.Image = source.image or ""
 	end
 	-- where the drawn part's middle is, from the canvas's middle
-	local mx, my = (s.ox + s.w / 2 - s.ow / 2) * k, (s.oy + s.h / 2 - s.oh / 2) * k
+	local mx, my = (s.ox + s.w / 2 - s.ow / 2) * kx, (s.oy + s.h / 2 - s.oh / 2) * ky
 	if flip then
 		-- the rect read right to left
 		img.ImageRectOffset = Vector2.new(s.x + s.w, s.y)
@@ -168,7 +176,7 @@ function Art.label(parent: Instance?, name: string, center: Vector2, size: numbe
 	img.ScaleType = Enum.ScaleType.Stretch
 	img.AnchorPoint = Vector2.new(0.5, 0.5)
 	img.Position = UDim2.fromOffset(center.X + mx, center.Y + my)
-	img.Size = UDim2.fromOffset(s.w * k, s.h * k)
+	img.Size = UDim2.fromOffset(s.w * kx, s.h * ky)
 	for key, v in props or {} do
 		(img :: any)[key] = v
 	end

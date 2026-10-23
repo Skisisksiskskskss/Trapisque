@@ -8,9 +8,16 @@
 
 	Units are map units (about one tile radius). y runs down.
 
+	The map is seen a little from the side: on screen the ground is squashed top to
+	bottom (Style.squash), and the props and the pieces stand straight up off it, their
+	foot on their spot. So a tall prop reaches up over whatever is behind it: the layout
+	keeps props from standing in front of a tile (or whoever is on it) and checks what
+	fits on screen in screen units (BoardLayout.toScreen).
+
 	BoardLayout.build(board, mapDef, Rng, { rotate = true }) stands the map up for upright
-	phones: everything turns a quarter clockwise (props stay upright). `tileBounds` is
-	what the camera fits; x0, y0, w, h is the whole map, open water included.
+	phones: everything turns a quarter clockwise (props stay upright). `view` is what the
+	camera fits, on screen (the tiles, with room above them for the pieces); `tileBounds`
+	is the tiles on the ground; x0, y0, w, h is the whole map, open water included.
 
 	layout = {
 		tiles = { { id, x, y, angle, kind, branch, scale } },
@@ -31,24 +38,58 @@ local BoardLayout = {}
 
 BoardLayout.Style = {
 	tileR = 0.8, -- a tile's radius
-	tileDepth = 0.22, -- how thick it is: its side shows below its top
+	tileDepth = 0.12, -- how thick it is: its side shows below its top (on screen)
+	squash = 0.72, -- seen a little from the side: the ground is this much shorter top to bottom
 	trailW = 1.75, -- the trail under the tiles
 	margin = 18, -- open water around the map: the camera never finds its edge
 	pawn = 1.45, -- a character's size on a tile of its own
 	pawnDisc = 0.92,
+	pawnUp = 1.4, -- how far a piece standing on a tile reaches up from its middle (on screen)
 	propGap = 0.3, -- clear space around props
-	reach = 0.5, -- a prop's ink stays within this x its size from its centre
+	reach = 0.5, -- a prop's ink stays within this x its size from its middle
+	foot = 0.35, -- a standing prop's foot: its ground, this x its size round its spot
 }
 
--- Where pawns sit when several share a tile (offsets from the tile centre) and how much
--- they shrink so they stand side by side instead of piling up.
+-- Where pawns stand when several share a tile (where the middle of each one's base is,
+-- from the tile's middle, on the ground) and how much they shrink so they stand side by
+-- side instead of piling up.
 BoardLayout.PawnSlots = {
-	{ scale = 1, { 0, -0.14 } },
-	{ scale = 0.56, { -0.38, -0.12 }, { 0.38, -0.12 } },
+	{ scale = 1, { 0, 0 } },
+	{ scale = 0.56, { -0.38, 0 }, { 0.38, 0 } },
 	{ scale = 0.52, { -0.38, -0.3 }, { 0.38, -0.3 }, { 0, 0.3 } },
 	{ scale = 0.46, { -0.34, -0.32 }, { 0.34, -0.32 }, { -0.34, 0.3 }, { 0.34, 0.3 } },
 	{ scale = 0.375, { -0.505, -0.3 }, { 0, -0.3 }, { 0.505, -0.3 }, { -0.26, 0.16 }, { 0.26, 0.16 } },
 	{ scale = 0.375, { -0.505, -0.3 }, { 0, -0.3 }, { 0.505, -0.3 }, { -0.505, 0.22 }, { 0, 0.22 }, { 0.505, 0.22 } },
+}
+
+--[[
+	What a tile looks like with something on it (BoardView draws it from art/items.py): a
+	cover over its top (ice, mud, the river, lava, a portal...) or a thing standing on it,
+	its foot on the tile's middle (a banana peel, spikes, a wall, the treasure chest...).
+	[a card placed on the board, a map feature, embers, or what the tile is] =
+	{ cover = sprite } or { stand = sprite, size = its canvas, map units }. A conveyor is
+	its belt, drawn along the way it runs.
+]]
+BoardLayout.TileLooks = {
+	spike = { stand = "spike", size = 1.3 },
+	grog = { stand = "grog", size = 1.4 },
+	fire = { stand = "fire", size = 1.4 },
+	ice = { cover = "ice" },
+	snare = { stand = "snare", size = 1.35 },
+	mudslide = { cover = "mud" },
+	banana = { stand = "banana", size = 1.3 },
+	wall = { stand = "wall", size = 1.55 },
+	teleporter = { cover = "portal" },
+	spore_warper = { stand = "mushroom", size = 1.4 },
+	sands = { cover = "sands" },
+	river = { cover = "water" },
+	slime = { cover = "slime" },
+	lava = { cover = "lava" },
+	gate = { stand = "gate", size = 1.5 },
+	shortcutGate = { stand = "gate", size = 1.5 },
+	embers = { cover = "embers" },
+	treasure = { stand = "chest", size = 1.45 },
+	start = { stand = "flag", size = 1.3 },
 }
 
 -- How big each prop is, if a landmark or the scatter doesn't say.
@@ -83,6 +124,30 @@ BoardLayout.PropSize = {
 
 -- Props that lie flat on the ground (drawn under the tiles, may touch the trail).
 local GROUND = { dock = true }
+
+-- On screen (map units): a standing prop's ink, from its foot (sx, sy) up most of its
+-- canvas (MapArt stands its canvas with its foot 0.92 of the way down)...
+function BoardLayout.inkBox(sx: number, sy: number, size: number): (number, number, number, number)
+	local h = size * 0.44
+	return sx - h, sy - size * 0.88, sx + h, sy + size * 0.06
+end
+
+-- ...and a tile's top and side, with room above it for whoever stands on it.
+function BoardLayout.tileBox(sx: number, sy: number, scale: number?): (number, number, number, number)
+	local S = BoardLayout.Style
+	local r = S.tileR * (scale or 1) + 0.08
+	return sx - r, sy - S.pawnUp, sx + r, sy + r * S.squash + S.tileDepth + 0.05
+end
+
+-- Where a point of the (finished) map is on screen, in map units.
+function BoardLayout.toScreen(x: number, y: number): (number, number)
+	return x, y * BoardLayout.Style.squash
+end
+
+local function overlaps(a0: number, b0: number, a1: number, b1: number, c0: number, d0: number, c1: number, d1: number): boolean
+	return a0 < c1 and c0 < a1 and b0 < d1 and d0 < b1
+end
+BoardLayout.overlaps = overlaps
 
 local function dist(ax: number, ay: number, bx: number, by: number): number
 	local dx, dy = ax - bx, ay - by
@@ -421,6 +486,18 @@ function BoardLayout.build(board, mapDef, Rng, opts: { [string]: any }?)
 		end
 		return best
 	end
+	-- how far from the trail as it's drawn (straight from tile to tile) or the curve it
+	-- follows, whichever is nearer
+	local function offTrail(x: number, y: number): number
+		local best = nearTrail(x, y)
+		for _, sg in layout.trail do
+			local dx, dy = sg.x2 - sg.x1, sg.y2 - sg.y1
+			local len2 = dx * dx + dy * dy
+			local t = if len2 < 1e-12 then 0 else math.clamp(((x - sg.x1) * dx + (y - sg.y1) * dy) / len2, 0, 1)
+			best = math.min(best, dist(x, y, sg.x1 + dx * t, sg.y1 + dy * t))
+		end
+		return best
+	end
 
 	-- land: discs along every trail, plus the scene's extra land and islets
 	local landCfg = scene.land
@@ -600,16 +677,60 @@ function BoardLayout.build(board, mapDef, Rng, opts: { [string]: any }?)
 	-- what it takes; the dock runs from the Start out to the nearest water
 	local props = layout.props
 	local WATER = { ship = true, wreck = true, sunken = true, ghostship = true }
-	-- what the camera fits (the tiles and a margin): a prop stands wholly inside it, so
-	-- none is cut in half by the edge of the screen
+	-- where a point ends up on screen (the map turned for upright screens, then squashed)
+	local K = S.squash
+	local function toScreen(x: number, y: number): (number, number)
+		if rotate then
+			return -y, x * K
+		end
+		return x, y * K
+	end
+	-- what the camera fits (the tiles, a margin, room above for the pieces): a prop stands
+	-- wholly inside it, so none is cut in half by the edge of the screen
 	local vx0, vy0, vx1, vy1 = math.huge, math.huge, -math.huge, -math.huge
 	for _, t in layout.tiles do
-		vx0, vx1 = math.min(vx0, t.x - 1.25), math.max(vx1, t.x + 1.25)
-		vy0, vy1 = math.min(vy0, t.y - 1.25), math.max(vy1, t.y + 1.25)
+		local sx, sy = toScreen(t.x, t.y)
+		vx0, vx1 = math.min(vx0, sx - 1.25), math.max(vx1, sx + 1.25)
+		vy0, vy1 = math.min(vy0, sy - S.pawnUp - 0.2), math.max(vy1, sy + 1.05)
 	end
+	layout.view = { x0 = vx0, y0 = vy0, x1 = vx1, y1 = vy1 }
 	local function inView(x: number, y: number, size: number): boolean
-		local h = size * 0.48
-		return x - h >= vx0 and x + h <= vx1 and y - h >= vy0 and y + h <= vy1
+		local sx, sy = toScreen(x, y)
+		local a0, b0, a1, b1 = BoardLayout.inkBox(sx, sy, size)
+		return a0 >= vx0 and a1 <= vx1 and b0 >= vy0 and b1 <= vy1
+	end
+	-- a standing prop isn't on a tile, and doesn't stand in front of one (or of whoever
+	-- is on it): on screen it would hide it
+	local function clearOfTiles(x: number, y: number, size: number): boolean
+		local sx, sy = toScreen(x, y)
+		local a0, b0, a1, b1 = BoardLayout.inkBox(sx, sy, size)
+		for _, t in layout.tiles do
+			if dist(x, y, t.x, t.y) < S.tileR * (t.scale or 1) + size * S.foot then
+				return false
+			end
+			local tx, ty = toScreen(t.x, t.y)
+			if ty <= sy + 0.05 then
+				local c0, d0, c1, d1 = BoardLayout.tileBox(tx, ty, t.scale)
+				if overlaps(a0, b0, a1, b1, c0, d0, c1, d1) then
+					return false
+				end
+			end
+		end
+		return true
+	end
+	-- and stands a little apart from the other standing props (on screen; one in front
+	-- of another hides a bit of it, as it should)
+	local function apart(x: number, y: number, size: number, gap: number): boolean
+		local sx, sy = toScreen(x, y)
+		for _, q in props do
+			if not q.ground then
+				local qx, qy = toScreen(q.x, q.y)
+				if dist(sx, sy, qx, qy) < (size + q.size) * S.reach * 0.9 + gap then
+					return false
+				end
+			end
+		end
+		return true
 	end
 	for _, m in scene.landmarks or {} do
 		local kind = m[1]
@@ -653,24 +774,15 @@ function BoardLayout.build(board, mapDef, Rng, opts: { [string]: any }?)
 			local function fitsAt(px: number, py: number): boolean
 				local depth = landDepth(px, py)
 				local ok = if WATER[kind] then depth <= -(reach * 0.6) else depth >= reach * 0.3
-				if not (ok and inView(px, py, size) and nearTrail(px, py) >= S.trailW / 2 + reach * 0.85) then
-					return false
-				end
-				for _, t in layout.tiles do
-					if dist(px, py, t.x, t.y) < S.tileR * (t.scale or 1) + reach * 0.85 then
-						return false
-					end
-				end
-				for _, q in props do
-					if not q.ground and dist(px, py, q.x, q.y) < reach + q.size * S.reach then
-						return false
-					end
-				end
-				return true
+				return ok
+					and inView(px, py, size)
+					and offTrail(px, py) >= S.trailW / 2 + size * S.foot
+					and clearOfTiles(px, py, size)
+					and apart(px, py, size, 0)
 			end
 			fits = fitsAt(x, y)
 			-- or the nearest spot close by where it does fit (inside the view, say)
-			for ring = 1, 8 do
+			for ring = 1, 12 do
 				if fits then
 					break
 				end
@@ -699,7 +811,7 @@ function BoardLayout.build(board, mapDef, Rng, opts: { [string]: any }?)
 
 	-- the scatter: props on the land and on the water, none on the trail, a tile, a
 	-- river, a pool, or each other
-	local function clearOfFeatures(x: number, y: number, reach: number): boolean
+	local function clearOfWater(x: number, y: number, reach: number): boolean
 		for _, list in { layout.rivers, layout.lava } do
 			for _, r in list do
 				for _, q in r.points do
@@ -714,8 +826,15 @@ function BoardLayout.build(board, mapDef, Rng, opts: { [string]: any }?)
 				return false
 			end
 		end
+		return true
+	end
+	-- (and the little things lying about keep off the props' feet)
+	local function clearOfFeatures(x: number, y: number, reach: number): boolean
+		if not clearOfWater(x, y, reach) then
+			return false
+		end
 		for _, pr in props do
-			if not pr.ground and dist(x, y, pr.x, pr.y) < reach + pr.size * S.reach + S.propGap then
+			if not pr.ground and dist(x, y, pr.x, pr.y) < reach + pr.size * S.foot + S.propGap then
 				return false
 			end
 		end
@@ -751,14 +870,14 @@ function BoardLayout.build(board, mapDef, Rng, opts: { [string]: any }?)
 			local kind = rng:weighted(weights)
 			local size = (BoardLayout.PropSize[kind] or 1) * (0.85 + rng:float() * 0.3)
 			local reach = size * S.reach
-			local ok = inView(c[1], c[2], size) and nearTrail(c[1], c[2]) >= trailClear + reach
+			local ok = inView(c[1], c[2], size) and offTrail(c[1], c[2]) >= trailClear + size * S.foot
 			if ok and onLand then
 				ok = c[3] >= reach * 0.75
 			elseif ok then
 				ok = -c[3] >= reach + 0.5
 			end
 			if ok then
-				ok = clearOfFeatures(c[1], c[2], reach)
+				ok = clearOfWater(c[1], c[2], size * S.foot) and clearOfTiles(c[1], c[2], size) and apart(c[1], c[2], size, S.propGap)
 			end
 			if ok then
 				table.insert(props, { kind = kind, x = c[1], y = c[2], size = size, flip = rng:float() < 0.5, water = not onLand })
@@ -794,7 +913,10 @@ function BoardLayout.build(board, mapDef, Rng, opts: { [string]: any }?)
 			if placed >= (P.groveCount or 3) then
 				break
 			end
-			local free = inView(c[1], c[2], size) and clearOfFeatures(c[1], c[2], size * S.reach + 1)
+			local free = inView(c[1], c[2], size)
+				and clearOfWater(c[1], c[2], size * S.reach + 1)
+				and clearOfTiles(c[1], c[2], size)
+				and apart(c[1], c[2], size, S.propGap + 0.6)
 			if free then
 				table.insert(props, { kind = P.grove, x = c[1], y = c[2], size = size, flip = rng:float() < 0.5 })
 				placed += 1
@@ -840,7 +962,7 @@ function BoardLayout.build(board, mapDef, Rng, opts: { [string]: any }?)
 			local xx = minX
 			while xx <= maxX do
 				local x, y = xx + (rng:float() - 0.5) * 0.4, yy + (rng:float() - 0.5) * 0.4
-				if landDepth(x, y) > 0.6 and nearTrail(x, y) >= S.trailW / 2 + 0.4 and clearOfFeatures(x, y, 0.3) then
+				if landDepth(x, y) > 0.6 and offTrail(x, y) >= S.trailW / 2 + 0.4 and clearOfFeatures(x, y, 0.3) and clearOfTiles(x, y, 0.7) then
 					table.insert(cands, { x, y })
 				end
 				xx += 0.7
@@ -924,9 +1046,11 @@ function BoardLayout.build(board, mapDef, Rng, opts: { [string]: any }?)
 		my0, my1 = math.min(my0, c.y - c.r), math.max(my1, c.y + c.r)
 	end
 	for _, p in layout.props do
+		-- (a standing prop reaches up from its foot, a long way on the squashed ground)
 		local r = p.size / 2
+		local up = if p.ground then r else p.size / K
 		mx0, mx1 = math.min(mx0, p.x - r), math.max(mx1, p.x + r)
-		my0, my1 = math.min(my0, p.y - r), math.max(my1, p.y + r)
+		my0, my1 = math.min(my0, p.y - up), math.max(my1, p.y + r)
 	end
 	layout.content = { x0 = mx0, y0 = my0, x1 = mx1, y1 = my1 }
 	layout.x0 = mx0 - S.margin

@@ -40,10 +40,10 @@ PAD = 4  # transparent pixels around every sprite, so filtering never bleeds a n
 STRIP = 256  # rows per strip of a sheet's pixels in ArtData (each unpacks to 1 MB at most)
 
 # the groups (a folder of SVGs and/or a generator, art/<group>.py), and which share runs of
-# sheets: the props, the ground's little things and the portraits together, the pieces on
-# their own
-GROUPS = ["props", "ground", "portraits", "pieces"]
-RUNS = [("scenery", ["props", "ground", "portraits"]), ("pieces", ["pieces"])]
+# sheets: the props, the ground's little things and the portraits together, the pieces
+# and what the board shows on its tiles (art/items.py)
+GROUPS = ["props", "ground", "portraits", "pieces", "items"]
+RUNS = [("scenery", ["props", "ground", "portraits"]), ("pieces", ["pieces", "items"])]
 
 
 def svg_size(svg: str):

@@ -1,5 +1,7 @@
 -- Map layout tests: the tiles follow their winding route without touching, and nothing
--- drawn around the trail (props, rivers) lands on it.
+-- drawn around the trail (props, rivers) lands on it. The map is seen a little from the
+-- side, so a standing prop reaches up the screen from its foot: what it may cover is
+-- checked on screen (BoardLayout.toScreen).
 local Maps = requireModule("Shared/Game/Maps")
 local Board = requireModule("Shared/Game/Board")
 local Rng = requireModule("Shared/Game/Rng")
@@ -66,20 +68,24 @@ for _, def in Maps.list do
 			for i, p in L.props do
 				truthy(MapScenes ~= nil and p.size > 0, "prop size")
 				if not p.ground then
-					local reach = p.size * S.reach
 					for _, s in L.trail do
-						truthy(segDist(p.x, p.y, s.x1, s.y1, s.x2, s.y2) >= S.trailW / 2 + reach - EPS, p.kind .. " stands on the trail")
+						truthy(segDist(p.x, p.y, s.x1, s.y1, s.x2, s.y2) >= S.trailW / 2 + p.size * S.foot - EPS, p.kind .. " stands on the trail")
 					end
+					local sx, sy = BoardLayout.toScreen(p.x, p.y)
 					for j, q in L.props do
 						if j > i and not q.ground then
-							truthy(dist(p.x, p.y, q.x, q.y) >= reach + q.size * S.reach - EPS, p.kind .. " overlaps " .. q.kind)
+							local qx, qy = BoardLayout.toScreen(q.x, q.y)
+							truthy(dist(sx, sy, qx, qy) >= (p.size + q.size) * S.reach * 0.9 - EPS, p.kind .. " stands in " .. q.kind)
 						end
 					end
-				end
-				if not p.ground then
+					-- one that stands in front of a tile never hides it (or whoever is on it)
+					local a0, b0, a1, b1 = BoardLayout.inkBox(sx, sy, p.size)
 					for _, t in L.tiles do
-						local d = dist(p.x, p.y, t.x, t.y)
-						truthy(d >= S.tileR * (t.scale or 1) + p.size * 0.3, string.format("%s covers tile %d", p.kind, t.id))
+						truthy(dist(p.x, p.y, t.x, t.y) >= S.tileR * (t.scale or 1) + p.size * S.foot - EPS, string.format("%s stands on tile %d", p.kind, t.id))
+						local tx, ty = BoardLayout.toScreen(t.x, t.y)
+						if ty <= sy then
+							truthy(not BoardLayout.overlaps(a0, b0, a1, b1, BoardLayout.tileBox(tx, ty, t.scale)), string.format("%s hides tile %d", p.kind, t.id))
+						end
 					end
 				end
 			end
@@ -104,11 +110,12 @@ for _, def in Maps.list do
 		end)
 
 		test(name .. ": every prop is wholly in view; the ground's little things lie on the land, off the trail", function()
-			local box = L.tileBounds
+			local v = L.view
 			for _, p in L.props do
 				if not p.ground then
-					local h = p.size * 0.48
-					truthy(p.x - h >= box.x0 - EPS and p.x + h <= box.x1 + EPS and p.y - h >= box.y0 - EPS and p.y + h <= box.y1 + EPS, p.kind .. " is cut off by the edge of the view")
+					local sx, sy = BoardLayout.toScreen(p.x, p.y)
+					local a0, b0, a1, b1 = BoardLayout.inkBox(sx, sy, p.size)
+					truthy(a0 >= v.x0 - EPS and a1 <= v.x1 + EPS and b0 >= v.y0 - EPS and b1 <= v.y1 + EPS, p.kind .. " is cut off by the edge of the view")
 				end
 			end
 			for _, d in L.details do
@@ -122,10 +129,11 @@ for _, def in Maps.list do
 			end
 		end)
 
-		test(name .. ": the camera box holds every tile, the map holds everything", function()
-			local box = L.tileBounds
+		test(name .. ": the camera box holds every tile and whoever stands on it, the map holds everything", function()
+			local v = L.view
 			for _, t in L.tiles do
-				truthy(t.x - S.tileR >= box.x0 and t.x + S.tileR <= box.x1 and t.y - S.tileR >= box.y0 and t.y + S.tileR <= box.y1, "tile " .. t.id .. " outside the camera box")
+				local x0, y0, x1, y1 = BoardLayout.tileBox(BoardLayout.toScreen(t.x, t.y))
+				truthy(x0 >= v.x0 and x1 <= v.x1 and y0 >= v.y0 and y1 <= v.y1, "tile " .. t.id .. " outside the camera box")
 			end
 			local x1, y1 = L.x0 + L.w, L.y0 + L.h
 			for _, c in L.land do
@@ -223,7 +231,7 @@ test("every prop, ground sprite, piece, stand and portrait has its art in the sh
 			end
 		end
 	end
-	for _, name in { "soft", "wave", "stone", "slab" } do
+	for _, name in { "soft", "wave", "stone", "slab", "disc", "rsq", "ring" } do
 		truthy(ArtAtlas.sprites["ground/" .. name], "no ground/" .. name)
 	end
 	for _, id in Characters.ids do
@@ -234,6 +242,30 @@ test("every prop, ground sprite, piece, stand and portrait has its art in the sh
 		end
 	end
 	truthy(ArtAtlas.sprites["pieces/plinth_gold"], "no gold stand")
+	-- what the board shows on a tile: every card placed on it, every map feature, the
+	-- Start, the treasure, a gated shortcut, embers (a conveyor is its belt)
+	local Items = requireModule("Shared/Game/Items")
+	local Board = requireModule("Shared/Game/Board")
+	local need = { start = true, treasure = true, shortcutGate = true, embers = true }
+	for _, def in Items.list do
+		if def.use == "place" and def.id ~= "conveyor" then
+			need[def.id] = true
+		end
+	end
+	for _, def in Maps.list do
+		for _, kind in Board.get(def).naturalInit do
+			need[kind] = true
+		end
+	end
+	for kind in need do
+		local look = BoardLayout.TileLooks[kind]
+		truthy(look, "nothing to show for " .. kind .. " on a tile")
+		if look then
+			local name = "items/" .. (look.cover or look.stand)
+			truthy(ArtAtlas.sprites[name], "no " .. name)
+		end
+	end
+	truthy(ArtAtlas.sprites["items/belt"], "no conveyor belt")
 	for name, sp in ArtAtlas.sprites do
 		truthy(table.find(ArtAtlas.sheets, sp.sheet), name .. "'s sheet isn't listed")
 		truthy(sp.x >= 0 and sp.y >= 0 and sp.x + sp.w <= 1024 and sp.y + sp.h <= 1024, name .. " runs off its sheet")

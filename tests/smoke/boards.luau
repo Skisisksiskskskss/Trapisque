@@ -52,7 +52,56 @@ for _, def in Maps.list do
 			for tile, kind in board.naturalInit do
 				table.insert(snap.natural, { tile = tile, kind = kind })
 			end
-			table.insert(snap.placed, { tile = 9, item = "wall", owner = 2 })
+			-- board pieces and hidden traps this player can see (theirs, and one a teammate
+			-- hid), on tiles with nothing else on them
+			local used = { [1] = true, [5] = true, [14] = true }
+			for _, t in snap.tokens do
+				used[t.tile] = true
+			end
+			for _, n in snap.natural do
+				used[n.tile] = true
+			end
+			-- (the first plain tile from there with `n` plain ones in a row, for a belt)
+			local function free(from: number, n: number?): number?
+				local function plain(t: number): boolean
+					local tile = board.tiles[t]
+					return tile ~= nil and tile.kind == "normal" and not used[t]
+				end
+				for t = from, board.totalTiles do
+					local ok = true
+					for k = 0, (n or 1) - 1 do
+						ok = ok and plain(t + k)
+					end
+					if ok then
+						for k = 0, (n or 1) - 1 do
+							used[t + k] = true
+						end
+						return t
+					end
+				end
+				return nil
+			end
+			for _, p in { { 9, "wall", 2 }, { 16, "teleporter", 3 }, { 23, "sands", 2 }, { 33, "spore_warper", 4 } } do
+				local t = free(p[1])
+				if t then
+					table.insert(snap.placed, { tile = t, item = p[2], owner = p[3] })
+				end
+			end
+			local beltAt = free(26, 3)
+			if beltAt then
+				table.insert(snap.placed, { tile = beltAt, item = "conveyor", owner = 3, dir = "forward", tiles = { beltAt, beltAt + 1, beltAt + 2 } })
+			end
+			snap.traps = {}
+			for _, p in { { 7, "banana", 1 }, { 11, "spike", 1 }, { 19, "grog", 3 }, { 30, "ice", 1 } } do
+				local t = free(p[1])
+				if t then
+					table.insert(snap.traps, { tile = t, item = p[2], owner = p[3] })
+				end
+			end
+			local burning = free(13)
+			if burning then
+				table.insert(snap.embers, { tile = burning, owner = 2 })
+			end
 			for i = 1, 4 do
 				table.insert(snap.players, { seat = i, character = seats[i], tile = ({ 1, 1, 5, 14 })[i], name = "P" .. i })
 			end

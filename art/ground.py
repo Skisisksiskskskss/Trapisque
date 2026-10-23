@@ -7,7 +7,8 @@ stone faces of the tiles (round stones and square slabs).
 
 Drawn like the props (lit from the upper left, outlines in a darker shade of the part's
 own colour), on 100 x 100 canvases. Most are in greys, so the board tints each map's
-own colour into them (ImageColor3); the shells and flowers keep their colours.
+own colour into them (ImageColor3); the shells and flowers keep their colours. And the
+plain white shapes the board stretches into ellipses and tile tops (disc, rsq, ring).
 """
 import os
 import sys
@@ -26,6 +27,32 @@ def soft():
         '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 100 100">'
         f'<defs><radialGradient id="s">{grad}</radialGradient></defs>'
         '<circle cx="50" cy="50" r="50" fill="url(#s)"/></svg>'
+    )
+
+
+def _shape(d, px=256):
+    """A plain white shape filling its canvas: the board stretches and tints it (an
+    ellipse from the disc, a tile's top from the rounded square)."""
+    return (
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{px}" height="{px}" viewBox="0 0 100 100">'
+        f'<path d="{d}" fill="#FFFFFF"/></svg>'
+    )
+
+
+def disc():
+    return _shape(circ(50, 50, 50))
+
+
+def rsq():
+    """A square with rounded corners (22% of its side), like a slab tile's top."""
+    return _shape("M 22 0 L 78 0 C 90 0, 100 10, 100 22 L 100 78 C 100 90, 90 100, 78 100 L 22 100 C 10 100, 0 90, 0 78 L 0 22 C 0 10, 10 0, 22 0 Z", 128)
+
+
+def ring():
+    """A circle's rim, for an owner's mark round something on a tile."""
+    return (
+        '<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 100 100">'
+        '<circle cx="50" cy="50" r="46.5" fill="none" stroke="#FFFFFF" stroke-width="6.5"/></svg>'
     )
 
 
@@ -167,6 +194,7 @@ def slab():
 SPRITES = [
     ("soft", soft), ("tuft", tuft), ("pebbles", pebbles), ("shell", shell), ("flowers", flowers),
     ("leaves", leaves), ("wave", wave), ("stone", stone), ("slab", slab),
+    ("disc", disc), ("rsq", rsq), ("ring", ring),
 ]
 
 
