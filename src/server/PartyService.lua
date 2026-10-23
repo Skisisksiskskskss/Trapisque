@@ -21,6 +21,7 @@ local Shared = ReplicatedStorage.Shared
 local Config = require(Shared.Config)
 local Modes = require(Shared.Game.Modes)
 local Maps = require(Shared.Game.Maps)
+local HouseRules = require(Shared.Game.HouseRules)
 
 local Net = require(script.Parent.Net)
 local ServerInfo = require(script.Parent.ServerInfo)
@@ -214,7 +215,7 @@ function PartyService.create(player: Player, restore: any?)
 		leader = player.UserId,
 		members = { player.UserId },
 		privacy = "code",
-		settings = { mode = "chaos", map = "random", length = "quick", bots = 3 },
+		settings = { mode = "chaos", map = "random", length = "quick", bots = 3, rules = HouseRules.clean(nil) },
 		state = "idle",
 	}
 	if restore then
@@ -226,6 +227,7 @@ function PartyService.create(player: Player, restore: any?)
 					party.settings[k] = v
 				end
 			end
+			party.settings.rules = HouseRules.clean(party.settings.rules)
 		end
 	end
 	parties[party.id] = party
@@ -578,6 +580,16 @@ function PartyService.init()
 				return false, "Bots must be 0-5."
 			end
 			s.bots = math.floor(n)
+		end
+		-- house rules and the map vote: only the fields sent change
+		if type(payload.rules) == "table" then
+			local merged = HouseRules.clean(s.rules)
+			for k, v in payload.rules do
+				if HouseRules.defaults[k] ~= nil then
+					merged[k] = v
+				end
+			end
+			s.rules = HouseRules.clean(merged)
 		end
 		PartyService.hooks.changed(party)
 		PartyService.push(party)

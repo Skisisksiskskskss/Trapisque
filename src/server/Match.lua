@@ -6,7 +6,10 @@
 	screen that falls behind (lag, a slow device) speeds up instead of drifting.
 
 	Around the game itself:
-		vote        Quick Play matches open with a map vote (three maps, a few seconds)
+		vote        Quick Play (and private matches whose host turns it on) opens with a map
+		            vote: three or four cards (maps, a face-down Mystery map, a map with a
+		            twist), decided by the most votes or by a roulette wheel
+		rules       a private match's house rules (Shared/Game/HouseRules)
 		drop-in     someone searching for Quick Play can take over a bot's seat early on
 		spectators  friends can watch: they get what everyone may see, and no hand
 		fishing     between your turns you can fish off the board (Meta/Fishing)
@@ -23,6 +26,8 @@ local Engine = require(Shared.Game.Engine)
 local Bot = require(Shared.Game.Bot)
 local Modes = require(Shared.Game.Modes)
 local Maps = require(Shared.Game.Maps)
+local HouseRules = require(Shared.Game.HouseRules)
+local Voting = require(Shared.Game.Voting)
 local Pacing = require(Shared.Game.Pacing)
 local TurnClock = require(Shared.Game.TurnClock)
 local Cosmetics = require(Shared.Meta.Cosmetics)
@@ -88,7 +93,8 @@ end
 		bots = { { team = number? } },
 		teamsPreset = boolean, -- teams given for every seat
 		parties = { { leader, members, settings } }, -- restored after reserved matches
-		vote = boolean,        -- open with a map vote (Quick Play)
+		vote = true | { style, mystery, wildcard }, -- open with a map vote (Quick Play: true)
+		rules = table?,        -- a private match's house rules (HouseRules)
 		tutorial = boolean,    -- the guided first match
 	}
 ]]
@@ -182,24 +188,39 @@ function Match.new(spec, hooks)
 		self.event = event.id
 		self.mutator = event.mutator
 	end
+	-- a private match's house rules, which can bring a twist of their own
+	self.rules = if spec.rules then HouseRules.clean(spec.rules) else nil
+	if self.rules and self.rules.twist ~= "none" then
+		self:_addTwist(self.rules.twist)
+	end
+	-- (a rematch keeps the twist its map won the vote with)
+	if spec.twist and spec.twist ~= self.twist then
+		self:_addTwist(spec.twist)
+	end
 
-	-- Quick Play opens with a vote between three maps
+	-- the map vote: Quick Play's, or a private match's whose host turned it on
 	if spec.vote then
-		local pool = {}
+		local cfg = if type(spec.vote) == "table" then spec.vote else { style = "majority", mystery = true }
+		self.voteStyle = if cfg.style == "roulette" then "roulette" else "majority"
+		local mapIds, eventIds = {}, {}
 		for _, m in Maps.list do
-			table.insert(pool, m.id)
+			table.insert(mapIds, m.id)
 		end
-		for i = #pool, 2, -1 do
-			local j = random:NextInteger(1, i)
-			pool[i], pool[j] = pool[j], pool[i]
+		for _, e in Progress.events do
+			table.insert(eventIds, e.id)
 		end
-		self.voteOptions = { pool[1], pool[2], pool[3] }
-		self.votes = {} -- [seat] = map id
+		self.voteOptions, self.mysteryMap = Voting.cards(cfg, mapIds, eventIds, self.twist, random)
+		self.votes = {} -- [seat] = the option they voted for
 	else
 		self:_makeEngine(mapId)
 	end
-	-- practice games have no turn timer (nobody is waiting on you)
-	self.clock = TurnClock.new({ timed = self.kind ~= "practice", turnTime = mode.turnTime })
+	-- practice games have no turn timer (nobody is waiting on you); a host can set one
+	local timed, turnTime = self.kind ~= "practice", mode.turnTime
+	if self.rules and self.rules.timer ~= HouseRules.defaults.timer then
+		timed = timed and self.rules.timer > 0
+		turnTime = if self.rules.timer > 0 then self.rules.timer else turnTime
+	end
+	self.clock = TurnClock.new({ timed = timed, turnTime = turnTime })
 	self.lastEmote = {}
 	self.busyUntil = 0
 	self.lastTurn = -1
@@ -207,6 +228,20 @@ function Match.new(spec, hooks)
 	self.botAt = nil
 	self.botSteps = 0
 	return self
+end
+
+-- A weekly event's twist on top of whatever twist the match already has.
+function Match:_addTwist(eventId: string)
+	local event = Progress.eventById(eventId)
+	if not event then
+		return
+	end
+	local mut = table.clone(self.mutator or {})
+	for k, v in event.mutator do
+		mut[k] = v
+	end
+	self.mutator = mut
+	self.twist = event.id
 end
 
 function Match:_makeEngine(mapId: string)
@@ -220,6 +255,7 @@ function Match:_makeEngine(mapId: string)
 		length = self.length,
 		teamsPreset = self.teamsPreset,
 		mutator = self.mutator,
+		rules = self.rules,
 	}
 	if self.tutorial then
 		-- the guided match: the human goes first with scripted dice and cards
@@ -315,6 +351,10 @@ function Match:_describe(payload, seat: number)
 	payload.length = self.length
 	payload.target = self.engine.target
 	payload.seats = self:seatList()
+	-- (the board to build: a house rule can cut it short)
+	payload.board = if self.rules then self.rules.board else "full"
+	payload.houseRules = if self.rules and HouseRules.changesPlay(self.rules) then HouseRules.describe(self.rules) else nil
+	payload.twist = self.twist
 	payload.tutorial = self.tutorial or nil
 	payload.spectating = seat == 0 or nil
 	return payload
@@ -339,12 +379,13 @@ end
 
 function Match:_votePayload()
 	local votes = {}
-	for seat, mapId in self.votes do
-		votes[tostring(seat)] = mapId
+	for seat, option in self.votes do
+		votes[tostring(seat)] = option
 	end
 	return {
 		id = self.id,
 		options = self.voteOptions,
+		style = self.voteStyle,
 		votes = votes,
 		deadline = self.voteDeadline,
 		seats = self:seatList(),
@@ -379,37 +420,46 @@ function Match:_runVote()
 			break
 		end
 	end
-	-- the most votes wins; a tie (or no votes) is settled at random among the leaders
-	local count = {}
-	for _, mapId in self.votes do
-		count[mapId] = (count[mapId] or 0) + 1
+	local chosen, weights = Voting.tally(self.voteOptions, self.votes, self.voteStyle, random)
+	local option = self.voteOptions[chosen]
+	local mapId = if option.kind == "mystery" then self.mysteryMap or option.map else option.map
+	if option.kind == "twist" then
+		self:_addTwist(option.event)
 	end
-	local best, leaders = 0, {}
-	for _, mapId in self.voteOptions do
-		local n = count[mapId] or 0
-		if n > best then
-			best, leaders = n, { mapId }
-		elseif n == best then
-			table.insert(leaders, mapId)
-		end
-	end
-	local chosen = leaders[random:NextInteger(1, #leaders)]
-	self:_makeEngine(chosen)
+	self:_makeEngine(mapId)
 	for _, p in self:audience() do
-		Net.push(p, "match.voted", { id = self.id, map = chosen })
+		Net.push(p, "match.voted", {
+			id = self.id,
+			option = chosen,
+			map = mapId,
+			mystery = option.kind == "mystery" or nil,
+			event = option.event,
+			style = self.voteStyle,
+			weights = weights,
+		})
 	end
-	task.wait(1.2)
+	-- (a roulette wheel takes a moment to spin, and a Mystery card to turn over)
+	task.wait((if self.voteStyle == "roulette" then 4.2 else 1.2) + (if option.kind == "mystery" then 0.9 else 0))
 end
 
-function Match:vote(player: Player, mapId: any)
+-- `option`: the card's number (or, from an older screen, a map's id).
+function Match:vote(player: Player, option: any)
 	local seat = self.seatOf[player]
 	if not seat or self.phase ~= "vote" then
 		return false, "Voting is over."
 	end
-	if type(mapId) ~= "string" or not table.find(self.voteOptions, mapId) then
+	local index = tonumber(option)
+	if index == nil and type(option) == "string" then
+		for i, o in self.voteOptions do
+			if o.map == option and o.kind == "map" then
+				index = i
+			end
+		end
+	end
+	if not index or not self.voteOptions[index] then
 		return false, "Pick one of the maps."
 	end
-	self.votes[seat] = mapId
+	self.votes[seat] = index
 	self:_pushVote()
 	return true
 end
@@ -1157,6 +1207,8 @@ function Match:rematchSpec()
 		length = self.length,
 		parties = self.parties,
 		event = self.event,
+		rules = self.rules,
+		twist = if self.rules and self.rules.twist == self.twist then nil else self.twist,
 		humans = humans,
 		bots = bots,
 		teamsPreset = true,

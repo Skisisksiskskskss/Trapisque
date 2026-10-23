@@ -34,6 +34,8 @@
 		        guided first match), then random dice again
 		hands   { [seat] = { item, ... } } starting cards instead of the random ones
 		firstSeat  this seat takes the first turn
+		rules   a private match's house rules (Shared/Game/HouseRules: the board, starting
+		        Power and cards, abilities, Wanted posters, the underdog die, banned cards)
 ]]
 
 local Config = require(script.Parent.Parent.Config)
@@ -125,12 +127,16 @@ function Engine.new(opts)
 	local self = setmetatable({}, Engine)
 	local mode = Modes.get(opts.mode)
 	assert(mode, "Engine: unknown mode " .. tostring(opts.mode))
-	local mapDef = Maps.get(opts.map)
+	-- a private match's house rules (none: the standard rules)
+	local rules = opts.rules or {}
+	local mapDef = Maps.variant(Maps.get(opts.map), rules.board)
 	assert(mapDef, "Engine: unknown map " .. tostring(opts.map))
 	assert(#opts.players >= 1 and #opts.players <= 6, "Engine: 1-6 players")
 
 	self.mode = mode
 	self.map = mapDef
+	self.rules = rules
+	self.banned = rules.banned or {}
 	self.board = Board.get(mapDef)
 	self.seed = opts.seed or 1
 	self.rng = Rng.new(self.seed)
@@ -169,7 +175,7 @@ function Engine.new(opts)
 	self.placeOrder = 0
 	self.stock = {}
 	for _, id in Items.potions do
-		self.stock[id] = Rules.PotionStock
+		self.stock[id] = if self.banned[id] then 0 else Rules.PotionStock
 	end
 
 	-- players
@@ -356,10 +362,15 @@ function Engine:start()
 	end
 	table.sort(self.lava)
 	for _, tile in self.map.ghosts or {} do
-		table.insert(self.ghosts, tile)
+		if tile < self.board.treasure - 1 then
+			table.insert(self.ghosts, tile)
+		end
 	end
 	self:_indexGhosts()
 	for tile, item in self.map.startingPlaced or {} do
+		if tile >= self.board.treasure then
+			continue
+		end
 		if Items.isHidden(item) then
 			self:_addTrap(tile, item, 0, nil, true)
 		else
@@ -397,37 +408,39 @@ function Engine:start()
 	end
 	self:_emit(setup)
 
-	-- starting cards: one assist card each, plus the Trapper's trap and the Fire Starter's Fire
+	-- starting cards: one assist card each (house rules: up to three), plus the Trapper's
+	-- trap and the Fire Starter's Fire; never a banned card
 	local starters = {}
 	for _, id in Items.wheels.assist do
-		if id ~= "coin" and id ~= "bkb" then
+		if id ~= "coin" and id ~= "bkb" and not self.banned[id] then
 			table.insert(starters, id)
 		end
 	end
+	local traps = {}
+	for _, id in Items.trapIds do
+		if id ~= "wall" and not self.banned[id] then
+			table.insert(traps, id)
+		end
+	end
 	for _, p in self.players do
-		local dealt = { rng:pick(starters) }
+		local dealt = {}
+		for _ = 1, math.clamp(self.rules.cards or 1, 0, 3) do
+			if #starters > 0 then
+				table.insert(dealt, rng:pick(starters))
+			end
+		end
 		local fixed = self.startHands and self.startHands[p.index]
 		if fixed then
 			dealt = copyList(fixed)
-		elseif p.character == "trapper" then
-			local traps = {}
-			for _, id in Items.trapIds do
-				if id ~= "wall" then
-					table.insert(traps, id)
-				end
-			end
+		elseif p.character == "trapper" and #traps > 0 then
 			table.insert(dealt, rng:pick(traps))
-		elseif p.character == "fire_starter" then
+		elseif p.character == "fire_starter" and not self.banned.fire then
 			table.insert(dealt, "fire")
 		end
 		for _ = 1, self.mut.startTraps or 0 do
-			local traps = {}
-			for _, id in Items.trapIds do
-				if id ~= "wall" then
-					table.insert(traps, id)
-				end
+			if #traps > 0 then
+				table.insert(dealt, rng:pick(traps))
 			end
-			table.insert(dealt, rng:pick(traps))
 		end
 		for _, item in dealt do
 			if #p.hand < Rules.HandLimit then
@@ -441,6 +454,14 @@ function Engine:start()
 			secret = { seat = p.index },
 			alt = { t = "deal", p = p.index, count = #dealt },
 		})
+	end
+
+	-- house rules: Power to start with
+	if self.rules.power == "half" or self.rules.power == "full" then
+		for _, p in self.players do
+			local cap = Engine.powerCap(p)
+			self:_gainPower(p, if self.rules.power == "full" then cap else math.floor(cap / 2))
+		end
 	end
 
 	self.phase = "action"
@@ -921,7 +942,14 @@ end
 
 function Engine:_spin(p, wheel: string)
 	local segments = Items.wheels[wheel]
-	local index = self.rng:int(1, #segments)
+	-- (a banned card's slice never comes up)
+	local allowed = {}
+	for i, seg in segments do
+		if not self.banned[seg] then
+			table.insert(allowed, i)
+		end
+	end
+	local index = allowed[self.rng:int(1, #allowed)]
 	local segment = segments[index]
 	local result = if segment == "bkb" then self.map.counterItem else segment
 	p.stats.spins += 1
@@ -938,6 +966,10 @@ function Engine.powerCap(p): number
 end
 
 function Engine:_gainPower(p, n: number)
+	if self.rules.abilities == false then
+		-- (no abilities, no Power)
+		return
+	end
 	local cap = Engine.powerCap(p)
 	local before = p.power
 	p.power = math.clamp(p.power + n, 0, cap)
@@ -1030,7 +1062,7 @@ end
 	Rules.UnderdogGap tiles or more (laps included). nil when nobody is.
 ]]
 function Engine:underdogSeat(): number?
-	if #self.players < 2 then
+	if #self.players < 2 or self.rules.underdog == false then
 		return nil
 	end
 	local last, lastP, second = nil, math.huge, math.huge
@@ -2190,6 +2222,9 @@ function Engine:_blizzardTargets(p): { number }
 end
 
 function Engine:_cmdAbility(p, cmd)
+	if self.rules.abilities == false then
+		return false, "Abilities are off in this match."
+	end
 	local cdef = Characters.get(p.character)
 	local ab = cdef and cdef.ability
 	if not ab then
@@ -2251,10 +2286,12 @@ function Engine:_cmdAbility(p, cmd)
 	elseif id == "scavenge" then
 		local pool = {}
 		for _, t in Items.trapIds do
-			table.insert(pool, t)
+			if not self.banned[t] then
+				table.insert(pool, t)
+			end
 		end
 		local a = table.remove(pool, self.rng:int(1, #pool))
-		local b = pool[self.rng:int(1, #pool)]
+		local b = if #pool > 0 then pool[self.rng:int(1, #pool)] else a
 		self.turn.pick = { kind = "scavenge", options = { a, b } }
 		self.phase = "pick"
 		self:_emit({
@@ -2424,7 +2461,7 @@ function Engine:snapshot(forSeat: number?)
 			coins = p.coins,
 			handCount = #p.hand,
 			power = p.power,
-			powerCap = Engine.powerCap(p),
+			powerCap = if self.rules.abilities == false then 0 else Engine.powerCap(p),
 			frozen = p.status.frozen,
 			burning = p.status.burning,
 			skip = p.status.skip,
@@ -2482,6 +2519,7 @@ function Engine:snapshot(forSeat: number?)
 		boost = if turn then turn.boost else nil,
 		double = if turn then turn.double == true else false,
 		mutator = table.clone(self.mut),
+		rules = { abilities = self.rules.abilities ~= false, wanted = self.rules.wanted ~= false, underdog = self.rules.underdog ~= false, board = self.rules.board or "full", banned = table.clone(self.banned) },
 		underdog = if self.phase ~= "over" then self:underdogSeat() else nil,
 		ghosts = copyList(self.ghosts),
 		erupting = self:eruptsThisRound(),

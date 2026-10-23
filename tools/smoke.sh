@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Plays the whole game (server and client) on the fake Roblox in tests/fake, once per
-# scenario: a PC, phones held sideways and upright, a team mode and the weekly event.
+# scenario: a PC, phones held sideways and upright, a team mode, the weekly event, Quick
+# Play, the guided first match and a private match with house rules.
 # Each run joins, tours the lobby, plays a practice match to the end with the real
 # controls and goes back to the lobby. Any error, warning or mangled remote / DataStore
 # table fails it. See tests/smoke/smoke.luau.
@@ -21,8 +22,9 @@ declare -A SCENARIOS=(
 	[event]='name = "event", w = 1920, h = 1080, mode = "event", map = "Junction Dungeon", bots = 3, seed = 9'
 	[quickplay]='name = "quickplay", w = 1280, h = 800, mode = "chaos", quickplay = true, idle = true, seed = 13'
 	[tutorial]='name = "tutorial", w = 1280, h = 720, tutorial = true, seed = 21'
+	[private]='name = "private", w = 1280, h = 720, mode = "chaos", private = true, seed = 17'
 )
-ORDER=(pc phone upright teams event quickplay tutorial)
+ORDER=(pc phone upright teams event quickplay tutorial private)
 if [ $# -gt 0 ]; then
 	ORDER=("$@")
 fi

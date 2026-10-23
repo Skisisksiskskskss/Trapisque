@@ -98,4 +98,27 @@ function Maps.get(id: string)
 	return Maps.byId[id]
 end
 
+-- How much of the trail a short board keeps (house rules: HouseRules.ShortShare).
+Maps.ShortShare = 0.65
+
+--[[
+	A map's board as a match plays it: `board` "short" is the same place with only the
+	first part of its trail (Maps.ShortShare of it, from the Start); the treasure sits
+	where the cut falls, and the hazards and shortcuts past it are left out (Board).
+]]
+local variants = {}
+function Maps.variant(def, board: string?)
+	if board ~= "short" or def == nil then
+		return def
+	end
+	local v = variants[def.id]
+	if not v then
+		v = table.clone(def)
+		v.variant = "short"
+		v.cutShare = Maps.ShortShare
+		variants[def.id] = v
+	end
+	return v
+end
+
 return Maps

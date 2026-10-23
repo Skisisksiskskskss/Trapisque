@@ -15,7 +15,7 @@
 	their owner's colour, your own hidden traps see-through), then the characters
 	standing on their tiles, the ones lower on the screen in front.
 
-		view = BoardView.new(parent, mapId, { rotate = bool })
+		view = BoardView.new(parent, mapId, { rotate = bool, board = "full" | "short" })
 		view:setFocus(rect)                 -- stage rect the tiles should fill
 		view:applySnapshot(snap)            -- tokens, placed items, natural traps, pawns
 		view:hop(seat, path, kind)          -- animate a move (yields)
@@ -106,7 +106,8 @@ end
 
 function BoardView.new(parent: Frame, mapId: string, opts: { [string]: any }?)
 	local self = setmetatable({}, BoardView)
-	local def = Maps.get(mapId)
+	-- (a house rule can cut the trail short: opts.board = "short")
+	local def = Maps.variant(Maps.get(mapId), opts and opts.board)
 	self.def = def
 	self.mapId = mapId
 	self.board = Board.get(def)

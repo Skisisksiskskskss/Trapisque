@@ -214,7 +214,10 @@ local function landingValue(game, p, tile: number, viewer: any?): number
 	return v
 end
 
-local function powerValue(p, gain: number): number
+local function powerValue(p, gain: number, game: any?): number
+	if game and game.rules and game.rules.abilities == false then
+		return 0
+	end
 	local cap = Engine.powerCap(p)
 	if cap <= 0 then
 		return 0
@@ -245,7 +248,7 @@ local function moveValue(game, p, m: number, backwards: boolean, gain: number, v
 	end
 	-- cards a walk would burn through (Key, Bridge, Boots, Shield) are worth a little
 	v -= #plan.uses * 0.6
-	v += powerValue(p, gain)
+	v += powerValue(p, gain, game)
 	return v, plan.tile
 end
 
@@ -370,7 +373,7 @@ end
 local function bestTrapTile(game, p, item: string)
 	local odds = predictions(game, p)
 	-- what a catch is worth to me: a coin, some Power (and a hop for the Trapper)
-	local reward = 0.8 + powerValue(p, Rules.PowerPerGotcha)
+	local reward = 0.8 + powerValue(p, Rules.PowerPerGotcha, game)
 	if p.character == "trapper" then
 		reward += CharCfg.trapper.bounty
 	end

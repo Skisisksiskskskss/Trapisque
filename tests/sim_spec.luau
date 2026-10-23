@@ -79,7 +79,7 @@ local function randomGarbage(rng)
 	}
 end
 
-local function simulate(seed, modeId, mapId, length, fuzz)
+local function simulate(seed, modeId, mapId, length, fuzz, rules)
 	local mode = Modes.get(modeId)
 	local Rng = requireModule("Shared/Game/Rng")
 	local meta = Rng.new(seed * 7919)
@@ -95,9 +95,10 @@ local function simulate(seed, modeId, mapId, length, fuzz)
 		seed = seed,
 		target = Modes.targetFor(mode, length),
 		length = length,
+		rules = rules,
 	})
 	g:start()
-	local label = string.format("seed=%d %s/%s/%s", seed, modeId, mapId, length)
+	local label = string.format("seed=%d %s/%s/%s%s", seed, modeId, mapId, length, if rules then " (house rules)" else "")
 	checkInvariants(g, label)
 	local commands, stuck = 0, 0
 	local lastTurn = g.turnCount
@@ -178,5 +179,44 @@ test("garbage commands never corrupt a game", function()
 		local modes = { "chaos", "assist", "factions", "ww4" }
 		local maps = { "blissful", "junction", "slimy" }
 		simulate(seed, modes[(seed % 4) + 1], maps[(seed % 3) + 1], "quick", true)
+	end
+end)
+
+test("bots finish games under every kind of house rules", function()
+	local HouseRules = requireModule("Shared/Game/HouseRules")
+	local sets = {
+		{ board = "short" },
+		{ board = "short", power = "full", cards = 3 },
+		{ abilities = false, underdog = false },
+		{ power = "half", cards = 2, banned = { banana = true, spike = true, grog = true, fire = true, ice = true, shield = true, thief_potion = true } },
+		{ board = "short", abilities = false, banned = { teleporter = true, conveyor = true, xray_potion = true } },
+	}
+	local seed = 9000
+	for si, raw in sets do
+		local rules = HouseRules.clean(raw)
+		for _, mapDef in Maps.list do
+			for _, modeId in { "chaos", "assist", "factions" } do
+				seed += 1
+				local g = simulate(seed, modeId, mapDef.id, "quick", false, rules)
+				local label = "set " .. si .. " " .. mapDef.id .. "/" .. modeId
+				for _, p in g.players do
+					for _, item in p.hand do
+						falsy(rules.banned[item], label .. ": a banned card in a hand (" .. item .. ")")
+					end
+					if not rules.abilities then
+						eq(p.power, 0, label .. ": Power with abilities off")
+						eq(p.stats.abilities or 0, 0, label .. ": an ability used with abilities off")
+					end
+				end
+				for _, e in g.placed do
+					falsy(rules.banned[e.item], label .. ": a banned card on the board (" .. e.item .. ")")
+				end
+				for _, list in g.traps do
+					for _, trap in list do
+						falsy(rules.banned[trap.item], label .. ": a banned trap on the board (" .. trap.item .. ")")
+					end
+				end
+			end
+		end
 	end
 end)

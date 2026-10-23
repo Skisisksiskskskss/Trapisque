@@ -518,6 +518,73 @@ elseif cfg.quickplay then
 	check(F.run(150, function()
 		return MatchScreen.current() ~= nil
 	end), "Quick Play never found a match")
+elseif cfg.private then
+	-- a private match: a party of one plus bots, house rules, a roulette map vote
+	local function switchFor(root, note: string): boolean
+		for _, d in F.findAll(root, function(d)
+			return d:IsA("TextLabel") and d.Text == note and F.visible(d)
+		end) do
+			local holder = d.Parent
+			for _ = 1, 3 do
+				local t = holder and holder:FindFirstChild("Toggle")
+				if t then
+					F.click(t)
+					return true
+				end
+				holder = holder and holder.Parent
+			end
+		end
+		return false
+	end
+	check(press(Root.screens, "CREATE PARTY"), "no CREATE PARTY button")
+	check(F.run(5, function()
+		return State.get("party") ~= nil
+	end), "the party was never made")
+	check(press(Root.screens, "PRIVATE"), "no PRIVATE MATCH button")
+	F.run(1)
+	local top = modals()
+	local panel = top[#top]
+	check(panel ~= nil, "the private match settings didn't open")
+	check(press(panel, "^ROULETTE$"), "no Roulette map vote")
+	F.run(0.3)
+	check(switchFor(panel, "A map with a random twist among the cards"), "no twist card switch")
+	F.run(0.3)
+	shot("private-match")
+	check(press(panel, "^HOUSE RULES$"), "no House rules tab")
+	F.run(0.3)
+	check(press(panel, "^SHORT$"), "no Short board")
+	check(press(panel, "^3$"), "no 3 starting cards")
+	check(switchFor(panel, "Characters' abilities and the Power bar"), "no abilities switch")
+	F.run(0.3)
+	shot("private-rules")
+	check(press(panel, "^CARDS$"), "no Cards tab")
+	F.run(0.3)
+	check(press(panel, "BANANA"), "no Banana Peel to ban")
+	F.run(0.5)
+	shot("private-bans")
+	local rules = State.get("party").settings.rules
+	check(rules.vote == "roulette" and rules.wildcard == true, "the vote settings weren't saved")
+	check(rules.board == "short" and rules.cards == 3 and rules.abilities == false, "the house rules weren't saved")
+	check(rules.banned.banana == true, "the ban wasn't saved")
+	check(press(panel, "START MATCH"), "no START MATCH button")
+	-- the vote: four cards (two maps, the Mystery map, a map with a twist); vote for the last
+	local vote
+	check(F.run(10, function()
+		vote = visibleNamed(Root.gui, "MapVote")
+		return vote ~= nil
+	end), "the map vote never opened")
+	F.run(0.6)
+	local card = visibleNamed(vote, "Option4")
+	check(card ~= nil, "no twist card in the vote")
+	check(visibleNamed(vote, "Twist") ~= nil, "the twist card has no twist on it")
+	F.click(card)
+	F.run(1)
+	shot("private-vote")
+	check(F.run(20, function()
+		return visibleNamed(Root.gui, "Roulette") ~= nil or MatchScreen.current() ~= nil
+	end), "the roulette never spun")
+	F.run(1.2)
+	shot("private-roulette")
 else
 	local tile = visibleNamed(Root.screens, mode)
 	check(tile ~= nil, "no tile for mode " .. mode)
@@ -545,6 +612,11 @@ end), "the match never started")
 local screen = MatchScreen.current()
 say("match started at %.1fs (seat %d, %s)", F.now, screen.mySeat, screen.mapDef.id)
 noProblems("starting the match")
+if cfg.private then
+	check(screen.boardKind == "short", "the match isn't on a short board")
+	check(screen.houseRules ~= nil, "the match doesn't know its house rules")
+	check(screen.twist ~= nil, "the twist card won, but the match has no twist")
+end
 if cfg.tutorial then
 	check(screen.coach ~= nil, "no coach in the guided match")
 	check(F.run(10, function()

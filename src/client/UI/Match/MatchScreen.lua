@@ -147,7 +147,11 @@ function MatchScreen.show(payload)
 	self.kind = payload.kind
 	self.mode = Modes.get(payload.mode)
 	self.isTeam = self.mode ~= nil and self.mode.isTeam == true
-	self.mapDef = Maps.get(payload.map)
+	self.mapDef = Maps.variant(Maps.get(payload.map), payload.board)
+	self.boardKind = payload.board
+	-- (a twist the map vote or the host's house rules added, and the rules they changed)
+	self.twist = Progress.eventById(payload.twist)
+	self.houseRules = payload.houseRules
 	self.target = payload.target
 	self.length = payload.length
 	self.seats = {}
@@ -597,7 +601,7 @@ function MatchScreen:_relayout(m)
 			end
 			self.board:destroy()
 		end
-		self.board = BoardView.new(self.boardLayer, self.mapDef.id, { rotate = rotate, mySeat = self.mySeat })
+		self.board = BoardView.new(self.boardLayer, self.mapDef.id, { rotate = rotate, mySeat = self.mySeat, board = self.boardKind })
 		self.boardRotated = rotate
 		for _, p in self.view.players do
 			local info = self.seats[p.seat] or {}
@@ -723,6 +727,9 @@ function MatchScreen:_updateRound()
 	local event = self.mode and self.mode.isEvent and Progress.currentEvent()
 	if event then
 		modeName = event.name
+	end
+	if self.twist and self.twist ~= event then
+		modeName ..= " + " .. self.twist.name
 	end
 	local lengthName = LENGTH_NAME[self.length or ""] or ""
 	local mapName = if self.mapDef then self.mapDef.name else ""
@@ -1080,6 +1087,16 @@ function MatchScreen:_intro(payload)
 		self.board:buildIntro(intro)
 		Overlays.reveal(self.fx, self:_seatList(), intro * 0.85)
 		task.wait(math.max(0, intro - (os.clock() - t0)))
+	end
+	-- what this match plays differently: its house rules, its twist
+	local twist = if self.twist and not (self.mode and self.mode.isEvent) then self.twist else nil
+	if self.alive and (self.houseRules or twist) then
+		local parts = table.clone(self.houseRules or {})
+		if twist then
+			table.insert(parts, 1, twist.blurb)
+		end
+		Overlays.shout(self.fx, if self.houseRules then "HOUSE RULES" else string.upper(twist.name), C.sun, 1.4, table.concat(parts, "  ·  "))
+		task.wait(0.6)
 	end
 	self.holding = false
 	self:_kick()

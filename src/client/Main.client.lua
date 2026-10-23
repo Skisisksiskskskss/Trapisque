@@ -123,7 +123,7 @@ Net.on("match.vote", function(data)
 end)
 Net.on("match.voted", function(data)
 	if type(data) == "table" and data.map then
-		MapVote.result(data.map)
+		MapVote.result(data)
 	end
 end)
 Net.on("match.start", function(payload)

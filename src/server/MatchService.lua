@@ -20,6 +20,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage.Shared
 local Modes = require(Shared.Game.Modes)
 local Maps = require(Shared.Game.Maps)
+local HouseRules = require(Shared.Game.HouseRules)
 local Tutorial = require(Shared.Meta.Tutorial)
 
 local Net = require(script.Parent.Net)
@@ -334,15 +335,23 @@ function MatchService.private(player: Player)
 			table.insert(bots, {})
 		end
 	end
+	-- the host's house rules, and their map vote (which picks the map instead)
+	local rules = HouseRules.clean(s.rules)
+	local vote = nil
+	if rules.vote ~= "off" then
+		vote = { style = rules.vote, mystery = rules.mystery, wildcard = rules.wildcard }
+	end
 	MatchService.start({
 		mode = mode.id,
-		map = s.map,
+		map = if vote then "random" else s.map,
 		length = s.length,
 		kind = "private",
 		humans = humans,
 		bots = bots,
 		teamsPreset = mode.isTeam,
 		parties = { { leader = party.leader, members = party.members, settings = party.settings } },
+		rules = rules,
+		vote = vote,
 	})
 	return true
 end
@@ -696,7 +705,7 @@ function MatchService.init()
 		if not match then
 			return false, "You're not in a match."
 		end
-		return match:vote(player, payload.map)
+		return match:vote(player, payload.option or payload.map)
 	end)
 
 	Net.handle("match.rematch", function(player)

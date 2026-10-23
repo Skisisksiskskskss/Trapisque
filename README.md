@@ -329,7 +329,7 @@ The tests run the rules, bot simulations, chest maths and board layouts with the
 standalone [Luau](https://github.com/luau-lang/luau/releases) CLI:
 
 ```sh
-python3 tools/bundle.py build/tests.luau tests/harness.luau tests/engine_spec.luau \
+python3 tools/bundle.py build/tests.luau tests/harness.luau tests/engine_spec.luau tests/rules_spec.luau \
   tests/sim_spec.luau tests/clock_spec.luau tests/meta_spec.luau tests/layout_spec.luau \
   tests/ui_layout_spec.luau tests/zz_run.luau
 luau build/tests.luau

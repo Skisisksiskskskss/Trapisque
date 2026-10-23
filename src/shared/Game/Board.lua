@@ -76,11 +76,20 @@ function Board.build(def)
 		return tile
 	end
 
-	-- main route
+	-- main route (a short board, def.cutShare, keeps only its first part)
 	local q, r = def.start[1], def.start[2]
 	addTile(q, r, nil)
 	table.insert(self.mainRoute, 1)
-	for _, dir in parseSteps(def.route) do
+	local route = parseSteps(def.route)
+	self.fullCount = #route + 1
+	local keep = #route
+	if def.cutShare then
+		keep = math.clamp(math.floor(#route * def.cutShare + 0.5), 8, #route)
+	end
+	for i, dir in route do
+		if i > keep then
+			break
+		end
 		local d = DIRS[dir]
 		q += d[1]
 		r += d[2]
@@ -101,6 +110,10 @@ function Board.build(def)
 	self.branches = {}
 	for bi, b in def.branches or {} do
 		local fromId, toId = b.from, b.to
+		if def.cutShare and toId >= self.count then
+			-- (past the end of a short board)
+			continue
+		end
 		assert(fromId > 1 and toId > fromId and toId < self.count, "Board " .. def.id .. ": bad branch " .. bi)
 		local steps = parseSteps(b.steps)
 		local bq, br = self.tiles[fromId].q, self.tiles[fromId].r
@@ -127,7 +140,7 @@ function Board.build(def)
 			end
 		end
 		assert(#branchTiles > 0, "Board " .. def.id .. ": branch " .. bi .. " has no tiles")
-		table.insert(self.branches, { from = fromId, to = toId, tiles = branchTiles })
+		table.insert(self.branches, { from = fromId, to = toId, tiles = branchTiles, index = bi })
 	end
 	self.totalTiles = #self.tiles
 
@@ -230,7 +243,9 @@ function Board.build(def)
 	self.tokenSpots = {}
 	local naturalInit = {}
 	for idx, kind in def.natural or {} do
-		naturalInit[idx] = kind
+		if idx < self.count then
+			naturalInit[idx] = kind
+		end
 	end
 	self.naturalInit = naturalInit
 	local every = def.tokenEvery or 3
@@ -254,10 +269,11 @@ function Board.build(def)
 end
 
 function Board.get(def)
-	local b = cache[def.id]
+	local k = def.id .. (if def.variant then ":" .. def.variant else "")
+	local b = cache[k]
 	if not b then
 		b = Board.build(def)
-		cache[def.id] = b
+		cache[k] = b
 	end
 	return b
 end

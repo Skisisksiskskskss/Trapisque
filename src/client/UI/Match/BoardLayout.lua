@@ -431,16 +431,34 @@ function BoardLayout.build(board, mapDef, Rng, opts: { [string]: any }?)
 		mottle = {},
 	}
 
-	-- tiles along the route, then along each shortcut
+	-- tiles along the route, then along each shortcut. A short board (house rules) has
+	-- its tiles along the first part of the route only; the island is still all there.
 	local pos: { [number]: { number } } = {}
-	local mainCurve = spline(scene.path)
+	local wholeCurve = spline(scene.path)
+	local mainCurve = wholeCurve
+	if board.fullCount and board.count < board.fullCount then
+		local L, total = lengths(wholeCurve)
+		local keep = total * (board.count - 1) / (board.fullCount - 1)
+		mainCurve = {}
+		for i, p in wholeCurve do
+			if L[i] <= keep then
+				table.insert(mainCurve, p)
+			else
+				-- where the cut falls
+				local a = wholeCurve[i - 1]
+				local f = (keep - L[i - 1]) / math.max(1e-9, L[i] - L[i - 1])
+				table.insert(mainCurve, { a[1] + (p[1] - a[1]) * f, a[2] + (p[2] - a[2]) * f })
+				break
+			end
+		end
+	end
 	for i, p in spaced(mainCurve, board.count, false) do
 		pos[i] = p
 	end
 	local curves = { { samples = mainCurve } }
 	for bi, b in board.branches do
 		local pts = { { pos[b.from][1], pos[b.from][2] } }
-		for _, v in (scene.branches and scene.branches[bi]) or {} do
+		for _, v in (scene.branches and scene.branches[b.index or bi]) or {} do
 			table.insert(pts, v)
 		end
 		table.insert(pts, { pos[b.to][1], pos[b.to][2] })
@@ -499,9 +517,12 @@ function BoardLayout.build(board, mapDef, Rng, opts: { [string]: any }?)
 		return best
 	end
 
-	-- land: discs along every trail, plus the scene's extra land and islets
+	-- land: discs along every trail (and the rest of a short board's route), plus the
+	-- scene's extra land and islets
 	local landCfg = scene.land
-	for _, cv in curves do
+	local landCurves = table.clone(curves)
+	landCurves[1] = { samples = wholeCurve }
+	for _, cv in landCurves do
 		local L, total = lengths(cv.samples)
 		local at = 0
 		while at <= total + 1e-6 do

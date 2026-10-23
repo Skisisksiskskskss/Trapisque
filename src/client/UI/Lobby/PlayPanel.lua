@@ -16,6 +16,8 @@ local Players = game:GetService("Players")
 local Shared = ReplicatedStorage.Shared
 local Modes = require(Shared.Game.Modes)
 local Maps = require(Shared.Game.Maps)
+local Items = require(Shared.Game.Items)
+local HouseRules = require(Shared.Game.HouseRules)
 local Progress = require(Shared.Meta.Progress)
 
 local UI = script.Parent.Parent
@@ -27,6 +29,7 @@ local CharacterSelect = require(script.Parent.CharacterSelect)
 
 local Client = UI.Parent
 local Net = require(Client.Net)
+local Sound = require(Client.Sound)
 local State = require(Client.State)
 
 local C = Theme.C
@@ -487,6 +490,41 @@ function PlayPanel:_practice()
 	})
 end
 
+-- The house rules' choices (short names: the rows are narrow on a phone).
+local VOTE_OPTIONS = {
+	{ text = "Off", value = "off" },
+	{ text = "Most votes", value = "majority" },
+	{ text = "Roulette", value = "roulette" },
+}
+local BOARD_OPTIONS = { { text = "Full", value = "full" }, { text = "Short", value = "short" } }
+local TIMER_OPTIONS = {}
+for _, t in HouseRules.options.timer do
+	table.insert(TIMER_OPTIONS, { text = if t == 0 then "Off" else (t .. "s"), value = t })
+end
+local POWER_OPTIONS = { { text = "Empty", value = "empty" }, { text = "Half", value = "half" }, { text = "Full", value = "full" } }
+local CARD_OPTIONS = {}
+for _, n in HouseRules.options.cards do
+	table.insert(CARD_OPTIONS, { text = tostring(n), value = n })
+end
+local TWIST_SHORT = { trap_frenzy = "Traps", bonk_bonanza = "Bonks", power_surge = "Power", triple_dice = "3 dice" }
+local TWIST_OPTIONS = {}
+for _, id in HouseRules.options.twist do
+	table.insert(TWIST_OPTIONS, { text = if id == "none" then "None" else (TWIST_SHORT[id] or id), value = id })
+end
+
+local function twistNote(id: string): string
+	local e = Progress.eventById(id)
+	if not e then
+		return "No twist: the rules as they are."
+	end
+	return e.name .. ": " .. e.blurb
+end
+
+--[[
+	Private match settings, on three pages: the match (mode, map or map vote, length,
+	bots), its house rules, and the cards it bans. Only the party leader can change them
+	(everyone else sees them); each change is saved to the party at once.
+]]
 function PlayPanel:_private()
 	local party = State.get("party")
 	if not party then
@@ -494,81 +532,370 @@ function PlayPanel:_private()
 		return
 	end
 	local s = table.clone(party.settings or {})
+	local rules = HouseRules.clean(s.rules)
+	local leader = party.leader == player.UserId
 	local roomW, _, narrow = Widgets.room()
 	local content, close = Widgets.modal(self.popups, {
 		title = "Private match",
 		titleWidth = 280,
-		width = math.min(640, roomW),
-		height = if narrow then 560 else 430,
+		width = math.min(700, roomW),
+		height = if narrow then 640 else 560,
 	})
-	local list = Util.frame(content, { Size = UDim2.new(1, 0, 1, -64) })
-	Util.list(list, "y", 10, "Left", "Top")
 	local function save(fields)
 		local ok, err = Net.request("party.settings", fields)
 		if not ok then
 			Widgets.toast(tostring(err), "error")
 		end
 	end
+	local function setRule(key: string, value: any)
+		rules[key] = value
+		save({ rules = { [key] = value } })
+	end
+	local choices = {}
+	local function choice(h: Frame, options, value, onChange, textSize: number?)
+		local c = Widgets.choice(h, { options = options, value = value, size = UDim2.fromScale(1, 1), textSize = textSize, onChange = onChange })
+		if not leader then
+			c:setEnabled(false)
+		end
+		table.insert(choices, c)
+		return c
+	end
+	-- an on / off switch with a few words on what it does
+	local function switch(h: Frame, value: boolean, note: string, onChange: (boolean) -> ())
+		local t
+		t = Widgets.toggle(h, {
+			value = value,
+			anchor = Vector2.new(0, 0.5),
+			position = UDim2.fromScale(0, 0.5),
+			onChange = function(v)
+				if not leader then
+					t:set(not v, true)
+					Widgets.toast("Only the party leader can change match settings.", "info")
+					return
+				end
+				onChange(v)
+			end,
+		})
+		Widgets.label(h, {
+			text = note,
+			font = "body",
+			size = 14,
+			minSize = 10,
+			color = C.textSoft,
+			wrap = true,
+			scaled = true,
+			sizeUDim = UDim2.new(1, -88, 1, 0),
+			position = UDim2.fromOffset(86, 0),
+		})
+		return t
+	end
+
+	-- the pages, and the tabs across the top that switch between them
+	local pages = {}
+	local function page(name: string): ScrollingFrame
+		local p = Widgets.scroll(content, {
+			name = name,
+			size = UDim2.new(1, 0, 1, -40 - 12 - 64),
+			position = UDim2.fromOffset(0, 52),
+			gap = 10,
+			hAlign = "Left",
+			padding = 4,
+		})
+		local pad = p:FindFirstChildOfClass("UIPadding")
+		if pad then
+			pad.PaddingRight = UDim.new(0, 16)
+		end
+		p.Visible = name == "match"
+		pages[name] = p
+		return p
+	end
+	local tabs = Util.frame(content, { Name = "Tabs", Size = UDim2.new(1, 0, 0, 40) })
+	Widgets.choice(tabs, {
+		options = { { text = "Match", value = "match" }, { text = "House rules", value = "rules" }, { text = "Cards", value = "cards" } },
+		value = "match",
+		size = UDim2.fromScale(1, 1),
+		onChange = function(v)
+			for name, p in pages do
+				p.Visible = name == v
+			end
+		end,
+	})
+
+	-- the match
+	local main = page("match")
 	local modeOptions = {}
 	for _, m in Modes.list do
 		table.insert(modeOptions, { text = m.short, value = m.id })
 	end
-	local botRow
-	settingRow(list, 1, "Mode", function(h)
-		Widgets.choice(h, { options = modeOptions, value = s.mode or "chaos", size = UDim2.fromScale(1, 1), onChange = function(v)
+	local botRow, mapRow, voteRow
+	local function showRows()
+		local m = Modes.get(s.mode or "chaos")
+		botRow.Visible = m ~= nil and not m.isTeam
+		mapRow.Visible = rules.vote == "off"
+		voteRow.Visible = rules.vote ~= "off"
+	end
+	settingRow(main, 1, "Mode", function(h)
+		choice(h, modeOptions, s.mode or "chaos", function(v)
 			s.mode = v
 			save({ mode = v })
-			if botRow then
-				local m = Modes.get(v)
-				botRow.Visible = m ~= nil and not m.isTeam
-			end
-		end })
+			showRows()
+		end)
 	end)
-	settingRow(list, 2, "Map", function(h)
-		Widgets.choice(h, { options = MAP_OPTIONS, value = s.map or "random", size = UDim2.fromScale(1, 1), textSize = 15, onChange = function(v)
+	settingRow(main, 2, "Map vote", function(h)
+		choice(h, VOTE_OPTIONS, rules.vote, function(v)
+			setRule("vote", v)
+			showRows()
+		end)
+	end)
+	mapRow = settingRow(main, 3, "Map", function(h)
+		choice(h, MAP_OPTIONS, s.map or "random", function(v)
 			save({ map = v })
-		end })
+		end, 15)
 	end)
-	settingRow(list, 3, "Length", function(h)
-		Widgets.choice(h, { options = LENGTH_OPTIONS, value = s.length or "quick", size = UDim2.fromScale(1, 1), onChange = function(v)
+	voteRow = Util.frame(main, { Name = "VoteCards", Size = UDim2.new(1, 0, 0, if narrow then 92 else 44), LayoutOrder = 4 })
+	do
+		local half = if narrow then UDim2.new(1, 0, 0, 44) else UDim2.new(0.5, -6, 1, 0)
+		local a = Util.frame(voteRow, { Size = half })
+		switch(a, rules.mystery, "A face-down Mystery map among the cards", function(v)
+			setRule("mystery", v)
+		end)
+		local b = Util.frame(voteRow, { Size = half, Position = if narrow then UDim2.fromOffset(0, 48) else UDim2.new(0.5, 6, 0, 0) })
+		switch(b, rules.wildcard, "A map with a random twist among the cards", function(v)
+			setRule("wildcard", v)
+		end)
+	end
+	settingRow(main, 5, "Length", function(h)
+		choice(h, LENGTH_OPTIONS, s.length or "quick", function(v)
 			save({ length = v })
-		end })
+		end)
 	end)
 	local botOptions = {}
 	for n = 0, 5 do
 		table.insert(botOptions, { text = tostring(n), value = n })
 	end
-	botRow = settingRow(list, 4, "Bots", function(h)
-		Widgets.choice(h, { options = botOptions, value = s.bots or 0, size = UDim2.fromScale(1, 1), onChange = function(v)
+	botRow = settingRow(main, 6, "Bots", function(h)
+		choice(h, botOptions, s.bots or 0, function(v)
 			save({ bots = v })
-		end })
+		end)
 	end)
-	local m = Modes.get(s.mode or "chaos")
-	botRow.Visible = m ~= nil and not m.isTeam
-	Widgets.label(list, {
-		text = "Team modes fill empty seats with bots automatically.",
+	Widgets.label(main, {
+		text = "Team modes fill empty seats with bots automatically. Roulette: every vote is a slice of a wheel, and the wheel decides.",
 		font = "body",
 		size = 14,
 		color = C.textSoft,
-		sizeUDim = UDim2.new(1, 0, 0, 20),
-		layoutOrder = 5,
+		wrap = true,
+		sizeUDim = UDim2.new(1, 0, 0, 40),
+		layoutOrder = 7,
 	})
-	Widgets.button(content, {
-		text = "Start match",
-		icon = "play",
-		style = "green",
-		textSize = 22,
-		size = UDim2.fromOffset(260, 52),
-		anchor = Vector2.new(0.5, 1),
-		position = UDim2.new(0.5, 0, 1, 0),
-		onClick = function()
-			close()
-			local ok, err = Net.request("match.private")
-			if not ok then
-				Widgets.toast(tostring(err), "error")
+	showRows()
+
+	-- house rules
+	local hr = page("rules")
+	settingRow(hr, 1, "Board", function(h)
+		choice(h, BOARD_OPTIONS, rules.board, function(v)
+			setRule("board", v)
+		end)
+	end)
+	settingRow(hr, 2, "Turn timer", function(h)
+		choice(h, TIMER_OPTIONS, rules.timer, function(v)
+			setRule("timer", v)
+		end)
+	end)
+	settingRow(hr, 3, "Power", function(h)
+		choice(h, POWER_OPTIONS, rules.power, function(v)
+			setRule("power", v)
+		end)
+	end)
+	settingRow(hr, 4, "Cards", function(h)
+		choice(h, CARD_OPTIONS, rules.cards, function(v)
+			setRule("cards", v)
+		end)
+	end)
+	settingRow(hr, 5, "Abilities", function(h)
+		switch(h, rules.abilities, "Characters' abilities and the Power bar", function(v)
+			setRule("abilities", v)
+		end)
+	end)
+	settingRow(hr, 6, "Wanted", function(h)
+		switch(h, rules.wanted, "A price on the leader's head, for whoever bonks them", function(v)
+			setRule("wanted", v)
+		end)
+	end)
+	settingRow(hr, 7, "Underdog", function(h)
+		switch(h, rules.underdog, "A gold die for whoever is clearly last", function(v)
+			setRule("underdog", v)
+		end)
+	end)
+	local note
+	settingRow(hr, 8, "Twist", function(h)
+		choice(h, TWIST_OPTIONS, rules.twist, function(v)
+			setRule("twist", v)
+			note.Text = twistNote(v)
+		end)
+	end)
+	note = Widgets.label(hr, {
+		text = twistNote(rules.twist),
+		font = "body",
+		size = 14,
+		color = C.textSoft,
+		wrap = true,
+		sizeUDim = UDim2.new(1, 0, 0, 38),
+		layoutOrder = 9,
+	})
+	Widgets.label(hr, {
+		text = "Board: Short keeps about two thirds of the trail. Power and Cards: what everyone starts with.",
+		font = "body",
+		size = 14,
+		color = C.textFaint,
+		wrap = true,
+		sizeUDim = UDim2.new(1, 0, 0, 38),
+		layoutOrder = 10,
+	})
+
+	-- banned cards
+	local cp = page("cards")
+	local banNote = Widgets.label(cp, {
+		text = "",
+		font = "body",
+		size = 14,
+		color = C.textSoft,
+		wrap = true,
+		sizeUDim = UDim2.new(1, 0, 0, 40),
+		layoutOrder = 1,
+	})
+	local grid = Util.frame(cp, { Name = "Bans", Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, LayoutOrder = 2 })
+	Util.new("UIGridLayout", {
+		CellSize = UDim2.fromOffset(if narrow then 84 else 96, if narrow then 96 else 104),
+		CellPadding = UDim2.fromOffset(8, 8),
+		SortOrder = Enum.SortOrder.LayoutOrder,
+		HorizontalAlignment = Enum.HorizontalAlignment.Center,
+		Parent = grid,
+	})
+	local cells = {}
+	local function paintBans()
+		local n = HouseRules.banCount(rules)
+		banNote.Text = "Tap a card to keep it out of this match (the wheels, the Potion Seller and starting hands skip it). "
+			.. n .. " of " .. HouseRules.MaxBans .. " banned; two traps always stay."
+		for id, cell in cells do
+			local banned = rules.banned[id] == true
+			cell.cross.Visible = banned
+			cell.root.BackgroundColor3 = if banned then C.badSoft else C.panelRaised
+			cell.stroke.Color = if banned then C.coral else C.line
+		end
+	end
+	for i, id in HouseRules.bannable do
+		local item = Items.get(id)
+		if not item then
+			continue
+		end
+		local root = Util.new("TextButton", {
+			Name = "Ban_" .. id,
+			Text = "",
+			AutoButtonColor = false,
+			BackgroundColor3 = C.panelRaised,
+			BorderSizePixel = 0,
+			LayoutOrder = i,
+			Parent = grid,
+		})
+		Util.corner(root, 10)
+		local stroke = Util.stroke(root, C.line, 2)
+		local icon = Util.frame(root, {
+			AnchorPoint = Vector2.new(0.5, 0),
+			Position = UDim2.new(0.5, 0, 0, 6),
+			Size = UDim2.fromOffset(52, 52),
+		})
+		Icons.medallion(icon, id, Theme.Category[item.category] or C.neutral, { Size = UDim2.fromScale(1, 1) })
+		Widgets.label(root, {
+			text = item.name,
+			font = "chunky",
+			size = 13,
+			minSize = 9,
+			color = C.text,
+			align = "center",
+			wrap = true,
+			scaled = true,
+			sizeUDim = UDim2.new(1, -8, 0, 32),
+			position = UDim2.new(0, 4, 1, -36),
+		})
+		-- a red slash across a banned card
+		local cross = Util.new("Frame", {
+			Name = "Banned",
+			BackgroundColor3 = C.coral,
+			BorderSizePixel = 0,
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.new(0.5, 0, 0, 32),
+			Size = UDim2.fromOffset(66, 8),
+			Rotation = -35,
+			ZIndex = 5,
+			Visible = false,
+			Parent = root,
+		})
+		Util.corner(cross, 0.5)
+		Util.stroke(cross, C.ink, 2)
+		cells[id] = { root = root, stroke = stroke, cross = cross }
+		root.Activated:Connect(function()
+			if not leader then
+				Widgets.toast("Only the party leader can change match settings.", "info")
+				return
 			end
-		end,
-	})
+			local want = table.clone(rules.banned)
+			want[id] = if want[id] then nil else true
+			if want[id] then
+				local traps = 0
+				for _, t in Items.trapIds do
+					if t ~= "wall" and not want[t] then
+						traps += 1
+					end
+				end
+				if HouseRules.banCount(rules) >= HouseRules.MaxBans then
+					Widgets.toast("You can ban up to " .. HouseRules.MaxBans .. " cards.", "info")
+					return
+				elseif traps < HouseRules.MinTraps then
+					Widgets.toast("At least two traps have to stay in the game.", "info")
+					return
+				end
+			end
+			local test = table.clone(rules)
+			test.banned = want
+			local cleaned = HouseRules.clean(test)
+			Sound.play("click")
+			Util.bump(root, 0.06)
+			rules.banned = cleaned.banned
+			paintBans()
+			save({ rules = { banned = cleaned.banned } })
+		end)
+	end
+	paintBans()
+
+	if leader then
+		Widgets.button(content, {
+			text = "Start match",
+			icon = "play",
+			style = "green",
+			textSize = 22,
+			size = UDim2.fromOffset(260, 52),
+			anchor = Vector2.new(0.5, 1),
+			position = UDim2.new(0.5, 0, 1, 0),
+			onClick = function()
+				close()
+				local ok, err = Net.request("match.private")
+				if not ok then
+					Widgets.toast(tostring(err), "error")
+				end
+			end,
+		})
+	else
+		Widgets.label(content, {
+			text = "The party leader picks these and starts the match.",
+			font = "heavy",
+			size = 16,
+			color = C.textSoft,
+			align = "center",
+			sizeUDim = UDim2.new(1, 0, 0, 52),
+			anchor = Vector2.new(0.5, 1),
+			position = UDim2.new(0.5, 0, 1, 0),
+		})
+	end
 end
 
 return PlayPanel

@@ -5,6 +5,7 @@
 # tools/preview/shot.py).
 #
 #   tools/shots.sh [pc phone upright ...]     (default: pc phone upright)
+#   tools/shots.sh private                    a private match's settings and map vote
 #   tools/shots.sh art store                  the store icon and banner, and store
 #                                             screenshots (OUT=docs/store)
 #   tools/shots.sh badges                     the badge icons (OUT=docs/store: badges/*.png)
@@ -23,6 +24,7 @@ declare -A SCENARIOS=(
 	[art]='name = "art", w = 1920, h = 1080'
 	[badges]='name = "badges", w = 512, h = 512'
 	[store]='name = "store", w = 1920, h = 1080, mode = "chaos", map = "Blissful Tricks", bots = 3, seed = 21, store = true, player = "Marlin"'
+	[private]='name = "private", w = 1366, h = 768, mode = "chaos", private = true, seed = 17'
 	[upright]='name = "upright", w = 390, h = 844, touch = true, safe = { l = 0, r = 0, t = 47, b = 34 }, inset = 95, barLeft = 110, barRight = 340, mode = "chaos", map = "Blissful Tricks", bots = 3, seed = 5'
 )
 ORDER=(pc phone upright)

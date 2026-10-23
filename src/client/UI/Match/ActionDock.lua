@@ -331,12 +331,14 @@ function ActionDock:setPower(power: number, cap: number, o)
 	end
 	if self.powerLabel then
 		local ab = self.abilityDef
-		self.powerLabel.Text = if not ab then "" elseif full then "Power full!" else string.format("Power %d / %d", power, cap)
+		-- (a house rule can switch abilities off: no Power bar to fill)
+		self.powerLabel.Text = if not ab then "" elseif cap <= 0 then "Abilities off" elseif full then "Power full!" else string.format("Power %d / %d", power, cap)
 		self.powerLabel.TextColor3 = if full then C.sun else C.textSoft
 	end
 	local btn = self.abilityButton
 	if btn then
 		local usable = self.powerInfo.usable
+		btn.root.Visible = cap > 0
 		btn:setEnabled(usable)
 		btn:pulse(usable)
 		if self.form == "tall" and self.abilityDef then
