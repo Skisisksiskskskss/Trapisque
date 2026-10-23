@@ -44,6 +44,8 @@ end
 -- part is fetched on its own, so one that fails leaves a gap instead of an error.
 Net.handle("hello", function(player)
 	DataService.waitFor(player, 20)
+	-- (back from a dropped connection, on the server that kept their seat)
+	try("rejoining a match", MatchService.rejoinHere, player)
 	local match = try("finding the player's match", MatchService.get, player)
 	return true, {
 		version = Config.Version,
@@ -54,6 +56,7 @@ Net.handle("hello", function(player)
 			return PartyService.view(PartyService.get(player))
 		end),
 		match = if match then try("the match", match.resync, match, player) else nil,
+		rejoin = if match then nil else try("the rejoin offer", MatchService.rejoinOffer, player),
 		status = try("the match status", MatchService.status, player),
 		chat = try("the chat status", ChatService.status, player),
 		staff = try("the staff role", AdminService.role, player),

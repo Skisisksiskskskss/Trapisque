@@ -360,6 +360,11 @@ local RULES = {
 		text = "Fall clearly behind everyone (8 tiles or more, and every treasure counts as a whole lap, so banking one and starting again from the flag never makes you last) and you're the underdog: you roll an extra GOLD die on your turn. Move with whichever die you like; the gold one never charges Power. It's marked on your name.",
 	},
 	{
+		icon = "wanted",
+		title = "Wanted",
+		text = "From the end of round 2, whoever is way out in front (4 tiles or more ahead of every rival, a whole lap for every treasure) gets a WANTED poster: a price of 3 coins on their head. It goes up by a coin every round they stay ahead, and with every rival they bonk or catch in a trap.\n\nBonk the Wanted or catch them in your trap to claim it: the coins, and one of their cards. At 8 coins they're MOST WANTED: their hidden traps are out in the open, and so is every trap they hide after that. And if the Wanted reaches the treasure with the poster still up, they got away: the coins are theirs.",
+	},
+	{
 		icon = "bolt",
 		title = "Power",
 		text = "Every character has a Power bar as long as their ability costs. The die you don't move with fills it, a hidden trap of yours catching someone adds 2, and a Regeneration card fills it up. When it's full, use your ability: then it starts again from empty. Frozen players charge no Power.",

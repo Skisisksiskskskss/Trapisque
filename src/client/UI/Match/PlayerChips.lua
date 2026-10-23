@@ -42,6 +42,8 @@ local TEXT_FAINT = C.textSoft
 
 -- statuses; the number beside each is how many turns it has left
 local STATUS = {
+	-- (first: a Wanted poster, with the price on their head beside it)
+	{ key = "bounty", icon = "wanted", color = hex("B5452F"), count = true },
 	{ key = "frozen", icon = "snowflake", color = hex("8FD3EE"), count = true },
 	{ key = "burning", icon = "flame", color = hex("F08A24"), count = true },
 	{ key = "skip", icon = "zzz", color = hex("2B4C7E"), count = true },

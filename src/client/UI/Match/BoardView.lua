@@ -64,6 +64,9 @@ local C = Theme.C
 local hex = Theme.hex
 
 local U = 46 -- world pixels per map unit
+-- a Wanted poster's paper and ink
+local POSTER = hex("F3E2B3")
+local POSTER_INK = hex("6E2A18")
 local S = BoardLayout.Style
 local K = S.squash -- the ground, seen a little from the side, is this much shorter top to bottom
 local PAWN = S.pawn -- a piece's square (map units) when it has a tile to itself
@@ -1291,6 +1294,9 @@ function BoardView:applySnapshot(snap)
 			pawn.burning = (p.burning or 0) > 0
 			pawn.frozen = (p.frozen or 0) > 0
 			pawn.skip = (p.skip or 0) > 0
+			local w = snap.wanted
+			pawn.bounty = if w and w.seat == p.seat then w.pot else nil
+			pawn.mostWanted = w ~= nil and w.seat == p.seat and w.most == true
 			self:_statusMarks(p.seat)
 		end
 	end
@@ -1653,6 +1659,66 @@ function BoardView:_statusMarks(seat: number)
 		Icons.sticker(flake, StickerArt.misc.snowflake, nil, 0.08)
 		return holder
 	end)
+	mark("Wanted", pawn.bounty ~= nil, function()
+		-- a Wanted poster nailed up beside the piece, with the price on their head
+		local poster = Util.new("Frame", {
+			AnchorPoint = Vector2.new(0.5, 1),
+			Position = UDim2.fromScale(0.1, 0.18),
+			Size = UDim2.fromScale(0.62, 0.74),
+			BackgroundColor3 = POSTER,
+			BorderSizePixel = 0,
+			Rotation = -8,
+			ZIndex = 9,
+		})
+		Util.corner(poster, 0.08)
+		Util.stroke(poster, C.ink, 0.05 * U)
+		Util.new("TextLabel", {
+			Name = "Title",
+			BackgroundTransparency = 1,
+			Position = UDim2.fromScale(0.06, 0.05),
+			Size = UDim2.fromScale(0.88, 0.24),
+			Text = "WANTED",
+			TextScaled = true,
+			FontFace = Theme.Font.Display,
+			TextColor3 = POSTER_INK,
+			ZIndex = 10,
+			Parent = poster,
+		})
+		local face = Util.frame(poster, {
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.5, 0.5),
+			Size = UDim2.fromScale(0.44, 0.44),
+			SizeConstraint = Enum.SizeConstraint.RelativeXX,
+			ZIndex = 10,
+		})
+		Icons.make(face, "skull", Icons.flatColors(POSTER_INK, POSTER), { Size = UDim2.fromScale(1, 1) })
+		Util.new("TextLabel", {
+			Name = "Price",
+			BackgroundTransparency = 1,
+			Position = UDim2.fromScale(0.06, 0.73),
+			Size = UDim2.fromScale(0.88, 0.22),
+			Text = "",
+			TextScaled = true,
+			FontFace = Theme.Font.Chunky,
+			TextColor3 = POSTER_INK,
+			ZIndex = 10,
+			Parent = poster,
+		})
+		return poster
+	end)
+	local poster = pawn.lift:FindFirstChild("Wanted") :: Frame?
+	if poster and pawn.bounty then
+		local price = poster:FindFirstChild("Price") :: TextLabel?
+		local title = poster:FindFirstChild("Title") :: TextLabel?
+		if price then
+			price.Text = pawn.bounty .. (if pawn.bounty == 1 then " coin" else " coins")
+		end
+		if title then
+			title.Text = if pawn.mostWanted then "MOST WANTED" else "WANTED"
+		end
+		-- (the Most Wanted's poster is gold)
+		poster.BackgroundColor3 = if pawn.mostWanted then C.sunLight else POSTER
+	end
 	mark("Snared", pawn.skip == true, function()
 		local holder = Util.frame(nil, {
 			AnchorPoint = Vector2.new(0.5, 0.5),
@@ -1663,6 +1729,16 @@ function BoardView:_statusMarks(seat: number)
 		Icons.sticker(holder, StickerArt.misc.zzz, nil, 0.08)
 		return holder
 	end)
+end
+
+-- The Wanted poster: on `seat` with the price `pot` (nil: nobody is Wanted).
+function BoardView:setWanted(seat: number?, pot: number?, most: boolean?)
+	for s, pawn in self.pawns do
+		local on = s == seat and pot ~= nil
+		pawn.bounty = if on then pot else nil
+		pawn.mostWanted = on and most == true
+		self:_statusMarks(s)
+	end
 end
 
 function BoardView:setStatus(seat: number, status: string, on: boolean)

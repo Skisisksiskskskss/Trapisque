@@ -3093,6 +3093,15 @@ function F.addPlayer(name: string, userId: number)
 	return p
 end
 
+-- A player who left comes back on the same server (a dropped connection).
+function F.reconnect(p)
+	setParent(p, S[p], PlayersInst)
+	if not table.find(F.players, p) then
+		table.insert(F.players, p)
+	end
+	fireEvent(S[PlayersInst], "PlayerAdded", p)
+end
+
 function F.removePlayer(p)
 	local i = table.find(F.players, p)
 	if i then

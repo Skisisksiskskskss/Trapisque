@@ -1,7 +1,7 @@
 --[[
 	Results
-	End-of-match screen: who won, everyone's treasures and best moments (bonks, gotchas),
-	and what you earned: Gems and XP, your character's mastery, daily quests that moved,
+	End-of-match screen: who won, everyone's treasures and their award for how they
+	played (Shared/Game/Awards), and what you earned: Gems and XP, your character's mastery, daily quests that moved,
 	and trophies from ranked games.
 
 		local close = Results.show(layer, data, mySeat, isTeam, onLeave, onRematch?)
@@ -61,8 +61,9 @@ local function row(list: Frame, i: number, r, mine: boolean, isTeam: boolean, na
 	}, { back = seatColor, ring = C.line, ringPx = 3 })
 	local charDef = Characters.get(r.character or "")
 	local who = r.name .. (if mine then "  (you)" else "")
-	-- room on the right for the treasure count (and the WINNER badge when there's space)
-	local right = if narrow then 84 else 360
+	-- room on the right for the treasure count (and the WINNER badge and award when there's space)
+	local award = r.award
+	local right = if narrow then 84 elseif award then 390 else 360
 	local name = Widgets.label(f, {
 		text = who,
 		font = "heavy",
@@ -76,11 +77,16 @@ local function row(list: Frame, i: number, r, mine: boolean, isTeam: boolean, na
 	if isTeam and r.team then
 		sub ..= "  ·  " .. (Theme.TeamName[r.team] or ("Team " .. r.team))
 	end
+	if award and narrow then
+		-- (no room for the award's ribbon: its name leads the line instead)
+		sub = '<font color="#' .. C.sunDark:ToHex() .. '">' .. award.name .. "</font>  ·  " .. (if charDef then charDef.name else "")
+	end
 	local subLabel = Widgets.label(f, {
 		text = sub,
 		font = "body",
 		size = if narrow then 12 else 14,
 		color = C.textSoft,
+		rich = true,
 		sizeUDim = UDim2.new(1, -(102 + right), 0, 18),
 		position = UDim2.fromOffset(102, 28),
 	})
@@ -102,9 +108,45 @@ local function row(list: Frame, i: number, r, mine: boolean, isTeam: boolean, na
 		sizeUDim = UDim2.fromOffset(46, 30),
 		layoutOrder = 2,
 	})
-	-- the match's best moments, on wide screens
+	-- their award for how they played, on a ribbon (wide screens)
 	local st = r.stats or {}
-	if not narrow and ((st.bonks or 0) + (st.gotchas or 0)) > 0 then
+	if award and not narrow then
+		local ribbon = Util.new("Frame", {
+			Name = "Award",
+			AnchorPoint = Vector2.new(1, 0.5),
+			Position = UDim2.new(1, -212, 0.5, 0),
+			Size = UDim2.fromOffset(172, 42),
+			BackgroundColor3 = C.panel,
+			BorderSizePixel = 0,
+			Parent = f,
+		})
+		Util.corner(ribbon, 10)
+		Util.stroke(ribbon, C.sun, 2)
+		local ic = Util.frame(ribbon, {
+			AnchorPoint = Vector2.new(0, 0.5),
+			Position = UDim2.new(0, 5, 0.5, 0),
+			Size = UDim2.fromOffset(32, 32),
+		})
+		Icons.medallion(ic, award.icon or "star", C.sun, { Size = UDim2.fromScale(1, 1) })
+		Widgets.label(ribbon, {
+			text = award.name,
+			font = "chunky",
+			size = 15,
+			color = C.text,
+			sizeUDim = UDim2.new(1, -46, 0, 19),
+			position = UDim2.fromOffset(42, 3),
+		}).TextTruncate = Enum.TextTruncate.AtEnd
+		Widgets.label(ribbon, {
+			text = award.text or "",
+			font = "body",
+			size = 11,
+			minSize = 8,
+			scaled = true,
+			color = C.textSoft,
+			sizeUDim = UDim2.new(1, -46, 0, 15),
+			position = UDim2.fromOffset(42, 22),
+		})
+	elseif not narrow and ((st.bonks or 0) + (st.gotchas or 0)) > 0 then
 		local moments = Util.frame(f, {
 			AnchorPoint = Vector2.new(1, 0.5),
 			Position = UDim2.new(1, -212, 0.5, 0),

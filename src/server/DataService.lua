@@ -54,6 +54,7 @@ local function newProfile()
 		stats = { games = 0, wins = 0, treasures = 0, deaths = 0, placed = 0, practice = 0, bonks = 0, gotchas = 0 },
 		character = Characters.ids[1], -- the character you play in matches
 		mastery = {}, -- [characterId] = mastery XP
+		awards = {}, -- [awardId] = how many times you've won it (Shared/Game/Awards)
 		quests = { day = -1, list = {}, rerolled = false, bonus = false },
 		streak = { day = -10, count = 0 },
 		trophies = 0,
@@ -910,6 +911,11 @@ function DataService.applyMatchResult(player: Player, result)
 	local R = Config.Rewards
 	local stats = result.stats or {}
 	local gems = R.MatchGems + R.TreasureGems * result.treasures + (if result.won then R.WinGems else 0)
+	-- everyone's end-of-match award
+	if type(result.award) == "string" then
+		gems += R.AwardGems
+		data.awards[result.award] = (data.awards[result.award] or 0) + 1
+	end
 	local xp = R.MatchXP + R.TreasureXP * result.treasures + (if result.won then R.WinXP else 0)
 	if result.practice then
 		gems *= R.PracticeMultiplier

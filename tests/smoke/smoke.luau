@@ -56,6 +56,7 @@ F.setScreen({
 local touch = cfg.touch == true
 
 local stats = {
+	posters = 0, -- Wanted posters seen going up
 	moves = 0,
 	cards = 0,
 	abilities = 0,
@@ -616,6 +617,29 @@ if cfg.private then
 	check(screen.boardKind == "short", "the match isn't on a short board")
 	check(screen.houseRules ~= nil, "the match doesn't know its house rules")
 	check(screen.twist ~= nil, "the twist card won, but the match has no twist")
+	-- the connection drops mid-match: the seat is kept (the match waits: nobody else is
+	-- in it), and it's handed back when they're back on the server
+	F.run(6)
+	local MatchService = requireModule("Server/MatchService")
+	local me = game:GetService("Players").LocalPlayer
+	local match = MatchService.get(me)
+	check(match ~= nil, "the server has no match for me")
+	F.removePlayer(me)
+	F.run(3)
+	check(match:heldSeat(me.UserId) ~= nil, "my seat wasn't kept when my connection dropped")
+	check(not match.closed, "the match closed when I dropped out")
+	F.reconnect(me)
+	check(F.run(20, function()
+		return MatchService.get(me) == match
+	end), "I never got my seat back")
+	check(F.run(10, function()
+		local s = MatchScreen.current()
+		return s ~= nil and s ~= screen
+	end), "the match screen didn't come back after rejoining")
+	screen = MatchScreen.current()
+	check(not screen.view.players[screen.mySeat].isBot, "I'm still a bot after rejoining")
+	say("rejoined at %.1fs", F.now)
+	noProblems("rejoining after a dropped connection")
 end
 if cfg.tutorial then
 	check(screen.coach ~= nil, "no coach in the guided match")
@@ -645,6 +669,7 @@ end
 -- The player's hands: one decision every so often, like a person.
 local nextThink = F.now + 2
 local lastTurn = nil
+local lastPoster = nil
 -- cfg.idle: touch nothing until the screen says a bot is playing for me, then come back
 local idle = cfg.idle == true
 local idleRound = nil
@@ -778,6 +803,15 @@ local function think()
 	if lastTurn ~= s.view.round then
 		lastTurn = s.view.round
 		stats.turns += 1
+		-- (a Wanted poster on someone, and its mark over their piece)
+		local w = s.view.wanted
+		local poster = if w then (w.seat .. (if w.most then "!" else "")) else nil
+		if poster and poster ~= lastPoster then
+			stats.posters += 1
+			local pawn = s.board and s.board.pawns[w.seat]
+			check(pawn ~= nil and pawn.lift:FindFirstChild("Wanted") ~= nil, "the Wanted has no poster on their piece")
+		end
+		lastPoster = poster
 	end
 	local me = s.view.players[s.mySeat]
 	local roll = rng:NextNumber()
@@ -971,7 +1005,7 @@ for _, c in commands do
 end
 
 local summary = string.format(
-	"%s: %d turns, %d moves, %d cards, %d abilities, %d tile clicks, %d picks, %d buys, %d refused commands, %d pages, %d toasts, %.0fs of game time",
+	"%s: %d turns, %d moves, %d cards, %d abilities, %d tile clicks, %d picks, %d buys, %d refused commands, %d pages, %d toasts, %d Wanted posters, %.0fs of game time",
 	cfg.name or "smoke",
 	stats.turns,
 	moves,
@@ -983,6 +1017,7 @@ local summary = string.format(
 	stats.refused,
 	stats.pages,
 	#toasts,
+	stats.posters,
 	F.now
 )
 F.print(summary)

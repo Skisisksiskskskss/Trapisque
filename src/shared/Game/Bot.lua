@@ -98,6 +98,15 @@ local function victimWeight(game, p, o): number
 	return math.max(0.4, w)
 end
 
+-- What claiming the Wanted poster on `o` is worth to `p`: its coins and one of their cards.
+local function bountyValue(game, p, o): number
+	local w = game.wanted
+	if not w or w.seat ~= o.index or not game:isOpponent(p, o) then
+		return 0
+	end
+	return w.pot * 0.5 + (if #o.hand > 0 and #p.hand < Rules.HandLimit then 1 else 0)
+end
+
 -- Tiles of progress `o` would lose to a trap on their way (how bad it is for them).
 local function trapSeverity(game, item: string, o): number
 	local board = game.board
@@ -193,7 +202,7 @@ local function landingValue(game, p, tile: number, viewer: any?): number
 	end
 	for _, o in game.players do
 		if o ~= p and o.tile == tile and o.team ~= p.team and o.character ~= "warper" then
-			v += BONK_VALUE * victimWeight(game, p, o)
+			v += BONK_VALUE * victimWeight(game, p, o) + bountyValue(game, p, o)
 			if p.character == "fire_starter" then
 				v += 1.2
 			elseif p.character == "cannoneer" then
@@ -383,7 +392,7 @@ local function bestTrapTile(game, p, item: string)
 		for _, o in opponents(game, p) do
 			local chance = odds[o.index] and odds[o.index][tile]
 			if chance then
-				v += chance * (trapSeverity(game, item, o) * victimWeight(game, p, o) + reward)
+				v += chance * (trapSeverity(game, item, o) * victimWeight(game, p, o) + reward + bountyValue(game, p, o))
 			end
 		end
 		-- traps stay until they catch someone: tiles just ahead of opponents keep paying off

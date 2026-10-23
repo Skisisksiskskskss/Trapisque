@@ -325,6 +325,17 @@ I.skull = {
 }
 I.token_trap = I.skull
 
+-- Wanted: a poster with a skull on it, nailed up
+I.wanted = {
+	{ "rect", 0.5, 0.54, 0.6, 0.76, r = 0.1 },
+	{ "circle", 0.5, 0.46, 0.3, c = "bg" },
+	{ "rect", 0.5, 0.58, 0.16, 0.1, r = 0.3, c = "bg" },
+	{ "circle", 0.45, 0.46, 0.08 },
+	{ "circle", 0.56, 0.46, 0.08 },
+	{ "rect", 0.5, 0.76, 0.34, 0.06, r = 0.5, c = "bg" },
+	{ "circle", 0.5, 0.2, 0.08, c = "bg" },
+}
+
 I.heart = {
 	{ "circle", 0.33, 0.4, 0.38 },
 	{ "circle", 0.67, 0.4, 0.38 },

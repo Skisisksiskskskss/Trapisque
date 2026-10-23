@@ -77,6 +77,13 @@ local fixed = {
 	useCard = 0.7,
 	drop = 0.8,
 	xray = 1.2,
+	-- Wanted: the poster goes up, its price rises, someone claims it or gets away with it
+	wanted = 1.5,
+	wantedUp = 0.6,
+	mostWanted = 1.8,
+	wantedClaim = 1.8,
+	wantedCashIn = 1.6,
+	loot = 0.9,
 	ability = 1.3,
 	blizzard = 1.2,
 	embers = 0.6,

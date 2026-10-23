@@ -28,6 +28,7 @@ local Modes = require(Shared.Game.Modes)
 local Maps = require(Shared.Game.Maps)
 local HouseRules = require(Shared.Game.HouseRules)
 local Voting = require(Shared.Game.Voting)
+local Awards = require(Shared.Game.Awards)
 local Pacing = require(Shared.Game.Pacing)
 local TurnClock = require(Shared.Game.TurnClock)
 local Cosmetics = require(Shared.Meta.Cosmetics)
@@ -268,6 +269,8 @@ function Match:_makeEngine(mapId: string)
 		opts.rig = Tutorial.dice(human, #self.seats)
 		opts.hands = { [human] = table.clone(Tutorial.hand) }
 		opts.firstSeat = human
+		-- (no Wanted posters yet: the coach has enough to explain)
+		opts.rules = { wanted = false }
 	end
 	self.engine = Engine.new(opts)
 	-- everyone stands on the base they've earned with the character they ended up with
@@ -776,6 +779,14 @@ function Match:_loop()
 	local engine = self.engine
 	while not self.closed and not engine:isOver() do
 		task.wait(0.1)
+		self:_expireHolds()
+		if self.closed then
+			break
+		end
+		-- nobody left but someone who dropped out: the match waits for them
+		if #self:humans() == 0 then
+			continue
+		end
 		local now = os.clock()
 		if now >= self.busyUntil then
 			local seat = engine.current
@@ -1008,11 +1019,15 @@ function Match:_finish()
 	end
 	self.finished = true
 	self.phase = "results"
+	self:_releaseHolds()
 	local engine = self.engine
+	-- everyone's award for how they played
+	local awards = Awards.pick(engine.players)
 	local results = {}
 	for seat, info in self.seats do
 		local p = engine.players[seat]
 		table.insert(results, {
+			award = awards[seat],
 			seat = seat,
 			name = info.name,
 			username = info.username,
@@ -1061,6 +1076,7 @@ function Match:_finish()
 					event = self.event,
 					stats = table.clone(p.stats),
 					tutorial = self.tutorial,
+					award = if awards[seat] then awards[seat].id else nil,
 				})
 				BadgeService.matchFeats(player, {
 					won = won,
@@ -1122,11 +1138,16 @@ function Match:_partySizeOf(player: Player): number
 	return 1
 end
 
-function Match:playerLeft(player: Player)
+--[[
+	`player` left the match. A dropped connection (anything but the Leave button: `quit`)
+	keeps their seat for Config.Rejoin.Seconds: a bot plays it meanwhile, and Match:rejoin
+	hands it back. Returns whether the seat is being kept.
+]]
+function Match:playerLeft(player: Player, quit: boolean?): boolean
 	self.spectators[player] = nil
 	local seat = self.seatOf[player]
 	if not seat then
-		return
+		return false
 	end
 	self.seatOf[player] = nil
 	self:_stopFishing(seat)
@@ -1134,6 +1155,12 @@ function Match:playerLeft(player: Player)
 	info.player = nil
 	-- (a seat someone left stays a bot: nobody drops into it)
 	info.left = true
+	local hold = not quit and not self.finished and not self.closed and not self.tutorial
+	if hold then
+		info.heldFor = player.UserId
+		info.heldUntil = os.clock() + Config.Rejoin.Seconds
+		info.heldName = info.name
+	end
 	if not self.finished then
 		info.isBot = true
 		info.name ..= " (bot)"
@@ -1141,16 +1168,110 @@ function Match:playerLeft(player: Player)
 			self.engine.players[seat].isBot = true
 			self.engine.players[seat].name = info.name
 			if self.phase == "playing" then
-				self:_broadcast({ { t = "left", p = seat, name = info.name } })
+				self:_broadcast({ { t = "left", p = seat, name = info.name, rejoin = hold or nil, who = if hold then info.heldName else nil } })
 			end
 		else
 			self.enginePlayers[seat].isBot = true
 			self.enginePlayers[seat].name = info.name
 		end
 	end
-	if #self:humans() == 0 then
+	if #self:humans() == 0 and not self:_holding() then
 		self:close("empty")
 	end
+	return hold
+end
+
+-- Is a seat being kept for someone whose connection dropped?
+function Match:_holding(): boolean
+	local now = os.clock()
+	for _, info in self.seats do
+		if info.heldFor and (info.heldUntil or 0) > now then
+			return true
+		end
+	end
+	return false
+end
+
+-- The seat kept for `userId`, if it still is.
+function Match:heldSeat(userId: number): number?
+	if self.closed or self.finished then
+		return nil
+	end
+	for seat, info in self.seats do
+		if info.heldFor == userId and (info.heldUntil or 0) > os.clock() then
+			return seat
+		end
+	end
+	return nil
+end
+
+-- Seats nobody came back for become bots for good (and an empty match closes).
+function Match:_expireHolds()
+	local now = os.clock()
+	for _, info in self.seats do
+		if info.heldFor and (info.heldUntil or 0) <= now then
+			local userId = info.heldFor
+			info.heldFor, info.heldUntil, info.heldName = nil, nil, nil
+			if self.hooks.released then
+				self.hooks.released(userId)
+			end
+		end
+	end
+	if #self:humans() == 0 and not self:_holding() and not self.closed then
+		self:close("empty")
+	end
+end
+
+-- Lets go of every kept seat (the match is over).
+function Match:_releaseHolds()
+	for _, info in self.seats do
+		if info.heldFor then
+			local userId = info.heldFor
+			info.heldFor, info.heldUntil, info.heldName = nil, nil, nil
+			if self.hooks.released then
+				self.hooks.released(userId)
+			end
+		end
+	end
+end
+
+-- Back from a dropped connection: `player` gets their seat back from the bot.
+function Match:rejoin(player: Player): (boolean, string?)
+	local seat = self:heldSeat(player.UserId)
+	if not seat then
+		return false, "That match has moved on without you."
+	end
+	local info = self.seats[seat]
+	info.heldFor, info.heldUntil = nil, nil
+	info.player = player
+	info.userId = player.UserId
+	info.name = player.DisplayName
+	info.username = player.Name
+	info.isBot = false
+	info.left = false
+	info.heldName = nil
+	local base = info.look and info.look.base
+	info.look = DataService.publicLook(player)
+	info.look.base = base
+	self.seatOf[player] = seat
+	self.clock:activity(seat, os.clock())
+	if self.engine then
+		local events = self.engine:takeSeat(seat, { id = "u" .. player.UserId, userId = player.UserId, name = player.DisplayName, back = true })
+		local payload = self:resync(player)
+		if payload then
+			payload.rejoined = true
+			Net.push(player, "match.start", payload)
+		end
+		self:_broadcast(events)
+	else
+		-- (still voting for the map)
+		self.enginePlayers[seat].isBot = false
+		self.enginePlayers[seat].name = player.DisplayName
+		local data = self:_votePayload()
+		data.seat = seat
+		Net.push(player, "match.vote", data)
+	end
+	return true
 end
 
 ---------------------------------------------------------------------------
@@ -1221,6 +1342,7 @@ function Match:close(reason: string)
 	end
 	self.closed = true
 	self.phase = "closed"
+	self:_releaseHolds()
 	if self.hooks.closed then
 		self.hooks.closed(self, reason)
 	end

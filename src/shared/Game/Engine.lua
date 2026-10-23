@@ -114,6 +114,10 @@ local function newStats()
 		abilities = 0,
 		doubles = 0,
 		underdog = 0,
+		bounties = 0, -- Wanted posters claimed
+		wantedRounds = 0, -- rounds that ended with a price on your head
+		rolled = 0, -- the sum of every die you rolled...
+		rolls = 0, -- ...and how many (for the Unluckiest Roller)
 		tiles = 0, -- tiles walked
 		coins = 0, -- coins earned
 	}
@@ -171,6 +175,7 @@ function Engine.new(opts)
 	self.ghosts = {} -- Haunted Hollow: the tile each ghost floats over
 	self.ghostAt = {} -- [tile] = ghost number
 	self.lava = {} -- Mount Kaboom: the lava stream tiles (natural "lava")
+	self.wanted = nil :: { seat: number, pot: number, most: boolean? }? -- the price on the leader's head
 	self.teleporters = {} -- tiles, in placement order (pairs: 1-2, 3-4, ...)
 	self.placeOrder = 0
 	self.stock = {}
@@ -591,6 +596,12 @@ function Engine:_roll(p, reroll: boolean)
 	self.turn.dice = dice
 	self.turn.frozen = frozen
 	self.turn.gold = if underdog then #dice else nil
+	if not frozen then
+		for _, d in dice do
+			p.stats.rolled += d
+			p.stats.rolls += 1
+		end
+	end
 	for i = 2, #dice do
 		if Engine.isBackDie(dice, i, self.turn.gold) then
 			p.stats.doubles += 1
@@ -667,6 +678,111 @@ function Engine:_endRound()
 			end
 		end
 	end
+	self:_postWanted()
+end
+
+---------------------------------------------------------------------------
+-- Wanted: a price on the leader's head (Rules.Wanted*)
+---------------------------------------------------------------------------
+
+-- Whoever leads the race clearly: Rules.WantedLead tiles or more ahead of every rival.
+function Engine:clearLeader(): number?
+	local best, bestP = nil, -math.huge
+	for _, p in self.players do
+		local pr = self:progress(p)
+		if pr > bestP then
+			best, bestP = p, pr
+		end
+	end
+	if not best then
+		return nil
+	end
+	local rival = -math.huge
+	for _, p in self.players do
+		if self:isOpponent(best, p) then
+			rival = math.max(rival, self:progress(p))
+		end
+	end
+	if rival == -math.huge or bestP - rival < Rules.WantedLead then
+		return nil
+	end
+	return best.index
+end
+
+-- At the end of a round the poster goes up on the clear leader (or its price rises).
+function Engine:_postWanted()
+	if self.rules.wanted == false or self.round < Rules.WantedFrom or self.phase == "over" then
+		return
+	end
+	local leader = self:clearLeader()
+	local w = self.wanted
+	if w and leader == w.seat then
+		self:_raiseWanted("round")
+	elseif leader then
+		self.wanted = { seat = leader, pot = Rules.WantedStart }
+		self:_emit({ t = "wanted", p = leader, pot = Rules.WantedStart, from = if w then w.seat else nil })
+	end
+	if self.wanted then
+		self.players[self.wanted.seat].stats.wantedRounds += 1
+	end
+end
+
+-- The price on the Wanted's head goes up by a coin; at the top they're Most Wanted,
+-- and every hidden trap of theirs is out in the open (so are the ones they hide next).
+function Engine:_raiseWanted(why: string)
+	local w = self.wanted
+	if not w or w.pot >= Rules.WantedMax then
+		return
+	end
+	w.pot += 1
+	self:_emit({ t = "wantedUp", p = w.seat, pot = w.pot, why = why })
+	if w.pot >= Rules.WantedMax and not w.most then
+		w.most = true
+		local exposed = {}
+		for _, entry in self:trapsOf(w.seat) do
+			if not entry.trap.public then
+				entry.trap.public = true
+				table.insert(exposed, { tile = entry.tile, item = entry.trap.item, owner = w.seat })
+			end
+		end
+		self:_emit({ t = "mostWanted", p = w.seat, pot = w.pot, traps = exposed })
+	end
+end
+
+-- `hunter` bonked the Wanted or caught them in a trap: the coins, and one of their cards.
+function Engine:_claimWanted(hunter, outlaw, how: string)
+	local w = self.wanted
+	if not w or w.seat ~= outlaw.index or not self:isOpponent(hunter, outlaw) then
+		return
+	end
+	self.wanted = nil
+	hunter.stats.bounties += 1
+	self:_emit({ t = "wantedClaim", p = hunter.index, target = outlaw.index, pot = w.pot, how = how })
+	self:_addCoins(hunter, w.pot, "bounty")
+	if #outlaw.hand > 0 and #hunter.hand < Rules.HandLimit then
+		-- (only the two of them know which card it was)
+		local loot = table.remove(outlaw.hand, self.rng:int(1, #outlaw.hand))
+		table.insert(hunter.hand, loot)
+		self:_emit({
+			t = "loot",
+			p = hunter.index,
+			target = outlaw.index,
+			item = loot,
+			secret = { seats = { [hunter.index] = true, [outlaw.index] = true } },
+			alt = { t = "loot", p = hunter.index, target = outlaw.index },
+		})
+	end
+end
+
+-- The Wanted made it to the treasure: they got away, and the price on their head is theirs.
+function Engine:_cashInWanted(p)
+	local w = self.wanted
+	if not w or w.seat ~= p.index then
+		return
+	end
+	self.wanted = nil
+	self:_emit({ t = "wantedCashIn", p = p.index, pot = w.pot })
+	self:_addCoins(p, w.pot, "bounty")
 end
 
 -- Caught in an eruption: Burning, and you scramble back. A Fire Cloak keeps you safe.
@@ -1035,6 +1151,7 @@ function Engine:_reachTreasure(p)
 	p.treasures += 1
 	self:_emit({ t = "treasure", p = p.index, treasures = p.treasures, team = self:teamTreasures(p.team) })
 	self:_addCoins(p, Rules.CoinsPerTreasure, "treasure")
+	self:_cashInWanted(p)
 	self:_sendToStart(p, "home")
 	if self:teamTreasures(p.team) >= self.teamTarget then
 		self:_gameOver(p.team, "treasure")
@@ -1522,6 +1639,12 @@ function Engine:_bonk(attacker, victim, back: number?, trample: boolean?)
 	attacker.stats.bonks += 1
 	victim.stats.bonked += 1
 	self:_emit({ t = "bonk", p = attacker.index, target = victim.index, tile = victim.tile })
+	local w = self.wanted
+	if w and w.seat == victim.index then
+		self:_claimWanted(attacker, victim, "bonk")
+	elseif w and w.seat == attacker.index then
+		self:_raiseWanted("bonk")
+	end
 	if attacker.character == "fire_starter" then
 		self:_setStatus(victim, "burning", "bonk")
 	end
@@ -1605,6 +1728,12 @@ function Engine:_triggerTrap(p, tile: number, trap)
 		self:_emit({ t = "gotcha", p = owner.index, target = p.index, item = item })
 		self:_addCoins(owner, Rules.CoinsPerGotcha, "gotcha")
 		self:_gainPower(owner, Rules.PowerPerGotcha)
+		local w = self.wanted
+		if w and w.seat == p.index then
+			self:_claimWanted(owner, p, "trap")
+		elseif w and w.seat == owner.index then
+			self:_raiseWanted("trap")
+		end
 	end
 	local by = if owner then owner.index else nil
 	self:_trapEffect(p, item, by)
@@ -1950,7 +2079,9 @@ function Engine:_cmdPlay(p, cmd)
 					secret = trapSecret(oldest.trap),
 				})
 			end
-			local trap = self:_addTrap(tile :: number, item, p.index, p.team)
+			-- (the Most Wanted can't hide anything any more)
+			local exposed = self.wanted ~= nil and self.wanted.most == true and self.wanted.seat == p.index
+			local trap = self:_addTrap(tile :: number, item, p.index, p.team, exposed)
 			self:_emit({
 				t = "place",
 				p = p.index,
@@ -2417,7 +2548,8 @@ function Engine:takeSeat(seat: number, info)
 	p.id = info.id or p.id
 	p.userId = info.userId
 	p.name = info.name or p.name
-	self:_emit({ t = "joined", p = seat, name = p.name })
+	-- (back: they're the player who had this seat, back from a dropped connection)
+	self:_emit({ t = "joined", p = seat, name = p.name, back = info.back == true or nil })
 	return self:_flushEvents()
 end
 
@@ -2521,6 +2653,7 @@ function Engine:snapshot(forSeat: number?)
 		mutator = table.clone(self.mut),
 		rules = { abilities = self.rules.abilities ~= false, wanted = self.rules.wanted ~= false, underdog = self.rules.underdog ~= false, board = self.rules.board or "full", banned = table.clone(self.banned) },
 		underdog = if self.phase ~= "over" then self:underdogSeat() else nil,
+		wanted = if self.wanted then { seat = self.wanted.seat, pot = self.wanted.pot, most = self.wanted.most == true } else nil,
 		ghosts = copyList(self.ghosts),
 		erupting = self:eruptsThisRound(),
 	}

@@ -248,6 +248,9 @@ function MatchScreen.show(payload)
 			self.board:zoomBy(1 / 1.25)
 		end
 	end))
+	if payload.rejoined then
+		Widgets.toast("Welcome back! A bot kept your seat warm.", "reward")
+	end
 	if payload.droppedIn then
 		local def = Characters.get(payload.droppedIn.character or "")
 		Widgets.toast(string.format("You took over %s's seat: you're the %s!", tostring(payload.droppedIn.from or "a bot"), if def then def.name else "pirate"), "reward")
@@ -304,6 +307,8 @@ function MatchScreen:_viewFrom(snap, noHand: boolean?)
 			copyOf.handCount = 0
 		end
 		copyOf.underdog = snap.underdog == p.seat
+		-- (the price on their head, if they're Wanted)
+		copyOf.bounty = if snap.wanted and snap.wanted.seat == p.seat then snap.wanted.pot else nil
 		players[p.seat] = copyOf
 	end
 	local tokens, placed, natural, embers = {}, {}, {}, {}
@@ -346,6 +351,7 @@ function MatchScreen:_viewFrom(snap, noHand: boolean?)
 		pick = snap.pick and copy(snap.pick) or nil,
 		mutator = snap.mutator or {},
 		stock = table.clone(snap.stock or {}),
+		wanted = if snap.wanted then table.clone(snap.wanted) else nil,
 		players = players,
 		tokens = tokens,
 		placed = placed,
@@ -1014,6 +1020,19 @@ function MatchScreen:_patch(seat: number, field: string, value: any)
 	end
 end
 
+-- The Wanted poster moves (seat nil: it came down).
+function MatchScreen:_setWanted(seat: number?, pot: number?, most: boolean?)
+	local v = self.view
+	v.wanted = if seat then { seat = seat, pot = pot, most = most == true } else nil
+	for s, p in v.players do
+		p.bounty = if s == seat then pot else nil
+	end
+	self.chips:update(v.players)
+	if self.board then
+		self.board:setWanted(seat, pot, most)
+	end
+end
+
 function MatchScreen:_handCount(seat: number, delta: number)
 	local p = self:_player(seat)
 	if p then
@@ -1416,7 +1435,8 @@ function MatchScreen:_play(e)
 		feed:add(self:_poss(e.p, true) .. " hand is full (" .. Rules.HandLimit .. " cards)")
 	elseif t == "coin" then
 		Sound.play("coin")
-		board:floatText(self:_pawnWorld(e.p), "+" .. tostring(e.gain or 1) .. " coin", C.sun)
+		local gain = e.gain or 1
+		board:floatText(self:_pawnWorld(e.p), "+" .. tostring(gain) .. (if gain == 1 then " coin" else " coins"), C.sun)
 		Overlays.flyIcon(self.fly, "coin", C.sun, self:_pawnSpot(e.p), self:_chipSpot(e.p), speed, self:_landing(function()
 			self:_patch(e.p, "coins", e.coins)
 		end))
@@ -1546,7 +1566,11 @@ function MatchScreen:_play(e)
 			info.isBot = false
 			info.name = e.name or info.name
 		end
-		feed:add((e.name or "A player") .. " dropped in and took over a bot's seat!", C.mint, "people", C.mint)
+		if e.back then
+			feed:add((e.name or "A player") .. " is back, and takes over from the bot!", C.mint, "people", C.mint)
+		else
+			feed:add((e.name or "A player") .. " dropped in and took over a bot's seat!", C.mint, "people", C.mint)
+		end
 	elseif t == "blocked" then
 		Effects.blocked(board, e.tile)
 		feed:add("A Wall stops " .. self:_tag(e.p), nil, "wall", C.trap)
@@ -1670,6 +1694,75 @@ function MatchScreen:_play(e)
 		else
 			feed:add(self:_tag(e.p) .. " stole a card from " .. self:_tag(e.target), nil, "thief_potion", C.potion)
 		end
+	elseif t == "wanted" then
+		-- a price goes up on the leader's head
+		self:_setWanted(e.p, e.pot, false)
+		Sound.play("reveal")
+		local mine = e.p == self.mySeat
+		Overlays.shout(self.fx, if mine then "YOU'RE WANTED!" else "WANTED!", C.coral, speed, (if mine then "Your" else (self:_name(e.p) .. "'s")) .. " head is worth " .. e.pot .. " coins")
+		local lead = if e.from then (" took the lead from " .. self:_tag(e.from)) else ((if mine then " are" else " is") .. " way out in front")
+		if mine then
+			feed:add("WANTED: " .. self:_tag(e.p) .. lead .. ". Whoever bonks or traps you gets " .. e.pot .. " coins and one of your cards; reach the treasure and they're yours.", C.coral, "wanted", C.coral)
+		else
+			feed:add("WANTED: " .. self:_tag(e.p) .. lead .. ". Bonk or trap them for " .. e.pot .. " coins and one of their cards!", C.coral, "wanted", C.coral)
+		end
+		self.chips:flash(e.p, C.coral)
+	elseif t == "wantedUp" then
+		self:_setWanted(e.p, e.pot, v.wanted ~= nil and v.wanted.most == true)
+		board:floatText(self:_pawnWorld(e.p), "Bounty " .. e.pot, C.coral)
+		if e.why ~= "round" then
+			feed:add("Crime spree! The price on " .. self:_poss(e.p) .. " head is " .. e.pot .. " coins", nil, "wanted", C.coral)
+		end
+	elseif t == "mostWanted" then
+		-- at the top price: their hidden traps are out in the open
+		self:_setWanted(e.p, e.pot, true)
+		local shown = 0
+		for _, tr in e.traps or {} do
+			local known = false
+			for _, have in v.traps do
+				if have.tile == tr.tile and have.item == tr.item and have.owner == tr.owner then
+					have.public = true
+					known = true
+				end
+			end
+			if not known then
+				table.insert(v.traps, { tile = tr.tile, item = tr.item, owner = tr.owner, public = true })
+				board:addTrap(tr.tile, { item = tr.item, owner = tr.owner, public = true })
+				shown += 1
+			end
+		end
+		Sound.play("reveal")
+		Overlays.shout(self.fx, "MOST WANTED!", C.sun, speed, if shown > 0 then (shown .. " hidden trap" .. (if shown == 1 then "" else "s") .. " found") else "Every trap they hide is out in the open")
+		feed:add(self:_tag(e.p) .. (if e.p == self.mySeat then " are" else " is") .. " Most Wanted: their hideouts are found, and every trap they hide shows", C.sun, "wanted", C.sun)
+	elseif t == "wantedClaim" then
+		self:_setWanted(nil)
+		Sound.play("reveal")
+		Sound.duck(0.4, 1.2)
+		local how = if e.how == "trap" then "trapped" else "bonked"
+		Overlays.shout(self.fx, "BOUNTY!", C.sun, speed, self:_name(e.p) .. " " .. how .. " " .. (if e.target == self.mySeat then "you" else self:_name(e.target)) .. " for " .. e.pot .. " coins")
+		feed:add(self:_tag(e.p) .. " " .. how .. " the Wanted " .. self:_tag(e.target) .. " and claimed " .. e.pot .. " coins!", C.sun, "wanted", C.sun)
+		self.chips:flash(e.p, C.sun)
+	elseif t == "wantedCashIn" then
+		self:_setWanted(nil)
+		Overlays.shout(self.fx, "GOT AWAY!", C.sun, speed, self:_name(e.p) .. " kept the " .. e.pot .. " coins on " .. (if e.p == self.mySeat then "your" else "their") .. " own head")
+		feed:add(self:_tag(e.p) .. " made it to the treasure with a price on " .. (if e.p == self.mySeat then "your" else "their") .. " head, and cashed it in: " .. e.pot .. " coins!", C.sun, "wanted", C.sun)
+	elseif t == "loot" then
+		-- the bounty hunter takes one of the outlaw's cards: only the two of them know which
+		self:_lose(e.target, e.item)
+		local to = if e.p == self.mySeat then self:_handSpot(nil) else self:_chipSpot(e.p)
+		Overlays.flyIcon(self.fly, "book", C.sun, self:_chipSpot(e.target), to, speed, self:_landing(function()
+			if e.p == self.mySeat and e.item then
+				self:_handAdd(e.item)
+			else
+				self:_handCount(e.p, 1)
+			end
+		end))
+		local def = e.item and Items.get(e.item)
+		if e.p == self.mySeat then
+			feed:add("You took " .. (if def then def.name else "a card") .. " from " .. self:_tag(e.target) .. " as loot", nil, "wanted", C.sun)
+		elseif e.target == self.mySeat then
+			feed:add(self:_tag(e.p) .. " took your " .. (if def then def.name else "card") .. " as loot", nil, "wanted", C.sun)
+		end
 	elseif t == "give" then
 		self:_lose(e.p, e.item)
 		if e.p == v.current then
@@ -1782,7 +1875,11 @@ function MatchScreen:_play(e)
 			p.isBot = true
 			p.name = e.name or p.name
 		end
-		feed:add((e.name or "A player") .. " left. A bot takes over.", nil, "exit", C.textFaint)
+		if e.rejoin then
+			feed:add((e.who or "A player") .. " lost their connection. A bot keeps their seat warm till they're back.", nil, "exit", C.textFaint)
+		else
+			feed:add((e.name or "A player") .. " left. A bot takes over.", nil, "exit", C.textFaint)
+		end
 	end
 end
 

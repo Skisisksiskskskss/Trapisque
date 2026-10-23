@@ -8,9 +8,12 @@
 	the matchmaker), wait for everyone to arrive, play, then send everyone back to a
 	lobby with their party intact.
 
-	Two MemoryStore maps let other servers find running matches:
+	Three MemoryStore maps let other servers find running matches:
 		TrapisqueOpen_<mode>  public matches with a bot seat someone could drop into
 		TrapisqueWhere        which match each player is in (so friends can watch)
+		TrapisqueRejoin       the seat kept for someone whose connection dropped
+		                      (Config.Rejoin): the lobby they come back to offers to
+		                      take them back to it
 ]]
 
 local Players = game:GetService("Players")
@@ -18,6 +21,7 @@ local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage.Shared
+local Config = require(Shared.Config)
 local Modes = require(Shared.Game.Modes)
 local Maps = require(Shared.Game.Maps)
 local HouseRules = require(Shared.Game.HouseRules)
@@ -36,13 +40,79 @@ local MatchService = {}
 
 local OPEN_PREFIX = "TrapisqueOpen_"
 local WHERE_MAP = "TrapisqueWhere"
+local REJOIN_MAP = "TrapisqueRejoin"
 
 local matches = {} -- [id] = Match
 local matchOf = {} -- [Player] = Match (playing or watching)
 local reserved = { waiting = true, expected = {}, info = nil }
+local offers = {} -- [Player] = the seat kept for them on another server
 
 function MatchService.get(player: Player)
 	return matchOf[player]
+end
+
+---------------------------------------------------------------------------
+-- rejoining after a dropped connection
+---------------------------------------------------------------------------
+
+-- Remember where `player` can get back to the seat kept for them.
+local function rememberRejoin(player: Player, match)
+	if not ServerInfo.canTeleport then
+		return
+	end
+	local rec = {
+		matchId = match.id,
+		mode = match.mode.id,
+		map = match.mapId,
+		untilTime = os.time() + Config.Rejoin.Seconds,
+	}
+	if ServerInfo.isReserved then
+		rec.code = reserved.info and reserved.info.code
+		rec.psid = game.PrivateServerId
+		if not rec.code then
+			return
+		end
+	else
+		rec.jobId = game.JobId
+	end
+	task.spawn(MemoryUtil.set, REJOIN_MAP, tostring(player.UserId), rec, Config.Rejoin.Seconds)
+end
+
+local function forgetRejoin(userId: number)
+	if ServerInfo.canTeleport then
+		task.spawn(MemoryUtil.remove, REJOIN_MAP, tostring(userId))
+	end
+end
+
+-- Back on the server where your seat is kept: you get it back. Returns whether.
+function MatchService.rejoinHere(player: Player): boolean
+	if matchOf[player] then
+		return false
+	end
+	for _, m in matches do
+		if m:heldSeat(player.UserId) then
+			DataService.waitFor(player, 10)
+			if player.Parent == Players and m:rejoin(player) then
+				matchOf[player] = m
+				forgetRejoin(player.UserId)
+				return true
+			end
+		end
+	end
+	return false
+end
+
+-- A seat kept for you on another server: what the lobby offers you (or nil).
+function MatchService.rejoinOffer(player: Player)
+	if ServerInfo.isReserved or not ServerInfo.canTeleport or matchOf[player] then
+		return nil
+	end
+	local ok, rec = MemoryUtil.get(REJOIN_MAP, tostring(player.UserId))
+	if not ok or type(rec) ~= "table" or (tonumber(rec.untilTime) or 0) <= os.time() or rec.jobId == game.JobId then
+		return nil
+	end
+	offers[player] = rec
+	return { mode = rec.mode, map = rec.map, seconds = rec.untilTime - os.time() }
 end
 
 ---------------------------------------------------------------------------
@@ -149,6 +219,8 @@ function MatchService.start(spec)
 		rematch = function(m)
 			rematch(m)
 		end,
+		-- a seat kept for someone who dropped out is a bot's for good now
+		released = forgetRejoin,
 	})
 	matches[match.id] = match
 	for _, h in spec.humans do
@@ -617,8 +689,12 @@ local function bootReserved()
 	})
 end
 
--- Someone arrived after the match started: a drop-in, a spectator, or a straggler.
+-- Someone arrived after the match started: back from a dropped connection, a drop-in,
+-- a spectator, or a straggler.
 local function lateArrival(player: Player)
+	if MatchService.rejoinHere(player) then
+		return
+	end
 	local data = player:GetJoinData().TeleportData
 	local match = nil
 	for _, m in matches do
@@ -654,19 +730,25 @@ function MatchService.init()
 	MatchmakingService.tryDropIn = dropInHere
 
 	Players.PlayerRemoving:Connect(function(player)
+		offers[player] = nil
 		local match = matchOf[player]
 		if match then
 			matchOf[player] = nil
-			match:playerLeft(player)
+			-- (a dropped connection: the seat is kept for a while)
+			if match:playerLeft(player) then
+				rememberRejoin(player, match)
+			end
 		end
 		forget(player.UserId)
 	end)
 
-	-- arriving on a lobby server to watch a friend's match here
+	-- arriving on a lobby server to watch a friend's match here (or back on the one
+	-- where your seat is kept)
 	Players.PlayerAdded:Connect(function(player)
 		if ServerInfo.isReserved then
 			return
 		end
+		task.spawn(MatchService.rejoinHere, player)
 		local data = player:GetJoinData().TeleportData
 		if type(data) == "table" and tonumber(data.spectate) then
 			task.delay(4, function()
@@ -690,6 +772,40 @@ function MatchService.init()
 
 	Net.handle("match.private", function(player)
 		return MatchService.private(player)
+	end)
+
+	-- back to the seat kept for you on another server, or not
+	Net.handle("rejoin.go", function(player)
+		local rec = offers[player]
+		if not rec or (tonumber(rec.untilTime) or 0) <= os.time() then
+			return false, "That match has moved on without you."
+		end
+		offers[player] = nil
+		local options = Instance.new("TeleportOptions")
+		if rec.code then
+			options.ReservedServerAccessCode = rec.code
+			options:SetTeleportData({ match = rec.psid, rejoin = true })
+		elseif rec.jobId then
+			options.ServerInstanceId = rec.jobId
+			options:SetTeleportData({ rejoin = true })
+		else
+			return false, "That match has moved on without you."
+		end
+		Net.push(player, "teleporting", { reason = "Back to your match..." })
+		DataService.save(player, true)
+		task.spawn(function()
+			local ok, err = TeleportUtil.teleport({ player }, game.PlaceId, options)
+			if not ok then
+				Net.push(player, "teleporting", nil)
+				Net.push(player, "toast", { text = "Couldn't get back to your match (" .. tostring(err) .. ").", kind = "error" })
+			end
+		end)
+		return true
+	end)
+	Net.handle("rejoin.skip", function(player)
+		offers[player] = nil
+		forgetRejoin(player.UserId)
+		return true
 	end)
 
 	Net.handle("match.cmd", function(player, payload)
@@ -762,7 +878,7 @@ function MatchService.init()
 		if ServerInfo.isReserved then
 			if match then
 				matchOf[player] = nil
-				match:playerLeft(player)
+				match:playerLeft(player, true)
 			end
 			sendHome({ player }, match or { parties = {} })
 			return true
@@ -770,7 +886,7 @@ function MatchService.init()
 		if match then
 			matchOf[player] = nil
 			forget(player.UserId)
-			match:playerLeft(player)
+			match:playerLeft(player, true)
 			local party = PartyService.get(player)
 			if party and party.state == "playing" then
 				local stillPlaying = false

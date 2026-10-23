@@ -33,6 +33,7 @@ local _Chat = require(Client.Chat) -- starts listening for chat lines straight a
 local LobbyScreen = require(Client.UI.Lobby.LobbyScreen)
 local MatchScreen = require(Client.UI.Match.MatchScreen)
 local MapVote = require(Client.UI.Match.MapVote)
+local RejoinOffer = require(Client.UI.Lobby.RejoinOffer)
 local BadgeToast = require(Client.UI.BadgeToast)
 local Gamepad = require(Client.Gamepad)
 
@@ -202,6 +203,10 @@ elseif data.role == "match" then
 	Root.curtain("Getting the board ready...")
 else
 	LobbyScreen.show()
+	-- your connection dropped mid-match: your seat is still kept on another server
+	if data.rejoin then
+		task.delay(1.5, RejoinOffer.show, Root.popups, data.rejoin)
+	end
 end
 loading(1, "Land ho!")
 

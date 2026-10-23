@@ -36,6 +36,16 @@ Config.Rules = {
 	-- Underdog: whoever is clearly last (behind everyone else by this many tiles, a whole
 	-- lap counting for every treasure) rolls an extra die on their turn
 	UnderdogGap = 8,
+	-- Wanted: from the end of round WantedFrom, whoever leads the race by WantedLead tiles
+	-- or more (a lap counting for every treasure) has a price on their head. It starts at
+	-- WantedStart coins and goes up by 1 every round they stay ahead and with every rival
+	-- they bonk or catch in a trap, up to WantedMax: then they're Most Wanted and their
+	-- hidden traps are out in the open. Bonk them or catch them in your trap to claim it
+	-- (the coins and one of their cards); reach the treasure with it and it's theirs.
+	WantedFrom = 2,
+	WantedLead = 4,
+	WantedStart = 3,
+	WantedMax = 8,
 	SandsSlide = 3, -- Shifting Sands: forward in even rounds, back in odd ones
 	-- Haunted Hollow: ghosts drift this many tiles toward the Start at the end of every
 	-- round; walking into one stops you and scares you back this many tiles
@@ -237,6 +247,7 @@ Config.Rewards = {
 	MatchGems = 15, -- for finishing a match
 	TreasureGems = 6, -- per treasure you collected
 	WinGems = 30, -- your team won
+	AwardGems = 10, -- everyone's end-of-match award (Shared/Game/Awards)
 	MatchXP = 40,
 	TreasureXP = 15,
 	WinXP = 60,
@@ -252,6 +263,12 @@ Config.Rewards = {
 function Config.xpForLevel(level: number): number
 	return 100 + 40 * (level - 1)
 end
+
+-- A dropped connection keeps your seat this long: a bot plays it until you're back (a
+-- match with nobody else in it waits for you). The Leave button gives it up at once.
+Config.Rejoin = {
+	Seconds = 180,
+}
 
 Config.Data = {
 	StoreName = "TrapisqueProfiles_v1",

@@ -64,6 +64,22 @@ every treasure counts as a whole lap: banking a treasure and starting a new run 
 the Start never makes you the underdog. The player list marks the underdog. A frozen
 underdog still rolls just the one frozen die. **(digital)**
 
+**Wanted.** From the end of round 2, whoever leads the race clearly (**4 tiles or more**
+ahead of every rival, a treasure counting as a whole lap) gets a **Wanted poster**: a
+price of **3 coins** on their head. It goes up by a coin at the end of every round they
+stay clearly ahead, and with every rival they bonk or catch in a hidden trap (their
+"crimes"). If someone else pulls clearly ahead, the poster moves to them at 3 coins.
+
+- **Claim it** by bonking the Wanted (Cannonball and Stampede count) or catching them in
+  your hidden trap: you get the coins and one random card from their hand (only the two
+  of you see which). The poster comes down until the end of the round.
+- At **8 coins** they're **Most Wanted**: every hidden trap of theirs is turned face up
+  for everyone, and so is every trap they hide after that.
+- **Getaway:** if the Wanted reaches the treasure with the poster still up, they cash it
+  in themselves.
+
+A private match's host can switch Wanted posters off. **(digital)**
+
 You choose in any order, but moving ends your turn. Hovering a die (tapping it once on
 a phone) shows on the board exactly where it takes you and what happens there: a
 bonk, a token, a hazard, a trap you know about. **(digital)**
