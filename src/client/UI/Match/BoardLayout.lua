@@ -24,6 +24,7 @@
 		trail = { { x1, y1, x2, y2, branch } },      -- tile to tile
 		land = { { x, y, r, inner } },                -- the land is the union of these discs
 		rivers = { { tile, points } },  lava = { { tile, points } } (lava streams),
+		canals = { { tile, points } } (under Clockwork Cove's drawbridge),
 		tunnels = { { points } },  pools = { { x, y, r } },
 		props = { { kind, x, y, size, flip, ground, angle } },
 		waves = { { x, y, w } },
@@ -71,26 +72,67 @@ BoardLayout.PawnSlots = {
 	its belt, drawn along the way it runs.
 ]]
 BoardLayout.TileLooks = {
+	-- standing on the tile (art/items.py; `facing`: turned to face the way the trail runs,
+	-- art/tiles.py)
 	spike = { stand = "spike", size = 1.3 },
 	grog = { stand = "grog", size = 1.4 },
 	fire = { stand = "fire", size = 1.4 },
-	ice = { cover = "ice" },
 	snare = { stand = "snare", size = 1.35 },
-	mudslide = { cover = "mud" },
 	banana = { stand = "banana", size = 1.3 },
-	wall = { stand = "wall", size = 1.55 },
-	teleporter = { cover = "portal" },
+	wall = { stand = "wall", size = 1.55, facing = true },
 	spore_warper = { stand = "mushroom", size = 1.4 },
-	sands = { cover = "sands" },
-	river = { cover = "water" },
-	slime = { cover = "slime" },
-	lava = { cover = "lava" },
-	gate = { stand = "gate", size = 1.5 },
-	shortcutGate = { stand = "gate", size = 1.5 },
-	embers = { cover = "embers" },
+	gate = { stand = "gate", size = 1.5, facing = true },
+	shortcutGate = { stand = "gate", size = 1.5, facing = true },
 	treasure = { stand = "chest", size = 1.45 },
 	start = { stand = "flag", size = 1.3 },
+	-- what the tile turns into (art/tiles.py: its face, in the tile's own shape), and the
+	-- colours its rim and side take. `bands`: stripes across it, cut to its shape (a
+	-- conveyor's ridges, the sands' ripples, a deck's seams), `speed` periods a second
+	ice = { face = "ice", rim = "#D7F1FB", side = "#6FA6C2" },
+	mudslide = { face = "mud", rim = "#A47448", side = "#4E2F18" },
+	teleporter = { face = "portal", rim = "#8EA4F2", side = "#26357A" },
+	sands = {
+		face = "sand",
+		rim = "#F2DBA4",
+		side = "#B08A4A",
+		bands = { color = "#A8803E", alpha = 0.55, period = 0.2, duty = 0.62, speed = 0.45, slides = true },
+	},
+	river = { face = "water", rim = "#8ED3EE", side = "#2F86AE" },
+	slime = { face = "slime", rim = "#A9DB5E", side = "#4E7E1A" },
+	lava = { face = "lava", rim = "#7A2A12", side = "#3A1A12" },
+	thinice = { face = "thinice", rim = "#E6F7FD", side = "#86B8D2" },
+	thinice_cracked = { face = "thinice_cracked", rim = "#E6F7FD", side = "#86B8D2" },
+	hole = { face = "hole", rim = "#E6F7FD", side = "#86B8D2" },
+	cog = { face = "cog", rim = "#EDC66A", side = "#8A6212" },
+	embers = { face = "embers", rim = "#5A4A42", side = "#2A211D" },
+	conveyor = {
+		face = "belt",
+		rim = "#A3ABBB",
+		side = "#596274",
+		bands = { color = "#C9D0DC", alpha = 0.12, period = 0.24, duty = 0.55, sharp = 0.07, speed = 1.6 },
+	},
+	-- a drawbridge down (its deck) and up (the canal under it)
+	deck = {
+		face = "planks",
+		rim = "#D4A672",
+		side = "#7A5230",
+		bands = { color = "#4E331C", alpha = 0.2, period = 0.2, duty = 0.07, sharp = 0.07 },
+	},
+	gap = { face = "canal", rim = "#7E7666", side = "#4A4438" },
 }
+
+-- Something standing across the trail faces the way it runs: its turn (art/tiles.py,
+-- 22.5 degrees apart), for a tile where the trail heads `angle` degrees (on the ground).
+-- Seen exactly end on it'd be a sliver, so that turn is the nearest one either side.
+local TURNS = 8
+function BoardLayout.facingTurn(angle: number): number
+	local yaw = (angle + 90) % 180
+	local k = math.floor(yaw / (180 / TURNS) + 0.5) % TURNS
+	if k == TURNS / 2 then
+		k = if yaw < 90 then k - 1 else k + 1
+	end
+	return k
+end
 
 -- How big each prop is, if a landmark or the scatter doesn't say.
 BoardLayout.PropSize = {
@@ -120,10 +162,26 @@ BoardLayout.PropSize = {
 	lavarock = 1.0,
 	charred = 1.4,
 	vent = 1.1,
+	pine_snow = 2.0,
+	icerock = 1.0,
+	snowman = 1.3,
+	iceberg = 1.8,
+	floe = 1.3,
+	seal = 1.3,
+	tentacle = 1.8,
+	coral = 1.2,
+	barnacle = 1.0,
+	mast = 2.0,
+	anchor = 1.2,
+	bones = 1.6,
+	gear = 1.4,
+	pipes = 1.2,
+	smokestack = 2.2,
+	buoy = 1.0,
 }
 
 -- Props that lie flat on the ground (drawn under the tiles, may touch the trail).
-local GROUND = { dock = true }
+local GROUND = { dock = true, whirlpool = true }
 
 -- On screen (map units): a standing prop's ink, from its foot (sx, sy) up most of its
 -- canvas (MapArt stands its canvas with its foot 0.92 of the way down)...
@@ -423,6 +481,7 @@ function BoardLayout.build(board, mapDef, Rng, opts: { [string]: any }?)
 		land = {},
 		rivers = {},
 		lava = {},
+		canals = {},
 		tunnels = {},
 		pools = {},
 		props = {},
@@ -615,53 +674,64 @@ function BoardLayout.build(board, mapDef, Rng, opts: { [string]: any }?)
 		end
 	end
 
-	-- rivers (Blissful) and lava streams (Mount Kaboom): from the tile across the land to
-	-- the sea, or to a pond before they'd meet the trail again
+	-- rivers (Blissful) and lava streams (Mount Kaboom), and the canal under Clockwork
+	-- Cove's drawbridge: from the tile across the land to the sea, or to a pond before
+	-- they'd meet the trail again. (`p` is where it crosses the trail, `here` how far
+	-- along the trail that is; a canal runs straight.)
 	local mainL = lengths(mainCurve)
 	local spacing = mainL[#mainL] / math.max(1, board.count - 1)
+	local function channel(tile: number, p: { number }, here: number, wiggle: number)
+		local heading = math.rad(p[3] + 90)
+		local sides = {}
+		for side = 1, 2 do
+			local pts = {}
+			local x, y = p[1], p[2]
+			local base = heading + (if side == 2 then math.pi else 0)
+			local phase = rng:float() * 6
+			local walked, ends = 0, "pond"
+			local out = 0
+			while walked < 9 do
+				local a = base + wiggle * math.sin(walked * 0.75 + phase)
+				x += math.cos(a) * 0.4
+				y += math.sin(a) * 0.4
+				walked += 0.4
+				if nearTrail(x, y, here - 2.4, here + 2.4) < 1.9 then
+					break
+				end
+				table.insert(pts, { x, y })
+				if landDepth(x, y) < 0 then
+					out += 0.4
+					if out >= 1.2 then
+						ends = "sea"
+						break
+					end
+				end
+			end
+			sides[side] = { pts = pts, ends = ends }
+		end
+		local points = {}
+		for i = #sides[1].pts, 1, -1 do
+			table.insert(points, sides[1].pts[i])
+		end
+		table.insert(points, { p[1], p[2] })
+		for _, q in sides[2].pts do
+			table.insert(points, q)
+		end
+		return { tile = tile, points = points, endA = sides[1].ends, endB = sides[2].ends }
+	end
 	if scene.rivers or scene.lava then
 		for tile, kind in board.naturalInit do
 			if (kind == "river" and scene.rivers) or (kind == "lava" and scene.lava) then
-				local p = pos[tile]
-				local here = (tile - 1) * spacing
-				local heading = math.rad(p[3] + 90)
-				local sides = {}
-				for side = 1, 2 do
-					local pts = {}
-					local x, y = p[1], p[2]
-					local base = heading + (if side == 2 then math.pi else 0)
-					local phase = rng:float() * 6
-					local walked, ends = 0, "pond"
-					local out = 0
-					while walked < 9 do
-						local a = base + 0.42 * math.sin(walked * 0.75 + phase)
-						x += math.cos(a) * 0.4
-						y += math.sin(a) * 0.4
-						walked += 0.4
-						if nearTrail(x, y, here - 2.4, here + 2.4) < 1.9 then
-							break
-						end
-						table.insert(pts, { x, y })
-						if landDepth(x, y) < 0 then
-							out += 0.4
-							if out >= 1.2 then
-								ends = "sea"
-								break
-							end
-						end
-					end
-					sides[side] = { pts = pts, ends = ends }
-				end
-				local points = {}
-				for i = #sides[1].pts, 1, -1 do
-					table.insert(points, sides[1].pts[i])
-				end
-				table.insert(points, { p[1], p[2] })
-				for _, q in sides[2].pts do
-					table.insert(points, q)
-				end
-				table.insert(if kind == "lava" then layout.lava else layout.rivers, { tile = tile, points = points, endA = sides[1].ends, endB = sides[2].ends })
+				table.insert(if kind == "lava" then layout.lava else layout.rivers, channel(tile, pos[tile], (tile - 1) * spacing, 0.42))
 			end
+		end
+	end
+	for _, span in (if scene.canal then mapDef.drawbridges else nil) or {} do
+		if pos[span[1]] and pos[span[2]] then
+			-- (between the bridge's two tiles)
+			local a, b = pos[span[1]], pos[span[2]]
+			local mid = { (a[1] + b[1]) / 2, (a[2] + b[2]) / 2, a[3] }
+			table.insert(layout.canals, channel(span[1], mid, (span[1] - 0.5) * spacing, 0.06))
 		end
 	end
 
@@ -697,7 +767,7 @@ function BoardLayout.build(board, mapDef, Rng, opts: { [string]: any }?)
 	-- of the trail, the tiles and each other, inside the view), moved a little if that's
 	-- what it takes; the dock runs from the Start out to the nearest water
 	local props = layout.props
-	local WATER = { ship = true, wreck = true, sunken = true, ghostship = true }
+	local WATER = { ship = true, wreck = true, sunken = true, ghostship = true, frozenship = true, whirlpool = true, iceberg = true }
 	-- where a point ends up on screen (the map turned for upright screens, then squashed)
 	local K = S.squash
 	local function toScreen(x: number, y: number): (number, number)
@@ -833,7 +903,7 @@ function BoardLayout.build(board, mapDef, Rng, opts: { [string]: any }?)
 	-- the scatter: props on the land and on the water, none on the trail, a tile, a
 	-- river, a pool, or each other
 	local function clearOfWater(x: number, y: number, reach: number): boolean
-		for _, list in { layout.rivers, layout.lava } do
+		for _, list in { layout.rivers, layout.lava, layout.canals } do
 			for _, r in list do
 				for _, q in r.points do
 					if dist(x, y, q[1], q[2]) < reach + 0.75 then
@@ -1040,7 +1110,7 @@ function BoardLayout.build(board, mapDef, Rng, opts: { [string]: any }?)
 				end
 			end
 		end
-		for _, list in { layout.rivers, layout.lava, layout.tunnels } do
+		for _, list in { layout.rivers, layout.lava, layout.canals, layout.tunnels } do
 			for _, r in list do
 				local pts = {}
 				for i, q in r.points do

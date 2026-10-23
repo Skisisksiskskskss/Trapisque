@@ -335,8 +335,8 @@ local Fishing = requireModule("Shared/Meta/Fishing")
 local Maps = requireModule("Shared/Game/Maps")
 
 test("every map has its own fish, and a few turn up anywhere", function()
-	for _, map in { "blissful", "junction", "slimy", "haunted", "volcano" } do
-		truthy(Maps.get(map), "map " .. map)
+	for _, def in Maps.list do
+		local map = def.id
 		local seen, local_ = {}, 0
 		for i = 0, 999 do
 			local id = Fishing.roll(map, (i + 0.5) / 1000, 0.5, true)

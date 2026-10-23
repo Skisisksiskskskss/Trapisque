@@ -185,6 +185,34 @@ local function landingValue(game, p, tile: number, viewer: any?): number
 	if game.natural[tile] == "lava" and not has(p, "cloak") and game:eruptsThisRound() then
 		v -= (Config.Rules.EruptBack or 0) + trapSeverity(game, "fire", p)
 	end
+	-- Frostbite Floes: cracked ice (or open water) gives way under you
+	local nat = game.natural[tile]
+	if (nat == "hole" or (nat == "thinice" and game.cracks[tile])) and p.character ~= "naturalist" and not has(p, "skates") then
+		v -= 0.5 * trapSeverity(game, "ice", p) + 0.4 + (Rules.IceSlip or 0)
+	end
+	-- Kraken's Reach: standing where the tentacle comes down at the end of the round
+	-- (it leaves the Naturalist be)
+	if game.kraken and not has(p, "harpoon") and p.character ~= "naturalist" then
+		for _, t in game:krakenZone() do
+			if t == tile then
+				v -= Rules.KrakenDrag + 0.4
+			end
+		end
+	end
+	-- Clockwork Cove: on a drawbridge as it rises; on a cog as the gears turn
+	local span = game.bridge[tile]
+	if span and not span.up and Engine.bridgeUp(game.round + 1, span.phase) and p.character ~= "naturalist" then
+		v -= Rules.BridgeTip + 1
+	end
+	if game.gears then
+		local a, b = game.gears[1], game.gears[2]
+		local gain = (board.dist[a] or 0) - (board.dist[b] or 0)
+		if tile == a then
+			v += 0.55 * gain
+		elseif tile == b then
+			v -= 0.55 * gain
+		end
+	end
 	local piece = game.placed[tile]
 	if piece then
 		if piece.item == "teleporter" then

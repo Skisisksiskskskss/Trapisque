@@ -807,6 +807,459 @@ def volcano(units=5.2):
 
 
 # (name, drawing, its size on the board)
+# ---------------------------------------------------------------------------
+# the ice floes (Frostbite Floes)
+# ---------------------------------------------------------------------------
+
+SNOW, SNOW_L, SNOW_D = "#EEF4F8", "#FFFFFF", "#B7C8D8"
+ICE, ICE_L, ICE_D = "#B4DDF0", "#E4F6FD", "#6CA6C8"
+PINE, PINE_D = "#2F6B55", "#1E4A3B"
+COAL = "#2B2A33"
+
+
+def _snow(a, d):
+    a.shape(d, SNOW, 0.35, 0.16, outline=SNOW_D)
+
+
+def _tier(top, base, half):
+    h = base - top
+    return (f"M {50 - half} {base} C {50 - half * 0.62} {base - h * 0.3}, {50 - half * 0.3} {top + h * 0.35}, 50 {top} "
+            f"C {50 + half * 0.3} {top + h * 0.35}, {50 + half * 0.62} {base - h * 0.3}, {50 + half} {base} "
+            f"C {50 + half * 0.45} {base + 3}, {50 - half * 0.45} {base + 3}, {50 - half} {base} Z")
+
+
+def _tiercap(top, base, half):
+    h = (base - top) * 0.46
+    y = top + h
+    w = half * 0.5
+    return (f"M 50 {top - 0.6} C {50 - w * 0.4} {top + h * 0.5}, {50 - w * 0.8} {y - h * 0.15}, {50 - w} {y} "
+            f"Q {50 - w * 0.66} {y + 3.4}, {50 - w * 0.33} {y} Q 50 {y + 3.6}, {50 + w * 0.33} {y} Q {50 + w * 0.66} {y + 3.4}, {50 + w} {y} "
+            f"C {50 + w * 0.8} {y - h * 0.15}, {50 + w * 0.4} {top + h * 0.5}, 50 {top - 0.6} Z")
+
+
+def pine_snow(units=2.0):
+    """A fir in the snow: three tiers of dark needles, snow heaped on each, a stub of
+    trunk."""
+    a = Art(192, units)
+    a.shadow(50, 94, 24, 3.8)
+    a.shape("M 46 95 L 46.5 82 L 53.5 82 L 54 95 Z", BARK, 0.25, 0.3)
+    tiers = ((42, 84, 33), (23, 63, 26), (8, 42, 19))
+    for top, base, half in tiers:
+        a.shape(_tier(top, base, half), PINE, 0.22, 0.35)
+        if top == 8:
+            _snow(a, _tiercap(top, base, half))
+        else:
+            # snow lying out along the branches, below the tier above
+            k = 0.74
+            y = top + (base - top) * k
+            w = half * k
+            for side in (-1, 1):
+                x = 50 + side * w * 0.6
+                _snow(a, f"M {x - w * 0.42} {y + 1.2} C {x - w * 0.3} {y - 3.4}, {x + w * 0.3} {y - 3.8}, {x + w * 0.42} {y + 0.4} "
+                         f"C {x + w * 0.2} {y + 2.6}, {x - w * 0.1} {y + 1.4}, {x - w * 0.42} {y + 1.2} Z")
+    return a.svg()
+
+
+def icerock(units=1.0):
+    """Rocks with the snow lying on their tops."""
+    a = Art(160, units)
+    a.shadow(54, 90, 42, 6, 0.3)
+    _rocks(a)
+    _snow(a, "M 24 56 C 30 49, 40 44.4, 48 44.4 C 58 44.2, 68 47, 74.8 53 C 70.4 56.4, 65 55, 60 57.8 C 55.4 55.4, 50.4 58.6, 45 56.8 C 39.4 59, 33.6 56.2, 28.4 58.8 C 26.6 58.2, 25.2 57.2, 24 56 Z")
+    _snow(a, "M 66.4 78.8 C 69.4 74.6, 76 72.6, 82 73.4 C 86.6 74.2, 89.6 76.6, 90.4 79.8 C 86.4 81.6, 82.4 79.6, 78.2 81.4 C 74 79.6, 70 81.2, 66.4 78.8 Z")
+    return a.svg()
+
+
+def snowman(units=1.3):
+    """A snowman the crew built: an eye of coal and a patch over the other, a carrot of
+    a nose, a red scarf, a captain's hat and twig arms."""
+    a = Art(192, units)
+    a.shadow(50, 93, 24, 4)
+    a.line("M 34 56 L 21 46 M 25.6 49.4 L 22.8 43.8", BARK, a.ow * 1.6)
+    a.line("M 66 56 L 80 49 M 75.2 51.4 L 80 53.6", BARK, a.ow * 1.6)
+    a.shape(ell(50, 78, 22, 15.5), SNOW, 0.3, 0.2, outline=SNOW_D)
+    a.shape(ell(50, 56, 16, 12), SNOW, 0.3, 0.2, outline=SNOW_D)
+    a.shape(circ(50, 37, 10.6), SNOW, 0.3, 0.2, outline=SNOW_D)
+    for y in (53, 59, 72, 80):
+        a.fill(circ(50, y, 1.5), COAL)
+    a.shape("M 39.4 45.6 C 44 48.6, 56 48.6, 60.6 45.6 L 61.2 49.6 C 56 52.6, 44 52.6, 38.8 49.6 Z", "#D64545", 0.25, 0.3)
+    a.shape("M 55 49.4 L 59.6 62.6 L 55 63.2 L 51.6 50.6 Z", "#D64545", 0.25, 0.3)
+    a.fill(circ(45.6, 35, 1.7), COAL)
+    a.line("M 40.4 31.2 L 59.8 36.6", COAL, a.ow * 0.9)
+    a.shape(ell(54.8, 35.4, 3.1, 2.7), COAL, flat=True)
+    a.shape("M 50 38.4 L 60.4 41 L 50 41.6 Z", "#F08A24", 0.3, 0.2)
+    a.shape("M 37.4 28 C 40 18.6, 60 18.6, 62.6 28 C 57 26.4, 43 26.4, 37.4 28 Z", COAL, 0.25, 0.2)
+    a.shape("M 31.6 28.8 C 40 24.6, 60 24.6, 68.4 28.8 C 60 31, 40 31, 31.6 28.8 Z", "#3A3944", 0.25, 0.2)
+    a.fill(circ(50, 23.4, 1.9), "#F3EAD3")
+    return a.svg()
+
+
+def igloo(units=2.2):
+    """A snow-block igloo with its tunnel of a doorway."""
+    a = Art(256, units)
+    a.shadow(50, 92, 40, 5)
+    dome = "M 12 90 C 12 62, 30 42, 52 42 C 74 42, 90 62, 88 90 Z"
+    a.shape(dome, SNOW, 0.32, 0.22, outline=SNOW_D)
+    a.group(clip=dome)
+    for y in (53, 64, 76):
+        a.line(f"M 0 {y} C 30 {y - 3}, 70 {y - 3}, 100 {y}", SNOW_D, a.ow * 0.8, 0.85)
+    for x, y0, y1 in ((36, 42, 52), (60, 42, 52), (26, 52, 63), (48, 51, 62), (70, 52, 63), (18, 63, 75), (38, 62, 74),
+                      (58, 62, 74), (78, 63, 75), (28, 75, 90), (66, 75, 90), (84, 75, 90)):
+        a.line(f"M {x} {y0} L {x - 1} {y1}", SNOW_D, a.ow * 0.8, 0.85)
+    a.end()
+    a.shape("M 28 90 L 28 75 C 28 64, 52 64, 52 75 L 52 90 Z", SNOW, 0.3, 0.2, outline=SNOW_D)
+    a.shape("M 33.6 90 L 33.6 77.6 C 33.6 70.6, 46.4 70.6, 46.4 77.6 L 46.4 90 Z", "#2C3A4A", 0.1, 0.2)
+    return a.svg()
+
+
+def iceberg(units=1.8):
+    """A berg riding the sea: white peaks lit from the left, blue in their shade."""
+    a = Art(192, units)
+    body = "M 8 86 L 19 58 L 29 63 L 42 25 L 54 49 L 63 39 L 77 63 L 92 86 Z"
+    a.shape(body, ICE_L, 0.2, 0.22, outline=ICE_D)
+    a.fill("M 42 25 L 54 49 L 51 86 L 41 86 L 47 52 Z", ICE, 0.95)
+    a.fill("M 63 39 L 77 63 L 92 86 L 71 86 L 69 60 Z", ICE, 0.95)
+    a.fill("M 42 25 L 35.4 43 L 40.4 45.4 L 44 34 Z", SNOW_L, 0.95)
+    a.fill("M 19 58 L 14 72 L 18.4 73 L 21 63 Z", SNOW_L, 0.9)
+    foam(a, 6, 94, 87)
+    return a.svg()
+
+
+def _floe(a, cx, cy, rx, ry):
+    side = f"M {cx - rx} {cy} C {cx - rx} {cy + ry * 1.7}, {cx + rx} {cy + ry * 1.7}, {cx + rx} {cy} L {cx + rx} {cy + 4} C {cx + rx} {cy + ry * 1.7 + 4}, {cx - rx} {cy + ry * 1.7 + 4}, {cx - rx} {cy + 4} Z"
+    a.shape(side, ICE, 0.2, 0.3, outline=ICE_D)
+    a.shape(f"M {cx - rx} {cy} C {cx - rx * 0.9} {cy - ry * 1.4}, {cx + rx * 0.9} {cy - ry * 1.4}, {cx + rx} {cy} C {cx + rx * 0.9} {cy + ry * 1.4}, {cx - rx * 0.9} {cy + ry * 1.4}, {cx - rx} {cy} Z", SNOW, 0.35, 0.14, outline=SNOW_D)
+
+
+def floe(units=1.3):
+    """A flat cake of ice afloat, the water lapping its edge."""
+    a = Art(160, units)
+    _floe(a, 50, 76, 40, 8)
+    a.fill(ell(38, 73, 16, 3.4), SNOW_L, 0.85)
+    foam(a, 6, 94, 88.6)
+    return a.svg()
+
+
+def seal(units=1.3):
+    """A seal hauled out on a little floe, tail and head up."""
+    a = Art(160, units)
+    _floe(a, 50, 80, 38, 7)
+    grey, grey_l = "#8E9AA8", "#B7C1CC"
+    a.shape("M 24 78 C 22 70, 34 64, 48 63 C 58 62, 64 58, 68 52 C 70 47, 77 45.6, 80 49.6 C 82.6 54, 79 60, 73 64 "
+            "C 67 70, 56 75, 42 76.4 C 34 77, 26 79, 24 78 Z", grey, 0.3, 0.28)
+    a.fill("M 30 75 C 40 74, 54 72, 64 66 C 60 71, 50 75.4, 40 76.4 C 35 76.8, 32 76.6, 30 75 Z", grey_l, 0.85)
+    a.shape("M 26 76 L 14 70.4 L 15.4 79 Z", grey, 0.3, 0.3)
+    a.shape("M 50 73 L 46.4 80 L 55 78.4 Z", grey, 0.3, 0.3)
+    a.fill(circ(76.4, 50.6, 1.5), COAL)
+    a.fill(circ(80.6, 52, 1.2), COAL)
+    a.line("M 80 54 L 86 52.6 M 80 55 L 85.6 56", COAL, a.ow * 0.5, 0.7)
+    foam(a, 8, 92, 92)
+    return a.svg()
+
+
+def frozenship(units=3.8):
+    """A ship the sea froze round: snow on its yards and rail, icicles off its hull, the
+    pack ice heaped about it."""
+    a = Art(320, units)
+    _rigged_ship(a, "#6E4A30", "#E6ECF0", COAL)
+    for d in ("M 27 18 C 33 15, 46 15, 52 18 C 46 20.4, 33 20.4, 27 18 Z", "M 24 43 C 32 40, 48 40, 55 43 C 48 45.4, 32 45.4, 24 43 Z",
+              "M 55 26 C 60 23.4, 70 23.4, 74 26 C 70 27.8, 60 27.8, 55 26 Z", "M 52 48 C 58 45.4, 72 45.4, 77 48 C 72 49.8, 58 49.8, 52 48 Z"):
+        _snow(a, d)
+    _snow(a, "M 7 66 L 80 66 L 88 58 L 95.4 58 C 95.4 60.4, 95 62, 94.4 63.4 L 89 63.4 L 81.4 70 L 9 70 Z")
+    for x, h in ((20, 5), (30, 7), (42, 4.6), (56, 6.6), (68, 5), (78, 6)):
+        a.shape(f"M {x - 1.8} 87.4 L {x + 1.8} 87.4 L {x} {87.4 + h} Z", ICE_L, 0.2, 0.2, outline=ICE_D)
+    for cx, w, h in ((12, 12, 7), (34, 13, 5), (60, 13, 6), (86, 12, 7)):
+        a.shape(f"M {cx - w} 95 L {cx - w * 0.45} {95 - h} L {cx + w * 0.3} {95 - h * 0.8} L {cx + w} 95 Z", ICE_L, 0.25, 0.25, outline=ICE_D)
+    return a.svg()
+
+
+# ---------------------------------------------------------------------------
+# the reefs (Kraken's Reach)
+# ---------------------------------------------------------------------------
+
+KRAKEN, KRAKEN_D, KRAKEN_L = "#B5485E", "#6E2436", "#E08A98"
+SUCKER = "#F6D2D2"
+REEF_PINK, REEF_ORANGE = "#E86A8E", "#F28C3A"
+BONE, BONE_D = "#F2EBDD", "#B5A992"
+RUST = "#6B6E78"
+
+
+def tentacle(units=1.8):
+    """One of the Kraken's arms rising out of the sea and curling over at its tip,
+    suckers up its inside."""
+    a = Art(192, units)
+    arm = ("M 34 90 C 30 70, 30 50, 40 34 C 48 22, 62 15, 73 21 C 82 26, 82 38, 73 43 "
+           "C 66 46.6, 59.6 41, 62 34.6 C 63.6 30.6, 68.4 31, 68.6 34 C 63 30.6, 55 34.4, 52.4 44 C 50 56, 52 74, 56 90 Z")
+    a.shape(arm, KRAKEN, 0.3, 0.32)
+    a.fill("M 52.4 44 C 55 34.4, 63 30.6, 68.6 34 C 66.4 34.6, 64.6 36.4, 64 38.4 C 58.4 38.6, 55.4 43.4, 55 50 C 54.4 62, 55.4 76, 58 90 L 56 90 C 52 74, 50 56, 52.4 44 Z", KRAKEN_L, 0.85)
+    for x, y, r in ((55.8, 82, 2.2), (54.8, 72, 2.2), (54.6, 62, 2.1), (55.6, 52.4, 2.0), (58.8, 44, 1.8), (63.4, 39.2, 1.5)):
+        a.shape(circ(x, y, r), SUCKER, 0.25, 0.25, outline=KRAKEN_D)
+    foam(a, 24, 70, 89)
+    return a.svg()
+
+
+def coral(units=1.2):
+    """A clump of branching coral on the reef: a pink one and an orange one."""
+    a = Art(160, units)
+    a.shadow(50, 92, 34, 4.4)
+    for d, base in (("M 38 92 L 38 72 L 29 58 M 38 76 L 46 62 L 44 48 M 31 61 L 26 48 M 45 54 L 52 46", REEF_PINK),
+                    ("M 62 92 L 64 73 L 73 61 L 75 49 M 64 77 L 56 65 L 58 53 M 72 63 L 81 57", REEF_ORANGE)):
+        a.line(d, mix(base, INK, 0.55), 7.6)
+        a.line(d, base, 5.2)
+        a.line(d, mix(base, "#FFFFFF", 0.4), 1.5, 0.75)
+    return a.svg()
+
+
+def barnacle(units=1.0):
+    """Rocks crusted with barnacles, a starfish clinging on."""
+    a = Art(160, units)
+    a.shadow(54, 90, 42, 6, 0.3)
+    _rocks(a)
+    for x, y in ((31, 63), (37, 58.6), (34.6, 68), (60, 54.4), (66.4, 58), (71, 77), (78.6, 80.4), (44, 64)):
+        a.shape(circ(x, y, 2.3), "#EDE6D6", 0.3, 0.3)
+        a.fill(circ(x, y, 0.9), "#5A5248")
+    import math
+    pts = []
+    for k in range(10):
+        ang = -math.pi / 2 + k * math.pi / 5
+        r = 7.4 if k % 2 == 0 else 3.2
+        pts.append((50 + math.cos(ang) * r, 77 + math.sin(ang) * r))
+    a.shape("M " + " L ".join(f"{x:.2f} {y:.2f}" for x, y in pts) + " Z", REEF_ORANGE, 0.3, 0.3)
+    return a.svg()
+
+
+def mast(units=2.0):
+    """A sunken ship's mast standing out of the sea: its yard askew, a rag of sail, the
+    crow's nest."""
+    a = Art(192, units)
+    a.shape("M 47 90 L 48 22 L 53 20 L 54 90 Z", WOOD_D, 0.25, 0.25)
+    a.shape("M 30 41 L 72 34.6 L 72.6 38.4 L 30.6 44.8 Z", WOOD_D, 0.25, 0.25)
+    a.shape("M 33 44.4 L 68 39 C 66 48, 66 54, 68 62 L 62.6 58 L 58.6 64 L 53 58.6 L 47 64 L 41.6 58.6 L 35.6 63 C 33.6 55, 32.4 49, 33 44.4 Z", SAIL, 0.2, 0.18)
+    a.shape("M 42 24.4 L 60 22 L 59.2 28.6 L 42.8 30.8 Z", WOOD, 0.25, 0.3)
+    a.line("M 50.6 22 L 30.6 44 M 51 22 L 72 37", ROPE, a.ow * 0.7, 0.8)
+    foam(a, 30, 72, 89)
+    return a.svg()
+
+
+def anchor(units=1.2):
+    """A great anchor run aground, a fluke dug into the sand, its chain trailing off."""
+    a = Art(160, units)
+    a.shadow(50, 92, 32, 4)
+    a.group("rotate(-14 50 72)")
+    a.line(circ(50, 20, 5), RUST, 3.6)
+    a.line(circ(50, 20, 5), mix(RUST, "#FFFFFF", 0.3), 1.2, 0.7)
+    a.shape("M 47 25 L 53 25 L 53 82 L 47 82 Z", RUST, 0.3, 0.3)
+    a.shape("M 35 33 L 65 33 L 65 38.4 L 35 38.4 Z", RUST, 0.3, 0.3)
+    a.shape("M 27 62 C 30 78, 43 85, 50 85 C 57 85, 70 78, 73 62 L 79 57 L 77 69 C 71 86, 58 92, 50 92 C 42 92, 29 86, 23 69 L 21 57 Z", RUST, 0.3, 0.3)
+    a.end()
+    for i in range(5):
+        a.line(ell(68 + i * 5.4, 90.6 - i * 0.5, 2.8, 1.7), RUST, a.ow * 1.5)
+    return a.svg()
+
+
+def bones(units=1.6):
+    """A whale's ribs arching out of the sand, bleached white."""
+    a = Art(192, units)
+    a.shadow(50, 92, 40, 5, 0.22)
+    for x, h, lean in ((22, 30, 6), (36, 40, 5), (52, 46, 3), (68, 40, 1), (82, 28, -1)):
+        tip = 92 - h
+        d = (f"M {x - 3} 92 C {x - 4} {92 - h * 0.6}, {x + lean} {tip}, {x + lean + 8} {tip + h * 0.08} "
+             f"L {x + lean + 8.6} {tip + h * 0.08 + 3.4} C {x + lean + 3} {tip + 5}, {x + 2} {92 - h * 0.55}, {x + 3} 92 Z")
+        a.shape(d, BONE, 0.25, 0.3, outline=BONE_D)
+    a.shape("M 14 92 C 34 89, 66 89, 90 91 L 90 94.4 C 66 92.6, 34 92.6, 14 95.4 Z", BONE, 0.25, 0.3, outline=BONE_D)
+    return a.svg()
+
+
+def lighthouse(units=3.2):
+    """A striped lighthouse on its rocks, its lamp lit."""
+    a = Art(256, units)
+    a.shadow(50, 93, 32, 4.4)
+    a.shape("M 18 94 C 16 86, 25 80, 36 81 L 64 81 C 75 80, 84 86, 82 94 Z", STONE, 0.22, 0.3)
+    tower = "M 38 83 L 42 31 L 58 31 L 62 83 Z"
+    a.fill(tower, "#F4EFE6")
+    a.group(clip=tower)
+    for y0 in (40, 57, 74):
+        a.fill(f"M 0 {y0} L 100 {y0 - 2} L 100 {y0 + 7} L 0 {y0 + 9} Z", "#D64545")
+    a.fill("M 52 0 L 70 0 L 70 100 L 54 100 Z", "#000000", 0.12)
+    a.end()
+    a.line(tower, mix("#D9CFC0", INK, 0.6), a.ow)
+    a.glow(50, 22, 28, 18, "#FFD45A", 0.55)
+    a.shape("M 42.4 31 L 42.4 18.6 L 57.6 18.6 L 57.6 31 Z", "#FFE9A0", 0.3, 0.2, outline="#8A6A20")
+    a.line("M 50 18.6 L 50 31 M 42.4 24.6 L 57.6 24.6", "#8A6A20", a.ow * 0.7, 0.7)
+    a.shape("M 36 31 L 64 31 L 64 35 L 36 35 Z", "#3A3944", 0.25, 0.2)
+    a.shape("M 40.4 18.6 C 40.4 10, 59.6 10, 59.6 18.6 Z", "#D64545", 0.25, 0.3)
+    a.shape("M 49 9.6 L 51 9.6 L 51 5.4 L 49 5.4 Z", "#3A3944", 0.2, 0.2)
+    a.shape("M 46 83 L 46 74 C 46 70.4, 54 70.4, 54 74 L 54 83 Z", "#5A3A22", 0.15, 0.2)
+    return a.svg()
+
+
+def whirlpool(units=5.0):
+    """The Kraken's lair, from above (it lies flat): the sea turning round and down into
+    the dark, white water streaming in along its arms, and an eye down in the deep."""
+    import math
+    a = Art(320, units)
+    a.glow(50, 50, 50, 50, "#0B1F33", 0.6)
+    for k, (r, color) in enumerate(((46, "#2B6A92"), (38, "#235A80"), (30, "#1B486A"), (21, "#133553"), (12, "#0B2138"))):
+        a.fill(ell(50 + k * 0.5, 50 + k * 0.4, r, r), color, 0.92)
+    for arm in range(5):
+        pts = []
+        for i in range(48):
+            t = i / 47
+            ang = arm * 2 * math.pi / 5 + t * 4.6
+            rad = 44 * (1 - t) ** 0.9 + 3
+            pts.append((50 + math.cos(ang) * rad, 50 + math.sin(ang) * rad))
+        a.line("M " + " L ".join(f"{x:.1f} {y:.1f}" for x, y in pts), FOAM, 2.6, 0.5)
+        a.line("M " + " L ".join(f"{x:.1f} {y:.1f}" for x, y in pts[:20]), FOAM, 1.2, 0.85)
+    # the eye
+    a.shape(ell(50, 52, 9, 5.2), "#F2C23A", 0.3, 0.3, outline="#5A3A10")
+    a.fill(ell(50, 52, 1.6, 4.4), "#141018")
+    a.fill(ell(47, 50.4, 1.6, 1.0), "#FFFFFF", 0.85)
+    return a.svg()
+
+
+# ---------------------------------------------------------------------------
+# the clockwork harbour (Clockwork Cove)
+# ---------------------------------------------------------------------------
+
+BRASS, BRASS_L, BRASS_D = "#C9963A", "#EBC56E", "#7E5A1C"
+COPPER, COPPER_D = "#C46A3C", "#7A3A1C"
+BRICK2, BRICK2_D = "#A9553A", "#6E3220"
+VERDIGRIS = "#4FA08A"
+SMOKE = "#E4E4EA"
+
+
+def _cog(cx, cy, r, teeth=10, depth=0.18):
+    """A cog's outline: a disc with square-ish teeth round it."""
+    import math
+    pts = []
+    n = teeth * 4
+    for i in range(n):
+        ang = 2 * math.pi * (i + 0.5) / n
+        rr = r if i % 4 in (0, 1) else r * (1 - depth)
+        pts.append((cx + math.cos(ang) * rr, cy + math.sin(ang) * rr))
+    return "M " + " L ".join(f"{x:.2f} {y:.2f}" for x, y in pts) + " Z"
+
+
+def gear(units=1.4):
+    """A big brass cog half sunk in the ground on its edge, its hub bolted."""
+    import math
+    a = Art(192, units)
+    a.shadow(50, 92, 34, 4.4)
+    a.group(clip="M 0 0 L 100 0 L 100 89 L 0 89 Z")
+    a.shape(_cog(50, 60, 34, 12), BRASS, 0.32, 0.32)
+    a.shape(circ(50, 60, 23), mix(BRASS, BRASS_D, 0.3), 0.2, 0.3)
+    for k in range(4):
+        ang = k * math.pi / 2 + math.pi / 4
+        a.shape(circ(50 + math.cos(ang) * 14, 60 + math.sin(ang) * 14, 4.6), "#3A2A14", 0.05, 0.1)
+    a.shape(circ(50, 60, 8), BRASS_L, 0.3, 0.3, outline=BRASS_D)
+    a.fill(circ(50, 60, 3), "#3A3944")
+    a.end()
+    a.shape("M 12 89.4 C 24 84, 76 84, 88 89.4 C 70 93.6, 30 93.6, 12 89.4 Z", "#8A7A62", 0.2, 0.3)
+    return a.svg()
+
+
+def pipes(units=1.2):
+    """A copper pipe coming up out of the ground and back down, a valve wheel on top and
+    a puff of steam from a joint."""
+    a = Art(160, units)
+    a.shadow(50, 92, 36, 4.4)
+    pipe = ("M 22 92 L 22 54 C 22 40, 33 32, 47 32 L 55 32 C 69 32, 78 40, 78 54 L 78 92 L 68 92 L 68 55 "
+            "C 68 47, 63 42, 55 42 L 47 42 C 39 42, 32 47, 32 55 L 32 92 Z")
+    a.shape(pipe, COPPER, 0.34, 0.32)
+    for d in ("M 19 72 L 35 72 L 35 78 L 19 78 Z", "M 65 68 L 81 68 L 81 74 L 65 74 Z", "M 48 28.4 L 54 28.4 L 54 45.6 L 48 45.6 Z"):
+        a.shape(d, COPPER_D, 0.3, 0.3)
+    a.line("M 51 28 L 51 20", "#3A3944", 2.0)
+    a.line(circ(51, 16, 6.4), "#B23A2E", 2.6)
+    a.line("M 44.6 16 L 57.4 16 M 51 9.6 L 51 22.4", "#B23A2E", 1.6)
+    for x, y, r in ((86, 62, 6), (91, 54, 7.4), (88, 44, 5.4)):
+        a.shape(circ(x, y, r), SMOKE, 0.3, 0.16, opacity=0.85)
+    return a.svg()
+
+
+def smokestack(units=2.2):
+    """A tall brick chimney, an iron band round its top, smoke rolling out."""
+    a = Art(192, units)
+    a.shadow(50, 94, 20, 3.6)
+    stack = "M 38 94 L 41 28 L 59 28 L 62 94 Z"
+    a.shape(stack, BRICK2, 0.25, 0.32)
+    a.group(clip=stack)
+    for i, y in enumerate(range(32, 94, 7)):
+        a.line(f"M 30 {y} L 70 {y}", BRICK2_D, a.ow * 0.6, 0.6)
+        for x in (44, 56) if i % 2 == 0 else (50,):
+            a.line(f"M {x} {y} L {x} {y + 7}", BRICK2_D, a.ow * 0.6, 0.6)
+    a.end()
+    a.shape("M 37 28 L 63 28 L 63 34 L 37 34 Z", "#3A3944", 0.25, 0.2)
+    for x, y, r in ((52, 21, 6.6), (60, 14, 7.6), (71, 9, 6.4)):
+        a.shape(circ(x, y, r), "#CFCFD6", 0.32, 0.18, opacity=0.92)
+    return a.svg()
+
+
+def buoy(units=1.0):
+    """A red and white bell buoy bobbing in the harbour."""
+    a = Art(160, units)
+    a.shape("M 28 84 C 28 72, 72 72, 72 84 C 64 88, 36 88, 28 84 Z", "#D64545", 0.3, 0.3)
+    body = "M 40 75 L 44 40 L 56 40 L 60 75 Z"
+    a.shape(body, "#F4EFE6", 0.25, 0.25)
+    a.group(clip=body)
+    a.fill("M 0 52 L 100 52 L 100 62 L 0 62 Z", "#D64545")
+    a.end()
+    a.line(body, mix("#D9CFC0", INK, 0.6), a.ow)
+    a.shape("M 42.6 40 C 42.6 31, 57.4 31, 57.4 40 Z", BRASS, 0.32, 0.3)
+    a.fill(circ(50, 41.4, 1.8), BRASS_D)
+    a.shape("M 48.6 31.6 L 51.4 31.6 L 51.4 26 L 48.6 26 Z", "#3A3944", 0.2, 0.2)
+    foam(a, 20, 80, 86)
+    return a.svg()
+
+
+def clocktower(units=3.6):
+    """The harbour's clock tower: brick, a big clock face, a green copper spire, and a cog
+    turning in a window."""
+    a = Art(320, units)
+    a.shadow(50, 94, 26, 4)
+    body = "M 34 94 L 34 36 L 66 36 L 66 94 Z"
+    a.shape(body, BRICK2, 0.25, 0.32)
+    a.group(clip=body)
+    for i, y in enumerate(range(40, 94, 6)):
+        a.line(f"M 30 {y} L 70 {y}", BRICK2_D, a.ow * 0.6, 0.55)
+        for x in (42, 54, 62) if i % 2 == 0 else (38, 48, 58):
+            a.line(f"M {x} {y} L {x} {y + 6}", BRICK2_D, a.ow * 0.6, 0.55)
+    a.fill("M 54 30 L 70 30 L 70 100 L 56 100 Z", "#000000", 0.14)
+    a.end()
+    a.shape("M 31 33 L 69 33 L 69 38 L 31 38 Z", STONE, 0.25, 0.3)
+    a.shape(circ(50, 53, 11.4), "#F4EFE6", 0.2, 0.2, outline=BRASS_D)
+    import math
+    for k in range(12):
+        ang = k * math.pi / 6
+        a.line(f"M {50 + math.cos(ang) * 8.6:.2f} {53 + math.sin(ang) * 8.6:.2f} L {50 + math.cos(ang) * 10.2:.2f} {53 + math.sin(ang) * 10.2:.2f}", "#3A3944", a.ow * 0.6)
+    a.line("M 50 53 L 50 45.4 M 50 53 L 55.6 55.6", "#2B2A33", a.ow * 1.3)
+    a.line(circ(50, 53, 11.4), BRASS, 1.8)
+    a.shape("M 43 71 L 57 71 L 57 85 L 43 85 Z", "#2C2A30", 0.1, 0.1)
+    a.shape(_cog(50, 78, 5.8, 8), BRASS, 0.32, 0.3)
+    a.fill(circ(50, 78, 1.6), "#3A3944")
+    a.shape("M 31 33 L 50 8 L 69 33 Z", VERDIGRIS, 0.3, 0.32)
+    a.shape("M 49 8.4 L 51 8.4 L 51 3 L 49 3 Z", "#3A3944", 0.2, 0.2)
+    return a.svg()
+
+
+def crane(units=3.2):
+    """A dockside crane: a timber tower, an iron jib out over the water, a crate hanging
+    from its hook."""
+    a = Art(320, units)
+    a.shadow(40, 94, 20, 3.6)
+    a.shape("M 29 94 L 35 30 L 41 30 L 39 94 Z", WOOD, 0.25, 0.3)
+    a.shape("M 45 94 L 43 30 L 49 30 L 55 94 Z", WOOD, 0.25, 0.3)
+    a.line("M 37.6 82 L 49.6 64 M 50 82 L 38.6 64 M 38 54 L 47.6 40 M 47.6 54 L 38.6 40", WOOD_D, a.ow * 1.4)
+    a.shape("M 31 30 L 53 30 L 53 17 L 31 17 Z", "#B23A2E", 0.25, 0.3)
+    a.shape("M 35 20 L 40 20 L 40 26 L 35 26 Z", "#F4E2A0", 0.2, 0.2)
+    a.shape("M 49 19.4 L 94 9.4 L 94.6 13.4 L 51 25.4 Z", "#3A3944", 0.3, 0.25)
+    a.line("M 42 17 L 58 5 L 94 10.4", "#3A3944", a.ow * 1.0)
+    a.line("M 88 12 L 88 51", ROPE, a.ow * 1.0)
+    a.shape("M 79 51 L 97 51 L 97 69 L 79 69 Z", WOOD_L, 0.25, 0.3)
+    a.line("M 79 51 L 97 69 M 97 51 L 79 69", WOOD_D, a.ow * 0.8, 0.6)
+    return a.svg()
+
+
+
 SPRITES = [
     ("palm", palm, 1.9), ("bush", bush, 1.1), ("rock", rock, 1.0), ("rock_sea", rock_sea, 1.0),
     ("barrel", barrel, 0.8), ("barrel_sea", barrel_sea, 0.8), ("gull", gull, 0.8), ("hut", hut, 1.8),
@@ -817,6 +1270,12 @@ SPRITES = [
     ("grave", grave, 0.9), ("pumpkin", pumpkin, 0.85), ("lamp", lamp, 1.2), ("fence", fence, 1.1),
     ("mist", mist, 1.3), ("crypt", crypt, 2.8), ("ghostship", ghostship, 3.8),
     ("lavarock", lavarock, 1.0), ("charred", charred, 1.4), ("vent", vent, 1.1), ("volcano", volcano, 5.2),
+    ("pine_snow", pine_snow, 2.0), ("icerock", icerock, 1.0), ("snowman", snowman, 1.3), ("igloo", igloo, 2.2),
+    ("iceberg", iceberg, 1.8), ("floe", floe, 1.3), ("seal", seal, 1.3), ("frozenship", frozenship, 3.8),
+    ("tentacle", tentacle, 1.8), ("coral", coral, 1.2), ("barnacle", barnacle, 1.0), ("mast", mast, 2.0),
+    ("anchor", anchor, 1.2), ("bones", bones, 1.6), ("lighthouse", lighthouse, 3.2), ("whirlpool", whirlpool, 5.0),
+    ("gear", gear, 1.4), ("pipes", pipes, 1.2), ("smokestack", smokestack, 2.2), ("buoy", buoy, 1.0),
+    ("clocktower", clocktower, 3.6), ("crane", crane, 3.2),
 ]
 
 

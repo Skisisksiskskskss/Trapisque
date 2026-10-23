@@ -326,6 +326,40 @@ cards.cloak = {
 	{ "drop", 0.5, 0.7, 0.05, dir = 0, c = P.orange, ol = false },
 }
 
+-- a skating boot on its blade
+cards.skates = {
+	{ "rect", 0.42, 0.4, 0.3, 0.44, r = 0.18, c = P.coral },
+	{ "rect", 0.55, 0.62, 0.56, 0.2, r = 0.45, c = P.coral },
+	{ "rect", 0.4, 0.2, 0.34, 0.1, r = 0.4, c = P.cream },
+	{ "line", 0.35, 0.33, 0.48, 0.36, 0.025, c = P.coralDark, ol = false },
+	{ "line", 0.35, 0.43, 0.48, 0.46, 0.025, c = P.coralDark, ol = false },
+	{ "line", 0.32, 0.72, 0.32, 0.83, 0.045, c = P.steelDark },
+	{ "line", 0.72, 0.72, 0.72, 0.83, 0.045, c = P.steelDark },
+	{ "pill", 0.54, 0.85, 0.76, 0.07, c = P.steel },
+	shine(0.35, 0.33, 0.08, 20),
+}
+
+-- a barbed harpoon and a coil of its line
+cards.harpoon = {
+	{ "ring", 0.27, 0.76, 0.3, 0.05, c = P.sand },
+	{ "line", 0.18, 0.84, 0.7, 0.3, 0.06, c = P.wood },
+	{ "tri", 0.7, 0.3, 0.2, dir = 45, c = P.steel },
+	{ "line", 0.64, 0.36, 0.54, 0.3, 0.04, c = P.steelDark },
+	{ "line", 0.64, 0.36, 0.7, 0.46, 0.04, c = P.steelDark },
+	{ "rect", 0.6, 0.4, 0.1, 0.05, r = 0.3, rot = -45, c = P.steelDark },
+}
+
+-- a grappling hook on its rope
+cards.grapple = {
+	{ "line", 0.5, 0.04, 0.5, 0.18, 0.035, c = P.sand },
+	{ "ring", 0.5, 0.21, 0.13, 0.04, c = P.steelDark },
+	{ "line", 0.5, 0.27, 0.5, 0.68, 0.07, c = P.steelDark },
+	{ "arc", 0.5, 0.62, 0.5, 0.07, dir = 180, c = P.steel },
+	{ "tri", 0.26, 0.58, 0.13, dir = 0, c = P.steel },
+	{ "tri", 0.74, 0.58, 0.13, dir = 0, c = P.steel },
+	{ "tri", 0.5, 0.82, 0.12, dir = 180, c = P.steel },
+}
+
 -- Neutral cards ------------------------------------------------------------------
 
 cards.teleporter = {
@@ -485,6 +519,52 @@ StickerArt.hazards = {
 		mouth(0.5, 0.69, 0.12, "smile"),
 	},
 }
+
+-- Frostbite Floes' cracked ice, Kraken's Reach's tentacle, Clockwork Cove's drawbridge
+StickerArt.hazards.thinice = {
+	{ "pill", 0.5, 0.56, 0.92, 0.6, c = P.iceLight },
+	{ "line", 0.5, 0.56, 0.3, 0.4, 0.03, c = P.skyDark, ol = false },
+	{ "line", 0.5, 0.56, 0.74, 0.44, 0.03, c = P.skyDark, ol = false },
+	{ "line", 0.5, 0.56, 0.56, 0.78, 0.03, c = P.skyDark, ol = false },
+	{ "line", 0.5, 0.56, 0.24, 0.66, 0.03, c = P.skyDark, ol = false },
+	{ "line", 0.3, 0.4, 0.2, 0.42, 0.025, c = P.skyDark, ol = false },
+	shine(0.28, 0.46, 0.1, 30),
+}
+StickerArt.hazards.kraken = {
+	{ "taper", { { 0.38, 0.92 }, { 0.36, 0.6 }, { 0.46, 0.32 }, { 0.66, 0.2 }, { 0.78, 0.32 }, { 0.68, 0.42 } }, 0.24, 0.07, c = "#B5485E" },
+	{ "circle", 0.47, 0.76, 0.07, c = "#F6D2D2" },
+	{ "circle", 0.46, 0.62, 0.065, c = "#F6D2D2" },
+	{ "circle", 0.5, 0.48, 0.06, c = "#F6D2D2" },
+	{ "pill", 0.5, 0.92, 0.62, 0.1, c = P.water },
+}
+StickerArt.hazards.drawbridge = {
+	{ "rect", 0.5, 0.86, 0.94, 0.16, r = 0.3, c = P.water },
+	{ "rect", 0.14, 0.62, 0.2, 0.44, r = 0.12, c = P.brick },
+	{ "rect", 0.86, 0.62, 0.2, 0.44, r = 0.12, c = P.brick },
+	{ "rect", 0.36, 0.42, 0.42, 0.11, r = 0.2, rot = -38, c = P.wood },
+	{ "rect", 0.64, 0.42, 0.42, 0.11, r = 0.2, rot = 38, c = P.wood },
+	{ "line", 0.14, 0.38, 0.32, 0.22, 0.025, c = P.steelDark },
+	{ "line", 0.86, 0.38, 0.68, 0.22, 0.025, c = P.steelDark },
+}
+-- where the thin ice gave way: open water till the round ends
+StickerArt.hazards.hole = {
+	{ "pill", 0.5, 0.56, 0.94, 0.62, c = P.iceLight },
+	{ "pill", 0.5, 0.57, 0.66, 0.4, c = P.waterDark },
+	{ "rect", 0.38, 0.54, 0.12, 0.08, r = 0.2, rot = -20, c = P.glass },
+	{ "rect", 0.62, 0.6, 0.1, 0.07, r = 0.2, rot = 25, c = P.glass },
+}
+-- Clockwork Cove's cogs: a brass gear set into the tile
+StickerArt.hazards.cog = (function()
+	local shapes = {}
+	for i = 0, 7 do
+		local a = i * math.pi / 4
+		table.insert(shapes, { "rect", 0.5 + 0.36 * math.cos(a), 0.5 + 0.36 * math.sin(a), 0.2, 0.18, r = 0.15, rot = math.deg(a), c = P.sunDark })
+	end
+	table.insert(shapes, { "circle", 0.5, 0.5, 0.36, c = P.sun })
+	table.insert(shapes, { "circle", 0.5, 0.5, 0.16, c = P.sunDark })
+	table.insert(shapes, { "circle", 0.5, 0.5, 0.06, c = P.line, ol = false })
+	return shapes
+end)()
 
 -- Haunted Hollow's ghost (floats over its tile) and Mount Kaboom's lava stream
 StickerArt.hazards.lava = {

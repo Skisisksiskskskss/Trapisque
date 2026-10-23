@@ -29,6 +29,9 @@
 		view:buildIntro()                   -- tiles drop into place one by one
 		view:setGhosts(tiles) / driftGhosts(moves, speed) / boo(tile)   -- Haunted Hollow
 		view:erupt(speed) / setRumble(on)   -- Mount Kaboom's volcano
+		view:crackIce(tile, state) / refreeze(tiles) -- Frostbite Floes' thin ice
+		view:setKraken(mark) / krakenSlam(speed) -- Kraken's Reach's tentacle
+		view:setBridges(bridges, animate) / turnCogs(speed) -- Clockwork Cove
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -174,6 +177,11 @@ function BoardView.new(parent: Frame, mapId: string, opts: { [string]: any }?)
 	self.natural = {} -- [tile] = kind
 	self.traps = {} -- [tile] = { { item, owner, team, public } } hidden traps I can see
 	self.embers = {} -- [tile] = owner seat
+	self.cracks = {} -- Frostbite Floes: [tile] = true where the thin ice has cracked
+	self.span = {} -- Clockwork Cove: [tile] = { angle (the way the trail crosses it, on the ground), up }
+	self.leaves = {} -- [tile] = a raised drawbridge's leaf standing over it
+	self.bandTiles = {} -- [tile] = { grad, spec, offset }: a conveyor's ridges, sands' ripples (moving)
+	self.cogs = {} -- Clockwork Cove: [tile] = how far its cog carries you (tiles, + forward)
 	self.pawns = {} -- [seat] = { frame, lift, share, tile, ring, seat, info, mascot (the piece), foot }
 	self.seatInfo = {}
 
@@ -198,6 +206,8 @@ function BoardView.new(parent: Frame, mapId: string, opts: { [string]: any }?)
 		self:_stepTags()
 		self:_stepBubbles()
 		self:_stepGhosts()
+		self:_stepKraken()
+		self:_stepBands()
 	end))
 	return self
 end
@@ -637,6 +647,7 @@ function BoardView:_buildTiles()
 	end)
 	local D = S.tileDepth * U
 	local slab = self.tileShape == "slab"
+	self.sideColor = Util.shade(self.tileColors.normal, -0.34)
 	for i, t in order do
 		local center = self:tileWorld(t.id)
 		local root = Util.frame(layer, {
@@ -657,7 +668,7 @@ function BoardView:_buildTiles()
 			ImageTransparency = 0.6,
 			ZIndex = 1,
 		})
-		local sideColor = Util.shade(self.tileColors.normal, -0.34)
+		local sideColor = self.sideColor
 		local side = Util.frame(root, { Name = "Side", ZIndex = 2 })
 		local bottom = self:_tileShape(side, mid + Vector2.new(0, D), r, sideColor, 2, "Bottom")
 		local band = Util.new("Frame", {
@@ -774,20 +785,34 @@ local LOOKS = BoardLayout.TileLooks
 local THING_FOOT = 0.8 -- where a standing thing's foot is, down its canvas
 local HIDDEN = 0.4 -- how see-through a hidden trap you can see is
 
--- `look` on a tile whose middle is `mid` in `parent` (r: the tile's radius, pixels):
--- one image, or nil without the art.
-function BoardView:_drawLook(parent: Instance, look, r: number, z: number, alpha: number?, mid: Vector2?): ImageLabel?
+local facingTurn = BoardLayout.facingTurn
+
+-- `look` on a tile whose middle is `mid` in `parent` (r: the tile's radius, pixels;
+-- `angle`: which way the trail runs there, for something that faces it): one image, or
+-- nil without the art. A face is the tile's own shape (it turns into it); a thing
+-- stands with its foot on the middle.
+function BoardView:_drawLook(parent: Instance, look, r: number, z: number, alpha: number?, mid: Vector2?, angle: number?): ImageLabel?
 	local at = mid or Vector2.new(U, U)
 	local k = r / (S.tileR * U)
-	if look.cover then
+	if look.face then
 		local fr = r - BEVEL * U
-		return Art.label(parent, "items/" .. look.cover, at, Vector2.new(2 * fr, 2 * fr * K), false, {
-			Name = "Cover",
+		local shape = if self.tileShape == "slab" then "square" else "round"
+		return Art.label(parent, "tiles/" .. look.face .. "_" .. shape, at, Vector2.new(2 * fr, 2 * fr * K), false, {
+			Name = "Face",
 			ImageTransparency = alpha or 0,
 			ZIndex = z,
 		})
 	end
 	local size = look.size * U * k
+	if look.facing and Art.has("tiles/" .. look.stand .. "_0") then
+		-- (a 100 x 125 canvas, its foot 80 down it)
+		local turn = facingTurn(angle or 0)
+		return Art.label(parent, "tiles/" .. look.stand .. "_" .. turn, at - Vector2.new(0, 0.175 * size + 0.03 * U), Vector2.new(size, 1.25 * size), false, {
+			Name = "Thing",
+			ImageTransparency = alpha or 0,
+			ZIndex = z,
+		})
+	end
 	return Art.label(parent, "items/" .. look.stand, at - Vector2.new(0, (THING_FOOT - 0.5) * size - 0.03 * U), size, false, {
 		Name = "Thing",
 		ImageTransparency = alpha or 0,
@@ -795,18 +820,77 @@ function BoardView:_drawLook(parent: Instance, look, r: number, z: number, alpha
 	})
 end
 
--- A stretch of conveyor belt lying on the tile, running `angle` degrees (on the ground).
-local function belt(parent: Instance, angle: number, z: number, alpha: number?, mid: Vector2?): ImageLabel?
-	local a = math.rad(angle)
-	local ux, uy = math.cos(a), math.sin(a)
-	local long = math.sqrt(ux * ux + K * K * uy * uy)
-	local len = 1.75 * U
-	return Art.label(parent, "items/belt", mid or Vector2.new(U, U), Vector2.new(len * long, len * K / long), false, {
-		Name = "Belt",
-		Rotation = math.deg(math.atan2(uy * K, ux)),
-		ImageTransparency = alpha or 0,
-		ZIndex = z,
+--[[
+	Bands across a tile's face, cut to its shape: a conveyor's ridges, the Shifting
+	Sands' ripples, a drawbridge deck's seams. One transparency gradient on the tile's
+	own outline (so nothing spills over its edge), `period` apart along the gradient,
+	each opaque for `duty` of it, at `phase` (0..1) of the way to the next. `sharp`: the
+	front edge is that much of a period (a ridge reads as moving even in a still frame);
+	without it a band rises and falls evenly.
+]]
+local function bands(phase: number, spec): NumberSequence
+	local period, duty, sharp, a = spec.period, spec.duty, spec.sharp, spec.alpha
+	local rise = if sharp then duty - sharp else duty / 2
+	-- the band at u (0..1 along its period): clear, fading in to `a`, then out
+	local function at(u: number): number
+		u %= 1
+		if u >= duty then
+			return 1
+		elseif u < rise then
+			return 1 - (1 - a) * (u / rise)
+		end
+		return a + (1 - a) * ((u - rise) / math.max(duty - rise, 1e-4))
+	end
+	local times = { 0, 1 }
+	local n = math.ceil(1 / period) + 1
+	for i = -1, n do
+		for _, u in { 0, rise, duty } do
+			local t = (i + u + phase) * period
+			if t > 0.002 and t < 0.998 then
+				table.insert(times, t)
+			end
+		end
+	end
+	table.sort(times)
+	local keys = {}
+	local last = -1
+	for _, t in times do
+		if t - last > 0.004 and #keys < 20 then
+			table.insert(keys, NumberSequenceKeypoint.new(t, at(t / period - phase)))
+			last = t
+		end
+	end
+	if keys[#keys].Time < 1 then
+		keys[#keys] = NumberSequenceKeypoint.new(1, at(1 / period - phase))
+	end
+	return NumberSequence.new(keys)
+end
+
+-- A small pill on a tile saying what it does to you (+3, -10): Shifting Sands, the cogs.
+local function badge(root: Instance, text: string, color: Color3): Frame
+	local mid = Vector2.new(U, U)
+	local way = Util.new("Frame", {
+		Name = "Way",
+		BackgroundColor3 = color,
+		BorderSizePixel = 0,
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = px(mid + Vector2.new(0.52 * U, 0.3 * U)),
+		Size = UDim2.fromOffset((0.36 + 0.12 * #text) * U, 0.38 * U),
+		ZIndex = 10,
+		Parent = root,
 	})
+	Util.corner(way, 0.5)
+	Util.stroke(way, C.line, 0.04 * U)
+	Widgets.label(way, {
+		text = text,
+		font = "chunky",
+		size = math.floor(0.28 * U),
+		color = C.white,
+		align = "center",
+		sizeUDim = UDim2.fromScale(1, 1),
+		z = 11,
+	})
+	return way
 end
 
 -- A token: a chip in its colour standing up `lift` pixels over the tile's middle
@@ -851,66 +935,144 @@ local function chip(parent: Instance, token: string, ground: Vector2, lift: numb
 	return holder
 end
 
+
 -- Is anything on the tile (its number hides)?
-local function busy(parts): boolean
-	return parts.cover ~= nil or parts.thing ~= nil or parts.token ~= nil or parts.ember ~= nil or parts.icon ~= nil
+local function busyTile(parts): boolean
+	return parts.cover ~= nil or parts.thing ~= nil or parts.token ~= nil or parts.icon ~= nil
 end
 
--- What a tile shows right now: a map feature > a belt > a board piece > a hidden trap I
--- can see (see-through, in its owner's ring) > what the tile is (Start, treasure, gate);
--- a token floats over any of them, and embers (a Blast Off's trail) lie under them.
--- A hidden trap I can't see is never in self.traps, so it never shows.
+--[[
+	What a tile shows right now. It turns into what covers it (its face: the map's own
+	hazard > a conveyor > a drawbridge's deck > a board piece > a hidden trap I can see >
+	a cog > embers), and whatever stands on it stands on that (a wall, a spike, the
+	chest...). A face in full view takes the tile's rim and side too, in its own colours;
+	a hidden trap I can see is see-through, in its owner's ring. A token floats over
+	everything. A hidden trap I can't see is never in self.traps, so it never shows.
+]]
 function BoardView:_paintTile(tile: number)
 	local parts = self.tileParts[tile]
 	if not parts then
 		return
 	end
-	for _, key in { "cover", "thing", "ring", "token", "badge", "ember", "icon", "extra" } do
+	for _, key in { "cover", "thing", "ring", "token", "badge", "glow", "icon", "extra", "bands" } do
 		if parts[key] then
 			parts[key]:Destroy()
 			parts[key] = nil
 		end
 	end
+	self.bandTiles[tile] = nil
 	parts.trapShown = nil
 	local kind = parts.kind
 	local natural = self.natural[tile]
 	local beltAngle = self.belt[tile]
+	local span = self.span[tile]
+	local cog = self.cogs[tile]
 	local entry = self.placed[tile]
 	local token = self.tokens[tile]
 	local traps = self.traps[tile]
-	local ember = self.embers[tile]
-	local topColor = if kind == "normal" and parts.branch then self.tileColors.branch else (self.tileColors[kind] or self.tileColors.normal)
-	paint(parts.top, Util.shade(topColor, 0.4))
-	paint(parts.face, topColor)
-
+	local trap = traps and traps[1]
 	local root = parts.root
 	local r = S.tileR * U * parts.scale
 	local mid = Vector2.new(U, U)
 	local fr = r - BEVEL * U
-	-- what it shows, and whose it is
-	local look, owner, alpha = nil, nil, 0
-	local trap = traps and traps[1]
-	local trapHere = false
-	if natural then
-		look = LOOKS[natural]
-	elseif entry and entry.item ~= "conveyor" then
-		look, owner = LOOKS[entry.item], entry.owner
-	elseif not beltAngle and trap then
-		look, owner = LOOKS[trap.item], trap.owner or 0
-		alpha = if trap.public then 0 else HIDDEN
-		trapHere = true
-	elseif not beltAngle and (kind == "start" or kind == "treasure" or kind == "shortcutGate") then
-		look = LOOKS[kind]
-	end
-	if entry and beltAngle then
-		owner = entry.owner
-	end
 
-	if ember then
-		parts.ember = self:_drawLook(root, LOOKS.embers, r, 5)
+	-- the two slots: what the tile turns into, and what stands on it
+	local face, faceAlpha, thing, thingAlpha = nil, 0, nil, 0
+	local owner, trapHere = nil, false
+	local function take(look, alpha: number): boolean
+		if not look then
+			return false
+		end
+		if look.face then
+			if face then
+				return false
+			end
+			face, faceAlpha = look, alpha
+		else
+			if thing then
+				return false
+			end
+			thing, thingAlpha = look, alpha
+		end
+		return true
+	end
+	if natural then
+		take(LOOKS[if natural == "thinice" and self.cracks[tile] then "thinice_cracked" else natural], 0)
 	end
 	if beltAngle then
-		parts.cover = belt(root, beltAngle, 6)
+		take(LOOKS.conveyor, 0)
+		if entry and entry.item == "conveyor" then
+			owner = entry.owner
+		end
+	end
+	if span then
+		take(LOOKS[if span.up then "gap" else "deck"], 0)
+	end
+	if entry and entry.item ~= "conveyor" and take(LOOKS[entry.item], 0) then
+		owner = entry.owner
+	end
+	if trap and take(LOOKS[trap.item], if trap.public then 0 else HIDDEN) then
+		owner = trap.owner or 0
+		trapHere = true
+	end
+	if kind == "start" or kind == "treasure" or kind == "shortcutGate" then
+		take(LOOKS[kind], 0)
+	end
+	if cog then
+		take(LOOKS.cog, 0)
+	end
+	local ember = self.embers[tile]
+	local emberGlow = ember ~= nil and not take(LOOKS.embers, 0)
+
+	-- the tile itself: the stuff's own rim and side when it's in full view
+	local topColor = if kind == "normal" and parts.branch then self.tileColors.branch else (self.tileColors[kind] or self.tileColors.normal)
+	local solid = face ~= nil and faceAlpha == 0
+	paint(parts.top, if solid then hex(string.sub(face.rim, 2)) else Util.shade(topColor, 0.4))
+	paint(parts.face, topColor)
+	local sideColor = if solid then hex(string.sub(face.side, 2)) else self.sideColor
+	for _, part in parts.side:GetChildren() do
+		if part:IsA("GuiObject") then
+			paint(part, sideColor)
+		end
+	end
+	if face then
+		parts.cover = self:_drawLook(root, face, r, 5, faceAlpha)
+		if trapHere and face == LOOKS[trap.item] then
+			parts.trapShown = parts.cover
+		end
+		-- (the stone's worn face under it only shows through a see-through one)
+		parts.face.Visible = not (solid and parts.cover ~= nil)
+		local spec = face.bands
+		if solid and parts.cover and spec then
+			local angle = if beltAngle then beltAngle elseif span then span.angle else (parts.angle or 0)
+			if spec.slides then
+				-- the Shifting Sands ripple the way they slide you this round
+				angle += if Engine.sandsForward(self.round) then 0 else 180
+			end
+			local band = self:_tileShape(root, mid, fr, hex(string.sub(spec.color, 2)), 6, "Bands")
+			local grad = Util.new("UIGradient", { Rotation = angle, Transparency = bands(0, spec), Parent = band })
+			parts.bands = band
+			if (spec.speed or 0) > 0 then
+				self.bandTiles[tile] = { grad = grad, spec = spec, offset = (tile * 0.37) % 1 }
+			end
+		end
+	else
+		parts.face.Visible = true
+	end
+	if thing then
+		parts.thing = self:_drawLook(root, thing, r, 8, thingAlpha, nil, parts.angle)
+		if trapHere and thing == LOOKS[trap.item] then
+			parts.trapShown = parts.thing
+		end
+	end
+	if emberGlow then
+		-- (embers under something that covers the tile: it glows)
+		parts.glow = Art.label(root, "ground/soft", mid, Vector2.new(2.2 * fr, 2.2 * fr * K), false, {
+			Name = "Glow",
+			ImageColor3 = C.orange,
+			ImageTransparency = 0.35,
+			ZIndex = 6,
+		})
 	end
 	if owner and (owner > 0 or trapHere) then
 		parts.ring = Art.label(root, "ground/ring", mid, Vector2.new(2 * fr, 2 * fr * K), false, {
@@ -918,19 +1080,6 @@ function BoardView:_paintTile(tile: number)
 			ImageColor3 = if owner > 0 then Theme.seatColor(owner) else C.coral,
 			ZIndex = 7,
 		})
-	end
-	if look then
-		local img = self:_drawLook(root, look, r, if look.cover then 6 else 8, alpha)
-		if img then
-			if look.cover then
-				parts.cover = img
-			else
-				parts.thing = img
-			end
-			if trapHere then
-				parts.trapShown = img
-			end
-		end
 	end
 	-- a trap I can see on a tile that already shows something: small, to one side
 	if trap and not trapHere then
@@ -943,7 +1092,7 @@ function BoardView:_paintTile(tile: number)
 			ZIndex = 9,
 		})
 		Util.new("UIScale", { Scale = 0.55, Parent = holder })
-		if small and self:_drawLook(holder, small, S.tileR * U, 9, if trap.public then 0 else HIDDEN) then
+		if small and self:_drawLook(holder, small, S.tileR * U, 9, if trap.public then 0 else HIDDEN, nil, parts.angle) then
 			parts.extra = holder
 			parts.trapShown = holder
 		else
@@ -956,34 +1105,17 @@ function BoardView:_paintTile(tile: number)
 	if entry and entry.item == "sands" then
 		-- which way it slides you this round: +3 or -3
 		local fwd = Engine.sandsForward(self.round)
-		local way = Util.new("Frame", {
-			Name = "Way",
-			BackgroundColor3 = if fwd then C.lime else C.coral,
-			BorderSizePixel = 0,
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = px(mid + Vector2.new(0.52 * U, 0.3 * U)),
-			Size = UDim2.fromOffset(0.6 * U, 0.38 * U),
-			ZIndex = 10,
-			Parent = root,
-		})
-		Util.corner(way, 0.5)
-		Util.stroke(way, C.line, 0.04 * U)
-		Widgets.label(way, {
-			text = (if fwd then "+" else "-") .. tostring(Config.Rules.SandsSlide),
-			font = "chunky",
-			size = math.floor(0.28 * U),
-			color = C.white,
-			align = "center",
-			sizeUDim = UDim2.fromScale(1, 1),
-			z = 11,
-		})
-		parts.badge = way
+		parts.badge = badge(root, (if fwd then "+" else "-") .. tostring(Config.Rules.SandsSlide), if fwd then C.lime else C.coral)
+	elseif cog then
+		-- where the gears carry you when the round ends
+		parts.badge = badge(root, (if cog > 0 then "+" else "") .. tostring(cog), if cog > 0 then C.lime else C.coral)
 	end
 	-- without the art: the stickers
-	if (look and not (parts.cover or parts.thing)) or (beltAngle and not parts.cover) then
-		parts.icon = self:_stickerLook(root, natural, beltAngle, entry, trapHere and trap or nil, kind)
+	local missing = (face ~= nil and parts.cover == nil) or (thing ~= nil and parts.thing == nil)
+	if missing then
+		parts.icon = self:_stickerLook(root, natural, beltAngle, entry, trapHere and trap or nil, if span and span.up then "gap" elseif cog then "cog" else kind)
 	end
-	parts.label.Visible = parts.numbered and not busy(parts) and (self.cover[tile] or 0) == 0
+	parts.label.Visible = parts.numbered and not busyTile(parts) and (self.cover[tile] or 0) == 0
 end
 
 -- What a tile shows when the art isn't there: its sticker (a board piece on a disc in
@@ -1020,7 +1152,16 @@ function BoardView:_stickerLook(root: Instance, natural: string?, beltAngle: num
 	elseif trap then
 		return trapMark(root, trap, mid, 0.8 * U, 8)
 	else
-		local art = if kind == "start" then StickerArt.misc.flag elseif kind == "treasure" then StickerArt.misc.chest else StickerArt.hazards.gate
+		local art = if kind == "start"
+			then StickerArt.misc.flag
+			elseif kind == "treasure" then StickerArt.misc.chest
+			elseif kind == "gap" then StickerArt.hazards.drawbridge
+			elseif kind == "cog" then StickerArt.hazards.cog
+			elseif kind == "shortcutGate" then StickerArt.hazards.gate
+			else nil
+		if not art then
+			return nil
+		end
 		local h = holder(if kind == "treasure" then 1.25 else 1, 7)
 		Icons.sticker(h, art, nil, 0.06)
 		return h
@@ -1229,6 +1370,404 @@ function BoardView:_setBelt(origin: number, tiles: { number }?, dir: string?)
 	end
 end
 
+---------------------------------------------------------------------------
+-- Frostbite Floes' thin ice, Kraken's Reach's tentacle, Clockwork Cove's drawbridge
+-- and cogs
+---------------------------------------------------------------------------
+
+local KRAKEN_SHADE = hex("2A1838")
+local KRAKEN_PINK = hex("D86A8A")
+local FROST = hex("E6F7FF")
+
+-- The thin ice that has cracked (a second landing breaks it): [tile] = true.
+function BoardView:setCracks(map: { [number]: boolean })
+	local changed = {}
+	for tile in self.cracks do
+		if not map[tile] then
+			changed[tile] = true
+		end
+	end
+	for tile in map do
+		if not self.cracks[tile] then
+			changed[tile] = true
+		end
+	end
+	self.cracks = map
+	for tile in changed do
+		self:_paintTile(tile)
+	end
+end
+
+-- Someone landed on thin ice: it cracks ("cracked"), gives way under them ("broken"),
+-- or they walked into the open water where it already had ("splash").
+function BoardView:crackIce(tile: number, state: string)
+	local at = self:tileWorld(tile)
+	if state == "cracked" then
+		self.cracks[tile] = true
+		self:_paintTile(tile)
+		local parts = self.tileParts[tile]
+		local cover = parts and (parts.cover or parts.icon)
+		if cover then
+			Util.bump(cover, 0.1)
+		end
+		Sound.play("ice", 1.2)
+		self:floatText(at, "Crack!", C.sky, 28)
+		return
+	end
+	if state == "broken" then
+		self.cracks[tile] = nil
+		self:setNatural(tile, "hole")
+	end
+	Sound.play("splash")
+	Sound.play("ice", 0.8)
+	for i = 1, 3 do
+		task.delay(i * 0.12, function()
+			self:_ring(at, FROST, 0.4, 1.9, 0.55)
+		end)
+	end
+	self:puff(at - Vector2.new(0, 0.3 * U), FROST)
+	self:floatText(at, "Splash!", C.sky, 32)
+end
+
+-- The open water freezes over again when the round ends.
+function BoardView:refreeze(tiles: { number })
+	for _, tile in tiles do
+		self.cracks[tile] = nil
+		self.natural[tile] = nil
+		self:setNatural(tile, "thinice")
+		self:puff(self:tileWorld(tile), FROST)
+	end
+	if #tiles > 0 then
+		Sound.play("ice", 1.4)
+	end
+end
+
+-- An expanding ring on the ground (a splash, a ripple).
+function BoardView:_ring(at: Vector2, color: Color3, from: number, to: number, life: number)
+	local r = Util.new("Frame", {
+		BackgroundTransparency = 1,
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = px(at),
+		Size = UDim2.fromOffset(from * U, from * U * K),
+		ZIndex = 40,
+		Parent = self.layers.Fx,
+	})
+	Util.corner(r, 0.5)
+	local st = Util.stroke(r, color, 3)
+	Util.tween(r, life, { Size = UDim2.fromOffset(to * U, to * U * K) }, Enum.EasingStyle.Quad)
+	Util.tween(st, life, { Transparency = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+	task.delay(life + 0.02, function()
+		r:Destroy()
+	end)
+end
+
+-- Where the Kraken's tentacle rises for its mark: just off the tile, on the side of
+-- the whirlpool it lives in (or behind the tile, on a map without one).
+function BoardView:_krakenFoot(tile: number): Vector2
+	local g = self.ground[tile]
+	local dir = Vector2.new(0.5, -1)
+	for _, p in self.layout.props do
+		if p.kind == "whirlpool" then
+			dir = Vector2.new(p.x, p.y) - g
+		end
+	end
+	if dir.Magnitude < 1e-3 then
+		dir = Vector2.new(0, -1)
+	end
+	local at = g + dir.Unit * 2.2
+	return MapArt.project(self.layout, U, at.X, at.Y)
+end
+
+function BoardView:_clearKraken()
+	local k = self.krakenSprite
+	if not k then
+		return
+	end
+	self.krakenSprite = nil
+	for _, img in k.shades do
+		img:Destroy()
+	end
+	k.holder:Destroy()
+end
+
+--[[
+	Kraken's Reach: the tentacle over its mark ({ tile, zone } or nil), swaying in the
+	water beside it, its shadow over the tiles it will come down on. A new mark rises
+	out of the sea.
+]]
+function BoardView:setKraken(mark)
+	local tile = mark and mark.tile
+	local k = self.krakenSprite
+	if k and k.tile == tile and not k.busy then
+		return
+	end
+	self:_clearKraken()
+	if not tile or not self.tileParts[tile] then
+		return
+	end
+	local shades = {}
+	for _, t in mark.zone or { tile } do
+		local parts = self.tileParts[t]
+		if parts then
+			local r = S.tileR * U * parts.scale
+			local img = Art.label(parts.root, "ground/soft", Vector2.new(U, U), Vector2.new(2.4 * r, 2.4 * r * K), false, {
+				Name = "KrakenShade",
+				ImageColor3 = KRAKEN_SHADE,
+				ImageTransparency = 0.4,
+				ZIndex = 6,
+			})
+			if img then
+				table.insert(shades, img)
+			end
+		end
+	end
+	local foot = self:_krakenFoot(tile)
+	local size = 2.6 * U
+	local holder = Util.frame(self.layers.Pawns, {
+		Name = "Kraken",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = px(foot),
+		Size = UDim2.fromOffset(2 * size, 2 * size),
+		ZIndex = depthZ(foot.Y) - 1,
+	})
+	-- (its foot on the holder's middle: it sways, rises and slams from there)
+	local lift = Util.frame(holder, {
+		Name = "Lift",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+	})
+	local art = Art.label(lift, "props/tentacle", Vector2.new(size, size - (0.92 - 0.5) * size), size, false, {
+		Name = "Tentacle",
+	})
+	if not art then
+		local h = Util.frame(lift, {
+			Name = "Tentacle",
+			AnchorPoint = Vector2.new(0.5, 1),
+			Position = UDim2.fromOffset(size, size),
+			Size = UDim2.fromOffset(0.7 * size, 0.7 * size),
+		})
+		Icons.sticker(h, StickerArt.hazards.kraken, nil, 0.06)
+	end
+	self.krakenSprite = { tile = tile, foot = foot, holder = holder, lift = lift, shades = shades, phase = math.random() * 6 }
+	local s = Util.scaler(lift)
+	s.Scale = 0
+	Util.tween(s, 0.45, { Scale = 1 }, Enum.EasingStyle.Back)
+	self:_ring(foot, FROST, 0.5, 2.2, 0.6)
+end
+
+-- A conveyor's ridges run along it and the Shifting Sands ripple the way they slide.
+function BoardView:_stepBands()
+	if next(self.bandTiles) == nil then
+		return
+	end
+	local now = os.clock()
+	for _, b in self.bandTiles do
+		b.grad.Transparency = bands((now * b.spec.speed + b.offset) % 1, b.spec)
+	end
+end
+
+function BoardView:_stepKraken()
+	local k = self.krakenSprite
+	if k and not k.busy then
+		k.lift.Rotation = math.sin(os.clock() * 1.7 + k.phase) * 6
+	end
+end
+
+-- The tentacle rears up and slams down across its mark, then sinks (yields until the
+-- hit lands).
+function BoardView:krakenSlam(speed: number?)
+	local k = self.krakenSprite
+	if not k then
+		return
+	end
+	local pace = 1 / math.max(speed or 1, 0.25)
+	k.busy = true
+	local target = self:tileWorld(k.tile)
+	local v = target - k.foot
+	-- (it falls towards the mark: the angle from straight up, clockwise)
+	local lean = math.deg(math.atan2(v.X, -v.Y))
+	local reach = math.clamp(v.Magnitude / (1.9 * U) * 1.1, 0.9, 1.5)
+	local s = Util.scaler(k.lift)
+	;(k.holder :: Frame).ZIndex = 400
+	Util.tween(k.lift, 0.35 * pace, { Rotation = -0.25 * lean }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	Util.tween(s, 0.35 * pace, { Scale = 1.2 }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	Sound.play("whoosh", 0.6)
+	task.wait(0.35 * pace)
+	Util.tween(k.lift, 0.14 * pace, { Rotation = lean }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+	Util.tween(s, 0.14 * pace, { Scale = reach }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+	task.wait(0.14 * pace)
+	self:shake(0.22, 0.45)
+	Sound.play("splash")
+	Sound.play("bonk", 0.55)
+	for _, img in k.shades do
+		local tile = img.Parent
+		if tile and tile:IsA("GuiObject") then
+			Util.bump(tile, 0.08)
+		end
+	end
+	self:_ring(target, KRAKEN_PINK, 0.6, 3.2, 0.5)
+	self:puff(target, FROST)
+	self:floatText(target, "SLAM!", KRAKEN_PINK, 38)
+	task.delay(0.45 * pace, function()
+		if self.krakenSprite ~= k then
+			return
+		end
+		Util.tween(s, 0.3, { Scale = 0 }, Enum.EasingStyle.Back, Enum.EasingDirection.In)
+		task.delay(0.32, function()
+			if self.krakenSprite == k then
+				self:_clearKraken()
+			end
+		end)
+	end)
+	task.wait(0.3 * pace)
+end
+
+--[[
+	Clockwork Cove's drawbridges ({ { tiles, up } }): down, their tiles are a deck of
+	planks laid across the trail; up, they're the canal's water, and each tile's leaf
+	stands raised on its hinge at the bank, leaning out over the gap. animate: they swing
+	up or down.
+]]
+function BoardView:setBridges(list, animate: boolean?)
+	local span = {}
+	for _, b in list or {} do
+		local tiles = b.tiles or {}
+		local first, last = tiles[1], tiles[#tiles]
+		if first and last and self.ground[first] and self.ground[last] then
+			local p, q = self.ground[first], self.ground[last]
+			if first == last then
+				local nxt = self.board.nextMain[first]
+				q = if nxt and self.ground[nxt] then self.ground[nxt] else p + Vector2.new(1, 0)
+			end
+			local angle = math.deg(math.atan2(q.Y - p.Y, q.X - p.X))
+			for i, t in tiles do
+				-- (the first tile's leaf leans on along the trail, the last one's back)
+				span[t] = { angle = angle, up = b.up == true, lean = if i == 1 then angle else angle + 180 }
+			end
+		end
+	end
+	local changed = {}
+	for t, old in self.span do
+		local new = span[t]
+		if not new or new.up ~= old.up or new.angle ~= old.angle then
+			changed[t] = true
+		end
+	end
+	for t in span do
+		if not self.span[t] then
+			changed[t] = true
+		end
+	end
+	if next(changed) == nil then
+		return
+	end
+	self.span = span
+	local rising, first = false, nil
+	for t in changed do
+		self:_paintTile(t)
+		self:_setLeaf(t, span[t], animate)
+		local parts = self.tileParts[t]
+		if animate and parts then
+			Util.bump(parts.root, 0.08)
+			first = first or t
+			rising = rising or (span[t] ~= nil and span[t].up)
+		end
+	end
+	if animate and first then
+		Sound.play("place", if rising then 0.7 else 0.9)
+		Sound.play("whoosh", 0.8)
+	end
+end
+
+-- A raised drawbridge's leaf over `tile` (or none): hinged at the tile's outer edge,
+-- leaning out over the gap (art/tiles.py leaf_<k>, 100 x 125, its hinge 92 down it).
+function BoardView:_setLeaf(tile: number, span, animate: boolean?)
+	local old = self.leaves[tile]
+	if old then
+		self.leaves[tile] = nil
+		if animate then
+			Util.tween(Util.scaler(old), 0.25, { Scale = 0 }, Enum.EasingStyle.Back, Enum.EasingDirection.In)
+			task.delay(0.26, function()
+				old:Destroy()
+			end)
+		else
+			old:Destroy()
+		end
+	end
+	if not (span and span.up) or not self.ground[tile] then
+		return
+	end
+	local lean = math.rad(span.lean)
+	local reach = 0.5 * (self.layout.spacing or 2)
+	local g = self.ground[tile] - Vector2.new(math.cos(lean), math.sin(lean)) * reach
+	local hinge = MapArt.project(self.layout, U, g.X, g.Y)
+	local turn = math.floor((span.lean % 360) / 22.5 + 0.5) % 16
+	local size = 2.6 * U
+	local holder = Util.frame(self.layers.Pawns, {
+		Name = "Leaf" .. tile,
+		AnchorPoint = Vector2.new(0.5, 0.736),
+		Position = px(hinge),
+		Size = UDim2.fromOffset(size, 1.25 * size),
+		ZIndex = depthZ(hinge.Y),
+	})
+	if not Art.label(holder, "tiles/leaf_" .. turn, Vector2.new(size / 2, 0.625 * size), Vector2.new(size, 1.25 * size), false, { Name = "Leaf" }) then
+		holder:Destroy()
+		return
+	end
+	self.leaves[tile] = holder
+	if animate then
+		-- it swings up off the deck
+		local sc = Util.scaler(holder)
+		sc.Scale = 0.2
+		Util.tween(sc, 0.45, { Scale = 1 }, Enum.EasingStyle.Back)
+	end
+end
+
+-- Clockwork Cove's two cogs ({ a, b } or nil): each shows how far it carries you.
+function BoardView:setCogs(gears: { number }?)
+	local cogs = {}
+	if gears and gears[1] and gears[2] then
+		local a, b = gears[1], gears[2]
+		local pa, pb = self.board.pathFromStart[a], self.board.pathFromStart[b]
+		local gain = if pa and pb then #pb - #pa else b - a
+		cogs[a], cogs[b] = gain, -gain
+	end
+	local changed = {}
+	for t in self.cogs do
+		if cogs[t] == nil then
+			changed[t] = true
+		end
+	end
+	for t, n in cogs do
+		if self.cogs[t] ~= n then
+			changed[t] = true
+		end
+	end
+	self.cogs = cogs
+	for t in changed do
+		self:_paintTile(t)
+	end
+end
+
+-- The gears turn with a clank: the cogs jolt twice (the riders follow as moves).
+function BoardView:turnCogs(speed: number?)
+	local pace = 1 / math.max(speed or 1, 0.25)
+	for t in self.cogs do
+		local parts = self.tileParts[t]
+		if parts then
+			Util.bump(parts.root, 0.08)
+			task.delay(0.22 * pace, function()
+				Util.bump(parts.root, 0.06)
+			end)
+			self:puff(self:tileWorld(t), C.sun)
+		end
+	end
+	Sound.play("place", 1.4)
+	task.delay(0.22 * pace, function()
+		Sound.play("place", 1.2)
+	end)
+end
+
 function BoardView:applySnapshot(snap)
 	-- natural traps (permanent, or placed by the Naturalist)
 	local natural = {}
@@ -1284,6 +1823,15 @@ function BoardView:applySnapshot(snap)
 	if snap.ghosts and #snap.ghosts > 0 then
 		self:setGhosts(snap.ghosts)
 	end
+	-- the new maps: cracked ice, the Kraken's mark, the drawbridge, the cogs
+	local cracks = {}
+	for _, tile in snap.cracks or {} do
+		cracks[tile] = true
+	end
+	self:setCracks(cracks)
+	self:setKraken(snap.kraken)
+	self:setBridges(snap.bridges)
+	self:setCogs(snap.gears)
 	-- pawns
 	for _, p in snap.players do
 		local pawn = self.pawns[p.seat]
@@ -1490,7 +2038,7 @@ function BoardView:_arrange(instant: boolean?)
 		local n = count[tile] or 0
 		if (self.cover[tile] or 0) ~= n then
 			self.cover[tile] = n
-			parts.label.Visible = parts.numbered and not busy(parts) and n == 0
+			parts.label.Visible = parts.numbered and not busyTile(parts) and n == 0
 		end
 	end
 end
@@ -1994,6 +2542,25 @@ function BoardView:hop(seat: number, path: { number }, kind: string, trailId: st
 		s.Scale = 0.85
 		Util.tween(s, 0.18, { Scale = 1 }, Enum.EasingStyle.Back)
 		Sound.play("step", 0.8)
+	elseif kind == "gears" then
+		-- Clockwork Cove: the gears swing you over to the other cog in one arc
+		local tile = path[#path]
+		pawn.tile = tile
+		local target = self:_restPosition(seat)
+		local t = 0.7 * pace
+		local frame = pawn.frame :: Frame
+		frame.ZIndex = depthZ(math.max(target.Y, frame.Position.Y.Offset))
+		Util.tween(pawn.frame, t, { Position = px(target) }, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+		Util.tween(pawn.lift, t * 0.5, { Position = UDim2.fromOffset(0, -2 * U) }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+		Sound.play("whoosh", 0.9)
+		task.wait(t * 0.5)
+		Util.tween(pawn.lift, t * 0.5, { Position = UDim2.new() }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		task.wait(t * 0.5)
+		local s = Util.scaler(pawn.lift)
+		s.Scale = 0.85
+		Util.tween(s, 0.18, { Scale = 1 }, Enum.EasingStyle.Back)
+		Sound.play("step", 0.8)
+		self:follow(tile)
 	else
 		local tile = path[#path]
 		local s = Util.scaler(pawn.lift)
@@ -2124,9 +2691,15 @@ function BoardView:previewTile(tile: number?, item: string?, color: Color3?)
 	local look = LOOKS[item]
 	local shown = nil
 	if item == "conveyor" then
+		-- the tile turned into a belt, its ridges running on along the trail
+		local conveyor = LOOKS.conveyor
 		local ahead = self.board.forward[tile] and self.board.forward[tile][1]
 		local v = if ahead then self.ground[ahead] - self.ground[tile] else Vector2.new(1, 0)
-		shown = belt(g, math.deg(math.atan2(v.Y, v.X)), 3, 0, mid)
+		shown = self:_drawLook(g, conveyor, r, 2, 0, mid, nil)
+		if shown then
+			local band = self:_tileShape(g, mid, r - BEVEL * U, hex(string.sub(conveyor.bands.color, 2)), 3, "Bands")
+			Util.new("UIGradient", { Rotation = math.deg(math.atan2(v.Y, v.X)), Transparency = bands(0, conveyor.bands), Parent = band })
+		end
 	elseif look then
 		if hidden then
 			local fr = r - BEVEL * U
@@ -2136,7 +2709,7 @@ function BoardView:previewTile(tile: number?, item: string?, color: Color3?)
 				ZIndex = 2,
 			})
 		end
-		shown = self:_drawLook(g, look, r, if look.cover then 2 else 4, if hidden then HIDDEN else 0, mid)
+		shown = self:_drawLook(g, look, r, if look.face then 2 else 4, if hidden then HIDDEN else 0, mid, parts and parts.angle)
 	end
 	if not shown then
 		local at = UDim2.fromOffset(mid.X, mid.Y)

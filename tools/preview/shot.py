@@ -238,7 +238,19 @@ def draw_op(canvas, op, scale):
     if img and img.get("id"):
         ia = (1 - img.get("t", 0)) * a
         if ia > 0.003 and img["id"].startswith("art:"):
-            draw_art(layer, img, x0, y0, w, h, ia)
+            if op.get("gr") and bg_alpha <= 0.003:
+                # a UIGradient tints (and fades) the image itself, as in Roblox
+                part = Image.new("RGBA", layer.size, (0, 0, 0, 0))
+                draw_art(part, img, x0, y0, w, h, ia)
+                g = gradient_image(int(math.ceil(w)), int(math.ceil(h)), op["gr"], (255, 255, 255))
+                full = Image.new("RGBA", layer.size, (255, 255, 255, 255))
+                full.paste(g, (pad, pad))
+                r_, g_, b_, a_ = part.split()
+                gr_, gg_, gb_, ga_ = full.split()
+                part = Image.merge("RGBA", (_mul(r_, gr_), _mul(g_, gg_), _mul(b_, gb_), _mul(a_, ga_)))
+                layer.alpha_composite(part)
+            else:
+                draw_art(layer, img, x0, y0, w, h, ia)
         elif ia > 0.003 and "rbxthumb" in img["id"]:
             # an avatar headshot: a stand-in head
             cx, cy, r = (x0 + x1) / 2, (y0 + y1) / 2, min(w, h) * 0.42

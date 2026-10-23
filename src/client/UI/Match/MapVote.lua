@@ -60,7 +60,7 @@ local function flagColor(i: number, option): Color3
 end
 
 -- The hazard each map is known for, as its sticker.
-local HAZARD_ART = { river = "river", gate = "gate", slime = "slime", lava = "lava" }
+local HAZARD_ART = { river = "river", gate = "gate", slime = "slime", lava = "lava", thinice = "thinice", kraken = "kraken", drawbridge = "drawbridge" }
 
 -- A little picture of a place: its sea, an island in its land colours, the hazard.
 local function picture(parent: Instance, mapId: string): Frame

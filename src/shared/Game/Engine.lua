@@ -176,6 +176,12 @@ function Engine.new(opts)
 	self.ghostAt = {} -- [tile] = ghost number
 	self.lava = {} -- Mount Kaboom: the lava stream tiles (natural "lava")
 	self.wanted = nil :: { seat: number, pot: number, most: boolean? }? -- the price on the leader's head
+	self.cracks = {} -- Frostbite Floes: [tile] = the round its thin ice cracked
+	self.kraken = nil :: number? -- Kraken's Reach: the tile the tentacle will slam
+	self.bridges = {} -- Clockwork Cove: { { tiles, phase, up } }, raised in turns (Engine.bridgeUp)
+	self.bridge = {} -- [tile] = its drawbridge
+	self.raised = {} -- [tile] = true while its drawbridge is up
+	self.gears = nil :: { number }? -- Clockwork Cove: the two cogs
 	self.teleporters = {} -- tiles, in placement order (pairs: 1-2, 3-4, ...)
 	self.placeOrder = 0
 	self.stock = {}
@@ -366,6 +372,27 @@ function Engine:start()
 		end
 	end
 	table.sort(self.lava)
+	-- Clockwork Cove (whatever is past the end of a short board is left out)
+	for _, span in self.map.drawbridges or {} do
+		local tiles = {}
+		for _, tile in span do
+			if tile < self.board.treasure then
+				table.insert(tiles, tile)
+			end
+		end
+		if #tiles > 0 then
+			local b = { tiles = tiles, phase = #self.bridges, up = false }
+			table.insert(self.bridges, b)
+			for _, tile in tiles do
+				self.bridge[tile] = b
+			end
+		end
+	end
+	self:_setBridges(1)
+	local gears = self.map.gears
+	if gears and gears[2] < self.board.treasure then
+		self.gears = { gears[1], gears[2] }
+	end
 	for _, tile in self.map.ghosts or {} do
 		if tile < self.board.treasure - 1 then
 			table.insert(self.ghosts, tile)
@@ -412,6 +439,10 @@ function Engine:start()
 		table.insert(setup.players, { seat = p.index, character = p.character, team = p.team, wanted = p.wanted })
 	end
 	self:_emit(setup)
+	-- Kraken's Reach: the first tentacle rises
+	if self.map.kraken then
+		self:_markKraken()
+	end
 
 	-- starting cards: one assist card each (house rules: up to three), plus the Trapper's
 	-- trap and the Fire Starter's Fire; never a banned card
@@ -678,7 +709,266 @@ function Engine:_endRound()
 			end
 		end
 	end
+	if self.kraken and self.phase ~= "over" then
+		self:_krakenSlam()
+	end
+	if self.gears and self.phase ~= "over" then
+		self:_turnGears()
+	end
+	if #self.bridges > 0 and self.phase ~= "over" then
+		self:_turnBridges()
+	end
+	-- Frostbite Floes: the open water freezes over again, and so does a crack by the
+	-- end of the round after it appeared
+	local frozen = {}
+	for tile, kind in self.natural do
+		if kind == "hole" then
+			table.insert(frozen, tile)
+		end
+	end
+	for tile, round in self.cracks do
+		if round < self.round then
+			self.cracks[tile] = nil
+			if not table.find(frozen, tile) then
+				table.insert(frozen, tile)
+			end
+		end
+	end
+	if #frozen > 0 then
+		table.sort(frozen)
+		for _, tile in frozen do
+			self.natural[tile] = "thinice"
+		end
+		self:_emit({ t = "refreeze", tiles = frozen })
+	end
 	self:_postWanted()
+end
+
+---------------------------------------------------------------------------
+-- the new maps: thin ice, the Kraken, the drawbridge and the gears
+---------------------------------------------------------------------------
+
+--[[
+	Frostbite Floes: landing on thin ice cracks it; landing on it cracked (or in the open
+	water where it gave way) and you fall in: Frozen, and the current under the ice carries
+	you back a little (the ice is open water till the round ends). Ice Skates glide you off
+	it; the Naturalist is too light to crack it. Returns whether you fell in.
+]]
+function Engine:_iceUnder(p, tile: number): boolean
+	if p.character == "naturalist" then
+		return false
+	end
+	local kind = self.natural[tile]
+	if kind == "thinice" and not self.cracks[tile] then
+		self.cracks[tile] = self.round
+		self:_emit({ t = "ice", p = p.index, tile = tile, state = "cracked" })
+		return false
+	end
+	if removeCard(p, "skates") then
+		self:_emit({ t = "useCard", p = p.index, item = "skates", tile = tile, why = "ice" })
+		return false
+	end
+	if kind == "thinice" then
+		self.natural[tile] = "hole"
+		self.cracks[tile] = nil
+	end
+	self:_emit({ t = "ice", p = p.index, tile = tile, state = if kind == "thinice" then "broken" else "splash" })
+	self:_setStatus(p, "frozen", "ice", Rules.IceFrozen)
+	if (Rules.IceSlip or 0) > 0 then
+		self:_shiftBack(p, Rules.IceSlip, "slip")
+		self:_land(p, true)
+	end
+	return true
+end
+
+-- Kraken's Reach: the tentacle rises over a tile a few ahead of whoever leads the race.
+function Engine:_markKraken()
+	local board = self.board
+	local leader, best = nil, -math.huge
+	for _, p in self.players do
+		local pr = self:progress(p)
+		if pr > best then
+			leader, best = p, pr
+		end
+	end
+	if not leader then
+		return
+	end
+	local function ok(tile: number?): boolean
+		return tile ~= nil and tile ~= board.start and tile ~= board.treasure
+	end
+	local options = {}
+	local cur = leader.tile
+	for step = 1, Rules.KrakenAhead[2] do
+		cur = board.nextMain[cur]
+		if not ok(cur) then
+			break
+		end
+		if step >= Rules.KrakenAhead[1] then
+			table.insert(options, cur)
+		end
+	end
+	if #options == 0 then
+		-- (nearly home: it rises behind them instead)
+		cur = leader.tile
+		for step = 1, Rules.KrakenAhead[2] do
+			cur = board.prevMain[cur]
+			if not ok(cur) then
+				break
+			end
+			if step >= 2 then
+				table.insert(options, cur)
+			end
+		end
+	end
+	if #options == 0 then
+		self.kraken = nil
+		return
+	end
+	self.kraken = options[self.rng:int(1, #options)]
+	self:_emit({ t = "krakenMark", tile = self.kraken, zone = self:krakenZone() })
+end
+
+-- The tiles the tentacle comes down on: its mark and the ones either side.
+function Engine:krakenZone(): { number }
+	local tile = self.kraken
+	if not tile then
+		return {}
+	end
+	local board = self.board
+	local zone = { tile }
+	local before, after = board.prevMain[tile], board.nextMain[tile]
+	if before and before ~= board.start then
+		table.insert(zone, 1, before)
+	end
+	if after and after ~= board.treasure then
+		table.insert(zone, after)
+	end
+	return zone
+end
+
+-- At the end of the round the tentacle slams down: whoever is in its zone is dragged
+-- back (a Harpoon fends it off), and it rises again somewhere new.
+function Engine:_krakenSlam()
+	local zone = {}
+	for _, tile in self:krakenZone() do
+		zone[tile] = true
+	end
+	local hit = {}
+	for _, p in self.players do
+		-- (sea creatures leave the Naturalist be)
+		if zone[p.tile] and p.character ~= "naturalist" then
+			table.insert(hit, p.index)
+		end
+	end
+	self:_emit({ t = "krakenSlam", tile = self.kraken, zone = self:krakenZone(), hit = hit })
+	for _, seat in hit do
+		if self.phase == "over" then
+			return
+		end
+		local p = self.players[seat]
+		if removeCard(p, "harpoon") then
+			self:_emit({ t = "useCard", p = seat, item = "harpoon", tile = p.tile, why = "kraken" })
+		else
+			self:_emit({ t = "grabbed", p = seat, tile = p.tile })
+			self:_shiftBack(p, Rules.KrakenDrag, "kraken")
+			self:_land(p, true)
+		end
+	end
+	self.kraken = nil
+	if self.phase ~= "over" then
+		self:_markKraken()
+	end
+end
+
+-- Clockwork Cove: whether a drawbridge is up in a round. They go up in turns: the
+-- first in even rounds, the second in odd ones (`phase`).
+function Engine.bridgeUp(round: number, phase: number?): boolean
+	return (round + (phase or 0)) % 2 == 0
+end
+
+-- Each drawbridge up or down for `round` (and which tiles are a gap for it).
+function Engine:_setBridges(round: number)
+	table.clear(self.raised)
+	for _, b in self.bridges do
+		b.up = Engine.bridgeUp(round, b.phase)
+		if b.up then
+			for _, tile in b.tiles do
+				self.raised[tile] = true
+			end
+		end
+	end
+end
+
+-- The round ends: the drawbridges swap, one going up (tipping whoever is on it into
+-- the water) as the other comes down.
+function Engine:_turnBridges()
+	local tipped = {}
+	for _, p in self.players do
+		local b = self.bridge[p.tile]
+		-- (the Naturalist just swims across)
+		if b and not b.up and Engine.bridgeUp(self.round + 1, b.phase) and p.character ~= "naturalist" then
+			table.insert(tipped, p)
+		end
+	end
+	self:_setBridges(self.round + 1)
+	local list = {}
+	for _, p in tipped do
+		table.insert(list, p.index)
+	end
+	self:_emit({ t = "bridge", bridges = self:_bridgeList(), tipped = list })
+	for _, p in tipped do
+		if self.phase == "over" then
+			return
+		end
+		-- back off the span, then the rest of the way
+		local n = 0
+		while self.bridge[p.tile] and #p.trail > 1 and n < 6 do
+			self:_shiftBack(p, 1, "tipped")
+			n += 1
+		end
+		self:_shiftBack(p, math.max(0, Rules.BridgeTip - n), "tipped")
+		self:_land(p, true)
+	end
+end
+
+-- The drawbridges as the screen sees them: { { tiles, up } }.
+function Engine:_bridgeList()
+	local out = {}
+	for _, b in self.bridges do
+		table.insert(out, { tiles = copyList(b.tiles), up = b.up })
+	end
+	return out
+end
+
+-- The gears turn: whoever stands on a cog is carried to the other one.
+function Engine:_turnGears()
+	local a, b = self.gears[1], self.gears[2]
+	local riders = {}
+	for _, p in self.players do
+		if p.tile == a or p.tile == b then
+			table.insert(riders, { p = p, to = if p.tile == a then b else a })
+		end
+	end
+	if #riders == 0 then
+		return
+	end
+	local moves = {}
+	for _, r in riders do
+		table.insert(moves, { p = r.p.index, from = r.p.tile, to = r.to })
+	end
+	self:_emit({ t = "gears", moves = moves })
+	for _, r in riders do
+		self:_warpTo(r.p, r.to, "gears")
+	end
+	for _, r in riders do
+		if self.phase == "over" then
+			return
+		end
+		if r.p.tile == r.to then
+			self:_land(r.p, true, true)
+		end
+	end
 end
 
 ---------------------------------------------------------------------------
@@ -1291,8 +1581,16 @@ function Engine.walkPlan(state, p, m: number, leap: boolean?)
 	local boots = count(p.hand, "boots")
 	local lanterns = count(p.hand, "lantern")
 	local cloaks = count(p.hand, "cloak")
+	local skates = count(p.hand, "skates")
+	local grapples = count(p.hand, "grapple")
 	local shields = count(p.hand, "shield")
 	local ghostAt = state.ghostAt or {}
+	-- Clockwork Cove: a raised drawbridge (a Grappling Hook swings you over, for free;
+	-- the Naturalist swims the gap)
+	local raised = state.raised or {}
+	local swing = false
+	-- Frostbite Floes: cracked ice gives way under whoever walks onto it
+	local cracks = state.cracks or {}
 	-- the Naturalist (and a Gambler's Double Down, `leap`) goes straight through hazards
 	local wild = p.character == "naturalist" or leap == true
 	local plan = { path = {}, tile = p.tile, result = "landed", uses = {}, slowed = nil, crumbles = {} }
@@ -1311,6 +1609,20 @@ function Engine.walkPlan(state, p, m: number, leap: boolean?)
 		end
 		if not nxt then
 			break
+		end
+		if not raised[nxt] then
+			swing = false
+		elseif not swing and not wild then
+			if grapples > 0 then
+				grapples -= 1
+				swing = true
+				table.insert(plan.uses, { item = "grapple", tile = nxt, why = "bridge" })
+			else
+				plan.result = "blocked"
+				plan.blockedAt = nxt
+				plan.hazard = "drawbridge"
+				break
+			end
 		end
 		-- walls: you can't move past one unless you move 5+; landing on it is fine
 		local piece = state.placed[nxt]
@@ -1331,7 +1643,9 @@ function Engine.walkPlan(state, p, m: number, leap: boolean?)
 		end
 		cur = nxt
 		table.insert(plan.path, nxt)
-		left -= 1
+		if not (swing and raised[nxt]) then
+			left -= 1
+		end
 		if nxt == board.treasure then
 			plan.result = "treasure"
 			break
@@ -1349,11 +1663,19 @@ function Engine.walkPlan(state, p, m: number, leap: boolean?)
 			end
 		end
 		-- hazards stop you on them (slime only drags you back a few steps), unless you
-		-- carry the card that gets you past
+		-- carry the card that gets you past (thin ice only once it has cracked)
 		local nat = state.natural[nxt]
+		if nat == "thinice" and not cracks[nxt] then
+			nat = nil
+		end
 		if nat and not wild and left > 0 then
 			local counter = Items.naturalCounter[nat]
-			local have = if counter == "key" then keys elseif counter == "bridge" then bridges elseif counter == "cloak" then cloaks else boots
+			local have = if counter == "key"
+				then keys
+				elseif counter == "bridge" then bridges
+				elseif counter == "cloak" then cloaks
+				elseif counter == "skates" then skates
+				else boots
 			if have > 0 then
 				if counter == "key" then
 					keys -= 1
@@ -1361,6 +1683,8 @@ function Engine.walkPlan(state, p, m: number, leap: boolean?)
 					bridges -= 1
 				elseif counter == "cloak" then
 					cloaks -= 1
+				elseif counter == "skates" then
+					skates -= 1
 				else
 					boots -= 1
 				end
@@ -1446,7 +1770,7 @@ function Engine:_walk(p, m: number): string
 	end
 	flush()
 	if plan.result == "blocked" then
-		self:_emit({ t = "blocked", p = p.index, tile = plan.blockedAt })
+		self:_emit({ t = "blocked", p = p.index, tile = plan.blockedAt, why = plan.hazard })
 	elseif plan.result == "stopped" then
 		self:_emit({ t = "natural", p = p.index, kind = plan.hazard, tile = p.tile })
 	elseif plan.result == "scared" then
@@ -1611,6 +1935,11 @@ function Engine:_land(p: any, forced: boolean?, teleported: boolean?): ()
 		end
 	end
 	if p.tile ~= tile then
+		return
+	end
+	-- Frostbite Floes: thin ice under you
+	local kind = self.natural[tile]
+	if (kind == "thinice" or kind == "hole") and self:_iceUnder(p, tile) then
 		return
 	end
 	local token = self.tokens[tile]
@@ -2656,6 +2985,18 @@ function Engine:snapshot(forSeat: number?)
 		wanted = if self.wanted then { seat = self.wanted.seat, pot = self.wanted.pot, most = self.wanted.most == true } else nil,
 		ghosts = copyList(self.ghosts),
 		erupting = self:eruptsThisRound(),
+		-- the new maps: cracked ice, the Kraken's mark, the drawbridge, the cogs
+		cracks = (function()
+			local list = {}
+			for tile in self.cracks do
+				table.insert(list, tile)
+			end
+			table.sort(list)
+			return list
+		end)(),
+		kraken = if self.kraken then { tile = self.kraken, zone = self:krakenZone() } else nil,
+		bridges = if #self.bridges > 0 then self:_bridgeList() else nil,
+		gears = if self.gears then copyList(self.gears) else nil,
 	}
 	if forSeat and self.players[forSeat] then
 		local me = self.players[forSeat]

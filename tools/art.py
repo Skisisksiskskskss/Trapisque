@@ -41,9 +41,10 @@ STRIP = 256  # rows per strip of a sheet's pixels in ArtData (each unpacks to 1 
 
 # the groups (a folder of SVGs and/or a generator, art/<group>.py), and which share runs of
 # sheets: the props, the ground's little things and the portraits together, the pieces
-# and what the board shows on its tiles (art/items.py)
-GROUPS = ["props", "ground", "portraits", "pieces", "items"]
-RUNS = [("scenery", ["props", "ground", "portraits"]), ("pieces", ["pieces", "items"])]
+# and what the board shows on its tiles (art/items.py: things on a tile; art/tiles.py:
+# what a tile turns into, and what stands across the trail facing it)
+GROUPS = ["props", "ground", "portraits", "pieces", "items", "tiles"]
+RUNS = [("scenery", ["props", "ground", "portraits"]), ("pieces", ["pieces", "items", "tiles"])]
 
 
 def svg_size(svg: str):

@@ -631,6 +631,17 @@ function MapArt.draw(layers: { [string]: Frame }, L, U: number)
 			splash = foam,
 		}, 10, "River", depth, i * 1.7)
 	end
+	-- (a canal: the same, a little wider, under the drawbridge)
+	for i, r in L.canals or {} do
+		stream(trail, L, U, r, {
+			width = 0.46,
+			lip = lip,
+			bank = Util.mix(cliff, cliffDark, 0.35),
+			edge = foam,
+			fill = water,
+			splash = foam,
+		}, 10, "Canal", depth, i * 3.1)
+	end
 	local lava = col.lava or C.coral
 	local glow = col.lavaGlow or C.sun
 	for i, r in L.lava or {} do

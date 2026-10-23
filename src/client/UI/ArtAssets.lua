@@ -10,6 +10,8 @@ return {
 	scenery_1 = 0,
 	scenery_2 = 0,
 	scenery_3 = 0,
+	scenery_4 = 0,
 	pieces_1 = 0,
 	pieces_2 = 0,
+	pieces_3 = 0,
 }

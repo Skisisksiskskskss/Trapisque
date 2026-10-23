@@ -333,6 +333,15 @@ function MatchScreen:_viewFrom(snap, noHand: boolean?)
 	for i, tile in snap.ghosts or {} do
 		ghostAt[tile] = i
 	end
+	-- the new maps: cracked ice, the drawbridges
+	local cracks = {}
+	for _, tile in snap.cracks or {} do
+		cracks[tile] = true
+	end
+	local bridges = {}
+	for _, b in snap.bridges or {} do
+		table.insert(bridges, { tiles = copy(b.tiles), up = b.up == true })
+	end
 	return {
 		round = snap.round or 1,
 		current = snap.current,
@@ -344,6 +353,10 @@ function MatchScreen:_viewFrom(snap, noHand: boolean?)
 		ghosts = copy(snap.ghosts),
 		ghostAt = ghostAt,
 		erupting = snap.erupting == true,
+		cracks = cracks,
+		kraken = if snap.kraken then { tile = snap.kraken.tile, zone = copy(snap.kraken.zone) } else nil,
+		bridges = bridges,
+		gears = if snap.gears then copy(snap.gears) else nil,
 		dice = copy(snap.dice),
 		gold = snap.gold,
 		chosen = nil,
@@ -381,7 +394,24 @@ function MatchScreen:_viewAsSnap()
 	for tile, owner in v.embers do
 		table.insert(embers, { tile = tile, owner = owner })
 	end
-	return { players = players, tokens = tokens, placed = placed, natural = natural, embers = embers, traps = v.traps }
+	local cracks = {}
+	for tile in v.cracks or {} do
+		table.insert(cracks, tile)
+	end
+	return {
+		players = players,
+		tokens = tokens,
+		placed = placed,
+		natural = natural,
+		embers = embers,
+		traps = v.traps,
+		ghosts = v.ghosts,
+		wanted = v.wanted,
+		cracks = cracks,
+		kraken = v.kraken,
+		bridges = if v.bridges and #v.bridges > 0 then v.bridges else nil,
+		gears = v.gears,
+	}
 end
 
 function MatchScreen:_build(container: Frame)
@@ -1527,6 +1557,9 @@ function MatchScreen:_play(e)
 			Sound.music(nil)
 		end)
 		self:_refresh()
+	elseif t == "natural" and (e.kind == "hole" or e.kind == "thinice") then
+		-- (walked into open water: the "ice" that follows tells it)
+		return
 	elseif t == "natural" then
 		Effects.natural(board, e.kind, e.tile, e.drag)
 		if e.drag then
@@ -1556,6 +1589,73 @@ function MatchScreen:_play(e)
 		board:erupt(1 / math.max(speed, 0.25))
 		Overlays.shout(self.fx, "KABOOM!", C.orange, speed, "The volcano erupts!")
 		feed:add("KABOOM! The volcano erupts: anyone in a lava stream gets scorched", C.orange, "volcano", C.orange)
+	elseif t == "ice" then
+		-- Frostbite Floes: thin ice cracks under someone, or gives way
+		if e.state == "cracked" then
+			v.cracks[e.tile] = true
+			board:crackIce(e.tile, "cracked")
+			feed:add("The ice cracks under " .. self:_tag(e.p) .. ". The next one on it falls in!", nil, "skates", C.sky)
+		else
+			if e.state == "broken" then
+				v.cracks[e.tile] = nil
+				v.natural[e.tile] = "hole"
+			end
+			board:crackIce(e.tile, e.state)
+			board:setMood(e.p, "shock", 1.4)
+			feed:add(self:_tag(e.p) .. " fell through the ice, and the current carries them back " .. tostring(Rules.IceSlip or 0) .. "!", nil, "skates", C.sky)
+		end
+	elseif t == "refreeze" then
+		for _, tile in e.tiles or {} do
+			v.natural[tile] = "thinice"
+			v.cracks[tile] = nil
+		end
+		board:refreeze(e.tiles or {})
+		feed:add("The open water freezes over again", C.sky, "skates", C.sky)
+	elseif t == "krakenMark" then
+		-- Kraken's Reach: the tentacle rises over its next mark
+		v.kraken = { tile = e.tile, zone = copy(e.zone) }
+		board:setKraken(v.kraken)
+		Sound.play("splash", 0.8)
+		feed:add("A tentacle rises from the deep... it slams down when the round ends!", C.pink, "harpoon", C.pink)
+	elseif t == "krakenSlam" then
+		local hit = e.hit or {}
+		Overlays.shout(self.fx, "KRAKEN!", C.pink, speed, if #hit > 0 then "The tentacle slams down!" else "The tentacle slams down... and misses")
+		board:krakenSlam(1 / math.max(speed, 0.25))
+		v.kraken = nil
+		if #hit == 0 then
+			feed:add("The Kraken slams down on empty tiles", C.pink, "harpoon", C.pink)
+		end
+	elseif t == "grabbed" then
+		board:setMood(e.p, "shock", 1.4)
+		feed:add("The Kraken drags " .. self:_tag(e.p) .. " back " .. tostring(Rules.KrakenDrag) .. "!", nil, "harpoon", C.pink)
+	elseif t == "bridge" then
+		-- Clockwork Cove: the drawbridges swap, one up as the other comes down
+		v.bridges = {}
+		for _, b in e.bridges or {} do
+			table.insert(v.bridges, { tiles = copy(b.tiles), up = b.up == true })
+		end
+		board:setBridges(v.bridges, true)
+		local tipped = {}
+		for _, seat in e.tipped or {} do
+			table.insert(tipped, self:_tag(seat))
+			board:setMood(seat, "shock", 1.4)
+		end
+		if #tipped > 0 then
+			feed:add("The drawbridges swap: " .. table.concat(tipped, ", ") .. " slid off the one going up!", C.sun, "grapple", C.sun)
+		elseif #v.bridges > 1 then
+			feed:add("The drawbridges swap: one goes up as the other comes down", C.sun, "grapple", C.sun)
+		else
+			feed:add(if v.bridges[1] and v.bridges[1].up then "The drawbridge goes up!" else "The drawbridge comes down: the way is open", C.sun, "grapple", C.sun)
+		end
+	elseif t == "gears" then
+		board:turnCogs(1 / math.max(speed, 0.25))
+		local names = {}
+		for _, m in e.moves or {} do
+			table.insert(names, self:_tag(m.p))
+		end
+		if #names > 0 then
+			feed:add("Clank! The gears carry " .. table.concat(names, ", ") .. " to the other cog", C.sun, "gear", C.sun)
+		end
 	elseif t == "doubleDown" then
 		v.double = true
 		board:floatText(self:_pawnWorld(e.p), "Double down!", C.sun, 26)
@@ -1582,6 +1682,10 @@ function MatchScreen:_play(e)
 		else
 			feed:add((e.name or "A player") .. " dropped in and took over a bot's seat!", C.mint, "people", C.mint)
 		end
+	elseif t == "blocked" and e.why == "drawbridge" then
+		board:floatText(board:tileWorld(e.tile), "Bridge up!", C.sun, 28)
+		Sound.play("place", 0.7)
+		feed:add("The drawbridge is up: " .. self:_tag(e.p) .. " can't cross (a Grappling Hook swings you over)", nil, "grapple", C.sun)
 	elseif t == "blocked" then
 		Effects.blocked(board, e.tile)
 		feed:add("A Wall stops " .. self:_tag(e.p), nil, "wall", C.trap)
@@ -1639,7 +1743,13 @@ function MatchScreen:_play(e)
 		self:_lose(e.p, e.item)
 		local from = if e.p == self.mySeat then self:_handSpot(nil) else self:_chipSpot(e.p)
 		Overlays.flyCard(self.fly, e.item, from, self:_pawnSpot(e.p), speed)
-		local why = if e.why == "shortcut" then " on a shortcut" elseif e.why == "ghost" then " to scare off a ghost" elseif e.why == "lava" then " against the lava" else ""
+		local why = if e.why == "shortcut" then " on a shortcut"
+			elseif e.why == "ghost" then " to scare off a ghost"
+			elseif e.why == "lava" then " against the lava"
+			elseif e.why == "ice" then " and glided off the cracked ice"
+			elseif e.why == "kraken" then " and fended off the Kraken"
+			elseif e.why == "bridge" then " and swung over the gap"
+			else ""
 		feed:add(self:_tag(e.p) .. " used " .. (if def then def.name else "a card") .. why, nil, e.item, Theme.Category[def and def.category or "assist"])
 	elseif t == "xray" then
 		-- my X-Ray: every hidden trap shows up
@@ -2034,7 +2144,15 @@ function MatchScreen:_planFor(key: any)
 	if back or backDie then
 		return Engine.backPlan({ trail = v.trail }, steps), steps, true
 	end
-	local state = { board = self.board.board, natural = v.natural, placed = v.placed, ghostAt = v.ghostAt }
+	local raised = {}
+	for _, b in v.bridges or {} do
+		if b.up then
+			for _, tile in b.tiles do
+				raised[tile] = true
+			end
+		end
+	end
+	local state = { board = self.board.board, natural = v.natural, placed = v.placed, ghostAt = v.ghostAt, raised = raised, cracks = v.cracks }
 	local walker = { tile = me.tile, hand = v.hand, character = me.character, trail = v.trail }
 	return Engine.walkPlan(state, walker, steps, v.double), steps, false
 end
@@ -2060,7 +2178,9 @@ function MatchScreen:_outcome(plan): { any }
 		return tags
 	end
 	if plan.result == "blocked" then
-		add("Wall", C.coral)
+		add(if plan.hazard == "drawbridge" then "Drawbridge up" else "Wall", C.coral)
+	elseif plan.result == "stopped" and (plan.hazard == "hole" or plan.hazard == "thinice") then
+		add("Open water: in you go, -" .. tostring(Rules.IceSlip or 0), C.sky)
 	elseif plan.result == "stopped" then
 		add(cap(plan.hazard or "hazard") .. " stops you", C.sky)
 	elseif plan.result == "scared" then
@@ -2068,6 +2188,9 @@ function MatchScreen:_outcome(plan): { any }
 	end
 	if v.erupting and v.natural[tile] == "lava" and not Engine.hasCard({ hand = v.hand }, "cloak") then
 		add("Eruption!", C.orange)
+	end
+	for _, tag in self:_mapTags(plan, me) do
+		table.insert(tags, tag)
 	end
 	if plan.slowed then
 		add("Slime -" .. tostring(Rules.SlimeDrag or 0), C.slime)
@@ -2107,6 +2230,49 @@ function MatchScreen:_outcome(plan): { any }
 		add("Shop", C.orange)
 	elseif token then
 		add("+1 card", Theme.Category[token] or C.lime)
+	end
+	return tags
+end
+
+-- What the new maps do to me where a plan lands: thin ice, the Kraken's mark, the
+-- drawbridge rising under me, a cog.
+function MatchScreen:_mapTags(plan, me): { any }
+	local v = self.view
+	local tags = {}
+	local tile = plan.tile
+	local function add(text: string, color: Color3)
+		table.insert(tags, { text = text, color = color })
+	end
+	local hand = { hand = v.hand }
+	if v.natural[tile] == "thinice" and me.character ~= "naturalist" then
+		if not v.cracks[tile] then
+			add("Thin ice: it cracks", C.sky)
+		elseif Engine.hasCard(hand, "skates") then
+			add("Cracked ice: Skates", C.mint)
+		else
+			add("Cracked ice: in you go, -" .. tostring(Rules.IceSlip or 0), C.sky)
+		end
+	end
+	local zone = v.kraken and v.kraken.zone
+	if zone and table.find(zone, tile) and me.character ~= "naturalist" then
+		add(if Engine.hasCard(hand, "harpoon") then "Kraken: Harpoon" else ("Kraken -" .. tostring(Rules.KrakenDrag)), C.pink)
+	end
+	for _, b in v.bridges or {} do
+		-- (they swap when the round ends: one that's down now goes up)
+		if not b.up and table.find(b.tiles, tile) and me.character ~= "naturalist" then
+			add("Bridge rises: -" .. tostring(Rules.BridgeTip), C.coral)
+		end
+	end
+	local gears = v.gears
+	if gears and (tile == gears[1] or tile == gears[2]) then
+		local board = self.board.board
+		local pa, pb = board.pathFromStart[gears[1]], board.pathFromStart[gears[2]]
+		local gain = if pa and pb then #pb - #pa else gears[2] - gears[1]
+		if tile == gears[1] then
+			add("Cog: +" .. tostring(gain), C.lime)
+		else
+			add("Cog: -" .. tostring(gain), C.coral)
+		end
 	end
 	return tags
 end

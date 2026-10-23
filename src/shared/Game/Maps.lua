@@ -2,7 +2,8 @@
 	Maps
 	The Trapisque boards, written as walks on a hex grid (see Board.lua): that gives the
 	board graph the rules use. How each map looks (the winding route through an island,
-	a fortress, a swamp, a haunted graveyard, a volcano) is the client's MapScenes.
+	a fortress, a swamp, a haunted graveyard, a volcano, ice floes, the Kraken's reefs, a
+	clockwork harbour) is the client's MapScenes.
 
 	route     main path from Start; the last tile is the Treasure
 	branches  gated shortcuts: leave the main route at `from`, rejoin at `to`.
@@ -13,6 +14,17 @@
 	          every round and scare back whoever walks into them
 	          (Mount Kaboom's natural "lava" streams stop you like rivers, and the volcano
 	          scorches whoever stands in one when it erupts)
+	          (Frostbite Floes' natural "thinice" cracks under whoever lands on it, and once
+	          cracked it gives way under whoever walks onto it: they fall in, and it's open
+	          water till the round ends)
+	kraken    (Kraken's Reach) every round a tentacle rises ahead of the leader and slams
+	          down at the end of it, dragging back whoever is on or beside its mark
+	drawbridges (Clockwork Cove) two drawbridges of two tiles each, raised in turns: the
+	          first up in even rounds, the second in odd ones (a gap you can't cross
+	          without a Grappling Hook); whoever is on one when it rises is tipped into the
+	          water
+	gears     (Clockwork Cove) two cogs: at the end of a round, whoever stands on one is
+	          carried to the other
 	counterItem the card that gets you past the map's hazard (the Assist wheel's map slot)
 ]]
 
@@ -83,6 +95,43 @@ local defs = {
 		tokenEvery = 4,
 		naturalKind = "lava",
 		counterItem = "cloak",
+	},
+	{
+		id = "frostbite",
+		name = "Frostbite Floes",
+		theme = "ice",
+		blurb = "A chain of ice floes across a frozen sea. Thin ice cracks under whoever lands on it, and gives way under the next one to step on it: fall through and you're frozen stiff. Ice Skates glide you over it.",
+		start = { 0, 0 },
+		route = "E10 NE NW W10 NW NE E10 NE NW W7",
+		natural = { [5] = "thinice", [10] = "thinice", [15] = "thinice", [20] = "thinice", [25] = "thinice", [30] = "thinice", [35] = "thinice", [40] = "thinice" },
+		tokenEvery = 4,
+		naturalKind = "thinice",
+		counterItem = "skates",
+	},
+	{
+		id = "kraken",
+		name = "Kraken's Reach",
+		theme = "deep",
+		blurb = "Reefs ringing the Kraken's whirlpool. Every round a tentacle rises ahead of whoever is leading, and when the round ends it slams down: anyone on or beside its mark is dragged back 3 tiles, unless they've a Harpoon to fend it off.",
+		start = { 0, 0 },
+		route = "E8 NE NW W8 NW NE E8 NE NW W3",
+		kraken = true,
+		tokenEvery = 4,
+		naturalKind = "kraken",
+		counterItem = "harpoon",
+	},
+	{
+		id = "clockwork",
+		name = "Clockwork Cove",
+		theme = "clockwork",
+		blurb = "A tinkerer's harbour of cogs and pistons. Its two drawbridges go up in turns: you can't cross a gap without a Grappling Hook, and whoever is on a bridge when it rises is tipped into the water. End a round on a cog and the gears carry you to the other one.",
+		start = { 0, 0 },
+		route = "E9 NE E2 NE NW W9 NW NE E9 NE NW W7",
+		drawbridges = { { 19, 20 }, { 32, 33 } },
+		gears = { 12, 22 },
+		tokenEvery = 4,
+		naturalKind = "drawbridge",
+		counterItem = "grapple",
 	},
 }
 

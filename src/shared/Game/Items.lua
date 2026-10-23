@@ -200,6 +200,32 @@ local defs = {
 		short = "Lava can't hurt you",
 		text = "Works by itself: carries you across one stream of molten lava, or keeps you safe from one eruption.",
 	},
+	{
+		id = "skates",
+		name = "Ice Skates",
+		nick = "Skates",
+		category = "assist",
+		use = "passive",
+		short = "Glide over thin ice",
+		text = "Works by itself: glides you over one patch of cracked ice or open water instead of falling in.",
+	},
+	{
+		id = "harpoon",
+		name = "Harpoon",
+		category = "assist",
+		use = "passive",
+		short = "Fend off the Kraken",
+		text = "Works by itself: when the Kraken's tentacle comes down on you, you fend it off and stay put.",
+	},
+	{
+		id = "grapple",
+		name = "Grappling Hook",
+		nick = "Grapple",
+		category = "assist",
+		use = "passive",
+		short = "Swing over a raised bridge",
+		text = "Works by itself: swings you across the drawbridge while it's up.",
+	},
 
 	-- Neutral cards (visible board pieces) -----------------------------------------
 	{
@@ -339,6 +365,10 @@ Items.naturalCounter = {
 	slime = "boots",
 	ghost = "lantern",
 	lava = "cloak",
+	thinice = "skates",
+	hole = "skates",
+	kraken = "harpoon",
+	drawbridge = "grapple",
 }
 
 function Items.get(id: string)

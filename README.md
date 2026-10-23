@@ -43,14 +43,18 @@ rendered offline (see [Screenshots](#screenshots)).
   you can reach, a Compass that sets a die to any number, board pieces (teleporters,
   the original game's Shifting Sands, conveyor belts) and potions from the Potion
   Seller (a Thief Potion steals a card from a rival).
-- **Five maps**, each a place the trail winds through: Blissful Tricks (a tropical
+- **Eight maps**, each a place the trail winds through: Blissful Tricks (a tropical
   island cut by two rivers), Junction Dungeon (a rocky sea fortress with locked gates
   and secret tunnels for its shortcuts), Slimy Snares (a swamp boardwalk spiralling
   in to the treasure, past slime pools), Haunted Hollow (a graveyard where two ghosts
-  drift back along the trail every round and scare anyone they meet) and Mount Kaboom
+  drift back along the trail every round and scare anyone they meet), Mount Kaboom
   (a volcano that erupts every third round, scorching anyone standing in its lava
-  streams). Each has its own hazard, and its own card that shrugs it off (the Lantern,
-  the Fire Cloak...). **Six modes**: Chaos (free-for-all), **Blitz** (first treasure
+  streams), Frostbite Floes (ice floes whose thin ice cracks under one player and
+  gives way under the next), Kraken's Reach (an atoll round a whirlpool, where a
+  tentacle rises ahead of the leader and drags whoever it slams back) and Clockwork
+  Cove (a tinkerer's harbour with two drawbridges that go up in turns, and two cogs
+  that swing you forward or back). Each has its own hazard, and its own card
+  that shrugs it off (the Lantern, the Fire Cloak, the Harpoon...). **Six modes**: Chaos (free-for-all), **Blitz** (first treasure
   wins, 30-second turns), Assist (2 vs 2), Factions (three teams of 2), World War Four
   (3 vs 3) and a **Weekly Event** with a twist on the rules (Trap Frenzy, Bonk
   Bonanza, Power Surge, Triple Dice). See [docs/RULES.md](docs/RULES.md) for the rules
@@ -330,8 +334,8 @@ standalone [Luau](https://github.com/luau-lang/luau/releases) CLI:
 
 ```sh
 python3 tools/bundle.py build/tests.luau tests/harness.luau tests/engine_spec.luau tests/rules_spec.luau \
-  tests/sim_spec.luau tests/clock_spec.luau tests/meta_spec.luau tests/layout_spec.luau \
-  tests/ui_layout_spec.luau tests/zz_run.luau
+  tests/maps_spec.luau tests/sim_spec.luau tests/clock_spec.luau tests/meta_spec.luau \
+  tests/layout_spec.luau tests/ui_layout_spec.luau tests/zz_run.luau
 luau build/tests.luau
 ```
 

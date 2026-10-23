@@ -38,23 +38,64 @@ for _, def in Maps.list do
 			local view = BoardView.new(holder, def.id, { rotate = rotate, mySeat = 1 })
 			view:setFocus({ x = 20, y = 20, w = w - 40, h = h - 40 }, true)
 			local board = Board.get(def)
-			local snap = { players = {}, tokens = {}, placed = {}, natural = {}, embers = {} }
+			local snap: any = { players = {}, tokens = {}, placed = {}, natural = {}, embers = {} }
+					-- the newest maps' own things: the Kraken's mark, the drawbridges (one up, one
+			-- down) and the cogs
+			local reserved = {}
+			if def.kraken then
+				snap.kraken = { tile = 12, zone = { 11, 12, 13 } }
+			end
+			if def.drawbridges then
+				snap.bridges = {}
+				for i, tiles in def.drawbridges do
+					table.insert(snap.bridges, { tiles = tiles, up = i == 1 })
+					for _, t in tiles do
+						reserved[t] = true
+					end
+				end
+			end
+			snap.gears = def.gears
+			for _, t in (snap.kraken and snap.kraken.zone) or {} do
+				reserved[t] = true
+			end
+			for _, t in def.gears or {} do
+				reserved[t] = true
+			end
 			local seats = {}
 			for i = 1, 4 do
 				seats[i] = characters[((i + #def.id) % 8) + 1]
 			end
 			Theme.setSeatCharacters(seats)
 			for i, spot in board.tokenSpots do
-				if i % 2 == 1 then
+				if i % 2 == 1 and not reserved[spot] then
 					table.insert(snap.tokens, { tile = spot, kind = ({ "trap", "assist", "neutral", "potion", "coin" })[(i % 5) + 1] })
 				end
 			end
 			for tile, kind in board.naturalInit do
 				table.insert(snap.natural, { tile = tile, kind = kind })
 			end
+			-- Frostbite Floes: one floe of thin ice cracked, one given way
+			table.sort(snap.natural, function(a, b)
+				return a.tile < b.tile
+			end)
+			local ice = {}
+			for _, n in snap.natural do
+				if n.kind == "thinice" then
+					table.insert(ice, n)
+				end
+			end
+			if ice[2] then
+				snap.cracks = { ice[2].tile }
+			end
+			if ice[3] then
+				ice[3].kind = "hole"
+			end
 			-- board pieces and hidden traps this player can see (theirs, and one a teammate
 			-- hid), on tiles with nothing else on them
 			local used = { [1] = true, [5] = true, [14] = true }
+			for t in reserved do
+				used[t] = true
+			end
 			for _, t in snap.tokens do
 				used[t.tile] = true
 			end

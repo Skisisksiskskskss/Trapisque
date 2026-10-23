@@ -8,9 +8,10 @@ place (or loads from Roblox, once you upload them):
 | File | What it draws |
 | --- | --- |
 | `pieces.py` | the playing pieces (every character in every finish), and the mastery stands |
-| `props.py` | everything that stands around the trail on the five maps, and the landmarks |
+| `props.py` | everything that stands around the trail on the eight maps, and the landmarks |
 | `ground.py` | what lies on the ground: the soft spot used for the shallows, patches and shadows, tufts, pebbles, shells, flowers, leaves, swells on the sea, and the worn faces of the tile stones |
-| `items.py` | what's on a tile, as the thing itself: things standing on it (a banana peel, spikes, a Grog in its hole, a campfire, a snare, a wall, a locked gate, a mushroom, the treasure chest, the start flag) and covers over its top (ice, mud, water, lava, slime, sand, a portal, embers, a stretch of conveyor belt) |
+| `items.py` | what stands on a tile, as the thing itself: a banana peel, spikes, a Grog in its hole, a campfire, a snare, a wall, a locked gate, a mushroom, the treasure chest, the start flag |
+| `tiles.py` | what a tile turns into when something covers it, in both tile shapes (`_round` stones, `_square` slabs), drawn bigger than the tile and cut to its outline: ice, thin ice (cracked, given way), mud, water, lava, slime, sand, a portal, embers, a conveyor's rubber, brass cogs, a drawbridge's planks and the canal under it (the board lays a conveyor's ridges and the sands' ripples on top, moving). And what stands across the trail turned to face it: a wall and a gate in seven turns, and a raised drawbridge leaf leaning sixteen ways |
 | `portraits.py` | the eight pirates, head and shoulders |
 
 The shapes of the land, the water, the trail and the tiles are still built in code

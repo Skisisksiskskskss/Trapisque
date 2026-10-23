@@ -35,6 +35,9 @@ local FAST_KINDS = {
 	sands = true,
 	bounty = true,
 	cannon = true,
+	kraken = true, -- dragged back by the Kraken
+	slip = true, -- carried back under the ice
+	tipped = true, -- slid off the drawbridge as it rose
 }
 Pacing.walkKinds = WALK_KINDS
 Pacing.fastKinds = FAST_KINDS
@@ -109,6 +112,14 @@ local fixed = {
 	erupt = 1.6, -- KABOOM
 	doubleDown = 0.6,
 	cannon = 0.5,
+	-- the new maps
+	ice = 0.9, -- thin ice cracks, or gives way: splash
+	refreeze = 0.6,
+	krakenMark = 0.9, -- the tentacle rises over its next mark
+	krakenSlam = 1.3, -- ...and slams down
+	grabbed = 0.5,
+	bridge = 1.0, -- the drawbridge swings up or down
+	gears = 0.6, -- the cogs turn (the riders' moves follow)
 }
 
 -- Ghosts float down the trail one tile at a time (BoardView.driftGhosts).
@@ -121,7 +132,7 @@ function Pacing.duration(e): number
 		elseif FAST_KINDS[e.kind] then
 			return #e.path * Pacing.FastStep + 0.3
 		end
-		return 0.8 -- warps: respawn, home, teleport, recall
+		return 0.8 -- warps: respawn, home, teleport, recall, the gears' swing
 	end
 	if e.t == "status" and e.on == false then
 		return 0.3

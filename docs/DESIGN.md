@@ -163,6 +163,31 @@ Snare's roll to break free, the Compass and the Thief Potion. The spread is the 
 as before it, 20 to 32%; the Mage and the Overseer sit lowest and the Gambler highest,
 worth watching. The 2- and 6-player tables below are from before the rework.)
 
+**The three newest maps** (4 players, Quick, 1000 games each):
+
+| 4 players, Quick | Mage | Trapper | Fire Starter | Naturalist | Warper | Overseer | Gambler | Cannoneer |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Frostbite Floes | 32.1% | 23.4% | 26.2% | 19.9% | 24.0% | 23.2% | 25.6% | 25.6% |
+| Kraken's Reach | 29.4% | 24.8% | 26.0% | 20.7% | 25.6% | 21.4% | 31.5% | 20.7% |
+| Clockwork Cove | 31.2% | 30.7% | 21.1% | 21.9% | 23.6% | 18.0% | 26.2% | 27.4% |
+
+How they were tuned (the first runs had the Naturalist at 13 to 15% on all three, and
+the Mage at 39% on Frostbite Floes):
+
+- **Frostbite Floes.** Thin ice that only froze whoever landed on it twice cost the
+  Mage nothing (he's never Frozen) and gave the Naturalist (who never cracks it)
+  nothing to walk through. Now falling in also carries you back a tile, and cracked ice
+  gives way under anyone who walks onto it, not just a landing: a hazard to walk
+  around, which the Naturalist walks across. Cracks that stayed till someone fell in
+  filled the trail and pushed the Naturalist to 40%, so a crack freezes over by the end
+  of the round after it appeared.
+- **Kraken's Reach.** The Kraken leaves the Naturalist alone (he's friends with the sea
+  creatures); 13% to 21%.
+- **Clockwork Cove.** One drawbridge stopped each player about once a match. Two,
+  raised in turns, mean one is always up somewhere ahead; the Naturalist swims the gap
+  and isn't tipped off a rising one (15% to 22%). The Overseer at 18% is about where
+  the Cannoneer sits on Junction Dungeon.
+
 2 players (500 games per map; each character plays about a quarter of them, so about
 ±9 points is noise) and 6 players (400 games per map, about ±4 points):
 

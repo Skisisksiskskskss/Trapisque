@@ -407,10 +407,20 @@ for _, l in Modes.lengths do
 	table.insert(LENGTH_OPTIONS, { text = l.name, value = l.id })
 end
 
--- A label and its choices side by side, or the label on top on narrow screens.
-local function settingRow(parent: Instance, order: number, label: string, build: (Frame) -> ())
+-- The maps in a grid: five to a row, or three on narrow screens.
+local function mapGrid(): (number, number)
 	local _, _, narrow = Widgets.room()
-	local row = Util.frame(parent, { Name = label, Size = UDim2.new(1, 0, 0, if narrow then 66 else 40), LayoutOrder = order })
+	local cols = if narrow then 3 else 5
+	local rows = math.ceil(#MAP_OPTIONS / cols)
+	return cols, rows * 36 + (rows - 1) * 6
+end
+
+-- A label and its choices side by side, or the label on top on narrow screens
+-- (`height`: the choices', when they take more than one row).
+local function settingRow(parent: Instance, order: number, label: string, build: (Frame) -> (), height: number?)
+	local _, _, narrow = Widgets.room()
+	local h = height or 40
+	local row = Util.frame(parent, { Name = label, Size = UDim2.new(1, 0, 0, if narrow then 26 + h else h), LayoutOrder = order })
 	Widgets.label(row, {
 		text = label,
 		font = "chunky",
@@ -419,7 +429,7 @@ local function settingRow(parent: Instance, order: number, label: string, build:
 		sizeUDim = if narrow then UDim2.new(1, 0, 0, 22) else UDim2.new(0, 110, 1, 0),
 	})
 	local holder = if narrow
-		then Util.frame(row, { Position = UDim2.fromOffset(0, 26), Size = UDim2.new(1, 0, 0, 40) })
+		then Util.frame(row, { Position = UDim2.fromOffset(0, 26), Size = UDim2.new(1, 0, 0, h) })
 		else Util.frame(row, { Position = UDim2.fromOffset(116, 0), Size = UDim2.new(1, -116, 1, 0) })
 	build(holder)
 	return row
@@ -429,11 +439,12 @@ function PlayPanel:_practice()
 	local mode = Modes.get(self.mode)
 	local settings = { map = "random", length = "quick", bots = 3 }
 	local roomW, _, narrow = Widgets.room()
+	local cols, gridH = mapGrid()
 	local content, close = Widgets.modal(self.popups, {
 		title = "Practice",
 		titleWidth = 220,
 		width = math.min(620, roomW),
-		height = if narrow then 470 else 380,
+		height = (if narrow then 470 else 380) + gridH - 40,
 	})
 	local list = Util.frame(content, { Size = UDim2.new(1, 0, 1, -64) })
 	Util.list(list, "y", 10, "Left", "Top")
@@ -447,10 +458,10 @@ function PlayPanel:_practice()
 		layoutOrder = 0,
 	})
 	settingRow(list, 1, "Map", function(h)
-		Widgets.choice(h, { options = MAP_OPTIONS, value = settings.map, size = UDim2.fromScale(1, 1), textSize = 15, onChange = function(v)
+		Widgets.choice(h, { options = MAP_OPTIONS, value = settings.map, size = UDim2.fromScale(1, 1), textSize = 15, columns = cols, onChange = function(v)
 			settings.map = v
 		end })
-	end)
+	end, gridH)
 	settingRow(list, 2, "Length", function(h)
 		Widgets.choice(h, { options = LENGTH_OPTIONS, value = settings.length, size = UDim2.fromScale(1, 1), onChange = function(v)
 			settings.length = v
@@ -552,8 +563,8 @@ function PlayPanel:_private()
 		save({ rules = { [key] = value } })
 	end
 	local choices = {}
-	local function choice(h: Frame, options, value, onChange, textSize: number?)
-		local c = Widgets.choice(h, { options = options, value = value, size = UDim2.fromScale(1, 1), textSize = textSize, onChange = onChange })
+	local function choice(h: Frame, options, value, onChange, textSize: number?, columns: number?)
+		local c = Widgets.choice(h, { options = options, value = value, size = UDim2.fromScale(1, 1), textSize = textSize, columns = columns, onChange = onChange })
 		if not leader then
 			c:setEnabled(false)
 		end
@@ -647,11 +658,12 @@ function PlayPanel:_private()
 			showRows()
 		end)
 	end)
+	local mapCols, mapH = mapGrid()
 	mapRow = settingRow(main, 3, "Map", function(h)
 		choice(h, MAP_OPTIONS, s.map or "random", function(v)
 			save({ map = v })
-		end, 15)
-	end)
+		end, 15, mapCols)
+	end, mapH)
 	voteRow = Util.frame(main, { Name = "VoteCards", Size = UDim2.new(1, 0, 0, if narrow then 92 else 44), LayoutOrder = 4 })
 	do
 		local half = if narrow then UDim2.new(1, 0, 0, 44) else UDim2.new(0.5, -6, 1, 0)

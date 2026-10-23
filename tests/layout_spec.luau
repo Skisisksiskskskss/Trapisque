@@ -242,13 +242,15 @@ test("every prop, ground sprite, piece, stand and portrait has its art in the sh
 		end
 	end
 	truthy(ArtAtlas.sprites["pieces/plinth_gold"], "no gold stand")
-	-- what the board shows on a tile: every card placed on it, every map feature, the
-	-- Start, the treasure, a gated shortcut, embers (a conveyor is its belt)
+	-- what the board shows on a tile: every card placed on it, every map feature (and
+	-- the newest maps' cracked ice, open water, cogs and drawbridges), the Start, the
+	-- treasure, a gated shortcut, embers. A tile turns into a face, in both tile shapes;
+	-- a thing stands on it, turned to face the trail if it does
 	local Items = requireModule("Shared/Game/Items")
 	local Board = requireModule("Shared/Game/Board")
-	local need = { start = true, treasure = true, shortcutGate = true, embers = true }
+	local need = { start = true, treasure = true, shortcutGate = true, embers = true, thinice_cracked = true, hole = true, cog = true, deck = true, gap = true }
 	for _, def in Items.list do
-		if def.use == "place" and def.id ~= "conveyor" then
+		if def.use == "place" then
 			need[def.id] = true
 		end
 	end
@@ -260,12 +262,23 @@ test("every prop, ground sprite, piece, stand and portrait has its art in the sh
 	for kind in need do
 		local look = BoardLayout.TileLooks[kind]
 		truthy(look, "nothing to show for " .. kind .. " on a tile")
-		if look then
-			local name = "items/" .. (look.cover or look.stand)
-			truthy(ArtAtlas.sprites[name], "no " .. name)
+		if look and look.face then
+			for _, shape in { "round", "square" } do
+				truthy(ArtAtlas.sprites["tiles/" .. look.face .. "_" .. shape], "no tiles/" .. look.face .. "_" .. shape)
+			end
+		elseif look then
+			truthy(ArtAtlas.sprites["items/" .. look.stand], "no items/" .. look.stand)
+			if look.facing then
+				for k = 0, 7 do
+					local turn = BoardLayout.facingTurn(k * 22.5 - 90)
+					truthy(ArtAtlas.sprites["tiles/" .. look.stand .. "_" .. turn], "no tiles/" .. look.stand .. "_" .. turn)
+				end
+			end
 		end
 	end
-	truthy(ArtAtlas.sprites["items/belt"], "no conveyor belt")
+	for k = 0, 15 do
+		truthy(ArtAtlas.sprites["tiles/leaf_" .. k], "no raised drawbridge leaf " .. k)
+	end
 	for name, sp in ArtAtlas.sprites do
 		truthy(table.find(ArtAtlas.sheets, sp.sheet), name .. "'s sheet isn't listed")
 		truthy(sp.x >= 0 and sp.y >= 0 and sp.x + sp.w <= 1024 and sp.y + sp.h <= 1024, name .. " runs off its sheet")

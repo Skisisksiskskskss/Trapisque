@@ -62,6 +62,18 @@ Fishing.catches = {
 	{ id = "tilapia", name = "Tilapia", rarity = "common", weight = 16, where = { "volcano" }, size = { 20, 45 }, look = { body = "#9AA38C", fin = "#6F7864", kind = "round" } },
 	{ id = "crab", name = "Obsidian Crab", rarity = "uncommon", weight = 9, where = { "volcano" }, size = { 10, 25 }, look = { body = "#3A3440", fin = "#F2541B", kind = "crab" } },
 	{ id = "ember", name = "Ember Eel", rarity = "rare", weight = 4, where = { "volcano" }, size = { 50, 120 }, look = { body = "#F2541B", fin = "#B83A12", kind = "eel" } },
+	-- Frostbite Floes: a frozen sea
+	{ id = "cod", name = "Arctic Cod", rarity = "common", weight = 16, where = { "frostbite" }, size = { 30, 80 }, look = { body = "#9FB4C2", fin = "#6F8797", kind = "slim" } },
+	{ id = "snowcrab", name = "Snow Crab", rarity = "uncommon", weight = 9, where = { "frostbite" }, size = { 10, 25 }, look = { body = "#E07A4F", fin = "#FFF9EF", kind = "crab" } },
+	{ id = "narwhal", name = "Narwhal", rarity = "rare", weight = 4, where = { "frostbite" }, size = { 300, 500 }, look = { body = "#B9C6CC", fin = "#7E8794", kind = "sword" } },
+	-- Kraken's Reach: the deep round a whirlpool
+	{ id = "lanternfish", name = "Lanternfish", rarity = "common", weight = 16, where = { "kraken" }, size = { 3, 15 }, look = { body = "#2F4C6E", fin = "#F4CF6B", kind = "round" } },
+	{ id = "octopus", name = "Octopus", rarity = "uncommon", weight = 9, where = { "kraken" }, size = { 30, 90 }, look = { body = "#B5485E", fin = "#F6D2D2", kind = "squid" } },
+	{ id = "oarfish", name = "Oarfish", rarity = "rare", weight = 4, where = { "kraken" }, size = { 300, 800 }, look = { body = "#C9D3DA", fin = "#D64545", kind = "eel" } },
+	-- Clockwork Cove: a tinkerer's harbour
+	{ id = "bass", name = "Harbour Bass", rarity = "common", weight = 16, where = { "clockwork" }, size = { 25, 60 }, look = { body = "#6E8B6A", fin = "#4C6A49", kind = "round" } },
+	{ id = "brasscrab", name = "Brass Crab", rarity = "uncommon", weight = 9, where = { "clockwork" }, size = { 10, 30 }, look = { body = "#E7B023", fin = "#B88A12", kind = "crab" } },
+	{ id = "tinfish", name = "Clockwork Fish", rarity = "rare", weight = 4, where = { "clockwork" }, size = { 15, 40 }, look = { body = "#B8BDC7", fin = "#E7B023", kind = "round" } },
 }
 
 Fishing.byId = {}

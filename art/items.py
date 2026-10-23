@@ -1,18 +1,12 @@
 """
-What the board shows on a tile (tools/art.py calls sprites()): instead of an icon, the
-tile turns into what's on it. Drawn like the props (lit from the upper left, a thin
-outline in a darker shade of each part's own colour, a soft shadow on the ground), on
-100 x 100 canvases, in two kinds:
-
-  - things standing on the tile (a banana peel, spikes, a Grog in its hole, a campfire,
-    a snare, a wall, a locked gate, a mushroom, the treasure chest, the start flag),
-    seen a little from the front like the pieces, standing on the canvas's point
-    (50, FOOT): the board puts that point on the tile's middle;
-  - what covers the tile's top (ice, mud, water, lava, slime, sand, a portal, embers, a
-    conveyor belt), drawn from straight above, round the canvas's middle: the board
-    squashes it onto the tile the way it squashes the ground.
-
-Each fits a tile of any shape (a round stone or a square slab).
+What stands on a tile (tools/art.py calls sprites()): instead of an icon, the thing
+itself (a banana peel, spikes, a Grog in its hole, a campfire, a snare, a wall, a locked
+gate, a mushroom, the treasure chest, the start flag), drawn like the props (lit from
+the upper left, a thin outline in a darker shade of each part's own colour, a soft
+shadow on the ground) on 100 x 100 canvases, seen a little from the front like the
+pieces, standing on the canvas's point (50, FOOT): the board puts that point on the
+tile's middle. What a tile turns into when something covers it, and the wall and gate
+turned to face the trail, are art/tiles.py's.
 """
 import math
 import os
@@ -286,144 +280,9 @@ def flag():
     return a.svg()
 
 
-# ---------------------------------------------------------------------------
-# covering the tile's top (drawn from above)
-# ---------------------------------------------------------------------------
-
-
-def ice():
-    """The tile frozen over: a sheet of ice with a frosty rim, cracks and a shine."""
-    a = art()
-    sheet = blob(50, 50, 41, 6, 0.06, 0.4)
-    a.shape(sheet, "#BDEBFF", 0.35, 0.25, outline="#5EA9D6")
-    a.group(clip=sheet)
-    a.line(blob(50, 50, 41, 6, 0.06, 0.4), "#FFFFFF", a.ow * 3, 0.55)
-    a.line("M 58 30 L 54 44 L 62 52 L 58 64", "#6FB4DD", a.ow * 0.9, 0.9)
-    a.line("M 54 44 L 40 48 L 34 60", "#6FB4DD", a.ow * 0.9, 0.9)
-    a.line("M 62 52 L 76 56", "#6FB4DD", a.ow * 0.9, 0.9)
-    a.line("M 22 44 L 42 24", "#FFFFFF", a.ow * 2.6, 0.75)
-    a.line("M 28 54 L 50 30", "#FFFFFF", a.ow * 1.4, 0.6)
-    a.end()
-    return a.svg()
-
-
-def mud():
-    """A mudslide: a wet puddle of mud, smeared the way it slides, a few splats."""
-    a = art()
-    pool = blob(50, 52, 38, 5, 0.1, 1.3)
-    a.shape(pool, "#8A5A34", 0.2, 0.3, outline="#4E2F18")
-    a.fill(blob(46, 54, 22, 4, 0.12, 0.2), "#6B4226", 0.9)
-    a.line("M 26 44 C 36 40, 48 40, 58 44", "#B07E52", a.ow * 1.4, 0.8)
-    a.line("M 34 64 C 44 60, 56 62, 68 66", "#B07E52", a.ow * 1.2, 0.7)
-    a.fill(ell(62, 40, 6, 3), "#C99A6C", 0.6)
-    for x, y, r in ((86, 30, 4.4), (14, 70, 3.6), (82, 76, 3)):
-        a.shape(blob(x, y, r, 3, 0.15, x), "#8A5A34", flat=True, outline="#4E2F18")
-    return a.svg()
-
-
-def water():
-    """The river running over the tile: shallow water with a foamy edge and ripples."""
-    a = art()
-    pool = blob(50, 50, 42, 5, 0.06, 2.1)
-    a.shape(pool, "#5FC3E4", 0.3, 0.2, outline="#2F86AE")
-    a.group(clip=pool)
-    a.line(blob(50, 50, 42, 5, 0.06, 2.1), "#E8FBFF", a.ow * 2.6, 0.8)
-    for y, x0, x1 in ((36, 30, 58), (52, 40, 74), (66, 26, 52)):
-        a.line(f"M {x0} {y} C {x0 + (x1 - x0) * 0.3} {y - 4}, {x0 + (x1 - x0) * 0.7} {y + 4}, {x1} {y}", "#FFFFFF", a.ow * 1.3, 0.75)
-    a.end()
-    return a.svg()
-
-
-def lava():
-    """Molten lava over the tile: hot in the middle, plates of dark crust riding on it."""
-    a = art()
-    a.glow(50, 50, 50, 50, "#FF8A2A", 0.45)
-    pool = blob(50, 50, 40, 5, 0.07, 0.9)
-    a.shape(pool, "#F2541B", 0.2, 0.25, outline="#7A220C")
-    a.fill(blob(50, 50, 26, 4, 0.12, 2.4), "#FF9A2A", 0.95)
-    a.fill(blob(52, 48, 13, 3, 0.15, 1.1), "#FFD45A", 0.95)
-    for d in ("M 22 40 L 32 34 L 38 42 L 30 48 Z", "M 64 64 L 76 60 L 78 70 L 68 74 Z", "M 60 24 L 70 26 L 68 32 L 60 31 Z"):
-        a.shape(d, "#4A2016", flat=True, outline="#2A0E08")
-    return a.svg()
-
-
-def slime():
-    """A slime pool over the tile: green goo, bubbling, dripping off its edge."""
-    a = art()
-    pool = blob(50, 50, 40, 6, 0.08, 0.2)
-    a.shape(pool, "#8BC93A", 0.3, 0.25, outline="#4E7E1A")
-    a.fill(blob(56, 44, 16, 3, 0.15, 0.6), "#B5E36A", 0.7)
-    for x, y, r in ((36, 40, 5), (60, 60, 4), (46, 64, 2.6), (66, 36, 2.4)):
-        a.parts.append(f'<circle cx="{x}" cy="{y}" r="{r}" fill="#CFF39A" fill-opacity="0.5" stroke="#E9FFC8" stroke-width="{a.ow * 0.9:.2f}"/>')
-    for x, y in ((30, 86), (68, 88)):
-        a.shape(f"M {x - 3} {y - 6} C {x - 3} {y - 1}, {x - 2} {y + 2}, {x} {y + 2} C {x + 2} {y + 2}, {x + 3} {y - 1}, {x + 3} {y - 6} Z", "#8BC93A", flat=True, outline="#4E7E1A")
-    return a.svg()
-
-
-def sands():
-    """Shifting Sands: a patch of loose sand, rippled round the way it slides you."""
-    a = art()
-    patch = blob(50, 50, 41, 5, 0.06, 0.7)
-    a.shape(patch, "#ECCB82", 0.25, 0.2, outline="#A8823E")
-    a.group(clip=patch)
-    for r in (30, 21, 12):
-        a.line(f"M {50 - r} 50 A {r} {r * 0.9} 0 1 1 {50 + r * 0.7} {50 + r * 0.6}", "#C9A55E", a.ow * 1.3, 0.85)
-    a.fill(circ(50, 50, 3), "#B8914E", 0.9)
-    a.end()
-    return a.svg()
-
-
-def portal():
-    """A Teleporter: a ring of runes round a swirl of light."""
-    a = art()
-    a.glow(50, 50, 50, 50, "#7FB2FF", 0.5)
-    a.shape(circ(50, 50, 38), "#3C55B8", 0.35, 0.3, outline="#1E2A66")
-    a.fill(circ(50, 50, 26), "#6F8EF0", 0.9)
-    a.line("M 50 50 C 50 42, 62 42, 62 50 C 62 62, 42 64, 40 50 C 38 34, 64 30, 70 46", "#FFFFFF", a.ow * 1.8, 0.9)
-    a.line(circ(50, 50, 33), "#BFD3FF", a.ow * 1.6, 0.9)
-    for k in range(8):
-        t = 2 * math.pi * k / 8 + 0.3
-        x, y = 50 + math.cos(t) * 33, 50 + math.sin(t) * 33
-        a.fill(f"M {x - 2.4} {y} L {x} {y - 2.4} L {x + 2.4} {y} L {x} {y + 2.4} Z", "#FFFFFF", 0.95)
-    return a.svg()
-
-
-def embers():
-    """A tile still burning after a Blast Off: glowing coals and a few small flames."""
-    a = art()
-    a.glow(50, 50, 48, 48, "#FF7A2A", 0.5)
-    for x, y, r, ph in ((36, 44, 9, 0.2), (60, 38, 8, 1.4), (64, 62, 10, 2.2), (40, 64, 8, 3.1), (52, 52, 6, 0.9)):
-        coal = blob(x, y, r, 3, 0.18, ph, ry=r * 0.8)
-        a.shape(coal, "#3A2A26", 0.15, 0.2, outline="#1E1412")
-        a.group(clip=coal)
-        # glowing where it's still hot, underneath
-        a.fill(ell(x + r * 0.15, y + r * 0.55, r * 0.8, r * 0.45), "#FF7A2A", 0.95)
-        a.fill(ell(x + r * 0.2, y + r * 0.7, r * 0.45, r * 0.25), "#FFC23A", 0.95)
-        a.end()
-    for x, y in ((44, 40), (66, 56)):
-        a.fill(f"M {x} {y - 12} C {x + 4} {y - 6}, {x + 5} {y - 2}, {x} {y} C {x - 5} {y - 2}, {x - 4} {y - 6}, {x} {y - 12} Z", "#FFC23A")
-    return a.svg()
-
-
-def belt():
-    """A stretch of conveyor belt, running to the right (the board turns it the belt's way)."""
-    a = art()
-    a.shape("M 6 30 L 94 30 L 94 70 L 6 70 Z", "#4A4E5A", 0.25, 0.3, outline="#22252C")
-    for x in (10, 90):
-        a.shape(f"M {x - 5} 28 L {x + 5} 28 L {x + 5} 72 L {x - 5} 72 Z", "#8792AD", outline="#3E4555")
-        a.fill(f"M {x - 5} 49 L {x + 5} 49 L {x + 5} 51 L {x - 5} 51 Z", "#3E4555", 0.8)
-    a.shape("M 6 26 L 94 26 L 94 31 L 6 31 Z", "#8792AD", flat=True, outline="#3E4555")
-    a.shape("M 6 69 L 94 69 L 94 74 L 6 74 Z", "#8792AD", flat=True, outline="#3E4555")
-    for x in (30, 52, 74):
-        a.shape(f"M {x - 7} 38 L {x + 3} 50 L {x - 7} 62 L {x - 1} 62 L {x + 9} 50 L {x - 1} 38 Z", "#FFC23A", flat=True, outline="#9C7414")
-    return a.svg()
-
-
 SPRITES = [
     ("banana", banana), ("spike", spike), ("grog", grog), ("fire", fire), ("snare", snare),
     ("wall", wall), ("gate", gate), ("mushroom", mushroom), ("chest", chest), ("flag", flag),
-    ("ice", ice), ("mud", mud), ("water", water), ("lava", lava), ("slime", slime),
-    ("sands", sands), ("portal", portal), ("embers", embers), ("belt", belt),
 ]
 
 

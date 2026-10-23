@@ -195,6 +195,15 @@ end
 
 local playerGui = player:FindFirstChild("PlayerGui")
 local MatchScreen = requireModule("Client/UI/Match/MatchScreen")
+-- every event the match screen plays, by kind (the newest maps' own ones are checked)
+local screenEvents: { [string]: number } = {}
+do
+	local play = MatchScreen._play
+	MatchScreen._play = function(self, e)
+		screenEvents[e.t] = (screenEvents[e.t] or 0) + 1
+		return play(self, e)
+	end
+end
 local Root = requireModule("Client/UI/Root")
 local State = requireModule("Client/State")
 local Widgets = requireModule("Client/UI/Widgets")
@@ -597,7 +606,7 @@ else
 	check(top[#top] ~= nil, "the practice settings didn't open")
 	local panel = top[#top]
 	if cfg.map then
-		press(panel, "^" .. cfg.map:upper() .. "$")
+		check(press(panel, "^" .. cfg.map:upper() .. "$"), "no button for the map " .. cfg.map)
 	end
 	press(panel, "^" .. (cfg.length or "Quick"):upper() .. "$")
 	if cfg.bots then
@@ -612,6 +621,9 @@ check(F.run(15, function()
 end), "the match never started")
 local screen = MatchScreen.current()
 say("match started at %.1fs (seat %d, %s)", F.now, screen.mySeat, screen.mapDef.id)
+if cfg.map and not cfg.private then
+	check(screen.mapDef.name == cfg.map, "the match is on " .. tostring(screen.mapDef.name) .. ", not " .. cfg.map)
+end
 noProblems("starting the match")
 if cfg.private then
 	check(screen.boardKind == "short", "the match isn't on a short board")
@@ -1021,6 +1033,21 @@ local summary = string.format(
 	F.now
 )
 F.print(summary)
+-- the newest maps' hazards turned up, and played
+local MAP_EVENTS = { frostbite = { "ice" }, kraken = { "krakenMark", "krakenSlam" }, clockwork = { "bridge" } }
+local mapId = screen and screen.mapDef and screen.mapDef.id
+local seen = {}
+for _, kind in { "ice", "refreeze", "krakenMark", "krakenSlam", "grabbed", "bridge", "gears" } do
+	if (screenEvents[kind] or 0) > 0 then
+		table.insert(seen, kind .. " x" .. screenEvents[kind])
+	end
+end
+if #seen > 0 then
+	F.print("  map events: " .. table.concat(seen, ", "))
+end
+for _, kind in MAP_EVENTS[mapId] or {} do
+	check((screenEvents[kind] or 0) > 0, "no " .. kind .. " event in a match on " .. tostring(mapId))
+end
 for _, t in toasts do
 	if t.kind == "error" then
 		F.print("  error toast: " .. t.text)

@@ -735,8 +735,21 @@ function Widgets.choice(parent: Instance, o: { [string]: any })
 		AnchorPoint = o.anchor or Vector2.zero,
 		LayoutOrder = o.layoutOrder or 0,
 	})
-	local layout = Util.list(root, "x", 6, o.align or "Left", "Center")
-	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	local n = #o.options
+	-- (o.columns: wrap into rows of that many, for a long list like the maps)
+	local cols = o.columns
+	if cols and n > cols then
+		local rows = math.ceil(n / cols)
+		Util.new("UIGridLayout", {
+			CellPadding = UDim2.fromOffset(6, 6),
+			CellSize = UDim2.new(1 / cols, -6 * (cols - 1) / cols, 1 / rows, -6 * (rows - 1) / rows),
+			SortOrder = Enum.SortOrder.LayoutOrder,
+			Parent = root,
+		})
+	else
+		local layout = Util.list(root, "x", 6, o.align or "Left", "Center")
+		layout.SortOrder = Enum.SortOrder.LayoutOrder
+	end
 	local c = { root = root, value = o.value, enabled = true }
 	local buttons = {}
 	local function paint()
@@ -748,7 +761,6 @@ function Widgets.choice(parent: Instance, o: { [string]: any })
 			b.frame.BackgroundTransparency = if c.enabled or on then 0 else 0.4
 		end
 	end
-	local n = #o.options
 	for i, opt in o.options do
 		local f = Util.new("TextButton", {
 			Name = "Option" .. i,

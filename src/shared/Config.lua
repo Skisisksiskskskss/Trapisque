@@ -56,6 +56,16 @@ Config.Rules = {
 	-- is scorched (Burning) and scrambles back this many tiles
 	EruptEvery = 3,
 	EruptBack = 2,
+	-- Frostbite Floes: falling through the ice freezes you for this many turns, and the
+	-- current under it carries you back this many tiles
+	IceFrozen = 1,
+	IceSlip = 1,
+	-- Kraken's Reach: the tentacle rises this many tiles ahead of the leader (fewest,
+	-- most), and drags whoever it hits back this many
+	KrakenAhead = { 3, 6 },
+	KrakenDrag = 3,
+	-- Clockwork Cove: tipped off the rising drawbridge, you swim back this many tiles
+	BridgeTip = 2,
 	TelepathyMax = 3,
 	JeopardySteps = 6,
 	FrozenTurns = 2, -- Frozen: roll one die, halved (no choice, no Power), for this many turns
