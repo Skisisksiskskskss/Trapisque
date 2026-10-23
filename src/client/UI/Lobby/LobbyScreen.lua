@@ -538,6 +538,7 @@ end
 
 function LobbyScreen.show()
 	Sound.music("lobby")
+	Sound.ambience(nil)
 	Root.show("lobby", function(container)
 		local maid = Util.maid()
 		local root = Util.frame(container, { Name = "Lobby" })

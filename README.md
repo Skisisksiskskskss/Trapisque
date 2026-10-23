@@ -146,6 +146,13 @@ rendered offline (see [Screenshots](#screenshots)).
   wooden pieces tapped down, a ship's bell for your turn, a cutlass drawn for abilities,
   a deep thump for bonks, and a tavern accordion in the lobby. Music and sound effects each have a
   volume slider (in Settings and the match menu), saved to your profile.
+- **Every map sounds like its place.** Under the music, each map has its own
+  ambience from Pro Sound Effects (Roblox's licensed library): waves lapping the
+  tropical island, surf on the sea fortress's rocks with dripping caves, the swamp's
+  frogs and insects at night, wind in the graveyard's trees, the volcano's low
+  rumble, a whistling wind over the ice floes, surf round the Kraken's reef over a
+  deep rumble, and a working harbour on Clockwork Cove. Each loops without a seam (a
+  fresh copy fades in over its end), and the music volume covers it.
 - **Music that follows the game.** Three moods, each a short playlist that's
   shuffled so no track plays twice in a row. Each track crossfades into the next
   just before its own ending, so nothing loops or cuts. The music steps back for a

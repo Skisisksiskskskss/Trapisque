@@ -15,6 +15,7 @@
 
 		Sound.play(name, pitchShift?)
 		Sound.music("lobby" | "match" | "tension" | nil)
+		Sound.ambience(mapId | nil)         -- the map's own sound under the music
 		Sound.duck(level?, seconds?)
 		Sound.setVolume(0..1) ; Sound.setMusicVolume(0..1)
 		Sound.applySettings(profile.settings)
@@ -130,6 +131,51 @@ local PLAYLISTS: { [string]: { Track } } = {
 		{ id = asset(1842868865), name = "Visions (Underscore Version)", volume = 0.232, fadeAt = 118 },
 	},
 }
+
+--[[
+	Ambience: each map's own sound, under the music. One or two long Pro Sound Effects
+	beds per map (their names and lengths as the library lists them), quiet enough to sit
+	under the board: waves lapping the tropical island, surf on the sea fortress's rocks
+	with water dripping in its caves, the swamp's frogs and insects at night, wind in the
+	graveyard's trees, the volcano's low rumble, a whistling wind over the ice floes, the
+	surf round the Kraken's reef over a deep rumble, a working harbour. Each loops with no
+	seam: near its end a fresh copy fades in over it. It plays through the Music group,
+	so the music volume (and switch) covers it.
+]]
+type Bed = { id: string, volume: number, length: number }
+local AMBIENCE: { [string]: { Bed } } = {
+	blissful = {
+		{ id = asset(9120572579), volume = 0.5, length = 41.1 }, -- Water Lap Small Waves 2
+		{ id = asset(9112802475), volume = 0.16, length = 36 }, -- Jungle Birds 1
+	},
+	junction = {
+		{ id = asset(9119676058), volume = 0.32, length = 79.2 }, -- Surf Cu Waves Crashing 2
+		{ id = asset(9120505297), volume = 0.22, length = 24 }, -- Water Cave Trickle Thin Into Small Puddles 5
+	},
+	slimy = {
+		{ id = asset(9112810704), volume = 0.38, length = 56 }, -- Jungle Night 2
+	},
+	haunted = {
+		{ id = asset(9116258071), volume = 0.36, length = 75.8 }, -- Leaves Rustle Wind Blowing Through Trees 1
+		{ id = asset(9112764573), volume = 0.18, length = 64 }, -- Crickets Night 3
+	},
+	volcano = {
+		{ id = asset(9112795583), volume = 0.42, length = 122.5 }, -- Hollow Rumble 3
+	},
+	frostbite = {
+		{ id = asset(9114057128), volume = 0.36, length = 92 }, -- Desert Wind Whistley Light Gusts 2
+		{ id = asset(9120572331), volume = 0.18, length = 27 }, -- Water Lap Small Waves 1
+	},
+	kraken = {
+		{ id = asset(9119676043), volume = 0.3, length = 46 }, -- Surf Cu Waves Crashing 1
+		{ id = asset(9112795571), volume = 0.26, length = 76.8 }, -- Hollow Rumble 2
+	},
+	clockwork = {
+		{ id = asset(9112791315), volume = 0.38, length = 62.7 }, -- Harbor Ambience 3 (industrial)
+	},
+}
+Sound.ambienceBeds = AMBIENCE
+local BED_FADE = 3 -- seconds a bed's two copies overlap at its loop
 
 local CROSSFADE = 2.5 -- seconds a track takes to hand over to the next
 local MOOD_FADE = 1.6 -- seconds to switch moods (lobby -> match...)
@@ -426,6 +472,46 @@ function Sound.mood(): string?
 	return mood
 end
 
+local ambienceMap: string? = nil
+local beds: { { def: Bed, sound: Sound } } = {}
+
+local function bedSound(def: Bed, fade: number): Sound
+	local snd = Instance.new("Sound")
+	snd.Name = "Ambience"
+	snd.SoundId = def.id
+	snd.Volume = 0
+	-- (looped too, in case the hand-over below is late: it just goes round)
+	snd.Looped = true
+	snd.SoundGroup = group("Music", 1)
+	snd.Parent = SoundService
+	snd:Play()
+	TweenService:Create(snd, TweenInfo.new(fade, Enum.EasingStyle.Sine), { Volume = def.volume }):Play()
+	return snd
+end
+
+-- A bed loops: a fresh copy fades in as the old one fades out.
+local function loopBed(b)
+	local old = b.sound
+	b.sound = bedSound(b.def, BED_FADE)
+	fadeOut(old, BED_FADE)
+end
+
+-- The map's own sound under the music (nil: none). The old one fades out.
+function Sound.ambience(mapId: string?)
+	if mapId == ambienceMap then
+		return
+	end
+	ambienceMap = mapId
+	for _, b in beds do
+		fadeOut(b.sound, MOOD_FADE)
+	end
+	beds = {}
+	for _, def in (if mapId then AMBIENCE[mapId] else nil) or {} do
+		local b = { def = def, sound = bedSound(def, MOOD_FADE * 1.5) }
+		table.insert(beds, b)
+	end
+end
+
 --[[
 	Ducks the music for a moment (a treasure, the winner) so the moment lands, then
 	brings it back. level = how loud the music stays (0..1).
@@ -448,10 +534,18 @@ function Sound.duck(level: number?, seconds: number?)
 	end)
 end
 
--- Hands each track over to the next one in its mood just before its ending.
+-- Hands each track over to the next one in its mood just before its ending, and loops
+-- the ambience's beds before theirs.
 task.spawn(function()
 	while true do
 		task.wait(0.5)
+		for _, b in beds do
+			local snd = b.sound
+			local length = if snd.TimeLength > 0 then snd.TimeLength else b.def.length
+			if length > BED_FADE * 3 and snd.TimePosition >= length - BED_FADE - 0.3 then
+				loopBed(b)
+			end
+		end
 		local c = current
 		if c and mood then
 			local snd, t = c.sound, c.track

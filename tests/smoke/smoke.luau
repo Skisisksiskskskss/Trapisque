@@ -624,6 +624,19 @@ say("match started at %.1fs (seat %d, %s)", F.now, screen.mySeat, screen.mapDef.
 if cfg.map and not cfg.private then
 	check(screen.mapDef.name == cfg.map, "the match is on " .. tostring(screen.mapDef.name) .. ", not " .. cfg.map)
 end
+-- the map's own sound plays under the music
+F.run(1)
+do
+	local beds = requireModule("Client/Sound").ambienceBeds[screen.mapDef.id]
+	check(beds ~= nil and #beds > 0, "no ambience for " .. screen.mapDef.id)
+	local playing = 0
+	for _, s in game:GetService("SoundService"):GetChildren() do
+		if s.Name == "Ambience" and s:IsA("Sound") and s.IsPlaying then
+			playing += 1
+		end
+	end
+	check(playing >= #beds, "the map's ambience isn't playing (" .. playing .. " of " .. #beds .. ")")
+end
 noProblems("starting the match")
 if cfg.private then
 	check(screen.boardKind == "short", "the match isn't on a short board")

@@ -292,6 +292,7 @@ function MatchScreen:_updateMood()
 		end
 	end
 	Sound.music(if close then "tension" else "match")
+	Sound.ambience(self.mapDef and self.mapDef.id)
 end
 
 -- The display state, from a snapshot. `noHand` starts with an empty hand (the deal fills it).
@@ -818,6 +819,7 @@ function MatchScreen:_destroy()
 		return
 	end
 	self.alive = false
+	Sound.ambience(nil)
 	if self.cancelTarget then
 		self.cancelTarget()
 	end
