@@ -16,6 +16,10 @@
 
 local F = Fake
 
+-- Image ids that stand for a sheet file here ("rbxassetid://123" -> "art:scenery_1"): how
+-- the art looks once its sheets are uploaded.
+F.assets = F.assets or {}
+
 local function rgb(c)
 	return { math.floor(c.R * 255 + 0.5), math.floor(c.G * 255 + 0.5), math.floor(c.B * 255 + 0.5) }
 end
@@ -117,7 +121,7 @@ local function opFor(inst, alpha: number, clip)
 		end
 	elseif inst:IsA("ImageLabel") or inst:IsA("ImageButton") then
 		op.img = {
-			id = inst.Image,
+			id = F.assets[inst.Image] or inst.Image,
 			color = rgb(inst.ImageColor3),
 			t = inst.ImageTransparency,
 			ro = { inst.ImageRectOffset.X, inst.ImageRectOffset.Y },

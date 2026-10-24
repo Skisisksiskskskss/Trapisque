@@ -36,6 +36,7 @@ local MapVote = require(Client.UI.Match.MapVote)
 local RejoinOffer = require(Client.UI.Lobby.RejoinOffer)
 local SeasonNews = require(Client.UI.Lobby.SeasonNews)
 local BadgeToast = require(Client.UI.BadgeToast)
+local ArtNotice = require(Client.UI.ArtNotice)
 local Gamepad = require(Client.Gamepad)
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -207,6 +208,10 @@ else
 	-- your connection dropped mid-match: your seat is still kept on another server
 	if data.rejoin then
 		task.delay(1.5, RejoinOffer.show, Root.popups, data.rejoin)
+	end
+	-- the owner (or whoever plays in Studio) hears about art that couldn't be loaded
+	if (data.studio or data.staff == "owner") and #Art.missing() > 0 then
+		task.delay(if data.rejoin then 4 else 1.5, ArtNotice.show, Root.popups)
 	end
 end
 -- a ranked season ended since you last played: how it went

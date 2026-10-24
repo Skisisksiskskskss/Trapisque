@@ -6,37 +6,49 @@ playing pieces that art/pieces.py writes) is rendered to PNG and packed into a f
 
     python3 tools/art.py            # art/sheets/*.png (the files to upload), art/contact.png
                                     # (every sprite at a glance), src/client/UI/ArtAtlas.lua
-                                    # (sprite -> sheet, rect), the sheet list in ArtAssets.lua,
-                                    # and src/client/UI/ArtData/<sheet>.lua for every sheet
-                                    # not uploaded yet (its pixels, so the game can build it
-                                    # itself: see Art.lua)
+                                    # (sprite -> sheet, rect, and each sheet's version),
+                                    # src/client/UI/ArtAssets.lua (each sheet's uploaded
+                                    # image id, kept), and src/client/UI/ArtData/<sheet>.lua
+                                    # for every sheet whose upload isn't current (its
+                                    # pixels, so the game can build it itself: see Art.lua)
 
 Each SVG says its own pixel size with width= and height= (the viewBox is whatever was
 easiest to draw in). A sprite's name is its group and file name: "props/palm",
-"ground/tuft", "emblems/mage", "cards/spike", "kraken/arm_0", "pieces/paint_mage". Needs cairosvg, Pillow and zstandard
-(pip install cairosvg pillow zstandard).
+"ground/tuft", "emblems/mage", "cards/spike", "kraken/arm_0", "pieces/paint_mage". Needs cairosvg, Pillow, numpy
+and zstandard (pip install cairosvg pillow numpy zstandard).
 
 Sprites are trimmed to what's drawn (the atlas keeps where that sits in the full
 canvas, so the game still places it by the canvas) and packed skyline-style: the props
 share the "scenery" sheets, the pieces theirs, the emblems, cards and the Kraken the
 "icons" ones (so changing a prop only moves the scenery sheets).
+
+Each sheet has a version: a hash of what's on it (every sprite's name, place and source).
+An uploaded sheet is only used while its version is the current one, so after the art
+changes, the sheets that changed have to be uploaded again (tools/upload_art.py); the
+others keep their ids. The version comes from the sources, not the pixels, so drawing the
+same art again on another machine doesn't make the uploads look out of date.
 """
+import hashlib
 import importlib.util
 import io
 import os
 import sys
 
+import artassets
 import cairosvg
+import numpy as np
 from PIL import Image, ImageDraw
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ART = os.path.join(ROOT, "art")
 OUT = os.path.join(ART, "sheets")
 ATLAS = os.path.join(ROOT, "src", "client", "UI", "ArtAtlas.lua")
-ASSETS = os.path.join(ROOT, "src", "client", "UI", "ArtAssets.lua")
 DATA = os.path.join(ROOT, "src", "client", "UI", "ArtData")
 SHEET = 1024
 PAD = 4  # transparent pixels around every sprite, so filtering never bleeds a neighbour in
+# bump when the sheets' processing changes in a way an old upload shouldn't survive
+PIPELINE = "2: alpha bled"
+SOURCES = {}  # sprite name -> hash of what it was drawn from (its SVG, or its PNG file)
 STRIP = 256  # rows per strip of a sheet's pixels in ArtData (each unpacks to 1 MB at most)
 
 # the groups (a folder of SVGs or PNGs and/or a generator, art/<group>.py), and which share
@@ -85,6 +97,8 @@ def collect():
                     with open(os.path.join(folder, f), encoding="utf-8") as fh:
                         items.append((f[:-4], fh.read()))
                 elif f.endswith(".png"):
+                    with open(os.path.join(folder, f), "rb") as fh:
+                        SOURCES[f"{group}/{f[:-4]}"] = hashlib.sha1(fh.read()).hexdigest()
                     img = Image.open(os.path.join(folder, f)).convert("RGBA")
                     sprites.append((group, f"{group}/{f[:-4]}", (img, (0, 0), img.size)))
         items += generated(group)
@@ -92,6 +106,7 @@ def collect():
             w, h = svg_size(svg)
             if not w or not h:
                 sys.exit(f"{group}/{name}: the <svg> needs width= and height=")
+            SOURCES[f"{group}/{name}"] = hashlib.sha1(svg.encode("utf-8")).hexdigest()
             sprites.append((group, f"{group}/{name}", trim(render(svg, w, h))))
     return sprites
 
@@ -173,16 +188,52 @@ def pack(sprites):
     return sheets
 
 
-def write_atlas(sheets):
+def bleed(img: Image.Image, steps: int = PAD) -> Image.Image:
+    """Alpha bleeding: the see-through pixels round each sprite take the colour of the
+    nearest drawn ones (and stay see-through), so when Roblox scales a sprite down its
+    edges fade into its own colours, not into a dark fringe."""
+    a = np.asarray(img).astype(np.float32)
+    rgb, alpha = a[..., :3].copy(), a[..., 3]
+    known = alpha > 0
+    h, w = known.shape
+    for _ in range(steps):
+        kp = np.pad(known, 1).astype(np.float32)
+        cp = np.pad(rgb * known[..., None], ((1, 1), (1, 1), (0, 0)))
+        total = np.zeros_like(rgb)
+        count = np.zeros((h, w), np.float32)
+        for dy in (0, 1, 2):
+            for dx in (0, 1, 2):
+                if dy != 1 or dx != 1:
+                    total += cp[dy:dy + h, dx:dx + w]
+                    count += kp[dy:dy + h, dx:dx + w]
+        grow = ~known & (count > 0)
+        if not grow.any():
+            break
+        rgb[grow] = total[grow] / count[grow][:, None]
+        known |= grow
+    return Image.fromarray(np.dstack([np.clip(np.rint(rgb), 0, 255), alpha]).astype(np.uint8), "RGBA")
+
+
+def version(rects) -> str:
+    """A sheet's version: what's on it and where, and what each sprite was drawn from."""
+    h = hashlib.sha1(f"pipeline {PIPELINE}\n".encode())
+    for name, x, y, w, ht, ox, oy, ow, oh in sorted(rects):
+        h.update(f"{name}:{x},{y},{w},{ht},{ox},{oy},{ow},{oh}:{SOURCES[name]}\n".encode())
+    return h.hexdigest()[:12]
+
+
+def write_atlas(sheets, versions):
     lines = [
         "--[[",
         "\tArtAtlas (generated by tools/art.py: don't edit)",
         "\tWhere every sprite sits in the uploaded sheets: sprites[name] = { sheet, x, y, w, h },",
         "\tand where that trimmed part sits in the sprite's whole canvas: ox, oy of ow x oh.",
+        "\tversions[sheet]: what's on that sheet now (an upload of another version doesn't fit).",
         "]]",
         "",
         "return {",
         "\tsheets = { " + ", ".join(f'"{s[0]}"' for s in sheets) + " },",
+        "\tversions = { " + ", ".join(f'{s[0]} = "{versions[s[0]]}"' for s in sheets) + " },",
         "\tsprites = {",
     ]
     for sheet, _, rects in sheets:
@@ -195,42 +246,31 @@ def write_atlas(sheets):
         fh.write("\n".join(lines))
 
 
-def uploaded():
-    """The image ids already filled in ArtAssets.lua: { sheet: id }."""
-    import re
-
-    known = {}
-    if os.path.exists(ASSETS):
-        with open(ASSETS, encoding="utf-8") as fh:
-            for m in re.finditer(r"^\t([a-z0-9_]+) = (\d+),", fh.read(), re.M):
-                known[m.group(1)] = int(m.group(2))
-    return known
-
-
-def write_assets(sheets, known):
-    """ArtAssets.lua: one line per sheet; ids already filled in are kept."""
-    lines = [
-        "--[[",
-        "\tArtAssets",
-        "\tThe Roblox image ids of the art sheets (art/sheets/*.png, uploaded with Studio's",
-        "\tAsset Manager > Bulk Import). 0 = not uploaded: the game builds that sheet itself",
-        "\tfrom ArtData (Art.lua). Re-run tools/art.py after changing the art, then upload",
-        "\tthe sheets again: their contents move, so their old ids no longer fit.",
-        "]]",
-        "",
-        "return {",
-    ]
+def write_assets(sheets, known, versions):
+    """ArtAssets.lua: one entry per sheet. Uploads are kept with the version they were of;
+    a sheet not uploaded gets its current version, ready for its id. Returns which sheets
+    have a current upload."""
+    entries = []
     for name, _, _ in sheets:
-        lines.append(f"\t{name} = {known.get(name, 0)},")
-    lines += ["}", ""]
-    with open(ASSETS, "w", encoding="utf-8") as fh:
-        fh.write("\n".join(lines))
+        id_, ver = known.get(name, (0, None))
+        if id_ <= 0:
+            id_, ver = 0, versions[name]
+        elif ver is None:
+            ver = versions[name]
+        entries.append((name, id_, ver))
+    artassets.write(entries)
+    current = artassets.current({n: (i, v) for n, i, v in entries}, versions)
+    stale = [name for name, _, _ in sheets if name not in current]
+    if stale:
+        print("to upload (new, or changed since their upload): " + ", ".join(stale))
+    return current
 
 
-def write_data(sheets, known):
-    """ArtData/<sheet>.lua for every sheet without an image id: its pixels (as far down as
-    anything is drawn), in strips of STRIP rows, each zstd-compressed and in base64, which
-    Art turns into an EditableImage. Each strip is checked by unpacking it again."""
+def write_data(sheets, current):
+    """ArtData/<sheet>.lua for every sheet without a current upload: its pixels (as far
+    down as anything is drawn), in strips of STRIP rows, each zstd-compressed and in
+    base64, which Art turns into an EditableImage. Each strip is checked by unpacking it
+    again."""
     import base64
 
     import zstandard
@@ -238,7 +278,7 @@ def write_data(sheets, known):
     os.makedirs(DATA, exist_ok=True)
     keep = set()
     for name, img, rects in sheets:
-        if known.get(name, 0) > 0:
+        if name in current:
             continue
         height = min(SHEET, max(y + h + PAD for _, _, y, _, h, *_ in rects))
         lines = [
@@ -290,7 +330,8 @@ def contact(sprites):
 
 def main():
     sprites = collect()
-    sheets = pack(sprites)
+    sheets = [(name, bleed(img), rects) for name, img, rects in pack(sprites)]
+    versions = {name: version(rects) for name, _, rects in sheets}
     os.makedirs(OUT, exist_ok=True)
     for f in os.listdir(OUT):
         if f.endswith(".png"):
@@ -299,10 +340,9 @@ def main():
         img.save(os.path.join(OUT, name + ".png"), optimize=True)
         print(f"{name}.png: {len(rects)} sprites")
     contact(sprites).convert("RGB").save(os.path.join(ART, "contact.png"))
-    write_atlas(sheets)
-    known = uploaded()
-    write_assets(sheets, known)
-    write_data(sheets, known)
+    write_atlas(sheets, versions)
+    current = write_assets(sheets, artassets.read(), versions)
+    write_data(sheets, current)
     print(f"{len(sprites)} sprites on {len(sheets)} sheets; atlas in {os.path.relpath(ATLAS, ROOT)}")
 
 

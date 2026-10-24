@@ -201,6 +201,31 @@ test("smoothing plugs the hole left where three discs nearly meet", function()
 	truthy(covered, "the hole is still open")
 end)
 
+test("an art sheet's upload is used only while it's of the sheet's current version", function()
+	local Art = requireModule("Client/UI/Art")
+	local versions = { scenery_1 = "abc" }
+	eq(Art.uploadedId("scenery_1", { scenery_1 = { id = 5, version = "abc" } }, versions), 5)
+	eq(Art.uploadedId("scenery_1", { scenery_1 = { id = 5, version = "old" } }, versions), nil, "an upload of older art isn't used")
+	eq(Art.uploadedId("scenery_1", { scenery_1 = { id = 0, version = "abc" } }, versions), nil, "not uploaded")
+	eq(Art.uploadedId("scenery_1", { scenery_1 = 7 }, versions), 7, "an id written in by hand, without its version")
+	eq(Art.uploadedId("scenery_1", {}, versions), nil)
+end)
+
+test("every art sheet has a version and an upload entry, and one without a current upload ships its pixels", function()
+	local Art = requireModule("Client/UI/Art")
+	local ArtAtlas = requireModule("Client/UI/ArtAtlas")
+	local ArtAssets = requireModule("Client/UI/ArtAssets")
+	for _, sheet in ArtAtlas.sheets do
+		local version = ArtAtlas.versions[sheet]
+		truthy(type(version) == "string" and #version == 12, sheet .. " has no version")
+		local entry = ArtAssets[sheet]
+		truthy(type(entry) == "table" and type(entry.id) == "number" and type(entry.version) == "string", sheet .. " isn't in ArtAssets")
+		if not Art.uploadedId(sheet) then
+			truthy(rawget(getNode("Client/UI/ArtData/" .. sheet), "__module"), sheet .. " has neither a current upload nor its pixels")
+		end
+	end
+end)
+
 test("every prop, ground sprite, piece, stand, emblem, card badge and Kraken frame has its art in the sheets", function()
 	local ArtAtlas = requireModule("Client/UI/ArtAtlas")
 	local Cosmetics = requireModule("Shared/Meta/Cosmetics")

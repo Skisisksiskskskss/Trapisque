@@ -3,8 +3,7 @@
 The board's playing pieces, the map props and landmarks, what the board shows on its
 tiles, the characters' emblems, the cards' badges and the Kraken's frames are
 illustrations. They're drawn as SVG by the scripts in this folder and packed into image
-sheets, which the game builds itself from data shipped in the place (or loads from
-Roblox, once you upload them). The map vote's pictures of the maps (`maps/*.png`) are
+sheets, which are uploaded to Roblox (see "How the game gets the art" below). The map vote's pictures of the maps (`maps/*.png`) are
 the game's own boards, rendered offline (`tools/shots.sh thumbs`) and packed with the
 rest:
 
@@ -61,45 +60,60 @@ The characters have no faces: each emblem is a symbol of theirs, never their hea
 python3 tools/art.py
 ```
 
-It needs Python 3 with `cairosvg`, Pillow and `zstandard`
-(`pip install cairosvg pillow zstandard`). It writes:
+It needs Python 3 with `cairosvg`, Pillow, numpy and `zstandard`
+(`pip install cairosvg pillow numpy zstandard`). It writes:
 
-- `art/sheets/*.png`: the four sheets (1024 x 1024 each)
+- `art/sheets/*.png`: the nine sheets (up to 1024 x 1024 each), the files to upload
 - `art/contact.png`: every sprite at a glance, for review
-- `src/client/UI/ArtAtlas.lua`: where each sprite sits in the sheets
-- `src/client/UI/ArtAssets.lua`: one line per sheet for an uploaded image id (ids
-  already filled in are kept)
-- `src/client/UI/ArtData/<sheet>.lua`: the pixels of each sheet that has no id, so
-  the game can build it itself
+- `src/client/UI/ArtAtlas.lua`: where each sprite sits in the sheets, and each sheet's
+  version (a hash of what's on it, from the sprites' sources)
+- `src/client/UI/ArtAssets.lua`: each sheet's uploaded image id and the version it was
+  uploaded at (kept from run to run)
+- `src/client/UI/ArtData/<sheet>.lua`: the pixels of each sheet that has no current
+  upload, so the game can try to build it itself
+
+The see-through pixels round each sprite take the colour of its edge (alpha bleeding),
+so a sprite scaled down on screen fades into its own colours, not into a dark fringe.
+When the art changes, only the sheets whose sprites changed get a new version; it lists
+them as "to upload".
 
 ## How the game gets the art
 
-Nothing has to be uploaded. When the game starts, it builds each sheet from its pixels
-in `ArtData` as an `EditableImage`:
+**Upload the sheets.** That's what works in every game, on every device:
 
-- **In Studio** this just works: press Play.
-- **In a published game** Roblox blocks `EditableImage` until the owner turns it on:
-  in Studio, **File → Experience Settings → Security → Allow Mesh / Image APIs** (or
-  on the Creator Dashboard: the experience's **Configure → Settings → Enable Mesh /
-  Image APIs**). Roblox asks for an age- and ID-verified account for that.
+1. In Studio (with the place published), open the **Asset Manager** (the **Window**
+   menu, or the **Home** tab), click its import button (**Bulk Import**) and pick the
+   nine files in `art/sheets/`. They go to whoever owns the game, user or group.
+2. Once they're through moderation, right-click each image and choose **Copy Asset ID**.
+3. Write the ids in with `python3 tools/upload_art.py scenery_1=<id> scenery_2=<id> ...`
+   (or put each in `src/client/UI/ArtAssets.lua` where its sheet says `id = 0`, leaving
+   its version as it is), then build the place again.
 
-If the images can't be built (that setting is off, or a phone is short of memory), the
-game draws plainer stand-ins and says why in the Output window.
+Or let `tools/upload_art.py` upload them itself with Open Cloud: give it an API key
+(Creator Hub → Open Cloud → API Keys, with the **Assets** API's Read and Write, made by
+the user or group that owns the game) and whose they are:
 
-**Or upload the sheets** (works everywhere, with no setting to turn on):
+```sh
+ROBLOX_API_KEY=... ROBLOX_CREATOR=user:<user id> python3 tools/upload_art.py
+```
 
-1. Open the place in Studio and open **View → Asset Manager**.
-2. Click **Bulk Import** and pick the four files in `art/sheets/`
-   (`scenery_1.png`, `scenery_2.png`, `pieces_1.png`, `pieces_2.png`).
-3. In the Asset Manager's **Images** folder, right-click each one and choose
-   **Copy Asset ID**.
-4. Put each id next to its sheet's name in `src/client/UI/ArtAssets.lua`, for example
-   `pieces_1 = 1234567890,`, then run `tools/art.py` again: it drops the pixels of the
-   uploaded sheets from the place, since they're no longer needed. Edits made only in
-   Studio are overwritten by the next place file built from the repository.
+(`group:<group id>` for a group's game.) It uploads only the sheets that have no current
+upload and writes their ids into `ArtAssets.lua`. Either way, the pixels of the uploaded
+sheets are dropped from the place, which makes it smaller and quicker to join.
 
-Uploaded sheets are used first. Upload them again after the art changes: the sprites
-move around the sheets, so the old ids no longer fit.
+An upload is used only while its version is the sheet's current one: when a sheet's art
+changes, its sprites move, so it's drawn the other way (below) until it's uploaded
+again. The other sheets keep their uploads.
+
+**Without uploads**, the game builds each sheet itself from its pixels in `ArtData`, as
+an `EditableImage`. Roblox only allows that once the owner (an age- and ID-verified
+account) turns on **File → Experience Settings → Security → Allow Mesh / Image APIs**
+(on the Creator Dashboard: the experience's **Configure → Settings → Enable Mesh / Image
+APIs**), and phones have little memory for it.
+
+When a sheet can't be had either way, the game draws plainer stand-ins in code. The
+Output says which sheets and why, and the owner (and anyone playing in Studio) gets a
+note in the lobby saying the same, with how to fix it. Players never see the note.
 
 ## Previews offline
 

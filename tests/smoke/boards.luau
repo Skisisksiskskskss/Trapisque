@@ -5,7 +5,9 @@
 	picks one map and SMOKE.orient ("flat", "upright" or "both") which way it lies;
 	SMOKE.slam (seconds) also shoots Kraken's Reach that long into the Kraken's strike.
 	SMOKE.thumbs: just the maps, bare (no pieces, cards or tokens), lying down, shot as
-	"<map id>": the map vote's pictures (tools/shots.sh thumbs).
+	"<map id>": the map vote's pictures (tools/shots.sh thumbs). SMOKE.uploaded draws the
+	art the way Roblox gets it once the sheets are uploaded: by image id (each standing for
+	its sheet file here), so Art's choice of an upload of the current version is tested.
 ]]
 
 local F = Fake
@@ -20,7 +22,21 @@ gui.Name = "Boards"
 gui.IgnoreGuiInset = true
 gui.Parent = player:FindFirstChild("PlayerGui")
 
-requireModule("Client/UI/Art").localSheets = true
+local Art = requireModule("Client/UI/Art")
+if cfg.uploaded then
+	local ArtAtlas = requireModule("Client/UI/ArtAtlas")
+	local ArtAssets = requireModule("Client/UI/ArtAssets")
+	Art.builtIn = false
+	for i, sheet in ArtAtlas.sheets do
+		local id = 9000000000 + i
+		ArtAssets[sheet] = { id = id, version = ArtAtlas.versions[sheet] }
+		F.assets["rbxassetid://" .. id] = "art:" .. sheet
+	end
+	Art.preload(0)
+	assert(#Art.missing() == 0, "the uploaded sheets weren't used")
+else
+	Art.localSheets = true
+end
 local BoardView = requireModule("Client/UI/Match/BoardView")
 local Maps = requireModule("Shared/Game/Maps")
 local Board = requireModule("Shared/Game/Board")

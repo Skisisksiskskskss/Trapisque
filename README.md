@@ -216,6 +216,8 @@ In Studio:
 4. If the loading screen sits on "Still hailing the harbour", the server isn't
    answering: the reason is in brackets there and in the Output window, along with
    any service that failed to start (`[Trapisque] ... failed`).
+5. If the board, pieces and emblems look plain, the art sheets aren't loaded: a note in
+   the lobby says which and why. Upload them (step 4 of Publishing below).
 
 ## Publishing
 
@@ -227,11 +229,12 @@ In Studio:
    all work in a published experience without extra setup.
 3. Create the gamepasses (next section) and paste their ids into
    `src/shared/Config.lua`.
-4. Turn on **File → Experience Settings → Security → Allow Mesh / Image APIs**: the
-   game builds its illustrations (pieces, props, emblems) itself, and Roblox blocks
-   that in published games until it's on (it needs an age- and ID-verified owner).
-   Without it, the game draws plainer stand-ins. Or upload the four art sheets instead,
-   which needs no setting: see [art/README.md](art/README.md).
+4. Upload the nine art sheets (`art/sheets`) and write in their ids
+   ([art/README.md](art/README.md) has the steps, or `tools/upload_art.py` does it with
+   an Open Cloud key). Until they're uploaded, the game tries to build its illustrations
+   (pieces, props, emblems, cards) itself, which Roblox only allows with **File →
+   Experience Settings → Security → Allow Mesh / Image APIs** on (that needs an age- and
+   ID-verified owner); with neither, it draws plainer stand-ins and tells the owner why.
 5. The owner panel is yours automatically: the game's creator (the group's owner, for
    a group game) is the owner. Add more owners by user id in `Config.Staff.OwnerIds`;
    admins are picked in the panel itself. Staff lists, bans and gifts for offline

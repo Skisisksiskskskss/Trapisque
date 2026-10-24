@@ -4,27 +4,29 @@
 	tools/art.py into a few sheets. Art.image draws one sprite from those sheets; Art.has
 	says whether it can.
 
-	Each sheet comes from one of two places:
-	  - its uploaded image, once its id is in ArtAssets (works everywhere), or
-	  - the sheet built in the game itself, from its pixels in ArtData, as an
-	    EditableImage. That needs nothing uploaded: it works in Studio, and in a published
-	    game once "Allow Mesh / Image APIs" is on (Experience Settings > Security).
-	When neither works, callers draw their code-built version instead (and Art.problem
-	says why, in the Output too).
+	Each sheet comes from the first of these that works:
+	  - its uploaded image (ArtAssets), while that upload is of the sheet's current
+	    version (ArtAtlas.versions): works in every game, on every device
+	  - the sheet built in the game itself from its pixels in ArtData, as an
+	    EditableImage: needs nothing uploaded, but Roblox only allows it once the owner
+	    (an ID-verified account) turns on Experience Settings > Security > Allow Mesh /
+	    Image APIs, and a phone has little memory for it
+	When neither works, callers draw their code-built version instead. Art.missing() says
+	which sheets and why (in the Output too; ArtNotice shows the owner).
 
 		Art.has(name) -> boolean                         -- "props/palm", "pieces/paint_mage"
 		Art.image(parent, name, props) -> Frame?         -- nil when it can't
 		Art.label(parent, name, center, size, flip?, props?) -> ImageLabel?   -- just the image
 		                                                 -- (size: px, or a Vector2 to stretch)
 		Art.frame(image, name, center, size, flip?) -> boolean   -- the image, another sprite
-		Art.preload(timeout?)                            -- builds / loads the sheets
+		Art.preload(timeout?)                            -- loads / builds the sheets
+		Art.missing() -> { { sheet, why } }              -- the sheets that couldn't be had
+		Art.uploadedId(sheet) -> number?                 -- its upload, if that's current
 
 	Art.image's frame is the sprite's whole canvas (props size and place it; it keeps the
 	canvas's shape); the image inside covers just the part that's drawn (the sheets hold
 	sprites trimmed to that).
 ]]
-
-local ContentProvider = game:GetService("ContentProvider")
 
 local ArtAtlas = require(script.Parent.ArtAtlas)
 local ArtAssets = require(script.Parent.ArtAssets)
@@ -35,48 +37,74 @@ local Art = {}
 Art.localSheets = false
 -- Build sheets that have no upload from ArtData (the fake Roblox can't).
 Art.builtIn = true
--- Why the built-in sheets couldn't be made, if they couldn't.
-Art.problem = nil :: string?
 
 type Source = { image: string?, content: Content? }
 
 local sources: { [string]: Source } = {}
-local failed: { [string]: boolean } = {}
+local failed: { [string]: boolean } = {} -- uploads that Roblox wouldn't load
+local why: { [string]: string } = {} -- why a sheet couldn't be had
+local blocked: string? = nil -- why the game can't make images at all (so it stops trying)
 local keep: { EditableImage } = {} -- the built sheets, held so they stay alive
 
-local function uploadedId(sheet: string): number?
-	local id = (ArtAssets :: any)[sheet]
-	if type(id) == "number" and id > 0 then
-		return id
+-- The image id `sheet` was uploaded as, if that upload is of its current version (an id
+-- written in by hand without its version is taken as current). `assets` and `versions`
+-- default to ArtAssets and ArtAtlas.versions.
+function Art.uploadedId(sheet: string, assets: { [string]: any }?, versions: { [string]: string }?): number?
+	local entry = (assets or ArtAssets :: any)[sheet]
+	if type(entry) == "number" then
+		return if entry > 0 then entry else nil
+	end
+	local current = (versions or (ArtAtlas :: any).versions or {})[sheet]
+	if type(entry) == "table" and type(entry.id) == "number" and entry.id > 0 and entry.version == current then
+		return entry.id
 	end
 	return nil
+end
+
+-- Whether `sheet` was uploaded, but before its art last changed.
+local function outdated(sheet: string): boolean
+	local entry = (ArtAssets :: any)[sheet]
+	return type(entry) == "table" and type(entry.id) == "number" and entry.id > 0 and Art.uploadedId(sheet) == nil
 end
 
 local function sourceOf(sheet: string): Source?
 	if Art.localSheets then
 		return { image = "art:" .. sheet }
 	end
-	local id = uploadedId(sheet)
+	local id = Art.uploadedId(sheet)
 	if id and not failed[sheet] then
 		return { image = "rbxassetid://" .. tostring(id) }
 	end
 	return sources[sheet]
 end
 
--- The sheet as an EditableImage, from its pixels in ArtData.
-local function build(sheet: string): Content?
+-- The sheet as an EditableImage, from its pixels in ArtData; or why it can't be.
+local function build(sheet: string): (Content?, string?)
+	if blocked then
+		return nil, blocked
+	end
 	local folder = script.Parent:FindFirstChild("ArtData")
 	local module = folder and folder:FindFirstChild(sheet)
 	if not (module and module:IsA("ModuleScript")) then
-		return nil
+		return nil, "its pixels aren't in the place (ArtData), since it was uploaded"
 	end
-	local ok, result = pcall(function(): Content
-		local data = require(module) :: any
+	local okData, data = pcall(require, module)
+	if not okData or type(data) ~= "table" then
+		return nil, "its pixels couldn't be read (" .. tostring(data) .. ")"
+	end
+	local okMake, image = pcall(function()
+		return game:GetService("AssetService"):CreateEditableImage({ Size = Vector2.new(data.width, data.height) })
+	end)
+	if not okMake then
+		-- (Roblox refuses EditableImage outright: every sheet would fail the same way)
+		blocked = "Roblox doesn't let this game make images (" .. tostring(image) .. ")"
+		return nil, blocked
+	end
+	if not image then
+		return nil, "this device is out of memory for images"
+	end
+	local okFill, err = pcall(function()
 		local EncodingService = game:GetService("EncodingService")
-		local image = game:GetService("AssetService"):CreateEditableImage({ Size = Vector2.new(data.width, data.height) })
-		if not image then
-			error("not enough image memory on this device")
-		end
 		-- strip by strip, top to bottom
 		for i, chunks in data.strips do
 			local top = (i - 1) * data.strip
@@ -84,14 +112,13 @@ local function build(sheet: string): Content?
 			local pixels = EncodingService:DecompressBuffer(packed, Enum.CompressionAlgorithm.Zstd)
 			image:WritePixelsBuffer(Vector2.new(0, top), Vector2.new(data.width, math.min(data.strip, data.height - top)), pixels)
 		end
-		table.insert(keep, image)
-		return Content.fromObject(image)
 	end)
-	if ok then
-		return result
+	if not okFill then
+		image:Destroy()
+		return nil, "its pixels couldn't be unpacked (" .. tostring(err) .. ")"
 	end
-	Art.problem = tostring(result)
-	return nil
+	table.insert(keep, image)
+	return Content.fromObject(image)
 end
 
 function Art.has(name: string): boolean
@@ -202,58 +229,82 @@ function Art.frame(img: ImageLabel, name: string, center: Vector2, size: number 
 	return true
 end
 
--- Builds the sheets that weren't uploaded, then loads the uploaded ones (with a time
--- limit). An uploaded one Roblox can't load (still in moderation, or removed) falls back
--- to the code-built art from then on.
+-- Loads the uploaded sheets (with a time limit; one Roblox won't load is dropped), then
+-- builds the rest from ArtData, and says in the Output which couldn't be had and why.
 function Art.preload(timeout: number?)
 	if Art.localSheets then
 		return
 	end
-	if Art.builtIn then
-		for _, sheet in ArtAtlas.sheets do
-			if not uploadedId(sheet) then
-				local content = build(sheet)
-				if content then
-					sources[sheet] = { content = content }
-				end
-			end
-		end
-		if Art.problem then
-			warn(
-				"[Trapisque] The illustrations couldn't be built in the game ("
-					.. Art.problem
-					.. "), so plainer stand-ins are drawn. In a published game, turn on Experience Settings > "
-					.. "Security > Allow Mesh / Image APIs, or upload the art sheets (art/README.md)."
-			)
-		end
-	end
 	local list, sheetOf = {}, {}
 	for _, sheet in ArtAtlas.sheets do
-		local id = uploadedId(sheet)
+		local id = Art.uploadedId(sheet)
 		if id then
 			local uri = "rbxassetid://" .. tostring(id)
 			table.insert(list, uri)
 			sheetOf[uri] = sheet
 		end
 	end
-	if #list == 0 then
-		return
-	end
-	local done = false
-	task.spawn(function()
-		pcall(function()
-			ContentProvider:PreloadAsync(list, function(contentId: string, status: Enum.AssetFetchStatus)
-				if status == Enum.AssetFetchStatus.Failure and sheetOf[contentId] then
-					failed[sheetOf[contentId]] = true
-				end
+	if #list > 0 then
+		local done = false
+		task.spawn(function()
+			pcall(function()
+				game:GetService("ContentProvider"):PreloadAsync(list, function(contentId: string, status: Enum.AssetFetchStatus)
+					local sheet = sheetOf[contentId]
+					if status == Enum.AssetFetchStatus.Failure and sheet then
+						failed[sheet] = true
+						why[sheet] = "its uploaded image (" .. contentId .. ") didn't load: still being moderated, or not allowed in this game"
+					end
+				end)
 			end)
+			done = true
 		end)
-		done = true
-	end)
-	local t0 = os.clock()
-	while not done and os.clock() - t0 < (timeout or 8) do
-		task.wait(0.1)
+		local t0 = os.clock()
+		while not done and os.clock() - t0 < (timeout or 8) do
+			task.wait(0.1)
+		end
 	end
+	for _, sheet in ArtAtlas.sheets do
+		if Art.builtIn and not sourceOf(sheet) then
+			local content, problem = build(sheet)
+			if content then
+				sources[sheet] = { content = content }
+			elseif not failed[sheet] then
+				why[sheet] = problem or "it couldn't be built"
+			end
+		end
+	end
+	local missing = Art.missing()
+	if #missing > 0 then
+		local lines = {}
+		for _, m in missing do
+			table.insert(lines, m.sheet .. ": " .. m.why)
+		end
+		warn(
+			string.format("[Trapisque] %d of %d art sheets couldn't be loaded, so plainer stand-ins are drawn.\n  ", #missing, #ArtAtlas.sheets)
+				.. table.concat(lines, "\n  ")
+				.. "\nUpload those sheets (art/sheets in the repository; see art/README.md), or turn on "
+				.. "Experience Settings > Security > Allow Mesh / Image APIs."
+		)
+	end
+end
+
+-- The sheets that couldn't be had, and why: those Art.preload tried to load or build and
+-- couldn't (so none offline, where the fake Roblox draws the stand-ins on purpose).
+function Art.missing(): { { sheet: string, why: string } }
+	local out = {}
+	if Art.localSheets then
+		return out
+	end
+	for _, sheet in ArtAtlas.sheets do
+		if not sourceOf(sheet) and why[sheet] then
+			local reason = why[sheet]
+			if outdated(sheet) then
+				reason ..= "; its upload is of older art, so it needs uploading again"
+			end
+			table.insert(out, { sheet = sheet, why = reason })
+		end
+	end
+	return out
 end
 
 return Art
