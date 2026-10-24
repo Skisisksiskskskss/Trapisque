@@ -218,7 +218,9 @@ In Studio:
    any service that failed to start (`[Trapisque] ... failed`).
 5. If the board, pieces and emblems look plain, the art sheets aren't loaded: a note in
    the lobby says which and why, and takes the ids once they're uploaded (step 4 of
-   Publishing below).
+   Publishing below). The lobby's top right corner shows you (the owner) the version
+   running and how many art sheets loaded, `v1.1.0 · art 9/9`: no tag, or an older
+   version, means an older place file is running.
 
 ## Publishing
 
@@ -234,7 +236,8 @@ In Studio:
    Decals) or with Studio's Asset Manager, then paste their ids into the art note the
    lobby shows you (the owner), in any order, and press **Save ids**: every server keeps
    them ([art/README.md](art/README.md) has the details; `tools/upload_art.py` can
-   upload them with an Open Cloud key instead). Until they're uploaded, the game tries
+   upload them with an Open Cloud key instead). An upload the game isn't allowed to
+   load is drawn from Roblox's thumbnail of it instead. Until they're uploaded, the game tries
    to build its illustrations (pieces, props, emblems, cards) itself, which Roblox only
    allows with **File → Experience Settings → Security → Allow Mesh / Image APIs** on
    (that needs an age- and ID-verified owner); with neither, it draws plainer stand-ins.

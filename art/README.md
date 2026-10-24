@@ -128,9 +128,19 @@ account) turns on **File → Experience Settings → Security → Allow Mesh / I
 (on the Creator Dashboard: the experience's **Configure → Settings → Enable Mesh / Image
 APIs**), and phones have little memory for it.
 
-When a sheet can't be had either way, the game draws plainer stand-ins in code. The
-Output says which sheets and why, and the owner (and anyone playing in Studio) gets a
-note in the lobby saying the same, with how to fix it. Players never see the note.
+**When an upload won't load** (Roblox refuses it in this game, or it's still being
+moderated), the game draws that sheet from Roblox's own thumbnail of the upload
+instead (`rbxthumb`, 420 pixels to the sheet's 1024, so a little softer), which loads in
+any game.
+
+When a sheet can't be had any of these ways, the game draws plainer stand-ins in code.
+The Output says which sheets and why, and the owner (and anyone playing in Studio) gets
+a note in the lobby saying the same, with how to fix it. Players never see the note.
+
+The owner (and anyone playing in Studio) also sees a small tag in the lobby's top right
+corner, with the version that's running and how many sheets loaded: `v1.1.0 · art 9/9`,
+plus `(N as thumbnails)` when some came from their thumbnails. If the tag is missing,
+or shows an older version, the game running isn't the latest place file.
 
 ## Previews offline
 

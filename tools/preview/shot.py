@@ -294,14 +294,18 @@ _sheet_cache = {}
 
 
 def draw_art(layer, img, x0, y0, w, h, alpha):
-    """A sprite from one of the art sheets (art/sheets/<name>.png), the way Roblox fits it."""
+    """A sprite from one of the art sheets (art/sheets/<name>.png), the way Roblox fits it.
+    "art:<name>@<n>" is the sheet as Roblox's n x n thumbnail of its upload."""
     name = img["id"][4:]
     sheet = _sheet_cache.get(name)
     if sheet is None:
-        path = os.path.join(ART_SHEETS, name + ".png")
+        base, _, size = name.partition("@")
+        path = os.path.join(ART_SHEETS, base + ".png")
         if not os.path.exists(path):
             return
         sheet = Image.open(path).convert("RGBA")
+        if size:
+            sheet = sheet.resize((int(size), int(size)), Image.LANCZOS)
         _sheet_cache[name] = sheet
     ox, oy = img.get("ro") or (0, 0)
     sw, sh = img.get("rs") or (0, 0)

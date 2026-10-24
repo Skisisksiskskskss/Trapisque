@@ -3329,11 +3329,14 @@ end
 
 -- misc client services
 service("ContentProvider")
+-- content ids that won't load (F.failAssets[id] = true), like an image a game may not use
+F.failAssets = {}
 METHODS.ContentProvider = {
 	PreloadAsync = function(_self, list, callback)
 		if callback then
 			for _, item in list do
-				callback(if typeof(item) == "Instance" then tostring(item) else tostring(item), Enum.AssetFetchStatus.Success)
+				local id = tostring(item)
+				callback(id, if F.failAssets[id] then Enum.AssetFetchStatus.Failure else Enum.AssetFetchStatus.Success)
 			end
 		end
 	end,

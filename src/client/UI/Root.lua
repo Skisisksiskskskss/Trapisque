@@ -10,6 +10,7 @@
 
 		Root.metrics        the current Layout metrics (vw, vh, scale, form, touch, safe, topbar)
 		Root.onResize(fn)   fn(vw, vh, metrics) now and whenever the screen changes
+		Root.onShow(fn)     fn(name) whenever a screen is shown
 ]]
 
 local Players = game:GetService("Players")
@@ -29,6 +30,7 @@ local Root = {}
 local player = Players.LocalPlayer
 local current = nil -- { name, frame, destroy }
 local resizeCallbacks = {}
+local showCallbacks = {}
 
 Root.metrics = Layout.metrics(1280, 720)
 Root.vw = 1280
@@ -185,6 +187,16 @@ function Root.onResize(fn: (number, number, any) -> ()): () -> ()
 	end
 end
 
+function Root.onShow(fn: (string) -> ()): () -> ()
+	table.insert(showCallbacks, fn)
+	return function()
+		local i = table.find(showCallbacks, fn)
+		if i then
+			table.remove(showCallbacks, i)
+		end
+	end
+end
+
 -- Where content may start below Roblox's top bar (stage pixels).
 function Root.topInset(): number
 	local m = Root.metrics
@@ -213,6 +225,9 @@ function Root.show(name: string, build: (Frame) -> (() -> ())?)
 		warn("[Trapisque] screen '" .. name .. "' failed to build: " .. tostring(err))
 	end
 	current = { name = name, frame = frame, cleanup = cleanup }
+	for _, fn in showCallbacks do
+		task.spawn(fn, name)
+	end
 	group.Position = UDim2.fromOffset(0, 24)
 	Util.tween(group, 0.35, { GroupTransparency = 0, Position = UDim2.new() }, Enum.EasingStyle.Quint)
 	-- once visible, drop the CanvasGroup's texture cost by re-parenting children

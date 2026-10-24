@@ -326,7 +326,8 @@ allows that with Allow Mesh / Image APIs on, for an ID-verified owner; with neit
 draws plain stand-ins and tells the owner, whose note takes the uploaded ids: pasted in
 any order, matched to their sheets by name, kept by the server for every server. Each
 upload carries the version of the sheet it was, so an upload of older art is never used
-for sprites that moved.) The land, water, trail and tiles are still built from UI frames so they stay
+for sprites that moved; an upload Roblox won't load in the game is drawn from Roblox's
+thumbnail of it.) The land, water, trail and tiles are still built from UI frames so they stay
 sharp at any zoom, but the coast is smoothed: wherever two of the land's discs meet,
 the corner is filled with a curve (`BoardLayout.fillets`, a morphological closing),
 the little holes where three discs nearly meet are plugged, small lagoons are shallow

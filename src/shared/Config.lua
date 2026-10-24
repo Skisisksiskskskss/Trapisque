@@ -289,6 +289,6 @@ Config.Data = {
 -- In Studio, pretend the player owns every gamepass so all features can be tested.
 Config.StudioOwnsAllPasses = true
 
-Config.Version = "1.0.0"
+Config.Version = "1.1.0"
 
 return Config

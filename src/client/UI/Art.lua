@@ -42,10 +42,16 @@ Art.localSheets = false
 -- Build sheets that have no upload from ArtData (the fake Roblox can't).
 Art.builtIn = true
 
-type Source = { image: string?, content: Content? }
+-- scale: the image's pixels per sheet pixel (a thumbnail is smaller than its sheet)
+type Source = { image: string?, content: Content?, scale: number? }
+
+-- The size Roblox's thumbnail of an uploaded sheet comes in (rbxthumb), and the sheets'.
+local THUMB = 420
+local SHEET = 1024
 
 local sources: { [string]: Source } = {}
 local failed: { [string]: boolean } = {} -- uploads that Roblox wouldn't load
+local thumbs: { [string]: boolean } = {} -- ...whose thumbnail did load instead
 local why: { [string]: string } = {} -- why a sheet couldn't be had
 local blocked: string? = nil -- why the game can't make images at all (so it stops trying)
 local keep: { EditableImage } = {} -- the built sheets, held so they stay alive
@@ -86,6 +92,7 @@ function Art.setUploads(entries: any): boolean
 			if not old or old.id ~= entry.id or old.version ~= entry.version then
 				uploads[sheet] = { id = entry.id, version = entry.version }
 				failed[sheet] = nil
+				thumbs[sheet] = nil
 				why[sheet] = nil
 				changed = true
 			end
@@ -115,7 +122,16 @@ local function sourceOf(sheet: string): Source?
 	if id and not failed[sheet] then
 		return { image = "rbxassetid://" .. tostring(id) }
 	end
+	if id and thumbs[sheet] then
+		return { image = Art.thumbnail(id), scale = THUMB / SHEET }
+	end
 	return sources[sheet]
+end
+
+-- Roblox's own picture of an uploaded image: smaller than the image, but it loads in any
+-- game, so it stands in when the image itself won't.
+function Art.thumbnail(id: number): string
+	return string.format("rbxthumb://type=Asset&id=%s&w=%d&h=%d", tostring(id), THUMB, THUMB)
 end
 
 -- The sheet as an EditableImage, from its pixels in ArtData; or why it can't be.
@@ -192,8 +208,9 @@ function Art.image(parent: Instance?, name: string, props: { [string]: any }?): 
 	else
 		img.Image = source.image or ""
 	end
-	img.ImageRectOffset = Vector2.new(s.x, s.y)
-	img.ImageRectSize = Vector2.new(s.w, s.h)
+	local k = source.scale or 1
+	img.ImageRectOffset = Vector2.new(s.x, s.y) * k
+	img.ImageRectSize = Vector2.new(s.w, s.h) * k
 	img.ScaleType = Enum.ScaleType.Stretch
 	img.Position = UDim2.fromScale(s.ox / s.ow, s.oy / s.oh)
 	img.Size = UDim2.fromScale(s.w / s.ow, s.h / s.oh)
@@ -220,14 +237,15 @@ local function place(img: ImageLabel, s, source: Source, center: Vector2, size: 
 	end
 	-- where the drawn part's middle is, from the canvas's middle
 	local mx, my = (s.ox + s.w / 2 - s.ow / 2) * kx, (s.oy + s.h / 2 - s.oh / 2) * ky
+	local k = source.scale or 1
 	if flip then
 		-- the rect read right to left
-		img.ImageRectOffset = Vector2.new(s.x + s.w, s.y)
-		img.ImageRectSize = Vector2.new(-s.w, s.h)
+		img.ImageRectOffset = Vector2.new(s.x + s.w, s.y) * k
+		img.ImageRectSize = Vector2.new(-s.w, s.h) * k
 		mx = -mx
 	else
-		img.ImageRectOffset = Vector2.new(s.x, s.y)
-		img.ImageRectSize = Vector2.new(s.w, s.h)
+		img.ImageRectOffset = Vector2.new(s.x, s.y) * k
+		img.ImageRectSize = Vector2.new(s.w, s.h) * k
 	end
 	img.Position = UDim2.fromOffset(center.X + mx, center.Y + my)
 	img.Size = UDim2.fromOffset(s.w * kx, s.h * ky)
@@ -269,37 +287,60 @@ function Art.frame(img: ImageLabel, name: string, center: Vector2, size: number 
 	return true
 end
 
--- Loads the uploaded sheets (with a time limit; one Roblox won't load is dropped), then
--- builds the rest from ArtData, and says in the Output which couldn't be had and why.
+-- Asks Roblox for these images (uri -> sheet), waiting `timeout` seconds at most; calls
+-- onFail(sheet, uri) for each one it couldn't fetch.
+local function fetch(uris: { [string]: string }, timeout: number?, onFail: (string, string) -> ())
+	local list = {}
+	for uri in uris do
+		table.insert(list, uri)
+	end
+	if #list == 0 then
+		return
+	end
+	local done = false
+	task.spawn(function()
+		pcall(function()
+			game:GetService("ContentProvider"):PreloadAsync(list, function(contentId: string, status: Enum.AssetFetchStatus)
+				local sheet = uris[contentId]
+				if status == Enum.AssetFetchStatus.Failure and sheet then
+					onFail(sheet, contentId)
+				end
+			end)
+		end)
+		done = true
+	end)
+	local t0 = os.clock()
+	while not done and os.clock() - t0 < (timeout or 8) do
+		task.wait(0.1)
+	end
+end
+
+-- Loads the uploaded sheets (with a time limit), each one Roblox won't load as its
+-- thumbnail instead, then builds the rest from ArtData, and says in the Output which
+-- couldn't be had and why.
 local function loadSheets(timeout: number?)
-	local list, sheetOf = {}, {}
+	local full = {}
 	for _, sheet in ArtAtlas.sheets do
 		local id = Art.uploadedId(sheet)
-		if id then
-			local uri = "rbxassetid://" .. tostring(id)
-			table.insert(list, uri)
-			sheetOf[uri] = sheet
+		if id and not failed[sheet] then
+			full["rbxassetid://" .. tostring(id)] = sheet
 		end
 	end
-	if #list > 0 then
-		local done = false
-		task.spawn(function()
-			pcall(function()
-				game:GetService("ContentProvider"):PreloadAsync(list, function(contentId: string, status: Enum.AssetFetchStatus)
-					local sheet = sheetOf[contentId]
-					if status == Enum.AssetFetchStatus.Failure and sheet then
-						failed[sheet] = true
-						why[sheet] = "its uploaded image (" .. contentId .. ") didn't load: still being moderated, or not allowed in this game"
-					end
-				end)
-			end)
-			done = true
-		end)
-		local t0 = os.clock()
-		while not done and os.clock() - t0 < (timeout or 8) do
-			task.wait(0.1)
+	fetch(full, timeout, function(sheet, uri)
+		failed[sheet] = true
+		why[sheet] = "its uploaded image (" .. uri .. ") didn't load: still being moderated, or not allowed in this game"
+	end)
+	local small = {}
+	for _, sheet in ArtAtlas.sheets do
+		local id = Art.uploadedId(sheet)
+		if id and failed[sheet] and not thumbs[sheet] then
+			small[Art.thumbnail(id)] = sheet
+			thumbs[sheet] = true -- (until it fails too)
 		end
 	end
+	fetch(small, timeout, function(sheet)
+		thumbs[sheet] = nil
+	end)
 	for _, sheet in ArtAtlas.sheets do
 		if Art.builtIn and not sourceOf(sheet) then
 			local content, problem = build(sheet)
@@ -341,6 +382,26 @@ function Art.preload(timeout: number?)
 	if not ok then
 		warn("[Trapisque] loading the art failed: " .. tostring(err))
 	end
+end
+
+-- How the sheets were had: { total, uploaded, thumbnails, built, missing } (counts).
+function Art.report(): { [string]: number }
+	local r = { total = #ArtAtlas.sheets, uploaded = 0, thumbnails = 0, built = 0, missing = 0 }
+	for _, sheet in ArtAtlas.sheets do
+		local id = Art.uploadedId(sheet)
+		if Art.localSheets then
+			r.uploaded += 1
+		elseif id and not failed[sheet] then
+			r.uploaded += 1
+		elseif id and thumbs[sheet] then
+			r.thumbnails += 1
+		elseif sources[sheet] then
+			r.built += 1
+		else
+			r.missing += 1
+		end
+	end
+	return r
 end
 
 -- The sheets that couldn't be had, and why: those Art.preload tried to load or build and

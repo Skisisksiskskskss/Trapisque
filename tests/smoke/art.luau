@@ -43,9 +43,13 @@ for i, sheet in ArtAtlas.sheets do
 	F.assetInfo[decal] = { Name = sheet, AssetTypeId = 13, Image = image }
 	F.assetInfo[image] = { Name = "Images/" .. sheet, AssetTypeId = 1 }
 	F.assets["rbxassetid://" .. image] = "art:" .. sheet
+	F.assets[string.format("rbxthumb://type=Asset&id=%d&w=420&h=420", image)] = "art:" .. sheet .. "@420"
 	decals[i] = decal
 	images[sheet] = image
 end
+-- one sheet's image won't load in this game (as if it weren't allowed here): its
+-- thumbnail stands in (the sheet with the Mage's emblem, which the lobby shows)
+F.failAssets["rbxassetid://" .. images[ArtAtlas.sprites["emblems/mage"].sheet]] = true
 
 F.spawn(function()
 	requireModule("Server/Main")
@@ -109,6 +113,8 @@ end
 for sheet, image in images do
 	check(Art.uploadedId(sheet) == image, sheet .. " got " .. tostring(Art.uploadedId(sheet)) .. ", not its image " .. image)
 end
+local report = Art.report()
+check(report.uploaded == #ArtAtlas.sheets - 1 and report.thumbnails == 1, string.format("expected %d uploaded and 1 thumbnail, got %d and %d", #ArtAtlas.sheets - 1, report.uploaded, report.thumbnails))
 -- kept for every server
 local ArtService = requireModule("Server/ArtService")
 local kept = 0
@@ -130,4 +136,10 @@ check(Root.currentName() == "lobby", "the lobby didn't come back after the art l
 if cfg.shots then
 	F.shot("art-lobby")
 end
-F.print(string.format("art: the note took %d decal ids, the server found their images and sheets, kept them, and the art loaded (%d of %d sheets)", #decals, kept, #ArtAtlas.sheets))
+-- the owner's tag says how it went
+local tag = F.findAll(Root.gui, function(d)
+	return d.Name == "ArtTag" and d:IsA("TextLabel")
+end)[1]
+check(tag ~= nil and string.find(tag.Text, "art 9/9 (1 as thumbnails)", 1, true) ~= nil, "the owner's tag reads " .. tostring(tag and tag.Text))
+check(tag.Visible, "the owner's tag is hidden in the lobby")
+F.print(string.format("art: the note took %d decal ids, the server found their images and sheets, kept them, and the art loaded (%d of %d sheets, %d as a thumbnail); the tag reads %q", #decals, kept, #ArtAtlas.sheets, report.thumbnails, tag.Text))

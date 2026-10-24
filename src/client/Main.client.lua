@@ -140,10 +140,47 @@ Net.on("badge", function(data)
 		BadgeToast.show(Root.toasts, data.key)
 	end
 end)
+-- The owner (and whoever plays in Studio) sees which version runs and how its art
+-- loaded, small in the lobby's top right corner: "v1.1.0 · art 9/9".
+local artTag: TextLabel? = nil
+local function showArtTag()
+	if not (State.get("studio") or State.get("staff") == "owner") then
+		return
+	end
+	local r = Art.report()
+	local text = string.format("v%s · art %d/%d", tostring(State.get("version")), r.uploaded + r.thumbnails + r.built, r.total)
+	if r.thumbnails > 0 then
+		text ..= string.format(" (%d as thumbnails)", r.thumbnails)
+	end
+	if r.missing > 0 then
+		text ..= " · see the art note"
+	end
+	if artTag then
+		artTag.Text = text
+		return
+	end
+	artTag = Widgets.label(Root.overlay, {
+		name = "ArtTag",
+		text = text,
+		size = 13,
+		color = Color3.fromRGB(200, 205, 214),
+		align = "right",
+		anchor = Vector2.new(1, 0),
+		position = UDim2.new(1, -14, 0, 6),
+		sizeUDim = UDim2.fromOffset(420, 18),
+		z = 5,
+	})
+	local tag = artTag :: TextLabel
+	tag.Visible = Root.currentName() == "lobby"
+	Root.onShow(function(name)
+		tag.Visible = name == "lobby"
+	end)
+end
 -- the owner pasted the ids of the uploaded art: load it, and redraw the lobby with it
 Net.on("art.ids", function(ids)
 	if Art.setUploads(ids) then
 		Art.preload(8)
+		showArtTag()
 		if Root.currentName() == "lobby" then
 			LobbyScreen.show()
 		end
@@ -220,6 +257,7 @@ else
 	if data.rejoin then
 		task.delay(1.5, RejoinOffer.show, Root.popups, data.rejoin)
 	end
+	showArtTag()
 	-- the owner (or whoever plays in Studio) hears about art that couldn't be loaded
 	if (data.studio or data.staff == "owner") and #Art.missing() > 0 then
 		task.delay(if data.rejoin then 4 else 1.5, ArtNotice.show, Root.popups)
