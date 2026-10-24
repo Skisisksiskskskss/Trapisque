@@ -1,0 +1,457 @@
+--[[
+	MapScenes
+	How each map looks: the winding route its tiles follow, the land it runs through, the
+	colours, and the landmarks. Pure data (BoardLayout turns it into positions, MapArt
+	draws it).
+
+	Units are map units (about one tile radius). y runs down.
+
+	path       points the trail passes through, Start first and the Treasure last; the
+	           main-route tiles are spaced evenly along a smooth curve through them
+	branches   extra bend points for each gated shortcut, between its two main tiles
+	land       r: how far the land reaches either side of the trail; jitter: how ragged
+	           the coast is; fill: water narrower than about twice this, between bends,
+	           becomes land; add: extra land { x, y, r }
+	islets     little islands { x, y, r } (none for now: a bare islet reads as a stray shape)
+	props      what grows or stands around: { kind, weight } lists for the land and the
+	           water, and how many to place on each (a few: the board is for playing on);
+	           grove: the prop that stands in the widest open ground (groveCount of them)
+	landmarks  fixed props: { kind, x, y, size } or { kind, tile, dx, dy, size }; one that
+	           doesn't fit (on the trail, a tile, the wrong side of the coast) is left out
+	details    the little things lying about on the land (the ground sprites: tuft,
+	           pebbles, shell, flowers, leaves): { kind, weight } list, how many, and
+	           the colour each grey one is tinted
+	mottle     soft patches of lighter and darker ground: how many, and their colours
+	colors     the map's inks: water; shallows (soft, around the land); foam (where the land
+	           meets the water); land (the ground) and lip (its edges lit from the upper
+	           left); cliff and cliffDark (the land's side, upper and lower) and cliffLine
+	           (the waterline under it); trail; tile...
+	tile       stone = round stepping stones, slab = square slabs turned along the trail
+	lava       its lava tiles get lava streams (like rivers, in the scene's lava inks)
+]]
+
+local MapScenes = {}
+
+MapScenes.blissful = {
+	path = {
+		{ 2.5, 12.8 }, { 5, 14.8 }, { 8.5, 15 }, { 11, 13.4 }, { 13.8, 14.8 }, { 17, 15.2 }, { 20.4, 14.2 },
+		{ 22.8, 12 }, { 22.2, 9.2 }, { 19.6, 7.8 }, { 16.6, 9 }, { 13.6, 10.6 }, { 10.4, 9.8 }, { 8.2, 7.2 },
+		{ 9.6, 4.2 }, { 13, 3 }, { 16.6, 4.2 }, { 19.8, 3 }, { 23.4, 2.8 }, { 26.6, 4.6 }, { 27.6, 8.2 },
+		{ 26.8, 11.6 },
+	},
+	land = {
+		r = 2.5,
+		jitter = 0.12,
+		beach = 1.05,
+		fill = 3,
+		add = {
+			{ 16.4, 12.6, 1.9 }, { 19.6, 11.2, 1.6 }, { 6.6, 11.2, 1.7 }, { 12.2, 6.8, 1.9 },
+			{ 15.6, 6.6, 1.6 }, { 24.6, 7.4, 1.7 }, { 23.4, 15.6, 1.4 },
+		},
+	},
+	rivers = true,
+	props = {
+		land = { { "palm", 6 }, { "bush", 3 }, { "rock", 2 }, { "hut", 1 } },
+		landCount = 6,
+		grove = "palm",
+		water = { { "rock", 3 }, { "barrel", 1 }, { "gull", 2 } },
+		waterCount = 2,
+	},
+	landmarks = {
+		{ "dock", tile = 1, size = 3.2 },
+		{ "ship", x = 6.2, y = 2.6, size = 3.8 },
+		{ "wreck", x = 27.4, y = 16.4, size = 3 },
+		{ "skullrock", x = 16.6, y = 12.2, size = 2.4 },
+	},
+	details = { kinds = { { "tuft", 3 }, { "shell", 2 }, { "pebbles", 2 }, { "flowers", 2 } }, count = 18, tint = { tuft = "#7DB85A", pebbles = "#EAD5A8" } },
+	mottle = { count = 12, light = "#FBDFA6", dark = "#E3B067" },
+	colors = {
+		water = "#2A8FBF",
+		foam = "#F2FBF8",
+		lip = "#FFE4AC",
+		cliff = "#E0A45C",
+		cliffDark = "#C08244",
+		cliffLine = "#8A5A2E",
+		waterMark = "#1F74A0",
+		shallows = "#6CC9DB",
+		land = "#F2C879",
+		inner = "#4FA548",
+		innerMark = "#3E8E41",
+		trail = "#E2B06A",
+		tile = "#FFF8E7",
+		tileSide = "#D9A54A",
+		number = "#A88B5E",
+		start = "#7FD1E0",
+	},
+	tile = "stone",
+}
+
+MapScenes.junction = {
+	path = {
+		{ 1.6, 14.8 }, { 4.6, 15.9 }, { 8, 15.2 }, { 11.4, 15.8 }, { 15, 15.2 }, { 18.4, 16 }, { 21.6, 14.8 },
+		{ 23, 12 }, { 21.8, 8 }, { 18.6, 8.2 }, { 15.6, 7 }, { 12.4, 8 }, { 9.2, 8.6 }, { 6, 8.8 },
+		{ 3.4, 7.2 }, { 3, 4.8 }, { 5, 2.6 }, { 7.8, 2.8 }, { 9.6, 4.8 }, { 12.4, 4.8 }, { 15.4, 3 },
+		{ 18.4, 1.4 }, { 21.8, 2.2 }, { 25, 1.4 }, { 27.8, 3.4 }, { 27.6, 6.8 }, { 26, 11 }, { 26.6, 14 },
+		{ 28.2, 16 },
+	},
+	branches = {
+		{ { 11.4, 12.2 } },
+		{},
+	},
+	land = {
+		r = 2.4,
+		jitter = 0.12,
+		beach = 0.95,
+		fill = 1.5,
+		add = {
+			{ 16.6, 12.4, 2.6 }, { 6.2, 5.8, 1.9 }, { 24.4, 8.4, 1.8 }, { 13.6, 12.6, 1.5 },
+		},
+	},
+	props = {
+		land = { { "barrel", 4 }, { "crate", 4 }, { "torch", 3 }, { "cannon", 2 }, { "rock", 1 } },
+		landCount = 6,
+		grove = "rock",
+		water = { { "rock", 4 }, { "barrel", 1 } },
+		waterCount = 2,
+	},
+	landmarks = {
+		{ "dock", tile = 1, size = 3 },
+		{ "keep", x = 16.6, y = 12.2, size = 2.6 },
+		{ "ship", x = 4, y = 18.6, size = 3.8 },
+		{ "flag", x = 6.2, y = 5.8, size = 2 },
+	},
+	gates = true,
+	tunnels = true,
+	details = { kinds = { { "pebbles", 4 }, { "tuft", 2 } }, count = 16, tint = { pebbles = "#C9C1AF", tuft = "#8FA36A" } },
+	mottle = { count = 12, light = "#B7B0A1", dark = "#8E8778" },
+	colors = {
+		water = "#1D5E80",
+		foam = "#D9E9EF",
+		lip = "#C6BEAE",
+		cliff = "#867E70",
+		cliffDark = "#676055",
+		cliffLine = "#3E3933",
+		waterMark = "#174C68",
+		shallows = "#3F86A0",
+		land = "#A39B8B",
+		inner = "#6E685E",
+		innerMark = "#5E5A52",
+		trail = "#CFC3A6",
+		tunnel = "#2A2836",
+		tile = "#F2EAD8",
+		tileSide = "#8C8476",
+		number = "#8C8476",
+		start = "#7FB6C9",
+	},
+	tile = "slab",
+}
+
+MapScenes.slimy = {
+	path = {
+		{ 2.4, 13.2 }, { 4.6, 15.4 }, { 8, 15.2 }, { 11.2, 16 }, { 14.6, 15 }, { 18, 15.6 }, { 21.2, 14.6 },
+		{ 23.4, 12.2 }, { 23, 9 }, { 23.8, 5.8 }, { 22, 3.2 }, { 18.6, 2.6 }, { 15.4, 3.4 }, { 12.2, 2.4 },
+		{ 8.8, 2.8 }, { 5.8, 3.4 }, { 3.8, 5.8 }, { 4.2, 8.8 }, { 6.6, 10.6 }, { 9.8, 11.6 }, { 13.2, 12 },
+		{ 16.6, 11.2 }, { 19, 9 }, { 18.4, 6.4 }, { 15.2, 6.4 }, { 12, 7.4 }, { 10.2, 7.6 },
+	},
+	land = {
+		r = 2.2,
+		jitter = 0.12,
+		beach = 0.9,
+		fill = 2,
+		add = { { 13.6, 9.4, 1.4 }, { 7.6, 6.6, 1.5 } },
+	},
+	pools = true,
+	props = {
+		land = { { "mangrove", 4 }, { "reeds", 4 }, { "log", 2 }, { "stump", 2 } },
+		landCount = 6,
+		grove = "mangrove",
+		water = { { "lily", 6 }, { "reeds", 2 } },
+		waterCount = 2,
+	},
+	landmarks = {
+		{ "dock", tile = 1, size = 3 },
+		{ "sunken", x = 27.2, y = 9.6, size = 3.2 },
+		{ "deadtree", x = 13.4, y = 9.2, size = 2.2 },
+	},
+	details = { kinds = { { "tuft", 5 }, { "flowers", 2 }, { "pebbles", 2 } }, count = 20, tint = { tuft = "#6E9A45", pebbles = "#A28E64" } },
+	mottle = { count = 12, light = "#9E8852", dark = "#71603A" },
+	colors = {
+		water = "#3D6E5C",
+		foam = "#CBE0D1",
+		lip = "#A9925D",
+		cliff = "#6F5B34",
+		cliffDark = "#574729",
+		cliffLine = "#33291A",
+		waterMark = "#2F5A4B",
+		shallows = "#5F927A",
+		land = "#8A7442",
+		inner = "#55803A",
+		innerMark = "#466C30",
+		trail = "#B87333",
+		trailMark = "#7A4A1F",
+		pool = "#9BCF2E",
+		tile = "#EBC48F",
+		tileSide = "#7A4A1F",
+		number = "#9C6B3A",
+		start = "#B8D98A",
+	},
+	tile = "slab",
+}
+
+MapScenes.haunted = {
+	path = {
+		{ 2.4, 15.6 }, { 5.5, 16.6 }, { 9, 16 }, { 12.5, 16.8 }, { 16, 16 }, { 19.5, 16.8 }, { 23, 16 }, { 26, 14.6 },
+		{ 27, 11.8 }, { 24.5, 10 }, { 21, 10.8 }, { 17.5, 9.8 }, { 14, 10.6 }, { 10.5, 9.6 }, { 7, 10.4 }, { 4, 9.2 },
+		{ 3.2, 6.4 }, { 5.6, 4.4 }, { 9, 4.8 }, { 12.5, 3.8 }, { 16, 4.6 }, { 19.5, 3.6 }, { 23, 4.4 }, { 25.6, 3.6 },
+		{ 27.4, 5.6 },
+	},
+	land = {
+		r = 2.4,
+		jitter = 0.12,
+		beach = 0.9,
+		fill = 2.4,
+		add = { { 14.6, 13.4, 1.6 }, { 9.4, 7.2, 1.5 }, { 20.6, 7.2, 1.5 } },
+	},
+	props = {
+		land = { { "grave", 6 }, { "pumpkin", 3 }, { "deadtree", 2 }, { "lamp", 2 }, { "fence", 2 }, { "rock", 1 } },
+		landCount = 6,
+		grove = "deadtree",
+		water = { { "rock", 4 }, { "mist", 3 }, { "barrel", 1 } },
+		waterCount = 2,
+	},
+	landmarks = {
+		{ "dock", tile = 1, size = 3 },
+		{ "crypt", x = 20.6, y = 7.2, size = 2.6 },
+		{ "ghostship", x = 6.6, y = 19.6, size = 3.8 },
+		{ "deadtree", x = 14.6, y = 13.4, size = 2.2 },
+	},
+	details = { kinds = { { "tuft", 4 }, { "leaves", 2 }, { "pebbles", 2 } }, count = 18, tint = { tuft = "#8E9470", leaves = "#8C6A44", pebbles = "#A3A594" } },
+	mottle = { count = 12, light = "#8B9079", dark = "#676C59" },
+	colors = {
+		water = "#1E3A55",
+		foam = "#B7CAD6",
+		lip = "#969B84",
+		cliff = "#5F6353",
+		cliffDark = "#4A4D41",
+		cliffLine = "#2A2C25",
+		waterMark = "#172E45",
+		shallows = "#2F5674",
+		land = "#7A7F6A",
+		inner = "#46603E",
+		innerMark = "#3A5134",
+		trail = "#A99B82",
+		tile = "#ECE6D4",
+		tileSide = "#8C8476",
+		number = "#8C8476",
+		start = "#9FB8C9",
+	},
+	tile = "slab",
+}
+
+MapScenes.volcano = {
+	path = {
+		{ 2.4, 16.4 }, { 5.8, 17.6 }, { 9.4, 16.6 }, { 13, 17.8 }, { 16.6, 16.6 }, { 20.2, 17.8 }, { 23.8, 16.8 }, { 26.6, 15 },
+		{ 26.8, 12.4 }, { 24, 11.2 }, { 20.6, 12.4 }, { 17, 11.2 }, { 13.4, 12.4 }, { 9.8, 11.2 }, { 6.4, 12.2 }, { 3.4, 11.2 },
+		{ 2.6, 8.4 }, { 4.6, 6 }, { 8, 6.8 }, { 11.6, 5.6 }, { 15.2, 6.8 }, { 18.6, 5.6 }, { 21.4, 3.4 }, { 21.6, 1.2 },
+	},
+	land = {
+		r = 2.4,
+		jitter = 0.12,
+		beach = 0.9,
+		fill = 2.4,
+		add = { { 27.2, 6.4, 3.6 }, { 24.4, 7.4, 2.2 }, { 15, 14.4, 1.4 } },
+	},
+	lava = true,
+	props = {
+		land = { { "palm", 3 }, { "lavarock", 4 }, { "charred", 3 }, { "vent", 2 }, { "rock", 2 } },
+		landCount = 6,
+		grove = "charred",
+		water = { { "rock", 4 }, { "barrel", 1 }, { "gull", 1 } },
+		waterCount = 2,
+	},
+	landmarks = {
+		{ "dock", tile = 1, size = 3 },
+		{ "volcano", x = 27.2, y = 6.6, size = 5.2 },
+		{ "ship", x = 9, y = 1.4, size = 3.6 },
+	},
+	details = { kinds = { { "pebbles", 4 }, { "tuft", 1 } }, count = 14, tint = { pebbles = "#5C4D45", tuft = "#7F8A4E" } },
+	mottle = { count = 12, light = "#7B695D", dark = "#58493F" },
+	colors = {
+		water = "#24839F",
+		foam = "#E4F3F5",
+		lip = "#86735F",
+		cliff = "#54463E",
+		cliffDark = "#3F342E",
+		cliffLine = "#211A17",
+		waterMark = "#1C6A82",
+		shallows = "#58B7C9",
+		land = "#6B5A50",
+		inner = "#4A3E38",
+		innerMark = "#3A302C",
+		trail = "#D4B088",
+		tile = "#F4E6CC",
+		tileSide = "#8A6A4A",
+		number = "#8A6A4A",
+		start = "#7FD1E0",
+		lava = "#F2541B",
+		lavaGlow = "#FFB000",
+	},
+	tile = "stone",
+}
+
+-- a chain of ice floes across a frozen sea
+MapScenes.frostbite = {
+	path = {
+		{ 2.2, 17.2 }, { 5.4, 18.2 }, { 8.8, 17.2 }, { 12.2, 18 }, { 15.6, 17 }, { 19, 17.8 }, { 22.4, 16.8 }, { 25.2, 15.2 },
+		{ 25.8, 12.8 }, { 23, 11.6 }, { 19.6, 12.4 }, { 16, 11.4 }, { 12.4, 12.2 }, { 8.8, 11.2 }, { 5.6, 11.8 }, { 3.2, 10 },
+		{ 3.4, 7.4 }, { 6.2, 6 }, { 9.6, 6.8 }, { 13.2, 5.8 }, { 16.8, 6.6 }, { 20.4, 5.6 }, { 23.8, 6.2 }, { 26.4, 4.6 },
+		{ 26, 2.4 }, { 22.8, 1.6 }, { 19.4, 2.4 }, { 16.4, 1.8 },
+	},
+	land = {
+		r = 2.3,
+		jitter = 0.18,
+		beach = 0.85,
+		fill = 2.4,
+		add = { { 14.6, 14.6, 1.8 }, { 11.4, 9, 1.4 }, { 21.4, 9, 1.4 } },
+	},
+	props = {
+		land = { { "pine_snow", 5 }, { "icerock", 3 }, { "snowman", 1 } },
+		landCount = 6,
+		grove = "pine_snow",
+		water = { { "iceberg", 3 }, { "floe", 3 }, { "seal", 1 } },
+		waterCount = 3,
+	},
+	landmarks = {
+		{ "dock", tile = 1, size = 3 },
+		{ "igloo", x = 14.6, y = 14.6, size = 2.2 },
+		{ "frozenship", x = 10, y = 2, size = 3 },
+		{ "iceberg", x = 5, y = 2.6, size = 2.6 },
+	},
+	details = { kinds = { { "tuft", 3 }, { "pebbles", 3 } }, count = 16, tint = { tuft = "#A9C3D2", pebbles = "#B9CCDA" } },
+	mottle = { count = 12, light = "#FFFFFF", dark = "#D3E2EC" },
+	colors = {
+		water = "#1F5878",
+		foam = "#EAF6FB",
+		lip = "#FFFFFF",
+		cliff = "#9CC6DE",
+		cliffDark = "#6FA3C4",
+		cliffLine = "#3E6E8E",
+		waterMark = "#174663",
+		shallows = "#5FA9C6",
+		land = "#E6F0F6",
+		inner = "#D3E5EF",
+		innerMark = "#C0D6E4",
+		trail = "#C4D7E4",
+		tile = "#F6FBFE",
+		tileSide = "#8FB4CC",
+		number = "#7C9CB2",
+		start = "#7FD1E0",
+	},
+	tile = "slab",
+}
+
+-- an atoll ringing the Kraken's whirlpool
+MapScenes.kraken = {
+	path = {
+		{ 3.4, 16.4 }, { 6.4, 18.4 }, { 10, 18.6 }, { 13.6, 17.8 }, { 17.2, 18.6 }, { 20.8, 18 }, { 24.2, 17.4 }, { 26.8, 15.2 },
+		{ 28, 12 }, { 27.6, 8.6 }, { 26.4, 5.4 }, { 23.8, 3 }, { 20.4, 1.8 }, { 16.8, 2.4 }, { 13.2, 1.6 }, { 9.6, 2.2 }, { 6.4, 3.2 },
+		{ 4, 5.4 }, { 2.8, 8.4 }, { 3, 11.8 },
+	},
+	land = {
+		r = 2.4,
+		jitter = 0.12,
+		beach = 1.0,
+		fill = 1.2,
+		add = { { 8.2, 10.4, 1.5 } },
+	},
+	props = {
+		land = { { "coral", 4 }, { "barnacle", 2 }, { "palm", 2 }, { "bones", 1 }, { "anchor", 1 } },
+		landCount = 7,
+		grove = "palm",
+		water = { { "rock", 3 }, { "mast", 1 } },
+		waterCount = 3,
+	},
+	landmarks = {
+		{ "dock", tile = 1, size = 3 },
+		{ "whirlpool", x = 15.4, y = 10.2, size = 6.2 },
+		{ "lighthouse", x = 8.2, y = 10.6, size = 2.6 },
+		{ "wreck", x = 21.2, y = 13.2, size = 2.4 },
+	},
+	details = { kinds = { { "shell", 4 }, { "pebbles", 2 }, { "tuft", 2 } }, count = 18, tint = { pebbles = "#E9C9A8", tuft = "#8FBF6A" } },
+	mottle = { count = 12, light = "#FBE4C6", dark = "#DDB08C" },
+	colors = {
+		water = "#1D4F7A",
+		foam = "#EFFAF8",
+		lip = "#FBE4C6",
+		cliff = "#C98F72",
+		cliffDark = "#A06A52",
+		cliffLine = "#5E3A2C",
+		waterMark = "#173F63",
+		shallows = "#3FA6B8",
+		land = "#EBC9A8",
+		inner = "#7FB36A",
+		innerMark = "#6A9C58",
+		trail = "#D8AF86",
+		tile = "#FFF6EA",
+		tileSide = "#B88660",
+		number = "#9C7A5A",
+		start = "#7FD1E0",
+	},
+	tile = "stone",
+}
+
+-- a tinkerer's harbour of cogs and pistons
+MapScenes.clockwork = {
+	path = {
+		{ 3.4, 17.4 }, { 6.4, 18.2 }, { 9.5, 17.4 }, { 12.6, 18.2 }, { 15.7, 17.4 }, { 18.9, 18.2 }, { 22, 17.4 },
+		{ 24.9, 16.6 }, { 26.8, 14.4 }, { 26.6, 11.8 }, { 24.2, 10.6 },
+		{ 21.1, 11.4 }, { 17.8, 10.6 }, { 14.4, 11.4 }, { 11.1, 10.6 }, { 7.8, 11.4 }, { 5.1, 10.2 },
+		{ 4, 7.6 }, { 5.6, 5.6 },
+		{ 8.6, 6.2 }, { 11.9, 5.4 }, { 15.2, 6.2 }, { 18.5, 5.4 }, { 21.8, 6.2 }, { 24.8, 5 },
+		{ 26, 2.8 }, { 23.5, 1.6 }, { 20.2, 2.2 },
+	},
+	land = {
+		r = 2.4,
+		jitter = 0.08,
+		beach = 0.8,
+		fill = 2.4,
+		add = { { 8, 14.6, 1.8 }, { 20.2, 14.4, 1.6 }, { 26.6, 8.4, 1.6 } },
+	},
+	canal = true,
+	props = {
+		land = { { "gear", 3 }, { "pipes", 4 }, { "smokestack", 3 }, { "crate", 2 }, { "barrel", 1 } },
+		landCount = 8,
+		grove = "smokestack",
+		water = { { "buoy", 3 }, { "rock", 1 }, { "barrel", 1 } },
+		waterCount = 2,
+	},
+	landmarks = {
+		{ "dock", tile = 1, size = 3 },
+		{ "clocktower", x = 8, y = 15, size = 2.5 },
+		{ "crane", x = 26.6, y = 8.6, size = 2.8 },
+		{ "ship", x = 9.5, y = 1.6, size = 3.6 },
+	},
+	details = { kinds = { { "pebbles", 4 }, { "tuft", 1 } }, count = 14, tint = { pebbles = "#B5A58C", tuft = "#8A9A5E" } },
+	mottle = { count = 12, light = "#BCAE96", dark = "#8E806A" },
+	colors = {
+		water = "#2C5B5A",
+		foam = "#DCEBE6",
+		lip = "#C9BBA2",
+		cliff = "#8E5A40",
+		cliffDark = "#6E4230",
+		cliffLine = "#3A2218",
+		waterMark = "#224948",
+		shallows = "#4F8A80",
+		land = "#A89880",
+		inner = "#7E7666",
+		innerMark = "#6C6556",
+		trail = "#C2B08C",
+		tile = "#E9E2D2",
+		tileSide = "#7E6E58",
+		number = "#7E6E58",
+		start = "#7FB6C9",
+	},
+	tile = "slab",
+}
+
+return MapScenes
