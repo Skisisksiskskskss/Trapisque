@@ -5,8 +5,10 @@
 	says whether it can.
 
 	Each sheet comes from the first of these that works:
-	  - its uploaded image (ArtAssets), while that upload is of the sheet's current
-	    version (ArtAtlas.versions): works in every game, on every device
+	  - its uploaded image, while that upload is of the sheet's current version
+	    (ArtAtlas.versions): works in every game, on every device. The ids come from
+	    ArtAssets (built into the place) or from the owner, pasted into the art note in
+	    the lobby and kept by the server (ArtService; Art.setUploads)
 	  - the sheet built in the game itself from its pixels in ArtData, as an
 	    EditableImage: needs nothing uploaded, but Roblox only allows it once the owner
 	    (an ID-verified account) turns on Experience Settings > Security > Allow Mesh /
@@ -22,6 +24,8 @@
 		Art.preload(timeout?)                            -- loads / builds the sheets
 		Art.missing() -> { { sheet, why } }              -- the sheets that couldn't be had
 		Art.uploadedId(sheet) -> number?                 -- its upload, if that's current
+		Art.setUploads({ [sheet] = { id, version } }) -> boolean   -- the owner's uploads
+		                                                 -- (true if any changed: preload again)
 
 	Art.image's frame is the sprite's whole canvas (props size and place it; it keeps the
 	canvas's shape); the image inside covers just the part that's drawn (the sheets hold
@@ -45,26 +49,62 @@ local failed: { [string]: boolean } = {} -- uploads that Roblox wouldn't load
 local why: { [string]: string } = {} -- why a sheet couldn't be had
 local blocked: string? = nil -- why the game can't make images at all (so it stops trying)
 local keep: { EditableImage } = {} -- the built sheets, held so they stay alive
+local uploads: { [string]: { id: number, version: string } } = {} -- the owner's (ArtService)
+local busy = false -- a preload is running
 
 -- The image id `sheet` was uploaded as, if that upload is of its current version (an id
 -- written in by hand without its version is taken as current). `assets` and `versions`
 -- default to ArtAssets and ArtAtlas.versions.
 function Art.uploadedId(sheet: string, assets: { [string]: any }?, versions: { [string]: string }?): number?
-	local entry = (assets or ArtAssets :: any)[sheet]
-	if type(entry) == "number" then
-		return if entry > 0 then entry else nil
-	end
 	local current = (versions or (ArtAtlas :: any).versions or {})[sheet]
-	if type(entry) == "table" and type(entry.id) == "number" and entry.id > 0 and entry.version == current then
-		return entry.id
+	local function check(entry: any): number?
+		if type(entry) == "number" then
+			return if entry > 0 then entry else nil
+		end
+		if type(entry) == "table" and type(entry.id) == "number" and entry.id > 0 and entry.version == current then
+			return entry.id
+		end
+		return nil
 	end
-	return nil
+	if assets then
+		return check(assets[sheet])
+	end
+	-- the owner's own uploads first, then the ones built into the place
+	return check(uploads[sheet]) or check((ArtAssets :: any)[sheet])
+end
+
+-- The owner's uploads (from the server: ArtService), each { id, version }. True if any
+-- changed, so the sheets want loading again (Art.preload).
+function Art.setUploads(entries: any): boolean
+	if type(entries) ~= "table" then
+		return false
+	end
+	local changed = false
+	for sheet, entry in entries do
+		if type(sheet) == "string" and type(entry) == "table" and type(entry.id) == "number" and type(entry.version) == "string" then
+			local old = uploads[sheet]
+			if not old or old.id ~= entry.id or old.version ~= entry.version then
+				uploads[sheet] = { id = entry.id, version = entry.version }
+				failed[sheet] = nil
+				why[sheet] = nil
+				changed = true
+			end
+		end
+	end
+	return changed
 end
 
 -- Whether `sheet` was uploaded, but before its art last changed.
 local function outdated(sheet: string): boolean
-	local entry = (ArtAssets :: any)[sheet]
-	return type(entry) == "table" and type(entry.id) == "number" and entry.id > 0 and Art.uploadedId(sheet) == nil
+	if Art.uploadedId(sheet) then
+		return false
+	end
+	for _, entry in { uploads[sheet], (ArtAssets :: any)[sheet] } do
+		if type(entry) == "table" and type(entry.id) == "number" and entry.id > 0 then
+			return true
+		end
+	end
+	return false
 end
 
 local function sourceOf(sheet: string): Source?
@@ -231,10 +271,7 @@ end
 
 -- Loads the uploaded sheets (with a time limit; one Roblox won't load is dropped), then
 -- builds the rest from ArtData, and says in the Output which couldn't be had and why.
-function Art.preload(timeout: number?)
-	if Art.localSheets then
-		return
-	end
+local function loadSheets(timeout: number?)
 	local list, sheetOf = {}, {}
 	for _, sheet in ArtAtlas.sheets do
 		local id = Art.uploadedId(sheet)
@@ -285,6 +322,24 @@ function Art.preload(timeout: number?)
 				.. "\nUpload those sheets (art/sheets in the repository; see art/README.md), or turn on "
 				.. "Experience Settings > Security > Allow Mesh / Image APIs."
 		)
+	end
+end
+
+-- Gets the sheets ready (loadSheets): run before the first screen draws, and again when
+-- the owner's uploads change.
+function Art.preload(timeout: number?)
+	if Art.localSheets then
+		return
+	end
+	-- (one at a time: the owner's uploads can arrive while the first one runs)
+	while busy do
+		task.wait(0.1)
+	end
+	busy = true
+	local ok, err = pcall(loadSheets, timeout)
+	busy = false
+	if not ok then
+		warn("[Trapisque] loading the art failed: " .. tostring(err))
 	end
 end
 

@@ -32,7 +32,7 @@ CLASSES = [
     "ObjectValue", "RemoteEvent", "RemoteFunction", "UnreliableRemoteEvent", "BindableEvent",
     "BindableFunction", "ExperienceInviteOptions", "TeleportOptions", "Tween", "InputObject",
     "Player", "PlayerGui", "PlayerScripts", "Backpack", "Camera", "ModuleScript", "LocalScript",
-    "Script",
+    "Script", "Decal",
     # services
     "DataModel", "Workspace", "Players", "ReplicatedStorage", "ReplicatedFirst", "RunService",
     "UserInputService", "TweenService", "GuiService", "StarterGui", "StarterPlayer",
@@ -40,7 +40,7 @@ CLASSES = [
     "TextService", "DataStoreService", "MemoryStoreService", "TeleportService", "PolicyService",
     "UserService", "ServerScriptService", "ServerStorage", "Lighting", "Debris",
     "CollectionService", "LocalizationService", "GroupService", "BadgeService",
-    "MessagingService", "AnalyticsService", "TextChatService",
+    "MessagingService", "AnalyticsService", "TextChatService", "InsertService",
     # chat voices (client Voice.lua)
     "AudioTextToSpeech", "AudioDeviceOutput", "AudioFader", "Wire", "AudioEcho", "AudioReverb",
     "AudioChorus", "AudioFlanger", "AudioDistortion", "AudioEqualizer", "AudioTremolo",

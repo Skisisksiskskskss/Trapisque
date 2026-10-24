@@ -217,7 +217,8 @@ In Studio:
    answering: the reason is in brackets there and in the Output window, along with
    any service that failed to start (`[Trapisque] ... failed`).
 5. If the board, pieces and emblems look plain, the art sheets aren't loaded: a note in
-   the lobby says which and why. Upload them (step 4 of Publishing below).
+   the lobby says which and why, and takes the ids once they're uploaded (step 4 of
+   Publishing below).
 
 ## Publishing
 
@@ -229,12 +230,14 @@ In Studio:
    all work in a published experience without extra setup.
 3. Create the gamepasses (next section) and paste their ids into
    `src/shared/Config.lua`.
-4. Upload the nine art sheets (`art/sheets`) and write in their ids
-   ([art/README.md](art/README.md) has the steps, or `tools/upload_art.py` does it with
-   an Open Cloud key). Until they're uploaded, the game tries to build its illustrations
-   (pieces, props, emblems, cards) itself, which Roblox only allows with **File →
-   Experience Settings → Security → Allow Mesh / Image APIs** on (that needs an age- and
-   ID-verified owner); with neither, it draws plainer stand-ins and tells the owner why.
+4. Upload the nine art sheets (`art/sheets`) as Decals (create.roblox.com → Creations →
+   Decals) or with Studio's Asset Manager, then paste their ids into the art note the
+   lobby shows you (the owner), in any order, and press **Save ids**: every server keeps
+   them ([art/README.md](art/README.md) has the details; `tools/upload_art.py` can
+   upload them with an Open Cloud key instead). Until they're uploaded, the game tries
+   to build its illustrations (pieces, props, emblems, cards) itself, which Roblox only
+   allows with **File → Experience Settings → Security → Allow Mesh / Image APIs** on
+   (that needs an age- and ID-verified owner); with neither, it draws plainer stand-ins.
 5. The owner panel is yours automatically: the game's creator (the group's owner, for
    a group game) is the owner. Add more owners by user id in `Config.Staff.OwnerIds`;
    admins are picked in the panel itself. Staff lists, bans and gifts for offline

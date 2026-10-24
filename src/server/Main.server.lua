@@ -27,6 +27,7 @@ local LeaderboardService = require(script.Parent.LeaderboardService)
 local ChatService = require(script.Parent.ChatService)
 local AdminService = require(script.Parent.AdminService)
 local BadgeService = require(script.Parent.BadgeService)
+local ArtService = require(script.Parent.ArtService)
 
 Net.init()
 
@@ -60,6 +61,8 @@ Net.handle("hello", function(player)
 		status = try("the match status", MatchService.status, player),
 		chat = try("the chat status", ChatService.status, player),
 		staff = try("the staff role", AdminService.role, player),
+		-- the art sheets the owner uploaded (ArtService)
+		art = try("the art ids", ArtService.ids),
 	}
 end)
 
@@ -91,6 +94,8 @@ start("MatchmakingService", MatchmakingService.init)
 start("MatchService", MatchService.init)
 start("ChatService", ChatService.init)
 start("AdminService", AdminService.init)
+ArtService.roleOf = AdminService.role
+start("ArtService", ArtService.init)
 BadgeService.roleOf = AdminService.role
 DataService.canUnlockAll = function(player)
 	return AdminService.role(player) == "owner"

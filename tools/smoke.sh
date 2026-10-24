@@ -2,7 +2,8 @@
 # Plays the whole game (server and client) on the fake Roblox in tests/fake, once per
 # scenario: a PC, phones held sideways and upright, a team mode, the weekly event, Quick
 # Play, the guided first match, a private match with house rules, and a match on each
-# of the three newest maps.
+# of the three newest maps. "art" is the owner's art note instead (tests/smoke/art.luau):
+# the ids of the uploaded sheets pasted in, kept by the server, and the art loading.
 # Each run joins, tours the lobby, plays a practice match to the end with the real
 # controls and goes back to the lobby. Any error, warning or mangled remote / DataStore
 # table fails it. See tests/smoke/smoke.luau.
@@ -27,8 +28,9 @@ declare -A SCENARIOS=(
 	[frost]='name = "frost", w = 1280, h = 720, mode = "chaos", map = "Frostbite Floes", bots = 3, seed = 23'
 	[kraken]='name = "kraken", w = 844, h = 390, touch = true, safe = { l = 47, r = 47, t = 0, b = 21 }, inset = 48, barLeft = 160, mode = "chaos", map = "Kraken'"'"'s Reach", bots = 3, seed = 29'
 	[clockwork]='name = "clockwork", w = 1366, h = 768, mode = "chaos", map = "Clockwork Cove", bots = 3, seed = 31'
+	[art]='name = "art", w = 1280, h = 720'
 )
-ORDER=(pc phone upright teams event quickplay tutorial private frost kraken clockwork)
+ORDER=(pc phone upright teams event quickplay tutorial private frost kraken clockwork art)
 if [ $# -gt 0 ]; then
 	ORDER=("$@")
 fi
@@ -37,8 +39,12 @@ failed=0
 for name in "${ORDER[@]}"; do
 	spec=${SCENARIOS[$name]:?unknown scenario $name}
 	echo "SMOKE = { $spec }" > "build/smoke/$name.luau"
+	script=tests/smoke/smoke.luau
+	if [ "$name" = art ]; then
+		script=tests/smoke/art.luau
+	fi
 	python3 tools/bundle.py --all "build/smoke/$name.run.luau" "build/smoke/$name.luau" \
-		tests/fake/classes.luau tests/fake/fonts.luau tests/fake/roblox.luau tests/smoke/smoke.luau
+		tests/fake/classes.luau tests/fake/fonts.luau tests/fake/roblox.luau "$script"
 	if "$LUAU" "build/smoke/$name.run.luau" > "build/smoke/$name.out" 2>&1; then
 		grep -E "^$name:" "build/smoke/$name.out" || true
 		grep -E "^  " "build/smoke/$name.out" || true

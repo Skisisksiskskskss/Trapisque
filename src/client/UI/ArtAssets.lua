@@ -12,13 +12,13 @@
 ]]
 
 return {
-	scenery_1 = { id = 0, version = "f7b102c49726" },
-	scenery_2 = { id = 0, version = "bfd491c61b81" },
-	scenery_3 = { id = 0, version = "6280ee4734d3" },
-	pieces_1 = { id = 0, version = "f5d0b79e9fee" },
-	pieces_2 = { id = 0, version = "00922546c219" },
-	pieces_3 = { id = 0, version = "5ac8c70b204f" },
-	icons_1 = { id = 0, version = "4c41186e6efb" },
-	icons_2 = { id = 0, version = "4bdbba8e54b2" },
-	icons_3 = { id = 0, version = "5ec65d2c8d2d" },
+	scenery_1 = { id = 137758988666662, version = "f7b102c49726" },
+	scenery_2 = { id = 75613331100483, version = "bfd491c61b81" },
+	scenery_3 = { id = 114458018925808, version = "6280ee4734d3" },
+	pieces_1 = { id = 86856771255019, version = "f5d0b79e9fee" },
+	pieces_2 = { id = 103690998359771, version = "00922546c219" },
+	pieces_3 = { id = 108930293665274, version = "5ac8c70b204f" },
+	icons_1 = { id = 130011418411297, version = "4c41186e6efb" },
+	icons_2 = { id = 92014138360421, version = "4bdbba8e54b2" },
+	icons_3 = { id = 82942990014553, version = "5ec65d2c8d2d" },
 }

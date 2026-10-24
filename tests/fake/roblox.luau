@@ -3435,6 +3435,9 @@ METHODS.SocialService = {
 }
 service("MarketplaceService")
 F.prompts = {}
+-- assets the fake Roblox knows by id: F.assetInfo[id] = { Name, AssetTypeId (1 image,
+-- 13 decal), Image = a decal's image id }
+F.assetInfo = {}
 METHODS.MarketplaceService = {
 	UserOwnsGamePassAsync = function()
 		return false
@@ -3446,7 +3449,26 @@ METHODS.MarketplaceService = {
 		table.insert(F.prompts, id)
 	end,
 	GetProductInfo = function(_self, id)
+		local asset = F.assetInfo[id]
+		if asset then
+			return { Name = asset.Name, AssetTypeId = asset.AssetTypeId, Description = "" }
+		end
 		return { Name = "Pass " .. tostring(id), PriceInRobux = 99, IconImageAssetId = 0, Description = "" }
+	end,
+}
+service("InsertService")
+METHODS.InsertService = {
+	-- a decal comes as a Model holding the Decal, its Texture the image's address
+	LoadAsset = function(_self, id)
+		local asset = F.assetInfo[id]
+		if not asset or asset.AssetTypeId ~= 13 then
+			error("HTTP 403 (Forbidden)", 2)
+		end
+		local model = Instance.new("Model")
+		local decal = Instance.new("Decal")
+		decal.Texture = "http://www.roblox.com/asset/?id=" .. tostring(asset.Image)
+		decal.Parent = model
+		return model
 	end,
 }
 service("HttpService")

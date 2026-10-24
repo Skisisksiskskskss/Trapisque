@@ -140,6 +140,15 @@ Net.on("badge", function(data)
 		BadgeToast.show(Root.toasts, data.key)
 	end
 end)
+-- the owner pasted the ids of the uploaded art: load it, and redraw the lobby with it
+Net.on("art.ids", function(ids)
+	if Art.setUploads(ids) then
+		Art.preload(8)
+		if Root.currentName() == "lobby" then
+			LobbyScreen.show()
+		end
+	end
+end)
 Net.on("match.closed", function()
 	if MatchScreen.current() then
 		LobbyScreen.show()
@@ -189,8 +198,10 @@ State.set("staff", data.staff)
 if data.profile and data.profile.settings then
 	Sound.applySettings(data.profile.settings)
 end
--- the art sheets: built (or loaded, once uploaded) before the first screen draws them
+-- the art sheets: loaded (or built) before the first screen draws them, with the
+-- uploads the owner pasted into the art note (ArtService)
 loading(0.9, "Setting out the pieces...")
+Art.setUploads(data.art)
 Art.preload(8)
 -- sounds and music load in the background; the lobby shows how far along they are
 Sound.preload(function(done, total)

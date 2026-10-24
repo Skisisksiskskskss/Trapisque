@@ -323,8 +323,10 @@ style (smooth shapes lit from the upper left, outlines in a darker shade of each
 part's colour, a soft shadow; `art/README.md`), drawn as SVG and packed into image sheets
 that are uploaded to Roblox. (The game can also build the sheets itself, but Roblox only
 allows that with Allow Mesh / Image APIs on, for an ID-verified owner; with neither, it
-draws plain stand-ins and tells the owner. Each upload carries the version of the sheet
-it was, so an upload of older art is never used for sprites that moved.) The land, water, trail and tiles are still built from UI frames so they stay
+draws plain stand-ins and tells the owner, whose note takes the uploaded ids: pasted in
+any order, matched to their sheets by name, kept by the server for every server. Each
+upload carries the version of the sheet it was, so an upload of older art is never used
+for sprites that moved.) The land, water, trail and tiles are still built from UI frames so they stay
 sharp at any zoom, but the coast is smoothed: wherever two of the land's discs meet,
 the corner is filled with a curve (`BoardLayout.fillets`, a morphological closing),
 the little holes where three discs nearly meet are plugged, small lagoons are shallow

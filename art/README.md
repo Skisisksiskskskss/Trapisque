@@ -79,7 +79,24 @@ them as "to upload".
 
 ## How the game gets the art
 
-**Upload the sheets.** That's what works in every game, on every device:
+**Upload the sheets.** That's what works in every game, on every device. The quickest
+way, with nothing to rebuild:
+
+1. Upload the nine files in `art/sheets/` to Roblox, as **Decals** on create.roblox.com
+   (Creations → Decals → Upload Asset; keep each file's name) or with Studio's Asset
+   Manager import. Uploads go to whoever uploads them, so do it as the game's owner (or
+   to the group, for a group's game).
+2. Play the game (in Studio or live) as its owner. The lobby shows the art note: paste
+   the nine ids into it, in any order (decal ids, image ids or their links all work),
+   and press **Save ids**.
+
+The server looks each id up, finds the image behind a decal, matches it to its sheet by
+the name it was uploaded under (or else by the order the note lists them in), keeps them
+in a DataStore for every server (`ArtService`), and the art loads straight away, for
+everyone. (In Studio, DataStores need Game Settings → Security → Enable Studio Access to
+API Services, or the ids last only until the game closes.)
+
+Or write the ids into the place itself:
 
 1. In Studio (with the place published), open the **Asset Manager** (the **Window**
    menu, or the **Home** tab), click its import button (**Bulk Import**) and pick the
