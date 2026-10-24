@@ -25,6 +25,7 @@ local Voices = require(Shared.Meta.Voices)
 local Passes = require(Shared.Meta.Passes)
 local Progress = require(Shared.Meta.Progress)
 local DailyShop = require(Shared.Meta.DailyShop)
+local Fishing = require(Shared.Meta.Fishing)
 local Tutorial = require(Shared.Meta.Tutorial)
 local Characters = require(Shared.Game.Characters)
 
@@ -595,12 +596,13 @@ function DataService.baseFor(player: Player, character: string?): number
 	return Progress.baseTier(Progress.masteryLevel(data.mastery[character] or 0))
 end
 
--- A catch for the fish log; returns how many of it they have now, and whether it's
--- bigger than any they'd landed before.
-function DataService.addCatch(player: Player, catchId: string, size: number?): (number, boolean)
+-- A catch for the fish log; returns how many of it they have now, whether it's bigger
+-- than any they'd landed before, and what filling the log has just earned them
+-- (Fishing.Rewards: cosmetic ids, given here).
+function DataService.addCatch(player: Player, catchId: string, size: number?): (number, boolean, { string })
 	local data = DataService.get(player)
 	if not data or catchId == "coin" then
-		return 0, false
+		return 0, false, {}
 	end
 	data.fish[catchId] = (data.fish[catchId] or 0) + 1
 	local record = false
@@ -611,7 +613,23 @@ function DataService.addCatch(player: Player, catchId: string, size: number?): (
 			data.fishBest[catchId] = size
 		end
 	end
-	return data.fish[catchId], record
+	local species = 0
+	for _, c in Fishing.logged do
+		if (data.fish[c.id] or 0) > 0 then
+			species += 1
+		end
+	end
+	local unlocked = {}
+	for _, item in Fishing.rewardsFor(species) do
+		if not data.owned[item] and Cosmetics.get(item) then
+			data.owned[item] = true
+			table.insert(unlocked, item)
+		end
+	end
+	if #unlocked > 0 then
+		DataService.pushProfile(player)
+	end
+	return data.fish[catchId], record, unlocked
 end
 
 -- Buy one of today's daily deals.

@@ -623,8 +623,12 @@ local function bestCardPlay(game, p)
 				-- the count of hidden traps out there is public (everyone saw them being hidden)
 				consider({ type = "play", item = item }, unseen * 0.8 - 1.2)
 			elseif use == "anchor" then
-				if not p.anchor and (game.board.dist[p.tile] or 99) <= 7 and p.tile ~= game.board.start then
-					consider({ type = "play", item = item }, 3)
+				-- insurance against being knocked back: down a good way along the lap, but
+				-- not at the treasure's door (banking it breaks the anchor)
+				local d = game.board.dist[p.tile] or 99
+				local lap = game.board.dist[game.board.start] or 40
+				if not p.anchor and p.tile ~= game.board.start and d >= 6 and d <= lap * 0.6 then
+					consider({ type = "play", item = item }, 2.5)
 				end
 			elseif use == "jeopardy" then
 				local lead = leader(game, opponents(game, p))

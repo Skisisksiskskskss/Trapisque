@@ -313,7 +313,7 @@ local defs = {
 		use = "anchor",
 		price = 4,
 		short = "Anchor & recall",
-		text = "Drop a time anchor where you stand. On any later turn you can warp back to it instead of moving, even after you've banked a treasure.",
+		text = "Drop a time anchor where you stand. On a later turn you can warp back to it instead of moving. Everyone can see it, and it breaks when you reach the treasure.",
 	},
 	{
 		id = "jeopardy_potion",

@@ -837,7 +837,7 @@ function MatchService.init()
 		if not match then
 			return false, "You're not in a match."
 		end
-		return match:fish(player, payload.action)
+		return match:fish(player, payload.action, payload)
 	end)
 
 	Net.handle("match.emote", function(player, payload)

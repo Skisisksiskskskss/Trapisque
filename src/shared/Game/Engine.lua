@@ -22,7 +22,8 @@
 			move      pick a die to move with; the other die charges your Power
 			          (doubles: the second die of the pair moves you backwards, or
 			          move the total, which charges no Power)
-			recall    warp back to your Time Travel anchor instead of moving
+			recall    warp back to your Time Travel anchor instead of moving (reaching the
+			          treasure breaks it)
 		Landing on a Potion Seller opens the shop: buy / shopDone.
 		Scavenge offers two cards: pick.
 
@@ -1442,6 +1443,11 @@ function Engine:_reachTreasure(p)
 	self:_emit({ t = "treasure", p = p.index, treasures = p.treasures, team = self:teamTreasures(p.team) })
 	self:_addCoins(p, Rules.CoinsPerTreasure, "treasure")
 	self:_cashInWanted(p)
+	-- a time anchor doesn't survive the trip home: no warping back to the treasure's doorstep
+	if p.anchor then
+		self:_emit({ t = "anchorLost", p = p.index, tile = p.anchor.tile })
+		p.anchor = nil
+	end
 	self:_sendToStart(p, "home")
 	if self:teamTreasures(p.team) >= self.teamTarget then
 		self:_gameOver(p.team, "treasure")

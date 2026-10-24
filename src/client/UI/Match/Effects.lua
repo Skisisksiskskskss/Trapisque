@@ -14,6 +14,7 @@ local Items = require(game:GetService("ReplicatedStorage").Shared.Game.Items)
 local Shapes = require(UI.Shapes)
 local Icons = require(UI.Icons)
 local StickerArt = require(UI.StickerArt)
+local Art = require(UI.Art)
 local Sound = require(UI.Parent.Sound)
 
 local C = Theme.C
@@ -313,7 +314,9 @@ function Effects.gotcha(view, owner: number, victim: number)
 	local to = view:pawnWorld(owner)
 	local U = view.UNIT
 	local bolt = holder(view, from, 0.7 * U, 62)
-	Icons.sticker(bolt, StickerArt.misc.bolt, nil, 0.08)
+	if not Art.image(bolt, "trails/bolt_1") then
+		Icons.sticker(bolt, StickerArt.misc.bolt, nil, 0.08)
+	end
 	Util.tween(bolt, 0.5, { Position = px(to) }, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
 	task.delay(0.52, function()
 		bolt:Destroy()
@@ -480,7 +483,9 @@ function Effects.blizzard(view, seat: number, targets: { number })
 			for k = 1, 4 do
 				local p = at + Vector2.new((math.random() - 0.5) * 1.6 * U, -1.4 * U)
 				local flake = holder(view, p, 0.45 * U, 60)
-				Icons.sticker(flake, StickerArt.misc.snowflake, nil, 0.08)
+				if not Art.image(flake, "trails/snow_1") then
+					Icons.sticker(flake, StickerArt.misc.snowflake, nil, 0.08)
+				end
 				Util.tween(flake, 0.7, { Position = px(at + Vector2.new((math.random() - 0.5) * U, 0.2 * U)), Rotation = 180 }, Enum.EasingStyle.Quad)
 				fadeOut(flake, 0.6 + k * 0.03, 0.15)
 			end

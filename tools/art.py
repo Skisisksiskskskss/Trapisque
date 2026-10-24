@@ -56,9 +56,20 @@ STRIP = 256  # rows per strip of a sheet's pixels in ArtData (each unpacks to 1 
 # the map vote's, drawn by the game itself: tools/shots.sh thumbs) together; the pieces and what the
 # board shows on its tiles (art/items.py: things on a tile; art/tiles.py: what a tile
 # turns into, and what stands across the trail facing it); the characters' emblems and
-# the cards' icons (art/emblems.py, art/cards.py) with the Kraken's frames (art/kraken.py)
-GROUPS = ["props", "ground", "maps", "pieces", "items", "tiles", "emblems", "cards", "kraken"]
-RUNS = [("scenery", ["props", "ground", "maps"]), ("pieces", ["pieces", "items", "tiles"]), ("icons", ["emblems", "cards", "kraken"])]
+# the cards' icons (art/emblems.py, art/cards.py) with the Kraken's frames (art/kraken.py);
+# the dice skins, the trails' particles, the fishing spot, the Treasure Chests and the
+# marks a piece wears (art/dice.py, art/trails.py, art/fishing.py, art/chests.py,
+# art/marks.py); the fish (art/fish.py).
+# A run added later goes on sheets of its own, so the sheets already uploaded keep their
+# uploads.
+GROUPS = ["props", "ground", "maps", "pieces", "items", "tiles", "emblems", "cards", "kraken", "dice", "trails", "fishing", "chests", "marks", "fish"]
+RUNS = [
+    ("scenery", ["props", "ground", "maps"]),
+    ("pieces", ["pieces", "items", "tiles"]),
+    ("icons", ["emblems", "cards", "kraken"]),
+    ("extras", ["dice", "trails", "fishing", "chests", "marks"]),
+    ("fish", ["fish"]),
+]
 
 
 def svg_size(svg: str):

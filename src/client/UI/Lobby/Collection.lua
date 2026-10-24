@@ -11,13 +11,13 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage.Shared
 local Badges = require(Shared.Meta.Badges)
+local Cosmetics = require(Shared.Meta.Cosmetics)
 local Fishing = require(Shared.Meta.Fishing)
 local Maps = require(Shared.Game.Maps)
 
 local UI = script.Parent.Parent
 local Util = require(UI.Util)
 local Theme = require(UI.Theme)
-local Icons = require(UI.Icons)
 local Widgets = require(UI.Widgets)
 local BadgeArt = require(UI.BadgeArt)
 local FishArt = require(UI.FishArt)
@@ -37,17 +37,6 @@ local RARITY_COLOR = {
 	legendary = C.sun,
 	junk = C.textFaint,
 }
-
--- Every op drawn in one dark ink (a fish you haven't caught yet).
-local function shadowOf(ops)
-	local out = {}
-	for _, op in ops do
-		local copy = table.clone(op)
-		copy.c = "#3A3846"
-		table.insert(out, copy)
-	end
-	return out
-end
 
 function Collection.open(popups: Instance, tab: string?)
 	local roomW, roomH, narrow = Widgets.room()
@@ -137,8 +126,17 @@ function Collection.open(popups: Instance, tab: string?)
 				have += 1
 			end
 		end
+		-- what's next for filling the log (Fishing.Rewards)
+		local goal = nil
+		for _, r in Fishing.Rewards do
+			if have < r.count then
+				local def = Cosmetics.get(r.item)
+				goal = string.format("%d more for the %s %s", r.count - have, if def then def.name else r.item, if def and def.category == "title" then "title" else "trail")
+				break
+			end
+		end
 		Widgets.label(body, {
-			text = string.format("%d of %d caught  ·  fish between turns with the rod in the board's corner", have, #Fishing.logged),
+			text = string.format("%d of %d caught  ·  %s", have, #Fishing.logged, goal or "every fish caught: Master Angler!"),
 			font = "heavy",
 			size = if narrow then 13 else 15,
 			color = C.textSoft,
@@ -166,12 +164,12 @@ function Collection.open(popups: Instance, tab: string?)
 			})
 			Util.corner(cell, 12)
 			Util.stroke(cell, if n > 0 then (RARITY_COLOR[c.rarity] or C.line) else C.line, 2.5)
-			local ops = FishArt.ops(c.id)
-			Icons.sticker(cell, if n > 0 then ops else shadowOf(ops), {
+			-- (one not caught yet is just its dark shape)
+			FishArt.image(cell, c.id, {
 				AnchorPoint = Vector2.new(0.5, 0),
-				Position = UDim2.new(0.5, 0, 0, 8),
-				Size = UDim2.fromOffset(84, 84),
-			}, 0.06)
+				Position = UDim2.new(0.5, 0, 0, 6),
+				Size = UDim2.fromOffset(88, 88),
+			}, n == 0)
 			Widgets.label(cell, {
 				text = if n > 0 then c.name else "???",
 				font = "chunky",

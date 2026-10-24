@@ -65,11 +65,15 @@ rendered offline (see [Screenshots](#screenshots)).
 - **A guided first match.** New players are offered a short Blitz game against gentle
   bots, with the Overseer pointing at the dice, the cards and the ability as each one
   comes up (scripted for a first win, and 100 Gems). It's in How to Play any time.
-- **Something to do between turns.** A fishing rod in the board's corner: cast, watch
+- **Something to do between turns.** A fishing pool in the board's corner: cast, watch
   the shadow under the bobber (how big it is), leave the nibbles alone and tap fast on
-  the real bite. Every map has its own fish (three each, plus a few found anywhere and
-  the Golden Fish); the fish log keeps your biggest of each and shows where each one
-  lives. Now and then you land a coin for the match.
+  the real bite to hook it. Then it fights: tap whenever the needle sweeping the meter
+  is over the green, a notch at a time (rarer fish need more notches, with a smaller
+  green and a faster needle); three taps off the green and the line snaps. Every map
+  has its own fish (three each, plus a few found anywhere and the Golden Fish); the fish
+  log keeps your biggest of each and shows where each one lives. Filling half of it
+  earns the Fish School trail, all of it the Master Angler title. Now and then you land
+  a coin for the match.
 - **Rematch.** The results screen has a Rematch button: once everyone still at the
   table asks, the same players go again on the same map, straight away.
 - **Watch a friend.** Friends in a match show up under WATCH in the party panel; you
@@ -109,8 +113,9 @@ rendered offline (see [Screenshots](#screenshots)).
   gets it and the other gets a free pick.
 - **Treasure Chests.** A cosmetic-only collection: finishes for your playing piece
   (oak, clay, marble, sea glass, obsidian, solid gold, crystal, glowstone; always in
-  your character's colour), dice, trails, emotes and titles. You open chests with
-  Gems, which you earn by playing.
+  your character's colour), dice (ivory, ruby, jade, neon, frost, gold, cosmic...),
+  22 trails (from seashells and confetti to fireflies, doubloons and thunder), emotes
+  and titles. You open chests with Gems, which you earn by playing.
 - **Gamepasses** that never touch gameplay (see below).
 - **Chat that everyone can see.** The gold CHAT button (or T on a keyboard) opens it,
   in the lobby and in matches. Lines pop up as big speech bubbles over the speaker's
@@ -219,7 +224,7 @@ In Studio:
 5. If the board, pieces and emblems look plain, the art sheets aren't loaded: a note in
    the lobby says which and why, and takes the ids once they're uploaded (step 4 of
    Publishing below). The lobby's top right corner shows you (the owner) the version
-   running and how many art sheets loaded, `v1.1.0 · art 9/9`: no tag, or an older
+   running and how many art sheets loaded, `v1.2.0 · art 11/11`: no tag, or an older
    version, means an older place file is running.
 
 ## Publishing
@@ -232,7 +237,7 @@ In Studio:
    all work in a published experience without extra setup.
 3. Create the gamepasses (next section) and paste their ids into
    `src/shared/Config.lua`.
-4. Upload the nine art sheets (`art/sheets`) as Decals (create.roblox.com → Creations →
+4. Upload the eleven art sheets (`art/sheets`) as Decals (create.roblox.com → Creations →
    Decals) or with Studio's Asset Manager, then paste their ids into the art note the
    lobby shows you (the owner), in any order, and press **Save ids**: every server keeps
    them ([art/README.md](art/README.md) has the details; `tools/upload_art.py` can

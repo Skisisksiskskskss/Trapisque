@@ -233,6 +233,12 @@ test("pasted art ids: read from text or links, matched to their sheets by name, 
 	m = ArtIds.match({ { image = 5, name = "scenery_2" }, { image = 6, name = "scenery_2" } }, sheets)
 	eq(m.scenery_2, 5)
 	eq(m.scenery_1, 6)
+	-- the note asked for icons_1 only: an id whose name doesn't say goes there, never to a
+	-- sheet that already has its upload (a name that does say still counts)
+	m = ArtIds.match({ { image = 7, name = "Decal" }, { image = 8, name = "scenery_2" } }, sheets, { "icons_1" })
+	eq(m.icons_1, 7)
+	eq(m.scenery_1, nil, "an unnamed id was taken for a sheet the note didn't ask for")
+	eq(m.scenery_2, 8)
 end)
 
 test("the owner's pasted uploads come before the place's own, and only while current", function()
@@ -261,6 +267,57 @@ test("every art sheet has a version and an upload entry, and one without a curre
 		truthy(type(entry) == "table" and type(entry.id) == "number" and type(entry.version) == "string", sheet .. " isn't in ArtAssets")
 		if not Art.uploadedId(sheet) then
 			truthy(rawget(getNode("Client/UI/ArtData/" .. sheet), "__module"), sheet .. " has neither a current upload nor its pixels")
+		end
+	end
+end)
+
+test("every dice skin, trail, catch, chest and status mark has its art in the sheets", function()
+	local ArtAtlas = requireModule("Client/UI/ArtAtlas")
+	local Cosmetics = requireModule("Shared/Meta/Cosmetics")
+	local Fishing = requireModule("Shared/Meta/Fishing")
+	local Gacha = requireModule("Shared/Meta/Gacha")
+	for _, def in Cosmetics.byCategory.dice do
+		local skin = string.gsub(def.id, "^dice_", "")
+		truthy(ArtAtlas.sprites["dice/" .. skin], "no die for " .. def.id)
+		truthy(ArtAtlas.sprites["dice/" .. skin .. "_pip"], "no pip for " .. def.id)
+	end
+	for _, def in Cosmetics.byCategory.trail do
+		if def.look.kind ~= "none" then
+			truthy(ArtAtlas.sprites["trails/" .. def.look.kind .. "_1"], "no particles for " .. def.id)
+		end
+	end
+	for _, c in Fishing.catches do
+		truthy(ArtAtlas.sprites["fish/" .. c.id], "no art for the " .. c.id)
+	end
+	for _, chest in Gacha.chests do
+		truthy(chest.look.art, chest.id .. " has no art name")
+		truthy(ArtAtlas.sprites["chests/" .. chest.look.art .. "_base"] and ArtAtlas.sprites["chests/" .. chest.look.art .. "_lid"], "no art for the " .. chest.id)
+	end
+	for _, name in { "flame", "ice", "poster", "poster_gold", "zzz" } do
+		truthy(ArtAtlas.sprites["marks/" .. name], "no marks/" .. name)
+	end
+	for _, name in { "water", "bobber", "ripple", "splash", "rod" } do
+		truthy(ArtAtlas.sprites["fishing/" .. name], "no fishing/" .. name)
+	end
+	-- the effects borrow two of the trails' particles
+	truthy(ArtAtlas.sprites["trails/bolt_1"] and ArtAtlas.sprites["trails/snow_1"])
+end)
+
+test("the art added later is on sheets of its own, so the uploaded ones keep their ids", function()
+	local ArtAtlas = requireModule("Client/UI/ArtAtlas")
+	local ArtAssets = requireModule("Client/UI/ArtAssets")
+	local old = { scenery = true, pieces = true, icons = true }
+	for name, sp in ArtAtlas.sprites do
+		local group = string.match(name, "^([^/]+)/")
+		local run = string.match(sp.sheet, "^(%a+)_")
+		if group == "dice" or group == "trails" or group == "fishing" or group == "chests" or group == "marks" or group == "fish" then
+			falsy(old[run], name .. " is on " .. sp.sheet)
+		end
+	end
+	-- (and the sheets already uploaded are still of the version they were uploaded at)
+	for sheet, entry in ArtAssets do
+		if type(entry) == "table" and entry.id > 0 then
+			eq(entry.version, ArtAtlas.versions[sheet], sheet .. "'s upload is out of date")
 		end
 	end
 end)

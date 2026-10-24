@@ -72,8 +72,18 @@ function ArtNotice.show(layer: Instance)
 		{ color = C.text, size = 16, order = 1 }
 	)
 	para("Why: " .. reasons[1] .. ".", { order = 2 })
+	local files = {}
+	for _, sheet in names do
+		table.insert(files, sheet .. ".png")
+	end
 	para(
-		"To fix it for everyone, upload the 9 images (the PNG files from the art zip, also in art/sheets) to Roblox: as Decals on create.roblox.com (Creations > Decals > Upload Asset), or in Studio with the Asset Manager's import. Then paste their ids here, in any order:",
+		string.format(
+			"To fix it for everyone, upload %s to Roblox: %s (the PNG %s of that name in art/sheets). As Decals on create.roblox.com (Creations > Decals > Upload Asset), or in Studio with the Asset Manager's import. Then paste %s here, in any order:",
+			if #files == 1 then "this image" else ("these " .. #files .. " images"),
+			table.concat(files, ", "),
+			if #files == 1 then "file" else "files",
+			if #files == 1 then "its id" else "their ids"
+		),
 		{ order = 3 }
 	)
 	local box = Widgets.textBox(column, {
@@ -98,7 +108,6 @@ function ArtNotice.show(layer: Instance)
 		"Or, if your Roblox account is ID-verified, turn on File > Experience Settings > Security > Allow Mesh / Image APIs.",
 		{ size = 14, order = 6 }
 	)
-	para("Missing: " .. table.concat(names, ", "), { font = "body", size = 13, color = C.textFaint, order = 7 })
 
 	local saving = false
 	local function save()
@@ -112,7 +121,7 @@ function ArtNotice.show(layer: Instance)
 		end
 		saving = true
 		status.Text = "Looking the ids up..."
-		local ok, result = Net.request("art.set", { ids = ids, sheets = ArtAtlas.sheets, versions = (ArtAtlas :: any).versions })
+		local ok, result = Net.request("art.set", { ids = ids, sheets = ArtAtlas.sheets, versions = (ArtAtlas :: any).versions, want = names })
 		saving = false
 		if not ok then
 			status.Text = tostring(result)

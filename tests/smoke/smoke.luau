@@ -304,6 +304,16 @@ for _, page in PAGES do
 		end
 		F.run(0.6)
 		shot("page-" .. page.id)
+		if page.id == "locker" then
+			-- the dice and the trails, each tab drawn
+			for _, tab in { "Dice", "Trails" } do
+				local top = modals()
+				if top[#top] and press(top[#top], "^" .. tab .. "$") then
+					F.run(0.6)
+					shot("page-locker-" .. string.lower(tab))
+				end
+			end
+		end
 		-- page tabs and pagers (How to Play, Top Players)
 		local top = modals()
 		if top[#top] then
@@ -934,6 +944,53 @@ local function think()
 end
 table.insert(F.onFrame, think)
 
+-- Fishing between turns (cfg.fish): cast, hook it when it bites, and win the fight by
+-- tapping while the needle's over the green; every third fish is let go on purpose
+-- (three taps off the green: the line snaps).
+local Fishing = requireModule("Shared/Meta/Fishing")
+local fishing = { casts = 0, hooks = 0, caught = 0, snapped = 0, fights = 0, rewards = 0, lastTap = -1, shot = false }
+local function fish()
+	local s = MatchScreen.current()
+	local rod = s and s.rod
+	if not rod or not rod.allowed or rod.busy or F.now - fishing.lastTap < 0.15 then
+		return
+	end
+	if rod.state == "idle" then
+		-- (a cast just as your own turn comes round is refused: wait a moment before the next)
+		if F.now - (fishing.lastCast or -10) < 2 then
+			return
+		end
+		fishing.casts += 1
+		fishing.lastCast = F.now
+		fishing.lastTap = F.now
+		F.click(rod.button)
+	elseif rod.state == "bite" then
+		fishing.lastTap = F.now
+		F.click(rod.button)
+	elseif rod.state == "fight" and rod.fight and not rod.fight.busy then
+		local f = rod.fight
+		if not f.counted then
+			f.counted = true
+			fishing.hooks += 1
+			fishing.fights += 1
+			f.letGo = fishing.fights % 3 == 0
+		end
+		if not fishing.shot and cfg.shots then
+			fishing.shot = true
+			shot("fishing-fight")
+		end
+		local x = Fishing.needle(f.spec.speed, os.clock() - f.t0)
+		local off = math.abs(x - f.zoneAt)
+		if (not f.letGo and off <= f.spec.zone * 0.35) or (f.letGo and off > f.spec.zone * 0.7) then
+			fishing.lastTap = F.now
+			F.click(rod.button)
+		end
+	end
+end
+if cfg.fish then
+	table.insert(F.onFrame, fish)
+end
+
 local finished = F.run(cfg.matchTime or 2400, function()
 	local s = MatchScreen.current()
 	return s ~= nil and s.view.phase == "over"
@@ -949,6 +1006,9 @@ say("match over at %.1fs: %d moves, %d cards, %d abilities, %d tiles, %d buys, %
 noProblems("the match")
 -- (the screen's autopilot stops here: the results are pressed below, on purpose)
 table.remove(F.onFrame, table.find(F.onFrame, think))
+if cfg.fish then
+	table.remove(F.onFrame, table.find(F.onFrame, fish))
+end
 if cfg.tutorial then
 	-- the guided match is scripted for a first win
 	local me = screen:_player(screen.mySeat)
@@ -1046,6 +1106,23 @@ local summary = string.format(
 	F.now
 )
 F.print(summary)
+if cfg.fish then
+	-- what the fishing came to: catches in the log, and lines snapped on purpose
+	for _, t in toasts do
+		if string.find(t.text, "Fish log reward", 1, true) then
+			fishing.rewards += 1
+		end
+	end
+	local profile = State.get("profile")
+	local logged = 0
+	for _, n in (profile and profile.fish) or {} do
+		logged += n
+	end
+	fishing.caught = logged
+	F.print(string.format("  fishing: %d casts, %d hooked, %d landed in the log, %d let go", fishing.casts, fishing.hooks, logged, math.floor(fishing.fights / 3)))
+	check(fishing.hooks >= 3, "fewer than three fish were hooked: " .. fishing.hooks)
+	check(logged >= 1, "no fish made it into the log")
+end
 -- the newest maps' hazards turned up, and played
 local MAP_EVENTS = { frostbite = { "ice" }, kraken = { "krakenMark", "krakenSlam" }, clockwork = { "bridge" } }
 local mapId = screen and screen.mapDef and screen.mapDef.id

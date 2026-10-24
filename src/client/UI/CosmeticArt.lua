@@ -2,7 +2,8 @@
 	CosmeticArt
 	Draws the cosmetics in Shared/Meta/Cosmetics: dice, trail particles, titles, emote
 	bubbles, and previews of everything (a finish shows the piece you play, made of it:
-	PieceArt).
+	PieceArt). Dice and trail particles are illustrations from the art sheets (art/dice.py,
+	art/trails.py); without the art they're drawn from shapes instead.
 ]]
 
 local RunService = game:GetService("RunService")
@@ -16,6 +17,8 @@ local Icons = require(script.Parent.Icons)
 local IconData = require(script.Parent.IconData)
 local PawnPatterns = require(script.Parent.PawnPatterns) -- (the dice pips live here)
 local PieceArt = require(script.Parent.PieceArt)
+local Art = require(script.Parent.Art)
+local ArtAtlas = require(script.Parent.ArtAtlas)
 
 local CosmeticArt = {}
 
@@ -92,9 +95,18 @@ function CosmeticArt.dieLook(skinId: string?)
 	}
 end
 
+-- The skin's art: "dice/<this>" and "dice/<this>_pip" (art/dice.py), from its id.
+function CosmeticArt.diceArt(skinId: string?): string
+	local def = Cosmetics.get(skinId or "")
+	local id = if def and def.category == "dice" then def.id else Cosmetics.defaults.dice
+	return (string.gsub(id, "^dice_", ""))
+end
+
 --[[
 	A die face showing `value` (1-6). Returns root and a setter:
 		local die, setValue = CosmeticArt.die(parent, "dice_gold", 4)
+	The illustrated die is its body and one pip drawn wherever the value has a spot (the
+	face is x 0.08 to 0.92, y 0.042 to 0.882 of it, as the drawn one's).
 ]]
 function CosmeticArt.die(parent: Instance?, skinId: string?, value: number, props: { [string]: any }?): (Frame, (number) -> ())
 	local look = CosmeticArt.dieLook(skinId)
@@ -107,6 +119,39 @@ function CosmeticArt.die(parent: Instance?, skinId: string?, value: number, prop
 		for k, v in props do
 			(root :: any)[k] = v
 		end
+	end
+	local art = "dice/" .. CosmeticArt.diceArt(skinId)
+	if Art.has(art) and Art.has(art .. "_pip") then
+		Art.image(root, art, { Name = "Body", ZIndex = root.ZIndex })
+		local face = Util.frame(root, {
+			Name = "Pips",
+			Position = UDim2.fromScale(0.08, 0.042),
+			Size = UDim2.fromScale(0.84, 0.84),
+			ZIndex = root.ZIndex + 1,
+		})
+		local spots = {}
+		for i = 1, 6 do
+			spots[i] = Art.image(face, art .. "_pip", {
+				Name = "Pip" .. i,
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				Size = UDim2.fromScale(0.19, 0.19),
+				ZIndex = root.ZIndex + 1,
+				Visible = false,
+			}) :: Frame
+		end
+		local function setArtValue(v: number)
+			local places = PawnPatterns.pips[math.clamp(math.floor(v), 1, 6)]
+			for i, pip in spots do
+				local at = places[i]
+				pip.Visible = at ~= nil
+				if at then
+					pip.Position = UDim2.fromScale(at[1], at[2])
+				end
+			end
+		end
+		setArtValue(value)
+		root.Parent = parent
+		return root, setArtValue
 	end
 	-- side peeking out below the face and its edge stroke (0.84 + 2 x 0.05 x 0.84 = 0.924)
 	Shapes.rect(root, 0.5, 0.538, 0.924, 0.924, Util.shade(look.face2, -0.35), { r = 0.24, name = "Side" })
@@ -167,6 +212,136 @@ local function particle(layer: Instance, pos: Vector2, size: number, draw: (Fram
 end
 
 --[[
+	How each kind of trail's particles go: how many a hop, how big (in tiles), how long
+	they last, and how they move:
+		rise    float up and away        fall    flutter down
+		drop    tumble out and land      stay    left on the ground where you stepped
+		wander  drift about, lit up      swim    dart off to one side
+		burst   flash out round you
+	spin: how far they turn (degrees), sway: they rock as they go.
+]]
+local MOTION = {
+	puff = { n = 3, size = 0.36, life = 0.8, move = "rise", slow = true },
+	bubble = { n = 4, size = 0.24, life = 0.9, move = "rise" },
+	leaf = { n = 4, size = 0.26, life = 1.0, move = "fall", spin = 220 },
+	sparkle = { n = 4, size = 0.26, life = 0.7, move = "rise", spin = 90 },
+	ember = { n = 4, size = 0.22, life = 0.8, move = "rise" },
+	heart = { n = 4, size = 0.24, life = 0.9, move = "rise", sway = true },
+	star = { n = 4, size = 0.26, life = 0.8, move = "rise", spin = 120 },
+	rainbow = { n = 3, size = 0.32, life = 0.9, move = "rise" },
+	shell = { n = 3, size = 0.26, life = 1.0, move = "drop", spin = 60 },
+	confetti = { n = 6, size = 0.2, life = 1.0, move = "fall", spin = 300 },
+	feather = { n = 3, size = 0.32, life = 1.2, move = "fall", spin = 120, sway = true },
+	snow = { n = 4, size = 0.24, life = 1.1, move = "fall", spin = 90 },
+	blossom = { n = 4, size = 0.26, life = 1.1, move = "fall", spin = 160, sway = true },
+	ink = { n = 3, size = 0.28, life = 0.9, move = "drop" },
+	paw = { n = 1, size = 0.38, life = 1.8, move = "stay" },
+	firefly = { n = 4, size = 0.26, life = 1.3, move = "wander" },
+	note = { n = 3, size = 0.3, life = 1.0, move = "rise", sway = true },
+	wisp = { n = 3, size = 0.32, life = 1.1, move = "rise", sway = true },
+	coin = { n = 3, size = 0.28, life = 0.9, move = "drop", spin = 40 },
+	gem = { n = 3, size = 0.26, life = 0.9, move = "rise", spin = 60 },
+	bolt = { n = 3, size = 0.32, life = 0.5, move = "burst" },
+	fishy = { n = 3, size = 0.32, life = 1.2, move = "swim" },
+}
+CosmeticArt.TrailMotion = MOTION
+
+-- The illustrated particles of each kind: trails/<kind>_1, _2... (art/trails.py)
+local variantCache: { [string]: { string } } = {}
+function CosmeticArt.trailSprites(kind: string): { string }
+	local list = variantCache[kind]
+	if not list then
+		list = {}
+		local n = 1
+		while ArtAtlas.sprites["trails/" .. kind .. "_" .. n] do
+			table.insert(list, "trails/" .. kind .. "_" .. n)
+			n += 1
+		end
+		variantCache[kind] = list
+	end
+	if #list == 0 or not Art.has(list[1]) then
+		return {}
+	end
+	return list
+end
+
+-- The paw prints go left, right, left...
+local pawSide = 1
+
+-- One illustrated particle: sprite `name` `size` pixels across at `pos`, moving as `m` says.
+local function spriteParticle(layer: Instance, name: string, pos: Vector2, size: number, unit: number, m)
+	local life = m.life * (0.8 + math.random() * 0.4)
+	local flip = false
+	local drift
+	if m.move == "fall" then
+		drift = Vector2.new((math.random() - 0.5) * unit * 0.9, unit * (0.25 + math.random() * 0.35))
+	elseif m.move == "drop" then
+		drift = Vector2.new((math.random() - 0.5) * unit * 0.9, unit * (0.05 + math.random() * 0.15))
+	elseif m.move == "stay" then
+		drift = Vector2.zero
+	elseif m.move == "wander" then
+		drift = Vector2.new((math.random() - 0.5) * unit * 1.2, -unit * (0.1 + math.random() * 0.5))
+	elseif m.move == "swim" then
+		local dir = if math.random() < 0.5 then -1 else 1
+		flip = dir < 0
+		drift = Vector2.new(dir * unit * (0.8 + math.random() * 0.6), (math.random() - 0.5) * unit * 0.3)
+	elseif m.move == "burst" then
+		drift = Vector2.zero
+	else
+		drift = Vector2.new((math.random() - 0.5) * unit * 0.5, -unit * (0.2 + math.random() * 0.4))
+	end
+	if m.slow then
+		drift *= 0.5
+	end
+	local img = Art.label(layer, name, pos, size, flip, { ZIndex = 30 })
+	if not img then
+		return
+	end
+	local label = img :: ImageLabel
+	label.Rotation = if m.move == "stay" then 0 else (math.random() - 0.5) * 40
+	local turn = label.Rotation + (if m.spin then (math.random() - 0.5) * 2 * m.spin else 0)
+	if m.sway then
+		turn = label.Rotation + (if math.random() < 0.5 then -25 else 25)
+	end
+	local start = label.Position
+	local endSize = if m.move == "stay" or m.move == "drop" then label.Size else UDim2.fromOffset(label.Size.X.Offset * 0.55, label.Size.Y.Offset * 0.55)
+	if m.move == "burst" then
+		local s = Util.scaler(label)
+		s.Scale = 0.3
+		Util.tween(s, life * 0.4, { Scale = 1.15 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+	end
+	Util.tween(label, life, {
+		Position = start + UDim2.fromOffset(drift.X, drift.Y),
+		Rotation = turn,
+		Size = endSize,
+	}, if m.move == "drop" then Enum.EasingStyle.Bounce else Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	-- fade toward the end (the ones left on the ground hold a while first)
+	local hold = if m.move == "stay" or m.move == "drop" then life * 0.55 else life * 0.25
+	Util.tween(label, life - hold, { ImageTransparency = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In, hold)
+	task.delay(life + 0.05, function()
+		label:Destroy()
+	end)
+end
+
+-- The plainer particles a kind falls back to without its art (the trails drawn in code).
+local FALLBACK = {
+	shell = "puff",
+	confetti = "ember",
+	feather = "leaf",
+	snow = "sparkle",
+	blossom = "heart",
+	ink = "puff",
+	paw = "puff",
+	firefly = "ember",
+	note = "star",
+	wisp = "bubble",
+	coin = "ember",
+	gem = "star",
+	bolt = "sparkle",
+	fishy = "leaf",
+}
+
+--[[
 	Spawns a puff of the trail's particles at `pos` (pixels in `layer`).
 	`unit` is roughly a tile's size in pixels.
 ]]
@@ -176,9 +351,31 @@ function CosmeticArt.trailBurst(layer: Instance, trailId: string?, pos: Vector2,
 		return
 	end
 	local look = def.look
+	local kindArt = look.kind
+	local sprites = CosmeticArt.trailSprites(kindArt)
+	local m = MOTION[kindArt]
+	if m and #sprites > 0 then
+		for i = 1, m.n do
+			local name = sprites[((i - 1) % #sprites) + 1]
+			if #sprites > 1 and math.random() < 0.35 then
+				name = sprites[math.random(1, #sprites)]
+			end
+			local p = pos
+			if m.move == "stay" then
+				-- a print where the foot came down, a little to one side of the last
+				pawSide = -pawSide
+				p = pos + Vector2.new(pawSide * unit * 0.12, unit * 0.08)
+			else
+				local a = math.random() * math.pi * 2
+				p = pos + Vector2.new(math.cos(a), math.sin(a) * 0.5) * unit * 0.25 * math.random()
+			end
+			spriteParticle(layer, name, p, unit * m.size * (0.8 + math.random() * 0.45), unit, m)
+		end
+		return
+	end
 	local color = hex(look.color, Theme.C.white)
 	local color2 = hex(look.color2, color)
-	local kind = look.kind
+	local kind = FALLBACK[kindArt] or kindArt
 	local n = if kind == "puff" then 3 else 4
 	for i = 1, n do
 		local a = math.random() * math.pi * 2
@@ -341,6 +538,19 @@ function CosmeticArt.preview(parent: Instance, itemId: string, _seatColor: Color
 			Position = UDim2.fromScale(0.5, 0.5),
 			Size = UDim2.fromScale(0.86, 0.86),
 		})
+	elseif def.category == "trail" and #CosmeticArt.trailSprites(def.look.kind) > 0 then
+		-- three of its particles, spilling up and to the right
+		local sprites = CosmeticArt.trailSprites(def.look.kind)
+		for i = 0, 2 do
+			local d = 0.42 - i * 0.05
+			Art.image(holder, sprites[(i % #sprites) + 1], {
+				Name = "Particle" .. i,
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				Position = UDim2.fromScale(0.26 + i * 0.25, 0.66 - i * 0.17),
+				Size = UDim2.fromScale(d, d),
+				Rotation = (i - 1) * 14,
+			})
+		end
 	elseif def.category == "trail" then
 		local look = def.look
 		local color = hex(look.color, Theme.C.white)
@@ -352,7 +562,8 @@ function CosmeticArt.preview(parent: Instance, itemId: string, _seatColor: Color
 				Shapes.circle(c, 0.18 + i * 0.13, 0.62 - math.sin(i * 0.9) * 0.18, 0.16 - i * 0.012, Color3.fromHSV(i / 6, 0.6, 1))
 			end
 		else
-			local glyph = ({ puff = "circle", bubble = "ring", leaf = "drop", sparkle = "sparkle", ember = "circle", heart = "heart", star = "star" })[look.kind]
+			local plain = FALLBACK[look.kind] or look.kind
+			local glyph = ({ puff = "circle", bubble = "ring", leaf = "drop", sparkle = "sparkle", ember = "circle", heart = "heart", star = "star" })[plain]
 			for i = 0, 2 do
 				local x, y, d = 0.24 + i * 0.27, 0.66 - i * 0.18, 0.3 - i * 0.05
 				if glyph == "heart" then

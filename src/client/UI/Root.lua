@@ -301,12 +301,23 @@ function Root.curtain(message: string?)
 	})
 	curtain = c
 	Util.tween(c, 0.3, { BackgroundTransparency = 0.05 })
-	local die = Icons.medallion(c, "dice", C.sun, {
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Size = UDim2.fromOffset(110, 110),
-		Position = UDim2.fromScale(0.5, 0.44),
-		ZIndex = 501,
-	})
+	-- the plain ivory die (the illustrated one once the art's in), or a dice badge
+	local Art = require(script.Parent.Art)
+	local die: GuiObject
+	if Art.has("dice/ivory") then
+		die = (require(script.Parent.CosmeticArt).die(c, "dice_ivory", 5, {
+			Size = UDim2.fromOffset(96, 96),
+			Position = UDim2.fromScale(0.5, 0.44),
+			ZIndex = 501,
+		}))
+	else
+		die = Icons.medallion(c, "dice", C.sun, {
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Size = UDim2.fromOffset(110, 110),
+			Position = UDim2.fromScale(0.5, 0.44),
+			ZIndex = 501,
+		})
+	end
 	task.spawn(function()
 		-- a tumble, a little rest, another tumble
 		local t = 0

@@ -830,6 +830,23 @@ test("time travel: drop an anchor, warp back later instead of moving", function(
 	eq(g.current, 2)
 end)
 
+test("time travel: everyone sees the anchor, and reaching the treasure breaks it", function()
+	local g = newGame({ target = 3 })
+	local treasure = g.board.treasure
+	setTile(g, 1, treasure - 2)
+	g.players[1].hand = { "time_potion" }
+	cmd(g, 1, { type = "play", item = "time_potion" })
+	eq(g:snapshot(2).players[1].anchor, treasure - 2, "a rival can't see the anchor")
+	local events = move(g, 1, 1, 2, 1)
+	eq(g.players[1].treasures, 1)
+	eq(g.players[1].anchor, nil, "the anchor survived banking a treasure")
+	local lost = findEvent(events, "anchorLost")
+	truthy(lost and lost.p == 1 and lost.tile == treasure - 2)
+	move(g, 2, 1, 1, 1)
+	local ok = g:command(1, { type = "recall" })
+	falsy(ok, "warped back to the treasure's doorstep after banking it")
+end)
+
 -- board pieces -------------------------------------------------------------------
 
 test("teleporters work in pairs", function()

@@ -397,6 +397,50 @@ test("fishing: at most one coin a round, sizes in range, rarer fish bite faster"
 	eq(Fishing.sizeText(150), "1.5 m")
 end)
 
+test("fishing: rarer fish fight harder, and the needle sweeps the whole meter", function()
+	local common, rare, legend = Fishing.fight("sardine"), Fishing.fight("swordfish"), Fishing.fight("golden")
+	truthy(common.reels <= rare.reels and rare.reels <= legend.reels, "rarer fish should take as many notches or more")
+	truthy(common.zone > rare.zone and rare.zone > legend.zone, "rarer fish should have a smaller green")
+	truthy(common.speed < rare.speed and rare.speed < legend.speed, "rarer fish should sweep faster")
+	for _, c in Fishing.catches do
+		local f = Fishing.fight(c.id)
+		truthy(f.reels >= 1 and f.zone > 0 and f.zone < 1 and f.speed > 0, c.id .. " fights oddly")
+		-- a whole fight fits in the time it's given, with room to spare
+		truthy(f.reels * Fishing.ReelGap * 4 < Fishing.FightTime, c.id .. "'s fight can't be won in time")
+	end
+	local lo, hi = 1, 0
+	for i = 0, 400 do
+		local x = Fishing.needle(1.3, i / 100)
+		lo, hi = math.min(lo, x), math.max(hi, x)
+	end
+	truthy(lo < 0.01 and hi > 0.99, "the needle doesn't reach both ends")
+end)
+
+test("fishing: filling the log earns the Fish School trail, then Master Angler", function()
+	local half = math.ceil(#Fishing.logged / 2)
+	eq(#Fishing.rewardsFor(half - 1), 0)
+	eq(Fishing.rewardsFor(half)[1], "trail_school")
+	local all = Fishing.rewardsFor(#Fishing.logged)
+	eq(#all, 2)
+	eq(all[2], "title_angler")
+	for _, r in Fishing.Rewards do
+		local def = Cosmetics.get(r.item)
+		truthy(def and def.source == "fishing", r.item .. " should be a fishing reward")
+	end
+	-- the rewards aren't in Treasure Chests, the new trails are
+	local pool = Cosmetics.chestPool()
+	local inChests = {}
+	for _, list in pool do
+		for _, id in list do
+			inChests[id] = true
+		end
+	end
+	falsy(inChests.trail_school or inChests.title_angler, "a fishing reward in the chests")
+	for _, id in { "trail_shells", "trail_confetti", "trail_feathers", "trail_snow", "trail_blossom", "trail_ink", "trail_paws", "trail_fireflies", "trail_shanty", "trail_wisps", "trail_doubloons", "trail_jewels", "trail_thunder" } do
+		truthy(inChests[id], id .. " isn't in the chests")
+	end
+end)
+
 test("ranked seasons: four weeks each, half the trophies carry over, a title for every rank", function()
 	local Progress = requireModule("Shared/Meta/Progress")
 	-- 23 October 2026 (Season 1 runs 22 October to 19 November)

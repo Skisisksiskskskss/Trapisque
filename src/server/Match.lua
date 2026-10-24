@@ -932,9 +932,12 @@ function Match:_stopFishing(seat: number?)
 	end
 end
 
--- action: "cast" | "reel". The fish is chosen when the line goes in (its shadow shows
--- under the bobber); it nibbles a time or two, then bites. Reel within its window.
-function Match:fish(player: Player, action: any)
+-- action: "cast" | "reel" | "land". The fish is chosen when the line goes in (its shadow
+-- shows under the bobber); it nibbles a time or two, then bites. Reel within its window
+-- to hook it; then it fights (Fishing.fight: the client plays the meter) and "land"
+-- says how it went ({ reels, slips } or { snapped = true }): enough notches, in no less
+-- time than they take, and it's yours.
+function Match:fish(player: Player, action: any, payload: any)
 	local seat = self.seatOf[player]
 	if not seat or self.phase ~= "playing" or self.engine:isOver() then
 		return false, "No fishing right now."
@@ -993,11 +996,38 @@ function Match:fish(player: Player, action: any)
 		elseif f.state ~= "bite" then
 			return true, { state = "idle", result = "nothing" }
 		end
+		local catch = f.catch or "sardine"
+		if now - (f.biteAt or 0) > Fishing.window(catch) + Fishing.Grace then
+			f.state = "idle"
+			f.token = nil
+			return true, { state = "idle", result = "late" }
+		end
+		-- hooked: now it fights
+		local token = f.token
+		f.state = "hooked"
+		f.hookedAt = now
+		f.fight = Fishing.fight(catch)
+		task.delay(Fishing.FightTime + Fishing.Grace, function()
+			if f.token == token and f.state == "hooked" then
+				f.state = "idle"
+				f.token = nil
+				Net.push(player, "fish.state", { state = "idle", reason = "snapped" })
+			end
+		end)
+		return true, { state = "hooked", result = "hooked", fight = f.fight }
+	elseif action == "land" then
+		if f.state ~= "hooked" then
+			return true, { state = "idle", result = "nothing" }
+		end
 		f.state = "idle"
 		f.token = nil
 		local catch = f.catch or "sardine"
-		if now - (f.biteAt or 0) > Fishing.window(catch) + Fishing.Grace then
-			return true, { state = "idle", result = "late" }
+		local fight = f.fight or Fishing.fight(catch)
+		local how = if type(payload) == "table" then payload else {}
+		local reels, slips = tonumber(how.reels) or 0, tonumber(how.slips) or 0
+		local took = now - (f.hookedAt or now)
+		if how.snapped or slips >= Fishing.Slips or reels < fight.reels or took < fight.reels * Fishing.ReelGap or took > Fishing.FightTime + Fishing.Grace then
+			return true, { state = "idle", result = "snapped" }
 		end
 		-- landed it
 		local def = Fishing.byId[catch]
@@ -1007,7 +1037,7 @@ function Match:fish(player: Player, action: any)
 			self:_broadcast(events)
 		end
 		local size = Fishing.sizeOf(catch, random:NextNumber())
-		local logged, record = DataService.addCatch(player, catch, size)
+		local logged, record, unlocked = DataService.addCatch(player, catch, size)
 		if def and def.rarity == "legendary" then
 			BadgeService.award(player, "golden_fish")
 		end
@@ -1017,9 +1047,9 @@ function Match:fish(player: Player, action: any)
 				Net.push(p, "fish.caught", { seat = seat, catch = catch, size = size })
 			end
 		end
-		return true, { state = "idle", result = "caught", catch = catch, size = size, new = logged == 1, record = record }
+		return true, { state = "idle", result = "caught", catch = catch, size = size, new = logged == 1, record = record, unlocked = unlocked }
 	end
-	return false, "Cast or reel."
+	return false, "Cast, reel or land."
 end
 
 ---------------------------------------------------------------------------

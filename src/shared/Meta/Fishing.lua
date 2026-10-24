@@ -9,13 +9,23 @@
 
 	A cast: the fish is chosen when the line goes in, and its shadow (small, medium or
 	large) shows under the bobber. It nibbles a time or two (pull then and it swims off),
-	then bites. The rarer it is, the less time you have to reel.
+	then bites: pull within its window to hook it (the rarer, the shorter). Then it
+	fights: a needle swings to and fro across a meter, and each pull while it's over the
+	green reels the fish in a notch (and the green moves); a pull off the green lets the
+	line slip. Land it after its notches; Fishing.Slips slips and the line snaps. The
+	rarer it is, the more notches, the smaller the green and the faster the needle.
+
+	Filling the log pays: the Fish School trail at half of it, Master Angler at all of it.
 
 		Fishing.roll(map, r1, r2, coinOk) -> catch id    (r1, r2 in [0, 1))
 		Fishing.sizeOf(id, r) -> centimetres             (r in [0, 1); 0 for coins)
-		Fishing.window(id) -> seconds to reel once it bites
+		Fishing.window(id) -> seconds to hook it once it bites
+		Fishing.fight(id) -> { reels, zone, speed }      (zone: the green's share of the
+		                                                  meter; speed: sweeps a second)
+		Fishing.needle(speed, t) -> 0 to 1               (where the needle is, t seconds in)
 		Fishing.shadow(id) -> "small" | "medium" | "large"
 		Fishing.livesIn(id, map) -> boolean
+		Fishing.rewardsFor(species) -> { cosmetic id }   (earned with that many in the log)
 ]]
 
 local Fishing = {}
@@ -24,10 +34,22 @@ Fishing.BiteMin = 3 -- seconds after a cast before the real bite
 Fishing.BiteMax = 7
 Fishing.Nibbles = { 1, 2 } -- fake bites before the real one (at least, at most)
 Fishing.Grace = 0.35 -- for the trip to the server and back
+Fishing.Slips = 3 -- pulls off the green before the line snaps
+Fishing.FightTime = 10 -- seconds to land it once it's hooked, at most
+Fishing.ReelGap = 0.2 -- the least time a notch takes (the server checks the fight wasn't faster)
 
--- how long you have to reel once it bites, and the shadow it throws, by rarity
+-- how long you have to hook it once it bites, and the shadow it throws, by rarity
 local WINDOW = { common = 1.3, uncommon = 1.1, rare = 0.9, legendary = 0.75, junk = 1.3, coin = 1.3 }
 local SHADOW = { common = "small", uncommon = "medium", rare = "large", legendary = "large", junk = "small", coin = "small" }
+-- how hard it fights once hooked
+local FIGHT = {
+	common = { reels = 1, zone = 0.42, speed = 0.9 },
+	uncommon = { reels = 2, zone = 0.34, speed = 1.15 },
+	rare = { reels = 3, zone = 0.27, speed = 1.4 },
+	legendary = { reels = 3, zone = 0.21, speed = 1.7 },
+	junk = { reels = 1, zone = 0.5, speed = 0.8 },
+	coin = { reels = 1, zone = 0.45, speed = 0.9 },
+}
 
 --[[
 	rarity: common | uncommon | rare | legendary (go in the log), junk (logged too, for a
@@ -90,6 +112,22 @@ for _, c in Fishing.catches do
 	end
 end
 
+-- What filling the log earns (cosmetics with source "fishing"): at `count` kinds caught.
+Fishing.Rewards = {
+	{ count = math.ceil(#Fishing.logged / 2), item = "trail_school" },
+	{ count = #Fishing.logged, item = "title_angler" },
+}
+
+function Fishing.rewardsFor(species: number): { string }
+	local out = {}
+	for _, r in Fishing.Rewards do
+		if species >= r.count then
+			table.insert(out, r.item)
+		end
+	end
+	return out
+end
+
 function Fishing.livesIn(id: string, map: string?): boolean
 	local c = Fishing.byId[id]
 	if not c then
@@ -148,6 +186,18 @@ end
 function Fishing.window(id: string): number
 	local c = Fishing.byId[id]
 	return WINDOW[c and c.rarity or "common"] or WINDOW.common
+end
+
+function Fishing.fight(id: string)
+	local c = Fishing.byId[id]
+	local f = FIGHT[c and c.rarity or "common"] or FIGHT.common
+	return { reels = f.reels, zone = f.zone, speed = f.speed }
+end
+
+-- Where the needle is across the meter (0 to 1), `t` seconds into the fight: it sweeps
+-- from one end to the other `speed` times a second, easing at the ends.
+function Fishing.needle(speed: number, t: number): number
+	return 0.5 - 0.5 * math.cos(math.pi * speed * t)
 end
 
 function Fishing.shadow(id: string): string

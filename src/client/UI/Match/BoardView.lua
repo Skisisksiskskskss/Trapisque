@@ -183,6 +183,7 @@ function BoardView.new(parent: Frame, mapId: string, opts: { [string]: any }?)
 	self.bandTiles = {} -- [tile] = { grad, spec, offset }: a conveyor's ridges, sands' ripples (moving)
 	self.cogs = {} -- Clockwork Cove: [tile] = how far its cog carries you (tiles, + forward)
 	self.pawns = {} -- [seat] = { frame, lift, share, tile, ring, seat, info, mascot (the piece), foot }
+	self.anchors = {} -- [seat] = { tile, frame }: Time Travel anchors, shown to everyone
 	self.seatInfo = {}
 
 	-- camera
@@ -2088,6 +2089,7 @@ function BoardView:applySnapshot(snap)
 		if pawn and not pawn.moving then
 			pawn.tile = p.tile
 		end
+		self:setAnchor(p.seat, if (p.anchor or 0) > 0 then p.anchor else nil)
 		if pawn then
 			pawn.burning = (p.burning or 0) > 0
 			pawn.frozen = (p.frozen or 0) > 0
@@ -2099,6 +2101,38 @@ function BoardView:applySnapshot(snap)
 		end
 	end
 	self:_arrange()
+end
+
+-- A Time Travel anchor, where `seat` would warp back to (nil: none). Everyone sees it:
+-- the potion's badge on a disc in its owner's colour, hovering by the tile's top corner
+-- (beside any other anchor there), so a rival can lay a trap where you'd land.
+function BoardView:setAnchor(seat: number, tile: number?)
+	local old = self.anchors[seat]
+	if old and old.tile == tile then
+		return
+	end
+	if old then
+		self.anchors[seat] = nil
+		local f = old.frame
+		Util.tween(Util.scaler(f), 0.25, { Scale = 0 }, Enum.EasingStyle.Back, Enum.EasingDirection.In)
+		task.delay(0.26, function()
+			f:Destroy()
+		end)
+	end
+	if not tile or not self.tileParts[tile] then
+		return
+	end
+	local others = 0
+	for _, a in self.anchors do
+		if a.tile == tile then
+			others += 1
+		end
+	end
+	local at = self:tileWorld(tile) + Vector2.new((0.42 + 0.5 * others) * U, -0.62 * U)
+	local frame = plaque(self.layers.Pieces, "time_potion", seat, px(at), 0.78 * U, 3)
+	frame.Name = "Anchor" .. seat
+	Util.popIn(frame, 0.3, 0.3)
+	self.anchors[seat] = { tile = tile, frame = frame }
 end
 
 local function trapKey(list): string
@@ -2418,7 +2452,9 @@ function BoardView:_statusMarks(seat: number)
 			Size = UDim2.fromScale(0.56, 0.56),
 			ZIndex = 9,
 		})
-		Icons.sticker(holder, StickerArt.misc.flame, nil, 0.08)
+		if not Art.image(holder, "marks/flame", { ZIndex = 9 }) then
+			Icons.sticker(holder, StickerArt.misc.flame, nil, 0.08)
+		end
 		task.spawn(function()
 			while holder.Parent do
 				Util.tween(holder, 0.25, { Size = UDim2.fromScale(0.5, 0.62) }, Enum.EasingStyle.Sine)
@@ -2437,6 +2473,9 @@ function BoardView:_statusMarks(seat: number)
 			Size = UDim2.fromScale(0.86, 0.86),
 			ZIndex = 8,
 		})
+		if Art.image(holder, "marks/ice", { ZIndex = 8 }) then
+			return holder
+		end
 		local block = Util.new("Frame", {
 			Name = "Ice",
 			BackgroundColor3 = hex("BFEFFF"),
@@ -2470,6 +2509,11 @@ function BoardView:_statusMarks(seat: number)
 		})
 		Util.corner(poster, 0.08)
 		Util.stroke(poster, C.ink, 0.05 * U)
+		if Art.has("marks/poster") then
+			-- the paper's drawn (with its skull); the words go on it
+			poster.BackgroundTransparency = 1
+			(poster:FindFirstChildOfClass("UIStroke") :: UIStroke).Enabled = false
+		end
 		Util.new("TextLabel", {
 			Name = "Title",
 			BackgroundTransparency = 1,
@@ -2482,14 +2526,16 @@ function BoardView:_statusMarks(seat: number)
 			ZIndex = 10,
 			Parent = poster,
 		})
-		local face = Util.frame(poster, {
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.fromScale(0.5, 0.5),
-			Size = UDim2.fromScale(0.44, 0.44),
-			SizeConstraint = Enum.SizeConstraint.RelativeXX,
-			ZIndex = 10,
-		})
-		Icons.make(face, "skull", Icons.flatColors(POSTER_INK, POSTER), { Size = UDim2.fromScale(1, 1) })
+		if not Art.has("marks/poster") then
+			local face = Util.frame(poster, {
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				Position = UDim2.fromScale(0.5, 0.5),
+				Size = UDim2.fromScale(0.44, 0.44),
+				SizeConstraint = Enum.SizeConstraint.RelativeXX,
+				ZIndex = 10,
+			})
+			Icons.make(face, "skull", Icons.flatColors(POSTER_INK, POSTER), { Size = UDim2.fromScale(1, 1) })
+		end
 		Util.new("TextLabel", {
 			Name = "Price",
 			BackgroundTransparency = 1,
@@ -2502,6 +2548,12 @@ function BoardView:_statusMarks(seat: number)
 			ZIndex = 10,
 			Parent = poster,
 		})
+		if Art.has("marks/poster") then
+			-- the words between the nails and the skull, and under it
+			local title, price = poster:FindFirstChild("Title") :: TextLabel, poster:FindFirstChild("Price") :: TextLabel
+			title.Position, title.Size = UDim2.fromScale(0.12, 0.2), UDim2.fromScale(0.76, 0.16)
+			price.Position, price.Size = UDim2.fromScale(0.12, 0.72), UDim2.fromScale(0.76, 0.16)
+		end
 		return poster
 	end)
 	local poster = pawn.lift:FindFirstChild("Wanted") :: Frame?
@@ -2516,6 +2568,23 @@ function BoardView:_statusMarks(seat: number)
 		end
 		-- (the Most Wanted's poster is gold)
 		poster.BackgroundColor3 = if pawn.mostWanted then C.sunLight else POSTER
+		local paper = if pawn.mostWanted then "marks/poster_gold" else "marks/poster"
+		local drawn = poster:FindFirstChild("Paper")
+		if drawn and drawn:GetAttribute("Sprite") ~= paper then
+			drawn:Destroy()
+			drawn = nil
+		end
+		if not drawn then
+			local art = Art.image(poster, paper, { Name = "Paper", ZIndex = 9 })
+			if art then
+				-- stretched to the poster's shape
+				local shape = art:FindFirstChildOfClass("UIAspectRatioConstraint")
+				if shape then
+					shape:Destroy()
+				end
+				art:SetAttribute("Sprite", paper)
+			end
+		end
 	end
 	mark("Snared", pawn.skip == true, function()
 		local holder = Util.frame(nil, {
@@ -2524,7 +2593,9 @@ function BoardView:_statusMarks(seat: number)
 			Size = UDim2.fromScale(0.5, 0.5),
 			ZIndex = 9,
 		})
-		Icons.sticker(holder, StickerArt.misc.zzz, nil, 0.08)
+		if not Art.image(holder, "marks/zzz", { ZIndex = 9 }) then
+			Icons.sticker(holder, StickerArt.misc.zzz, nil, 0.08)
+		end
 		return holder
 	end)
 end

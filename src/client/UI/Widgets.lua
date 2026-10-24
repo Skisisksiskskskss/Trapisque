@@ -8,6 +8,7 @@
 ]]
 
 local UserInputService = game:GetService("UserInputService")
+local TextService = game:GetService("TextService")
 
 local Util = require(script.Parent.Util)
 local Theme = require(script.Parent.Theme)
@@ -1153,9 +1154,12 @@ function Widgets.toast(text: string, kind: string?)
 		align = "center",
 		z = 202,
 	})
-	label.AutomaticSize = Enum.AutomaticSize.XY
-	label.Size = UDim2.fromOffset(0, 0)
-	Util.new("UISizeConstraint", { MaxSize = Vector2.new(maxW - 32, 200), Parent = label })
+	-- as wide as the text needs, up to the room there is, and as tall as it wraps to (Roblox
+	-- sizes a wrapping label that grows both ways by its first line only)
+	local room = maxW - 32
+	local bounds = TextService:GetTextSize(text, 18, Enum.Font.Nunito, Vector2.new(room / 1.12, 1000))
+	label.AutomaticSize = Enum.AutomaticSize.Y
+	label.Size = UDim2.fromOffset(math.min(room, math.ceil(bounds.X * 1.12) + 4), 0)
 	Util.popIn(note, 0.3, 0.6)
 	if kind == "error" then
 		Sound.play("error")

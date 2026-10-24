@@ -11,7 +11,8 @@
 	rarity    common | rare | epic | legendary | mythic
 	source    nil = in chests, "default" = everyone owns it, "vip" / "emotepack" / "captain"
 	          = gamepass,
-	          "mastery" = earned by levelling up a character (Meta/Progress)
+	          "mastery" = earned by levelling up a character (Meta/Progress),
+	          "fishing" = earned by filling the fish log (Meta/Fishing)
 ]]
 
 local Cosmetics = {}
@@ -91,7 +92,8 @@ local defs = {
 
 	-------------------------------------------------------------------------
 	-- Trails: little particles that follow your character as it hops
-	-- look: kind, color, color2
+	-- look: kind (its particles: art/trails.py draws trails/<kind>_<n>), color, color2
+	-- (for the plainer particles drawn when the art can't be had)
 	-------------------------------------------------------------------------
 	{ id = "trail_none", category = "trail", name = "No Trail", rarity = "common", source = "default",
 		look = { kind = "none" } },
@@ -111,6 +113,35 @@ local defs = {
 		look = { kind = "star", color = "#FFE066", color2 = "#FFFFFF" } },
 	{ id = "trail_rainbow", category = "trail", name = "Rainbow Road", rarity = "mythic",
 		look = { kind = "rainbow", color = "#FFFFFF" } },
+	{ id = "trail_shells", category = "trail", name = "Seashells", rarity = "common",
+		look = { kind = "shell", color = "#F7A8B8", color2 = "#F3E2C3" } },
+	{ id = "trail_confetti", category = "trail", name = "Confetti", rarity = "common",
+		look = { kind = "confetti", color = "#FF5E7A", color2 = "#4FC3FF" } },
+	{ id = "trail_feathers", category = "trail", name = "Parrot Feathers", rarity = "rare",
+		look = { kind = "feather", color = "#E5383B", color2 = "#2F7FD0" } },
+	{ id = "trail_snow", category = "trail", name = "Snowflakes", rarity = "rare",
+		look = { kind = "snow", color = "#DDF3FF" } },
+	{ id = "trail_blossom", category = "trail", name = "Cherry Blossoms", rarity = "rare",
+		look = { kind = "blossom", color = "#FFC2D6" } },
+	{ id = "trail_ink", category = "trail", name = "Kraken Ink", rarity = "rare",
+		look = { kind = "ink", color = "#3A2E5C" } },
+	{ id = "trail_paws", category = "trail", name = "Paw Prints", rarity = "rare",
+		look = { kind = "paw", color = "#6B4A32" } },
+	{ id = "trail_fireflies", category = "trail", name = "Fireflies", rarity = "epic",
+		look = { kind = "firefly", color = "#E8FF7A" } },
+	{ id = "trail_shanty", category = "trail", name = "Sea Shanty", rarity = "epic",
+		look = { kind = "note", color = "#3B3552" } },
+	{ id = "trail_wisps", category = "trail", name = "Ghost Wisps", rarity = "epic",
+		look = { kind = "wisp", color = "#F4F7FB", color2 = "#7FD8FF" } },
+	{ id = "trail_doubloons", category = "trail", name = "Doubloons", rarity = "legendary",
+		look = { kind = "coin", color = "#F5C14B" } },
+	{ id = "trail_jewels", category = "trail", name = "Jewels", rarity = "legendary",
+		look = { kind = "gem", color = "#E23A4E", color2 = "#3C7FE8" } },
+	{ id = "trail_thunder", category = "trail", name = "Thunder", rarity = "legendary",
+		look = { kind = "bolt", color = "#FFE14D" } },
+	-- landed by filling half the fish log (Meta/Fishing)
+	{ id = "trail_school", category = "trail", name = "Fish School", rarity = "legendary", source = "fishing",
+		look = { kind = "fishy", color = "#FF9F43", color2 = "#4FA3FF" } },
 
 	-------------------------------------------------------------------------
 	-- Emotes: quick reactions in matches (fixed text, so no chat filtering needed)
@@ -151,6 +182,8 @@ local defs = {
 	{ id = "title_royalty", category = "title", name = "Treasure Royalty", rarity = "mythic", look = { text = "Treasure Royalty", color = "#F07CB0", rainbow = true } },
 	{ id = "title_vip", category = "title", name = "VIP", rarity = "legendary", source = "vip", look = { text = "VIP", color = "#F5B700" } },
 	{ id = "title_captain", category = "title", name = "Captain", rarity = "legendary", source = "captain", look = { text = "Captain", color = "#2B4C7E" } },
+	-- landed by filling the whole fish log (Meta/Fishing)
+	{ id = "title_angler", category = "title", name = "Master Angler", rarity = "legendary", source = "fishing", look = { text = "Master Angler", color = "#4FC3FF" } },
 }
 
 -- Mastery titles: "Mage Fan", "Mage Pro", "Mage Legend"... earned by playing a character

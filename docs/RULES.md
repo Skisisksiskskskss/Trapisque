@@ -84,7 +84,8 @@ You choose in any order, but moving ends your turn. Hovering a die (tapping it o
 a phone) shows on the board exactly where it takes you and what happens there: a
 bonk, a token, a hazard, a trap you know about. **(digital)**
 
-Instead of moving you may **Recall** to a Time Travel anchor you dropped earlier.
+Instead of moving you may **Recall** to a Time Travel anchor you dropped earlier. Anchors
+are shown to everyone, and reaching the treasure breaks yours. **(digital)**
 
 ### Power
 
@@ -188,7 +189,7 @@ from treasures (2), gotchas (1) and the wheels' coin slots.
 | Phoenix Potion | 2 | Works by itself: the next time you'd be knocked out, you survive instead. |
 | X-Ray Potion | 2 | See every hidden trap on the board right now. |
 | Telepathy Potion | 3 | Move any player 1 to 3 tiles forward or back. |
-| Time Travel Potion | 4 | Drop an anchor where you stand; on any later turn you can Recall to it instead of moving. |
+| Time Travel Potion | 4 | Drop an anchor where you stand; on a later turn you can Recall to it instead of moving. Everyone sees it, and it breaks when you reach the treasure. |
 | Double Jeopardy | 5 | Swap hands with a player, push them back 6 tiles and jump forward 6 yourself. |
 
 Playing a potion counts as your card for the turn.
@@ -278,8 +279,12 @@ along) and play on from there.
   matches (embers for the Fire Starter, a poker chip for the Gambler...), and it turns
   gold at mastery 10. They can't be bought.
 - **Fishing between turns:** while someone else plays, cast the rod in the board's
-  corner and tap fast when it bites. Catches fill your fish log; a coin catch (once a
-  round at most) adds a coin for this match. It never changes anything else.
+  corner and tap fast when it bites to hook it. Then reel it in: tap whenever the
+  needle on the meter is over the green (rarer fish take more notches, with a smaller
+  green and a faster needle); three taps off the green and the line snaps. Catches fill
+  your fish log (half of it earns the Fish School trail, all of it the Master Angler
+  title); a coin catch (once a round at most) adds a coin for this match. It never
+  changes anything else.
 - **The guided first match:** a Blitz game on Blissful Tricks against gentle bots,
   with the Overseer explaining each part as it comes up. It's scripted so you win,
   pays 100 Gems the first time, and can be replayed from How to Play.

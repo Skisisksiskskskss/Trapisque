@@ -8,8 +8,10 @@
 	or else by the order the note lists the sheets in, and a decal's id is turned into
 	its image's.
 
-	Requests: "art.set" { ids = { number }, sheets = { name }, versions = { [name] = v } }
-	          (owner only) -> { saved = { [sheet] = { id, version } }, stored = boolean }
+	Requests: "art.set" { ids = { number }, sheets = { name }, versions = { [name] = v },
+	          want = { name }? (the sheets the note asked for: ids whose name doesn't say
+	          their sheet go to these) } (owner only)
+	          -> { saved = { [sheet] = { id, version } }, stored = boolean }
 	Pushes:   "art.ids" { [sheet] = { id, version } } to everyone when they change
 	ArtService.ids() is what "hello" hands each client.
 ]]
@@ -116,6 +118,17 @@ local function set(player: Player, payload)
 		table.insert(sheets, sheet)
 		versions[sheet] = v
 	end
+	-- the sheets an id whose name doesn't say goes to (the ones the note asked for)
+	local want = nil
+	if type(payload.want) == "table" then
+		want = {}
+		for i, sheet in payload.want do
+			if i > 32 or type(sheet) ~= "string" or not versions[sheet] then
+				return false, "Bad request."
+			end
+			table.insert(want, sheet)
+		end
+	end
 	local found, problems = {}, {}
 	for i, raw in payload.ids do
 		local id = tonumber(raw)
@@ -133,7 +146,7 @@ local function set(player: Player, payload)
 		return false, if #problems > 0 then problems[1] else "No ids found."
 	end
 	local changes = {}
-	for sheet, image in ArtIds.match(found, sheets) do
+	for sheet, image in ArtIds.match(found, sheets, want) do
 		changes[sheet] = { id = image, version = versions[sheet] }
 		ids[sheet] = changes[sheet]
 	end

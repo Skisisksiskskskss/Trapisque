@@ -22,7 +22,8 @@ Gacha.chests = {
 		odds = { common = 62, rare = 26, epic = 9, legendary = 2.5, mythic = 0.5 },
 		-- guaranteed drop of at least this rarity after N chests without one
 		pity = { { rarity = "epic", every = 10 }, { rarity = "legendary", every = 50 } },
-		look = { body = "#8B5E34", trim = "#D4A373", band = "#6F4518", gem = "#4FA3FF" },
+		-- art: its drawing (art/chests.py); the colours draw it without the art
+		look = { art = "explorer", body = "#8B5E34", trim = "#D4A373", band = "#6F4518", gem = "#4FA3FF" },
 	},
 	{
 		id = "royal",
@@ -32,7 +33,7 @@ Gacha.chests = {
 		tenPrice = 3150,
 		odds = { rare = 58, epic = 30, legendary = 10, mythic = 2 },
 		pity = { { rarity = "legendary", every = 20 } },
-		look = { body = "#5A189A", trim = "#FFD60A", band = "#3C096C", gem = "#FF5FA2" },
+		look = { art = "royal", body = "#5A189A", trim = "#FFD60A", band = "#3C096C", gem = "#FF5FA2" },
 	},
 }
 Gacha.byId = {}

@@ -1901,8 +1901,14 @@ function MatchScreen:_play(e)
 		feed:add(self:_tag(e.p) .. " gave a card to " .. self:_tag(e.target), nil, "plus", C.good)
 	elseif t == "recall" then
 		self:_patch(e.p, "anchor", 0)
+		board:setAnchor(e.p, nil)
 		Effects.recall(board, e.p)
 		feed:add(self:_tag(e.p) .. " traveled back in time", nil, "time_potion", C.potion)
+	elseif t == "anchorLost" then
+		-- banking a treasure breaks your time anchor
+		self:_patch(e.p, "anchor", 0)
+		board:setAnchor(e.p, nil)
+		feed:add(self:_tag(e.p) .. "'s time anchor broke at the treasure", nil, "time_potion", C.potion)
 	elseif t == "offer" then
 		if e.p == self.mySeat and e.options then
 			v.phase = "pick"
@@ -2099,6 +2105,7 @@ function MatchScreen:_playCardEvent(e, speed: number)
 	end
 	if e.item == "time_potion" then
 		self:_patch(e.p, "anchor", e.tile or 0)
+		self.board:setAnchor(e.p, e.tile)
 	end
 	local from = if e.p == self.mySeat then self:_handSpot(nil) else self:_chipSpot(e.p)
 	Overlays.flyCard(self.fly, e.item, from, self:_pawnSpot(e.target or e.p), speed)
@@ -2856,7 +2863,7 @@ function MatchScreen:_cardHint(itemId: string): (string, boolean)
 	elseif def.use == "steal" then
 		return click .. " to steal a random card from a rival.", true
 	elseif def.use == "anchor" then
-		return click .. " to drop your time anchor here. RECALL brings you back.", true
+		return click .. " to drop your time anchor here. RECALL brings you back, until you reach the treasure.", true
 	elseif def.use == "telepathy" then
 		return click .. " to move any player up to " .. Rules.TelepathyMax .. " tiles.", true
 	elseif def.use == "jeopardy" then

@@ -35,6 +35,8 @@ local SOURCE_TEXT = {
 	season = "Ranked seasons",
 	mastery = "Character mastery",
 	emotepack = "Emote Pack",
+	captain = "Captain's Chest pass",
+	fishing = "Fishing: fill the fish log",
 }
 
 local function rarityOrder(def): number

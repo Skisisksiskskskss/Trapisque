@@ -140,6 +140,7 @@ end
 local tag = F.findAll(Root.gui, function(d)
 	return d.Name == "ArtTag" and d:IsA("TextLabel")
 end)[1]
-check(tag ~= nil and string.find(tag.Text, "art 9/9 (1 as thumbnails)", 1, true) ~= nil, "the owner's tag reads " .. tostring(tag and tag.Text))
+local all = #ArtAtlas.sheets
+check(tag ~= nil and string.find(tag.Text, string.format("art %d/%d (1 as thumbnails)", all, all), 1, true) ~= nil, "the owner's tag reads " .. tostring(tag and tag.Text))
 check(tag.Visible, "the owner's tag is hidden in the lobby")
 F.print(string.format("art: the note took %d decal ids, the server found their images and sheets, kept them, and the art loaded (%d of %d sheets, %d as a thumbnail); the tag reads %q", #decals, kept, #ArtAtlas.sheets, report.thumbnails, tag.Text))

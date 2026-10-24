@@ -5,9 +5,11 @@
 
 		ArtIds.parse(text) -> { number }          -- every run of 5+ digits (links work too)
 		ArtIds.sheetNamed(name, sheets) -> string?   -- "Images/scenery_1" -> "scenery_1"
-		ArtIds.match(found, sheets) -> { [sheet] = image id }
+		ArtIds.match(found, sheets, fill?) -> { [sheet] = image id }
 			found = { { image, name? } } in the order pasted: those whose name says their
-			sheet go there, the rest fill the sheets left over in the order given
+			sheet go there, the rest fill the sheets left over in the order given (of
+			`fill` if it's given: the sheets the note asked for, so an id whose name
+			doesn't say is never taken for a sheet that already had its upload)
 ]]
 
 local ArtIds = {}
@@ -37,7 +39,7 @@ function ArtIds.sheetNamed(name: string, sheets: { string }): string?
 	return nil
 end
 
-function ArtIds.match(found: { { image: number, name: string? } }, sheets: { string }): { [string]: number }
+function ArtIds.match(found: { { image: number, name: string? } }, sheets: { string }, fill: { string }?): { [string]: number }
 	local out = {}
 	local rest = {}
 	for _, f in found do
@@ -49,7 +51,7 @@ function ArtIds.match(found: { { image: number, name: string? } }, sheets: { str
 		end
 	end
 	local i = 1
-	for _, sheet in sheets do
+	for _, sheet in fill or sheets do
 		if out[sheet] == nil and rest[i] then
 			out[sheet] = rest[i]
 			i += 1

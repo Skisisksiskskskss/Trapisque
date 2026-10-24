@@ -1,8 +1,9 @@
 # The art
 
 The board's playing pieces, the map props and landmarks, what the board shows on its
-tiles, the characters' emblems, the cards' badges and the Kraken's frames are
-illustrations. They're drawn as SVG by the scripts in this folder and packed into image
+tiles, the characters' emblems, the cards' badges, the Kraken's frames, the dice, the
+trails' particles, the fish, the fishing spot, the Treasure Chests and the marks a
+piece wears (burning, frozen, Wanted, snared) are illustrations. They're drawn as SVG by the scripts in this folder and packed into image
 sheets, which are uploaded to Roblox (see "How the game gets the art" below). The map vote's pictures of the maps (`maps/*.png`) are
 the game's own boards, rendered offline (`tools/shots.sh thumbs`) and packed with the
 rest:
@@ -18,6 +19,12 @@ rest:
 | `emblems.py` | the characters' emblems: a classic one each (a cream symbol on a field of their colour), a Ghost Crew one (another symbol, glowing mint on a dark field, a wispy rim) and a Gilded one (another symbol in gold, a sunburst rim and a gem) |
 | `cards.py` | every card's badge (its symbol in its own colours on a cream field, the rim in its category's colour) and the board's tokens (the kind's symbol in cream on its colour) |
 | `kraken.py` | the Kraken of Kraken's Reach as frames: its arm rising out of the water, swaying, rearing, arching and slamming eight ways round on the ground; its lair's turning white water, its head (ahead, left, right, blinking, angry) and the arms that loop out of the water round it |
+| `dice.py` | every dice skin: the die without its pips (its face over the side facing you, in its material: ivory grain, ruby facets, jade veins, speckled bone, a neon rim, frost, brushed gold, a beaded doubloon, a cosmic nebula) and one carved pip, which the game puts on the face for each spot of the number |
+| `trails.py` | the trails' particles, a few of each kind: dust puffs, bubbles, leaves, sparkles, embers, hearts, stars, rainbows, doubloons, seashells, parrot feathers, snowflakes, cherry blossoms, fireflies, music notes, ghost wisps, jewels, ink, thunder, confetti, paw prints and the Fish School's little fish |
+| `fish.py` | every catch in the fish log, side on and head to the right (and the gold coin); the game draws one dark and see-through as the shadow under the bobber |
+| `fishing.py` | the fishing spot: its pool, the rod, the bobber, a ripple and the splash of a bite |
+| `chests.py` | the Treasure Chests, each as its box and its lid, so the reveal can send the lid flying |
+| `marks.py` | what a piece wears when something's happened to it: a flame (Burning), a block of ice (Frozen), the Wanted poster (and the Most Wanted's gold one; the game writes on it) and Zzz (Snared) |
 
 The shapes of the land, the water, the trail and the tiles are still built in code
 (`MapArt`, `BoardView`) from plain shapes (`ground.py`'s white disc and rounded square,
@@ -63,7 +70,10 @@ python3 tools/art.py
 It needs Python 3 with `cairosvg`, Pillow, numpy and `zstandard`
 (`pip install cairosvg pillow numpy zstandard`). It writes:
 
-- `art/sheets/*.png`: the nine sheets (up to 1024 x 1024 each), the files to upload
+- `art/sheets/*.png`: the eleven sheets (up to 1024 x 1024 each), the files to upload:
+  three each of scenery, pieces and icons, `extras_1` (the dice, the trails, the fishing
+  spot, the chests and the marks) and `fish_1`. A group added later goes on sheets of its
+  own, so the sheets already uploaded keep their uploads
 - `art/contact.png`: every sprite at a glance, for review
 - `src/client/UI/ArtAtlas.lua`: where each sprite sits in the sheets, and each sheet's
   version (a hash of what's on it, from the sprites' sources)
@@ -82,12 +92,13 @@ them as "to upload".
 **Upload the sheets.** That's what works in every game, on every device. The quickest
 way, with nothing to rebuild:
 
-1. Upload the nine files in `art/sheets/` to Roblox, as **Decals** on create.roblox.com
+1. Upload the files in `art/sheets/` that aren't uploaded yet (the art note names them)
+   to Roblox, as **Decals** on create.roblox.com
    (Creations → Decals → Upload Asset; keep each file's name) or with Studio's Asset
    Manager import. Uploads go to whoever uploads them, so do it as the game's owner (or
    to the group, for a group's game).
 2. Play the game (in Studio or live) as its owner. The lobby shows the art note: paste
-   the nine ids into it, in any order (decal ids, image ids or their links all work),
+   their ids into it, in any order (decal ids, image ids or their links all work),
    and press **Save ids**.
 
 The server looks each id up, finds the image behind a decal, matches it to its sheet by
@@ -100,7 +111,7 @@ Or write the ids into the place itself:
 
 1. In Studio (with the place published), open the **Asset Manager** (the **Window**
    menu, or the **Home** tab), click its import button (**Bulk Import**) and pick the
-   nine files in `art/sheets/`. They go to whoever owns the game, user or group.
+   files in `art/sheets/`. They go to whoever owns the game, user or group.
 2. Once they're through moderation, right-click each image and choose **Copy Asset ID**.
 3. Write the ids in with `python3 tools/upload_art.py scenery_1=<id> scenery_2=<id> ...`
    (or put each in `src/client/UI/ArtAssets.lua` where its sheet says `id = 0`, leaving
@@ -138,7 +149,7 @@ The Output says which sheets and why, and the owner (and anyone playing in Studi
 a note in the lobby saying the same, with how to fix it. Players never see the note.
 
 The owner (and anyone playing in Studio) also sees a small tag in the lobby's top right
-corner, with the version that's running and how many sheets loaded: `v1.1.0 · art 9/9`,
+corner, with the version that's running and how many sheets loaded: `v1.2.0 · art 11/11`,
 plus `(N as thumbnails)` when some came from their thumbnails. If the tag is missing,
 or shows an older version, the game running isn't the latest place file.
 

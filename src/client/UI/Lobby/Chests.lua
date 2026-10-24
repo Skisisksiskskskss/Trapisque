@@ -21,6 +21,7 @@ local Shapes = require(UI.Shapes)
 local Icons = require(UI.Icons)
 local Widgets = require(UI.Widgets)
 local CosmeticArt = require(UI.CosmeticArt)
+local Art = require(UI.Art)
 
 local Client = UI.Parent
 local Net = require(Client.Net)
@@ -39,12 +40,27 @@ local RARITY_ORDER = { "common", "rare", "epic", "legendary", "mythic" }
 ---------------------------------------------------------------------------
 
 --[[
-	A treasure chest drawn from shapes, split into base and lid so the lid can fly off.
-	look = { body, trim, band, gem } hex colours (Gacha.chests[i].look)
+	A treasure chest, split into base and lid so the lid can fly off: its illustration
+	(art/chests.py: chests/<look.art>_base and _lid), or drawn from shapes without it.
+	look = { art, body, trim, band, gem } (Gacha.chests[i].look; the colours are hex)
 ]]
 function Chests.art(parent: Instance, look, props: { [string]: any }?)
 	local root = Util.frame(parent, props)
 	root.Name = "Chest"
+	local name = if look.art then "chests/" .. look.art else nil
+	if name and Art.has(name .. "_base") and Art.has(name .. "_lid") then
+		local function part(sprite: string, z: number): Frame
+			return Art.image(root, sprite, {
+				Name = if z == 1 then "Base" else "Lid",
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				Position = UDim2.fromScale(0.5, 0.5),
+				ZIndex = root.ZIndex + z - 1,
+			}) :: Frame
+		end
+		local base = part(name .. "_base", 1)
+		local lid = part(name .. "_lid", 2)
+		return { root = root, lid = lid, base = base }
+	end
 	local body, trim, band, gem = hex(string.sub(look.body, 2)), hex(string.sub(look.trim, 2)), hex(string.sub(look.band, 2)), hex(string.sub(look.gem, 2))
 
 	-- lid and box share one width; only the lid's top corners are rounded. Each part
@@ -569,7 +585,9 @@ function Chests._revealOne(layer: Instance, chest, r, done: () -> ())
 	-- lid flies off, light pours out
 	Util.tween(art.lid, 0.4, { Position = UDim2.new(0.5, 30, 0.5, -170), Rotation = 28 }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 	for _, part in art.lid:GetChildren() do
-		if part:IsA("GuiObject") then
+		if part:IsA("ImageLabel") then
+			Util.tween(part, 0.4, { ImageTransparency = 1 })
+		elseif part:IsA("GuiObject") then
 			Util.tween(part, 0.4, { BackgroundTransparency = 1 })
 		end
 	end
