@@ -463,9 +463,9 @@ def head_frame(look):
         c.ellipse(x, ey, 0.55, 0.48, c.radial([(0, "#FFF2A8", 1), (0.7, "#F2C23A", 1), (1, "#C58E12", 1)], 0.4, 0.35, 0.8))
         c.ellipse(x + px, ey + 0.02, 0.1 if look != "angry" else 0.07, 0.34, "#1B1018")
         c.circle(x - 0.17, ey - 0.16, 0.08, "#FFFFFF", opacity=0.9)
-        # its lids: heavy, and drawn down hard when it's angry
+        # its lids: heavy, and drawn down hard toward the middle when it's angry
         if look == "angry":
-            lid = [(x - side * 0.62, ey - 0.62), (x + side * 0.6, ey - 0.12), (x + side * 0.55, ey - 0.55)]
+            lid = [(x + side * 0.62, ey - 0.62), (x - side * 0.6, ey - 0.12), (x - side * 0.55, ey - 0.55)]
         else:
             lid = [(x - 0.58, ey - 0.3), (x, ey - 0.58), (x + 0.58, ey - 0.3), (x + 0.5, ey - 0.62), (x - 0.5, ey - 0.62)]
         c.path(lid, FLESH_D, OUT, 0.07, closed=True, curve=look != "angry")
