@@ -21,6 +21,6 @@ return {
 	icons_1 = { id = 130011418411297, version = "4c41186e6efb" },
 	icons_2 = { id = 92014138360421, version = "4bdbba8e54b2" },
 	icons_3 = { id = 82942990014553, version = "5ec65d2c8d2d" },
-	extras_1 = { id = 0, version = "12811230d118" },
-	fish_1 = { id = 0, version = "13f3f29bd3c7" },
+	extras_1 = { id = 88835193670165, version = "12811230d118" },
+	fish_1 = { id = 120604847864264, version = "13f3f29bd3c7" },
 }
