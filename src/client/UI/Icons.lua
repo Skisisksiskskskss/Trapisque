@@ -507,20 +507,14 @@ function Icons.engraved(parent: Instance, id: string, wood: Color3, props: { [st
 	return holder
 end
 
--- The sticker art for an id, if it has one: a card's illustration or a character's mascot.
+-- The sticker art for an id, if it has one: a card's illustration (the code-drawn
+-- stand-in for its badge).
 function Icons.stickerFor(id: string): { any }?
-	local art = StickerArt.cards[id]
-	if art then
-		return art
-	end
-	if StickerArt.bodyColor[id] then
-		return StickerArt.mascot(id, nil, { bust = true })
-	end
-	return StickerArt.misc[id]
+	return StickerArt.cards[id] or StickerArt.misc[id]
 end
 
--- A character's portrait id: "mage", or "mage:ghost" in an outfit (Cosmetics outfits).
-function Icons.splitPortrait(id: string): (string, string?)
+-- A character's emblem id: "mage", or "mage:ghost" in another set (Cosmetics emblems).
+function Icons.splitEmblem(id: string): (string, string?)
 	local char, set = string.match(id, "^([%w_]+):([%w_]+)$")
 	if char then
 		return char, set
@@ -528,25 +522,48 @@ function Icons.splitPortrait(id: string): (string, string?)
 	return id, nil
 end
 
--- Its picture: portraits/mage_ghost (the Classic one if that outfit has no art).
-function Icons.portraitSprite(id: string): string
-	local char, set = Icons.splitPortrait(id)
+-- Its art: emblems/mage, emblems/mage_ghost (the classic one if that set has none).
+function Icons.emblemSprite(id: string): string
+	local char, set = Icons.splitEmblem(id)
 	if set then
-		local name = "portraits/" .. char .. "_" .. set
+		local name = "emblems/" .. char .. "_" .. set
 		if Art.has(name) then
 			return name
 		end
 	end
-	return "portraits/" .. char
+	return "emblems/" .. char
 end
 
---[[
-	An icon on a coloured disc with the sticker outline (tokens, badges, portraits).
-	Cards and characters show their sticker art; anything else is a white glyph. A
-	character can come in an outfit: "mage:ghost".
-]]
-function Icons.medallion(parent: Instance, id: string, color: Color3, props: { [string]: any }?): Frame
-	local disc = Util.new("Frame", {
+local function fill(frame: GuiObject, props: { [string]: any }?)
+	if props then
+		for k, v in props do
+			(frame :: any)[k] = v
+		end
+	end
+end
+
+-- A badge from the art (it brings its own rim and field), square, filling its frame.
+local function badgeArt(parent: Instance, sprite: string, props: { [string]: any }?): Frame?
+	local holder = Util.new("Frame", {
+		Name = "Badge",
+		BackgroundTransparency = 1,
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromScale(1, 1),
+		SizeConstraint = Enum.SizeConstraint.RelativeYY,
+	})
+	fill(holder, props)
+	if not Art.image(holder, sprite, { ZIndex = holder.ZIndex }) then
+		holder:Destroy()
+		return nil
+	end
+	holder.Parent = parent
+	return holder
+end
+
+-- A plain disc (the stand-in when the art can't be drawn): `color`, a ring, `glyph`.
+local function disc(parent: Instance, color: Color3, props: { [string]: any }?): Frame
+	local d = Util.new("Frame", {
 		Name = "Medallion",
 		BackgroundColor3 = color,
 		BorderSizePixel = 0,
@@ -555,52 +572,84 @@ function Icons.medallion(parent: Instance, id: string, color: Color3, props: { [
 		Size = UDim2.fromScale(1, 1),
 		SizeConstraint = Enum.SizeConstraint.RelativeYY,
 	})
-	if props then
-		for k, v in props do
-			(disc :: any)[k] = v
-		end
-	end
-	Util.corner(disc, 0.5)
-	Util.scaledStroke(disc, Theme.C.line, 0.035, 2)
-	disc.Parent = parent
-	local character = Icons.splitPortrait(id)
-	if StickerArt.bodyColor[character] then
-		-- a character: a real portrait on a pale disc of their colour, cropped to the circle
-		disc.BackgroundColor3 = color:Lerp(Theme.C.cream, 0.62)
-		local crop = Util.new("CanvasGroup", {
-			Name = "Portrait",
-			BackgroundTransparency = 1,
-			Size = UDim2.fromScale(1, 1),
-			ZIndex = disc.ZIndex + 1,
-			Parent = disc,
-		})
-		Util.corner(crop, 0.5)
-		-- their illustrated portrait (Art), or the drawing from code shapes
-		if not Art.image(crop, Icons.portraitSprite(id), { ZIndex = disc.ZIndex + 1 }) then
-			local s = Icons.sticker(crop, StickerArt.mascot(character, nil, { crop = true }), {
-				Size = UDim2.fromScale(1, 1),
-				ZIndex = disc.ZIndex + 1,
-			}, 0.045)
-			s.ZIndex = disc.ZIndex + 1
-		end
-		return disc
-	end
-	local art = Icons.stickerFor(id)
+	fill(d, props)
+	Util.corner(d, 0.5)
+	Util.scaledStroke(d, Util.shade(color, -0.4), 0.06, 2)
+	d.Parent = parent
+	return d
+end
+
+--[[
+	A character's emblem: the badge of their symbol (art/emblems.py), in the set they
+	wear ("mage:ghost"); or, when the art can't be drawn, a disc of their colour with
+	their symbol on it.
+]]
+function Icons.emblem(parent: Instance, id: string, props: { [string]: any }?): Frame
+	local art = badgeArt(parent, Icons.emblemSprite(id), props)
 	if art then
-		local s = Icons.sticker(disc, art, {
-			Size = UDim2.fromScale(0.86, 0.86),
-			SizeConstraint = Enum.SizeConstraint.RelativeYY,
-			ZIndex = disc.ZIndex + 1,
-		}, 0.055)
-		s.ZIndex = disc.ZIndex + 1
-	else
-		Icons.make(disc, id, { ink = Color3.new(1, 1, 1), bg = color, acc = Theme.C.sunLight, acc2 = Theme.C.sunLight, hi = color, line = color }, {
-			Size = UDim2.fromScale(0.56, 0.56),
-			SizeConstraint = Enum.SizeConstraint.RelativeYY,
-			ZIndex = disc.ZIndex + 1,
-		})
+		art.Name = "Emblem"
+		return art
 	end
-	return disc
+	local character = Icons.splitEmblem(id)
+	local d = disc(parent, Theme.Character[character] or Theme.C.grape, props)
+	d.Name = "Emblem"
+	Icons.make(d, character, Icons.flatColors(Theme.C.cream, Theme.Character[character] or Theme.C.grape), {
+		Size = UDim2.fromScale(0.6, 0.6),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		SizeConstraint = Enum.SizeConstraint.RelativeYY,
+		ZIndex = d.ZIndex + 1,
+	})
+	return d
+end
+
+--[[
+	A card's badge (art/cards.py: the card's symbol on a badge of its category's
+	colour), or a board token's ("token_trap"); or, when the art can't be drawn, a disc
+	of `color` with its sticker or glyph.
+]]
+function Icons.cardBadge(parent: Instance, id: string, color: Color3, props: { [string]: any }?): Frame
+	local art = badgeArt(parent, "cards/" .. id, props)
+	if art then
+		return art
+	end
+	local d = disc(parent, color, props)
+	local sticker = Icons.stickerFor(id) or StickerArt.tokens[string.match(id, "^token_(.+)$") or ""]
+	if sticker then
+		local s = Icons.sticker(d, sticker, {
+			Size = UDim2.fromScale(0.8, 0.8),
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.5, 0.5),
+			SizeConstraint = Enum.SizeConstraint.RelativeYY,
+			ZIndex = d.ZIndex + 1,
+		}, 0.055)
+		s.ZIndex = d.ZIndex + 1
+	end
+	return d
+end
+
+--[[
+	An icon on a coloured disc (badges, modes, rewards). A character's emblem or a card's
+	badge stands in for the disc when the id is one ("mage", "mage:ghost", "spike");
+	anything else is a white glyph on `color`.
+]]
+function Icons.medallion(parent: Instance, id: string, color: Color3, props: { [string]: any }?): Frame
+	local character = Icons.splitEmblem(id)
+	if Theme.Character[character] then
+		return Icons.emblem(parent, id, props)
+	end
+	if Art.has("cards/" .. id) or StickerArt.cards[id] then
+		return Icons.cardBadge(parent, id, color, props)
+	end
+	local d = disc(parent, color, props)
+	Icons.make(d, id, { ink = Color3.new(1, 1, 1), bg = color, acc = Theme.C.sunLight, acc2 = Theme.C.sunLight, hi = color, line = color }, {
+		Size = UDim2.fromScale(0.56, 0.56),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		SizeConstraint = Enum.SizeConstraint.RelativeYY,
+		ZIndex = d.ZIndex + 1,
+	})
+	return d
 end
 
 return Icons

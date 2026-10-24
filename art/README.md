@@ -1,9 +1,12 @@
 # The art
 
 The board's playing pieces, the map props and landmarks, what the board shows on its
-tiles, and the eight character portraits are illustrations. They're drawn as SVG by the scripts in this folder and
-packed into four image sheets, which the game builds itself from data shipped in the
-place (or loads from Roblox, once you upload them):
+tiles, the characters' emblems, the cards' badges and the Kraken's frames are
+illustrations. They're drawn as SVG by the scripts in this folder and packed into image
+sheets, which the game builds itself from data shipped in the place (or loads from
+Roblox, once you upload them). The map vote's pictures of the maps (`maps/*.png`) are
+the game's own boards, rendered offline (`tools/shots.sh thumbs`) and packed with the
+rest:
 
 | File | What it draws |
 | --- | --- |
@@ -12,7 +15,10 @@ place (or loads from Roblox, once you upload them):
 | `ground.py` | what lies on the ground: the soft spot used for the shallows, patches and shadows, tufts, pebbles, shells, flowers, leaves, swells on the sea, and the worn faces of the tile stones |
 | `items.py` | what stands on a tile, as the thing itself: a banana peel, spikes, a Grog in its hole, a campfire, a snare, a wall, a locked gate, a mushroom, the treasure chest, the start flag |
 | `tiles.py` | what a tile turns into when something covers it, in both tile shapes (`_round` stones, `_square` slabs), drawn bigger than the tile and cut to its outline: ice, thin ice (cracked, given way), mud, water, lava, slime, sand, a portal, embers, a conveyor's rubber, brass cogs, a drawbridge's planks and the canal under it (the board lays a conveyor's ridges and the sands' ripples on top, moving). And what stands across the trail turned to face it: a wall and a gate in seven turns, and a raised drawbridge leaf leaning sixteen ways |
-| `portraits.py` | the eight pirates, head and shoulders |
+| `badge.py` | the emblem style the next two share: a round badge (rim, ring, field) and a bold symbol, outlined thick, cut darker along its lower right, a soft shadow |
+| `emblems.py` | the characters' emblems: a classic one each (a cream symbol on a field of their colour), a Ghost Crew one (another symbol, glowing mint on a dark field, a wispy rim) and a Gilded one (another symbol in gold, a sunburst rim and a gem) |
+| `cards.py` | every card's badge (its symbol in its own colours on a cream field, the rim in its category's colour) and the board's tokens (the kind's symbol in cream on its colour) |
+| `kraken.py` | the Kraken of Kraken's Reach as frames: its arm rising out of the water, swaying, rearing, arching and slamming eight ways round on the ground; its lair's turning white water, its head (ahead, left, right, blinking, angry) and the arms that loop out of the water round it |
 
 The shapes of the land, the water, the trail and the tiles are still built in code
 (`MapArt`, `BoardView`) from plain shapes (`ground.py`'s white disc and rounded square,
@@ -40,16 +46,14 @@ untouched.
   cut-off bottom
 - a soft shadow on the ground under things that stand; foam or ripples where something
   meets the water
-- no faces on objects; only the pirates have them
+- no faces on objects (only the Kraken and the Grog, which are creatures)
 - as little detail as reads at the size it's shown: a prop is often 50 to 100 pixels
   tall on screen
 
-The portraits are simpler still: a flat cartoon style of big chunky shapes, each one
-flat colour with a line in a dark shade of its own colour, and at most one flat shadow
-on a big part (under a hat's brim, under the chin). No gradients, no eye whites or
-shine: dot eyes (a line or an arc when they're lidded, shut or winking), bar brows, a
-plain nose and mouth, faces front on. The eight are told apart by the shape of their
-head, their hat and hair, and the one thing each of them carries.
+The emblems and the cards' badges are bolder: a symbol in two or three flat colours,
+outlined thick in one dark ink, with a darker cut along its lower right edge and a soft
+shadow on the badge, so it reads at 24 pixels on a chip as well as at 200 on a card.
+The characters have no faces: each emblem is a symbol of theirs, never their head.
 
 ## Building the sheets
 
@@ -99,5 +103,5 @@ move around the sheets, so the old ids no longer fit.
 
 ## Previews offline
 
-`tools/shots.sh boards crew` renders the maps and the pieces and portraits from the
+`tools/shots.sh boards crew` renders the maps and the pieces and emblems from the
 sheet files, without Roblox, and so do the other screenshot scenarios.

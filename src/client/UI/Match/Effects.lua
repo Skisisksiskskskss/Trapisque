@@ -3,13 +3,14 @@
 	Animations that play on the board when something happens: a spike springs up, a
 	Grog lunges, a bonk sends someone flying with a BOING, a hidden trap goes GOTCHA,
 	a Blizzard snows over everyone... Every function is fire-and-forget and lasts about
-	as long as Pacing says the event takes. The pictures are the same stickers as the
-	cards, so a trap going off looks like its card.
+	as long as Pacing says the event takes. A card going off shows its badge, the same
+	as on the card.
 ]]
 
 local UI = script.Parent.Parent
 local Util = require(UI.Util)
 local Theme = require(UI.Theme)
+local Items = require(game:GetService("ReplicatedStorage").Shared.Game.Items)
 local Shapes = require(UI.Shapes)
 local Icons = require(UI.Icons)
 local StickerArt = require(UI.StickerArt)
@@ -126,15 +127,20 @@ local function ring(view, at: Vector2, color: Color3, from: number, to: number, 
 end
 Effects.ring = ring
 
--- A sticker (a card's art, or one of the extras) pops up at a spot, rises, then shrinks away.
+-- A card's badge (or one of the extras' stickers) pops up at a spot, rises, then shrinks away.
 local function popSticker(view, at: Vector2, id: string, size: number, life: number): Frame?
 	local art = Icons.stickerFor(id)
-	if not art then
+	local badge = Items.get(id) ~= nil
+	if not art and not badge then
 		return nil
 	end
 	local U = view.UNIT
 	local h = holder(view, at - Vector2.new(0, 0.4 * U), size * U, 58)
-	Icons.sticker(h, art, nil, 0.06)
+	if badge then
+		Icons.cardBadge(h, id, Theme.Category[Items.get(id).category] or Theme.C.panelRaised, { Size = UDim2.fromScale(0.9, 0.9) })
+	else
+		Icons.sticker(h, art, nil, 0.06)
+	end
 	Util.popIn(h, 0.3, 0.2)
 	Util.tween(h, life, { Position = px(at - Vector2.new(0, 1.1 * U)) }, Enum.EasingStyle.Quad)
 	fadeOut(h, life * 0.75, life * 0.25)

@@ -155,9 +155,13 @@ local PICTURES: { [string]: () -> { any } } = {
 		return StickerArt.misc.chest
 	end,
 	crew = function()
+		-- two of the crew's emblems: the Mage's snowflake and the Fire Starter's flame
 		return {
-			{ "group", s = 0.62, dx = -0.2, dy = 0.04, ops = StickerArt.mascot("mage", "happy", { bust = true }) },
-			{ "group", s = 0.62, dx = 0.2, dy = 0.04, ops = StickerArt.mascot("trapper", "happy", { bust = true }) },
+			{ "circle", 0.33, 0.52, 0.5, c = "#2F7FD0" },
+			{ "sparkle", 0.33, 0.52, 0.3, c = "#FFF6E6" },
+			{ "circle", 0.67, 0.48, 0.5, c = "#D64545" },
+			{ "drop", 0.67, 0.5, 0.13, dir = 0, c = "#FFF6E6" },
+			{ "drop", 0.67, 0.54, 0.065, dir = 0, c = "#F5C14B", ol = false },
 		}
 	end,
 	star = function()

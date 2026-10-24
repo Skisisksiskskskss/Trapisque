@@ -175,6 +175,27 @@ test("accessory packs become finishes, and a second pack of one finish pays Gems
 	end
 end)
 
+test("portrait outfits become the emblems of their sets, worn the same way", function()
+	local owned = { outfit_mage_classic = true, outfit_mage_ghost = true, outfit_trapper_gilded = true, fin_paint = true }
+	local equipped = { outfits = { mage = "outfit_mage_ghost", trapper = "outfit_trapper_gilded" }, emblems = {} }
+	Cosmetics.migrateOutfits(owned, equipped)
+	truthy(owned.emblem_mage_classic and owned.emblem_mage_ghost and owned.emblem_trapper_gilded and owned.fin_paint, "the emblems (and the rest) are owned")
+	eq(owned.outfit_mage_ghost or owned.outfit_trapper_gilded or owned.outfit_mage_classic, nil, "no outfits left")
+	eq(equipped.emblems.mage, "emblem_mage_ghost", "the Mage wears the Ghost Crew emblem")
+	eq(equipped.emblems.trapper, "emblem_trapper_gilded", "the Trapper wears the Gilded one")
+	eq(equipped.outfits, nil, "no outfit slot left")
+	-- every character has three, each its own design: the classic one, the Ghost Crew's
+	-- and the Gilded one
+	for _, id in requireModule("Shared/Game/Characters").ids do
+		for _, set in Cosmetics.emblemSets do
+			local def = Cosmetics.get("emblem_" .. id .. "_" .. set.id)
+			truthy(def and def.category == "emblem" and def.character == id, "no " .. set.id .. " emblem for the " .. id)
+		end
+		eq(Cosmetics.emblemOf(nil, id), "emblem_" .. id .. "_classic", "the classic one by default")
+		eq(Cosmetics.emblemOf({ [id] = "emblem_" .. id .. "_gilded" }, id), "emblem_" .. id .. "_gilded")
+	end
+end)
+
 ---------------------------------------------------------------------------
 -- Progress: mastery, quests, streak, trophies, events
 ---------------------------------------------------------------------------

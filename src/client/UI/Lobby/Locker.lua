@@ -115,8 +115,8 @@ function Locker._fill(_maid, content: Frame, category: string)
 		charOrder[id] = i
 	end
 	table.sort(items, function(a, b)
-		if category == "outfit" then
-			-- (a row of outfits for each character)
+		if category == "emblem" then
+			-- (a row of emblems for each character)
 			if a.character ~= b.character then
 				return (charOrder[a.character] or 99) < (charOrder[b.character] or 99)
 			end
@@ -170,7 +170,7 @@ function Locker._fill(_maid, content: Frame, category: string)
 		local isOwned = owned[def.id] == true
 		local isEquipped = if category == "emote"
 			then emoteSlots[def.id] ~= nil
-			elseif category == "outfit" then Cosmetics.outfitOf(equipped.outfits, def.character) == def.id
+			elseif category == "emblem" then Cosmetics.emblemOf(equipped.emblems, def.character) == def.id
 			else equipped[category] == def.id
 		local rarity = Cosmetics.rarityById[def.rarity]
 		local rimColor = if rarity then hex(string.sub(rarity.color, 2)) else C.textFaint

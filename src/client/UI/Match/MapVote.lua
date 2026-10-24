@@ -1,14 +1,15 @@
 --[[
 	MapVote
 	A match can open with a vote (Quick Play always; a private match when its host turns
-	it on). The cards sit side by side (stacked, or two by two, on an upright phone):
+	it on). The cards sit side by side (two by two on an upright phone):
 
-		map      a map with its colours, its hazard and what it does
+		map      a picture of the map (art/maps: the game's own board), its name, what it
+		         does to you and the card that gets you past it
 		mystery  a face-down map that isn't on the other cards; it turns over if it wins
 		twist    a map with one of the weekly events' twists on top
 
-	Tap one to vote; everyone's vote shows as a dot in their character's colour, and a
-	countdown runs to the server's deadline. "majority": the most votes wins. "roulette":
+	Tap one to vote. Everyone who has voted shows on their card as their emblem; a bar
+	runs down to the server's deadline. "majority": the most votes wins. "roulette":
 	every vote is a slice of a wheel (a card nobody picked keeps a sliver), the cards show
 	their chances, and the wheel spins when time is up.
 
@@ -32,8 +33,8 @@ local Theme = require(UI.Theme)
 local Widgets = require(UI.Widgets)
 local Icons = require(UI.Icons)
 local Shapes = require(UI.Shapes)
-local StickerArt = require(UI.StickerArt)
-local MapScenes = require(script.Parent.MapScenes)
+local Art = require(UI.Art)
+local CosmeticArt = require(UI.CosmeticArt)
 
 local Client = UI.Parent
 local Net = require(Client.Net)
@@ -59,185 +60,105 @@ local function flagColor(i: number, option): Color3
 	return FLAG[i] or C.sun
 end
 
--- The hazard each map is known for, as its sticker.
-local HAZARD_ART = { river = "river", gate = "gate", slime = "slime", lava = "lava", thinice = "thinice", kraken = "kraken", drawbridge = "drawbridge" }
+-- What each map's hazard does to you, in a few words (Maps: the blurb says it in full).
+local HAZARD = {
+	river = "Rivers stop you",
+	gate = "Gates block the way",
+	slime = "Slime eats your steps",
+	ghost = "Ghosts scare you back",
+	lava = "Lava, and eruptions",
+	thinice = "Thin ice gives way",
+	kraken = "The Kraken strikes",
+	drawbridge = "Drawbridges rise",
+}
 
--- A little picture of a place: its sea, an island in its land colours, the hazard.
-local function picture(parent: Instance, mapId: string): Frame
-	local def = Maps.get(mapId)
-	local scene = MapScenes[mapId] or MapScenes.blissful
-	local col = scene.colors
-	local pic = Util.new("Frame", {
-		Name = "Picture",
-		BackgroundColor3 = hex(col.water),
-		BorderSizePixel = 0,
-		Position = UDim2.fromOffset(10, 10),
-		Size = UDim2.new(1, -20, 0.5, -10),
-		ClipsDescendants = true,
-		Parent = parent,
-	})
-	Util.corner(pic, 10)
-	Util.stroke(pic, C.line, 2.5)
-	for i, blob in { { 0.32, 0.62, 0.9 }, { 0.62, 0.48, 1.0 }, { 0.82, 0.7, 0.55 } } do
-		local shore = Util.new("Frame", {
-			BackgroundColor3 = hex(col.shallows),
-			BorderSizePixel = 0,
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.fromScale(blob[1], blob[2]),
-			Size = UDim2.fromScale(blob[3] * 0.62, blob[3] * 0.95),
-			SizeConstraint = Enum.SizeConstraint.RelativeYY,
-			ZIndex = 1,
-			Parent = pic,
-		})
-		Util.corner(shore, 0.5)
-		local land = Util.new("Frame", {
-			BackgroundColor3 = hex(if i == 2 then col.inner else col.land),
-			BorderSizePixel = 0,
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.fromScale(0.5, 0.5),
-			Size = UDim2.fromScale(0.8, 0.8),
-			ZIndex = 2,
-			Parent = shore,
-		})
-		Util.corner(land, 0.5)
-		Util.stroke(land, C.line, 2)
-	end
-	local art = if def.naturalKind == "ghost" then StickerArt.misc.ghost else StickerArt.hazards[HAZARD_ART[def.naturalKind or ""] or "river"]
-	if art then
-		Icons.sticker(pic, art, {
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.fromScale(0.5, 0.5),
-			Size = UDim2.fromScale(0.62, 0.62),
-			SizeConstraint = Enum.SizeConstraint.RelativeYY,
-			ZIndex = 5,
-		}, 0.07)
-	end
-	return pic
-end
+local PAD = 8 -- inside a card
+local GAP = 14 -- between cards
 
--- The back of a card: a night sea full of question marks.
-local function mysteryPicture(parent: Instance): Frame
+-- The picture at the top of a card: the map itself, or the back of a Mystery card.
+local function picture(parent: Instance, option, w: number, h: number): Frame
 	local pic = Util.new("Frame", {
 		Name = "Picture",
 		BackgroundColor3 = C.grapeDark,
 		BorderSizePixel = 0,
-		Position = UDim2.fromOffset(10, 10),
-		Size = UDim2.new(1, -20, 0.5, -10),
+		Position = UDim2.fromOffset(PAD, PAD),
+		Size = UDim2.fromOffset(w, h),
 		ClipsDescendants = true,
+		ZIndex = 2,
 		Parent = parent,
 	})
 	Util.corner(pic, 10)
-	Util.stroke(pic, C.line, 2.5)
-	for _, q in { { 0.14, 0.26, -18 }, { 0.86, 0.3, 14 }, { 0.2, 0.8, 10 }, { 0.8, 0.78, -12 }, { 0.5, 0.12, 4 } } do
-		Util.new("TextLabel", {
+	if option.kind == "mystery" then
+		-- a night sea, fog, and question marks
+		Util.grad(pic, { C.grapeDark, Util.shade(C.grapeDark, -0.35) }, 90)
+		for _, q in { { 0.14, 0.3, -18, 0.34 }, { 0.86, 0.28, 14, 0.3 }, { 0.22, 0.8, 10, 0.26 }, { 0.8, 0.78, -12, 0.3 } } do
+			Util.new("TextLabel", {
+				BackgroundTransparency = 1,
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				Position = UDim2.fromScale(q[1], q[2]),
+				Size = UDim2.fromScale(q[4], q[4]),
+				SizeConstraint = Enum.SizeConstraint.RelativeYY,
+				Rotation = q[3],
+				Text = "?",
+				TextScaled = true,
+				TextTransparency = 0.45,
+				FontFace = Theme.Font.Display,
+				TextColor3 = C.sky,
+				ZIndex = 3,
+				Parent = pic,
+			})
+		end
+		local big = Util.new("TextLabel", {
 			BackgroundTransparency = 1,
 			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.fromScale(q[1], q[2]),
-			Size = UDim2.fromScale(0.3, 0.3),
+			Position = UDim2.fromScale(0.5, 0.52),
+			Size = UDim2.fromScale(0.86, 0.86),
 			SizeConstraint = Enum.SizeConstraint.RelativeYY,
-			Rotation = q[3],
 			Text = "?",
 			TextScaled = true,
 			FontFace = Theme.Font.Display,
-			TextColor3 = C.grape,
-			ZIndex = 2,
+			TextColor3 = C.sun,
+			ZIndex = 4,
 			Parent = pic,
 		})
+		Util.stroke(big, C.ink, 3)
+		return pic
 	end
-	local big = Util.new("TextLabel", {
-		BackgroundTransparency = 1,
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.52),
-		Size = UDim2.fromScale(0.8, 0.8),
-		SizeConstraint = Enum.SizeConstraint.RelativeYY,
-		Text = "?",
-		TextScaled = true,
-		FontFace = Theme.Font.Display,
-		TextColor3 = C.sun,
-		ZIndex = 5,
-		Parent = pic,
-	})
-	Util.stroke(big, C.ink, 3)
+	local def = Maps.get(option.map) or Maps.list[1]
+	if not Art.image(pic, "maps/" .. def.id, { ZIndex = 3, Size = UDim2.fromScale(1, 1) }) then
+		-- (no art: the map's sea and land colours)
+		pic.BackgroundColor3 = C.sky
+	end
+	local event = option.kind == "twist" and Progress.eventById(option.event)
+	if event then
+		-- the twist on a ribbon across the bottom of the picture
+		local ribbon = Util.new("Frame", {
+			Name = "Twist",
+			BackgroundColor3 = hex(event.color),
+			BorderSizePixel = 0,
+			AnchorPoint = Vector2.new(0, 1),
+			Position = UDim2.new(0, 0, 1, 0),
+			Size = UDim2.new(1, 0, 0, math.floor(h * 0.24)),
+			ZIndex = 5,
+			Parent = pic,
+		})
+		Widgets.label(ribbon, {
+			text = "+ " .. event.name,
+			font = "chunky",
+			size = 16,
+			color = Theme.textOn(hex(event.color)),
+			align = "center",
+			scaled = true,
+			sizeUDim = UDim2.new(1, -16, 1, -6),
+			position = UDim2.fromOffset(8, 3),
+			z = 6,
+		})
+	end
 	return pic
 end
 
--- A card's face (the part that turns over when a Mystery map wins).
-local function face(root: Instance, option): Frame
-	local f = Util.frame(root, {
-		Name = "Face",
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.5),
-		Size = UDim2.fromScale(1, 1),
-		ClipsDescendants = true,
-	})
-	local name, blurb
-	if option.kind == "mystery" then
-		mysteryPicture(f)
-		name = "Mystery Map"
-		blurb = "A map that isn't on the other cards, face down. You see which one only if it wins."
-	else
-		local def = Maps.get(option.map) or Maps.list[1]
-		local pic = picture(f, def.id)
-		name = def.name
-		local counter = Items.get(def.counterItem or "")
-		blurb = def.blurb .. (if counter then ("  Counter: " .. counter.name .. ".") else "")
-		local event = option.kind == "twist" and Progress.eventById(option.event)
-		if event then
-			-- a ribbon across the picture with the twist on it
-			local ribbon = Util.new("Frame", {
-				Name = "Twist",
-				BackgroundColor3 = hex(event.color),
-				BorderSizePixel = 0,
-				AnchorPoint = Vector2.new(0.5, 0),
-				Position = UDim2.new(0.5, 0, 0, 8),
-				Size = UDim2.new(1, 24, 0, 28),
-				Rotation = -4,
-				ZIndex = 8,
-				Parent = pic,
-			})
-			Util.stroke(ribbon, C.ink, 2.5)
-			Widgets.label(ribbon, {
-				text = "+ " .. string.upper(event.name),
-				font = "chunky",
-				size = 16,
-				color = C.white,
-				outline = C.ink,
-				align = "center",
-				scaled = true,
-				sizeUDim = UDim2.new(1, -40, 1, -6),
-				position = UDim2.fromOffset(20, 3),
-				z = 9,
-			})
-			blurb = "Twist: " .. event.blurb
-		end
-	end
-	Widgets.label(f, {
-		text = name,
-		font = "chunky",
-		size = 22,
-		color = C.text,
-		outline = C.line,
-		align = "center",
-		scaled = true,
-		sizeUDim = UDim2.new(1, -16, 0, 26),
-		position = UDim2.new(0, 8, 0.5, 6),
-	})
-	Widgets.label(f, {
-		text = blurb,
-		font = "body",
-		size = 14,
-		minSize = 9,
-		color = C.textSoft,
-		wrap = true,
-		valign = "top",
-		scaled = true,
-		sizeUDim = UDim2.new(1, -20, 0.5, -72),
-		position = UDim2.new(0, 10, 0.5, 36),
-	})
-	return f
-end
-
-local function card(parent: Instance, i: number, option, onPick: () -> ())
+-- A card: its picture, its name, what it does, and who voted for it.
+local function card(parent: Instance, i: number, option, w: number, h: number, onPick: () -> ())
 	local root = Util.new("TextButton", {
 		Name = "Option" .. i,
 		Text = "",
@@ -245,56 +166,152 @@ local function card(parent: Instance, i: number, option, onPick: () -> ())
 		BackgroundColor3 = C.panelRaised,
 		BorderSizePixel = 0,
 		Selectable = true,
-		LayoutOrder = i,
+		Size = UDim2.fromOffset(w, h),
+		ZIndex = 1,
 		Parent = parent,
 	})
 	Util.corner(root, 14)
-	local rim = Util.stroke(root, C.line, 3)
-	local c = { root = root, rim = rim, option = option, face = face(root, option) }
+	local rim = Util.stroke(root, C.line, 2.5)
+	local picW = w - 2 * PAD
+	local picH = math.floor(picW * 9 / 16)
+	local c = { root = root, rim = rim, option = option, w = w, h = h, picW = picW, picH = picH }
+	c.pic = picture(root, option, picW, picH)
 	-- its number, in the colour of its slice of the wheel
 	local badge = Util.new("Frame", {
 		Name = "Badge",
 		BackgroundColor3 = flagColor(i, option),
 		BorderSizePixel = 0,
-		Position = UDim2.fromOffset(2, 2),
-		Size = UDim2.fromOffset(30, 30),
+		Position = UDim2.fromOffset(PAD + 6, PAD + 6),
+		Size = UDim2.fromOffset(28, 28),
 		ZIndex = 20,
 		Parent = root,
 	})
 	Util.corner(badge, 0.5)
-	Util.stroke(badge, C.ink, 2.5)
+	Util.stroke(badge, C.white, 2.5)
 	Widgets.label(badge, {
 		text = tostring(i),
 		font = "chunky",
-		size = 18,
+		size = 17,
 		color = C.white,
-		outline = C.ink,
 		align = "center",
 		sizeUDim = UDim2.fromScale(1, 1),
 		z = 21,
 	})
 	-- (roulette) its chance of coming up
-	c.chance = Widgets.label(root, {
+	local chance = Util.new("Frame", {
+		Name = "Chance",
+		BackgroundColor3 = C.panelRaised,
+		BorderSizePixel = 0,
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, -(PAD + 6), 0, PAD + 6),
+		Size = UDim2.fromOffset(52, 24),
+		Visible = false,
+		ZIndex = 20,
+		Parent = root,
+	})
+	Util.corner(chance, 0.5)
+	c.chance = Widgets.label(chance, {
 		text = "",
 		font = "chunky",
-		size = 16,
+		size = 15,
 		color = C.text,
-		align = "right",
-		sizeUDim = UDim2.fromOffset(70, 22),
-		anchor = Vector2.new(1, 0),
-		position = UDim2.new(1, -14, 0, 14),
-		z = 20,
+		align = "center",
+		sizeUDim = UDim2.fromScale(1, 1),
+		z = 21,
 	})
-	-- who voted for it: a dot in each voter's colour
-	c.dots = Util.frame(root, {
+	c.chanceBox = chance
+	-- your vote (on its top edge)
+	c.mineTag = Util.new("Frame", {
+		Name = "Mine",
+		BackgroundColor3 = C.sun,
+		BorderSizePixel = 0,
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(0.5, 0, 0, 0),
+		Size = UDim2.fromOffset(92, 24),
+		Visible = false,
+		ZIndex = 22,
+		Parent = root,
+	})
+	Util.corner(c.mineTag, 0.5)
+	Util.stroke(c.mineTag, C.white, 2)
+	Widgets.label(c.mineTag, {
+		text = "Your vote",
+		font = "chunky",
+		size = 14,
+		color = C.textOnLight,
+		align = "center",
+		sizeUDim = UDim2.fromScale(1, 1),
+		z = 23,
+	})
+	-- its name, and what it does to you (and the card that gets you past it)
+	local y = PAD + picH + 14
+	local name, line, counter
+	if option.kind == "mystery" then
+		name, line = "Mystery Map", "One you can't see. It turns over if it wins."
+	else
+		local def = Maps.get(option.map) or Maps.list[1]
+		name = def.name
+		local event = option.kind == "twist" and Progress.eventById(option.event)
+		line = if event then event.blurb else (HAZARD[def.naturalKind or ""] or "")
+		counter = if event then nil else Items.get(def.counterItem or "")
+	end
+	c.name = Widgets.label(root, {
+		name = "Name",
+		text = name,
+		font = "chunky",
+		size = 19,
+		color = C.text,
+		align = "center",
+		scaled = true,
+		sizeUDim = UDim2.new(1, -2 * PAD, 0, 24),
+		position = UDim2.fromOffset(PAD, y),
+		z = 3,
+	})
+	y += 26
+	local lineH = h - y - 40
+	local info = Util.frame(root, { Name = "Info", Position = UDim2.fromOffset(PAD, y), Size = UDim2.new(1, -2 * PAD, 0, lineH), ZIndex = 3 })
+	local textX = 0
+	if counter then
+		local icon = Util.frame(info, {
+			Name = "Counter",
+			AnchorPoint = Vector2.new(0, 0.5),
+			Position = UDim2.new(0, 0, 0.5, 0),
+			Size = UDim2.fromOffset(math.min(30, lineH), math.min(30, lineH)),
+			ZIndex = 3,
+		})
+		Icons.cardBadge(icon, counter.id, Theme.Category[counter.category] or C.lime, { Size = UDim2.fromScale(1, 1), ZIndex = 3 })
+		textX = math.min(30, lineH) + 6
+	end
+	Widgets.label(info, {
+		name = "Line",
+		text = if counter then (line .. "\nCounter: " .. counter.name) else line,
+		font = "body",
+		size = 13,
+		minSize = 9,
+		color = C.textSoft,
+		wrap = true,
+		scaled = true,
+		align = if counter then "left" else "center",
+		sizeUDim = UDim2.new(1, -textX, 1, 0),
+		position = UDim2.fromOffset(textX, 0),
+		z = 3,
+	})
+	-- who voted for it: their emblems
+	c.voters = Util.frame(root, {
 		Name = "Votes",
 		AnchorPoint = Vector2.new(0.5, 1),
 		Position = UDim2.new(0.5, 0, 1, -8),
-		Size = UDim2.new(1, -16, 0, 22),
-		ZIndex = 20,
+		Size = UDim2.new(1, -2 * PAD, 0, 28),
+		ZIndex = 3,
 	})
-	Util.list(c.dots, "x", 6, "Center", "Center")
+	Util.list(c.voters, "x", 4, "Center", "Center")
 	root.Activated:Connect(onPick)
+	root.MouseEnter:Connect(function()
+		Util.tween(Util.scaler(root), 0.12, { Scale = 1.03 }, Enum.EasingStyle.Back)
+	end)
+	root.MouseLeave:Connect(function()
+		Util.tween(Util.scaler(root), 0.12, { Scale = 1 })
+	end)
 	return c
 end
 
@@ -308,9 +325,9 @@ local function paint(data)
 			mine = tonumber(i)
 		end
 	end
-	local colorOf = {}
+	local seatInfo = {}
 	for _, s in data.seats or {} do
-		colorOf[s.seat] = Theme.playerColor(s.character)
+		seatInfo[s.seat] = s
 	end
 	local weights = Voting.weights(open.options, data.votes)
 	local total = 0
@@ -318,26 +335,64 @@ local function paint(data)
 		total += w
 	end
 	for i, c in open.cards do
-		Util.clear(c.dots, true)
+		Util.clear(c.voters, true)
+		local count = 0
 		for seatKey, voted in data.votes or {} do
 			if tonumber(voted) == i then
-				local dot = Util.new("Frame", {
-					Name = "Vote",
-					BackgroundColor3 = colorOf[tonumber(seatKey) or 0] or C.sun,
-					BorderSizePixel = 0,
-					Size = UDim2.fromOffset(20, 20),
-					Parent = c.dots,
-				})
-				Util.corner(dot, 0.5)
-				Util.stroke(dot, C.line, 2)
+				count += 1
+				local s = seatInfo[tonumber(seatKey) or 0]
+				local holder = Util.frame(c.voters, { Name = "Vote", Size = UDim2.fromOffset(26, 26), LayoutOrder = tonumber(seatKey) or 0, ZIndex = 4 })
+				if s and s.character then
+					Icons.emblem(holder, CosmeticArt.emblemId(s.character, s.look and s.look.emblems), { Size = UDim2.fromScale(1, 1), ZIndex = 4 })
+				else
+					local dot = Util.new("Frame", { BackgroundColor3 = C.sun, BorderSizePixel = 0, Size = UDim2.fromScale(1, 1), ZIndex = 4, Parent = holder })
+					Util.corner(dot, 0.5)
+				end
 			end
 		end
-		c.chance.Text = if data.style == "roulette" then (math.floor(100 * weights[i] / total + 0.5) .. "%") else ""
+		if count == 0 then
+			Widgets.label(c.voters, {
+				name = "None",
+				text = "No votes yet",
+				font = "body",
+				size = 12,
+				color = C.textFaint,
+				align = "center",
+				sizeUDim = UDim2.new(1, 0, 1, 0),
+				z = 4,
+			})
+		end
+		c.chanceBox.Visible = data.style == "roulette"
+		c.chance.Text = math.floor(100 * weights[i] / total + 0.5) .. "%"
 		local picked = mine == i
+		c.mineTag.Visible = picked
 		c.rim.Color = if picked then C.sun else C.line
-		c.rim.Thickness = if picked then 5 else 3
+		c.rim.Thickness = if picked then 4 else 2.5
 		c.root.BackgroundColor3 = if picked then C.mine else C.panelRaised
 	end
+end
+
+-- Where the cards go: in a row, or two by two on an upright screen (a last odd one in
+-- the middle). Returns each card's position, the card size and the space they take.
+local function arrange(n: number, w: number, h: number, upright: boolean): ({ Vector2 }, Vector2, Vector2)
+	local cols = if upright then math.min(2, n) else n
+	local rows = math.ceil(n / cols)
+	local cw = math.floor(math.min(if upright then 210 else 270, (w - GAP * (cols - 1)) / cols))
+	local ch = math.floor(cw * 9 / 16) + 2 * PAD + 112
+	if rows * ch + (rows - 1) * GAP > h then
+		-- (a short screen: smaller cards)
+		local k = (h - (rows - 1) * GAP) / (rows * ch)
+		cw, ch = math.floor(cw * k), math.floor(ch * k)
+	end
+	local spots = {}
+	for i = 1, n do
+		local row, col = (i - 1) // cols, (i - 1) % cols
+		local inRow = math.min(cols, n - row * cols)
+		local rowW = inRow * cw + (inRow - 1) * GAP
+		local x0 = (cols * cw + (cols - 1) * GAP - rowW) / 2
+		spots[i] = Vector2.new(x0 + col * (cw + GAP), row * (ch + GAP))
+	end
+	return spots, Vector2.new(cw, ch), Vector2.new(cols * cw + (cols - 1) * GAP, rows * ch + (rows - 1) * GAP)
 end
 
 function MapVote.show(layer: Instance, data)
@@ -354,7 +409,7 @@ function MapVote.show(layer: Instance, data)
 	local dim = Util.new("Frame", {
 		Name = "MapVote",
 		BackgroundColor3 = C.table,
-		BackgroundTransparency = 0.08,
+		BackgroundTransparency = 0.06,
 		BorderSizePixel = 0,
 		Size = UDim2.fromScale(1, 1),
 		ZIndex = 300,
@@ -363,76 +418,81 @@ function MapVote.show(layer: Instance, data)
 	local roomW, roomH, narrow = Widgets.room()
 	local upright = roomH > roomW
 	local n = #data.options
-	local w = math.min(roomW, if upright then 420 else (if n >= 4 then 1080 else 980))
-	local h = math.min(roomH, if upright then 720 else 470)
+	local headH = if narrow then 92 else 112
+	local spots, cardSize, span = arrange(n, math.min(roomW - 24, 1180), roomH - headH - 24, upright)
+	local w = math.max(span.X, math.min(roomW - 24, 520))
 	local content = Util.frame(dim, {
 		Name = "Content",
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.52),
-		Size = UDim2.fromOffset(w, h),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromOffset(w, headH + span.Y),
 		ZIndex = 301,
 	})
 	open = { id = data.id, root = dim, content = content, cards = {}, options = data.options, data = data, maid = maid }
 	local roulette = data.style == "roulette"
 	Widgets.label(content, {
-		text = "VOTE FOR THE MAP",
+		text = "Vote for the map",
 		font = "display",
-		size = if narrow then 34 else 44,
-		color = C.sun,
-		outline = C.line,
-		outlineThickness = 3,
-		align = "center",
-		sizeUDim = UDim2.new(1, 0, 0, 50),
-		z = 302,
-	})
-	local timer = Widgets.label(content, {
-		text = "",
-		font = "heavy",
-		size = 18,
+		size = if narrow then 30 else 40,
 		color = C.textLight,
 		align = "center",
-		sizeUDim = UDim2.new(1, 0, 0, 22),
-		position = UDim2.fromOffset(0, 50),
+		sizeUDim = UDim2.new(1, 0, 0, if narrow then 36 else 46),
 		z = 302,
 	})
-	local top = 82
-	if roulette then
-		Widgets.label(content, {
-			text = "Roulette: every vote is a slice of the wheel, and the wheel decides.",
-			font = "body",
-			size = 15,
-			minSize = 10,
-			color = C.textLightSoft,
-			align = "center",
-			scaled = true,
-			sizeUDim = UDim2.new(1, 0, 0, 20),
-			position = UDim2.fromOffset(0, 74),
-			z = 302,
-		})
-		top = 102
-	end
+	Widgets.label(content, {
+		text = if roulette then "Roulette: every vote is a slice of the wheel, and the wheel decides." else "The most votes wins. A tie is settled at random.",
+		font = "body",
+		size = 15,
+		minSize = 10,
+		color = C.textLightSoft,
+		align = "center",
+		scaled = true,
+		sizeUDim = UDim2.new(1, 0, 0, 20),
+		position = UDim2.fromOffset(0, if narrow then 36 else 46),
+		z = 302,
+	})
+	-- the time left: a bar running down, and the seconds
+	local barY = if narrow then 62 else 76
+	local track = Util.new("Frame", {
+		Name = "Time",
+		BackgroundColor3 = C.bgDeep,
+		BorderSizePixel = 0,
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0, barY),
+		Size = UDim2.new(0.7, 0, 0, 10),
+		ZIndex = 302,
+		Parent = content,
+	})
+	Util.corner(track, 0.5)
+	local fill = Util.new("Frame", {
+		Name = "Fill",
+		BackgroundColor3 = C.sun,
+		BorderSizePixel = 0,
+		Size = UDim2.fromScale(1, 1),
+		ZIndex = 303,
+		Parent = track,
+	})
+	Util.corner(fill, 0.5)
+	local timer = Widgets.label(content, {
+		text = "",
+		font = "chunky",
+		size = 15,
+		color = C.textLight,
+		align = "left",
+		sizeUDim = UDim2.fromOffset(120, 20),
+		anchor = Vector2.new(0, 0.5),
+		position = UDim2.new(0.85, 10, 0, barY + 5),
+		z = 302,
+	})
 	local grid = Util.frame(content, {
 		Name = "Cards",
-		Position = UDim2.fromOffset(0, top),
-		Size = UDim2.new(1, 0, 1, -top),
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0, headH),
+		Size = UDim2.fromOffset(span.X, span.Y),
 		ZIndex = 302,
 	})
-	local cell, gap
-	if upright and n >= 4 then
-		cell, gap = UDim2.new(0.5, -6, 0.5, -6), UDim2.fromOffset(12, 12)
-	elseif upright then
-		cell, gap = UDim2.new(1, 0, 1 / n, -10), UDim2.fromOffset(0, 12)
-	else
-		cell, gap = UDim2.new(1 / n, -14 * (n - 1) / n, 1, 0), UDim2.fromOffset(14, 0)
-	end
-	Util.new("UIGridLayout", {
-		CellSize = cell,
-		CellPadding = gap,
-		SortOrder = Enum.SortOrder.LayoutOrder,
-		Parent = grid,
-	})
 	for i, option in data.options do
-		open.cards[i] = card(grid, i, option, function()
+		local c = card(grid, i, option, cardSize.X, cardSize.Y, function()
 			if data.seat == 0 then
 				return -- spectators watch the vote
 			end
@@ -442,16 +502,21 @@ function MapVote.show(layer: Instance, data)
 				Widgets.toast(tostring(err), "info")
 			end
 		end)
+		c.root.Position = UDim2.fromOffset(spots[i].X, spots[i].Y)
+		open.cards[i] = c
+		Util.popIn(c.root, 0.3 + 0.06 * i, 0.7)
 	end
-	Util.popIn(content, 0.35, 0.8)
 	Sound.play("open")
+	local total = math.max(1, (data.deadline or 0) - workspace:GetServerTimeNow())
 	maid:add(RunService.Heartbeat:Connect(function()
 		local d = open and open.data
 		if not d then
 			return
 		end
-		local left = math.max(0, math.ceil((d.deadline or 0) - workspace:GetServerTimeNow()))
-		timer.Text = if d.seat == 0 then ("Watching the vote  ·  " .. left .. "s") else ("Tap a card  ·  " .. left .. "s")
+		local left = math.max(0, (d.deadline or 0) - workspace:GetServerTimeNow())
+		fill.Size = UDim2.fromScale(math.clamp(left / total, 0, 1), 1)
+		fill.BackgroundColor3 = if left < 3 then C.coral else C.sun
+		timer.Text = (if d.seat == 0 then "Watching  ·  " else "") .. math.ceil(left) .. "s"
 	end))
 	paint(data)
 end
@@ -589,14 +654,19 @@ end
 
 -- A Mystery card turns over to show the map under it.
 local function flip(c, mapId: string)
-	local old = c.face
-	Util.tweenWait(old, 0.14, { Size = UDim2.fromScale(0, 1) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+	local old = c.pic :: Frame
+	Util.tweenWait(old, 0.14, { Size = UDim2.fromOffset(0, c.picH), Position = UDim2.fromOffset(PAD + c.picW / 2, PAD) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
 	old:Destroy()
 	c.option = { kind = "map", map = mapId }
-	local f = face(c.root, c.option)
-	f.Size = UDim2.fromScale(0, 1)
-	c.face = f
-	Util.tween(f, 0.22, { Size = UDim2.fromScale(1, 1) }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+	local pic = picture(c.root, c.option, c.picW, c.picH)
+	pic.Size = UDim2.fromOffset(0, c.picH)
+	pic.Position = UDim2.fromOffset(PAD + c.picW / 2, PAD)
+	c.pic = pic
+	local def = Maps.get(mapId)
+	if def then
+		c.name.Text = def.name
+	end
+	Util.tween(pic, 0.22, { Size = UDim2.fromOffset(c.picW, c.picH), Position = UDim2.fromOffset(PAD, PAD) }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 end
 
 -- The chosen card flashes gold (a Mystery one turns over); the rest go dark.
@@ -627,7 +697,32 @@ function MapVote.result(data)
 			if i == chosen then
 				c.rim.Color = C.sun
 				c.rim.Thickness = 6
-				Util.bump(c.root, 0.08)
+				;(c.root :: TextButton).ZIndex = 5
+				Util.tween(Util.scaler(c.root), 0.25, { Scale = 1.08 }, Enum.EasingStyle.Back)
+				-- "This one!" across the top of it
+				c.mineTag.Visible = false
+				local tag = Util.new("Frame", {
+					Name = "Chosen",
+					BackgroundColor3 = C.sun,
+					BorderSizePixel = 0,
+					AnchorPoint = Vector2.new(0.5, 0.5),
+					Position = UDim2.new(0.5, 0, 0, 0),
+					Size = UDim2.fromOffset(120, 30),
+					ZIndex = 40,
+					Parent = c.root,
+				})
+				Util.corner(tag, 0.5)
+				Util.stroke(tag, C.white, 2.5)
+				Widgets.label(tag, {
+					text = "This one!",
+					font = "chunky",
+					size = 17,
+					color = C.textOnLight,
+					align = "center",
+					sizeUDim = UDim2.fromScale(1, 1),
+					z = 41,
+				})
+				Util.popIn(tag, 0.3, 0.4)
 			else
 				local shade = Util.new("Frame", {
 					Name = "Shade",

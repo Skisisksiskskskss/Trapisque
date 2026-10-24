@@ -106,18 +106,13 @@ function PlayPanel.new(parent: Instance, popups: Instance, opts: { [string]: any
 	local grid = Util.frame(content, { Name = "Modes", Position = UDim2.fromOffset(0, top), Size = UDim2.new(1, 0, 1, -(buttonsH + 12 + top)) })
 	local inRow = if compact then #classic + (if eventMode then 1 else 0) else 2
 	local rows = if compact then 1 else math.ceil(#classic / 2)
-	Util.new("UIGridLayout", {
-		CellSize = if compact then UDim2.new(1 / inRow, -12 * (inRow - 1) / inRow, 1, 0) else UDim2.new(0.5, -6, 1 / rows, -12 * (rows - 1) / rows),
-		CellPadding = UDim2.fromOffset(12, 12),
-		SortOrder = Enum.SortOrder.LayoutOrder,
-		Parent = grid,
-	})
 	for i, mode in classic do
 		self.tiles[mode.id] = self:_modeTile(grid, mode, i)
 	end
 	if eventMode and compact then
 		self.tiles[eventMode.id] = self:_modeTile(grid, eventMode, 0, event)
 	end
+	Util.grid(grid, inRow, rows, 12)
 
 	-- buttons
 	local row = Util.frame(content, {

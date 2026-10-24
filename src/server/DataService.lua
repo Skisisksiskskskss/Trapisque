@@ -69,7 +69,7 @@ local function newProfile()
 			trail = Cosmetics.defaults.trail,
 			title = Cosmetics.defaults.title,
 			emotes = table.clone(Cosmetics.defaults.emotes),
-			outfits = {}, -- [characterId] = outfit id (none: Classic)
+			emblems = {}, -- [characterId] = emblem id (none: Classic)
 		},
 		pity = { explorer = {}, royal = {} },
 		granted = {}, -- [passKey] = true: passes the owner gave this player
@@ -118,6 +118,8 @@ local function reconcile(data)
 	-- accessory packs became piece finishes (a second pack that became the same finish
 	-- is paid back as a duplicate)
 	data.gems = (data.gems or 0) + Cosmetics.migratePacks(data.owned, data.equipped, Gacha.dupeRefund)
+	-- portrait outfits became emblems (each the emblem of its set)
+	Cosmetics.migrateOutfits(data.owned, data.equipped)
 	-- drop ids that no longer exist
 	for id in data.owned do
 		if Cosmetics.get(id) == nil then
@@ -129,6 +131,12 @@ local function reconcile(data)
 		local id = data.equipped[cat]
 		if id == nil or not (data.owned[id] or data.unlockAll) or Cosmetics.get(id) == nil then
 			data.equipped[cat] = Cosmetics.defaults[cat]
+		end
+	end
+	for character, id in table.clone(data.equipped.emblems) do
+		local def = Cosmetics.get(id)
+		if not def or def.category ~= "emblem" or def.character ~= character or not (data.owned[id] or data.unlockAll) then
+			data.equipped.emblems[character] = nil
 		end
 	end
 	local emotes = {}
@@ -371,7 +379,7 @@ function DataService.view(player: Player)
 			trail = data.equipped.trail,
 			title = data.equipped.title,
 			emotes = table.clone(data.equipped.emotes),
-			outfits = table.clone(data.equipped.outfits or {}),
+			emblems = table.clone(data.equipped.emblems or {}),
 		},
 		pity = {
 			explorer = table.clone(data.pity.explorer or {}),
@@ -507,6 +515,11 @@ function DataService.setUnlockAll(player: Player, on: boolean): (boolean, string
 			end
 		end
 		data.equipped.emotes = if #emotes > 0 then emotes else table.clone(Cosmetics.defaults.emotes)
+		for character, id in table.clone(data.equipped.emblems) do
+			if not data.owned[id] then
+				data.equipped.emblems[character] = nil
+			end
+		end
 		if not Characters.unlocked(data.character, data.level) then
 			data.character = Characters.ids[1]
 		end
@@ -562,7 +575,7 @@ function DataService.publicLook(player: Player)
 		trail = data.equipped.trail,
 		title = data.equipped.title,
 		emotes = table.clone(data.equipped.emotes),
-		outfits = table.clone(data.equipped.outfits or {}),
+		emblems = table.clone(data.equipped.emblems or {}),
 		level = data.level,
 		vip = vip,
 		-- the base your character stands on: earned with mastery (Progress.baseTier)
@@ -789,16 +802,16 @@ function DataService.equip(player: Player, category: string, value: any)
 		data.equipped.emotes = list
 		return true
 	end
-	if category == "outfit" then
+	if category == "emblem" then
 		-- (worn by one character)
 		local def = type(value) == "string" and Cosmetics.get(value)
-		if not def or def.category ~= "outfit" then
+		if not def or def.category ~= "emblem" then
 			return false, "That item doesn't fit there."
 		end
 		if not hasItem(player, data, value) then
 			return false, "You don't own that yet."
 		end
-		data.equipped.outfits[def.character] = if def.set == "classic" then nil else value
+		data.equipped.emblems[def.character] = if def.set == "classic" then nil else value
 		return true
 	end
 	if category ~= "finish" and category ~= "dice" and category ~= "trail" and category ~= "title" then
@@ -849,7 +862,7 @@ local function applyMastery(data, result)
 	data.mastery[charId] = after
 	local oldLevel, newLevel = Progress.masteryLevel(before), Progress.masteryLevel(after)
 	local gems, titles = 0, {}
-	local outfit = nil
+	local emblem = nil
 	for level = oldLevel + 1, newLevel do
 		gems += Progress.masteryGems(level)
 		local tier = Progress.masteryTitles[level]
@@ -860,12 +873,12 @@ local function applyMastery(data, result)
 				table.insert(titles, id)
 			end
 		end
-		if level == Progress.OutfitMastery then
-			-- their Gilded outfit
-			local id = "outfit_" .. charId .. "_gilded"
+		if level == Progress.EmblemMastery then
+			-- their Gilded emblem
+			local id = "emblem_" .. charId .. "_gilded"
 			if Cosmetics.get(id) and not data.owned[id] then
 				data.owned[id] = true
-				outfit = id
+				emblem = id
 			end
 		end
 	end
@@ -880,7 +893,7 @@ local function applyMastery(data, result)
 		need = need,
 		gems = gems,
 		titles = titles,
-		outfit = outfit,
+		emblem = emblem,
 	}
 end
 

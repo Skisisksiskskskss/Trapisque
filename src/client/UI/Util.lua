@@ -130,6 +130,31 @@ function Util.list(inst: Instance, direction: string?, padding: number?, hAlign:
 	})
 end
 
+--[[
+	A grid whose cells fill the frame exactly, `cols` across and `rows` down with gaps
+	between: each child (by LayoutOrder) is placed and sized itself. (A UIGridLayout
+	whose cells add up to exactly its width wraps a row early in Roblox, now and then,
+	and the last cell falls out of the frame.)
+]]
+function Util.grid(inst: Instance, cols: number, rows: number, gapX: number, gapY: number?)
+	local gy = gapY or gapX
+	local kids = {}
+	for _, c in inst:GetChildren() do
+		if c:IsA("GuiObject") then
+			table.insert(kids, c)
+		end
+	end
+	table.sort(kids, function(a, b)
+		return a.LayoutOrder < b.LayoutOrder
+	end)
+	for i, c in kids do
+		local col, row = (i - 1) % cols, (i - 1) // cols
+		c.AnchorPoint = Vector2.zero
+		c.Position = UDim2.new(col / cols, gapX * col / cols, row / rows, gy * row / rows)
+		c.Size = UDim2.new(1 / cols, -gapX * (cols - 1) / cols, 1 / rows, -gy * (rows - 1) / rows)
+	end
+end
+
 function Util.ratio(inst: Instance, r: number): UIAspectRatioConstraint
 	return Util.new("UIAspectRatioConstraint", { AspectRatio = r, Parent = inst })
 end

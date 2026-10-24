@@ -1895,7 +1895,15 @@ layoutChildren = function(parent, pw: number, ph: number)
 		local h = cell._ys * ph + cell._yo
 		local gx = cpad._xs * pw + cpad._xo
 		local gy = cpad._ys * ph + cpad._yo
-		local perRow = math.max(1, math.floor((pw + gx) / math.max(1, w + gx)))
+		local fit = (pw + gx) / math.max(1, w + gx)
+		local perRow = math.max(1, math.floor(fit))
+		if cell._xs ~= 0 and fit >= 1.99 and math.abs(fit - math.floor(fit + 0.5)) < 0.01 and not st.warnedGrid then
+			-- scaled cells that add up to exactly the row: Roblox's rounding wraps a row a
+			-- cell early now and then, and the last cell falls out of the frame (the map
+			-- picker lost Clockwork Cove that way); Util.grid places the cells itself
+			st.warnedGrid = true
+			warn("grid cells fill a row exactly in " .. fullName(parent) .. ": Roblox can wrap a cell early (use Util.grid)")
+		end
 		local maxCells = gget(grid, "FillDirectionMaxCells")
 		if maxCells > 0 then
 			perRow = math.min(perRow, maxCells)

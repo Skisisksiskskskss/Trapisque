@@ -1,8 +1,9 @@
 --[[
 	StickerArt
-	Trapisque's illustrations, in one style: simple shapes, a thin ink outline around
-	every piece (drawn automatically, see Icons.draw), flat colours, two tones at most.
-	Only the characters have faces; cards, tokens and hazards are plain objects.
+	Trapisque's code-drawn illustrations, in one style: simple shapes, a thin ink outline
+	around every piece (drawn automatically, see Icons.draw), flat colours, two tones at
+	most. They stand in for the art (art/cards.py's badges) when the art sheets can't be
+	drawn; the hazards and odd bits are drawn from them.
 
 	Pure data (no Roblox APIs), so the offline preview renders exactly the same art.
 
@@ -14,7 +15,6 @@
 	Option ol = false: no outline for this piece (details inside a shape).
 
 	StickerArt.cards[id], .tokens[kind], .hazards[kind], .misc[name]: op lists
-	StickerArt.mascot(characterId, mood?): op list for that character's mascot
 ]]
 
 local StickerArt = {}
@@ -627,22 +627,11 @@ StickerArt.misc = {
 }
 
 ---------------------------------------------------------------------------
--- the characters
+-- the characters (their emblems are art: art/emblems.py)
 ---------------------------------------------------------------------------
 
---[[
-	The crew: eight cartoon pirates, each one a clear silhouette in its own colour (the
-	player's colour everywhere): a big head with a big nose, dot eyes and brows (no
-	googly eyes, no blush), a coat in the character's colour and one thing in the left
-	hand. All of them share the same head and hands:
-		head  centre (0.5, 0.38), 0.34 across; eyes at y 0.36 (x 0.425 / 0.575);
-		      nose (0.52, 0.42); mouth y 0.49; hats sit on y 0.25
-		body  0.55 to 0.89 (collar y 0.57); hands (0.25, 0.83) left, (0.75, 0.83) right
-		feet  y 0.93
-]]
-
 -- The character's colour and its darker shade (Theme.Character mirrors these).
-local BODY = {
+StickerArt.bodyColor = {
 	mage = { "#2F7FD0", "#245F9C" }, -- blue
 	trapper = { "#EE8A2E", "#B8601A" }, -- orange
 	fire_starter = { "#D64545", "#A83434" }, -- red
@@ -652,288 +641,9 @@ local BODY = {
 	gambler = { "#22A094", "#18786F" }, -- teal
 	cannoneer = { "#93633A", "#654227" }, -- brown
 }
-StickerArt.bodyColor = BODY
 
--- Faces: eyes (dots), brows and mouth for each mood.
-local MOODS = {
-	idle = { eyes = "normal", brows = "normal", mouth = "smile" },
-	happy = { eyes = "happy", brows = "raised", mouth = "grin" },
-	shock = { eyes = "shock", brows = "raised", mouth = "o" },
-	sad = { eyes = "normal", brows = "sad", mouth = "frown" },
-	dizzy = { eyes = "dizzy", brows = "normal", mouth = "flat" },
-	smug = { eyes = "smug", brows = "smug", mouth = "smirk" },
-	angry = { eyes = "normal", brows = "angry", mouth = "teeth" },
-	cheeky = { eyes = "wink", brows = "angry", mouth = "grin" },
-}
-StickerArt.moods = MOODS
-
-local INK = P.line
-local BOOTS = "#3A2A1E"
-local CREAM = P.cream
-local GOLD = P.sun
-local WHITE = "#F3F1EA"
-local HAIR_DARK = "#2A2018"
-
--- Everyone's base: boots, trousers, coat, arms and hands, ears and head.
-local function figure(o)
-	local coat = o.coat
-	local ops = {}
-	local function add(op)
-		table.insert(ops, op)
-	end
-	for _, op in o.back or {} do
-		add(op)
-	end
-	-- feet (boots, or bare feet)
-	local feet = o.feet or BOOTS
-	add({ "rect", 0.41, 0.93, 0.15, 0.08, r = 0.4, c = feet })
-	add({ "rect", 0.59, 0.93, 0.15, 0.08, r = 0.4, c = feet })
-	if not o.robe then
-		add({ "rect", 0.5, 0.86, 0.28, 0.1, r = 0.2, c = o.trousers or "#4A3A2A" })
-	end
-	-- arms behind the coat, hands in front
-	add({ "pill", 0.27, 0.71, 0.11, 0.27, rot = 14, c = coat })
-	add({ "pill", 0.73, 0.71, 0.11, 0.27, rot = -14, c = coat })
-	-- the coat (a robe reaches the boots)
-	if o.robe then
-		add({ "rect", 0.5, 0.74, 0.46, 0.4, r = 0.16, c = coat })
-	else
-		add({ "rect", 0.5, 0.72, 0.44, 0.34, r = 0.18, c = coat })
-	end
-	for _, op in o.coatDetail or {} do
-		add(op)
-	end
-	add({ "circle", 0.25, 0.84, 0.1, c = o.skin })
-	add({ "circle", 0.75, 0.84, 0.1, c = o.skin })
-	for _, op in o.hand or {} do
-		add(op)
-	end
-	-- head
-	for _, op in o.hairBack or {} do
-		add(op)
-	end
-	add({ "circle", 0.33, 0.4, 0.08, c = o.skin })
-	add({ "circle", 0.67, 0.4, 0.08, c = o.skin })
-	add({ "circle", 0.5, 0.38, 0.34, c = o.skin })
-	for _, op in o.faceDetail or {} do
-		add(op)
-	end
-	return ops
-end
-
--- What makes each one themselves, and nothing more: the coat's colour, a hat you can
--- tell from across the board, hair or a beard where it's part of who they are, and one
--- thing in their hand. No buttons, buckles, lashes or trims: at the size a portrait
--- shows they're only noise.
-local CREW = {
-	mage = {
-		skin = "#F2C9A0",
-		coat = BODY.mage[1],
-		coatDark = BODY.mage[2],
-		robe = true,
-		coatDetail = { { "star", 0.38, 0.72, 0.08, c = GOLD, ol = false } },
-		-- a staff with an ice crystal
-		hand = {
-			{ "line", 0.2, 0.5, 0.2, 0.98, 0.035, c = "#9C6B3A" },
-			{ "circle", 0.2, 0.47, 0.09, c = "#8FD3EE" },
-		},
-		-- a long white beard
-		faceDetail = {
-			{ "half", 0.5, 0.47, 0.3, dir = 180, c = WHITE },
-			{ "tri", 0.5, 0.6, 0.2, dir = 180, c = WHITE },
-		},
-		browColor = WHITE,
-		hat = {
-			{ "taper", { { 0.5, 0.25 }, { 0.53, 0.11 }, { 0.63, 0.03 } }, 0.34, 0.05, c = BODY.mage[1] },
-			{ "pill", 0.5, 0.25, 0.56, 0.08, c = BODY.mage[1] },
-		},
-		mood = "idle",
-	},
-	trapper = {
-		skin = "#E2AD80",
-		coat = BODY.trapper[1],
-		coatDark = BODY.trapper[2],
-		trousers = "#5A4632",
-		-- a fur collar
-		coatDetail = { { "pill", 0.5, 0.58, 0.36, 0.08, c = "#8B5A2B" } },
-		-- a coil of rope
-		hand = {
-			{ "circle", 0.22, 0.8, 0.15, c = "#C9A26B" },
-			{ "circle", 0.22, 0.8, 0.07, c = "#A8844E", ol = false },
-		},
-		-- long auburn hair with a braid over her shoulder
-		hairBack = {
-			{ "circle", 0.5, 0.39, 0.4, c = "#C0562A" },
-			{ "pill", 0.69, 0.6, 0.09, 0.3, rot = -10, c = "#C0562A" },
-		},
-		faceDetail = {
-			{ "pill", 0.35, 0.41, 0.06, 0.15, c = "#C0562A", ol = false },
-			{ "pill", 0.65, 0.41, 0.06, 0.15, c = "#C0562A", ol = false },
-		},
-		-- a fur cap with its tail
-		hat = {
-			{ "taper", { { 0.63, 0.25 }, { 0.75, 0.32 }, { 0.78, 0.46 } }, 0.08, 0.06, c = "#7A6A58" },
-			{ "half", 0.5, 0.27, 0.37, dir = 0, c = "#7A6A58" },
-			{ "pill", 0.5, 0.27, 0.39, 0.07, c = "#5A4C3E" },
-		},
-		mood = "cheeky",
-	},
-	fire_starter = {
-		skin = "#A86B45",
-		coat = BODY.fire_starter[1],
-		coatDark = BODY.fire_starter[2],
-		trousers = "#3A3A44",
-		-- a lit torch
-		hand = {
-			{ "line", 0.24, 0.88, 0.18, 0.58, 0.04, c = "#9C6B3A" },
-			{ "drop", 0.18, 0.52, 0.06, dir = 0, c = P.orange },
-		},
-		-- a black chin beard
-		faceDetail = { { "half", 0.5, 0.52, 0.24, dir = 180, c = HAIR_DARK } },
-		-- a bandana, knotted at the side
-		hat = {
-			{ "pill", 0.7, 0.32, 0.06, 0.14, rot = 75, c = BODY.fire_starter[1] },
-			{ "half", 0.5, 0.29, 0.37, dir = 0, c = BODY.fire_starter[1] },
-		},
-		mood = "cheeky",
-	},
-	naturalist = {
-		skin = "#C68A5A",
-		coat = BODY.naturalist[1],
-		coatDark = BODY.naturalist[2],
-		trousers = "#8C6B3E",
-		feet = "#C68A5A",
-		-- a coconut
-		hand = { { "circle", 0.21, 0.8, 0.12, c = "#7A4A1F" } },
-		-- two braids
-		hairBack = {
-			{ "pill", 0.34, 0.52, 0.07, 0.2, c = "#4A2E1A" },
-			{ "pill", 0.66, 0.52, 0.07, 0.2, c = "#4A2E1A" },
-		},
-		faceDetail = { { "half", 0.5, 0.29, 0.34, dir = 0, c = "#4A2E1A" } },
-		-- three big leaves for a hat
-		hat = {
-			{ "drop", 0.38, 0.225, 0.06, dir = -45, c = "#5DB54A" },
-			{ "drop", 0.62, 0.225, 0.06, dir = 45, c = "#5DB54A" },
-			{ "drop", 0.5, 0.205, 0.065, dir = 0, c = "#7CC85A" },
-		},
-		mood = "happy",
-	},
-	warper = {
-		skin = "#F0C29A",
-		coat = BODY.warper[1],
-		coatDark = BODY.warper[2],
-		trousers = "#2A2836",
-		-- a white cravat
-		coatDetail = { { "tri", 0.5, 0.58, 0.16, dir = 180, c = CREAM } },
-		-- a gold pocket watch
-		hand = {
-			{ "circle", 0.22, 0.85, 0.12, c = GOLD },
-			{ "circle", 0.22, 0.85, 0.07, c = CREAM, ol = false },
-		},
-		-- a thin moustache
-		faceDetail = {
-			{ "pill", 0.455, 0.465, 0.09, 0.03, rot = 12, c = "#5A3A22" },
-			{ "pill", 0.545, 0.465, 0.09, 0.03, rot = -12, c = "#5A3A22" },
-		},
-		-- a wide hat with a white feather
-		hat = {
-			{ "taper", { { 0.58, 0.2 }, { 0.71, 0.1 }, { 0.83, 0.07 } }, 0.09, 0.03, c = WHITE },
-			{ "rect", 0.5, 0.19, 0.3, 0.13, r = 0.3, c = BODY.warper[1] },
-			{ "pill", 0.5, 0.26, 0.64, 0.08, c = BODY.warper[1] },
-		},
-		mood = "idle",
-	},
-	overseer = {
-		skin = "#7A4E2D",
-		coat = BODY.overseer[1],
-		coatDark = BODY.overseer[2],
-		trousers = "#2A2836",
-		-- a harbour master's coat with navy lapels
-		coatDetail = {
-			{ "line", 0.44, 0.6, 0.46, 0.86, 0.035, c = "#2B4C7E", ol = false },
-			{ "line", 0.56, 0.6, 0.54, 0.86, 0.035, c = "#2B4C7E", ol = false },
-		},
-		-- a brass spyglass
-		hand = {
-			{ "line", 0.25, 0.88, 0.185, 0.67, 0.075, c = "#C9A227" },
-			{ "line", 0.185, 0.67, 0.155, 0.57, 0.055, c = "#A87A00" },
-		},
-		-- a short grey beard
-		faceDetail = { { "half", 0.5, 0.485, 0.29, dir = 180, c = "#D8D2C8" } },
-		browColor = "#D8D2C8",
-		-- a navy tricorn
-		hat = {
-			{ "tri", 0.29, 0.21, 0.1, dir = -40, c = "#2B4C7E" },
-			{ "tri", 0.71, 0.21, 0.1, dir = 40, c = "#2B4C7E" },
-			{ "half", 0.5, 0.255, 0.3, dir = 0, c = "#2B4C7E" },
-			{ "pill", 0.5, 0.255, 0.5, 0.08, c = "#2B4C7E" },
-		},
-		mood = "idle",
-	},
-	gambler = {
-		skin = "#F0C8A0",
-		coat = BODY.gambler[1],
-		coatDark = BODY.gambler[2],
-		trousers = "#2A2836",
-		-- a cream shirt and a red bow
-		coatDetail = {
-			{ "tri", 0.5, 0.605, 0.12, dir = 180, c = CREAM },
-			{ "pill", 0.5, 0.59, 0.12, 0.045, c = P.coral },
-		},
-		-- a big die
-		hand = {
-			{ "rect", 0.21, 0.78, 0.17, 0.17, r = 0.22, rot = -12, c = CREAM },
-			{ "circle", 0.21, 0.78, 0.03, c = INK, ol = false },
-			{ "circle", 0.17, 0.74, 0.028, c = INK, ol = false },
-			{ "circle", 0.25, 0.82, 0.028, c = INK, ol = false },
-		},
-		-- a short dark bob
-		hairBack = {
-			{ "circle", 0.5, 0.4, 0.4, c = "#3A2418" },
-			{ "rect", 0.5, 0.5, 0.42, 0.14, r = 0.4, c = "#3A2418" },
-		},
-		faceDetail = {
-			{ "pill", 0.35, 0.4, 0.06, 0.14, c = "#3A2418", ol = false },
-			{ "pill", 0.65, 0.4, 0.06, 0.14, c = "#3A2418", ol = false },
-		},
-		-- a small teal tricorn
-		hat = {
-			{ "tri", 0.33, 0.235, 0.08, dir = -40, c = BODY.gambler[1] },
-			{ "tri", 0.67, 0.235, 0.08, dir = 40, c = BODY.gambler[1] },
-			{ "half", 0.5, 0.265, 0.26, dir = 0, c = BODY.gambler[1] },
-			{ "pill", 0.5, 0.265, 0.44, 0.07, c = BODY.gambler[1] },
-		},
-		mood = "smug",
-	},
-	cannoneer = {
-		skin = "#D9A07A",
-		coat = BODY.cannoneer[1],
-		coatDark = BODY.cannoneer[2],
-		trousers = "#3A3A44",
-		-- a bandolier
-		coatDetail = { { "line", 0.34, 0.6, 0.64, 0.86, 0.035, c = "#2A2018", ol = false } },
-		-- a cannonball
-		hand = { { "circle", 0.21, 0.79, 0.17, c = "#3A3A44" } },
-		-- a ginger handlebar moustache
-		faceDetail = {
-			{ "pill", 0.44, 0.47, 0.13, 0.045, rot = 14, c = "#C0562A" },
-			{ "pill", 0.56, 0.47, 0.13, 0.045, rot = -14, c = "#C0562A" },
-		},
-		browColor = "#C0562A",
-		-- a steel helmet
-		hat = {
-			{ "half", 0.5, 0.27, 0.32, dir = 0, c = "#8C94A3" },
-			{ "pill", 0.5, 0.27, 0.5, 0.06, c = "#6E7686" },
-		},
-		mood = "cheeky",
-	},
-}
-StickerArt.crew = CREW
-
--- Objects have no faces in the pirate look (only the characters do), and no shines
--- or sparkles: the eyes, mouths, cheeks, glints and twinkles come off every card,
--- token, hazard and odd bit.
+-- Objects have no faces, and no shines or sparkles: the eyes, mouths, cheeks, glints
+-- and twinkles come off every card, token, hazard and odd bit.
 local STRIP = { eyes = true, eye = true, mouth = true, blush = true, shine = true, sparkle = true }
 local function plain(list)
 	for key, ops in list do
@@ -951,52 +661,5 @@ plain(StickerArt.cards)
 plain(StickerArt.tokens)
 plain(StickerArt.hazards)
 plain(StickerArt.misc)
-
---[[
-	A character, pulling a face: mood = idle | happy | shock | sad | dizzy | smug |
-	angry | cheeky (nil = their usual one). opts.bust: just the head and shoulders (portraits);
-	opts.crop: a bust for a round portrait that crops it (Icons.medallion), whose coat
-	runs off the bottom and whose hat stays inside the circle.
-]]
-function StickerArt.mascot(characterId: string, moodName: string?, opts: { [string]: any }?)
-	local crew = CREW[characterId] or CREW.mage
-	local mood = MOODS[moodName or crew.mood or "idle"] or MOODS.idle
-	local bust = opts ~= nil and (opts.bust == true or opts.crop == true)
-	local crop = opts ~= nil and opts.crop == true
-	local ops
-	if bust then
-		-- just the head and the shoulders of the coat
-		ops = {}
-		for _, op in crew.hairBack or {} do
-			table.insert(ops, op)
-		end
-		if crop then
-			table.insert(ops, { "rect", 0.5, 0.98, 0.7, 0.76, r = 0.32, c = crew.coat })
-		else
-			table.insert(ops, { "half", 0.5, 0.74, 0.56, dir = 0, c = crew.coat })
-		end
-		table.insert(ops, { "circle", 0.33, 0.4, 0.08, c = crew.skin })
-		table.insert(ops, { "circle", 0.67, 0.4, 0.08, c = crew.skin })
-		table.insert(ops, { "circle", 0.5, 0.38, 0.34, c = crew.skin })
-		for _, op in crew.faceDetail or {} do
-			table.insert(ops, op)
-		end
-	else
-		ops = figure(table.clone(crew))
-	end
-	for _, op in crew.hat or {} do
-		table.insert(ops, op)
-	end
-	-- the face goes on last: brows, eyes and a mouth
-	table.insert(ops, { "brows", 0.5, 0.3, 0.15, 0.06, mood = mood.brows, c = crew.browColor })
-	table.insert(ops, { "dots", 0.5, 0.36, 0.15, 0.045, mood = mood.eyes })
-	table.insert(ops, { "mouth", 0.5, 0.5, 0.1, mood = mood.mouth })
-	if crop then
-		return { { "group", s = 1.05, dy = 0.13, ops = ops } }
-	elseif bust then
-		return { { "group", s = 1.4, dy = 0.17, ops = ops } }
-	end
-	return ops
-end
 
 return StickerArt

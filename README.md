@@ -10,12 +10,14 @@ slab of land with a cliff along the edges that face you and foam where it meets 
 the tiles are low stones, and the trail is worn into the ground. What's on a tile is
 drawn as the thing itself (a banana peel lying on it, spikes, a wall, the tile frozen
 over), not as an icon. The pieces, the props and landmarks on the maps, what's on the
-tiles, the stones' faces, the little things lying about and the character portraits are
-illustrations (drawn in [art/](art), built into four image sheets the game makes
-itself). Everything else is
-built from plain UI frames, in one calm tabletop look: flat colours with light borders,
-one rounded font in sentence case, one orange accent for the main action on a screen.
-Only the characters have faces.
+tiles, the stones' faces, the little things lying about, the Kraken's animation frames,
+the characters' emblems and the cards' badges are illustrations (drawn in [art/](art),
+built into image sheets the game makes itself). Everything else is built from plain UI
+frames, in one calm tabletop look: flat colours with light borders, one rounded font in
+sentence case, one orange accent for the main action on a screen. The characters have no
+faces: each is an emblem, a badge with a symbol of theirs (the Mage's snowflake, the
+Trapper's bear trap, the Fire Starter's flame...), and every card is a badge in its
+category's colour in the same style.
 
 | Match (PC) | Lobby (PC) | Match (upright phone) |
 | --- | --- | --- |
@@ -50,8 +52,9 @@ rendered offline (see [Screenshots](#screenshots)).
   drift back along the trail every round and scare anyone they meet), Mount Kaboom
   (a volcano that erupts every third round, scorching anyone standing in its lava
   streams), Frostbite Floes (ice floes whose thin ice cracks under one player and
-  gives way under the next), Kraken's Reach (an atoll round a whirlpool, where a
-  tentacle rises ahead of the leader and drags whoever it slams back) and Clockwork
+  gives way under the next), Kraken's Reach (an atoll round the Kraken's whirlpool,
+  where it watches from the middle of the lagoon and its arm rises out of the water
+  ahead of the leader, then slams down and drags whoever it hits back) and Clockwork
   Cove (a tinkerer's harbour with two drawbridges that go up in turns, and two cogs
   that swing you forward or back). Each has its own hazard, and its own card
   that shrugs it off (the Lantern, the Fire Cloak, the Harpoon...). **Six modes**: Chaos (free-for-all), **Blitz** (first treasure
@@ -82,8 +85,10 @@ rendered offline (see [Screenshots](#screenshots)).
 - **Match lengths.** Quick (2 treasures), Standard (3) and Classic (4).
 - **Quick Play matchmaking.** Queue for any mode on your own or as a party. Queues are
   shared by every server, and bots fill empty seats if you wait long enough. Every
-  Quick Play match opens with a vote between three maps, and in its first few rounds
-  someone new in the queue can drop into a bot's seat.
+  Quick Play match opens with a vote between three maps (a picture of each, what it
+  does to you and the card that gets you past it; everyone's vote shows as their
+  emblem), and in its first few rounds someone new in the queue can drop into a bot's
+  seat.
 - **Parties.** Create a party and invite friends with Roblox invites, or share its
   6-letter code. A party can be open to its code or invite-only. Joining a party on
   another server takes you to that server.
@@ -176,7 +181,8 @@ src/server/          ServerScriptService.Server: data, parties, matchmaking, mat
 src/client/          StarterPlayerScripts.Client: all screens and the art library
   UI/                Icons, Cards, Shapes, Widgets... plus Lobby/ and Match/ screens
 src/first/           ReplicatedFirst loading screen
-art/                 the illustrations (pieces, props, ground, portraits) and their sheets
+art/                 the illustrations (pieces, props, ground, emblems, cards, the Kraken,
+                     the maps' pictures) and their sheets
 tests/               rules, simulation, meta and board-layout tests (plain Luau)
 tools/               test bundler, type-check, art builder, smoke test and screenshot scripts
 docs/                rules, design notes (balance tables) and screenshots
@@ -222,7 +228,7 @@ In Studio:
 3. Create the gamepasses (next section) and paste their ids into
    `src/shared/Config.lua`.
 4. Turn on **File → Experience Settings → Security → Allow Mesh / Image APIs**: the
-   game builds its illustrations (pieces, props, portraits) itself, and Roblox blocks
+   game builds its illustrations (pieces, props, emblems) itself, and Roblox blocks
    that in published games until it's on (it needs an age- and ID-verified owner).
    Without it, the game draws plainer stand-ins. Or upload the four art sheets instead,
    which needs no setting: see [art/README.md](art/README.md).
@@ -406,15 +412,16 @@ LUAU=/path/to/luau tools/smoke.sh
 ### Art rules
 
 The playing pieces, the map props, what the board shows on its tiles, the ground's
-sprites (soft shading, tufts, pebbles, the stones' worn faces) and the portraits are
-illustrations, drawn as SVG by `art/*.py` and built into image sheets by `tools/art.py`
-(`Art`, `PieceArt`; see [art/README.md](art/README.md) for their style). Everything else
-is built from Frames with `UICorner` and `UIStroke`: card art, tokens and the maps
-themselves are data (`StickerArt`, `MapScenes`, `IconData`) drawn by `Icons`, `Shapes`
-and `MapArt` (the land as layers of discs seen a little from the side: the ground, its
-lit lip, the cliff under it, the waterline and foam; rivers, lava and slime cut into it
-the same way), and the code-drawn props (`MapProps`), stickers and portraits stand in
-when the sheets can't be built or loaded. The style has a few strict rules so every screen
+sprites (soft shading, tufts, pebbles, the stones' worn faces), the characters' emblems,
+the cards' badges and the Kraken's frames are illustrations, drawn as SVG by `art/*.py`
+and built into image sheets by `tools/art.py` (`Art`, `PieceArt`; see
+[art/README.md](art/README.md) for their style); the map vote's pictures of the maps are
+the game's own boards (`tools/shots.sh thumbs`). Everything else is built from Frames
+with `UICorner` and `UIStroke`: the maps themselves are data (`MapScenes`) drawn by
+`MapArt` (the land as layers of discs seen a little from the side: the ground, its lit
+lip, the cliff under it, the waterline and foam; rivers, lava and slime cut into it the
+same way), and the code-drawn props (`MapProps`), stickers (`StickerArt`, `IconData`)
+and plain emblem discs stand in when the sheets can't be built or loaded. The style has a few strict rules so every screen
 comes out of the same kit:
 
 - one UI font (Nunito, `Theme.Font`), Fredoka One only for the logo and big moments;

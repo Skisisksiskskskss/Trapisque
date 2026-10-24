@@ -7,7 +7,7 @@
 	PieceArt for finishes), not image ids. Colors are hex strings so this module stays
 	plain data.
 
-	category  finish | dice | trail | emote | title | outfit
+	category  finish | dice | trail | emote | title | emblem
 	rarity    common | rare | epic | legendary | mythic
 	source    nil = in chests, "default" = everyone owns it, "vip" / "emotepack" / "captain"
 	          = gamepass,
@@ -34,7 +34,7 @@ Cosmetics.categories = {
 	{ id = "trail", name = "Trails", single = "Trail" },
 	{ id = "emote", name = "Emotes", single = "Emote" },
 	{ id = "title", name = "Titles", single = "Title" },
-	{ id = "outfit", name = "Outfits", single = "Outfit" },
+	{ id = "emblem", name = "Emblems", single = "Emblem" },
 }
 
 -- How many emotes can be equipped at once (the emote wheel in matches)
@@ -189,26 +189,41 @@ for _, charId in { "mage", "trapper", "fire_starter", "naturalist", "warper", "o
 	end
 end
 
--- Outfits: a character's portrait in another set of clothes (worn per character: your
--- Mage can be Ghostly while your Trapper is Gilded). Classic is the one everyone has;
--- the Ghost Crew is in Treasure Chests; Gilded comes with character mastery
--- (Progress.OutfitMastery). art/portraits.py makes the art: portraits/<character>_<set>.
-Cosmetics.outfitSets = {
+--[[
+	Emblems: the badge that stands for a character on their cards, chips and results (no
+	faces: a symbol of theirs). Each character has three, each a different design in a
+	different colour scheme, worn per character (your Mage can wear the Golden Moon
+	while your Trapper keeps the Bear Trap). Classic is the one everyone has; the Ghost
+	Crew is in Treasure Chests; Gilded comes with character mastery
+	(Progress.EmblemMastery). art/emblems.py draws them: emblems/<character>_<set>.
+]]
+Cosmetics.emblemSets = {
 	{ id = "classic", name = "Classic", rarity = "common", source = "default" },
-	{ id = "ghost", name = "Ghostly", rarity = "epic" },
+	{ id = "ghost", name = "Ghost Crew", rarity = "epic" },
 	{ id = "gilded", name = "Gilded", rarity = "legendary", source = "mastery" },
 }
+-- each emblem's symbol: classic, Ghost Crew, Gilded
+local emblemNames = {
+	mage = { "Snowflake", "Ghost Crystal", "Golden Moon" },
+	trapper = { "Bear Trap", "Ghost Lasso", "Golden Star" },
+	fire_starter = { "Flame", "Ghost Match", "Golden Rocket" },
+	naturalist = { "Sprout", "Ghost Paw", "Golden Feather" },
+	warper = { "Spiral", "Ghost Hourglass", "Golden Comet" },
+	overseer = { "Spyglass", "Ghost Eye", "Golden Wheel" },
+	gambler = { "Dice", "Ghost Spade", "Golden Chip" },
+	cannoneer = { "Cannonball", "Ghost Cannon", "Golden Burst" },
+}
 for _, charId in { "mage", "trapper", "fire_starter", "naturalist", "warper", "overseer", "gambler", "cannoneer" } do
-	for _, set in Cosmetics.outfitSets do
+	for i, set in Cosmetics.emblemSets do
 		table.insert(defs, {
-			id = "outfit_" .. charId .. "_" .. set.id,
-			category = "outfit",
+			id = "emblem_" .. charId .. "_" .. set.id,
+			category = "emblem",
 			character = charId,
 			set = set.id,
-			name = set.name .. " " .. masteryNames[charId],
+			name = emblemNames[charId][i],
 			rarity = set.rarity,
 			source = set.source,
-			look = { portrait = if set.id == "classic" then charId else (charId .. ":" .. set.id) },
+			look = { emblem = if set.id == "classic" then charId else (charId .. ":" .. set.id) },
 		})
 	end
 end
@@ -264,14 +279,41 @@ function Cosmetics.get(id: string)
 	return Cosmetics.byId[id]
 end
 
--- The outfit `character` wears in `outfits` ([character] = outfit id; Classic if none).
-function Cosmetics.outfitOf(outfits: { [string]: string }?, character: string): string
-	local id = outfits and outfits[character]
+-- The emblem `character` wears in `emblems` ([character] = emblem id; Classic if none).
+function Cosmetics.emblemOf(emblems: { [string]: string }?, character: string): string
+	local id = emblems and emblems[character]
 	local def = id and Cosmetics.byId[id]
-	if def and def.category == "outfit" and def.character == character then
+	if def and def.category == "emblem" and def.character == character then
 		return id :: string
 	end
-	return "outfit_" .. character .. "_classic"
+	return "emblem_" .. character .. "_classic"
+end
+
+--[[
+	Portrait outfits became emblems: each outfit owned is the emblem of the same set
+	("outfit_mage_ghost" -> "emblem_mage_ghost"), and what each character wore, what
+	they wear now. Returns nothing (no refunds: every outfit has its emblem).
+]]
+function Cosmetics.migrateOutfits(owned: { [string]: boolean }, equipped: { [string]: any })
+	for id in table.clone(owned) do
+		local rest = string.match(id, "^outfit_(.+)$")
+		if rest then
+			owned[id] = nil
+			if Cosmetics.byId["emblem_" .. rest] then
+				owned["emblem_" .. rest] = true
+			end
+		end
+	end
+	if type(equipped.outfits) == "table" then
+		equipped.emblems = equipped.emblems or {}
+		for character, id in equipped.outfits do
+			local rest = type(id) == "string" and string.match(id, "^outfit_(.+)$")
+			if rest and Cosmetics.byId["emblem_" .. rest] and equipped.emblems[character] == nil then
+				equipped.emblems[character] = "emblem_" .. rest
+			end
+		end
+	end
+	equipped.outfits = nil
 end
 
 -- The pawn skins that accessories replaced, by rarity: saves that own them get the

@@ -984,20 +984,6 @@ BONE, BONE_D = "#F2EBDD", "#B5A992"
 RUST = "#6B6E78"
 
 
-def tentacle(units=1.8):
-    """One of the Kraken's arms rising out of the sea and curling over at its tip,
-    suckers up its inside."""
-    a = Art(192, units)
-    arm = ("M 34 90 C 30 70, 30 50, 40 34 C 48 22, 62 15, 73 21 C 82 26, 82 38, 73 43 "
-           "C 66 46.6, 59.6 41, 62 34.6 C 63.6 30.6, 68.4 31, 68.6 34 C 63 30.6, 55 34.4, 52.4 44 C 50 56, 52 74, 56 90 Z")
-    a.shape(arm, KRAKEN, 0.3, 0.32)
-    a.fill("M 52.4 44 C 55 34.4, 63 30.6, 68.6 34 C 66.4 34.6, 64.6 36.4, 64 38.4 C 58.4 38.6, 55.4 43.4, 55 50 C 54.4 62, 55.4 76, 58 90 L 56 90 C 52 74, 50 56, 52.4 44 Z", KRAKEN_L, 0.85)
-    for x, y, r in ((55.8, 82, 2.2), (54.8, 72, 2.2), (54.6, 62, 2.1), (55.6, 52.4, 2.0), (58.8, 44, 1.8), (63.4, 39.2, 1.5)):
-        a.shape(circ(x, y, r), SUCKER, 0.25, 0.25, outline=KRAKEN_D)
-    foam(a, 24, 70, 89)
-    return a.svg()
-
-
 def coral(units=1.2):
     """A clump of branching coral on the reef: a pink one and an orange one."""
     a = Art(160, units)
@@ -1094,26 +1080,28 @@ def lighthouse(units=3.2):
 
 
 def whirlpool(units=5.0):
-    """The Kraken's lair, from above (it lies flat): the sea turning round and down into
-    the dark, white water streaming in along its arms, and an eye down in the deep."""
+    """The Kraken's lair, from above (it lies flat): the sea churned pale round its rim,
+    turning round and down into the dark. The white water streaming round it and the
+    Kraken's head rising out of it are laid on top by the board (art/kraken.py)."""
     import math
-    a = Art(320, units)
-    a.glow(50, 50, 50, 50, "#0B1F33", 0.6)
-    for k, (r, color) in enumerate(((46, "#2B6A92"), (38, "#235A80"), (30, "#1B486A"), (21, "#133553"), (12, "#0B2138"))):
-        a.fill(ell(50 + k * 0.5, 50 + k * 0.4, r, r), color, 0.92)
+    a = Art(240, units)
+    a.glow(50, 50, 50, 50, "#0B1F33", 0.55)
+    a.fill(ell(50, 50, 47.5, 47.5), "#3B88AE", 0.55)
+    for k, (r, color) in enumerate(((44, "#2C6C94"), (37, "#255E86"), (30, "#1D4E73"), (23, "#163E5E"), (16, "#0F2C46"), (9, "#081A2C"))):
+        # (each ring a little lower: we look down into it)
+        a.fill(ell(50, 50 + k * 0.9, r, r), color, 0.96)
+    # faint streaks turning down into the deep
     for arm in range(5):
         pts = []
-        for i in range(48):
-            t = i / 47
-            ang = arm * 2 * math.pi / 5 + t * 4.6
-            rad = 44 * (1 - t) ** 0.9 + 3
-            pts.append((50 + math.cos(ang) * rad, 50 + math.sin(ang) * rad))
-        a.line("M " + " L ".join(f"{x:.1f} {y:.1f}" for x, y in pts), FOAM, 2.6, 0.5)
-        a.line("M " + " L ".join(f"{x:.1f} {y:.1f}" for x, y in pts[:20]), FOAM, 1.2, 0.85)
-    # the eye
-    a.shape(ell(50, 52, 9, 5.2), "#F2C23A", 0.3, 0.3, outline="#5A3A10")
-    a.fill(ell(50, 52, 1.6, 4.4), "#141018")
-    a.fill(ell(47, 50.4, 1.6, 1.0), "#FFFFFF", 0.85)
+        for i in range(36):
+            t = i / 35
+            ang = arm * 2 * math.pi / 5 + 0.6 + t * 4.0
+            rad = 42 * (1 - t) ** 0.9 + 4
+            pts.append((50 + math.cos(ang) * rad, 51 + math.sin(ang) * rad))
+        a.line("M " + " L ".join(f"{x:.1f} {y:.1f}" for x, y in pts), "#4FA3C8", 1.6, 0.35)
+    # the churned rim
+    a.line(circ(50, 50, 45.5), "#CFEFF7", 2.4, 0.5)
+    a.line(circ(50, 50, 47.8), FOAM, 1.2, 0.35)
     return a.svg()
 
 
@@ -1272,7 +1260,7 @@ SPRITES = [
     ("lavarock", lavarock, 1.0), ("charred", charred, 1.4), ("vent", vent, 1.1), ("volcano", volcano, 5.2),
     ("pine_snow", pine_snow, 2.0), ("icerock", icerock, 1.0), ("snowman", snowman, 1.3), ("igloo", igloo, 2.2),
     ("iceberg", iceberg, 1.8), ("floe", floe, 1.3), ("seal", seal, 1.3), ("frozenship", frozenship, 3.8),
-    ("tentacle", tentacle, 1.8), ("coral", coral, 1.2), ("barnacle", barnacle, 1.0), ("mast", mast, 2.0),
+    ("coral", coral, 1.2), ("barnacle", barnacle, 1.0), ("mast", mast, 2.0),
     ("anchor", anchor, 1.2), ("bones", bones, 1.6), ("lighthouse", lighthouse, 3.2), ("whirlpool", whirlpool, 5.0),
     ("gear", gear, 1.4), ("pipes", pipes, 1.2), ("smokestack", smokestack, 2.2), ("buoy", buoy, 1.0),
     ("clocktower", clocktower, 3.6), ("crane", crane, 3.2),

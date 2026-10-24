@@ -59,11 +59,11 @@ COLLAR_SIDE = "M 43 78 L 43 81 A 21 5.5 0 0 0 85 81 L 85 78 Z"
 EMBLEMS = {
     "mage": {
         "parts": [
-            # the hat's cone, its tip flopping to the right, then the brim in front
-            ("body", "M 44 73 C 49 58, 55 40, 59 24 C 61 15, 70 11, 78 15 C 72 18, 68 23, 68 31 C 69 45, 76 60, 84 73 Z"),
-            ("body", "M 36 75 C 36 70, 50 67, 64 67 C 78 67, 92 70, 92 75 C 92 80, 78 82, 64 82 C 50 82, 36 80, 36 75 Z"),
+            # an ice star standing on the collar (the snowflake of the Mage's emblem)
+            ("body", "M 60.5 77 L 60.5 66 L 67.5 66 L 67.5 77 Z"),
+            ("body", "M 64.0 22.0 L 69.2 37.9 L 85.7 34.5 L 74.5 47.0 L 85.7 59.5 L 69.2 56.1 L 64.0 72.0 L 58.8 56.1 L 42.3 59.5 L 53.5 47.0 L 42.3 34.5 L 58.7 37.9 Z"),
         ],
-        "decal": [("light", "M 62 44 L 64.2 48.6 L 69.2 49.3 L 65.6 52.8 L 66.5 57.8 L 62 55.4 L 57.5 57.8 L 58.4 52.8 L 54.8 49.3 L 59.8 48.6 Z")],
+        "decal": [("groove", "M 64 47 L 64.0 28.0 M 64 47 L 80.5 37.5 M 64 47 L 80.5 56.5 M 64 47 L 64.0 66.0 M 64 47 L 47.5 56.5 M 64 47 L 47.5 37.5"), ("light", "M 64.0 41.8 L 68.5 44.4 L 68.5 49.6 L 64.0 52.2 L 59.5 49.6 L 59.5 44.4 Z")],
     },
     "trapper": {
         "parts": [

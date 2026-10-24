@@ -736,17 +736,11 @@ function Widgets.choice(parent: Instance, o: { [string]: any })
 		LayoutOrder = o.layoutOrder or 0,
 	})
 	local n = #o.options
-	-- (o.columns: wrap into rows of that many, for a long list like the maps)
+	-- (o.columns: wrap into rows of that many, for a long list like the maps; placed
+	-- once the buttons are made)
 	local cols = o.columns
-	if cols and n > cols then
-		local rows = math.ceil(n / cols)
-		Util.new("UIGridLayout", {
-			CellPadding = UDim2.fromOffset(6, 6),
-			CellSize = UDim2.new(1 / cols, -6 * (cols - 1) / cols, 1 / rows, -6 * (rows - 1) / rows),
-			SortOrder = Enum.SortOrder.LayoutOrder,
-			Parent = root,
-		})
-	else
+	local wrap = cols ~= nil and n > cols
+	if not wrap then
 		local layout = Util.list(root, "x", 6, o.align or "Left", "Center")
 		layout.SortOrder = Enum.SortOrder.LayoutOrder
 	end
@@ -796,6 +790,9 @@ function Widgets.choice(parent: Instance, o: { [string]: any })
 				task.spawn(o.onChange, opt.value)
 			end
 		end)
+	end
+	if wrap and cols then
+		Util.grid(root, cols, math.ceil(n / cols), 6)
 	end
 	function c.set(_self, value: any)
 		c.value = value

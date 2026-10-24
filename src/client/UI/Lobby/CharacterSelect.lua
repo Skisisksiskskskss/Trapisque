@@ -136,9 +136,9 @@ function CharacterSelect.open(popups: Instance)
 		})
 		Util.corner(cell, 14)
 		local rim = Util.stroke(cell, C.line, 2.5)
-		-- (in the outfit you've picked for them)
-		local portrait = CosmeticArt.portraitId(def.id, profile and profile.equipped and profile.equipped.outfits)
-		local card = Cards.character(cell, portrait, {
+		-- (in the emblem you've picked for them)
+		local emblem = CosmeticArt.emblemId(def.id, profile and profile.equipped and profile.equipped.emblems)
+		local card = Cards.character(cell, emblem, {
 			AnchorPoint = Vector2.new(0.5, 0),
 			Position = UDim2.new(0.5, 0, 0, 8),
 			Size = UDim2.fromOffset(cardW, cardW / CardStyle.aspect),
@@ -146,11 +146,11 @@ function CharacterSelect.open(popups: Instance)
 		-- open it big to read its rules
 		Cards.interactive(card, function()
 			Cards.zoom(card.root, function(parent, props)
-				return Cards.character(parent, portrait, props)
+				return Cards.character(parent, emblem, props)
 			end)
 		end)
 		-- locked: a padlock badge in the corner of their picture until your level reaches it
-		-- (their face stays in view)
+		-- (their emblem stays in view)
 		local lock = Util.frame(cell, {
 			Name = "Lock",
 			AnchorPoint = Vector2.new(0.5, 0.5),
@@ -240,7 +240,7 @@ function CharacterSelect.open(popups: Instance)
 end
 
 --[[
-	The lobby's "your character" bar: mascot, name, mastery level and bar, CHANGE.
+	The lobby's "your character" bar: emblem, name, mastery level and bar, CHANGE.
 	opts = { compact, onChange }
 ]]
 function CharacterSelect.strip(parent: Instance, opts: { [string]: any }?)
@@ -257,7 +257,7 @@ function CharacterSelect.strip(parent: Instance, opts: { [string]: any }?)
 	})
 	Util.corner(root, 12)
 	Util.stroke(root, C.line, 2.5)
-	local portrait = Util.frame(root, { Name = "Portrait", Position = UDim2.fromOffset(6, 4) })
+	local badge = Util.frame(root, { Name = "Emblem", Position = UDim2.fromOffset(6, 4) })
 	local name = Widgets.label(root, {
 		name = "Name",
 		text = "",
@@ -301,7 +301,7 @@ function CharacterSelect.strip(parent: Instance, opts: { [string]: any }?)
 			h = if compact then 44 else 60
 		end
 		local ps = h - 8
-		portrait.Size = UDim2.fromOffset(ps, ps)
+		badge.Size = UDim2.fromOffset(ps, ps)
 		local bw = if compact then 84 else 108
 		change.root.Size = UDim2.fromOffset(bw, math.min(40, h - 14))
 		local tx = ps + 14
@@ -314,11 +314,11 @@ function CharacterSelect.strip(parent: Instance, opts: { [string]: any }?)
 		local profile = State.get("profile")
 		local id = profile and profile.character or Characters.ids[1]
 		local def = Characters.get(id)
-		local look = CosmeticArt.portraitId(id, profile and profile.equipped and profile.equipped.outfits)
+		local look = CosmeticArt.emblemId(id, profile and profile.equipped and profile.equipped.emblems)
 		if shown ~= look then
 			shown = look
-			Util.clear(portrait)
-			Icons.medallion(portrait, look, Theme.Character[id] or C.grape, { Size = UDim2.fromScale(1, 1) })
+			Util.clear(badge)
+			Icons.emblem(badge, look, { Size = UDim2.fromScale(1, 1) })
 		end
 		local level, into, need = masteryOf(profile, id)
 		name.Text = if def then def.name else id

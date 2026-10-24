@@ -30,7 +30,7 @@
 		view:setGhosts(tiles) / driftGhosts(moves, speed) / boo(tile)   -- Haunted Hollow
 		view:erupt(speed) / setRumble(on)   -- Mount Kaboom's volcano
 		view:crackIce(tile, state) / refreeze(tiles) -- Frostbite Floes' thin ice
-		view:setKraken(mark) / krakenSlam(speed) -- Kraken's Reach's tentacle
+		view:setKraken(mark) / krakenSlam(speed) -- Kraken's Reach's arm (and its lair)
 		view:setBridges(bridges, animate) / turnCogs(speed) -- Clockwork Cove
 ]]
 
@@ -196,6 +196,7 @@ function BoardView.new(parent: Frame, mapId: string, opts: { [string]: any }?)
 	MapArt.draw(self.layers, L, U)
 	self:_buildTiles()
 	self:_buildHits()
+	self:_buildLair()
 
 	self:_bindInput()
 	self.bubbles = {} -- [seat] = { holder, w, h, token }
@@ -719,6 +720,7 @@ end
 -- A board piece as a sticker: its card art on a disc in its owner's colour.
 local function plaque(parent: Instance, item: string, owner: number?, at: UDim2, size: number, z: number): Frame
 	local color = if owner and owner > 0 then Theme.seatColor(owner) else C.panelRaised
+	-- the card's badge, ringed in its owner's colour
 	local disc = Util.new("Frame", {
 		Name = "Plaque",
 		BackgroundColor3 = color,
@@ -730,11 +732,11 @@ local function plaque(parent: Instance, item: string, owner: number?, at: UDim2,
 		Parent = parent,
 	})
 	Util.corner(disc, 0.5)
-	Util.stroke(disc, C.line, 0.07 * U)
-	local art = Icons.stickerFor(item)
-	if art then
-		Icons.sticker(disc, art, { Size = UDim2.fromScale(0.86, 0.86), ZIndex = z + 1 }, 0.05)
-	end
+	Util.stroke(disc, C.line, 0.05 * U)
+	Icons.cardBadge(disc, item, Theme.Category[(Items.get(item) or {}).category or ""] or C.panelRaised, {
+		Size = UDim2.fromScale(0.9, 0.9),
+		ZIndex = z + 1,
+	})
 	return disc
 end
 BoardView.plaque = plaque
@@ -772,10 +774,7 @@ local function trapMark(parent: Instance, trap, at: UDim2, size: number, z: numb
 	})
 	Util.corner(disc, 0.5)
 	Util.stroke(disc, color, ring)
-	local art = Icons.stickerFor(trap.item)
-	if art then
-		Icons.sticker(disc, art, { Size = UDim2.fromScale(0.84, 0.84), ZIndex = 2 }, 0.05)
-	end
+	Icons.cardBadge(disc, trap.item, C.coral, { Size = UDim2.fromScale(0.94, 0.94), ZIndex = 2 })
 	return g
 end
 BoardView.trapMark = trapMark
@@ -924,14 +923,10 @@ local function chip(parent: Instance, token: string, ground: Vector2, lift: numb
 		Util.corner(f, 0.5)
 		return f
 	end
-	-- its edge (the chip's thickness), then its face
-	face("Edge", 0.1 * size, Util.shade(color, -0.35), z)
-	local top = face("Face", 0, color, z + 1)
-	Util.stroke(top, Util.shade(color, -0.5), math.max(1, 0.05 * size))
-	local art = StickerArt.tokens[token]
-	if art then
-		Icons.sticker(top, art, { Size = UDim2.fromScale(0.74, 0.74), ZIndex = z + 2 }, 0.06)
-	end
+	-- its edge (the chip's thickness), then its face: the token's badge
+	face("Edge", 0.1 * size, Util.shade(color, -0.45), z)
+	local top = Util.frame(holder, { Name = "Face", Size = UDim2.fromOffset(size, size), ZIndex = z + 1 })
+	Icons.cardBadge(top, "token_" .. token, color, { Size = UDim2.fromScale(1, 1), ZIndex = z + 1 })
 	return holder
 end
 
@@ -1220,12 +1215,7 @@ function BoardView:moveToken(from: number, to: number, kind: string?)
 		ZIndex = 45,
 	})
 	local color = Theme.Category[k] or C.panelRaised
-	local disc = Shapes.circle(flyer, 0.5, 0.5, 0.8, color)
-	Util.scaledStroke(disc, C.line, 0.07, 3)
-	local art = StickerArt.tokens[k]
-	if art then
-		Icons.sticker(flyer, art, { Size = UDim2.fromScale(0.62, 0.62), ZIndex = 3 }, 0.06)
-	end
+	Icons.cardBadge(flyer, "token_" .. k, color, { Size = UDim2.fromScale(0.82, 0.82), ZIndex = 3 })
 	local s = Util.scaler(flyer)
 	local dist = (b - a).Magnitude
 	local t = math.clamp(dist / (U * 14), 0.35, 0.7)
@@ -1461,21 +1451,104 @@ function BoardView:_ring(at: Vector2, color: Color3, from: number, to: number, l
 	end)
 end
 
--- Where the Kraken's tentacle rises for its mark: just off the tile, on the side of
--- the whirlpool it lives in (or behind the tile, on a map without one).
+--[[
+	Kraken's Reach. The Kraken's arm (art/kraken.py, frames on one canvas, its foot where
+	it leaves the water): it rises out of the sea beside its mark, sways there, then
+	rears back, arches over and slams down across the mark, and sinks. ARM: that canvas,
+	map units round the foot.
+]]
+local ARM = { x0 = -4.6, x1 = 4.6, y0 = -6.8, y1 = 3.2 }
+local ARM_REACH = 2.8 -- how far from its foot a slammed arm lies across (art: kraken.py)
+local ARM_FPS = 8
+
+-- The arm's canvas on the board: its size and its middle, for a foot at `foot` (world
+-- pixels) and the arm `scale` x its drawn size.
+local function armBox(foot: Vector2, scale: number): (Vector2, Vector2)
+	local w, h = (ARM.x1 - ARM.x0) * U * scale, (ARM.y1 - ARM.y0) * U * scale
+	local mid = foot + Vector2.new(((ARM.x0 + ARM.x1) / 2) * U * scale, ((ARM.y0 + ARM.y1) / 2) * U * scale)
+	return Vector2.new(w, h), mid
+end
+
+--[[
+	Where the arm rises for its mark: open water near the tile (never out of the land, a
+	beach or a cliff), clear of the other tiles and the lair, its arm on screen, about as
+	far from the mark as a slammed arm reaches; off to the side if it can be, so it
+	strikes across the screen. Ground coordinates (map units).
+]]
 function BoardView:_krakenFoot(tile: number): Vector2
+	local L = self.layout
 	local g = self.ground[tile]
-	local dir = Vector2.new(0.5, -1)
-	for _, p in self.layout.props do
+	local depth = L.landDepth
+	local lair = nil
+	for _, p in L.props do
 		if p.kind == "whirlpool" then
-			dir = Vector2.new(p.x, p.y) - g
+			lair = p
 		end
 	end
-	if dir.Magnitude < 1e-3 then
-		dir = Vector2.new(0, -1)
+	local v = L.view
+	local best, bestScore = nil, math.huge
+	for _, d in { 2.8, 2.5, 3.1, 3.4, 2.2, 3.8 } do
+		for k = 0, 23 do
+			local a = k * math.pi / 12
+			local x, y = g.X + math.cos(a) * d, g.Y + math.sin(a) * d
+			-- open water, and water a little up the screen too (not under a cliff's face)
+			local ok = depth(x, y) < -0.6 and depth(x, y - 0.8) < -0.25 and depth(x, y + 0.5) < -0.3
+			if ok then
+				for _, t in L.tiles do
+					if t.id ~= tile and (x - t.x) ^ 2 + (y - t.y) ^ 2 < 1.7 ^ 2 then
+						ok = false
+						break
+					end
+				end
+			end
+			if ok then
+				for _, p in L.props do
+					local keep = if p.kind == "whirlpool" then p.size * 0.62 else p.size * 0.45
+					if (not p.ground or p.kind == "whirlpool") and (x - p.x) ^ 2 + (y - p.y) ^ 2 < keep * keep then
+						ok = false
+						break
+					end
+				end
+			end
+			if ok then
+				-- on screen, with room above for the arm, and not standing in front of a
+				-- tile (or whoever is on it) while it waits there
+				local at = MapArt.project(L, 1, x, y) + Vector2.new(L.x0, L.y0 * K)
+				local scr = MapArt.project(L, 1, g.X, g.Y) + Vector2.new(L.x0, L.y0 * K)
+				local off = (at.Y - 5.2 < v.y0 - 0.6) or at.X < v.x0 + 1.2 or at.X > v.x1 - 1.2 or at.Y > v.y1 - 0.6
+				local covers = false
+				for _, t in L.tiles do
+					local ts = MapArt.project(L, 1, t.x, t.y) + Vector2.new(L.x0, L.y0 * K)
+					if math.abs(ts.X - at.X) < 1.7 and ts.Y < at.Y + 0.6 and ts.Y > at.Y - 5.4 then
+						covers = true
+						break
+					end
+				end
+				local across = scr - at
+				local side = math.abs(across.Y / K) / math.max(1e-3, across.Magnitude)
+				local score = math.abs(d - ARM_REACH) + 0.4 * side + (if off then 4 else 0) + (if covers then 3 else 0)
+				if lair then
+					-- (it lives in the lagoon, round its lair)
+					score += 0.12 * math.sqrt((x - lair.x) ^ 2 + (y - lair.y) ^ 2)
+				end
+				if score < bestScore then
+					best, bestScore = Vector2.new(x, y), score
+				end
+			end
+		end
+		if best and bestScore < 1.5 then
+			break
+		end
 	end
-	local at = g + dir.Unit * 2.2
-	return MapArt.project(self.layout, U, at.X, at.Y)
+	if not best then
+		-- (no open water near: the side of the lair, or just behind the tile)
+		local dir = if lair then Vector2.new(lair.x, lair.y) - g else Vector2.new(0, -1)
+		if dir.Magnitude < 1e-3 then
+			dir = Vector2.new(0, -1)
+		end
+		best = g + dir.Unit * 2.4
+	end
+	return best
 end
 
 function BoardView:_clearKraken()
@@ -1490,10 +1563,22 @@ function BoardView:_clearKraken()
 	k.holder:Destroy()
 end
 
+-- Shows frame `name` of the arm (mirrored if `flip`), `scale` x its drawn size,
+-- turned `turn` degrees round its foot.
+function BoardView:_armFrame(k, name: string, flip: boolean?, scale: number?, turn: number?)
+	local sc = scale or k.scale
+	local size, mid = armBox(Vector2.zero, sc)
+	local center = k.half + mid
+	if k.img then
+		Art.frame(k.img, "kraken/" .. name, center, size, flip)
+	end
+	k.holder.Rotation = turn or 0
+	k.frame = name
+end
+
 --[[
-	Kraken's Reach: the tentacle over its mark ({ tile, zone } or nil), swaying in the
-	water beside it, its shadow over the tiles it will come down on. A new mark rises
-	out of the sea.
+	Kraken's Reach: the arm over its mark ({ tile, zone } or nil), rising out of the
+	water beside it and swaying there, its shadow over the tiles it will come down on.
 ]]
 function BoardView:setKraken(mark)
 	local tile = mark and mark.tile
@@ -1521,37 +1606,37 @@ function BoardView:setKraken(mark)
 			end
 		end
 	end
-	local foot = self:_krakenFoot(tile)
-	local size = 2.6 * U
+	local L = self.layout
+	local ground = self:_krakenFoot(tile)
+	local foot = MapArt.project(L, U, ground.X, ground.Y)
+	local target = self:tileWorld(tile)
+	-- (the arm faces its mark: mirrored when the mark is to its left)
+	local flip = target.X < foot.X - 0.2 * U
+	local scale = 1
+	local size = armBox(Vector2.zero, scale)
+	-- a frame round the foot: the arm turns round it
+	local span = 2 * math.max(size.X, size.Y)
 	local holder = Util.frame(self.layers.Pawns, {
 		Name = "Kraken",
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = px(foot),
-		Size = UDim2.fromOffset(2 * size, 2 * size),
+		Size = UDim2.fromOffset(span, span),
 		ZIndex = depthZ(foot.Y) - 1,
 	})
-	-- (its foot on the holder's middle: it sways, rises and slams from there)
-	local lift = Util.frame(holder, {
-		Name = "Lift",
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.5),
-	})
-	local art = Art.label(lift, "props/tentacle", Vector2.new(size, size - (0.92 - 0.5) * size), size, false, {
-		Name = "Tentacle",
-	})
-	if not art then
-		local h = Util.frame(lift, {
-			Name = "Tentacle",
+	local half = Vector2.new(span / 2, span / 2)
+	local k2 = { tile = tile, foot = foot, ground = ground, holder = holder, shades = shades, flip = flip, scale = scale, half = half, t0 = os.clock(), phase = math.random() * 6 }
+	k2.img = Art.label(holder, "kraken/rise_0", half, size, flip, { Name = "Arm", ZIndex = holder.ZIndex })
+	if not k2.img then
+		-- (no art: the old sticker, swaying)
+		local h = Util.frame(holder, {
+			Name = "Arm",
 			AnchorPoint = Vector2.new(0.5, 1),
-			Position = UDim2.fromOffset(size, size),
-			Size = UDim2.fromOffset(0.7 * size, 0.7 * size),
+			Position = UDim2.fromOffset(span / 2, span / 2),
+			Size = UDim2.fromOffset(1.8 * U, 1.8 * U),
 		})
 		Icons.sticker(h, StickerArt.hazards.kraken, nil, 0.06)
 	end
-	self.krakenSprite = { tile = tile, foot = foot, holder = holder, lift = lift, shades = shades, phase = math.random() * 6 }
-	local s = Util.scaler(lift)
-	s.Scale = 0
-	Util.tween(s, 0.45, { Scale = 1 }, Enum.EasingStyle.Back)
+	self.krakenSprite = k2
 	self:_ring(foot, FROST, 0.5, 2.2, 0.6)
 end
 
@@ -1566,15 +1651,32 @@ function BoardView:_stepBands()
 	end
 end
 
+-- The arm rises out of the water (three frames), then sways (a loop); the lair's water
+-- turns, its arms bob and its head watches the mark.
 function BoardView:_stepKraken()
+	self:_stepLair()
 	local k = self.krakenSprite
-	if k and not k.busy then
-		k.lift.Rotation = math.sin(os.clock() * 1.7 + k.phase) * 6
+	if not k or k.busy or not k.img then
+		return
+	end
+	local t = os.clock() - k.t0
+	local name
+	if t < 0.36 then
+		name = "rise_" .. math.min(2, math.floor(t / 0.12))
+	else
+		name = "arm_" .. (math.floor((t - 0.36) * ARM_FPS) % 6)
+	end
+	if name ~= k.frame then
+		self:_armFrame(k, name, k.flip, nil, nil)
 	end
 end
 
--- The tentacle rears up and slams down across its mark, then sinks (yields until the
--- hit lands).
+--[[
+	The arm rears back, arches over its mark and slams down across it, the dust flying,
+	then sinks back into the water (yields until the hit lands). Its frames are drawn
+	eight ways round on the ground; the nearest is turned the rest of the way and
+	stretched to reach the mark.
+]]
 function BoardView:krakenSlam(speed: number?)
 	local k = self.krakenSprite
 	if not k then
@@ -1582,25 +1684,46 @@ function BoardView:krakenSlam(speed: number?)
 	end
 	local pace = 1 / math.max(speed or 1, 0.25)
 	k.busy = true
+	self.lairAngry = os.clock() + 1.6 * pace
 	local target = self:tileWorld(k.tile)
 	local v = target - k.foot
-	-- (it falls towards the mark: the angle from straight up, clockwise)
-	local lean = math.deg(math.atan2(v.X, -v.Y))
-	local reach = math.clamp(v.Magnitude / (1.9 * U) * 1.1, 0.9, 1.5)
-	local s = Util.scaler(k.lift)
+	-- the way it strikes, on the ground (seen from straight above), and how far
+	local gx, gy = v.X, v.Y / K
+	local dist = math.sqrt(gx * gx + gy * gy) / U
+	local angle = math.deg(math.atan2(gy, gx))
+	local dir = math.floor(angle / 45 + 0.5) % 8
+	local rest = angle - dir * 45
+	if rest > 180 then
+		rest -= 360
+	elseif rest < -180 then
+		rest += 360
+	end
+	local reach = math.clamp(dist / ARM_REACH, 0.8, 1.3)
 	;(k.holder :: Frame).ZIndex = 400
-	Util.tween(k.lift, 0.35 * pace, { Rotation = -0.25 * lean }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-	Util.tween(s, 0.35 * pace, { Scale = 1.2 }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	local img = k.img :: ImageLabel?
+	if img then
+		img.ZIndex = 400
+		-- rearing back, away from its mark
+		self:_armFrame(k, if gx >= 0 then "rear_l" else "rear_r", false, nil, nil)
+		Util.tween(Util.scaler(img), 0.3 * pace, { Scale = 1.06 }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	end
 	Sound.play("whoosh", 0.6)
-	task.wait(0.35 * pace)
-	Util.tween(k.lift, 0.14 * pace, { Rotation = lean }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-	Util.tween(s, 0.14 * pace, { Scale = reach }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-	task.wait(0.14 * pace)
-	self:shake(0.22, 0.45)
+	task.wait(0.32 * pace)
+	if img then
+		Util.scaler(img).Scale = 1
+		self:_armFrame(k, "arc_" .. dir, false, reach, rest * 0.6)
+	end
+	task.wait(0.1 * pace)
+	if img then
+		self:_armFrame(k, "hit_" .. dir, false, reach, rest)
+	else
+		Util.tween(k.holder, 0.14 * pace, { Rotation = math.clamp(angle + 90, -80, 80) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+	end
+	self:shake(0.25, 0.5)
 	Sound.play("splash")
 	Sound.play("bonk", 0.55)
-	for _, img in k.shades do
-		local tile = img.Parent
+	for _, shade in k.shades do
+		local tile = shade.Parent
 		if tile and tile:IsA("GuiObject") then
 			Util.bump(tile, 0.08)
 		end
@@ -1608,18 +1731,145 @@ function BoardView:krakenSlam(speed: number?)
 	self:_ring(target, KRAKEN_PINK, 0.6, 3.2, 0.5)
 	self:puff(target, FROST)
 	self:floatText(target, "SLAM!", KRAKEN_PINK, 38)
-	task.delay(0.45 * pace, function()
+	task.spawn(function()
+		task.wait(0.5 * pace)
 		if self.krakenSprite ~= k then
 			return
 		end
-		Util.tween(s, 0.3, { Scale = 0 }, Enum.EasingStyle.Back, Enum.EasingDirection.In)
-		task.delay(0.32, function()
-			if self.krakenSprite == k then
-				self:_clearKraken()
+		-- it sinks back into the deep
+		if img then
+			for _, name in { "arc_" .. dir, "rise_2", "rise_1", "rise_0" } do
+				self:_armFrame(k, name, if string.sub(name, 1, 4) == "rise" then gx < 0 else false, if name == "arc_" .. dir then reach else nil, if name == "arc_" .. dir then rest * 0.6 else 0)
+				task.wait(0.09)
+				if self.krakenSprite ~= k then
+					return
+				end
 			end
-		end)
+			Util.tween(img, 0.2, { ImageTransparency = 1 })
+			task.wait(0.2)
+		end
+		if self.krakenSprite == k then
+			self:_clearKraken()
+		end
 	end)
 	task.wait(0.3 * pace)
+end
+
+--[[
+	The Kraken's lair, in the middle of the lagoon (the whirlpool prop): its white water
+	turning round and down (four frames, faded one into the next), a few of its arms
+	arching out of the water round it, and its head rising out of the middle, watching
+	the mark, blinking now and then, and glaring when it strikes.
+]]
+local SWIRL_STEP = 0.24 -- seconds a swirl frame (each turns 18 degrees)
+local HEAD = { x0 = -2.2, x1 = 2.2, y0 = -3.6, y1 = 0.7 } -- its canvas, its waterline at 0
+local COIL = { x0 = -1.6, x1 = 1.6, y0 = -2.0, y1 = 0.5 }
+
+function BoardView:_buildLair()
+	local lair = nil
+	for _, p in self.layout.props do
+		if p.kind == "whirlpool" then
+			lair = p
+		end
+	end
+	if not lair or not self.def.kraken or not Art.has("kraken/head_ahead") then
+		return
+	end
+	local L = self.layout
+	local mid = MapArt.project(L, U, lair.x, lair.y)
+	local size = lair.size * U
+	local swirls = {}
+	for i = 1, 2 do
+		swirls[i] = Art.label(self.layers.Trail, "kraken/swirl_0", mid, Vector2.new(size * 0.94, size * 0.94 * K), false, {
+			Name = "Swirl",
+			ImageTransparency = if i == 1 then 0 else 1,
+			ZIndex = 120,
+		})
+	end
+	-- its arms arching out of the water round it
+	local coils = {}
+	for i, at in { { -0.36, -0.06, false }, { 0.33, -0.2, true }, { 0.18, 0.3, false } } do
+		local x, y = lair.x + at[1] * lair.size, lair.y + at[2] * lair.size
+		local foot = MapArt.project(L, U, x, y)
+		local s = 0.62 * lair.size / 6.2
+		local w, h = (COIL.x1 - COIL.x0) * U * s, (COIL.y1 - COIL.y0) * U * s
+		local center = foot + Vector2.new(0, ((COIL.y0 + COIL.y1) / 2) * U * s)
+		local img = Art.label(self.layers.Props, "kraken/coil_" .. ((i - 1) % 2), center, Vector2.new(w, h), at[3], {
+			Name = "Coil",
+			ZIndex = 300 + math.floor(foot.Y / 4),
+		})
+		if img then
+			table.insert(coils, { img = img, center = center, phase = i * 2.1 })
+		end
+	end
+	local s = 1.05 * lair.size / 6.2
+	local hw, hh = (HEAD.x1 - HEAD.x0) * U * s, (HEAD.y1 - HEAD.y0) * U * s
+	local hcenter = mid + Vector2.new(0, ((HEAD.y0 + HEAD.y1) / 2) * U * s + 0.15 * U)
+	local head = Art.label(self.layers.Props, "kraken/head_ahead", hcenter, Vector2.new(hw, hh), false, {
+		Name = "KrakenHead",
+		ZIndex = 300 + math.floor(mid.Y / 4),
+	})
+	self.lair = {
+		swirls = swirls,
+		coils = coils,
+		head = head,
+		headCenter = hcenter,
+		headSize = Vector2.new(hw, hh),
+		headAt = head and head.Position, -- (where its frame puts it, before it bobs)
+		look = "ahead",
+		blinkAt = os.clock() + 2 + math.random() * 3,
+		mid = mid,
+	}
+end
+
+function BoardView:_stepLair()
+	local lair = self.lair
+	if not lair then
+		return
+	end
+	local now = os.clock()
+	-- the water turning: frame i fading into frame i + 1
+	local f = now / SWIRL_STEP
+	local i = math.floor(f)
+	local a, b = lair.swirls[1], lair.swirls[2]
+	if a and b then
+		local size = a.Size
+		if lair.swirlFrame ~= i then
+			lair.swirlFrame = i
+			local box = Vector2.new(size.X.Offset, size.Y.Offset)
+			Art.frame(a, "kraken/swirl_" .. (i % 4), lair.mid, box)
+			Art.frame(b, "kraken/swirl_" .. ((i + 1) % 4), lair.mid, box)
+		end
+		local t = f - i
+		a.ImageTransparency = 0.15 + 0.85 * t
+		b.ImageTransparency = 1 - 0.85 * t
+	end
+	for _, c in lair.coils do
+		c.img.Position = UDim2.fromOffset(c.center.X, c.center.Y + math.sin(now * 1.3 + c.phase) * 0.08 * U)
+	end
+	if lair.head then
+		-- it watches the arm's mark; blinks; glares as it strikes
+		local look = "ahead"
+		local k = self.krakenSprite
+		if self.lairAngry and now < self.lairAngry then
+			look = "angry"
+		elseif now >= lair.blinkAt then
+			look = "blink"
+			if now >= lair.blinkAt + 0.14 then
+				lair.blinkAt = now + 2.5 + math.random() * 3.5
+			end
+		elseif k then
+			local dx = self:tileWorld(k.tile).X - lair.mid.X
+			look = if dx < -1.5 * U then "left" elseif dx > 1.5 * U then "right" else "ahead"
+		end
+		if look ~= lair.look then
+			lair.look = look
+			Art.frame(lair.head, "kraken/head_" .. look, lair.headCenter, lair.headSize)
+			lair.headAt = lair.head.Position
+		end
+		-- (bobbing in the water)
+		lair.head.Position = lair.headAt + UDim2.fromOffset(0, math.sin(now * 0.9) * 0.07 * U)
+	end
 end
 
 --[[

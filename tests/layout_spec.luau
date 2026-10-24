@@ -201,7 +201,7 @@ test("smoothing plugs the hole left where three discs nearly meet", function()
 	truthy(covered, "the hole is still open")
 end)
 
-test("every prop, ground sprite, piece, stand and portrait has its art in the sheets", function()
+test("every prop, ground sprite, piece, stand, emblem, card badge and Kraken frame has its art in the sheets", function()
 	local ArtAtlas = requireModule("Client/UI/ArtAtlas")
 	local Cosmetics = requireModule("Shared/Meta/Cosmetics")
 	local Characters = requireModule("Shared/Game/Characters")
@@ -235,13 +235,40 @@ test("every prop, ground sprite, piece, stand and portrait has its art in the sh
 		truthy(ArtAtlas.sprites["ground/" .. name], "no ground/" .. name)
 	end
 	for _, id in Characters.ids do
-		truthy(ArtAtlas.sprites["portraits/" .. id], "no portrait of the " .. id)
 		truthy(ArtAtlas.sprites["pieces/plinth_" .. id], "no stand for the " .. id)
 		for _, def in Cosmetics.byCategory.finish do
 			truthy(ArtAtlas.sprites["pieces/" .. def.look.finish .. "_" .. id], "no " .. def.id .. " " .. id)
 		end
 	end
 	truthy(ArtAtlas.sprites["pieces/plinth_gold"], "no gold stand")
+	-- every emblem a character can wear, every card's badge, every token's
+	for _, def in Cosmetics.byCategory.emblem do
+		local char, set = string.match(def.look.emblem, "^([%w_]+):([%w_]+)$")
+		local name = if char then "emblems/" .. char .. "_" .. set else "emblems/" .. def.look.emblem
+		truthy(ArtAtlas.sprites[name], "no art for the " .. def.id)
+	end
+	local ItemList = requireModule("Shared/Game/Items")
+	for _, def in ItemList.list do
+		truthy(ArtAtlas.sprites["cards/" .. def.id], "no badge for the " .. def.id .. " card")
+	end
+	for _, kind in { "trap", "assist", "neutral", "potion", "coin" } do
+		truthy(ArtAtlas.sprites["cards/token_" .. kind], "no badge for the " .. kind .. " token")
+	end
+	-- the Kraken's frames: rising, swaying, rearing, arching and slamming every way, and
+	-- its lair (the swirl, its head, the arms arching round it)
+	for k = 0, 2 do
+		truthy(ArtAtlas.sprites["kraken/rise_" .. k], "no rise_" .. k)
+	end
+	for k = 0, 5 do
+		truthy(ArtAtlas.sprites["kraken/arm_" .. k], "no arm_" .. k)
+	end
+	for k = 0, 7 do
+		truthy(ArtAtlas.sprites["kraken/arc_" .. k], "no arc_" .. k)
+		truthy(ArtAtlas.sprites["kraken/hit_" .. k], "no hit_" .. k)
+	end
+	for _, name in { "rear_l", "rear_r", "swirl_0", "swirl_1", "swirl_2", "swirl_3", "head_ahead", "head_left", "head_right", "head_blink", "head_angry", "coil_0", "coil_1" } do
+		truthy(ArtAtlas.sprites["kraken/" .. name], "no kraken/" .. name)
+	end
 	-- what the board shows on a tile: every card placed on it, every map feature (and
 	-- the newest maps' cracked ice, open water, cogs and drawbridges), the Start, the
 	-- treasure, a gated shortcut, embers. A tile turns into a face, in both tile shapes;

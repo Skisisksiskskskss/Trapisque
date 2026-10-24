@@ -13,13 +13,13 @@ playing pieces that art/pieces.py writes) is rendered to PNG and packed into a f
 
 Each SVG says its own pixel size with width= and height= (the viewBox is whatever was
 easiest to draw in). A sprite's name is its group and file name: "props/palm",
-"ground/tuft", "portraits/mage", "pieces/paint_mage". Needs cairosvg, Pillow and zstandard
+"ground/tuft", "emblems/mage", "cards/spike", "kraken/arm_0", "pieces/paint_mage". Needs cairosvg, Pillow and zstandard
 (pip install cairosvg pillow zstandard).
 
 Sprites are trimmed to what's drawn (the atlas keeps where that sits in the full
 canvas, so the game still places it by the canvas) and packed skyline-style: the props
-and portraits share the "scenery" sheets, the pieces have their own (so changing a prop
-only moves the scenery sheets).
+share the "scenery" sheets, the pieces theirs, the emblems, cards and the Kraken the
+"icons" ones (so changing a prop only moves the scenery sheets).
 """
 import importlib.util
 import io
@@ -39,12 +39,14 @@ SHEET = 1024
 PAD = 4  # transparent pixels around every sprite, so filtering never bleeds a neighbour in
 STRIP = 256  # rows per strip of a sheet's pixels in ArtData (each unpacks to 1 MB at most)
 
-# the groups (a folder of SVGs and/or a generator, art/<group>.py), and which share runs of
-# sheets: the props, the ground's little things and the portraits together, the pieces
-# and what the board shows on its tiles (art/items.py: things on a tile; art/tiles.py:
-# what a tile turns into, and what stands across the trail facing it)
-GROUPS = ["props", "ground", "portraits", "pieces", "items", "tiles"]
-RUNS = [("scenery", ["props", "ground", "portraits"]), ("pieces", ["pieces", "items", "tiles"])]
+# the groups (a folder of SVGs or PNGs and/or a generator, art/<group>.py), and which share
+# runs of sheets: the props, the ground's little things and the maps' pictures (art/maps:
+# the map vote's, drawn by the game itself: tools/shots.sh thumbs) together; the pieces and what the
+# board shows on its tiles (art/items.py: things on a tile; art/tiles.py: what a tile
+# turns into, and what stands across the trail facing it); the characters' emblems and
+# the cards' icons (art/emblems.py, art/cards.py) with the Kraken's frames (art/kraken.py)
+GROUPS = ["props", "ground", "maps", "pieces", "items", "tiles", "emblems", "cards", "kraken"]
+RUNS = [("scenery", ["props", "ground", "maps"]), ("pieces", ["pieces", "items", "tiles"]), ("icons", ["emblems", "cards", "kraken"])]
 
 
 def svg_size(svg: str):
@@ -82,6 +84,9 @@ def collect():
                 if f.endswith(".svg"):
                     with open(os.path.join(folder, f), encoding="utf-8") as fh:
                         items.append((f[:-4], fh.read()))
+                elif f.endswith(".png"):
+                    img = Image.open(os.path.join(folder, f)).convert("RGBA")
+                    sprites.append((group, f"{group}/{f[:-4]}", (img, (0, 0), img.size)))
         items += generated(group)
         for name, svg in items:
             w, h = svg_size(svg)

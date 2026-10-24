@@ -23,6 +23,7 @@ local Theme = require(UI.Theme)
 local Icons = require(UI.Icons)
 local Widgets = require(UI.Widgets)
 local Avatars = require(UI.Avatars)
+local CosmeticArt = require(UI.CosmeticArt)
 local Layout = require(UI.Layout)
 local Sound = require(UI.Parent.Sound)
 local Net = require(UI.Parent.Net)
@@ -53,8 +54,9 @@ local function row(list: Frame, i: number, r, mine: boolean, isTeam: boolean, na
 		align = "center",
 		sizeUDim = UDim2.fromOffset(52, 52),
 	})
-	-- the player's avatar in their seat colour (bots get their character's medallion)
-	Avatars.portrait(f, { userId = r.userId, character = r.character, isBot = r.isBot }, {
+	-- the player's avatar in their seat colour (bots get the emblem their character wears)
+	local emblem = r.character and CosmeticArt.emblemId(r.character, r.look and r.look.emblems)
+	Avatars.portrait(f, { userId = r.userId, character = r.character, isBot = r.isBot, emblem = emblem }, {
 		AnchorPoint = Vector2.new(0, 0.5),
 		Position = UDim2.new(0, 52, 0.5, 0),
 		Size = UDim2.fromOffset(42, 42),
@@ -334,8 +336,8 @@ function Results.show(layer: Instance, data, mySeat: number, isTeam: boolean, on
 					table.insert(extra, "New title!")
 					local _ = id
 				end
-				if mastery.outfit then
-					table.insert(extra, "Gilded outfit!")
+				if mastery.emblem then
+					table.insert(extra, "Gilded emblem!")
 				end
 				Widgets.label(f, {
 					text = if #extra > 0 then table.concat(extra, "  ·  ") else "Character mastery",

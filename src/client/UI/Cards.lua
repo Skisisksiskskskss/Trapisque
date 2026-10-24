@@ -1,11 +1,12 @@
 --[[
 	Cards
 	Trapisque's cards. The front is white card stock: the name on a band of the card's
-	category colour, its illustration (StickerArt) on a light tint of that colour, and
-	the kind of card along the bottom. The back is the same stock with the rules.
+	category colour, its badge (art/cards.py; a character's emblem, art/emblems.py) on a
+	light tint of that colour, and the kind of card along the bottom. The back is the
+	same stock with the rules.
 
 	Cards.item(parent, itemId, props)        -> card object (front, can flip to back)
-	Cards.character(parent, characterId, props)
+	Cards.character(parent, characterId, props)   -- (or "mage:ghost": in that emblem)
 	card:flip() / card:showBack(bool) / card.root
 ]]
 
@@ -35,7 +36,7 @@ local CATEGORY_LABEL = {
 }
 Cards.CATEGORY_LABEL = CATEGORY_LABEL
 
--- The illustration for a card (sticker art), or nil.
+-- The code-drawn stand-in for a card's badge (sticker art), or nil.
 function Cards.art(itemId: string)
 	return StickerArt.cards[itemId]
 end
@@ -116,8 +117,9 @@ local function slab(parent: Instance, color: Color3, band: boolean?): (Frame, Fr
 	return holder, face
 end
 
--- The tinted window, and the art in it.
-local function window(face: Frame, color: Color3, ops: { any }?)
+-- The tinted window, and the art in it: a badge (`badge`: a card's id, or a character's
+-- emblem "mage:ghost"), else the sticker ops.
+local function window(face: Frame, color: Color3, ops: { any }?, badge: string?)
 	local W = CardStyle.window
 	local win = Util.new("Frame", {
 		Name = "Window",
@@ -129,8 +131,26 @@ local function window(face: Frame, color: Color3, ops: { any }?)
 		Parent = face,
 	})
 	Util.new("UICorner", { CornerRadius = UDim.new(W.corner, 0), Parent = win })
-	if ops then
-		local I = CardStyle.icon
+	local I = CardStyle.icon
+	local sprite = if badge == nil then nil elseif Theme.Character[Icons.splitEmblem(badge)] then Icons.emblemSprite(badge) else "cards/" .. badge
+	if sprite and Art.has(sprite) then
+		Art.image(face, sprite, {
+			Name = "Art",
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(I.cx, I.cy),
+			Size = UDim2.fromScale(I.size, I.size),
+			SizeConstraint = Enum.SizeConstraint.RelativeXX,
+			ZIndex = 4,
+		})
+	elseif badge and Theme.Character[Icons.splitEmblem(badge)] then
+		Icons.emblem(face, badge, {
+			Name = "Art",
+			Position = UDim2.fromScale(I.cx, I.cy),
+			Size = UDim2.fromScale(I.size * 0.9, I.size * 0.9),
+			SizeConstraint = Enum.SizeConstraint.RelativeXX,
+			ZIndex = 4,
+		})
+	elseif ops then
 		local art = Icons.sticker(face, ops, {
 			Name = "Art",
 			AnchorPoint = Vector2.new(0.5, 0.5),
@@ -348,7 +368,7 @@ function Cards.item(parent: Instance?, itemId: string, props: { [string]: any }?
 	local front, face = slab(flipper, color, true)
 	front.Name = "Front"
 	topTag(face, CATEGORY_LABEL[category] or "", root, color)
-	window(face, color, Cards.art(itemId))
+	window(face, color, Cards.art(itemId), itemId)
 	nameLine(face, def.name, root, color, def.nick)
 
 	-- back
@@ -358,9 +378,9 @@ function Cards.item(parent: Instance?, itemId: string, props: { [string]: any }?
 	return makeCardObject(root, flipper, front, back)
 end
 
--- (`portraitId` is a character, or one in an outfit: "mage:ghost")
-function Cards.character(parent: Instance?, portraitId: string, props: { [string]: any }?)
-	local characterId = Icons.splitPortrait(portraitId)
+-- (`emblemId` is a character, or one wearing another emblem: "mage:ghost")
+function Cards.character(parent: Instance?, emblemId: string, props: { [string]: any }?)
+	local characterId = Icons.splitEmblem(emblemId)
 	local def = Characters.get(characterId)
 	assert(def, "Cards: unknown character " .. tostring(characterId))
 	local root, flipper = newCard(parent, props)
@@ -370,24 +390,7 @@ function Cards.character(parent: Instance?, portraitId: string, props: { [string
 	local front, face = slab(flipper, color, true)
 	front.Name = "Front"
 	topTag(face, if def.ability then def.ability.name else "", root, color)
-	local portrait = Icons.portraitSprite(portraitId)
-	local win = window(face, color, if Art.has(portrait) then nil else StickerArt.mascot(characterId))
-	if Art.has(portrait) then
-		-- their illustrated portrait, cropped to the window
-		local crop = Util.new("CanvasGroup", {
-			Name = "Portrait",
-			BackgroundTransparency = 1,
-			Size = UDim2.fromScale(1, 1),
-			ZIndex = 4,
-			Parent = win,
-		})
-		Util.new("UICorner", { CornerRadius = UDim.new(CardStyle.window.corner, 0), Parent = crop })
-		Art.image(crop, portrait, {
-			AnchorPoint = Vector2.new(0.5, 1),
-			Position = UDim2.fromScale(0.5, 1),
-			ZIndex = 4,
-		})
-	end
+	window(face, color, nil, emblemId)
 	nameLine(face, def.name, root, color)
 
 	local sections = { { def.passiveName or "Passive", def.passive, "0.24" } }

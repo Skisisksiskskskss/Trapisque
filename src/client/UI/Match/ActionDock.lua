@@ -11,7 +11,7 @@
 	the tray shows their dice, so you can see what they chose. RECALL joins the tray when
 	you've dropped a time anchor.
 
-	The Power panel: your mascot, a Power bar as long as your ability costs, and the
+	The Power panel: your emblem, a Power bar as long as your ability costs, and the
 	ability button, which lights up when the bar is full.
 
 		local dock = ActionDock.new(parent, { character = "mage", touch = bool })
@@ -23,7 +23,7 @@
 		dock:setRecall(show, enabled)
 		dock:setClock(secondsLeft?)
 		dock:clearSelection()
-		dock.onDie(key), dock.onDieHover(key?), dock.onAbility(), dock.onRecall(), dock.onPortrait()
+		dock.onDie(key), dock.onDieHover(key?), dock.onAbility(), dock.onRecall(), dock.onEmblem()
 
 	A die's key is its number in the roll (1, 2, 3) or "sum" for doubles' TOTAL.
 ]]
@@ -63,6 +63,7 @@ local DIE_KEYS = { "Q", "W", "E" }
 function ActionDock.new(parent: Instance, opts)
 	local self = setmetatable({}, ActionDock)
 	self.character = opts.character
+	self.emblem = opts.emblem -- (the emblem they wear: "mage:ghost")
 	self.touch = opts.touch == true
 	self.def = Characters.get(self.character or "")
 	self.abilityRoot = Util.frame(parent, { Name = "Ability" })
@@ -138,9 +139,9 @@ function ActionDock:_buildPower(r, form: string)
 	self.bar = nil
 	self.powerLabel = nil
 
-	local function portrait(size: number, x: number, y: number)
+	local function emblem(size: number, x: number, y: number)
 		local p = Util.new("TextButton", {
-			Name = "Portrait",
+			Name = "Emblem",
 			Text = "",
 			AutoButtonColor = false,
 			BackgroundTransparency = 1,
@@ -149,10 +150,10 @@ function ActionDock:_buildPower(r, form: string)
 			ZIndex = 2,
 			Parent = box,
 		})
-		Icons.medallion(p, self.portrait or self.character or "info", color, { Size = UDim2.fromScale(1, 1), ZIndex = 2 })
+		Icons.medallion(p, self.emblem or self.character or "info", color, { Size = UDim2.fromScale(1, 1), ZIndex = 2 })
 		p.Activated:Connect(function()
-			if self.onPortrait then
-				self.onPortrait()
+			if self.onEmblem then
+				self.onEmblem()
 			end
 		end)
 		p.MouseEnter:Connect(function()
@@ -185,7 +186,7 @@ function ActionDock:_buildPower(r, form: string)
 	if form == "wide" then
 		slab(box, C.panel, 16)
 		local ps = math.min(70, r.h - 50)
-		portrait(ps, 10, 10)
+		emblem(ps, 10, 10)
 		local tx = ps + 20
 		Widgets.label(box, {
 			name = "Name",
@@ -214,7 +215,7 @@ function ActionDock:_buildPower(r, form: string)
 		end
 	elseif form == "short" then
 		local ps = math.min(38, r.h - 34)
-		portrait(ps, 0, 0)
+		emblem(ps, 0, 0)
 		self.bar = self:_bar(box, ps + 6, math.floor((ps - 14) / 2), r.w - ps - 6, 14)
 		if ability then
 			self.abilityButton = abilityButton(0, ps + 4, r.w, math.max(30, r.h - ps - 4), 15)

@@ -2,7 +2,10 @@
 	The maps on their own (no match): every map, lying down and stood up for upright
 	phones, with a few tokens, hazards and pieces on it (in a few finishes, two on their
 	mastery stands). For checking the map art quickly: tools/shots.sh boards. SMOKE.only
-	picks one map and SMOKE.orient ("flat", "upright" or "both") which way it lies.
+	picks one map and SMOKE.orient ("flat", "upright" or "both") which way it lies;
+	SMOKE.slam (seconds) also shoots Kraken's Reach that long into the Kraken's strike.
+	SMOKE.thumbs: just the maps, bare (no pieces, cards or tokens), lying down, shot as
+	"<map id>": the map vote's pictures (tools/shots.sh thumbs).
 ]]
 
 local F = Fake
@@ -37,6 +40,25 @@ for _, def in Maps.list do
 			holder.Parent = gui
 			local view = BoardView.new(holder, def.id, { rotate = rotate, mySeat = 1 })
 			view:setFocus({ x = 20, y = 20, w = w - 40, h = h - 40 }, true)
+			if cfg.thumbs then
+				view:applySnapshot({ players = {}, tokens = {}, placed = {}, natural = (function()
+					local list = {}
+					for tile, kind in Board.get(def).naturalInit do
+						table.insert(list, { tile = tile, kind = kind })
+					end
+					return list
+				end)(), embers = {}, gears = def.gears, bridges = (function()
+					local list = {}
+					for i, tiles in def.drawbridges or {} do
+						table.insert(list, { tiles = tiles, up = i == 1 })
+					end
+					return list
+				end)() })
+				F.run(0.5)
+				F.shot(def.id)
+				holder:Destroy()
+				continue
+			end
 			local board = Board.get(def)
 			local snap: any = { players = {}, tokens = {}, placed = {}, natural = {}, embers = {} }
 					-- the newest maps' own things: the Kraken's mark, the drawbridges (one up, one
@@ -154,6 +176,11 @@ for _, def in Maps.list do
 			view:setCurrent(1)
 			F.run(0.5)
 			F.shot("board-" .. def.id .. (if rotate then "-upright" else ""))
+			if def.kraken and cfg.slam then
+				task.spawn(view.krakenSlam, view, 1)
+				F.run(cfg.slam)
+				F.shot("board-" .. def.id .. (if rotate then "-upright" else "") .. "-slam")
+			end
 			holder:Destroy()
 		end
 	end

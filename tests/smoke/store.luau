@@ -18,6 +18,7 @@ local Util = requireModule("Client/UI/Util")
 local Widgets = requireModule("Client/UI/Widgets")
 local CosmeticArt = requireModule("Client/UI/CosmeticArt")
 local Art = requireModule("Client/UI/Art")
+local PieceArt = requireModule("Client/UI/PieceArt")
 -- the illustrations come straight from the sheet files (art/sheets)
 Art.localSheets = true
 local BoardView = requireModule("Client/UI/Match/BoardView")
@@ -76,11 +77,13 @@ if not badgesOnly then
 	F.setScreen({ w = 512, h = 512, inset = 0 })
 	local gui = screenGui("Icon")
 	local bg = sea(gui, 512, 512, 10)
-	-- the Fire Starter (behind, right) and the Mage (in front, left, his staff on the
-	-- outside), big enough to read at the size Roblox shows icons, their shoulders running
-	-- off the bottom
-	Art.label(bg, "portraits/fire_starter", Vector2.new(400, 300), 470, false, { ZIndex = 5 })
-	Art.label(bg, "portraits/mage", Vector2.new(196, 316), 540, true, { ZIndex = 8 })
+	-- two of the crew's emblems, big enough to read at the size Roblox shows icons: the
+	-- Fire Starter's flame (behind, right) and the Mage's snowflake (in front, left), each
+	-- with its playing piece standing by it
+	Art.label(bg, "emblems/fire_starter", Vector2.new(352, 196), 250, false, { ZIndex = 5, Rotation = 10 })
+	Art.label(bg, "emblems/mage", Vector2.new(170, 232), 290, false, { ZIndex = 8, Rotation = -8 })
+	PieceArt.icon(bg, "fire_starter", "fin_paint", { Position = UDim2.fromOffset(372, 250), Size = UDim2.fromOffset(110, 138), ZIndex = 9 })
+	PieceArt.icon(bg, "mage", "fin_gold", { Position = UDim2.fromOffset(26, 262), Size = UDim2.fromOffset(110, 138), ZIndex = 10 })
 	-- a band of shade the name sits on
 	Util.new("Frame", {
 		Name = "Band",
@@ -170,19 +173,21 @@ if not badgesOnly then
 		})
 		CosmeticArt.preview(die, if i == 1 then "dice_doubloon" else "dice_ivory", nil, { Size = UDim2.fromScale(1, 1), ZIndex = 46 })
 	end
-	-- the whole crew along the bottom, four either side of the treasure (the back row a
-	-- little higher)
+	-- the whole crew along the bottom, four either side of the treasure: each one's
+	-- playing piece standing in front of their emblem (the back row a little higher)
 	local crew = { "mage", "trapper", "fire_starter", "naturalist", "warper", "overseer", "gambler", "cannoneer" }
 	for i, id in crew do
 		local left = i <= 4
 		local k = if left then i - 1 else i - 5
 		local x = if left then 130 + k * 190 else W - 130 - (3 - k) * 190
 		local back = k % 2 == 1
-		Art.image(root, "portraits/" .. id, {
+		local y = H - (if back then 250 else 200)
+		Art.label(root, "emblems/" .. id, Vector2.new(x, y), if back then 190 else 210, false, { ZIndex = if back then 50 else 60 })
+		PieceArt.icon(root, id, if i == 3 then "fin_gold" else "fin_paint", {
 			AnchorPoint = Vector2.new(0.5, 1),
-			Position = UDim2.fromOffset(x, H + (if back then 20 else 60)),
-			Size = UDim2.fromOffset(if back then 340 else 380, if back then 340 else 380),
-			ZIndex = if back then 50 else 60,
+			Position = UDim2.fromOffset(x + 70, H - (if back then 40 else 10)),
+			Size = UDim2.fromOffset(if back then 104 else 120, if back then 130 else 150),
+			ZIndex = if back then 51 else 61,
 		})
 	end
 	F.run(0.5)

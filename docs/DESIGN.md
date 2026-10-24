@@ -286,10 +286,20 @@ so every screen comes out of the same kit:
 - **Less on the board.** A handful of props per map, a number on every fifth tile
   only, no stray islets or decorative marks.
 - **Playing pieces, not figures.** Each player is a piece shaped like a pawn, in their
-  character's colour, with the character's emblem on top (the Mage's hat, the
+  character's colour, with the character's symbol on top (the Mage's ice star, the
   Trapper's trap, the Fire Starter's flame...). It reads from across the board the way
   a real board game's pieces do, and a mastery stand goes under it at mastery 5 (gold
-  at 10). The pirates themselves stay on the cards, the portraits and the results.
+  at 10).
+- **Emblems, not faces.** The characters have no faces anywhere: on the cards, the
+  chips, the ability panel and the results each one is an emblem, a round badge with a
+  symbol of theirs on a field of their colour (the Mage's snowflake, the Trapper's bear
+  trap, the Fire Starter's flame, the Naturalist's sprout, the Warper's spiral, the
+  Overseer's spyglass, the Gambler's dice, the Cannoneer's cannonball). Each also has a
+  Ghost Crew emblem (from Treasure Chests: another symbol of theirs, glowing mint on a
+  dark field with a wispy rim) and a Gilded one (mastery 8: another symbol in gold on a
+  deep field of their colour, a sunburst rim and a gem), in place of the portrait
+  outfits; saves that had an outfit have that set's emblem. The cards are badges in
+  the same style, each in its category's colour (`art/emblems.py`, `art/cards.py`).
 - **Finishes instead of accessory packs:** what your piece is made of (oak, clay,
   pearl, marble, sea glass, porcelain, metallic, obsidian, solid gold, crystal,
   glowstone; Royal and Admiralty from the passes), always in your character's colour,
@@ -306,7 +316,7 @@ cannons, mangroves) are placed clear of the trail. The board graph (tile count,
 shortcuts, hazards) is the rulebook's, so none of this touches balance.
 
 **Illustrations where shapes from code looked machine-made.** The pieces, the props
-and landmarks, and the portraits used to be assembled at runtime from circles and
+and landmarks, and the character art used to be assembled at runtime from circles and
 rectangles; up close they looked like it (a coastline of scalloped discs, a palm made
 of three ellipses, flat green circles for jungle). They're now illustrations in one
 style (smooth shapes lit from the upper left, outlines in a darker shade of each
@@ -350,13 +360,27 @@ them; tokens are chips standing over their tiles. A card on the board is ringed 
 owner's colour. A hidden trap shows only to whoever may see it (see-through, in its
 owner's ring); for everyone else its tile is untouched.
 
-**Portraits: simple and flat.** The first illustrated portraits shared one face with
-the costume changed; a detailed three-quarter redraw read as more realistic rather than
-more fun. They're now a flat cartoon style: chunky shapes in flat colour, dot eyes, bar
-brows, at most one flat shadow, front on. The eight are told apart by their head's
-shape, their hat and hair, a face (the Fire Starter's wink and grin, the Trapper's
-squint and smirk, the Overseer's stern brow) and what they carry (a match, a card, a
-cannonball, a parrot on the Naturalist's shoulder).
+**No faces: emblems.** The portraits went through three styles (one shared face in
+different costumes; a detailed three-quarter redraw that read as more realistic, not
+more fun; a flat cartoon) before the characters lost their faces altogether. An emblem
+reads at 24 pixels on a chip as well as at 200 on a card, matches the symbol on the
+piece, and leaves the board's only faces to the Kraken and the Grog.
+
+**The Kraken is a creature, not a sticker.** Kraken's Reach's arm is drawn as frames
+(`art/kraken.py`: a tube of shaded discs along a curve in 3D, seen from the board's
+angle): it rises out of the water beside its mark (never out of the land, and never in
+front of a tile or whoever is on it), sways there for the round, then rears back,
+arches over and slams down across the mark in a burst of dust, and sinks. Its head
+sits in the whirlpool in the middle of the lagoon: it watches the mark, blinks now and
+then, and glares as it strikes; a few of its arms loop out of the water round it.
+
+**A vote you can read at a glance.** The map vote shows each map as a picture of the
+real board (`art/maps`, drawn by the game itself), with what it does to you in a few
+words and the card that gets you past it; everyone's vote is their emblem on the card,
+and a bar runs down to the deadline. Its cards are placed one by one rather than by a
+grid that fills a row exactly (Roblox wraps such a grid a cell early now and then:
+that's what hid Clockwork Cove, the ninth button, from the practice and private map
+pickers).
 
 ## 6. Talking at the table
 

@@ -44,8 +44,8 @@ Progress.masteryMax = #Progress.masteryLevels
 -- Rewards for reaching a mastery level: gems, and a title at 3, 6 and 10.
 Progress.masteryTitles = { [3] = "fan", [6] = "pro", [10] = "legend" }
 Progress.masteryTitleName = { fan = "Fan", pro = "Pro", legend = "Legend" }
--- The mastery level that dresses a character in their Gilded outfit (Cosmetics).
-Progress.OutfitMastery = 8
+-- The mastery level that earns a character their Gilded emblem (Cosmetics).
+Progress.EmblemMastery = 8
 
 -- Each character's own base (the stand under them on the board): it appears at
 -- mastery 5 and turns gold at mastery 10. 0 = none yet, 1 = the base, 2 = gilded.

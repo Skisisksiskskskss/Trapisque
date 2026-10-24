@@ -368,7 +368,7 @@ MapScenes.kraken = {
 		land = { { "coral", 4 }, { "barnacle", 2 }, { "palm", 2 }, { "bones", 1 }, { "anchor", 1 } },
 		landCount = 7,
 		grove = "palm",
-		water = { { "tentacle", 3 }, { "rock", 2 }, { "mast", 1 } },
+		water = { { "rock", 3 }, { "mast", 1 } },
 		waterCount = 3,
 	},
 	landmarks = {

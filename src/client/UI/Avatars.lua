@@ -4,7 +4,8 @@
 	ids aren't real) get their character's emblem instead, so every seat has a face.
 
 		Avatars.portrait(parent, info, props) -> Frame
-			info = { userId, character, isBot, name }   props go on the root frame
+			info = { userId, character, isBot, name, emblem? }   props go on the root frame
+			(emblem: the one the character wears, "mage:ghost"; Classic if none)
 ]]
 
 local UI = script.Parent
@@ -65,7 +66,7 @@ function Avatars.portrait(parent: Instance?, info, props: { [string]: any }?, op
 	else
 		local character = info and info.character or "info"
 		local color = Theme.Character[character] or C.textFaint
-		Icons.medallion(root, character, color, { Size = UDim2.fromScale(1, 1), ZIndex = 2 })
+		Icons.medallion(root, info and info.emblem or character, color, { Size = UDim2.fromScale(1, 1), ZIndex = 2 })
 	end
 	if o.ring then
 		local ring = Util.new("Frame", {

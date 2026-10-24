@@ -67,12 +67,12 @@ function CosmeticArt.characterBadge(parent: Instance, character: string, props: 
 end
 
 --[[
-	The portrait to draw for `character` in someone's outfit: "mage", or "mage:ghost".
-	`outfits` is their equipped outfits ([character] = outfit id), from a look or a profile.
+	The emblem to draw for `character` as someone wears it: "mage", or "mage:ghost".
+	`emblems` is their equipped emblems ([character] = emblem id), from a look or a profile.
 ]]
-function CosmeticArt.portraitId(character: string, outfits: { [string]: string }?): string
-	local def = Cosmetics.get(Cosmetics.outfitOf(outfits, character))
-	return if def and def.look and def.look.portrait then def.look.portrait else character
+function CosmeticArt.emblemId(character: string, emblems: { [string]: string }?): string
+	local def = Cosmetics.get(Cosmetics.emblemOf(emblems, character))
+	return if def and def.look and def.look.emblem then def.look.emblem else character
 end
 
 ---------------------------------------------------------------------------
@@ -336,11 +336,10 @@ function CosmeticArt.preview(parent: Instance, itemId: string, _seatColor: Color
 		})
 	elseif def.category == "dice" then
 		CosmeticArt.die(holder, itemId, 5, { Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromScale(0.7, 0.7) })
-	elseif def.category == "outfit" then
-		-- the character in it
-		Icons.medallion(holder, def.look.portrait, Theme.Character[def.character] or Theme.C.grape, {
+	elseif def.category == "emblem" then
+		Icons.emblem(holder, def.look.emblem, {
 			Position = UDim2.fromScale(0.5, 0.5),
-			Size = UDim2.fromScale(0.82, 0.82),
+			Size = UDim2.fromScale(0.86, 0.86),
 		})
 	elseif def.category == "trail" then
 		local look = def.look

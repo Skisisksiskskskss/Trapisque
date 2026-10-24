@@ -84,12 +84,12 @@ local function botLook()
 		vip = false,
 		-- a few bots have played their character a lot
 		base = if random:NextNumber() < 0.2 then 1 else 0,
-		-- and a few dress up (whichever character they end up with)
-		outfits = (function()
+		-- and a few wear another emblem (whichever character they end up with)
+		emblems = (function()
 			local out = {}
 			if random:NextNumber() < 0.25 then
 				local set = if random:NextNumber() < 0.6 then "ghost" else "gilded"
-				for _, def in Cosmetics.byCategory.outfit do
+				for _, def in Cosmetics.byCategory.emblem do
 					if def.set == set then
 						out[def.character] = def.id
 					end
