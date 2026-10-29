@@ -81,6 +81,8 @@ local function newProfile()
 		badges = {}, -- [badge key] = when it was earned (Meta/Badges)
 		fish = {}, -- [catch id] = how many (the fish log, Meta/Fishing)
 		fishBest = {}, -- [catch id] = the biggest one landed, in centimetres
+		fishGems = 0, -- Gems from fishing today (Fishing.GemsPerDay at most)
+		fishGemsDay = 0, -- which day that was (days since 1970, UTC)
 		tutorialDone = false, -- finished (or skipped) the guided first match
 		groupReward = false, -- claimed the join-the-group Gems
 		deals = { day = -1, bought = {} }, -- today's daily deals already bought
@@ -241,8 +243,25 @@ local function ownsPass(player: Player, passKey: string): boolean
 	return ok and owns == true
 end
 
+-- Titles earned by deeds (Cosmetics: deed = { stat, goal }) that the profile's
+-- lifetime stats have reached and it doesn't own yet: grants them, returns their ids.
+local function applyDeeds(data): { string }
+	local earned = {}
+	for _, id in Cosmetics.fromSource("deed") do
+		local def = Cosmetics.get(id)
+		local deed = def and def.deed
+		if deed and not data.owned[id] and (data.stats[deed.stat] or 0) >= deed.goal then
+			data.owned[id] = true
+			table.insert(earned, id)
+		end
+	end
+	return earned
+end
+DataService.applyDeeds = applyDeeds
+
 local function grantPassPerks(prof)
 	local data = prof.data
+	applyDeeds(data)
 	if prof.passes.VIP then
 		for _, id in Cosmetics.fromSource("vip") do
 			data.owned[id] = true
@@ -790,6 +809,23 @@ function DataService.voiceOf(player: Player): string
 	return "auto"
 end
 
+-- Gems from fishing, up to Fishing.GemsPerDay a day (UTC). Returns how many were given.
+function DataService.addFishGems(player: Player, amount: number): number
+	local data = DataService.get(player)
+	if not data or amount <= 0 then
+		return 0
+	end
+	local day = os.time() // 86400
+	if data.fishGemsDay ~= day then
+		data.fishGemsDay = day
+		data.fishGems = 0
+	end
+	local give = math.max(0, math.min(math.floor(amount), Fishing.GemsPerDay - (data.fishGems or 0)))
+	data.fishGems = (data.fishGems or 0) + give
+	data.gems += give
+	return give
+end
+
 function DataService.addGems(player: Player, amount: number)
 	local data = DataService.get(player)
 	if data then
@@ -1045,6 +1081,7 @@ function DataService.applyMatchResult(player: Player, result)
 	local mastery = applyMastery(data, result)
 	local quests = applyQuests(player, data, result)
 	local trophies = applyTrophies(data, result)
+	local deeds = applyDeeds(data)
 
 	-- characters that unlocked with this level-up
 	local unlocked = {}
@@ -1063,6 +1100,7 @@ function DataService.applyMatchResult(player: Player, result)
 		mastery = mastery,
 		quests = quests,
 		trophies = trophies,
+		deeds = if #deeds > 0 then deeds else nil,
 		unlocked = unlocked,
 		tutorialGems = if tutorialGems > 0 then tutorialGems else nil,
 	}

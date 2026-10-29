@@ -69,11 +69,14 @@ rendered offline (see [Screenshots](#screenshots)).
   the shadow under the bobber (how big it is), leave the nibbles alone and tap fast on
   the real bite to hook it. Then it fights: tap whenever the needle sweeping the meter
   is over the green, a notch at a time (rarer fish need more notches, with a smaller
-  green and a faster needle); three taps off the green and the line snaps. Every map
-  has its own fish (three each, plus a few found anywhere and the Golden Fish); the fish
-  log keeps your biggest of each and shows where each one lives. Filling half of it
-  earns the Fish School trail, all of it the Master Angler title. Now and then you land
-  a coin for the match.
+  green and a faster needle, and a whopper of its kind fights harder still); three taps
+  off the green and the line snaps. Every catch pays: Gems (1 for a common fish up to 25
+  for the Golden Fish, plus 5 for a species new to your log, up to 60 a day) and, for
+  the better fish, Power for your ability in the match. Every map has its own fish
+  (three each, plus a few found anywhere and the Golden Fish); the fish log keeps your
+  biggest of each and shows where each one lives. Filling half of it earns the Fish
+  School trail, all of it the Master Angler title. Now and then you land a coin for the
+  match.
 - **Rematch.** The results screen has a Rematch button: once everyone still at the
   table asks, the same players go again on the same map, straight away.
 - **Watch a friend.** Friends in a match show up under WATCH in the party panel; you
@@ -81,6 +84,13 @@ rendered offline (see [Screenshots](#screenshots)).
 - **Badges.** Twenty Roblox badges for moments, not grinding: a Gotcha Hat Trick, Snake
   Eyes, getting scared by a ghost, the Golden Fish, playing with the owner... with a
   Collection page for your badges and fish log.
+- **Titles with their own look.** Every title sits on its own plate (wood, iron, brass,
+  parchment, a ribbon, glowing fog, bone, ice, flame...) with an illustrated badge.
+  Some come from chests or passes; deed titles are earned by playing: Sea Dog (25
+  matches), Treasure Hunter (10 wins), Fleet Admiral (50 wins), Bonkmaster (50 bonks),
+  Trap Lord (25 gotchas), Hoarder of Gold (25 treasures), Master Rigger (100 traps and
+  pieces set), Walked the Plank (sent back to the Start 25 times). The Locker shows the
+  deeds you haven't done yet, faded, with what they take.
 - **Reasons to come back.** Character mastery (levels, Gems, titles, and the
   character's own base to stand on in matches at mastery 5, gilded at 10), three daily
   quests (with a free swap and a bonus chest), a 7-day login streak, trophies and ranks

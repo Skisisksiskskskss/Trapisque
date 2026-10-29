@@ -402,10 +402,10 @@ local function stream(parent: Instance, L, U: number, r, look, z: number, name: 
 				})
 				ellipse(parent, top + Vector2.new(0, drop), w * 1.5, w * 0.5, look.splash, z + 1, name .. "Splash")
 			else
-				-- it runs on into the sea a little way
+				-- it runs on into the sea a little way (lava cools there into dark rock)
 				for _, q in e.sea do
 					if depth(q.x, q.y) > -0.6 then
-						disc(parent, L, U, q.x, q.y, q.r + CUT.fill[1], look.fill, z + 1, name .. "Mouth", 0, CUT.fill[3])
+						disc(parent, L, U, q.x, q.y, (q.r + CUT.fill[1]) * (if look.cooled then 0.8 else 1), look.cooled or look.fill, z + 1, name .. "Mouth", 0, CUT.fill[3])
 					end
 				end
 			end
@@ -420,25 +420,43 @@ local function stream(parent: Instance, L, U: number, r, look, z: number, name: 
 			disc(parent, L, U, c.x, c.y, c.r + ly[1], look[key], z + 1 + i, name .. (if key == "fill" then "" else key), ly[2], ly[3])
 		end
 	end
-	-- lava's hotter middle: two narrower bands down it
-	if look.mid then
-		local off = Vector2.new(0, CUT.fill[3] * U)
-		for _, band in { { 0.55, look.mid, "Mid" }, { 0.26, look.core, "Core" } } do
+	-- down its middle: deeper water, or lava's hotter heart (which breaks up into seams
+	-- here and there, where the crust closes over it)
+	local off = Vector2.new(0, CUT.fill[3] * U)
+	for _, band in { { look.midWidth or 0.56, look.mid, "Mid", false }, { 0.24, look.core, "Core", true } } do
+		if band[2] then
 			for i = 1, #samples - 1 do
 				local a, b = samples[i], samples[i + 1]
-				if a.land and b.land then
-					local w = across(2 * (a.r + CUT.fill[1]) * band[1], a.x, a.y, b.x, b.y) * U
+				local open = not band[4] or math.sin(i * 0.8 + seed) > -0.35
+				if a.land and b.land and open then
+					local k = if band[4] then 0.7 + 0.3 * math.sin(i * 1.9 + seed) else 1
+					local w = across(2 * (a.r + CUT.fill[1]) * band[1] * k, a.x, a.y, b.x, b.y) * U
 					strip(parent, project(L, U, a.x, a.y) + off, project(L, U, b.x, b.y) + off, w, band[2], z + 6, name .. band[3], w * 0.3)
 				end
 			end
 		end
 	end
+	-- little wave strokes on it, like the sea's, first one side then the other
+	if look.ripple then
+		for i = 3, #samples - 1, 4 do
+			local a = samples[i]
+			if a.land then
+				local side = ({ 0.4, -0.15, -0.42, 0.1 })[(i // 4) % 4 + 1]
+				local w = a.r + CUT.fill[1]
+				sprite(parent, L, U, "ground/wave", a.x + a.nx * w * side, a.y + a.ny * w * side - 0.02, 0.42, z + 7, look.ripple, 0.35, true)
+			end
+		end
+	end
 	if look.crust then
+		-- plates of cooling crust riding on the lava, each with a lighter top
 		for i, s in samples do
-			if i % 4 == 2 and s.land then
-				local side = if i % 8 == 2 then 0.42 else -0.38
+			if i % 3 == 1 and s.land then
+				local side = ({ 0.45, -0.4, 0.1 })[(i // 3) % 3 + 1]
 				local w = s.r + CUT.fill[1]
-				disc(parent, L, U, s.x + s.nx * w * side, s.y + s.ny * w * side, 0.06 + 0.025 * ((i * 7) % 3), look.crust, z + 7, name .. "Crust", 0, CUT.fill[3])
+				local size = 0.07 + 0.035 * ((i * 7) % 3)
+				local x, y = s.x + s.nx * w * side, s.y + s.ny * w * side
+				disc(parent, L, U, x, y, size, look.crust, z + 7, name .. "Crust", 0, CUT.fill[3])
+				disc(parent, L, U, x - size * 0.2, y - size * 0.25, size * 0.6, Util.shade(look.crust, 0.18), z + 8, name .. "CrustTop", 0, CUT.fill[3])
 			end
 		end
 	end
@@ -620,27 +638,28 @@ function MapArt.draw(layers: { [string]: Frame }, L, U: number)
 
 	-- rivers and lava streams, cut into the ground in its own colours (lava glows on the
 	-- ground around it)
-	local water = Util.mix(col.shallows, col.water, 0.15)
+	-- (water: a light, shallow rim along the banks rather than a hard line of foam,
+	-- deeper down its middle, ripples showing which way it runs)
+	local water = Util.mix(col.shallows, col.water, 0.3)
+	local riverLook = {
+		width = 0.38,
+		lip = lip,
+		bank = Util.mix(cliff, cliffDark, 0.35),
+		edge = Util.mix(col.shallows, foam, 0.35),
+		fill = water,
+		mid = Util.mix(water, col.water, 0.3),
+		midWidth = 0.66,
+		ripple = foam,
+		splash = foam,
+	}
 	for i, r in L.rivers do
-		stream(trail, L, U, r, {
-			width = 0.38,
-			lip = lip,
-			bank = Util.mix(cliff, cliffDark, 0.35),
-			edge = foam,
-			fill = water,
-			splash = foam,
-		}, 10, "River", depth, i * 1.7)
+		stream(trail, L, U, r, riverLook, 10, "River", depth, i * 1.7)
 	end
 	-- (a canal: the same, a little wider, under the drawbridge)
+	local canalLook = table.clone(riverLook)
+	canalLook.width = 0.46
 	for i, r in L.canals or {} do
-		stream(trail, L, U, r, {
-			width = 0.46,
-			lip = lip,
-			bank = Util.mix(cliff, cliffDark, 0.35),
-			edge = foam,
-			fill = water,
-			splash = foam,
-		}, 10, "Canal", depth, i * 3.1)
+		stream(trail, L, U, r, canalLook, 10, "Canal", depth, i * 3.1)
 	end
 	local lava = col.lava or C.coral
 	local glow = col.lavaGlow or C.sun
@@ -660,6 +679,7 @@ function MapArt.draw(layers: { [string]: Frame }, L, U: number)
 			mid = Util.mix(lava, glow, 0.45),
 			core = glow,
 			crust = hex("4A2016"),
+			cooled = hex("3A2A26"),
 			splash = Util.mix(C.white, col.shallows, 0.3),
 			steam = C.white,
 		}, 10, "Lava", depth, i * 2.3)

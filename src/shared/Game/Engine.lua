@@ -1289,6 +1289,9 @@ function Engine.checkPlacement(board, layers, itemId: string, tile: number, dir:
 	if not ok then
 		return false, why
 	end
+	if def.category == "trap" and (board.dist[tile] or 99) <= (Rules.TreasureGuard or 0) then
+		return false, "Not within " .. tostring(Rules.TreasureGuard) .. " tiles of the treasure."
+	end
 	if itemId == "teleporter" and (board.dist[tile] or 0) < Rules.TeleporterMinDistance then
 		return false, "Teleporters must be at least " .. Rules.TeleporterMinDistance .. " tiles from the treasure."
 	end
@@ -1575,6 +1578,9 @@ end
 		path = { tiles }, tile = landing tile,
 		result = "landed" | "stopped" (river/gate/lava) | "blocked" (wall) | "treasure"
 			| "scared" (walked into a ghost: `flee` is the way back, `tile` its end),
+		bounced = steps walked back from the treasure (it takes an exact count: the steps
+			left over when you reach it take you back the way you came; the path's last
+			`bounced` tiles are those), or nil,
 		uses = { "key" | "bridge" | "boots" | "lantern" | "cloak" | "shield", ... } in
 			order, with the tile,
 		slowed = tile where slime slowed you (or nil), crumbles = { wall tiles passed },
@@ -1653,7 +1659,24 @@ function Engine.walkPlan(state, p, m: number, leap: boolean?)
 			left -= 1
 		end
 		if nxt == board.treasure then
-			plan.result = "treasure"
+			if left == 0 then
+				plan.result = "treasure"
+			else
+				-- too many: back the way you came, as many steps as were left over
+				local trail = {}
+				for _, t in p.trail or { p.tile } do
+					table.insert(trail, t)
+				end
+				for _, t in plan.path do
+					table.insert(trail, t)
+				end
+				local back = math.min(left, #trail - 1)
+				for i = 1, back do
+					cur = trail[#trail - i]
+					table.insert(plan.path, cur)
+				end
+				plan.bounced = back
+			end
 			break
 		end
 		-- a ghost in your way scares you back (a Lantern shines it away)
@@ -1762,7 +1785,20 @@ function Engine:_walk(p, m: number): string
 			end
 		end
 	end
-	for _, tile in plan.path do
+	local forward = #plan.path - (plan.bounced or 0)
+	for i, tile in plan.path do
+		if i > forward then
+			-- bounced off the treasure: back along the trail
+			if i == forward + 1 then
+				flush()
+				self:_emit({ t = "bounce", p = p.index, tile = self.board.treasure, back = plan.bounced })
+			end
+			table.remove(p.trail)
+			p.tile = tile
+			table.insert(path, tile)
+			p.stats.tiles += 1
+			continue
+		end
 		applyUses(tile)
 		p.tile = tile
 		table.insert(p.trail, tile)
@@ -1796,9 +1832,10 @@ end
 function Engine:_shiftForward(p, n: number, kind: string)
 	local board = self.board
 	local path = {}
-	for _ = 1, n do
+	for step = 1, n do
 		local nxt = board.nextMain[p.tile]
-		if not nxt then
+		if not nxt or (self.raised[nxt] and p.character ~= "naturalist") then
+			-- nothing carries you over a raised drawbridge (the Naturalist swims it)
 			break
 		end
 		p.tile = nxt
@@ -1806,7 +1843,13 @@ function Engine:_shiftForward(p, n: number, kind: string)
 		table.insert(path, nxt)
 		if nxt == board.treasure then
 			self:_emit({ t = "move", p = p.index, path = path, kind = kind })
-			self:_reachTreasure(p)
+			if step == n then
+				self:_reachTreasure(p)
+			else
+				-- the treasure takes an exact count: back off it by what's left
+				self:_emit({ t = "bounce", p = p.index, tile = nxt, back = n - step })
+				self:_shiftBack(p, n - step, "bounce")
+			end
 			return
 		end
 	end
@@ -2835,7 +2878,7 @@ function Engine:_cmdAbility(p, cmd)
 		local cur, hit = p.tile, nil
 		for step = 1, cfg.range do
 			cur = self.board.nextMain[cur]
-			if not cur or cur == self.board.treasure then
+			if not cur or cur == self.board.treasure or self.raised[cur] then
 				break
 			end
 			for _, o in self.players do
@@ -2870,6 +2913,17 @@ function Engine:grantCoins(seat: number, n: number, why: string)
 		return {}
 	end
 	self:_addCoins(p, n, why)
+	return self:_flushEvents()
+end
+
+-- Power from outside the rules (a good catch while fishing between turns). Returns the
+-- events to send.
+function Engine:grantPower(seat: number, n: number)
+	local p = self.players[seat]
+	if not p or n <= 0 or self.phase == "over" or self.phase == "setup" or self.rules.abilities == false then
+		return {}
+	end
+	self:_gainPower(p, n)
 	return self:_flushEvents()
 end
 

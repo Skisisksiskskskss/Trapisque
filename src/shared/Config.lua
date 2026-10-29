@@ -21,6 +21,8 @@ Config.Rules = {
 	PotionStock = 6, -- of each potion at the Potion Seller, per match
 
 	TrapRange = 5, -- traps and board pieces go on a tile within this many tiles of you
+	TreasureGuard = 3, -- no hidden traps this close to the treasure (it takes an exact roll,
+	-- so players wait there: a trap on that doorstep would catch them again and again)
 	TrapCap = 3, -- hidden traps you can have out at once (placing another removes your oldest)
 	BonkBack = 2, -- landing on someone knocks them back this many tiles...
 	BonkBounce = 1, -- ...and bounces you forward this many (which keeps players from bunching up)
@@ -86,7 +88,7 @@ Config.Rules = {
 -- Character numbers (Power costs and passives). Tuned with bot simulations so that
 -- every character wins about as often on every map (see tests/balance.luau).
 Config.Characters = {
-	mage = { cost = 8, turns = 1, skate = 1 },
+	mage = { cost = 10, turns = 1, skate = 1 },
 	trapper = { cost = 6, trapCap = 4, bounty = 2 },
 	fire_starter = { cost = 10, blast = 4 },
 	naturalist = { cost = 12, charge = 2, trample = 2 },
@@ -289,6 +291,6 @@ Config.Data = {
 -- In Studio, pretend the player owns every gamepass so all features can be tested.
 Config.StudioOwnsAllPasses = true
 
-Config.Version = "1.2.0"
+Config.Version = "1.3.0"
 
 return Config

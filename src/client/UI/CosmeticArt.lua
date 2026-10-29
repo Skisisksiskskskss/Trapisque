@@ -426,51 +426,227 @@ end
 -- Titles & emotes
 ---------------------------------------------------------------------------
 
--- A title is its text on a small dark nameplate, so every title colour reads the
--- same on parchment and on dark tiles. With `textSize` the plate hugs the text
--- (left-aligned in its parent); without it the plate fills the parent and the
--- text scales to fit.
+-- Titles are plates of something (Cosmetics look.plate): wood, metal, parchment, a
+-- ribbon, glowing fog, bone... each in its own shape and lettering, lit from above and
+-- outlined like the art, with the title's badge (look.icon, art/ui.py) or a
+-- character's emblem (look.emblem) at its left end.
+local PLATES = {
+	scroll = { face = "#F3E2B8", text = "#4A3424", line = "#7A5A36", shape = "scroll" },
+	map = { face = "#E9D29C", text = "#6B2A1C", line = "#7A5A36", shape = "scroll" },
+	plank = { face = "#A8703C", text = "#FFF3DC", line = "#4A2E16", shape = "plank" },
+	driftwood = { face = "#9C8F7E", text = "#FFFFFF", line = "#4A4238", shape = "plank" },
+	mahogany = { face = "#7A3324", text = "#FFD9B0", line = "#2E120A", shape = "plank" },
+	iron = { face = "#4F5563", text = "#EEF1F5", line = "#1E2128", shape = "plaque" },
+	brass = { face = "#D9A441", text = "#3B2A10", line = "#6E4F12", shape = "plaque" },
+	bronze = { face = "#C47A44", text = "#FFF1E0", line = "#5E3315", shape = "plaque" },
+	silver = { face = "#C9D3E6", text = "#26324A", line = "#56627A", shape = "plaque" },
+	verdigris = { face = "#5E9C8A", text = "#F0FFF8", line = "#21463C", shape = "plaque" },
+	gold = { face = "#F2C230", text = "#5A2A08", line = "#8A5A0A", shape = "ribbon" },
+	ribbon = { face = "#C8443A", text = "#FFFFFF", line = "#5E1712", shape = "ribbon" },
+	tide = { face = "#2F8FD0", text = "#FFFFFF", line = "#0E3554", shape = "ribbon" },
+	ghost = { face = "#1E3A34", text = "#BFFFE4", line = "#57E0A8", shape = "ghost" },
+	glass = { face = "#2F7A45", text = "#E9FFD6", line = "#123A1E", shape = "glass" },
+	coral = { face = "#F49AB8", text = "#5A1830", line = "#8E3A5A", shape = "pill" },
+	ice = { face = "#CFEFFF", text = "#1D4B73", line = "#3F8FC0", shape = "ice" },
+	flame = { face = "#FF8A1C", text = "#FFE45C", line = "#3A0A04", shape = "flame" },
+	bone = { face = "#EDE6D3", text = "#2A2620", line = "#6F6656", shape = "bone" },
+	royal = { face = "#5A189A", text = "#FFD60A", line = "#2A0A4A", shape = "royal" },
+	navy = { face = "#24395E", text = "#FFE7A0", line = "#0C1628", shape = "royal" },
+	sea = { face = "#1F6FA8", text = "#E6F7FF", line = "#0E3554", shape = "wave" },
+}
+CosmeticArt.PLATES = PLATES
+local DISPLAY = { ribbon = true, royal = true, flame = true, ghost = true, bone = true, pill = true }
+local CORNER = { scroll = 3, plank = 3, plaque = 5, ribbon = 3, ghost = 10, glass = 8, pill = 0.5, ice = 1, flame = 7, bone = 0.5, royal = 6, wave = 6 }
+
+local function bit(parent: Instance, props: { [string]: any }, corner: number?, stroke: Color3?, width: number?): Frame
+	local f = Util.new("Frame", { BorderSizePixel = 0, ZIndex = 2, Parent = parent })
+	for k, v in props do
+		(f :: any)[k] = v
+	end
+	if corner then
+		Util.corner(f, corner)
+	end
+	if stroke then
+		Util.new("UIStroke", { Color = stroke, Thickness = width or 1.5, Parent = f })
+	end
+	return f
+end
+
+-- what each shape adds to the plate
+local function decorate(plate: Frame, shape: string, face: Color3, line: Color3)
+	if shape == "plank" then
+		for _, y in { 0.34, 0.68 } do
+			bit(plate, { Size = UDim2.new(1, -10, 0, 1), Position = UDim2.new(0, 5, y, 0), BackgroundColor3 = Util.shade(face, -0.4), BackgroundTransparency = 0.55 })
+		end
+	elseif shape == "plaque" then
+		for _, c in { { 0, 0 }, { 1, 0 }, { 0, 1 }, { 1, 1 } } do
+			bit(plate, {
+				AnchorPoint = Vector2.new(c[1], c[2]),
+				Position = UDim2.new(c[1], if c[1] == 0 then 4 else -4, c[2], if c[2] == 0 then 4 else -4),
+				Size = UDim2.fromOffset(4, 4),
+				BackgroundColor3 = Util.shade(face, 0.45),
+				ZIndex = 5,
+			}, 0.5, line, 1)
+		end
+	elseif shape == "ribbon" then
+		-- the ends folded back, peeking out below either side
+		for _, side in { 0, 1 } do
+			bit(plate, {
+				AnchorPoint = Vector2.new(1 - side, 0),
+				Position = UDim2.new(side, 0, 0.32, 0),
+				Size = UDim2.new(0, 10, 0.68, 2),
+				BackgroundColor3 = Util.shade(face, -0.3),
+				ZIndex = 0,
+			}, nil, line, 2)
+		end
+	elseif shape == "scroll" then
+		-- rolled up at either end
+		for _, side in { 0, 1 } do
+			bit(plate, {
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				Position = UDim2.fromScale(side, 0.5),
+				Size = UDim2.new(0, 7, 1, 6),
+				BackgroundColor3 = Util.shade(face, -0.12),
+				ZIndex = 5,
+			}, 3, line, 1.5)
+		end
+	elseif shape == "bone" then
+		-- the knobs of a bone at either end
+		for _, side in { 0, 1 } do
+			for _, y in { 0.2, 0.8 } do
+				bit(plate, {
+					AnchorPoint = Vector2.new(0.5, 0.5),
+					Position = UDim2.new(side, if side == 0 then 2 else -2, y, 0),
+					Size = UDim2.fromScale(0.62, 0.62),
+					SizeConstraint = Enum.SizeConstraint.RelativeYY,
+					BackgroundColor3 = face,
+					ZIndex = 0,
+				}, 0.5, line, 2)
+			end
+		end
+	elseif shape == "glass" then
+		bit(plate, { Size = UDim2.new(1, -14, 0.28, 0), Position = UDim2.fromOffset(7, 3), BackgroundColor3 = Color3.new(1, 1, 1), BackgroundTransparency = 0.72 }, 4)
+	elseif shape == "ice" then
+		for i, x in { 0.82, 0.88 } do
+			bit(plate, {
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				Position = UDim2.fromScale(x, 0.5),
+				Size = UDim2.new(0, if i == 1 then 3 else 2, 1.3, 0),
+				Rotation = 28,
+				BackgroundColor3 = Color3.new(1, 1, 1),
+				BackgroundTransparency = 0.35,
+			})
+		end
+	elseif shape == "royal" then
+		bit(plate, { Size = UDim2.new(1, -6, 1, -6), Position = UDim2.fromOffset(3, 3), BackgroundTransparency = 1 }, 4, hex("#F2C230", face), 1.4)
+	elseif shape == "wave" then
+		for i, y in { 0.74, 0.86 } do
+			bit(plate, { Size = UDim2.new(1, -16, 0, 1), Position = UDim2.new(0, 8, y, 0), BackgroundColor3 = Color3.new(1, 1, 1), BackgroundTransparency = 0.45 + i * 0.15 })
+		end
+	end
+end
+
+-- With `textSize` the plate hugs its words (left-aligned in its parent); without it
+-- the plate fills the parent and the words scale to fit.
 function CosmeticArt.title(parent: Instance, titleId: string?, props: { [string]: any }?, textSize: number?): Frame?
 	local def = Cosmetics.get(titleId or "")
 	if not def or def.look.text == "" then
 		return nil
 	end
+	local look = def.look
+	local P = PLATES[look.plate or ""] or PLATES.scroll
+	local face, ink, line = hex(P.face, Theme.C.panel), hex(P.text, Theme.C.text), hex(P.line, Theme.C.ink)
+	local shape = P.shape
 	local plate = Util.new("Frame", {
 		Name = "Title",
-		BackgroundColor3 = Theme.C.panelDeep,
 		BorderSizePixel = 0,
 		Size = UDim2.fromScale(1, 1),
 	})
-	Util.corner(plate, 6)
-	Util.stroke(plate, Theme.C.line, 2)
+	Util.corner(plate, CORNER[shape] or 4)
+	if shape == "flame" then
+		-- embers below, smouldering dark red above
+		plate.BackgroundColor3 = face
+		Util.grad(plate, { Color3.fromRGB(120, 28, 18), Color3.fromRGB(190, 60, 30), Color3.new(1, 1, 1) }, 90)
+		Util.new("UIStroke", { Color = hex("#FFB000", face), Thickness = 2, Parent = plate })
+	else
+		plate.BackgroundColor3 = Util.shade(face, 0.14)
+		Util.grad(plate, { Color3.new(1, 1, 1), Color3.fromRGB(205, 205, 205) }, 90)
+		Util.new("UIStroke", {
+			Color = line,
+			Thickness = if shape == "ghost" then 2.5 else 2,
+			Transparency = if shape == "ghost" then 0.1 else 0,
+			Parent = plate,
+		})
+		if shape == "ghost" then
+			plate.BackgroundTransparency = 0.12
+		end
+	end
+	decorate(plate, shape, face, line)
+
+	-- the badge at its left end
+	local badge: GuiObject? = nil
+	local badgeProps = {
+		Name = "Badge",
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.new(0, -3, 0.5, 0),
+		Size = UDim2.fromScale(1.35, 1.35),
+		SizeConstraint = Enum.SizeConstraint.RelativeYY,
+		ZIndex = 6,
+	}
+	if look.emblem then
+		badge = Icons.emblem(plate, look.emblem, badgeProps)
+	elseif look.icon and Art.has("ui/" .. look.icon) then
+		badge = Art.image(plate, "ui/" .. look.icon, badgeProps)
+	end
+
+	-- the words sit in a holder of their own, so their padding moves nothing else
+	local words = Util.frame(plate, { Name = "Words", ZIndex = 4 })
 	local label = Util.new("TextLabel", {
 		Name = "Text",
 		BackgroundTransparency = 1,
-		Text = def.look.text,
-		TextColor3 = if def.look.rainbow then Theme.C.white else Color3.fromHex(string.sub(def.look.color, 2)),
-		FontFace = Theme.Font.BodyHeavy,
-		Parent = plate,
+		Text = look.text,
+		TextColor3 = if look.rainbow then Theme.C.white else ink,
+		FontFace = if DISPLAY[shape] then Theme.Font.Display else Theme.Font.Chunky,
+		ZIndex = 4,
+		Parent = words,
 	})
+	-- light lettering on a dark plate keeps the plate's outline
+	local r, g, b = ink.R, ink.G, ink.B
+	if r * 0.3 + g * 0.59 + b * 0.11 > 0.6 or look.rainbow then
+		Util.new("UIStroke", { Color = line, Thickness = 1.2, ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual, Parent = label })
+	end
+	local endPad = if shape == "scroll" or shape == "bone" then 10 else 8
 	if textSize then
 		plate.AutomaticSize = Enum.AutomaticSize.X
 		plate.Size = UDim2.fromScale(0, 1)
-		Util.pad(plate, 8, 0, 8, 0)
+		words.AutomaticSize = Enum.AutomaticSize.X
+		words.Size = UDim2.fromScale(0, 1)
+		Util.pad(words, if badge then math.floor(textSize * 2.1 + 4) else endPad, 0, endPad, 0)
 		label.AutomaticSize = Enum.AutomaticSize.X
 		label.Size = UDim2.fromScale(0, 1)
 		label.TextSize = textSize
 	else
-		-- one size for every title; only long ones shrink to fit
+		-- one size for every title; only long ones shrink to fit (beside the badge,
+		-- which is as wide as the plate is tall)
 		label.TextScaled = true
-		label.Size = UDim2.new(1, -16, 1, -8)
-		label.Position = UDim2.fromOffset(8, 4)
 		Util.new("UITextSizeConstraint", { MaxTextSize = 20, Parent = label })
+		local function fit()
+			local k = Util.inheritedScale(plate, true)
+			local h = plate.AbsoluteSize.Y / math.max(k, 0.01)
+			local lead = if badge then math.floor(h * 1.3) else endPad
+			label.Position = UDim2.new(0, lead, 0, 4)
+			label.Size = UDim2.new(1, -lead - endPad, 1, -8)
+		end
+		plate:GetPropertyChangedSignal("AbsoluteSize"):Connect(fit)
+		fit()
+		task.defer(fit)
 	end
 	if props then
 		for k, v in props do
 			(plate :: any)[k] = v
 		end
 	end
-	if def.look.rainbow then
+	if look.rainbow then
 		CosmeticArt.spin(Util.grad(label, RAINBOW, 0), 80)
 	end
 	plate.Parent = parent

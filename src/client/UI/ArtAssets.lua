@@ -23,4 +23,5 @@ return {
 	icons_3 = { id = 82942990014553, version = "5ec65d2c8d2d" },
 	extras_1 = { id = 88835193670165, version = "12811230d118" },
 	fish_1 = { id = 120604847864264, version = "13f3f29bd3c7" },
+	ui_1 = { id = 0, version = "7942206e8fc2" },
 }

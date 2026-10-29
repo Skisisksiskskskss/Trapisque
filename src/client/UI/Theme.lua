@@ -1,9 +1,9 @@
 --[[
 	Theme
-	Trapisque's look: a tabletop game, drawn flat. Paper-white cards and panels on a
-	deep blue table, one warm orange for the thing you should press, and each
-	character's colour for its player. Rounded shapes, light borders, a darker bottom
-	edge on anything you can press, and no decoration that doesn't say something.
+	Trapisque's look: a pirate tabletop game, drawn like its art. Parchment panels framed
+	in dark wood over the sea, one warm orange for the thing you should press, and each
+	character's colour for its player. Rounded shapes lit from above and outlined in a
+	dark shade of their own colour, a darker bottom edge on anything you can press.
 
 	Two fonts: Nunito for everything you read or press, and Fredoka One only for the
 	logo and the big moments of a match (YOUR TURN, TREASURE!). Every colour and font
@@ -27,25 +27,28 @@ Theme.hex = hex
 
 local C = {
 	-- the light border between surfaces, the illustrations' outline, and shadows
-	line = hex("DDD3C3"),
+	line = hex("CDB58C"),
 	ink = hex("2A2830"),
 	shadow = hex("0E1A24"),
 
 	-- surfaces: the table behind, paper on top
-	bg = hex("203646"), -- the table, behind everything
-	bgDeep = hex("172836"),
-	panel = hex("F7F3EC"), -- panels and dialogs
-	panelDeep = hex("ECE5D8"), -- wells, tracks, inputs pressed into a panel
-	panelRaised = hex("FFFFFF"), -- rows and tiles sitting on a panel
-	panelHi = hex("FFF1D6"), -- hovered or picked rows
-	panelEdge = hex("E3DACB"), -- quiet borders between surfaces
-	panelLine = hex("ECE4D6"), -- dividers
+	bg = hex("1D4560"), -- the sea, behind everything
+	bgDeep = hex("143247"),
+	panel = hex("F6EBD3"), -- panels and dialogs: parchment
+	panelDeep = hex("EADBBB"), -- wells, tracks, inputs pressed into a panel
+	panelRaised = hex("FFF9EA"), -- rows and tiles sitting on a panel
+	panelHi = hex("FFE9BC"), -- hovered or picked rows
+	panelEdge = hex("DCC69E"), -- quiet borders between surfaces
+	panelLine = hex("E6D4AE"), -- dividers
+	frame = hex("5E3F24"), -- the dark wood round a panel
+	gilt = hex("C9A14A"), -- the thin gold line inside it
+	ribbon = hex("C8443A"), -- panel headings
 
 	-- text (on paper unless it says otherwise)
-	text = hex("23262D"),
-	textSoft = hex("625D57"),
-	textFaint = hex("958E85"),
-	textOnLight = hex("23262D"),
+	text = hex("33261A"),
+	textSoft = hex("6B5844"),
+	textFaint = hex("9A8770"),
+	textOnLight = hex("33261A"),
 	textLight = hex("F7F5F0"), -- on the table and on dark fills
 	textLightSoft = hex("A9BBC8"),
 	white = hex("FFFFFF"),

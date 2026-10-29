@@ -15,13 +15,16 @@
 	line slip. Land it after its notches; Fishing.Slips slips and the line snaps. The
 	rarer it is, the more notches, the smaller the green and the faster the needle.
 
+	The bigger it is, the harder it fights too (its size is known from the cast). Every
+	catch pays: Gems (a few a day at most) and, for the better fish, Power in the match.
 	Filling the log pays: the Fish School trail at half of it, Master Angler at all of it.
 
 		Fishing.roll(map, r1, r2, coinOk) -> catch id    (r1, r2 in [0, 1))
 		Fishing.sizeOf(id, r) -> centimetres             (r in [0, 1); 0 for coins)
 		Fishing.window(id) -> seconds to hook it once it bites
-		Fishing.fight(id) -> { reels, zone, speed }      (zone: the green's share of the
+		Fishing.fight(id, cm?) -> { reels, zone, speed } (zone: the green's share of the
 		                                                  meter; speed: sweeps a second)
+		Fishing.reward(id) -> { gems, power }            (what landing it pays)
 		Fishing.needle(speed, t) -> 0 to 1               (where the needle is, t seconds in)
 		Fishing.shadow(id) -> "small" | "medium" | "large"
 		Fishing.livesIn(id, map) -> boolean
@@ -44,12 +47,23 @@ local SHADOW = { common = "small", uncommon = "medium", rare = "large", legendar
 -- how hard it fights once hooked
 local FIGHT = {
 	common = { reels = 1, zone = 0.42, speed = 0.9 },
-	uncommon = { reels = 2, zone = 0.34, speed = 1.15 },
-	rare = { reels = 3, zone = 0.27, speed = 1.4 },
-	legendary = { reels = 3, zone = 0.21, speed = 1.7 },
+	uncommon = { reels = 2, zone = 0.32, speed = 1.25 },
+	rare = { reels = 3, zone = 0.24, speed = 1.6 },
+	legendary = { reels = 4, zone = 0.17, speed = 2.0 },
 	junk = { reels = 1, zone = 0.5, speed = 0.8 },
 	coin = { reels = 1, zone = 0.45, speed = 0.9 },
 }
+-- what landing one pays: Gems (Fishing.GemsPerDay at most a day) and Power in the match
+local REWARD = {
+	common = { gems = 1, power = 0 },
+	uncommon = { gems = 3, power = 1 },
+	rare = { gems = 8, power = 2 },
+	legendary = { gems = 25, power = 4 },
+	junk = { gems = 0, power = 0 },
+	coin = { gems = 0, power = 0 },
+}
+Fishing.NewGems = 5 -- more for the first of a kind in your log
+Fishing.GemsPerDay = 60
 
 --[[
 	rarity: common | uncommon | rare | legendary (go in the log), junk (logged too, for a
@@ -188,10 +202,22 @@ function Fishing.window(id: string): number
 	return WINDOW[c and c.rarity or "common"] or WINDOW.common
 end
 
-function Fishing.fight(id: string)
+function Fishing.fight(id: string, cm: number?)
 	local c = Fishing.byId[id]
 	local f = FIGHT[c and c.rarity or "common"] or FIGHT.common
-	return { reels = f.reels, zone = f.zone, speed = f.speed }
+	-- how big it is for its kind, 0 to 1: a whopper fights harder
+	local big = 0
+	if c and c.size and cm and c.size[2] > c.size[1] then
+		big = math.clamp((cm - c.size[1]) / (c.size[2] - c.size[1]), 0, 1)
+	end
+	local reels = f.reels + (if big >= 0.7 and c and c.rarity ~= "common" then 1 else 0)
+	return { reels = reels, zone = f.zone * (1 - 0.25 * big), speed = f.speed * (1 + 0.35 * big) }
+end
+
+function Fishing.reward(id: string)
+	local c = Fishing.byId[id]
+	local r = REWARD[c and c.rarity or "junk"] or REWARD.junk
+	return { gems = r.gems, power = r.power }
 end
 
 -- Where the needle is across the meter (0 to 1), `t` seconds into the fight: it sweeps

@@ -19,6 +19,7 @@ local UI = script.Parent.Parent
 local Util = require(UI.Util)
 local Theme = require(UI.Theme)
 local Icons = require(UI.Icons)
+local Art = require(UI.Art)
 local Widgets = require(UI.Widgets)
 local CosmeticArt = require(UI.CosmeticArt)
 local Avatars = require(UI.Avatars)
@@ -86,7 +87,9 @@ local function gemCounter(parent: Instance, size: number, maid): Frame
 	})
 	gems.AutomaticSize = Enum.AutomaticSize.X
 	local gemIcon = Util.frame(row, { Size = UDim2.fromOffset(size, size), LayoutOrder = 2 })
-	Icons.medallion(gemIcon, "gem", C.neutral, { Size = UDim2.fromScale(1, 1) })
+	if not Art.image(gemIcon, "ui/gem", { Size = UDim2.fromScale(1.3, 1.3), Position = UDim2.fromScale(-0.15, -0.15) }) then
+		Icons.medallion(gemIcon, "gem", C.neutral, { Size = UDim2.fromScale(1, 1) })
+	end
 	local last = nil
 	maid:add(State.watch("profile", function(p)
 		if not p then
@@ -262,10 +265,10 @@ end
 
 local NAV = {
 	{ id = "chests", text = "Chests", short = "Chests", icon = "chest", style = "wood" },
-	{ id = "quests", text = "Quests", short = "Quests", icon = "star", style = "wood" },
+	{ id = "quests", text = "Quests", short = "Quests", icon = "star", picture = "ui/quests", style = "wood" },
 	{ id = "locker", text = "Locker", short = "Locker", icon = "hanger", style = "wood" },
 	{ id = "shop", text = "Shop", short = "Shop", icon = "bag", style = "wood" },
-	{ id = "leaders", text = "Top players", short = "Top", icon = "crown", style = "wood" },
+	{ id = "leaders", text = "Top players", short = "Top", icon = "crown", picture = "ui/leaders", style = "wood" },
 	{ id = "rules", text = "How to play", short = "Rules", icon = "book", style = "wood" },
 	{ id = "settings", text = "Settings", short = "Settings", icon = "gear", style = "wood" },
 }
@@ -324,6 +327,7 @@ local function buildNav(parent: Instance, maid, spec, popups: Instance, withLead
 			local size = math.min(spec.rect.h - 18, math.floor(cellW - 4))
 			local b = Widgets.iconButton(cell, {
 				icon = item.icon,
+				picture = item.picture,
 				style = item.style,
 				size = UDim2.fromOffset(size, size),
 				anchor = Vector2.new(0.5, 0),
@@ -351,6 +355,7 @@ local function buildNav(parent: Instance, maid, spec, popups: Instance, withLead
 				name = item.id,
 				text = if spec.kind == "full" then item.text else item.short,
 				icon = item.icon,
+				picture = item.picture,
 				style = item.style,
 				textSize = if spec.kind == "full" then 18 elseif n >= 7 then 13 else 15,
 				size = UDim2.new(1 / n, -gap * (n - 1) / n, 1, 0),
@@ -467,9 +472,12 @@ local function build(frame: Frame, maid, L, popups: Instance)
 			text = "Trapisque",
 			font = "display",
 			size = math.floor(math.min(54, r.h * 0.8)),
-			color = C.textLight,
+			color = C.sunLight,
 			align = if L.form == "tall" then "center" else "left",
 		})
+		-- the logo: gold lettering lit from above, outlined in dark wood
+		Util.grad(title, { Color3.new(1, 1, 1), Color3.fromRGB(225, 200, 150) }, 90)
+		Util.new("UIStroke", { Color = C.frame, Thickness = 3.5, Parent = title })
 		place(title, r)
 		titleLabel = title
 	end

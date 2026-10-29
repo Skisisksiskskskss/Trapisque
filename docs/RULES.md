@@ -17,6 +17,11 @@ Each map is a path of hex tiles from the **Start** flag to the **Treasure** ches
 Reaching the chest banks a treasure, pays 2 coins and sends you back to the Start for
 another run. The first player (or team) with enough treasures wins.
 
+You have to land on the chest **exactly**: roll too many and you reach it, then bounce
+back the way you came by the steps left over (from 2 tiles away a 5 leaves you 3 tiles
+back). Forced moves (a Cannonball, a skate across the ice) bounce the same way, and
+nothing carries you over a raised drawbridge. **(digital)**
+
 | Length | Treasures to win | Notes |
 | --- | --- | --- |
 | Quick | 2 | Quick Play always uses this length. **(digital)** |
@@ -129,7 +134,8 @@ drinks an X-Ray Potion). Rivals just see a puff of smoke next to you.
 
 - Hide one on a free tile **within 5 tiles of you** along the race (the Trapper can
   hide them anywhere). Not on the Start, the Treasure, a token, a hazard, a gated
-  shortcut or a board piece.
+  shortcut or a board piece, and not within 3 tiles of the Treasure (it takes an exact
+  roll to get in, so a trap there would be too cruel).
 - You can have **3 out at once** (the Trapper 4). Hiding another removes your oldest.
 - Several traps can hide on the same tile; a lander sets them off oldest first.
 - When yours catches someone: **GOTCHA!** You get 1 coin and 2 Power.
@@ -218,7 +224,7 @@ catch them at the end of a round. A Gambler's Double Down leaps over all of them
 
 | Character | Passive | Ability (Power) |
 | --- | --- | --- |
-| Mage | **Frostproof:** can't be Frozen. | **Blizzard (7):** every rival is Frozen for their next turn, and you skate 1 tile ahead. |
+| Mage | **Frostproof:** can't be Frozen. | **Blizzard (10):** every rival is Frozen for their next turn, and you skate 1 tile ahead. |
 | Trapper | **Bounty Hunter:** hides traps anywhere on the board and keeps up to 4 out; each time one catches someone, you hop 2 tiles forward. | **Scavenge (6):** pick one of two random trap cards. |
 | Fire Starter | **Hot Hands:** your bonks set rivals on fire. Starts with a Fire card. | **Blast Off (10):** rocket 4 tiles forward; the tiles you fly over burn until your next turn. |
 | Naturalist | **Wild Walker:** rivers, locked gates and slime never stop or slow you. | **Stampede (12):** charge 2 tiles forward with a herd of wild boars; every rival on those tiles (or where you land) is knocked back 2 tiles. **(digital)** |

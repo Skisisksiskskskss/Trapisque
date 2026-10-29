@@ -16,6 +16,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage.Shared
 local Characters = require(Shared.Game.Characters)
 local Progress = require(Shared.Meta.Progress)
+local Cosmetics = require(Shared.Meta.Cosmetics)
 
 local UI = script.Parent.Parent
 local Util = require(UI.Util)
@@ -332,9 +333,11 @@ function Results.show(layer: Instance, data, mySeat: number, isTeam: boolean, on
 				if (mastery.gems or 0) > 0 then
 					table.insert(extra, "+" .. mastery.gems .. " Gems")
 				end
-				for _, id in mastery.titles or {} do
-					table.insert(extra, "New title!")
-					local _ = id
+				for _, ids in { mastery.titles or {}, reward.deeds or {} } do
+					for _, id in ids do
+						local def = Cosmetics.get(id)
+						table.insert(extra, if def then "New title: " .. def.name .. "!" else "New title!")
+					end
 				end
 				if mastery.emblem then
 					table.insert(extra, "Gilded emblem!")

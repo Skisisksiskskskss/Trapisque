@@ -41,11 +41,36 @@ local function layer(name: string, z: number): Frame
 	return Util.frame(Root.stage, { Name = name, ZIndex = z })
 end
 
--- The table: one flat colour behind everything (the loading screen uses the same, so
--- the hand-over is seamless).
+-- The sea behind everything: lighter far off at the top, deep below, with foam crests
+-- on it once the art has loaded (the loading screen uses the same colour, so the
+-- hand-over is seamless).
 local function buildBackground(bg: Frame)
 	bg.BackgroundTransparency = 0
-	bg.BackgroundColor3 = C.bg
+	bg.BackgroundColor3 = Util.shade(C.bg, 0.12)
+	Util.grad(bg, { Color3.new(1, 1, 1), Color3.fromRGB(150, 150, 150) }, 90)
+	local Art = require(script.Parent.Art)
+	if not Art.has("ui/wavelet") then
+		return
+	end
+	-- crests in loose rows, the far ones smaller and fainter (the same everywhere: no
+	-- randomness, so nothing changes between screens)
+	for row = 0, 6 do
+		local y = 0.06 + row * 0.15
+		local size = 34 + row * 7
+		for col = 0, 7 do
+			local x = (col + (if row % 2 == 0 then 0.25 else 0.75)) / 8 + math.sin(row * 2.3 + col * 1.7) * 0.03
+			local crest = Art.image(bg, "ui/wavelet", {
+				Name = "Crest",
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				Position = UDim2.new(x, 0, y + math.cos(col * 2.1 + row) * 0.02, 0),
+				Size = UDim2.fromOffset(size, size),
+			})
+			local img = crest and crest:FindFirstChild("Image") :: ImageLabel?
+			if img then
+				img.ImageTransparency = 0.72 - row * 0.03
+			end
+		end
+	end
 end
 
 -- A full-screen frame in its own ScreenGui with the given insets, to read where the

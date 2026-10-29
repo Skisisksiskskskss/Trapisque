@@ -1,10 +1,11 @@
 --[[
 	Widgets
-	Buttons, panels, labels and other reusable pieces. Flat colour on paper, rounded
-	corners, light borders. Anything you can press sits on a darker edge of its own
-	colour and sinks into it when pressed. Three kinds of button and no more: the
-	orange one for the thing that matters on a screen, a white one for everything else,
-	red for anything you can't take back (and green for "done").
+	Buttons, panels, labels and other reusable pieces, drawn like the game's art: lit
+	from above, outlined in a dark shade of their own colour, on parchment framed in
+	wood-brown. Anything you can press sits on a darker edge of its own colour and sinks
+	into it when pressed. Three kinds of button and no more: the orange one for the
+	thing that matters on a screen, a cream one for everything else, red for anything
+	you can't take back (and green for "done"). Panel headings are ribbons.
 ]]
 
 local UserInputService = game:GetService("UserInputService")
@@ -13,6 +14,7 @@ local TextService = game:GetService("TextService")
 local Util = require(script.Parent.Util)
 local Theme = require(script.Parent.Theme)
 local Icons = require(script.Parent.Icons)
+local Art = require(script.Parent.Art)
 local Layout = require(script.Parent.Layout)
 local Sound = require(script.Parent.Parent.Sound)
 
@@ -25,17 +27,47 @@ local Widgets = {}
 Widgets.metrics = Layout.metrics(1280, 720)
 
 --[[
-	A button's colours: its face, the darker edge it sits on, its lettering, and a
-	border (white buttons only: a coloured face needs none).
+	A button's colours: its face, the darker edge it sits on, its lettering, and its
+	outline (a dark shade of its own colour, like every drawing in the game).
 ]]
 local function paint(face: Color3, text: Color3, edge: Color3?, border: Color3?)
+	local dark = edge or Util.shade(face, -0.22)
 	return {
 		face = face,
-		dark = edge or Util.shade(face, -0.22),
-		stroke = border,
+		dark = dark,
+		stroke = border or Util.shade(dark, -0.45),
 		text = text,
 	}
 end
+
+-- The illustrated pictures (art/ui.py) that stand in for some of the flat glyphs on
+-- buttons, once their sheet has loaded.
+Widgets.Pictures = {
+	chest = "ui/chest",
+	hanger = "ui/locker",
+	bag = "ui/shop",
+	book = "ui/rules",
+	gear = "ui/settings",
+	chat = "ui/chat",
+	eye = "ui/watch",
+	party = "ui/party",
+	gem = "ui/gem",
+	trophy = "ui/leaders",
+}
+
+-- Light from above on a face: the face is drawn a little lighter and the gradient
+-- (which multiplies) takes it back down toward the bottom.
+local function lit(frame: GuiObject, color: Color3, amount: number?): UIGradient
+	local a = amount or 0.16
+	frame.BackgroundColor3 = Util.shade(color, a)
+	local g = frame:FindFirstChild("Lit") :: UIGradient?
+	if not g then
+		g = Util.grad(frame, { Color3.new(1, 1, 1), Color3.new(1 - a * 1.1, 1 - a * 1.1, 1 - a * 1.1) }, 90)
+		;(g :: UIGradient).Name = "Lit"
+	end
+	return g :: UIGradient
+end
+Widgets.lit = lit
 
 local primary = paint(C.orange, C.white, C.orangeDark)
 local secondary = paint(C.panelRaised, C.text, C.panelEdge, C.line)
@@ -187,6 +219,7 @@ function Widgets.button(parent: Instance?, o: { [string]: any })
 		Parent = root,
 	})
 	Util.corner(side, o.corner or 12)
+	local sideStroke = Util.new("UIStroke", { Color = style.stroke, Thickness = 2, Parent = side })
 
 	local face = Util.new("Frame", {
 		Name = "Face",
@@ -197,17 +230,16 @@ function Widgets.button(parent: Instance?, o: { [string]: any })
 		Parent = root,
 	})
 	Util.corner(face, o.corner or 12)
-	local faceStroke = Util.stroke(face, style.stroke or style.face, 2)
-	faceStroke.Enabled = style.stroke ~= nil
-	-- (printed paint is flat: the old candy shine stays, invisible, for the code that
-	-- still toggles it)
+	lit(face, style.face)
+	local faceStroke = Util.new("UIStroke", { Color = style.stroke, Thickness = 2, Parent = face })
+	-- the shine of the light on its upper half
 	local gloss = Util.new("Frame", {
 		Name = "Gloss",
 		BackgroundColor3 = C.white,
-		BackgroundTransparency = 1,
+		BackgroundTransparency = 0.8,
 		BorderSizePixel = 0,
-		Size = UDim2.new(1, -10, 0.36, 0),
-		Position = UDim2.fromOffset(5, 4),
+		Size = UDim2.new(1, -12, 0.3, 0),
+		Position = UDim2.fromOffset(6, 4),
 		ZIndex = 3,
 		Parent = face,
 	})
@@ -241,7 +273,14 @@ function Widgets.button(parent: Instance?, o: { [string]: any })
 		if not iconId then
 			return
 		end
-		-- a flat glyph in the lettering's colour
+		-- its illustration, or a flat glyph in the lettering's colour
+		local picture = o.picture or Widgets.Pictures[iconId]
+		if picture and Art.has(picture) then
+			local img = Art.image(iconHolder, picture, { Size = UDim2.fromScale(1.25, 1.25), Position = UDim2.fromScale(-0.125, -0.125) })
+			if img then
+				return
+			end
+		end
 		Icons.make(iconHolder, iconId, { ink = style.text, bg = style.face, acc = style.text, acc2 = style.text, hi = style.face, line = style.text }, nil)
 	end
 	if o.icon then
@@ -278,20 +317,30 @@ function Widgets.button(parent: Instance?, o: { [string]: any })
 		label = Widgets.label(textHolder, textOpts)
 		label.AutomaticSize = Enum.AutomaticSize.X
 	end
+	-- light lettering on a coloured face gets the face's outline
+	local textStroke = if label
+		then Util.new("UIStroke", { Color = style.stroke, Thickness = 1.6, ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual, Parent = label })
+		else nil
+	local function strokeText()
+		if textStroke then
+			textStroke.Enabled = style.text == C.white
+			textStroke.Color = style.stroke
+		end
+	end
+	strokeText()
 
 	local btn = { root = root, label = label, face = face, enabled = o.disabled ~= true, hovering = false }
 
 	local function restyle(s)
 		style = s
 		side.BackgroundColor3 = s.dark
-		face.BackgroundColor3 = s.face
-		faceStroke.Enabled = s.stroke ~= nil
-		if s.stroke then
-			faceStroke.Color = s.stroke
-		end
+		lit(face, s.face)
+		faceStroke.Color = s.stroke
+		sideStroke.Color = s.stroke
 		if label then
 			label.TextColor3 = s.text
 		end
+		strokeText()
 		drawIcon()
 	end
 
@@ -456,9 +505,9 @@ end
 		style = "walnut" | "wood" | "dark" | "board", title, size, position, anchor,
 		padding = 18, name, z
 	}) -> content frame, root frame
-	"walnut" (the default, the name is historical) is a paper panel with a light
-	border. "bright" is a panel in a flat colour (o.color). A title is a plain heading
-	across the top.
+	"walnut" (the default, the name is historical) is a sheet of parchment lit from
+	above, outlined in dark wood with a thin gilt line inside its edge. "bright" is a
+	panel in a flat colour (o.color). A title is a ribbon across the top.
 ]]
 function Widgets.panel(parent: Instance?, o: { [string]: any }): (Frame, Frame)
 	local style = o.style or "walnut"
@@ -477,8 +526,17 @@ function Widgets.panel(parent: Instance?, o: { [string]: any }): (Frame, Frame)
 	local corner = o.corner or 16
 	Util.corner(root, corner)
 	if style == "walnut" then
-		root.BackgroundColor3 = C.panel
-		Util.stroke(root, C.line, 2)
+		lit(root, C.panel, 0.1)
+		Util.new("UIStroke", { Color = C.frame, Thickness = 3, Parent = root })
+		local inner = Util.new("Frame", {
+			Name = "Gilt",
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1, -12, 1, -12),
+			Position = UDim2.fromOffset(6, 6),
+			Parent = root,
+		})
+		Util.corner(inner, math.max(4, corner - 5))
+		Util.new("UIStroke", { Color = C.gilt, Thickness = 1.5, Transparency = 0.25, Parent = inner })
 	elseif style == "wood" or style == "board" then
 		-- a panel set on a panel (the Potion Seller's stall)
 		root.BackgroundColor3 = if style == "board" then C.panelDeep else C.panelRaised
@@ -511,8 +569,8 @@ function Widgets.panel(parent: Instance?, o: { [string]: any }): (Frame, Frame)
 	return content, root
 end
 
--- A panel's heading: plain text across its top, as wide as it's allowed (o.width).
--- (The name is historical: it used to be a tilted banner.)
+-- A panel's heading: a ribbon across its top with its ends folded back, as wide as
+-- its words (and no wider than it's allowed: o.width). o.color tints the ribbon.
 function Widgets.ribbon(parent: Instance, text: string, o: { [string]: any }?)
 	local opts = o or {}
 	local holder = Util.frame(parent, {
@@ -522,17 +580,57 @@ function Widgets.ribbon(parent: Instance, text: string, o: { [string]: any }?)
 		Size = UDim2.new(1, -120, 0, 34),
 		ZIndex = 20,
 	})
-	Widgets.label(holder, {
+	local color = opts.color or C.ribbon
+	local line = Util.shade(color, -0.55)
+	local size = opts.size or 24
+	local textW = TextService:GetTextSize(text, size, Enum.Font.FredokaOne, Vector2.new(2000, 100)).X
+	local band = Util.new("Frame", {
+		Name = "Band",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.new(0, textW + 56, 1, 6),
+		ZIndex = 22,
+		Parent = holder,
+	})
+	Util.corner(band, 6)
+	lit(band, color)
+	Util.new("UIStroke", { Color = line, Thickness = 2.5, Parent = band })
+	-- the ends, folded back behind it
+	for _, side in { 0, 1 } do
+		local tail = Util.new("Frame", {
+			Name = "Tail",
+			AnchorPoint = Vector2.new(side, 0),
+			Position = UDim2.new(side, if side == 0 then -12 else 12, 0, 10),
+			Size = UDim2.new(0, 22, 1, -8),
+			BackgroundColor3 = Util.shade(color, -0.3),
+			ZIndex = 21,
+			Parent = band,
+		})
+		Util.new("UIStroke", { Color = line, Thickness = 2, Parent = tail })
+	end
+	local label = Widgets.label(band, {
 		name = "Heading",
 		text = text,
-		font = "chunky",
-		size = opts.size or 24,
-		color = opts.textColor or C.text,
+		font = "display",
+		size = size,
+		color = opts.textColor or C.white,
 		align = "center",
-		sizeUDim = UDim2.fromScale(1, 1),
+		sizeUDim = UDim2.new(1, -20, 1, -4),
+		position = UDim2.fromOffset(10, 2),
 		scaled = true,
 		z = 23,
 	})
+	Util.new("UIStroke", { Color = line, Thickness = 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual, Parent = label })
+	-- no wider than the room it's given
+	local function fit()
+		local k = Util.inheritedScale(holder, true)
+		local room = holder.AbsoluteSize.X / math.max(k, 0.01)
+		if room > 0 then
+			band.Size = UDim2.new(0, math.min(textW + 56, room), 1, 6)
+		end
+	end
+	holder:GetPropertyChangedSignal("AbsoluteSize"):Connect(fit)
+	task.defer(fit)
 	return holder
 end
 

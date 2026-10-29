@@ -484,6 +484,22 @@ function Icons.flatColors(ink: Color3, bg: Color3, acc: Color3?)
 	return { ink = ink, bg = bg, acc = acc or ink, acc2 = acc or ink, hi = bg }
 end
 
+-- The illustrations (art/ui.py) that stand in for some flat glyphs in medallions.
+Icons.Pictures = {
+	gem = "ui/gem",
+	star = "ui/star",
+	chest = "ui/chest",
+	coin = "ui/coin",
+	gear = "ui/settings",
+	book = "ui/rules",
+	bag = "ui/shop",
+	trophy = "ui/leaders",
+	anchor = "ui/anchor",
+	skull = "ui/skull",
+	fire = "ui/flame",
+	snowflake = "ui/snowflake",
+}
+
 -- New square canvas containing icon `id`. Returns the canvas frame.
 function Icons.make(parent: Instance, id: string, colors, props: { [string]: any }?, outline: number?): Frame
 	local ops = IconData[id]
@@ -640,6 +656,14 @@ function Icons.medallion(parent: Instance, id: string, color: Color3, props: { [
 	end
 	if Art.has("cards/" .. id) or StickerArt.cards[id] then
 		return Icons.cardBadge(parent, id, color, props)
+	end
+	-- the menus' own illustrations (art/ui.py), where there is one
+	local picture = Icons.Pictures[id]
+	if picture and Art.has(picture) then
+		local holder = Util.frame(parent, props)
+		holder.Name = "Medallion_" .. id
+		Art.image(holder, picture, { Size = UDim2.fromScale(1.15, 1.15), Position = UDim2.fromScale(-0.075, -0.075) })
+		return holder
 	end
 	local d = disc(parent, color, props)
 	Icons.make(d, id, { ink = Color3.new(1, 1, 1), bg = color, acc = Theme.C.sunLight, acc2 = Theme.C.sunLight, hi = color, line = color }, {

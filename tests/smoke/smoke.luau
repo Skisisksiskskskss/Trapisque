@@ -305,8 +305,8 @@ for _, page in PAGES do
 		F.run(0.6)
 		shot("page-" .. page.id)
 		if page.id == "locker" then
-			-- the dice and the trails, each tab drawn
-			for _, tab in { "Dice", "Trails" } do
+			-- the dice, the trails and the titles, each tab drawn
+			for _, tab in { "Dice", "Trails", "Titles" } do
 				local top = modals()
 				if top[#top] and press(top[#top], "^" .. tab .. "$") then
 					F.run(0.6)

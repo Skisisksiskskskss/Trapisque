@@ -416,6 +416,42 @@ test("fishing: rarer fish fight harder, and the needle sweeps the whole meter", 
 	truthy(lo < 0.01 and hi > 0.99, "the needle doesn't reach both ends")
 end)
 
+test("fishing: a whopper fights harder, and better fish pay more", function()
+	local small, big = Fishing.fight("swordfish", Fishing.sizeOf("swordfish", 0)), Fishing.fight("swordfish", Fishing.sizeOf("swordfish", 1))
+	truthy(big.zone < small.zone and big.speed > small.speed and big.reels > small.reels, "a big swordfish should fight harder than a small one")
+	for _, c in Fishing.catches do
+		local f = Fishing.fight(c.id, Fishing.sizeOf(c.id, 1))
+		truthy(f.reels * Fishing.ReelGap * 4 < Fishing.FightTime, c.id .. " at its biggest can't be landed in time")
+	end
+	local last = -1
+	for _, id in { "sardine", "swordfish", "golden" } do
+		local r = Fishing.reward(id)
+		truthy(r.gems > last, id .. " should pay more Gems than the fish before it")
+		last = r.gems
+	end
+	truthy(Fishing.reward("golden").power > Fishing.reward("swordfish").power, "a legend charges more Power")
+	eq(Fishing.reward("boot").gems, 0)
+end)
+
+test("titles: every title has a plate, deeds name a real stat, and none look alike", function()
+	local seen = {}
+	for _, def in Cosmetics.byCategory.title do
+		if def.look.text ~= "" then
+			truthy(def.look.plate ~= nil, def.id .. " has no plate")
+			truthy(def.look.icon ~= nil or def.look.emblem ~= nil, def.id .. " has no badge")
+			if not def.hidden and def.source ~= "mastery" then
+				local key = def.look.plate .. "/" .. (def.look.icon or "")
+				truthy(seen[key] == nil, def.id .. " looks just like " .. tostring(seen[key]))
+				seen[key] = def.id
+			end
+		end
+		if def.deed then
+			truthy(def.source == "deed" and def.deed.goal > 0, def.id .. "'s deed")
+			truthy(({ games = 1, wins = 1, treasures = 1, deaths = 1, placed = 1, bonks = 1, gotchas = 1 })[def.deed.stat] ~= nil, def.id .. " counts an unknown stat")
+		end
+	end
+end)
+
 test("fishing: filling the log earns the Fish School trail, then Master Angler", function()
 	local half = math.ceil(#Fishing.logged / 2)
 	eq(#Fishing.rewardsFor(half - 1), 0)

@@ -2239,18 +2239,38 @@ function BoardView:addPawn(seat: number, info, tile: number)
 		foot = standFoot or foot
 		onStand = true
 	end
-	local shadow = Util.new("Frame", {
+	-- the shadow: soft, like the art's, a little to the lower right of the light, with
+	-- a darker patch right under the base where it touches the ground
+	local px = PAWN * U
+	local sy = if onStand then 0.95 else foot - 0.02
+	local sw = if onStand then 0.95 else 0.78
+	local shadow: GuiObject? = Art.label(root, "ground/soft", Vector2.new(0.53 * px, sy * px), Vector2.new(sw * px, sw * px * 0.32), false, {
 		Name = "Shadow",
-		BackgroundColor3 = C.shadow,
-		BackgroundTransparency = 0.55,
-		BorderSizePixel = 0,
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.54, if onStand then 0.95 else foot - 0.03),
-		Size = UDim2.fromScale(if onStand then 0.9 else 0.66, if onStand then 0.24 else 0.18),
+		ImageColor3 = C.shadow,
+		ImageTransparency = 0.2,
 		ZIndex = 0,
-		Parent = root,
 	})
-	Util.corner(shadow, 0.5)
+	if shadow then
+		Art.label(root, "ground/soft", Vector2.new(0.51 * px, (sy - 0.005) * px), Vector2.new(sw * 0.6 * px, sw * 0.6 * px * 0.3), false, {
+			Name = "Contact",
+			ImageColor3 = C.shadow,
+			ImageTransparency = 0.35,
+			ZIndex = 0,
+		})
+	else
+		shadow = Util.new("Frame", {
+			Name = "Shadow",
+			BackgroundColor3 = C.shadow,
+			BackgroundTransparency = 0.6,
+			BorderSizePixel = 0,
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.53, sy),
+			Size = UDim2.fromScale(sw * 0.8, sw * 0.22),
+			ZIndex = 0,
+			Parent = root,
+		})
+		Util.corner(shadow :: GuiObject, 0.5)
+	end
 	local pawn = {
 		frame = root,
 		lift = lift,

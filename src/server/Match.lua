@@ -960,6 +960,8 @@ function Match:fish(player: Player, action: any, payload: any)
 		f.token = token
 		-- what's down there, this map's waters (at most one coin a round)
 		f.catch = Fishing.roll(self.engine.map.id, random:NextNumber(), random:NextNumber(), f.coinRound ~= self.engine.round)
+		-- (how big it is, too: a whopper fights harder)
+		f.size = Fishing.sizeOf(f.catch, random:NextNumber())
 		local wait = Fishing.BiteMin + random:NextNumber() * (Fishing.BiteMax - Fishing.BiteMin)
 		-- a nibble or two first: pulling on one scares it off
 		local nibbles = random:NextInteger(Fishing.Nibbles[1], Fishing.Nibbles[2])
@@ -1006,7 +1008,7 @@ function Match:fish(player: Player, action: any, payload: any)
 		local token = f.token
 		f.state = "hooked"
 		f.hookedAt = now
-		f.fight = Fishing.fight(catch)
+		f.fight = Fishing.fight(catch, f.size)
 		task.delay(Fishing.FightTime + Fishing.Grace, function()
 			if f.token == token and f.state == "hooked" then
 				f.state = "idle"
@@ -1022,7 +1024,7 @@ function Match:fish(player: Player, action: any, payload: any)
 		f.state = "idle"
 		f.token = nil
 		local catch = f.catch or "sardine"
-		local fight = f.fight or Fishing.fight(catch)
+		local fight = f.fight or Fishing.fight(catch, f.size)
 		local how = if type(payload) == "table" then payload else {}
 		local reels, slips = tonumber(how.reels) or 0, tonumber(how.slips) or 0
 		local took = now - (f.hookedAt or now)
@@ -1036,8 +1038,17 @@ function Match:fish(player: Player, action: any, payload: any)
 			local events = self.engine:grantCoins(seat, 1, "fishing")
 			self:_broadcast(events)
 		end
-		local size = Fishing.sizeOf(catch, random:NextNumber())
+		local size = f.size or Fishing.sizeOf(catch, random:NextNumber())
 		local logged, record, unlocked = DataService.addCatch(player, catch, size)
+		-- what it pays: Gems (more for a new kind), and Power in the match for the better fish
+		local reward = Fishing.reward(catch)
+		local gems = DataService.addFishGems(player, reward.gems + (if logged == 1 then Fishing.NewGems else 0))
+		local power = 0
+		if reward.power > 0 then
+			local before = self.engine.players[seat] and self.engine.players[seat].power or 0
+			self:_broadcast(self.engine:grantPower(seat, reward.power))
+			power = (self.engine.players[seat] and self.engine.players[seat].power or 0) - before
+		end
 		if def and def.rarity == "legendary" then
 			BadgeService.award(player, "golden_fish")
 		end
@@ -1047,7 +1058,10 @@ function Match:fish(player: Player, action: any, payload: any)
 				Net.push(p, "fish.caught", { seat = seat, catch = catch, size = size })
 			end
 		end
-		return true, { state = "idle", result = "caught", catch = catch, size = size, new = logged == 1, record = record, unlocked = unlocked }
+		if gems > 0 or #unlocked > 0 then
+			DataService.pushProfile(player)
+		end
+		return true, { state = "idle", result = "caught", catch = catch, size = size, new = logged == 1, record = record, unlocked = unlocked, gems = gems, power = power }
 	end
 	return false, "Cast, reel or land."
 end

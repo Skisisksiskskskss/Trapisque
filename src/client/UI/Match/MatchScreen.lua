@@ -1899,6 +1899,10 @@ function MatchScreen:_play(e)
 			end
 		end))
 		feed:add(self:_tag(e.p) .. " gave a card to " .. self:_tag(e.target), nil, "plus", C.good)
+	elseif t == "bounce" then
+		-- the treasure takes an exact count
+		self.board:floatText(self:_pawnWorld(e.p), "Too far!", C.coral, 18)
+		feed:add(self:_tag(e.p) .. " overshot the treasure and bounced back " .. tostring(e.back or 0), nil, "chest", C.coral)
 	elseif t == "recall" then
 		self:_patch(e.p, "anchor", 0)
 		board:setAnchor(e.p, nil)
@@ -2185,6 +2189,9 @@ function MatchScreen:_outcome(plan): { any }
 	if plan.result == "treasure" then
 		add("Treasure!", C.sun)
 		return tags
+	end
+	if plan.bounced then
+		add("Too far: bounces back " .. tostring(plan.bounced), C.coral)
 	end
 	if plan.result == "blocked" then
 		add(if plan.hazard == "drawbridge" then "Drawbridge up" else "Wall", C.coral)

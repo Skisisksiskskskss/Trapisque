@@ -189,6 +189,16 @@ function Locker._fill(_maid, content: Frame, category: string)
 		Util.stroke(tile, if isEquipped then C.good else rimColor, if isEquipped then 4 else 3)
 		if isOwned then
 			CosmeticArt.preview(tile, def.id, nil, { Size = UDim2.new(1, 0, 0, 118) })
+		elseif def.deed then
+			-- a deed's title isn't a surprise: it shows, faded, until you've earned it
+			local faded = Util.new("CanvasGroup", {
+				Name = "Faded",
+				BackgroundTransparency = 1,
+				Size = UDim2.new(1, 0, 0, 118),
+				GroupTransparency = 0.5,
+				Parent = tile,
+			})
+			CosmeticArt.preview(faded, def.id, nil, { Size = UDim2.fromScale(1, 1) })
 		else
 			Widgets.label(tile, {
 				text = "?",
@@ -224,7 +234,9 @@ function Locker._fill(_maid, content: Frame, category: string)
 		elseif isOwned then
 			status = rarity and rarity.name or ""
 		else
-			status = if def.source and SOURCE_TEXT[def.source] then SOURCE_TEXT[def.source] else "In Treasure Chests"
+			status = if def.deed then def.deed.text
+				elseif def.source and SOURCE_TEXT[def.source] then SOURCE_TEXT[def.source]
+				else "In Treasure Chests"
 		end
 		Widgets.label(strip, {
 			text = status,

@@ -168,22 +168,44 @@ local defs = {
 	{ id = "emote_shh", category = "emote", name = "Shhh...", rarity = "rare", source = "emotepack", look = { text = "Shhh...", color = "#DDD6FE" } },
 
 	-------------------------------------------------------------------------
-	-- Titles: shown under your name
+	-- Titles: shown under your name, each on its own plate (CosmeticArt.title draws
+	-- look.plate, with the badge look.icon from art/ui.py beside the words). Some come
+	-- from chests, some from passes, and the deeds are earned by doing them
+	-- (deed = { stat, goal, text }: a lifetime count in your profile's stats).
 	-------------------------------------------------------------------------
 	{ id = "title_none", category = "title", name = "No Title", rarity = "common", source = "default", look = { text = "", color = "#FFFFFF" } },
-	{ id = "title_rookie", category = "title", name = "Rookie Explorer", rarity = "common", look = { text = "Rookie Explorer", color = "#E8D9B5" } },
-	{ id = "title_hopper", category = "title", name = "Tile Hopper", rarity = "common", look = { text = "Tile Hopper", color = "#8CCFE3" } },
-	{ id = "title_setter", category = "title", name = "Trap Setter", rarity = "common", look = { text = "Trap Setter", color = "#EE9C7C" } },
-	{ id = "title_lucky", category = "title", name = "Lucky Roller", rarity = "rare", look = { text = "Lucky Roller", color = "#A3D67F" } },
-	{ id = "title_sneaky", category = "title", name = "Sneaky Sneak", rarity = "rare", look = { text = "Sneaky Sneak", color = "#BBA7EE" } },
-	{ id = "title_tamer", category = "title", name = "Grog Tamer", rarity = "epic", look = { text = "Grog Tamer", color = "#7CC65F" } },
-	{ id = "title_warlord", category = "title", name = "Warlord", rarity = "epic", look = { text = "Warlord", color = "#EF8240" } },
-	{ id = "title_legend", category = "title", name = "Living Legend", rarity = "legendary", look = { text = "Living Legend", color = "#F2C445" } },
-	{ id = "title_royalty", category = "title", name = "Treasure Royalty", rarity = "mythic", look = { text = "Treasure Royalty", color = "#F07CB0", rainbow = true } },
-	{ id = "title_vip", category = "title", name = "VIP", rarity = "legendary", source = "vip", look = { text = "VIP", color = "#F5B700" } },
-	{ id = "title_captain", category = "title", name = "Captain", rarity = "legendary", source = "captain", look = { text = "Captain", color = "#2B4C7E" } },
+	{ id = "title_rookie", category = "title", name = "Landlubber", rarity = "common", look = { text = "Landlubber", color = "#E8D9B5", plate = "scroll", icon = "rules" } },
+	{ id = "title_hopper", category = "title", name = "Deckhand", rarity = "common", look = { text = "Deckhand", color = "#C99563", plate = "plank", icon = "anchor" } },
+	{ id = "title_setter", category = "title", name = "Bilge Rat", rarity = "common", look = { text = "Bilge Rat", color = "#8A909C", plate = "iron", icon = "barrel" } },
+	{ id = "title_lucky", category = "title", name = "Lucky Doubloon", rarity = "rare", look = { text = "Lucky Doubloon", color = "#D9A441", plate = "brass", icon = "coin" } },
+	{ id = "title_sneaky", category = "title", name = "Fog Walker", rarity = "rare", look = { text = "Fog Walker", color = "#7CFFC4", plate = "ghost", icon = "ghost" } },
+	{ id = "title_frost", category = "title", name = "Frostbeard", rarity = "rare", look = { text = "Frostbeard", color = "#CFEFFF", plate = "ice", icon = "snowflake" } },
+	{ id = "title_tamer", category = "title", name = "Grog Tamer", rarity = "epic", look = { text = "Grog Tamer", color = "#3E9F5B", plate = "glass", icon = "bottle" } },
+	{ id = "title_siren", category = "title", name = "Siren of the Shoals", rarity = "epic", look = { text = "Siren of the Shoals", color = "#F49AB8", plate = "coral", icon = "shell" } },
+	{ id = "title_warlord", category = "title", name = "Scourge of the Seas", rarity = "epic", look = { text = "Scourge of the Seas", color = "#FF8A1C", plate = "flame", icon = "swords" } },
+	{ id = "title_legend", category = "title", name = "Dread Pirate", rarity = "legendary", look = { text = "Dread Pirate", color = "#EDE6D3", plate = "bone", icon = "skull" } },
+	{ id = "title_royalty", category = "title", name = "Treasure Royalty", rarity = "mythic", look = { text = "Treasure Royalty", color = "#F07CB0", plate = "royal", icon = "crown", rainbow = true } },
+	{ id = "title_vip", category = "title", name = "VIP", rarity = "legendary", source = "vip", look = { text = "VIP", color = "#F5B700", plate = "gold", icon = "star" } },
+	{ id = "title_captain", category = "title", name = "Captain", rarity = "legendary", source = "captain", look = { text = "Captain", color = "#2B4C7E", plate = "navy", icon = "locker" } },
 	-- landed by filling the whole fish log (Meta/Fishing)
-	{ id = "title_angler", category = "title", name = "Master Angler", rarity = "legendary", source = "fishing", look = { text = "Master Angler", color = "#4FC3FF" } },
+	{ id = "title_angler", category = "title", name = "Master Angler", rarity = "legendary", source = "fishing", look = { text = "Master Angler", color = "#4FC3FF", plate = "sea", icon = "hook" } },
+	-- deeds
+	{ id = "title_seadog", category = "title", name = "Sea Dog", rarity = "common", source = "deed", deed = { stat = "games", goal = 25, text = "Play 25 matches" },
+		look = { text = "Sea Dog", color = "#9C8F7E", plate = "driftwood", icon = "settings" } },
+	{ id = "title_hunter", category = "title", name = "Treasure Hunter", rarity = "rare", source = "deed", deed = { stat = "wins", goal = 10, text = "Win 10 matches" },
+		look = { text = "Treasure Hunter", color = "#C8443A", plate = "ribbon", icon = "compass" } },
+	{ id = "title_hoarder", category = "title", name = "Hoarder of Gold", rarity = "epic", source = "deed", deed = { stat = "treasures", goal = 25, text = "Reach the treasure 25 times" },
+		look = { text = "Hoarder of Gold", color = "#CD7F45", plate = "bronze", icon = "chest" } },
+	{ id = "title_bonker", category = "title", name = "Bonkmaster", rarity = "rare", source = "deed", deed = { stat = "bonks", goal = 50, text = "Bonk 50 rivals" },
+		look = { text = "Bonkmaster", color = "#5E9C8A", plate = "verdigris", icon = "cannonball" } },
+	{ id = "title_snarer", category = "title", name = "Trap Lord", rarity = "epic", source = "deed", deed = { stat = "gotchas", goal = 25, text = "Catch rivals in your traps 25 times" },
+		look = { text = "Trap Lord", color = "#7A3B26", plate = "mahogany", icon = "trap" } },
+	{ id = "title_rigger", category = "title", name = "Master Rigger", rarity = "rare", source = "deed", deed = { stat = "placed", goal = 100, text = "Set 100 traps and pieces" },
+		look = { text = "Master Rigger", color = "#D9B77A", plate = "map", icon = "party" } },
+	{ id = "title_plank", category = "title", name = "Walked the Plank", rarity = "common", source = "deed", deed = { stat = "deaths", goal = 25, text = "Get sent back to the start 25 times" },
+		look = { text = "Walked the Plank", color = "#2F8FD0", plate = "tide", icon = "wave" } },
+	{ id = "title_admiral", category = "title", name = "Fleet Admiral", rarity = "legendary", source = "deed", deed = { stat = "wins", goal = 50, text = "Win 50 matches" },
+		look = { text = "Fleet Admiral", color = "#C9D3E6", plate = "silver", icon = "watch" } },
 }
 
 -- Mastery titles: "Mage Fan", "Mage Pro", "Mage Legend"... earned by playing a character
@@ -217,7 +239,13 @@ for _, charId in { "mage", "trapper", "fire_starter", "naturalist", "warper", "o
 			name = text,
 			rarity = tier[3],
 			source = "mastery",
-			look = { text = text, color = masteryColors[charId], rainbow = tier[1] == "legend" or nil },
+			look = {
+				text = text,
+				color = masteryColors[charId],
+				plate = ({ fan = "scroll", pro = "brass", legend = "gold" })[tier[1]],
+				emblem = charId,
+				rainbow = tier[1] == "legend" or nil,
+			},
 		})
 	end
 end
@@ -279,7 +307,13 @@ for season = 1, 24 do
 			rarity = r[3],
 			source = "season",
 			hidden = true,
-			look = { text = text, color = r[4], rainbow = r[1] == "legend" or nil },
+			look = {
+				text = text,
+				color = r[4],
+				plate = ({ bronze = "bronze", silver = "silver", gold = "gold", diamond = "ice", legend = "royal" })[r[1]],
+				icon = "leaders",
+				rainbow = r[1] == "legend" or nil,
+			},
 		})
 	end
 end

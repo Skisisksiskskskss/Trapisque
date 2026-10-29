@@ -510,7 +510,7 @@ function FishingRod:_land(snapped: boolean)
 		local ok, data = Net.request("match.fish", { action = "land", reels = fight.reels, slips = fight.slips, snapped = snapped })
 		self:_set("idle")
 		if ok and type(data) == "table" and data.result == "caught" and data.catch then
-			self:_show(data.catch, data.new == true, tonumber(data.size), data.record == true, data.unlocked)
+			self:_show(data.catch, data.new == true, tonumber(data.size), data.record == true, data.unlocked, tonumber(data.gems), tonumber(data.power))
 			if self.opts.onCaught then
 				self.opts.onCaught(data.catch, data.new == true)
 			end
@@ -525,7 +525,7 @@ end
 ---------------------------------------------------------------------------
 
 -- The catch's picture, name and size rise out of the water for a moment.
-function FishingRod:_show(catchId: string, new: boolean, size: number?, record: boolean?, unlocked: { string }?)
+function FishingRod:_show(catchId: string, new: boolean, size: number?, record: boolean?, unlocked: { string }?, gems: number?, power: number?)
 	local def = Fishing.byId[catchId]
 	local pop = Util.frame(self.root, {
 		Name = "Catch",
@@ -555,6 +555,17 @@ function FishingRod:_show(catchId: string, new: boolean, size: number?, record: 
 	local text = if catchId == "coin" then "+1 coin" elseif catchId == "boot" then "An old boot..." else ((if new then "New: " else "") .. name)
 	if size and size > 0 and catchId ~= "boot" then
 		text ..= ", " .. Fishing.sizeText(size) .. (if record then " (your biggest!)" else "")
+	end
+	-- what it paid
+	local paid = {}
+	if gems and gems > 0 then
+		table.insert(paid, "+" .. gems .. " Gems")
+	end
+	if power and power > 0 then
+		table.insert(paid, "+" .. power .. " Power")
+	end
+	if #paid > 0 then
+		text ..= "  " .. table.concat(paid, ", ")
 	end
 	self:_say(text, if def and def.rarity == "legendary" then C.sun elseif new or record then C.mint else C.textLight)
 	Util.tween(pop, 1.4, { Position = UDim2.new(0.5, 0, 0, -30) }, Enum.EasingStyle.Quad)
