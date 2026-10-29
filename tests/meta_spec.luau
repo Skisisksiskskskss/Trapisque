@@ -5,7 +5,7 @@ local Cosmetics = requireModule("Shared/Meta/Cosmetics")
 local Modes = requireModule("Shared/Game/Modes")
 local Config = requireModule("Shared/Config")
 local Rng = requireModule("Shared/Game/Rng")
-local Speech = requireModule("Shared/Meta/Speech")
+local ChatFilter = requireModule("Shared/Meta/ChatFilter")
 
 local cfg = Config.Matchmaking
 
@@ -299,55 +299,87 @@ test("trophies: winners gain, last place loses a little, never below zero", func
 	eq(Progress.rank(99999).id, "legend")
 end)
 
-test("weekly events rotate and every event mode game finishes", function()
-	local seen = {}
-	for week = 0, 7 do
-		seen[Progress.currentEvent(week * 7 * 86400 + 1).id] = true
+test("party mode: each treasure lays a new rule over the last, and every party game finishes", function()
+	local PartyRules = requireModule("Shared/Game/PartyRules")
+	truthy(Modes.get("party") and Modes.get("party").isParty, "the party mode")
+	eq(Modes.get("event"), nil)
+	for _, r in PartyRules.list do
+		eq(PartyRules.get(r.id), r)
+		truthy(r.fx and r.text and r.icon, r.id .. " needs a look and a line")
 	end
-	for _, e in Progress.events do
-		truthy(seen[e.id], "event never comes up: " .. e.id)
-		eq(Progress.eventById(e.id), e)
-	end
-	truthy(Modes.get("event") and Modes.get("event").isEvent, "event queue mode")
 	local Engine = requireModule("Shared/Game/Engine")
 	local Bot = requireModule("Shared/Game/Bot")
-	for i, e in Progress.events do
-		for seed = 1, 4 do
-			local players = {}
-			for s = 1, 4 do
-				players[s] = { id = "b" .. s, name = "B" .. s, isBot = true }
+	local rulesSeen = {}
+	for seed = 1, 6 do
+		local players = {}
+		for s = 1, 4 do
+			players[s] = { id = "b" .. s, name = "B" .. s, isBot = true }
+		end
+		local g = Engine.new({ mode = "party", map = "blissful", players = players, seed = seed * 31, target = 3 })
+		g:start()
+		eq(g.partyRule, nil, "no rule before the first treasure")
+		local guard, last = 0, nil
+		while g.phase ~= "over" do
+			guard += 1
+			assert(guard < 20000, "party game stuck")
+			local cmd = Bot.decide(g, g.current)
+			local ok = cmd ~= nil and g:command(g.current, cmd)
+			if not ok then
+				g:autoAct()
 			end
-			local g = Engine.new({ mode = "event", map = "blissful", players = players, seed = seed * 31 + i, target = 2, mutator = e.mutator })
-			g:start()
-			local guard = 0
-			while g.phase ~= "over" do
-				guard += 1
-				assert(guard < 20000, "event game stuck: " .. e.id)
-				local cmd = Bot.decide(g, g.current)
-				local ok = cmd ~= nil and g:command(g.current, cmd)
-				if not ok then
-					g:autoAct()
+			if g.partyRule ~= last then
+				last = g.partyRule
+				rulesSeen[last] = true
+				local rule = PartyRules.get(last)
+				for k, v in rule.mutator do
+					eq(g.mut[k], v, last .. " sets " .. k)
 				end
 			end
 		end
 	end
+	local n = 0
+	for _ in rulesSeen do
+		n += 1
+	end
+	truthy(n >= 3, "only " .. n .. " different rules came up")
 end)
 
-test("chat lines are made speakable: numbers, slang and letter-words", function()
-	eq(Speech.normalize("GG EZ"), "gee gee ee zee")
-	eq(Speech.normalize("gg wp, 12 treasures!!!"), "gee gee well played, twelve treasures!")
-	eq(Speech.normalize("I came 3rd of 6"), "I came third of six")
-	eq(Speech.normalize("21st"), "twenty-first")
-	eq(Speech.normalize("50% chance"), "fifty percent chance")
-	eq(Speech.normalize("2v2 me"), "two versus two me")
-	eq(Speech.normalize("u r 1,250 gems richer"), "you are one thousand two hundred fifty gems richer")
-	eq(Speech.normalize("noooooo :("), "noo")
-	eq(Speech.normalize("NPC lol"), "en pee see el oh el")
-	eq(Speech.normalize("hmm"), "hmm")
-	eq(Speech.normalize("HMM ok"), "HMM okay")
-	eq(Speech.normalize("3.5 x2"), "three point five times two")
-	eq(Speech.number(0), "zero")
-	eq(Speech.number(1000000), "one million")
+test("party mode's Gold Rush doubles coins", function()
+	local Engine = requireModule("Shared/Game/Engine")
+	local players = {}
+	for s = 1, 2 do
+		players[s] = { id = "b" .. s, name = "B" .. s, isBot = true }
+	end
+	local g = Engine.new({ mode = "party", map = "blissful", players = players, seed = 5, target = 3 })
+	g:start()
+	local p = g.players[1]
+	local before = p.coins
+	g.mut = { coinMult = 2 }
+	g:_addCoins(p, 3, "test")
+	eq(p.coins, before + 6)
+end)
+
+test("chat filter: meanness, links and spam are kept off the table", function()
+	local function clean(t, recent, now)
+		return (ChatFilter.clean(t, recent, now))
+	end
+	eq(clean("gg nice game"), "gg nice game")
+	eq(clean("you idiot"), "you #####")
+	eq(clean("ur so stuuupid"), "ur so ########")
+	eq(clean("N00B"), "####")
+	eq(clean("i d i o t"), "#########")
+	eq(clean("shut up lol"), "####### lol")
+	eq(clean("add me on discord"), "add me on #######")
+	eq(clean("go to www.site.com now"), "go to ############ now")
+	eq(clean("call 5551234567"), "call ##########")
+	eq(clean("WHY DID YOU DO THAT"), "Why did you do that")
+	eq(clean("noooooooo"), "nooo")
+	eq(clean("The snapper is a fish"), "The snapper is a fish")
+	eq(clean("instant replay"), "instant replay")
+	local text, why = ChatFilter.clean("again", { { text = "again", t = 10 } }, 15)
+	eq(text, nil)
+	truthy(why ~= nil, "a repeat should say why")
+	eq(clean("again", { { text = "again", t = 10 } }, 40), "again")
 end)
 
 -- fishing -------------------------------------------------------------------------

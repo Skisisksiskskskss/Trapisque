@@ -304,6 +304,16 @@ for _, page in PAGES do
 		end
 		F.run(0.6)
 		shot("page-" .. page.id)
+		if page.id == "shop" then
+			-- the Gem packs and the passes, further down
+			local top = modals()
+			local scroll = top[#top] and top[#top]:FindFirstChild("Scroll", true)
+			if scroll then
+				scroll.CanvasPosition = Vector2.new(0, 700)
+				F.run(0.3)
+				shot("page-shop-passes")
+			end
+		end
 		if page.id == "locker" then
 			-- the dice, the trails and the titles, each tab drawn
 			for _, tab in { "Dice", "Trails", "Titles" } do
@@ -904,6 +914,10 @@ local function think()
 	end
 	local _ = cost
 
+	-- Party mode: the board once a rule is in play
+	if s.view.partyRule then
+		shot("party-rule")
+	end
 	-- move: look at a die or two, then go
 	local dice = s.view.dice or {}
 	if #dice == 0 then

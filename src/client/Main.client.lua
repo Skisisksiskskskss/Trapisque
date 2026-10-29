@@ -39,18 +39,9 @@ local BadgeToast = require(Client.UI.BadgeToast)
 local ArtNotice = require(Client.UI.ArtNotice)
 local Gamepad = require(Client.Gamepad)
 
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Progress = require(ReplicatedStorage.Shared.Meta.Progress)
 
 local player = Players.LocalPlayer
 
--- the owner can switch the weekly event; every screen shows the one in play
-local function syncEvent()
-	local id = ReplicatedStorage:GetAttribute("TrapisqueEvent")
-	Progress.eventOverride = if type(id) == "string" and id ~= "" then id else nil
-end
-syncEvent()
-ReplicatedStorage:GetAttributeChangedSignal("TrapisqueEvent"):Connect(syncEvent)
 
 -- Roblox's own HUD pieces we don't use (the chat and menu stay available)
 local function hideCoreGui()

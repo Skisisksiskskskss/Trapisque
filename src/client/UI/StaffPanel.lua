@@ -6,7 +6,7 @@
 	  Players   everyone on this server; Manage opens their sheet
 	  Reports   chat reports from players (on every server), with the person's last lines
 	  Find      anyone by username, online or not (gifts wait for them to join)
-	  Server    announcements; the owner's gem rain, chest rain, weekly event, shutdown
+	  Server    announcements; the owner's gem rain, chest rain, shutdown
 	  Admins    (owner) who's an admin
 	  Bans      who's banned and until when
 	  Log       what staff did lately
@@ -24,7 +24,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage.Shared
 local Passes = require(Shared.Meta.Passes)
 local Cosmetics = require(Shared.Meta.Cosmetics)
-local Progress = require(Shared.Meta.Progress)
 
 local UI = script.Parent
 local Util = require(UI.Util)
@@ -628,23 +627,6 @@ function StaffPanel.open(layer: Instance)
 				act({ action = "chestRain" })
 			end },
 		}, 5)
-		heading(body, "Weekly event", 6)
-		local current = state and state.event
-		note(body, "Switch this week's event on every server (back to the rotation when you like). Now: " .. (if current then (Progress.eventById(current) or {}).name or current else ("rotation (" .. Progress.currentEvent().name .. ")")), 7)
-		local events = {}
-		for _, e in Progress.events do
-			table.insert(events, { text = string.upper(e.name), style = if current == e.id then "green" else "panel", onClick = function()
-				if act({ action = "event", id = e.id }) then
-					refresh()
-				end
-			end })
-		end
-		table.insert(events, { text = "ROTATION", style = if current == nil then "green" else "panel", onClick = function()
-			if act({ action = "event" }) then
-				refresh()
-			end
-		end })
-		buttons(body, events, 8, 170)
 		heading(body, "Shut down", 9)
 		note(body, "Everyone gets your message, then every server closes (for an update). Rejoining starts fresh servers.", 10)
 		local msg = textRow(body, "Trapisque is updating. Rejoin in a minute!", 11, 200)

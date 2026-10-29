@@ -46,6 +46,7 @@ local Characters = require(script.Parent.Characters)
 local Maps = require(script.Parent.Maps)
 local Modes = require(script.Parent.Modes)
 local Board = require(script.Parent.Board)
+local PartyRules = require(script.Parent.PartyRules)
 
 local Rules = Config.Rules
 local CharCfg = Config.Characters
@@ -147,8 +148,12 @@ function Engine.new(opts)
 	self.rng = Rng.new(self.seed)
 	self.target = opts.target or mode.target
 	self.teamTarget = self.target * mode.teamSize
-	-- a weekly event's twist on the rules (Shared/Meta/Progress events), or none
+	-- a twist on the rules (Shared/Meta/Progress events), or none; in Party mode each
+	-- treasure lays a new rule (PartyRules) over it
 	self.mut = opts.mutator or {}
+	self.baseMut = table.clone(self.mut)
+	self.party = opts.party == true or mode.isParty == true
+	self.partyRule = nil :: string?
 	self.length = opts.length or "classic"
 	local caps = Rules.MaxRounds
 	self.maxRounds = if type(caps) == "table" then (caps[self.length] or caps.classic) else caps
@@ -1345,6 +1350,7 @@ function Engine:_addCoins(p, n: number, why: string)
 	if n <= 0 then
 		return
 	end
+	n *= self.mut.coinMult or 1
 	p.coins += n
 	p.stats.coins += n
 	self:_emit({ t = "coin", p = p.index, coins = p.coins, gain = n, why = why })
@@ -1454,6 +1460,42 @@ function Engine:_reachTreasure(p)
 	self:_sendToStart(p, "home")
 	if self:teamTreasures(p.team) >= self.teamTarget then
 		self:_gameOver(p.team, "treasure")
+	elseif self.party then
+		self:_nextPartyRule(p)
+	end
+end
+
+-- Party mode: a new rule replaces the last one (never the same one twice in a row).
+function Engine:_nextPartyRule(p)
+	local choices = {}
+	for _, r in PartyRules.list do
+		if r.id ~= self.partyRule then
+			table.insert(choices, r)
+		end
+	end
+	local rule = self.rng:pick(choices)
+	self.partyRule = rule.id
+	local mut = table.clone(self.baseMut)
+	for k, v in rule.mutator do
+		mut[k] = v
+	end
+	self.mut = mut
+	self:_emit({ t = "partyRule", rule = rule.id, p = p.index })
+	if rule.instant == "cards" then
+		-- everyone draws a card from the helping kind (none that's banned)
+		local deck = {}
+		for _, id in Items.wheels.assist do
+			if id ~= "coin" and not self.banned[id] then
+				table.insert(deck, id)
+			end
+		end
+		if #deck > 0 then
+			for _, q in self.players do
+				local id = self.rng:pick(deck)
+				-- ("bkb" on the wheel is the map's own counter card)
+				self:_giveCard(q, if id == "bkb" then self.map.counterItem else id, "party")
+			end
+		end
 	end
 end
 
@@ -3040,6 +3082,7 @@ function Engine:snapshot(forSeat: number?)
 		boost = if turn then turn.boost else nil,
 		double = if turn then turn.double == true else false,
 		mutator = table.clone(self.mut),
+		partyRule = self.partyRule,
 		rules = { abilities = self.rules.abilities ~= false, wanted = self.rules.wanted ~= false, underdog = self.rules.underdog ~= false, board = self.rules.board or "full", banned = table.clone(self.banned) },
 		underdog = if self.phase ~= "over" then self:underdogSeat() else nil,
 		wanted = if self.wanted then { seat = self.wanted.seat, pot = self.wanted.pot, most = self.wanted.most == true } else nil,

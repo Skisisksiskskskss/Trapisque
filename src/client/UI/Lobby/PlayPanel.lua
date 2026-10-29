@@ -24,6 +24,7 @@ local UI = script.Parent.Parent
 local Util = require(UI.Util)
 local Theme = require(UI.Theme)
 local Icons = require(UI.Icons)
+local Art = require(UI.Art)
 local Widgets = require(UI.Widgets)
 local CharacterSelect = require(script.Parent.CharacterSelect)
 
@@ -85,13 +86,13 @@ function PlayPanel.new(parent: Instance, popups: Instance, opts: { [string]: any
 	self.maid:add(strip.destroy)
 	local top = stripH + (if compact then 8 else 12)
 
-	-- this week's event: a wide banner tile over the classic modes (one more tile in a
-	-- row when compact)
-	local event = Progress.currentEvent()
+	-- Party: a wide banner tile over the classic modes (one more tile in a row when
+	-- compact)
+	local event = { name = "Party", blurb = "Every treasure brings a new rule!", color = "#9A6BFF" }
 	local classic = {}
 	local eventMode = nil
 	for _, mode in Modes.list do
-		if mode.isEvent then
+		if mode.isParty then
 			eventMode = mode
 		else
 			table.insert(classic, mode)
@@ -203,7 +204,7 @@ function PlayPanel:destroy()
 	self.maid:clean()
 end
 
--- The weekly event as a wide tile: its name, its twist, in its own colour.
+-- Party mode as a wide tile: its name and what it does, in its own colour.
 function PlayPanel:_eventTile(holder: Frame, mode, event)
 	local color = Color3.fromHex(string.sub(event.color, 2))
 	local tile = Util.new("TextButton", {
@@ -218,9 +219,11 @@ function PlayPanel:_eventTile(holder: Frame, mode, event)
 	Util.corner(tile, 12)
 	local stroke = Util.stroke(tile, C.line, 2)
 	local ic = Util.frame(tile, { AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 12, 0.5, 0), Size = UDim2.fromOffset(34, 34) })
-	Icons.medallion(ic, "star", color, { Size = UDim2.fromScale(1, 1) })
+	if not Art.image(ic, "ui/party", { Size = UDim2.fromScale(1.2, 1.2), Position = UDim2.fromScale(-0.1, -0.1) }) then
+		Icons.medallion(ic, "star", color, { Size = UDim2.fromScale(1, 1) })
+	end
 	Widgets.label(tile, {
-		text = "This week: " .. event.name,
+		text = event.name,
 		font = "chunky",
 		size = 18,
 		color = C.text,
@@ -269,7 +272,7 @@ function PlayPanel:_modeTile(grid: Frame, mode, order: number, event: any?)
 		Position = UDim2.fromOffset(pad, pad),
 		Size = UDim2.fromOffset(iconSize, iconSize),
 	})
-	Icons.medallion(icon, if mode.isEvent then "star" elseif mode.isTeam then "people" elseif mode.id == "blitz" then "hourglass" else "bolt", if mode.isEvent then C.pink else C.sun, { Size = UDim2.fromScale(1, 1) })
+	Icons.medallion(icon, if mode.isParty then "star" elseif mode.isTeam then "people" elseif mode.id == "blitz" then "hourglass" else "bolt", if mode.isParty then C.pink else C.sun, { Size = UDim2.fromScale(1, 1) })
 	local textX = pad + iconSize + 10
 	-- the name, with the player count beside it on a wide tile (under it on a narrow one)
 	local name = Widgets.label(tile, {

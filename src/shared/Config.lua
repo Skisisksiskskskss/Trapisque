@@ -180,15 +180,26 @@ Config.Server = {
 ---------------------------------------------------------------------------
 -- Create these gamepasses on the Creator Dashboard (Monetization > Passes) and paste
 -- their ids here. A pass left at 0 is simply hidden from the Shop.
+-- (Shared/Meta/Passes has the price to set for each.)
 Config.GamePasses = {
+	StarterPack = 0,
 	VIP = 0,
 	DoubleGems = 0,
+	CaptainsChest = 0,
 	LuckyCharm = 0,
 	EmotePack = 0,
-	Chat = 0, -- 10 Robux: type your own lines in the game chat
-	VoicePack = 0,
 	VictoryParade = 0,
-	CaptainsChest = 0,
+	Chat = 0,
+}
+
+-- Gem packs: create these as developer products (Monetization > Developer Products)
+-- and paste their ids here. A pack left at 0 is hidden from the Shop.
+Config.DevProducts = {
+	Gems250 = 0,
+	Gems600 = 0,
+	Gems1400 = 0,
+	Gems3000 = 0,
+	Gems8000 = 0,
 }
 
 -- Staff: the owner (and admins the owner picks) get the staff panel. The game's creator
@@ -291,6 +302,6 @@ Config.Data = {
 -- In Studio, pretend the player owns every gamepass so all features can be tested.
 Config.StudioOwnsAllPasses = true
 
-Config.Version = "1.3.0"
+Config.Version = "1.4.0"
 
 return Config

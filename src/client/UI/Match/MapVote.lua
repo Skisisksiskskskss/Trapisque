@@ -6,7 +6,7 @@
 		map      a picture of the map (art/maps: the game's own board), its name, what it
 		         does to you and the card that gets you past it
 		mystery  a face-down map that isn't on the other cards; it turns over if it wins
-		twist    a map with one of the weekly events' twists on top
+		twist    a map with a twist on the rules on top
 
 	Tap one to vote. Everyone who has voted shows on their card as their emblem; a bar
 	runs down to the server's deadline. "majority": the most votes wins. "roulette":

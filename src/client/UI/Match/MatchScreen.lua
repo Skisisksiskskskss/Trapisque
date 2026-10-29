@@ -38,7 +38,7 @@ local Engine = require(Shared.Game.Engine)
 local Pacing = require(Shared.Game.Pacing)
 local Cosmetics = require(Shared.Meta.Cosmetics)
 local Progress = require(Shared.Meta.Progress)
-local Voices = require(Shared.Meta.Voices)
+local PartyRules = require(Shared.Game.PartyRules)
 
 local UI = script.Parent.Parent
 local Util = require(UI.Util)
@@ -56,6 +56,7 @@ local HandView = require(script.Parent.HandView)
 local ActionDock = require(script.Parent.ActionDock)
 local Feed = require(script.Parent.Feed)
 local Overlays = require(script.Parent.Overlays)
+local PartyFx = require(script.Parent.PartyFx)
 local Effects = require(script.Parent.Effects)
 local Inspector = require(script.Parent.Inspector)
 local CardTip = require(script.Parent.CardTip)
@@ -72,7 +73,6 @@ local Net = require(Client.Net)
 local State = require(Client.State)
 local Sound = require(Client.Sound)
 local Chat = require(Client.Chat)
-local Voice = require(Client.Voice)
 local Gamepad = require(Client.Gamepad)
 local Fishing = require(Shared.Meta.Fishing)
 
@@ -365,6 +365,7 @@ function MatchScreen:_viewFrom(snap, noHand: boolean?)
 		trail = copy(snap.trail),
 		pick = snap.pick and copy(snap.pick) or nil,
 		mutator = snap.mutator or {},
+		partyRule = snap.partyRule,
 		stock = table.clone(snap.stock or {}),
 		wanted = if snap.wanted then table.clone(snap.wanted) else nil,
 		players = players,
@@ -656,6 +657,12 @@ function MatchScreen:_relayout(m)
 		self.board:applySnapshot(self:_viewAsSnap())
 		self.board:setCurrent(if self.view.phase ~= "over" then self.view.current else nil)
 		self.board:setFocus(L.focus, true)
+		-- Party mode's rule, on the board for as long as it lasts
+		if self.partyFx then
+			self.partyFx:destroy()
+		end
+		self.partyFx = PartyFx.new(self.board.container)
+		self.partyFx:set(self.view.partyRule)
 	else
 		self.board:setFocus(L.focus, false)
 	end
@@ -763,15 +770,13 @@ function MatchScreen:_updateRound()
 		return
 	end
 	local modeName = if self.mode then self.mode.short else ""
-	local event = self.mode and self.mode.isEvent and Progress.currentEvent()
-	if event then
-		modeName = event.name
-	end
-	if self.twist and self.twist ~= event then
+	if self.twist then
 		modeName ..= " + " .. self.twist.name
 	end
+	local rule = PartyRules.get(self.view.partyRule)
 	local lengthName = LENGTH_NAME[self.length or ""] or ""
-	local mapName = if self.mapDef then self.mapDef.name else ""
+	-- (in Party mode the rule in play matters more than the map's name)
+	local mapName = if rule then rule.name elseif self.mapDef then self.mapDef.name else ""
 	local w = self.L and self.L.info and self.L.info.w or 300
 	if w >= 460 then
 		self.roundLabel.Text = string.format("Round %d  ·  %s  ·  %s%s  ·  First to %d", round, mapName, modeName, if lengthName ~= "" then ("  ·  " .. lengthName) else "", self.target or 0)
@@ -832,6 +837,10 @@ function MatchScreen:_destroy()
 		self.closePick = nil
 	end
 	self.maid:clean()
+	if self.partyFx then
+		self.partyFx:destroy()
+		self.partyFx = nil
+	end
 	if self.tip then
 		self.tip:destroy()
 	end
@@ -1151,7 +1160,7 @@ function MatchScreen:_intro(payload)
 		task.wait(math.max(0, intro - (os.clock() - t0)))
 	end
 	-- what this match plays differently: its house rules, its twist
-	local twist = if self.twist and not (self.mode and self.mode.isEvent) then self.twist else nil
+	local twist = self.twist
 	if self.alive and (self.houseRules or twist) then
 		local parts = table.clone(self.houseRules or {})
 		if twist then
@@ -1276,6 +1285,9 @@ function MatchScreen:_reconcile(payload)
 		self.board:applySnapshot(snap)
 		self.board:setCurrent(if snap.phase ~= "over" then snap.current else nil)
 		self.board:setRumble(snap.erupting == true and snap.phase ~= "over")
+	end
+	if self.partyFx then
+		self.partyFx:set(if snap.phase ~= "over" then snap.partyRule else nil)
 	end
 	if self.chips then
 		self.chips:setCurrent(if snap.phase ~= "over" then snap.current else nil, self.deadline)
@@ -1899,6 +1911,20 @@ function MatchScreen:_play(e)
 			end
 		end))
 		feed:add(self:_tag(e.p) .. " gave a card to " .. self:_tag(e.target), nil, "plus", C.good)
+	elseif t == "partyRule" then
+		-- Party mode: a new rule replaces the last
+		local rule = PartyRules.get(e.rule)
+		if rule then
+			local color = Theme.hex(string.sub(rule.color, 2))
+			Overlays.shout(self.fx, "NEW RULE: " .. string.upper(rule.name), color, 1.6, rule.text)
+			feed:add("New rule: " .. rule.name .. ". " .. rule.text, color, "star", color)
+			if self.partyFx then
+				self.partyFx:set(rule.id)
+			end
+			self.view.partyRule = rule.id
+			self:_updateRound()
+			Sound.play("magic")
+		end
 	elseif t == "bounce" then
 		-- the treasure takes an exact count
 		self.board:floatText(self:_pawnWorld(e.p), "Too far!", C.coral, 18)
@@ -2305,6 +2331,15 @@ function MatchScreen:_previewDie(key: any)
 	local plan = self:_planFor(key)
 	if not plan or #plan.path == 0 then
 		self.board:showPath(nil)
+		return
+	end
+	if self.view.mutator and self.view.mutator.noPreview then
+		-- Party mode's fog: no peeking
+		self.board:showPath(nil)
+		local me = self:_player(self.mySeat)
+		if me then
+			self.board:floatText(self:_pawnWorld(self.mySeat), "Too foggy to see!", C.steel, 16)
+		end
 		return
 	end
 	if self.coach then
@@ -3335,14 +3370,13 @@ function MatchScreen:_openPick(options: { string })
 	end)
 end
 
--- An emote: a bubble over the character (in the emote's colour), read out in their voice.
+-- An emote: a bubble over the character (in the emote's colour).
 function MatchScreen:_emote(data)
 	local def = Cosmetics.get(data.emote)
 	if not def then
 		return
 	end
 	local info = self.seats[data.seat] or {}
-	local p = self.view and self.view.players[data.seat]
 	if self.board and Chat.bubbles() then
 		self.board:say(data.seat, def.look.text, {
 			emote = true,
@@ -3354,10 +3388,6 @@ function MatchScreen:_emote(data)
 		self.chips:emote(data.seat, data.emote)
 	end
 	Sound.play("pop")
-	local settings = (State.get("profile") or {}).settings or {}
-	if settings.voices ~= false then
-		Voice.say(def.look.text, Voices.resolve(data.voice, p and p.character))
-	end
 end
 
 -- The say button: your emotes, the quick lines and (with the Chat pass) your own words.

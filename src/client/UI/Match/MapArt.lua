@@ -364,22 +364,83 @@ local function stream(parent: Instance, L, U: number, r, look, z: number, name: 
 	if not first or not last then
 		return
 	end
-	local discs = {}
+	-- where it reaches the sea its banks stop short of the coast, so the water runs on
+	-- out into the sea (its bed only, no bank closing it off)
+	local open = {}
+	local reach = math.ceil((look.width + 0.25) / 0.3)
+	if r.endA == "sea" then
+		for i = first, math.min(last, first + reach - 1) do
+			open[i] = true
+		end
+	end
+	if r.endB == "sea" then
+		for i = math.max(first, last - reach + 1), last do
+			open[i] = true
+		end
+	end
+	local discs, banked = {}, {}
 	for i = first, last do
 		if samples[i].land then
 			table.insert(discs, samples[i])
+			if not open[i] then
+				table.insert(banked, samples[i])
+			end
 		end
 	end
+	local soft = Art.has("ground/soft")
 	local ends = {
-		{ kind = r.endA, point = pts[1], at = samples[first], from = samples[first + 1], sea = { table.unpack(samples, 1, first - 1) } },
-		{ kind = r.endB, point = pts[#pts], at = samples[last], from = samples[last - 1], sea = { table.unpack(samples, last + 1) } },
+		{ kind = r.endA, point = pts[1], at = samples[first], from = samples[first + 1], sea = {}, inward = 1 },
+		{ kind = r.endB, point = pts[#pts], at = samples[last], from = samples[last - 1], sea = {}, inward = -1 },
 	}
+	-- the samples out at sea, nearest the coast first
+	for i = first - 1, 1, -1 do
+		table.insert(ends[1].sea, samples[i])
+	end
+	for i = last + 1, #samples do
+		table.insert(ends[2].sea, samples[i])
+	end
 	for k, e in ends do
-		if e.kind == "pond" then
+		if e.kind == "pond" and look.vent then
+			-- lava wells up from a vent: a cone of dark rock, glowing at its mouth, smoking
+			local x, y = e.point[1], e.point[2]
+			if soft then
+				sprite(parent, L, U, "ground/soft", x, y, 3.2, z + 1, look.core, 0.55, true)
+			end
+			disc(parent, L, U, x + 0.05, y + 0.12, 0.92, look.bank, z + 2, name .. "VentFoot")
+			disc(parent, L, U, x, y, 0.82, look.vent, z + 3, name .. "Vent")
+			disc(parent, L, U, x - 0.08, y - 0.1, 0.62, Util.shade(look.vent, 0.18), z + 4, name .. "VentLip")
+			disc(parent, L, U, x, y, 0.46, look.edge, z + 5, name .. "VentRim")
+			disc(parent, L, U, x, y + 0.02, 0.38, look.fill, z + 6, name .. "VentLava", 0, 0.04)
+			disc(parent, L, U, x - 0.04, y, 0.22, look.core, z + 7, name .. "VentHeart", 0, 0.04)
+			if soft and look.steam then
+				for n, o in { { 0.1, -0.9, 1.3 }, { -0.2, -1.6, 1.7 }, { 0.25, -2.3, 2.0 } } do
+					sprite(parent, L, U, "ground/soft", x + o[1], y + o[2], o[3], z + 9, Util.shade(look.vent, 0.5), 0.45 + n * 0.12)
+				end
+			end
+		elseif e.kind == "pond" then
 			-- a small lake
 			local x, y = e.point[1], e.point[2]
 			for _, o in { { 0, 0, 0.72 }, { 0.48, 0.16, 0.52 }, { -0.4, 0.24, 0.48 }, { 0.1 * k, -0.34, 0.44 } } do
-				table.insert(discs, { x = x + o[1], y = y + o[2], r = o[3] })
+				local c = { x = x + o[1], y = y + o[2], r = o[3] }
+				table.insert(discs, c)
+				table.insert(banked, c)
+			end
+		elseif e.kind == "sea" and e.from and look.cooled then
+			-- lava meeting the sea: it cools into a shelf of dark rock, steaming
+			local m = e.at
+			for n, q in e.sea do
+				if n > 4 then
+					break
+				end
+				local rr = (q.r + CUT.fill[1]) * (1.05 - n * 0.16)
+				disc(parent, L, U, q.x, q.y, rr + 0.08, Util.shade(look.cooled, -0.3), z + 1, name .. "Shelf", 0, CUT.fill[3] + 0.04)
+				disc(parent, L, U, q.x, q.y, rr, look.cooled, z + 2, name .. "Shelf", 0, CUT.fill[3])
+			end
+			if soft then
+				sprite(parent, L, U, "ground/soft", m.x, m.y, 1.6, z + 8, look.core, 0.45, true)
+				for n, o in { { 0, -0.6, 1.6 }, { -0.35, -1.3, 2.1 }, { 0.3, -2.0, 2.5 } } do
+					sprite(parent, L, U, "ground/soft", m.x + o[1], m.y + o[2], o[3], z + 9, look.steam, 0.3 + n * 0.12)
+				end
 			end
 		elseif e.kind == "sea" and e.from then
 			local m = e.at
@@ -387,36 +448,61 @@ local function stream(parent: Instance, L, U: number, r, look, z: number, name: 
 			local len = math.sqrt(hx * hx + hy * hy)
 			local top = project(L, U, m.x, m.y) + Vector2.new(0, CUT.fill[3] * U)
 			if len > 1e-6 and hy / len > 0.3 then
-				-- the cliff faces you: it pours down it, foaming (or steaming) where it lands
+				-- the cliff faces you: it pours down it, white water at its foot
 				local w = 2 * (m.r + CUT.fill[1]) * U * 0.9
 				local drop = (math.max(0, depth(m.x, m.y)) * K + CLIFF + 0.05) * U
-				Util.new("Frame", {
+				local fall = Util.new("Frame", {
 					Name = name .. "Fall",
 					BackgroundColor3 = look.fill,
 					BorderSizePixel = 0,
 					AnchorPoint = Vector2.new(0.5, 0),
-					Position = UDim2.fromOffset(top.X, top.Y),
-					Size = UDim2.fromOffset(w, drop),
-					ZIndex = z,
+					Position = UDim2.fromOffset(top.X, top.Y - 0.1 * U),
+					Size = UDim2.fromOffset(w, drop + 0.1 * U),
+					ZIndex = z + 6,
 					Parent = parent,
 				})
-				ellipse(parent, top + Vector2.new(0, drop), w * 1.5, w * 0.5, look.splash, z + 1, name .. "Splash")
+				Util.corner(fall, math.floor(w * 0.2))
+				Util.grad(fall, { Color3.new(1, 1, 1), Util.mix(Color3.new(1, 1, 1), look.splash, 0.3) }, 90)
+				for n = 1, 3 do
+					local streak = Util.new("Frame", {
+						Name = name .. "Streak",
+						BackgroundColor3 = look.splash,
+						BackgroundTransparency = 0.35,
+						BorderSizePixel = 0,
+						AnchorPoint = Vector2.new(0.5, 0),
+						Position = UDim2.fromOffset(top.X + (n - 2) * w * 0.28, top.Y + drop * (0.1 + 0.15 * n)),
+						Size = UDim2.fromOffset(math.max(2, w * 0.07), drop * 0.55),
+						ZIndex = z + 7,
+						Parent = parent,
+					})
+					Util.corner(streak, 0.5)
+				end
+				if soft then
+					sprite(parent, L, U, "ground/soft", m.x, m.y + (drop / U) / K, 1.9, z + 8, look.splash, 0.15, true)
+				else
+					ellipse(parent, top + Vector2.new(0, drop), w * 1.5, w * 0.5, look.splash, z + 1, name .. "Splash")
+				end
+			elseif soft then
+				-- it runs on out into the sea, its colour fading into the sea's
+				for n, q in e.sea do
+					if n > 6 then
+						break
+					end
+					local t = n / 6
+					sprite(parent, L, U, "ground/soft", q.x, q.y + CUT.fill[3] / K * 0.5, 2.4 * (q.r + 0.1) * (1 + t * 0.6), z + 1, look.fill, 0.15 + 0.7 * t, true)
+				end
 			else
-				-- it runs on into the sea a little way (lava cools there into dark rock)
 				for _, q in e.sea do
 					if depth(q.x, q.y) > -0.6 then
-						disc(parent, L, U, q.x, q.y, (q.r + CUT.fill[1]) * (if look.cooled then 0.8 else 1), look.cooled or look.fill, z + 1, name .. "Mouth", 0, CUT.fill[3])
+						disc(parent, L, U, q.x, q.y, q.r + CUT.fill[1], look.fill, z + 1, name .. "Mouth", 0, CUT.fill[3])
 					end
 				end
-			end
-			if look.steam then
-				sprite(parent, L, U, "ground/soft", m.x, m.y - 0.5, 1.8, z + 9, look.steam, 0.45)
 			end
 		end
 	end
 	for i, key in { "lip", "bank", "edge", "fill" } do
 		local ly = CUT[key]
-		for _, c in discs do
+		for _, c in (if key == "fill" then discs else banked) do
 			disc(parent, L, U, c.x, c.y, c.r + ly[1], look[key], z + 1 + i, name .. (if key == "fill" then "" else key), ly[2], ly[3])
 		end
 	end
@@ -427,8 +513,8 @@ local function stream(parent: Instance, L, U: number, r, look, z: number, name: 
 		if band[2] then
 			for i = 1, #samples - 1 do
 				local a, b = samples[i], samples[i + 1]
-				local open = not band[4] or math.sin(i * 0.8 + seed) > -0.35
-				if a.land and b.land and open then
+				local showing = not band[4] or math.sin(i * 0.8 + seed) > -0.35
+				if a.land and b.land and showing then
 					local k = if band[4] then 0.7 + 0.3 * math.sin(i * 1.9 + seed) else 1
 					local w = across(2 * (a.r + CUT.fill[1]) * band[1] * k, a.x, a.y, b.x, b.y) * U
 					strip(parent, project(L, U, a.x, a.y) + off, project(L, U, b.x, b.y) + off, w, band[2], z + 6, name .. band[3], w * 0.3)
@@ -680,6 +766,7 @@ function MapArt.draw(layers: { [string]: Frame }, L, U: number)
 			core = glow,
 			crust = hex("4A2016"),
 			cooled = hex("3A2A26"),
+			vent = hex("4A3E38"),
 			splash = Util.mix(C.white, col.shallows, 0.3),
 			steam = C.white,
 		}, 10, "Lava", depth, i * 2.3)

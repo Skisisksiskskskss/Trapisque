@@ -196,12 +196,6 @@ function Match.new(spec, hooks)
 	self.enginePlayers = enginePlayers
 	self.teamsPreset = spec.teamsPreset == true
 
-	-- the weekly event queue plays with the week's twist on the rules
-	if mode.isEvent then
-		local event = Progress.eventById(spec.event) or Progress.currentEvent()
-		self.event = event.id
-		self.mutator = event.mutator
-	end
 	-- a private match's house rules, which can bring a twist of their own
 	self.rules = if spec.rules then HouseRules.clean(spec.rules) else nil
 	if self.rules and self.rules.twist ~= "none" then
@@ -244,7 +238,7 @@ function Match.new(spec, hooks)
 	return self
 end
 
--- A weekly event's twist on top of whatever twist the match already has.
+-- A twist on the rules on top of whatever twist the match already has.
 function Match:_addTwist(eventId: string)
 	local event = Progress.eventById(eventId)
 	if not event then
@@ -668,10 +662,8 @@ function Match:_sendEmote(seat: number, emoteId: string)
 	if self.closed then
 		return
 	end
-	local info = self.seats[seat]
-	local voice = if info and info.player then DataService.voiceOf(info.player) else "auto"
 	for _, p in self:audience() do
-		Net.push(p, "match.emote", { id = self.id, seat = seat, emote = emoteId, voice = voice })
+		Net.push(p, "match.emote", { id = self.id, seat = seat, emote = emoteId })
 	end
 end
 
@@ -1146,12 +1138,11 @@ function Match:_finish()
 					treasures = p.treasures,
 					won = won,
 					practice = self.kind == "practice",
-					ranked = self.kind == "public" and not self.mode.isTeam and not self.mode.isEvent,
+					ranked = self.kind == "public" and not self.mode.isTeam and not self.mode.isParty,
 					place = table.find(engine.ranking or {}, seat) or #self.seats,
 					players = #self.seats,
 					character = p.character,
 					mode = self.mode.id,
-					event = self.event,
 					stats = stats,
 					tutorial = self.tutorial,
 					award = if awards[seat] then awards[seat].id else nil,
@@ -1406,7 +1397,6 @@ function Match:rematchSpec()
 		map = self.mapId,
 		length = self.length,
 		parties = self.parties,
-		event = self.event,
 		rules = self.rules,
 		twist = if self.rules and self.rules.twist == self.twist then nil else self.twist,
 		humans = humans,

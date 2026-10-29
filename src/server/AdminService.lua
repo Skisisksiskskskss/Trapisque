@@ -10,7 +10,7 @@
 
 	The owner can also give anyone (online or not) gamepasses, Gems, free chests, any
 	cosmetic or the whole collection; ban for good; make or remove admins; announce to
-	every server; give everyone on a server Gems or a chest; switch the weekly event; and
+	every server; give everyone on a server Gems or a chest; and
 	shut every server down (for an update). Gifts to someone who's offline wait in the
 	DataStore and land the next time they join.
 
@@ -36,7 +36,6 @@ local Shared = ReplicatedStorage.Shared
 local Config = require(Shared.Config)
 local Passes = require(Shared.Meta.Passes)
 local Cosmetics = require(Shared.Meta.Cosmetics)
-local Progress = require(Shared.Meta.Progress)
 
 local Net = require(script.Parent.Net)
 local ServerInfo = require(script.Parent.ServerInfo)
@@ -163,11 +162,6 @@ local function announceHere(text: string, by: string?)
 	end
 end
 
-local function setEvent(id: string?)
-	Progress.eventOverride = id
-	ReplicatedStorage:SetAttribute("TrapisqueEvent", id or "")
-end
-
 -- Gifts for someone who's offline (or on another server) wait here until they join.
 local function queueGift(userId: number, gift)
 	update("pending_" .. userId, function(old)
@@ -240,8 +234,6 @@ local function onMessage(message)
 		end
 	elseif m.kind == "mute" and type(m.userId) == "number" then
 		ChatService.mute(m.userId, m.minutes)
-	elseif m.kind == "event" then
-		setEvent(if type(m.id) == "string" and m.id ~= "" then m.id else nil)
 	elseif m.kind == "gift" and type(m.userId) == "number" then
 		local p = Players:GetPlayerByUserId(m.userId)
 		if p then
@@ -380,7 +372,6 @@ local function stateFor(player: Player)
 		admins = adminList,
 		log = log,
 		reports = currentReports(),
-		event = Progress.eventOverride,
 		maxBanHours = if role == "owner" then 0 else S.AdminMaxBanHours,
 	}
 end
@@ -610,15 +601,6 @@ local function act(player: Player, payload): (boolean, any)
 			end
 		end
 		record(player, action, nil, if action == "gemRain" then tostring(amount) else nil)
-		return true
-	elseif action == "event" then
-		local id = payload.id
-		if id ~= nil and (type(id) ~= "string" or not Progress.eventById(id)) then
-			return false, "Pick an event."
-		end
-		setEvent(id)
-		publish({ kind = "event", id = id or "" })
-		record(player, "event", nil, id or "back to the weekly rotation")
 		return true
 	elseif action == "shutdown" then
 		local text = filterBroadcast(player, string.sub(tostring(payload.text or ""), 1, 200))

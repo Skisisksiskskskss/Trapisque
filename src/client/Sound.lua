@@ -62,7 +62,6 @@ local LIBRARY: { [string]: Def } = {
 	close = { id = asset(17208186900), volume = 0.4 },
 	error = { id = asset(17208353912), volume = 0.37 },
 	pop = { id = asset(9119708437), volume = 0.6, jitter = 0.06 }, -- quick card fwip
-	blip = { id = asset(9119983245), volume = 0.3, jitter = 0.03, max = 4 }, -- a babbled syllable (Voice)
 	-- the board
 	step = {
 		id = asset(9114559553), -- a wooden piece tapped down, one per tile

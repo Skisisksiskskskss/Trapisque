@@ -59,9 +59,11 @@ rendered offline (see [Screenshots](#screenshots)).
   that swing you forward or back). Each has its own hazard, and its own card
   that shrugs it off (the Lantern, the Fire Cloak, the Harpoon...). **Six modes**: Chaos (free-for-all), **Blitz** (first treasure
   wins, 30-second turns), Assist (2 vs 2), Factions (three teams of 2), World War Four
-  (3 vs 3) and a **Weekly Event** with a twist on the rules (Trap Frenzy, Bonk
-  Bonanza, Power Surge, Triple Dice). See [docs/RULES.md](docs/RULES.md) for the rules
-  as played.
+  (3 vs 3) and **Party**, where every treasure brings a new rule that replaces the
+  last (Power Surge, Triple Dice, Bonk Bonanza, Trap Frenzy, Gold Rush, Pea-Souper fog,
+  Card Shower), each with its own look on the board: a tint and something drifting
+  across it (sparks, tumbling dice, falling doubloons, rolling fog...). See
+  [docs/RULES.md](docs/RULES.md) for the rules as played.
 - **A guided first match.** New players are offered a short Blitz game against gentle
   bots, with the Overseer pointing at the dice, the cards and the ability as each one
   comes up (scripted for a first win, and 100 Gems). It's in How to Play any time.
@@ -130,15 +132,15 @@ rendered offline (see [Screenshots](#screenshots)).
 - **Chat that everyone can see.** The gold CHAT button (or T on a keyboard) opens it,
   in the lobby and in matches. Lines pop up as big speech bubbles over the speaker's
   character on the board (in the lobby, under the chat button with their avatar), with
-  their name on a tab in their colour. Each line is read out loud in the speaker's
-  voice: Roblox's text-to-speech, pitched and paced for each character (a grumbly old
-  mage, a salty sea dog, a squeaky naturalist, a dandy, a captain), so it never sounds
-  like a newsreader, and made speakable first (numbers as words, "GG" spelled "gee
-  gee", "brb" said "be right back"); if a voice can't be had it babbles instead. Six
-  quick lines ("Ahoy!", "Good luck!", "GG!") are free for everyone, whatever their
-  Roblox chat settings. Typing anything else is the Chat pass, and still needs chat
-  switched on in your Roblox settings: every typed line goes through Roblox's filter
-  for each person who reads it. Voices and bubbles can be switched off in Settings.
+  their name on a tab in their colour. Twelve quick lines ("Ahoy!", "Good luck!",
+  "Watch out!", "GG!"...) are free for everyone, whatever their Roblox chat settings:
+  they're how players Roblox doesn't let type (by age, parental controls or country)
+  still talk. Typing anything else is the Chat pass, and needs chat switched on in your
+  Roblox settings (a game can't overrule that). Every typed line goes through the
+  game's own filter first (insults, even spelt l1ke th1s or s p a c e d, links and
+  handles, long numbers, SHOUTING, a key held down, the same line twice), then
+  Roblox's filter for each person who reads it. Bubbles can be switched off in
+  Settings.
   Tap someone's line to hide their lines (just for you), block them on Roblox, or
   report them to the game's staff with their last few lines. People you've blocked on
   Roblox never show up in the chat.
@@ -147,7 +149,7 @@ rendered offline (see [Screenshots](#screenshots)).
   for good), end a stuck match, announce to the server; and for the owner, give anyone
   gamepasses, Gems, free chests, any item or the whole collection (online or not: gifts
   wait for them), make or remove admins, announce to every server, rain Gems or chests
-  on a server, switch the weekly event and shut every server down for an update.
+  on a server, and shut every server down for an update.
   Chat reports from every server wait in its REPORTS tab. Every action is checked on
   the server and logged. The owner also gets an **Unlock everything** switch in
   Settings: every character, cosmetic and gold base for themselves while it's on,
@@ -294,13 +296,15 @@ and UI code (no outside images; `tools/shots.sh art store` redraws them):
 Before switching the experience to **Public**:
 
 1. Publish the place (above) and test a few matches with friends on live servers.
-2. Create the gamepasses (below) and put their ids in `Config.GamePasses`; set the Chat
-   pass to 10 Robux. A pass left at 0 shows as "SOON" in the Shop.
+2. Create the gamepasses and the Gem packs (below) at the prices listed, and put their
+   ids in `Config.GamePasses` and `Config.DevProducts`. Anything left at 0 shows as
+   "Soon" in the Shop.
 3. **Configure → Questionnaire**: answer the maturity questions. The game has no
-   violence beyond cartoon bonks, no blood, and a filtered text chat (Roblox's filter
-   for every typed line; quick lines are fixed text). Paid random items: the Treasure
-   Chests are bought with Gems only (Gems are earned by playing, never sold), so no
-   real money buys a random item.
+   violence beyond cartoon bonks, no blood, and a filtered text chat (the game's own
+   filter, then Roblox's, for every typed line; quick lines are fixed text). Paid random
+   items: **yes**. Gems can be bought (Gem packs, the Starter Pack) and they open the
+   Treasure Chests, whose odds are shown on the chest screens; all of it is hidden for
+   players whose region restricts paid random items.
 4. **Configure → Places → Server size**: 20 is a good lobby size (matches run on their
    own reserved servers).
 5. **Configure → Basic info**: genre *Strategy* (or *Party & Casual*), devices:
@@ -324,28 +328,44 @@ Store text to paste:
 > see, and bonk your rivals off their tiles. Eight pirates, each with their own power:
 > freeze the table, charge with a boar stampede, warp past the leader, fire yourself
 > out of a cannon... Five maps, from a tropical island to a haunted graveyard and an
-> erupting volcano. Quick 10-minute games, 5-minute Blitz, team modes, a weekly event
-> with a twist on the rules, daily quests, badges and Treasure Chests full of
+> erupting volcano. Quick 10-minute games, 5-minute Blitz, team modes, a Party mode
+> where every treasure changes the rules, daily quests, badges and Treasure Chests full of
 > cosmetics. Play with friends in a party, or jump into Quick Play.
 
-## Gamepasses
+## Gamepasses and Gem packs
 
-Create these on the Creator Dashboard (**Monetization → Passes**) and put their ids in
-`Config.GamePasses`. A pass left at `0` is hidden from the in-game Shop.
+Create the gamepasses on the Creator Dashboard (**Monetization → Passes**) at the price
+shown and put their ids in `Config.GamePasses`. A pass left at `0` shows as "Soon" in
+the in-game Shop.
 
-| Key | Name | What it gives |
+| Key | Name | Price | What it gives |
+| --- | --- | --- | --- |
+| `StarterPack` | Starter Pack | 49 | 1,500 Gems and 3 free Explorer Chests, once. |
+| `VIP` | VIP | 129 | +25% Gems from every match, a free Explorer Chest every day, the Royal finish and the VIP title, a gold name. |
+| `DoubleGems` | 2x Gems | 99 | Double Gems from every match (stacks with VIP). |
+| `CaptainsChest` | Captain's Chest | 79 | The Admiralty finish, the Golden Doubloon dice, the Captain title and 500 Gems. |
+| `LuckyCharm` | Lucky Charm | 49 | Legendary and Mythic chest odds ×1.5. |
+| `EmotePack` | Emote Pack | 25 | 6 extra emotes, and up to 6 equipped in matches. |
+| `VictoryParade` | Victory Parade | 25 | Cannons, streamers and a fanfare over your piece when you win. |
+| `Chat` | Chat | 10 | Type your own lines in the game chat. Quick lines are free for everyone. |
+
+Gem packs are **developer products** (**Monetization → Developer Products**), bought as
+often as you like: create them at these prices and put their ids in
+`Config.DevProducts` (a pack left at `0` shows as "Soon").
+
+| Key | Gems | Price |
 | --- | --- | --- |
-| `VIP` | VIP | +25% Gems from every match, a free Explorer Chest every day, the Royal finish for your piece and the VIP title, and a gold name in parties and matches. |
-| `DoubleGems` | 2x Gems | Double Gems from every match (stacks with VIP). |
-| `LuckyCharm` | Lucky Charm | Legendary and Mythic chest odds ×1.5, and the chest screens show your boosted odds. Hidden for players whose region doesn't allow paid random items. |
-| `EmotePack` | Emote Pack | 6 extra emotes, and up to 6 emotes equipped in matches. |
-| `Chat` | Chat | Type your own lines in the game chat (set its price to 10 Robux). Quick lines are free for everyone. |
-| `VoicePack` | Voice Pack | Pick the voice your chat bubbles speak in (Grumbly, Salty, Captain, Dandy, Chipper, Squeaky, Parrot, Ghostly, Clockwork); without it you speak in your character's own voice. |
-| `VictoryParade` | Victory Parade | Cannons, streamers and a fanfare over your character when you win, seen by everyone in the match. |
-| `CaptainsChest` | Captain's Chest | The Admiralty finish for your piece, the Golden Doubloon dice and the Captain title. |
+| `Gems250` | 250 | 25 |
+| `Gems600` | 600 | 49 |
+| `Gems1400` | 1,400 | 99 |
+| `Gems3000` | 3,000 | 199 |
+| `Gems8000` | 8,000 | 449 |
 
-None of them changes how a match plays. They only speed up or add to the cosmetic
-collection, or add ways to talk and show off.
+Each purchase is granted once (its purchase id is kept with the profile) and only
+reported to Roblox as granted after the profile is saved. Gems open Treasure Chests, so
+the Gem packs, the Starter Pack and the Lucky Charm are hidden for players whose region
+doesn't allow paid random items (PolicyService), and the chest screens always show the
+odds. None of it changes how a match plays.
 
 ## Treasure Chests
 
@@ -356,7 +376,7 @@ collection, or add ways to talk and show off.
   and Mythic 2%. You're guaranteed a Legendary or better at least every 20 chests.
 - Items you don't own yet are 3× as likely within a rarity, and duplicates turn back
   into Gems.
-- Gems can't be bought with Robux. They come from matches (finishing, treasures,
+- Gems come from matches (finishing, treasures,
   winning, levelling up), character mastery levels, daily quests, the login streak and
   the starting gift.
 
@@ -423,7 +443,7 @@ LUAU=/path/to/luau OUT=docs/previews tools/shots.sh pc phone upright boards
 
 `tools/smoke.sh` plays the whole game (server and client) on a fake Roblox in
 `tests/fake`: a scripted player tours the lobby and plays a match to the end with the
-real controls on a PC, on phones held both ways, in a team mode, in the weekly event,
+real controls on a PC, on phones held both ways, in a team mode, in Party mode,
 through Quick Play (its map vote, then going idle until a bot takes over and coming
 back) and through the guided first match (which has to end in a win). Any Lua
 error, warning, table Roblox would mangle on a remote or in a DataStore, or work left

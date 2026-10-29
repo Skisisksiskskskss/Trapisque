@@ -1,9 +1,17 @@
 --[[
 	Passes
-	Gamepasses sold in the Shop. None of them change match gameplay: they speed up the
-	cosmetic collection, add cosmetics, or add ways to talk (the Chat pass unlocks typing
-	your own lines; quick chat is free). Gamepass ids go in Config.GamePasses (create
-	the passes on the Creator Dashboard first). A pass with id 0 is hidden in the Shop.
+	What the Shop sells for Robux. None of it changes how a match plays: it speeds up
+	or adds to the cosmetic collection, or adds ways to talk and show off.
+
+	  Passes.list      gamepasses (bought once). Ids in Config.GamePasses; a pass at 0
+	                   shows as "Soon". `gift` is handed over once, the first time the
+	                   owner joins after buying it (Gems, free chests).
+	  Passes.gemPacks  Gem packs: developer products, bought as often as you like. Ids
+	                   in Config.DevProducts; a pack at 0 is hidden.
+
+	`robux` is the price to set on the Creator Dashboard (the Shop shows Roblox's own
+	price). Anything that buys a random item (Gems open Treasure Chests) is
+	`randomItems`: hidden for players whose region doesn't allow paid random items.
 ]]
 
 local Config = require(script.Parent.Parent.Config)
@@ -12,77 +20,45 @@ local Passes = {}
 
 Passes.list = {
 	{
+		key = "StarterPack",
+		name = "Starter Pack",
+		color = "#E8643C",
+		icon = "chest",
+		picture = "ui/chest",
+		robux = 49,
+		badge = "Best value",
+		randomItems = true,
+		gift = { gems = 1500, chests = { explorer = 3 } },
+		perks = {
+			"1,500 Gems, straight away",
+			"3 free Explorer Chests",
+			"Once per player",
+		},
+	},
+	{
 		key = "VIP",
 		name = "VIP",
 		color = "#F5B700",
 		icon = "crown",
+		picture = "ui/crown",
+		robux = 129,
 		perks = {
 			"+25% Gems from every match",
 			"A free Explorer Chest every day",
-			"The exclusive Royal finish for your piece, and the VIP title",
-			"Gold name in parties and matches",
+			"The Royal finish and the VIP title",
+			"A gold name in parties and matches",
 		},
 	},
 	{
 		key = "DoubleGems",
 		name = "2x Gems",
-		color = "#4FA3FF",
+		color = "#3FA7F5",
 		icon = "gem",
+		picture = "ui/gem",
+		robux = 99,
 		perks = {
 			"Double Gems from every match",
 			"Stacks with VIP",
-		},
-	},
-	{
-		key = "LuckyCharm",
-		name = "Lucky Charm",
-		color = "#3CC48A",
-		icon = "clover",
-		randomItems = true, -- hidden where paid random items are restricted
-		perks = {
-			"Legendary and Mythic chest odds x1.5",
-			"Chest screens show your boosted odds",
-		},
-	},
-	{
-		key = "EmotePack",
-		name = "Emote Pack",
-		color = "#FF9F1C",
-		icon = "bubble",
-		perks = {
-			"6 extra emotes, yours forever",
-			"Equip up to 6 emotes in matches",
-		},
-	},
-	{
-		key = "Chat",
-		name = "Chat",
-		color = "#2E8FB3",
-		icon = "bubble",
-		perks = {
-			"Type your own lines in the game chat",
-			"(Quick chat lines are free for everyone)",
-			"Needs chat to be on in your Roblox settings",
-		},
-	},
-	{
-		key = "VoicePack",
-		name = "Voice Pack",
-		color = "#D94C9C",
-		icon = "music",
-		perks = {
-			"Pick the voice your chat bubbles talk in",
-			"Grumbly, Captain, Dandy, Parrot, Ghostly, Clockwork...",
-		},
-	},
-	{
-		key = "VictoryParade",
-		name = "Victory Parade",
-		color = "#F5B700",
-		icon = "star",
-		perks = {
-			"Cannons, streamers and a brass fanfare when you win",
-			"Everyone in the match sees it",
 		},
 	},
 	{
@@ -90,16 +66,83 @@ Passes.list = {
 		name = "Captain's Chest",
 		color = "#2B4C7E",
 		icon = "chest",
+		picture = "ui/locker",
+		robux = 79,
+		gift = { gems = 500 },
 		perks = {
-			"The Admiralty finish for your piece (navy and gold)",
+			"The Admiralty finish (navy and gold)",
 			"The Golden Doubloon dice and the Captain title",
+			"500 Gems to start your collection",
 		},
 	},
+	{
+		key = "LuckyCharm",
+		name = "Lucky Charm",
+		color = "#3CC48A",
+		icon = "clover",
+		picture = "ui/coin",
+		robux = 49,
+		randomItems = true,
+		perks = {
+			"Legendary and Mythic chest odds x1.5",
+			"The chest screens show your boosted odds",
+		},
+	},
+	{
+		key = "EmotePack",
+		name = "Emote Pack",
+		color = "#FF9F1C",
+		icon = "bubble",
+		picture = "ui/chat",
+		robux = 25,
+		perks = {
+			"6 extra emotes, yours forever",
+			"Equip up to 6 emotes in matches",
+		},
+	},
+	{
+		key = "VictoryParade",
+		name = "Victory Parade",
+		color = "#D35A9C",
+		icon = "star",
+		picture = "ui/party",
+		robux = 25,
+		perks = {
+			"Cannons, streamers and a brass fanfare when you win",
+			"Everyone in the match sees it",
+		},
+	},
+	{
+		key = "Chat",
+		name = "Chat",
+		color = "#2E8FB3",
+		icon = "bubble",
+		picture = "ui/chat",
+		robux = 10,
+		perks = {
+			"Type your own lines in the game chat",
+			"Quick lines are free for everyone",
+			"Needs chat on in your Roblox settings",
+		},
+	},
+}
+
+-- Gems for Robux, as often as you like: more Gems per Robux the bigger the pack.
+Passes.gemPacks = {
+	{ key = "Gems250", gems = 250, robux = 25, pile = 1 },
+	{ key = "Gems600", gems = 600, robux = 49, pile = 2 },
+	{ key = "Gems1400", gems = 1400, robux = 99, pile = 3, badge = "Popular" },
+	{ key = "Gems3000", gems = 3000, robux = 199, pile = 4 },
+	{ key = "Gems8000", gems = 8000, robux = 449, pile = 5, badge = "Best value" },
 }
 
 Passes.byKey = {}
 for _, p in Passes.list do
 	Passes.byKey[p.key] = p
+end
+Passes.packByKey = {}
+for _, p in Passes.gemPacks do
+	Passes.packByKey[p.key] = p
 end
 
 function Passes.id(key: string): number
@@ -110,6 +153,20 @@ function Passes.keyForId(id: number): string?
 	for key, passId in Config.GamePasses do
 		if passId == id and passId ~= 0 then
 			return key
+		end
+	end
+	return nil
+end
+
+function Passes.productId(key: string): number
+	return (Config.DevProducts and Config.DevProducts[key]) or 0
+end
+
+-- The Gem pack a developer product id sells, if any.
+function Passes.packForProduct(productId: number)
+	for key, id in Config.DevProducts or {} do
+		if id == productId and id ~= 0 then
+			return Passes.packByKey[key]
 		end
 	end
 	return nil

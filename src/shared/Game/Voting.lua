@@ -8,7 +8,7 @@
 		Voting.tally(cards, votes, style, rng) -> the chosen card (and, for the wheel, its slices)
 
 	A card is { kind = "map", map } | { kind = "mystery" } (a face-down map that isn't on
-	the other cards) | { kind = "twist", map, event } (a map with a weekly event's twist).
+	the other cards) | { kind = "twist", map, event } (a map with a twist on the rules).
 	cfg = { mystery = boolean, wildcard = boolean }. votes: [seat] = card number.
 	rng: a Random (NextInteger, NextNumber).
 ]]

@@ -1,6 +1,6 @@
 --[[
 	Modes
-	The Trapisque game modes: the four from the rulebook plus the weekly event.
+	The Trapisque game modes: the four from the rulebook plus Blitz and Party.
 
 	teams = number of teams, teamSize = players per team. A teamSize of 1 means
 	free-for-all. `target` is how many treasures each player is worth to their team:
@@ -58,16 +58,16 @@ local defs = {
 		target = Config.Rules.TreasuresToWin,
 	},
 	{
-		-- free-for-all with the week's twist on the rules (Meta/Progress events)
-		id = "event",
-		name = "Weekly Event",
-		short = "Event",
-		blurb = "Free-for-all with this week's twist on the rules.",
+		-- free-for-all where every treasure brings a new rule (Game/PartyRules)
+		id = "party",
+		name = "Party",
+		short = "Party",
+		blurb = "Free-for-all. Every treasure brings a new rule, replacing the last.",
 		minPlayers = 2,
 		maxPlayers = 6,
 		teamSize = 1,
 		target = Config.Rules.TreasuresToWin,
-		isEvent = true,
+		isParty = true,
 	},
 	{
 		id = "ww4",

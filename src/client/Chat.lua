@@ -1,8 +1,7 @@
 --[[
 	Chat (client)
 	The game chat as it arrives (server "chat.line"): the last lines are kept for the
-	chat window, each one is read out loud in its speaker's voice (Voice), and screens
-	listen to pop it as a bubble over whoever said it.
+	chat window, and screens listen to pop it as a bubble over whoever said it.
 
 		Chat.onLine(fn(line)) -> disconnect
 		Chat.say(text) ; Chat.quick(id)       -> ok, err (yields)
@@ -16,9 +15,7 @@
 	People you've blocked on Roblox never show up in the chat at all (their lines and
 	bubbles are dropped as they arrive), and blocking someone here blocks them on Roblox.
 
-	In a match every line is spoken; in the lobby only yours and your party's are (a
-	full lobby talking at once would be a racket). Settings can switch the voices and the
-	bubbles off.
+	Settings can switch the bubbles off.
 ]]
 
 local Players = game:GetService("Players")
@@ -26,16 +23,13 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterGui = game:GetService("StarterGui")
 
 local Config = require(ReplicatedStorage.Shared.Config)
-local Voices = require(ReplicatedStorage.Shared.Meta.Voices)
 
 local Client = script.Parent
 local Net = require(Client.Net)
 local State = require(Client.State)
-local Voice = require(Client.Voice)
 
 local Chat = {}
 
-local player = Players.LocalPlayer
 local history: { any } = {}
 local listeners: { (any) -> () } = {}
 local muted: { [number]: boolean } = {}
@@ -44,16 +38,6 @@ local blocked: { [number]: boolean } = {}
 local function settings()
 	local p = State.get("profile")
 	return p and p.settings or {}
-end
-
-local function inParty(userId: number): boolean
-	local party = State.get("party")
-	for _, m in party and party.members or {} do
-		if m.userId == userId then
-			return true
-		end
-	end
-	return false
 end
 
 function Chat.bubbles(): boolean
@@ -71,10 +55,6 @@ Net.on("chat.line", function(line)
 	table.insert(history, line)
 	while #history > Config.Chat.History do
 		table.remove(history, 1)
-	end
-	local spoken = line.seat ~= nil or line.from == player.UserId or inParty(line.from or 0)
-	if spoken and settings().voices ~= false then
-		Voice.say(line.text, Voices.resolve(line.voice, line.character))
 	end
 	for _, fn in table.clone(listeners) do
 		task.spawn(fn, line)
@@ -190,11 +170,6 @@ task.spawn(function()
 			end)
 		end
 	end
-end)
-
--- Settings: voices on or off take effect straight away.
-State.watch("profile", function(p)
-	Voice.setEnabled(not (p and p.settings and p.settings.voices == false))
 end)
 
 return Chat

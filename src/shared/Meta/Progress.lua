@@ -8,7 +8,7 @@
 		Trophies  Quick Play results move your trophy count; trophies set your rank
 		Seasons   ranked play runs in four-week seasons: the best rank you reach pays
 		          out (and leaves you a title), then trophies carry over at half
-		Events    a weekly twist on the rules, with its own Quick Play queue
+		Events    twists on the rules (house rules, the map vote)
 
 	DataService applies these to profiles; the lobby shows them.
 ]]
@@ -310,12 +310,13 @@ function Progress.seasonCarry(trophies: number): number
 end
 
 ---------------------------------------------------------------------------
--- Weekly events
+-- Twists
 ---------------------------------------------------------------------------
 
 --[[
-	Each week Quick Play has an event queue with a twist on the rules. The engine reads
-	the twist from `mutator` (Engine.new opts.mutator).
+	Twists on the rules: a private match's house rules can pick one, and a map in the
+	Quick Play vote can come with one. The engine reads the twist from `mutator`
+	(Engine.new opts.mutator). (Party mode has its own rules: Game/PartyRules.)
 ]]
 Progress.events = {
 	{
@@ -347,22 +348,6 @@ Progress.events = {
 		color = "#45C3FF",
 	},
 }
-
--- This week's event (weeks start on Thursday, Unix epoch week).
--- The owner can switch this week's event (staff panel); every server and client sets this.
-Progress.eventOverride = nil :: string?
-
-function Progress.currentEvent(now: number?)
-	if Progress.eventOverride then
-		for _, e in Progress.events do
-			if e.id == Progress.eventOverride then
-				return e
-			end
-		end
-	end
-	local week = (now or os.time()) // (7 * DAY)
-	return Progress.events[(week % #Progress.events) + 1]
-end
 
 function Progress.eventById(id: string?)
 	for _, e in Progress.events do

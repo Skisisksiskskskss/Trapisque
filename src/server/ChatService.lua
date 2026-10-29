@@ -6,17 +6,20 @@
 	  quick   one of the ready-made lines (Meta/QuickChat): fixed text, so anyone can
 	          say them whatever their Roblox chat settings, and anyone can see them
 	  typed   your own words: needs the Chat pass and chat switched on in your Roblox
-	          settings. Every line goes through Roblox's text filter for each person
-	          who reads it, and only reaches people whose settings let them chat with you.
+	          settings (Roblox decides who may chat, by age, parental controls and
+	          country, and a game can't overrule it: quick lines are for everyone).
+	          Every line goes through the game's own filter (Meta/ChatFilter: insults,
+	          links, spam), then Roblox's text filter for each person who reads it,
+	          and only reaches people whose settings let them chat with you.
 
 	Staff can mute a player (AdminService); a muted player can still use quick lines.
 	Each person's last few lines stay on this server for a while, so a report
 	(AdminService, "chat.report") can show staff what they said: filtered for everyone,
 	never the raw text.
 
-	Pushes "chat.line" { from, name, text, quick?, seat?, staff?, voice, character } to
+	Pushes "chat.line" { from, name, text, quick?, seat?, staff?, character } to
 	everyone who hears it. The screen pops it as a bubble over the speaker's character
-	(in a match) or their party card (in the lobby) and reads it out in their voice.
+	(in a match) or their party card (in the lobby).
 ]]
 
 local Players = game:GetService("Players")
@@ -26,6 +29,7 @@ local TextChatService = game:GetService("TextChatService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local QuickChat = require(ReplicatedStorage.Shared.Meta.QuickChat)
+local ChatFilter = require(ReplicatedStorage.Shared.Meta.ChatFilter)
 
 local Net = require(script.Parent.Net)
 local ServerInfo = require(script.Parent.ServerInfo)
@@ -38,6 +42,7 @@ local canChatCache: { [number]: boolean } = {}
 local buckets: { [Player]: { tokens: number, t: number } } = {}
 local muted: { [number]: number } = {} -- [userId] = os.time() when the mute ends
 local said: { [number]: { name: string, lines: { any } } } = {} -- [userId] = their latest lines
+local lastTyped: { [Player]: { { text: string, t: number } } } = {} -- for ChatFilter's repeat check
 local staffTag: (Player) -> string? = function()
 	return nil
 end
@@ -185,7 +190,6 @@ local function send(player: Player, payload): (boolean, string?)
 		name = player.DisplayName,
 		seat = seat,
 		staff = staffTag(player),
-		voice = DataService.voiceOf(player),
 		character = character,
 	}
 	if payload.quick ~= nil then
@@ -224,6 +228,18 @@ local function send(player: Player, payload): (boolean, string?)
 	if ChatService.isMuted(player) then
 		return false, "You're muted for now. Quick lines still work."
 	end
+	-- the game's own pass first (meanness, links, spam), then Roblox's filter
+	local recent = lastTyped[player] or {}
+	local cleaned, why = ChatFilter.clean(text, recent, os.clock())
+	if not cleaned then
+		return false, why
+	end
+	table.insert(recent, { text = cleaned, t = os.clock() })
+	while #recent > 3 do
+		table.remove(recent, 1)
+	end
+	lastTyped[player] = recent
+	text = cleaned
 	local ok, filtered = pcall(function()
 		return TextService:FilterStringAsync(text, player.UserId, Enum.TextFilterContext.PublicChat)
 	end)
@@ -253,6 +269,7 @@ function ChatService.init()
 	end)
 	Players.PlayerRemoving:Connect(function(player)
 		buckets[player] = nil
+		lastTyped[player] = nil
 		canChatCache[player.UserId] = nil
 		-- their lines stay a while, for anyone reporting them just after they left
 		local id = player.UserId

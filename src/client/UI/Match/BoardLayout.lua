@@ -680,7 +680,7 @@ function BoardLayout.build(board, mapDef, Rng, opts: { [string]: any }?)
 	-- along the trail that is; a canal runs straight.)
 	local mainL = lengths(mainCurve)
 	local spacing = mainL[#mainL] / math.max(1, board.count - 1)
-	local function channel(tile: number, p: { number }, here: number, wiggle: number)
+	local function channel(tile: number, p: { number }, here: number, wiggle: number, sourceMax: number?)
 		local heading = math.rad(p[3] + 90)
 		local sides = {}
 		for side = 1, 2 do
@@ -707,6 +707,12 @@ function BoardLayout.build(board, mapDef, Rng, opts: { [string]: any }?)
 					end
 				end
 			end
+			-- (lava wells up from a vent close by, where you can see it)
+			if ends == "pond" and sourceMax then
+				while #pts > 1 and #pts * 0.4 > sourceMax do
+					table.remove(pts)
+				end
+			end
 			sides[side] = { pts = pts, ends = ends }
 		end
 		local points = {}
@@ -722,7 +728,7 @@ function BoardLayout.build(board, mapDef, Rng, opts: { [string]: any }?)
 	if scene.rivers or scene.lava then
 		for tile, kind in board.naturalInit do
 			if (kind == "river" and scene.rivers) or (kind == "lava" and scene.lava) then
-				table.insert(if kind == "lava" then layout.lava else layout.rivers, channel(tile, pos[tile], (tile - 1) * spacing, 0.42))
+				table.insert(if kind == "lava" then layout.lava else layout.rivers, channel(tile, pos[tile], (tile - 1) * spacing, 0.42, if kind == "lava" then 3.6 else nil))
 			end
 		end
 	end

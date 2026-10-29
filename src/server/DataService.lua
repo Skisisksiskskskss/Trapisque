@@ -21,7 +21,6 @@ local Shared = ReplicatedStorage.Shared
 local Config = require(Shared.Config)
 local Cosmetics = require(Shared.Meta.Cosmetics)
 local Gacha = require(Shared.Meta.Gacha)
-local Voices = require(Shared.Meta.Voices)
 local Passes = require(Shared.Meta.Passes)
 local Progress = require(Shared.Meta.Progress)
 local DailyShop = require(Shared.Meta.DailyShop)
@@ -74,10 +73,12 @@ local function newProfile()
 		},
 		pity = { explorer = {}, royal = {} },
 		granted = {}, -- [passKey] = true: passes the owner gave this player
+		passGifts = {}, -- [passKey] = true: that pass's one-time gift is handed over
+		receipts = {}, -- the latest Gem pack purchase ids (each one granted once)
 		freeChests = { explorer = Config.Rewards.StartingFreeChests },
 		chestsOpened = 0,
 		lastDaily = 0,
-		settings = { sfx = true, music = true, sfxVolume = 1, musicVolume = 0.7, autoRoll = false, fastAnim = false, voices = true, bubbles = true, voice = "auto" },
+		settings = { sfx = true, music = true, sfxVolume = 1, musicVolume = 0.7, autoRoll = false, fastAnim = false, bubbles = true },
 		badges = {}, -- [badge key] = when it was earned (Meta/Badges)
 		fish = {}, -- [catch id] = how many (the fish log, Meta/Fishing)
 		fishBest = {}, -- [catch id] = the biggest one landed, in centimetres
@@ -277,6 +278,21 @@ local function grantPassPerks(prof)
 			data.owned[id] = true
 		end
 	end
+	-- the one-time gifts that come with a pass (Gems, free chests)
+	data.passGifts = data.passGifts or {}
+	local gifts = {}
+	for _, pass in Passes.list do
+		local gift = pass.gift
+		if gift and prof.passes[pass.key] and not data.passGifts[pass.key] then
+			data.passGifts[pass.key] = true
+			data.gems += gift.gems or 0
+			for chest, n in gift.chests or {} do
+				data.freeChests[chest] = (data.freeChests[chest] or 0) + n
+			end
+			table.insert(gifts, pass.name)
+		end
+	end
+	return gifts
 end
 
 local function refreshPasses(player: Player)
@@ -798,17 +814,6 @@ function DataService.summary(player: Player)
 	}
 end
 
--- The voice someone's chat bubbles speak in: their pick with the Voice Pack, else
--- "auto" (their character's own).
-function DataService.voiceOf(player: Player): string
-	local data = DataService.get(player)
-	local v = data and data.settings and data.settings.voice
-	if type(v) == "string" and Voices.byId[v] and DataService.hasPass(player, "VoicePack") then
-		return v
-	end
-	return "auto"
-end
-
 -- Gems from fishing, up to Fishing.GemsPerDay a day (UTC). Returns how many were given.
 function DataService.addFishGems(player: Player, amount: number): number
 	local data = DataService.get(player)
@@ -894,11 +899,6 @@ function DataService.saveSettings(player: Player, settings)
 		elseif type(current) == "number" and type(v) == "number" and v == v then
 			-- volumes (0..1)
 			data.settings[k] = math.clamp(v, 0, 1)
-		elseif k == "voice" and type(v) == "string" and Voices.byId[v] then
-			-- picking a voice is the Voice Pack's (your character's own voice is free)
-			if v == "auto" or DataService.hasPass(player, "VoicePack") then
-				data.settings.voice = v
-			end
 		end
 	end
 	return true
@@ -1272,14 +1272,46 @@ function DataService.init()
 		task.spawn(onPlayerAdded, p)
 	end
 
+	-- Gem packs (developer products): granted once per purchase id, and only told to
+	-- Roblox as granted once the profile holding them is saved.
+	MarketplaceService.ProcessReceipt = function(receipt)
+		local player = Players:GetPlayerByUserId(receipt.PlayerId)
+		local prof = player and profiles[player]
+		local pack = Passes.packForProduct(receipt.ProductId)
+		if not player or not prof or not pack then
+			return Enum.ProductPurchaseDecision.NotProcessedYet
+		end
+		local data = prof.data
+		data.receipts = data.receipts or {}
+		if table.find(data.receipts, receipt.PurchaseId) then
+			return Enum.ProductPurchaseDecision.PurchaseGranted
+		end
+		data.gems += pack.gems
+		table.insert(data.receipts, receipt.PurchaseId)
+		while #data.receipts > 50 do
+			table.remove(data.receipts, 1)
+		end
+		if not prof.temp and not saveData(player, false) then
+			-- not saved: take it back, and Roblox will ask again later
+			data.gems -= pack.gems
+			table.remove(data.receipts)
+			return Enum.ProductPurchaseDecision.NotProcessedYet
+		end
+		DataService.pushProfile(player)
+		Net.push(player, "toast", { text = "Thanks! +" .. pack.gems .. " Gems", kind = "reward" })
+		return Enum.ProductPurchaseDecision.PurchaseGranted
+	end
+
 	MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(player, passId, purchased)
 		if purchased and profiles[player] then
 			local passKey = Passes.keyForId(passId)
 			if passKey then
 				profiles[player].passes[passKey] = true
-				grantPassPerks(profiles[player])
+				local gifts = grantPassPerks(profiles[player])
 				DataService.pushProfile(player)
-				Net.push(player, "toast", { text = "Thanks! " .. Passes.byKey[passKey].name .. " is now active.", kind = "reward" })
+				local gift = Passes.byKey[passKey].gift
+				local extra = if gift and #gifts > 0 and gift.gems then " +" .. gift.gems .. " Gems" else ""
+				Net.push(player, "toast", { text = "Thanks! " .. Passes.byKey[passKey].name .. " is now active." .. extra, kind = "reward" })
 			end
 		end
 	end)

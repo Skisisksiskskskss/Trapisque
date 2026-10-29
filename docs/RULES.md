@@ -244,20 +244,28 @@ account level: Warper at 3, Overseer at 5, Gambler at 7, Cannoneer at 10. **(dig
 | Blitz | 2 to 6 | Free-for-all: the first treasure wins, 30-second turns **(digital)** |
 | Assist Trapisque | 4 | 2 vs 2 (pooled treasures) |
 | Factions | 6 | Three teams of 2 (pooled) |
-| Weekly Event | 2 to 6 | Free-for-all with this week's twist **(digital)** |
+| Party | 2 to 6 | Free-for-all: every treasure brings a new rule **(digital)** |
 | World War Four | 6 | 3 vs 3 (pooled) |
 
 Team modes: your traps never catch teammates, you can't bonk them, and you can give
 a teammate a card (it counts as your card for the turn).
 
-**Weekly events** rotate every week (Thursday 00:00 UTC):
+**Party**: the match starts with the normal rules. Every time anyone banks a treasure,
+a new rule comes in and replaces the one before (never the same one twice in a row):
 
-| Event | Twist |
+| Rule | What changes |
 | --- | --- |
-| Trap Frenzy | Everyone starts with two hidden traps, and traps can be hidden up to 10 tiles away. |
-| Bonk Bonanza | Bonks knock rivals back 4 tiles. |
 | Power Surge | Power charges twice as fast. |
 | Triple Dice | Roll three dice and pick one; the best leftover charges Power. |
+| Bonk Bonanza | Bonks knock rivals back 4 tiles. |
+| Trap Frenzy | Traps can be hidden up to 10 tiles away. |
+| Gold Rush | Every coin you get counts double. |
+| Pea-Souper | Thick fog: you can't preview where a die takes you. |
+| Card Shower | Everyone draws a free card when it arrives. |
+
+**Twists** (a private match's house rules can pick one, and a map in the Quick Play
+vote can come with one): Trap Frenzy (everyone starts with two hidden traps, and traps
+reach 10 tiles), Bonk Bonanza, Power Surge and Triple Dice, as above.
 
 Bots fill empty seats in Quick Play when a human has waited long enough, and in
 practice matches. Every Quick Play match opens with a 10-second vote between three

@@ -22,7 +22,7 @@ declare -A SCENARIOS=(
 	[phone]='name = "phone", w = 844, h = 390, touch = true, safe = { l = 47, r = 47, t = 0, b = 21 }, inset = 48, barLeft = 160, mode = "chaos", map = "Junction Dungeon", bots = 2, seed = 11'
 	[upright]='name = "upright", w = 390, h = 844, touch = true, safe = { l = 0, r = 0, t = 47, b = 34 }, inset = 95, barLeft = 110, barRight = 340, mode = "chaos", map = "Blissful Tricks", bots = 1, seed = 5'
 	[teams]='name = "teams", w = 1366, h = 768, mode = "assist", map = "Blissful Tricks", seed = 3'
-	[event]='name = "event", w = 1920, h = 1080, mode = "event", map = "Junction Dungeon", bots = 3, seed = 9'
+	[party]='name = "party", w = 1920, h = 1080, mode = "party", map = "Junction Dungeon", bots = 3, seed = 9'
 	[quickplay]='name = "quickplay", w = 1280, h = 800, mode = "chaos", quickplay = true, idle = true, seed = 13'
 	[tutorial]='name = "tutorial", w = 1280, h = 720, tutorial = true, seed = 21'
 	[private]='name = "private", w = 1280, h = 720, mode = "chaos", private = true, seed = 17'
@@ -32,7 +32,7 @@ declare -A SCENARIOS=(
 	[fish]='name = "fish", w = 1280, h = 720, mode = "chaos", map = "Blissful Tricks", bots = 3, seed = 37, fish = true'
 	[art]='name = "art", w = 1280, h = 720'
 )
-ORDER=(pc phone upright teams event quickplay tutorial private frost kraken clockwork fish art)
+ORDER=(pc phone upright teams party quickplay tutorial private frost kraken clockwork fish art)
 if [ $# -gt 0 ]; then
 	ORDER=("$@")
 fi

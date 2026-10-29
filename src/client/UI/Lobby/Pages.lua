@@ -1,8 +1,8 @@
 --[[
 	Pages
 	The smaller lobby windows: the Shop (today's deals for Gems, free Gems for joining
-	the group, the gamepasses), How to Play and Settings (volumes, the chat's voices and
-	bubbles, your voice, and the staff panel for staff).
+	the group, the gamepasses), How to Play and Settings (volumes, chat bubbles, and the
+	staff panel for staff).
 
 		Pages.shop(popupLayer)
 		Pages.rules(popupLayer)
@@ -18,8 +18,6 @@ local Shared = ReplicatedStorage.Shared
 local Passes = require(Shared.Meta.Passes)
 local Characters = require(Shared.Game.Characters)
 local Modes = require(Shared.Game.Modes)
-local Progress = require(Shared.Meta.Progress)
-local Voices = require(Shared.Meta.Voices)
 local Cosmetics = require(Shared.Meta.Cosmetics)
 local Config = require(Shared.Config)
 
@@ -27,6 +25,7 @@ local UI = script.Parent.Parent
 local Util = require(UI.Util)
 local Theme = require(UI.Theme)
 local Icons = require(UI.Icons)
+local Art = require(UI.Art)
 local Widgets = require(UI.Widgets)
 local VolumeRows = require(UI.VolumeRows)
 local CosmeticArt = require(UI.CosmeticArt)
@@ -36,7 +35,6 @@ local StaffPanel = require(UI.StaffPanel)
 local Client = UI.Parent
 local Net = require(Client.Net)
 local State = require(Client.State)
-local Voice = require(Client.Voice)
 
 local C = Theme.C
 local hex = Theme.hex
@@ -49,38 +47,146 @@ local player = Players.LocalPlayer
 -- Shop (gamepasses)
 ---------------------------------------------------------------------------
 
+-- A card in the Shop: parchment framed in a dark shade of its colour, with a window
+-- of that colour across its top (lit from above, a soft shine behind its picture).
+local function shopCard(parent: Instance, name: string, color: Color3, order: number, bandH: number): (Frame, Frame)
+	local card = Util.new("Frame", {
+		Name = name,
+		BackgroundColor3 = C.panelRaised,
+		BorderSizePixel = 0,
+		LayoutOrder = order,
+		Parent = parent,
+	})
+	Util.corner(card, 16)
+	Widgets.lit(card, C.panelRaised, 0.06)
+	Util.new("UIStroke", { Color = Util.shade(color, -0.5), Thickness = 3, Parent = card })
+	local band = Util.new("Frame", {
+		Name = "Band",
+		BackgroundColor3 = color,
+		BorderSizePixel = 0,
+		Position = UDim2.fromOffset(7, 7),
+		Size = UDim2.new(1, -14, 0, bandH),
+		Parent = card,
+	})
+	Util.corner(band, 11)
+	Widgets.lit(band, color, 0.22)
+	Util.new("UIStroke", { Color = Util.shade(color, -0.4), Thickness = 2, Parent = band })
+	-- a soft shine behind the picture
+	local shine = Art.image(band, "ground/soft", {
+		Name = "Shine",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.55),
+		Size = UDim2.fromScale(0.9, 1.3),
+	})
+	local img = shine and shine:FindFirstChild("Image") :: ImageLabel?
+	if img then
+		img.ImageColor3 = Color3.new(1, 1, 1)
+		img.ImageTransparency = 0.45
+	end
+	return card, band
+end
+
+-- A picture from the art, centred in a frame (the code-drawn medallion if it hasn't loaded).
+local function shopPicture(parent: Instance, picture: string?, icon: string, color: Color3, size: number, y: number?)
+	local holder = Util.frame(parent, {
+		Name = "Picture",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, y or 0.55),
+		Size = UDim2.fromOffset(size, size),
+		ZIndex = 3,
+	})
+	if not (picture and Art.image(holder, picture, { Size = UDim2.fromScale(1, 1), ZIndex = 3 })) then
+		Icons.medallion(holder, icon, color, { Size = UDim2.fromScale(1, 1) })
+	end
+	return holder
+end
+
+-- A heading between the Shop's sections.
+local function shopHeading(parent: Instance, text: string, note: string?, order: number)
+	local f = Util.frame(parent, { Name = "Heading_" .. text, Size = UDim2.new(1, -8, 0, 40), LayoutOrder = order })
+	Widgets.label(f, {
+		text = text,
+		font = "display",
+		size = 26,
+		color = C.text,
+		sizeUDim = UDim2.new(0, 0, 1, 0),
+	}).AutomaticSize = Enum.AutomaticSize.X
+	if note then
+		Widgets.label(f, {
+			text = note,
+			font = "heavy",
+			size = 14,
+			color = C.textSoft,
+			align = "right",
+			sizeUDim = UDim2.new(1, 0, 1, 0),
+		})
+	end
+	local rule = Util.frame(f, { Size = UDim2.new(1, 0, 0, 2), Position = UDim2.new(0, 0, 1, -2) })
+	rule.BackgroundTransparency = 0
+	rule.BackgroundColor3 = C.panelEdge
+end
+
+-- A section's grid of cards, as tall as its rows.
+local function shopGrid(parent: Instance, name: string, cols: number, cellH: number, order: number): Frame
+	local grid = Util.frame(parent, {
+		Name = name,
+		Size = UDim2.new(1, -8, 0, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		LayoutOrder = order,
+	})
+	Util.new("UIGridLayout", {
+		-- (a few pixels short of the row, or Roblox can wrap a cell early)
+		CellSize = UDim2.new(1 / cols, -12 * (cols - 1) / cols - 4, 0, cellH),
+		CellPadding = UDim2.fromOffset(12, 12),
+		SortOrder = Enum.SortOrder.LayoutOrder,
+		HorizontalAlignment = Enum.HorizontalAlignment.Left,
+		Parent = grid,
+	})
+	return grid
+end
+
+-- Ask Roblox for a pass's or product's price and show it on its button.
+local function showPrice(button, id: number, kind: Enum.InfoType)
+	if id == 0 then
+		return
+	end
+	task.spawn(function()
+		local ok, info = pcall(function()
+			return MarketplaceService:GetProductInfo(id, kind)
+		end)
+		if ok and info and info.PriceInRobux and button.root.Parent then
+			button:setText("R$ " .. tostring(info.PriceInRobux))
+		end
+	end)
+end
+
+-- where a pile of gems sits in its card, for each size of pack: { x, y, size }
+local PILES = {
+	{ { 0.5, 0.55, 0.62 } },
+	{ { 0.38, 0.6, 0.5 }, { 0.62, 0.5, 0.56 } },
+	{ { 0.3, 0.62, 0.44 }, { 0.7, 0.62, 0.44 }, { 0.5, 0.46, 0.56 } },
+	{ { 0.24, 0.66, 0.38 }, { 0.76, 0.66, 0.38 }, { 0.38, 0.48, 0.44 }, { 0.62, 0.48, 0.44 }, { 0.5, 0.62, 0.5 } },
+	{ { 0.5, 0.5, 0.74, "ui/chest" }, { 0.24, 0.7, 0.36 }, { 0.76, 0.7, 0.36 }, { 0.5, 0.74, 0.4 } },
+}
+
 function Pages.shop(layer: Instance): () -> ()
 	local maid = Util.maid()
 	local roomW, roomH, narrow = Widgets.room()
+	local width = math.min(980, roomW)
 	local content, close = Widgets.modal(layer, {
 		title = "Shop",
 		titleWidth = 200,
-		width = math.min(960, roomW),
-		height = math.min(560, roomH),
+		width = width,
+		height = math.min(600, roomH),
 		onClose = function()
 			maid:clean()
 		end,
 	})
 	task.spawn(Net.request, "shop.refresh")
-	Widgets.label(content, {
-		text = "Today's deals change every day. Passes never change how a match plays.",
-		font = "heavy",
-		size = if narrow then 13 else 16,
-		color = C.textSoft,
-		align = "center",
-		wrap = true,
-		sizeUDim = UDim2.new(1, 0, 0, if narrow then 34 else 24),
-	})
-	-- four across on a wide screen (scrolling down to the rest), one or two on a phone
-	local top = if narrow then 42 else 34
-	local cols = if not narrow then 4 elseif roomW >= 560 then 2 else 1
-	local row = Widgets.scroll(content, {
-		position = UDim2.fromOffset(0, top),
-		size = UDim2.new(1, 0, 1, -top),
-		grid = UDim2.new(1 / cols, -14 * (cols - 1) / cols - 4, 0, 400),
-		gap = 14,
-		padding = 4,
-	})
+	local list = Widgets.scroll(content, { gap = 14, padding = 4, hAlign = "Left" })
+	local inner = width - 60
+	local cols = math.max(1, math.min(4, math.floor(inner / 215)))
+	local packCols = math.max(1, math.min(5, math.floor(inner / 170)))
 
 	local cards = {}
 	local function render()
@@ -90,54 +196,50 @@ function Pages.shop(layer: Instance): () -> ()
 		end
 	end
 	local profile = State.get("profile")
-	-- today's deals: cosmetics for Gems, no random rolls
+	local restricted = profile ~= nil and profile.restricted == true
+
+	-- today's deals: cosmetics for Gems, no random rolls (and the free Gems for the group)
+	shopHeading(list, "Today's deals", if narrow then nil else "New every day, for Gems", 1)
+	local deals = shopGrid(list, "Deals", cols, 300, 2)
 	for i, deal in (profile and profile.deals and profile.deals.items) or {} do
 		local def = Cosmetics.get(deal.id)
 		if def then
 			local rarity = Cosmetics.rarityById[def.rarity]
 			local color = if rarity then hex(string.sub(rarity.color, 2)) else C.sun
-			local card = Util.new("Frame", {
-				Name = "Deal_" .. deal.id,
-				BackgroundColor3 = C.panelRaised,
-				BorderSizePixel = 0,
-				LayoutOrder = i,
-				Parent = row,
-			})
-			Util.corner(card, 14)
-			Util.stroke(card, color, 3)
-			Widgets.badge(card, { text = "Today's deal", color = color, height = 24, textSize = 13, position = UDim2.fromOffset(10, 10) })
-			CosmeticArt.preview(card, deal.id, nil, {
-				AnchorPoint = Vector2.new(0.5, 0),
-				Position = UDim2.new(0.5, 0, 0, 44),
-				Size = UDim2.fromOffset(150, 150),
+			local card, band = shopCard(deals, "Deal_" .. deal.id, color, i, 140)
+			CosmeticArt.preview(band, deal.id, nil, {
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				Position = UDim2.fromScale(0.5, 0.5),
+				Size = UDim2.fromOffset(124, 124),
+				ZIndex = 3,
 			})
 			Widgets.label(card, {
 				text = def.name,
 				font = "chunky",
-				size = 24,
+				size = 22,
 				color = C.text,
 				align = "center",
 				scaled = true,
-				sizeUDim = UDim2.new(1, -20, 0, 30),
-				position = UDim2.fromOffset(10, 206),
+				sizeUDim = UDim2.new(1, -20, 0, 28),
+				position = UDim2.fromOffset(10, 156),
 			})
 			Widgets.label(card, {
 				text = (if rarity then rarity.name else def.rarity) .. " " .. string.lower(def.category),
 				font = "heavy",
 				size = 15,
-				color = color,
+				color = Util.shade(color, -0.25),
 				align = "center",
 				sizeUDim = UDim2.new(1, -20, 0, 20),
-				position = UDim2.fromOffset(10, 238),
+				position = UDim2.fromOffset(10, 186),
 			})
 			local buy = Widgets.button(card, {
 				text = Util.commas(deal.price) .. " Gems",
 				icon = "gem",
 				style = "brass",
 				textSize = 18,
-				size = UDim2.new(1, -28, 0, 50),
+				size = UDim2.new(1, -24, 0, 48),
 				anchor = Vector2.new(0.5, 1),
-				position = UDim2.new(0.5, 0, 1, -14),
+				position = UDim2.new(0.5, 0, 1, -12),
 				onClick = function()
 					local ok, err = Net.request("shop.deal", { id = deal.id })
 					if ok then
@@ -160,36 +262,27 @@ function Pages.shop(layer: Instance): () -> ()
 	end
 	-- free Gems for joining the group (and liking the game)
 	if profile and not profile.groupReward then
-		local card = Util.new("Frame", {
-			Name = "Community",
-			BackgroundColor3 = C.panelRaised,
-			BorderSizePixel = 0,
-			LayoutOrder = 5,
-			Parent = row,
-		})
-		Util.corner(card, 14)
-		Util.stroke(card, C.mint, 3)
-		local icon = Util.frame(card, { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 14), Size = UDim2.fromOffset(86, 86) })
-		Icons.medallion(icon, "people", C.mint, { Size = UDim2.fromScale(1, 1) })
+		local card, band = shopCard(deals, "Community", C.mint, 5, 110)
+		shopPicture(band, "ui/party", "people", C.mint, 84)
 		Widgets.label(card, {
 			text = "Free " .. Config.Community.Gems .. " Gems",
 			font = "chunky",
-			size = 26,
+			size = 22,
 			color = C.text,
 			align = "center",
 			scaled = true,
-			sizeUDim = UDim2.new(1, -20, 0, 32),
-			position = UDim2.fromOffset(10, 108),
+			sizeUDim = UDim2.new(1, -20, 0, 28),
+			position = UDim2.fromOffset(10, 124),
 		})
 		Widgets.label(card, {
-			text = "Like the game (the thumbs up on its page) and join our Roblox group, then claim your Gems. Once per player.",
+			text = "Like the game and join our group, then claim. Once per player.",
 			font = "body",
-			size = 15,
-			color = C.text,
+			size = 14,
+			color = C.textSoft,
 			wrap = true,
 			align = "center",
-			sizeUDim = UDim2.new(1, -28, 0, 110),
-			position = UDim2.fromOffset(14, 146),
+			sizeUDim = UDim2.new(1, -24, 0, 40),
+			position = UDim2.fromOffset(12, 154),
 		})
 		local function groupId(): number
 			local id = Config.Community.GroupId or 0
@@ -201,11 +294,11 @@ function Pages.shop(layer: Instance): () -> ()
 		Widgets.button(card, {
 			text = "Join group",
 			icon = "people",
-			style = "blue",
-			textSize = 17,
-			size = UDim2.new(1, -28, 0, 46),
+			style = "panel",
+			textSize = 16,
+			size = UDim2.new(1, -24, 0, 42),
 			anchor = Vector2.new(0.5, 1),
-			position = UDim2.new(0.5, 0, 1, -72),
+			position = UDim2.new(0.5, 0, 1, -64),
 			onClick = function()
 				local id = groupId()
 				if id == 0 then
@@ -225,9 +318,9 @@ function Pages.shop(layer: Instance): () -> ()
 			icon = "gem",
 			style = "green",
 			textSize = 18,
-			size = UDim2.new(1, -28, 0, 46),
+			size = UDim2.new(1, -24, 0, 44),
 			anchor = Vector2.new(0.5, 1),
-			position = UDim2.new(0.5, 0, 1, -14),
+			position = UDim2.new(0.5, 0, 1, -12),
 			onClick = function()
 				local ok, data = Net.request("community.claim")
 				if ok then
@@ -239,65 +332,122 @@ function Pages.shop(layer: Instance): () -> ()
 			end,
 		})
 	end
+
+	-- Gems for Robux (not where paid random items are restricted: Gems open chests)
+	if not restricted then
+		shopHeading(list, "Gems", if narrow then nil else "Spend them on chests and deals", 3)
+		local packs = shopGrid(list, "GemPacks", packCols, 236, 4)
+		local base = Passes.gemPacks[1].gems / Passes.gemPacks[1].robux
+		for i, pack in Passes.gemPacks do
+			local color = hex("3FA7F5")
+			local card, band = shopCard(packs, pack.key, color, i, 112)
+			for _, g in PILES[pack.pile] or PILES[1] do
+				local d = 100 * g[3]
+				local holder = Util.frame(band, {
+					AnchorPoint = Vector2.new(0.5, 0.5),
+					Position = UDim2.fromScale(g[1], g[2]),
+					Size = UDim2.fromOffset(d, d),
+					ZIndex = 3,
+				})
+				if not Art.image(holder, g[4] or "ui/gem", { Size = UDim2.fromScale(1, 1), ZIndex = 3 }) then
+					Icons.medallion(holder, "gem", color, { Size = UDim2.fromScale(1, 1) })
+				end
+			end
+			if pack.badge then
+				Widgets.badge(card, { text = pack.badge, color = C.orange, height = 24, textSize = 13, anchor = Vector2.new(1, 0), position = UDim2.new(1, -4, 0, -6), z = 12 })
+			end
+			Widgets.label(card, {
+				text = Util.commas(pack.gems) .. " Gems",
+				font = "chunky",
+				size = 22,
+				color = C.text,
+				align = "center",
+				sizeUDim = UDim2.new(1, -12, 0, 28),
+				position = UDim2.fromOffset(6, 124),
+			})
+			local extra = math.floor((pack.gems / pack.robux) / base * 100 + 0.5) - 100
+			Widgets.label(card, {
+				text = if extra > 0 then ("+" .. extra .. "% extra") else "",
+				font = "heavy",
+				size = 14,
+				color = C.good,
+				align = "center",
+				sizeUDim = UDim2.new(1, -12, 0, 18),
+				position = UDim2.fromOffset(6, 152),
+			})
+			local id = Passes.productId(pack.key)
+			local buy = Widgets.button(card, {
+				text = if id == 0 then "Soon" else "Buy",
+				style = "green",
+				textSize = 18,
+				size = UDim2.new(1, -20, 0, 46),
+				anchor = Vector2.new(0.5, 1),
+				position = UDim2.new(0.5, 0, 1, -10),
+				disabled = id == 0,
+				onClick = function()
+					local ok = pcall(function()
+						MarketplaceService:PromptProductPurchase(player, id)
+					end)
+					if not ok then
+						Widgets.toast("The Roblox store didn't open. Try again in a moment.", "error")
+					end
+				end,
+			})
+			showPrice(buy, id, Enum.InfoType.Product)
+		end
+	end
+
+	-- the passes
+	shopHeading(list, "Passes", if narrow then nil else "Yours for good. None change how a match plays.", 5)
+	local passes = shopGrid(list, "Passes", cols, 370, 6)
 	for i, pass in Passes.list do
-		if pass.randomItems and profile and profile.restricted then
-			continue -- paid random-item boosts are hidden where they're restricted
+		if pass.randomItems and restricted then
+			continue -- paid random items (chests, chest odds) are hidden where they're restricted
 		end
 		local color = hex(string.sub(pass.color, 2))
-		local card = Util.new("Frame", {
-			Name = pass.key,
-			BackgroundColor3 = C.panelRaised,
-			BorderSizePixel = 0,
-			Size = UDim2.new(0.25, -12, 1, 0),
-			LayoutOrder = 10 + i,
-			Parent = row,
-		})
-		Util.corner(card, 14)
-		Util.stroke(card, color, 3)
-		local icon = Util.frame(card, {
-			AnchorPoint = Vector2.new(0.5, 0),
-			Position = UDim2.new(0.5, 0, 0, 14),
-			Size = UDim2.fromOffset(86, 86),
-		})
-		Icons.medallion(icon, pass.icon, color, { Size = UDim2.fromScale(1, 1) })
+		local card, band = shopCard(passes, pass.key, color, i, 118)
+		shopPicture(band, pass.picture, pass.icon, color, 96)
+		if pass.badge then
+			Widgets.badge(card, { text = pass.badge, color = C.orange, height = 24, textSize = 13, anchor = Vector2.new(1, 0), position = UDim2.new(1, -4, 0, -6), z = 12 })
+		end
 		Widgets.label(card, {
 			text = pass.name,
-			font = "chunky",
-			size = 26,
+			font = "display",
+			size = 24,
 			color = C.text,
 			align = "center",
-			sizeUDim = UDim2.new(1, 0, 0, 32),
-			position = UDim2.fromOffset(0, 108),
+			scaled = true,
+			sizeUDim = UDim2.new(1, -16, 0, 30),
+			position = UDim2.fromOffset(8, 132),
 		})
 		local perks = Util.frame(card, {
-			Position = UDim2.fromOffset(14, 146),
-			Size = UDim2.new(1, -28, 1, -220),
+			Position = UDim2.fromOffset(14, 170),
+			Size = UDim2.new(1, -28, 1, -240),
 		})
-		Util.list(perks, "y", 8, "Left", "Top")
+		Util.list(perks, "y", 7, "Left", "Top")
 		for j, perk in pass.perks do
 			local line = Util.frame(perks, { Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, LayoutOrder = j })
-			local tick = Util.frame(line, { Size = UDim2.fromOffset(18, 18), Position = UDim2.fromOffset(0, 2) })
+			local tick = Util.frame(line, { Size = UDim2.fromOffset(16, 16), Position = UDim2.fromOffset(0, 2) })
 			Icons.make(tick, "check", Icons.flatColors(C.good, C.panelRaised))
 			local text = Widgets.label(line, {
 				text = perk,
 				font = "body",
-				size = 15,
+				size = 14,
 				color = C.text,
 				wrap = true,
-				sizeUDim = UDim2.new(1, -26, 0, 0),
-				position = UDim2.fromOffset(26, 0),
+				sizeUDim = UDim2.new(1, -22, 0, 0),
+				position = UDim2.fromOffset(22, 0),
 			})
 			text.AutomaticSize = Enum.AutomaticSize.Y
 		end
 		local id = Passes.id(pass.key)
 		local buy = Widgets.button(card, {
 			text = "Buy",
-			icon = "bag",
 			style = "green",
 			textSize = 20,
-			size = UDim2.new(1, -28, 0, 50),
+			size = UDim2.new(1, -24, 0, 50),
 			anchor = Vector2.new(0.5, 1),
-			position = UDim2.new(0.5, 0, 1, -14),
+			position = UDim2.new(0.5, 0, 1, -12),
 			onClick = function()
 				if id == 0 then
 					return
@@ -310,17 +460,7 @@ function Pages.shop(layer: Instance): () -> ()
 				end
 			end,
 		})
-		-- show the Robux price once Roblox tells us
-		if id ~= 0 then
-			task.spawn(function()
-				local ok, info = pcall(function()
-					return MarketplaceService:GetProductInfo(id, Enum.InfoType.GamePass)
-				end)
-				if ok and info and info.PriceInRobux and buy.root.Parent then
-					buy:setText("R$ " .. tostring(info.PriceInRobux))
-				end
-			end)
-		end
+		showPrice(buy, id, Enum.InfoType.GamePass)
 		table.insert(cards, {
 			update = function(p)
 				local owned = p ~= nil and table.find(p.passes or {}, pass.key) ~= nil
@@ -402,7 +542,7 @@ local RULES = {
 	{
 		icon = "people",
 		title = "Modes",
-		text = "Blitz is a quick race to a single treasure. In team modes your treasures add up, your traps never catch teammates, you can't bonk them, and you can give a teammate a card (it's your card for the turn). The Weekly Event changes every Thursday.\n\nWhile someone else takes their turn, tap the fishing rod in the board's corner to fish. Don't pull on a nibble: wait for the real bite, then reel it in fast. Every map has its own fish, and now and then you'll hook a gold coin.",
+		text = "Blitz is a quick race to a single treasure. In team modes your treasures add up, your traps never catch teammates, you can't bonk them, and you can give a teammate a card (it's your card for the turn). In Party mode, every treasure brings a new rule, replacing the last one.\n\nWhile someone else takes their turn, tap the fishing rod in the board's corner to fish. Don't pull on a nibble: wait for the real bite, then reel it in fast. Every map has its own fish, and now and then you'll hook a gold coin.",
 		modes = true,
 	},
 	{
@@ -464,12 +604,7 @@ function Pages.rules(layer: Instance): () -> ()
 		if section.modes then
 			local lines = {}
 			for _, m in Modes.list do
-				if m.isEvent then
-					local event = Progress.currentEvent()
-					table.insert(lines, m.name .. " (this week: " .. event.name .. "): " .. event.blurb)
-				else
-					table.insert(lines, m.name .. ": " .. m.blurb)
-				end
+				table.insert(lines, m.name .. ": " .. m.blurb)
 			end
 			text = table.concat(lines, "\n") .. "\n\n" .. section.text
 		elseif section.characters then
@@ -592,59 +727,6 @@ local function unlockAllRow(list: Instance, order: number)
 	note.AutomaticSize = Enum.AutomaticSize.Y
 end
 
--- The voice your chat bubbles speak in: your character's, or (Voice Pack) any of them.
-local function voiceRow(list: Instance, order: number)
-	local profile = State.get("profile")
-	local current = profile and profile.settings and profile.settings.voice or "auto"
-	local hasPack = State.hasPass("VoicePack")
-	Widgets.label(list, {
-		text = if hasPack then "Your voice" else "Your voice (pick any with the Voice Pack)",
-		font = "heavy",
-		size = 18,
-		color = C.text,
-		sizeUDim = UDim2.new(1, 0, 0, 24),
-		layoutOrder = order,
-	})
-	local grid = Util.frame(list, { Name = "Voices", Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, LayoutOrder = order + 1 })
-	Util.new("UIGridLayout", {
-		CellSize = UDim2.fromOffset(150, 38),
-		CellPadding = UDim2.fromOffset(8, 8),
-		SortOrder = Enum.SortOrder.LayoutOrder,
-		HorizontalAlignment = Enum.HorizontalAlignment.Center,
-		Parent = grid,
-	})
-	local chips = {}
-	local function paint()
-		for id, b in chips do
-			b:setStyle(if id == current then "brass" else "panel")
-		end
-	end
-	for i, v in Voices.list do
-		local locked = v.id ~= "auto" and not hasPack
-		chips[v.id] = Widgets.button(grid, {
-			text = v.name,
-			icon = if locked then "lock" else nil,
-			style = "panel",
-			textSize = 15,
-			font = "heavy",
-			depth = 3,
-			layoutOrder = i,
-			onClick = function()
-				local character = profile and profile.character
-				Voice.sample(Voices.resolve(v.id, character))
-				if locked then
-					Widgets.toast("That's a Voice Pack voice. Get it in the Shop!", "info")
-					return
-				end
-				current = v.id
-				paint()
-				saveSetting("voice", v.id)
-			end,
-		})
-	end
-	paint()
-end
-
 function Pages.settings(layer: Instance): () -> ()
 	local staff = State.get("staff")
 	local content, close = Widgets.modal(layer, {
@@ -655,9 +737,7 @@ function Pages.settings(layer: Instance): () -> ()
 	})
 	local list = Widgets.scroll(content, { gap = 12, padding = 4 })
 	VolumeRows.build(list, 1)
-	toggleRow(list, "Read chat out loud", "voices", 3)
 	toggleRow(list, "Chat bubbles over players", "bubbles", 4)
-	voiceRow(list, 5)
 	if staff == "owner" then
 		unlockAllRow(list, 7)
 	end

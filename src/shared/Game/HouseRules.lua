@@ -11,7 +11,7 @@
 		abilities false: nobody can use their ability (the Power bar goes)
 		wanted    false: no price on the leader's head (Engine "Wanted")
 		underdog  false: no gold die for whoever is clearly last
-		twist     a weekly event's twist on the rules ("none" or an event id)
+		twist     a twist on the rules ("none" or a twist id, Meta/Progress events)
 		banned    [card id] = true: those cards never come up (wheels, shop, starting hands)
 		vote      how the map is chosen when the match opens: "off" (the map picked in the
 		          settings), "majority" (most votes wins) or "roulette" (every vote is a
