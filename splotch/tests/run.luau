@@ -64,7 +64,10 @@ test("encode/decode round trip", function()
 	for _, sample in { { 1, 1, 0, 0 }, { 57, 6, 1023, 1023 }, { 4000, 3, 512, 7 }, { 1, 5, 0, 900 } } do
 		local key = PaintGrid.encode(sample[1], sample[2], sample[3], sample[4])
 		local id, face, u, v = PaintGrid.decode(key)
-		check(id == sample[1] and face == sample[2] and u == sample[3] and v == sample[4], "round trip failed for " .. key)
+		check(
+			id == sample[1] and face == sample[2] and u == sample[3] and v == sample[4],
+			"round trip failed for " .. key
+		)
 	end
 end)
 
@@ -90,7 +93,10 @@ test("cell slabs are clipped to the face and lifted off it", function()
 	local key = PaintGrid.encode(1, 3, 3, 0)
 	local cframe, size = PaintGrid.cellSlab(floor, key, 3, 0.05, 0.1)
 	check(near(size.X, 1) and near(size.Z, 3) and near(size.Y, 0.1), "unexpected slab size " .. tostring(size))
-	check(nearVector(cframe.Position, Vector3.new(4.5, 1.1, -3.5)), "unexpected slab position " .. tostring(cframe.Position))
+	check(
+		nearVector(cframe.Position, Vector3.new(4.5, 1.1, -3.5)),
+		"unexpected slab position " .. tostring(cframe.Position)
+	)
 	check(nearVector(cframe.UpVector, Vector3.new(0, 1, 0)), "slab should face up")
 end)
 
@@ -222,11 +228,18 @@ end)
 -- Geometry --------------------------------------------------------------------------
 
 test("segment distance for crossing and parallel segments", function()
-	local d1, s1 = Geometry.segmentSegment(Vector3.new(-1, 0, 0), Vector3.new(1, 0, 0), Vector3.new(0, -1, 2), Vector3.new(0, 1, 2))
+	local d1, s1 = Geometry.segmentSegment(
+		Vector3.new(-1, 0, 0),
+		Vector3.new(1, 0, 0),
+		Vector3.new(0, -1, 2),
+		Vector3.new(0, 1, 2)
+	)
 	check(near(d1, 2) and near(s1, 0.5), "crossing: " .. d1 .. " at " .. s1)
-	local d2 = Geometry.segmentSegment(Vector3.new(0, 0, 0), Vector3.new(4, 0, 0), Vector3.new(0, 3, 0), Vector3.new(4, 3, 0))
+	local d2 =
+		Geometry.segmentSegment(Vector3.new(0, 0, 0), Vector3.new(4, 0, 0), Vector3.new(0, 3, 0), Vector3.new(4, 3, 0))
 	check(near(d2, 3), "parallel: " .. d2)
-	local d3, s3 = Geometry.segmentSegment(Vector3.new(0, 0, 0), Vector3.new(1, 0, 0), Vector3.new(5, 0, 0), Vector3.new(5, 0, 0))
+	local d3, s3 =
+		Geometry.segmentSegment(Vector3.new(0, 0, 0), Vector3.new(1, 0, 0), Vector3.new(5, 0, 0), Vector3.new(5, 0, 0))
 	check(near(d3, 4) and near(s3, 1), "point beyond the end: " .. d3)
 end)
 

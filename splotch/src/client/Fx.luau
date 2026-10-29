@@ -99,7 +99,11 @@ local function emitter(kind: string, colorId: number): ParticleEmitter
 	else
 		e.Texture = PARTICLE_TEXTURE
 		e.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.9), NumberSequenceKeypoint.new(1, 0.1) })
-		e.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(0.7, 0.2), NumberSequenceKeypoint.new(1, 1) })
+		e.Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0),
+			NumberSequenceKeypoint.new(0.7, 0.2),
+			NumberSequenceKeypoint.new(1, 1),
+		})
 		e.Lifetime = NumberRange.new(0.35, 0.6)
 		e.Acceleration = Vector3.new(0, -70, 0)
 		e.Drag = 2
@@ -217,7 +221,17 @@ local function projectileVisual(style: string, size: number, colorId: number): B
 	return part
 end
 
-local function spawnProjectile(key: string, origin: Vector3, velocity: Vector3, gravity: number, lifetime: number, style: string, size: number, colorId: number, owner: Player?)
+local function spawnProjectile(
+	key: string,
+	origin: Vector3,
+	velocity: Vector3,
+	gravity: number,
+	lifetime: number,
+	style: string,
+	size: number,
+	colorId: number,
+	owner: Player?
+)
 	local part = projectileVisual(style, size, colorId)
 	part.CFrame = CFrame.new(origin)
 	if style == "Hook" then
@@ -279,7 +293,9 @@ local function updateProjectiles()
 				p.part.CFrame = CFrame.new(hit.Position)
 				p.part.Transparency = 1
 			else
-				local spin = if p.style == "Can" or p.style == "Stencil" then CFrame.Angles(age * 14, age * 9, 0) else CFrame.identity
+				local spin = if p.style == "Can" or p.style == "Stencil"
+					then CFrame.Angles(age * 14, age * 9, 0)
+					else CFrame.identity
 				p.part.CFrame = CFrame.new(position) * spin
 				p.last = position
 			end
@@ -291,17 +307,47 @@ end
 
 local handlers: { [string]: (...any) -> () } = {}
 
-function handlers.Projectile(id: number, ownerId: number, shotId: number, origin: Vector3, velocity: Vector3, gravity: number, lifetime: number, style: string, size: number, colorId: number)
+function handlers.Projectile(
+	id: number,
+	ownerId: number,
+	shotId: number,
+	origin: Vector3,
+	velocity: Vector3,
+	gravity: number,
+	lifetime: number,
+	style: string,
+	size: number,
+	colorId: number
+)
 	if ownerId == localPlayer.UserId and shotId ~= 0 then
 		return -- already drawn by prediction
 	end
-	spawnProjectile("s" .. id, origin, velocity, gravity, lifetime, style, size, colorId, Players:GetPlayerByUserId(ownerId))
+	spawnProjectile(
+		"s" .. id,
+		origin,
+		velocity,
+		gravity,
+		lifetime,
+		style,
+		size,
+		colorId,
+		Players:GetPlayerByUserId(ownerId)
+	)
 	if style ~= "Paint" then
 		Sounds.playAt("Skill", origin, 0.8)
 	end
 end
 
-function handlers.ProjectileEnd(id: number, ownerId: number, shotId: number, position: Vector3, normal: Vector3, style: string, colorId: number, hitCharacter: boolean)
+function handlers.ProjectileEnd(
+	id: number,
+	ownerId: number,
+	shotId: number,
+	position: Vector3,
+	normal: Vector3,
+	style: string,
+	colorId: number,
+	hitCharacter: boolean
+)
 	if ownerId == localPlayer.UserId and shotId ~= 0 then
 		removeProjectile("l" .. shotId)
 	else
@@ -442,12 +488,25 @@ local function damageNumber(position: Vector3, damage: number, heavy: boolean, b
 	Debris:AddItem(anchor, 0.8)
 end
 
-local function onHit(victim: Model?, position: Vector3, damage: number, attackerColorId: number, heavy: boolean, blocked: boolean)
+local function onHit(
+	victim: Model?,
+	position: Vector3,
+	damage: number,
+	attackerColorId: number,
+	heavy: boolean,
+	blocked: boolean
+)
 	CharacterVisuals.flash(victim, heavy)
 	if damage > 0 then
 		damageNumber(position, damage, heavy, blocked)
 	end
-	burst(position, if attackerColorId > 0 then attackerColorId else 1, if heavy then 18 else 8, if heavy then 40 else 24, heavy)
+	burst(
+		position,
+		if attackerColorId > 0 then attackerColorId else 1,
+		if heavy then 18 else 8,
+		if heavy then 40 else 24,
+		heavy
+	)
 
 	if victim and victim == localPlayer.Character then
 		Sounds.play(if blocked then "Blocked" else "Hurt")
@@ -462,7 +521,15 @@ end
 -- Local predictions -----------------------------------------------------------------
 
 -- Draws your own primary shot the moment you fire.
-function Fx.predictShot(shotId: number, origin: Vector3, velocity: Vector3, gravity: number, lifetime: number, size: number, colorId: number)
+function Fx.predictShot(
+	shotId: number,
+	origin: Vector3,
+	velocity: Vector3,
+	gravity: number,
+	lifetime: number,
+	size: number,
+	colorId: number
+)
 	spawnProjectile("l" .. shotId, origin, velocity, gravity, lifetime, "Paint", size, colorId, localPlayer)
 end
 

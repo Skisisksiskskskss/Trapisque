@@ -394,7 +394,12 @@ local function update()
 	end
 
 	-- Bounce pads.
-	if down and t >= bounceReadyAt and down.Instance:HasTag("BouncePad") and (root.Position - down.Position).Magnitude < 3.8 then
+	if
+		down
+		and t >= bounceReadyAt
+		and down.Instance:HasTag("BouncePad")
+		and (root.Position - down.Position).Magnitude < 3.8
+	then
 		bounceReadyAt = t + 0.4
 		local pad = down.Instance :: BasePart
 		local power = pad:GetAttribute("Power") or 90
@@ -631,7 +636,8 @@ function MovementController.applyKnockback(velocity: Vector3, ragdoll: number, s
 		humanoid:ChangeState(Enum.HumanoidStateType.Physics)
 		root.AssemblyLinearVelocity = velocity
 		local random = Random.new()
-		root.AssemblyAngularVelocity = Vector3.new(random:NextNumber(-8, 8), random:NextNumber(-5, 5), random:NextNumber(-8, 8))
+		root.AssemblyAngularVelocity =
+			Vector3.new(random:NextNumber(-8, 8), random:NextNumber(-5, 5), random:NextNumber(-8, 8))
 		return
 	end
 	if velocity.Magnitude < 1 then

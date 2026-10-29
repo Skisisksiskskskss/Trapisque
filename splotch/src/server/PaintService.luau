@@ -63,7 +63,13 @@ end
 	normal at the impact (used to step the visibility checks off the surface) and
 	`hitPart` the part that was struck, if known. Returns how many cells changed.
 ]]
-function PaintService.splat(colorId: number, point: Vector3, normal: Vector3?, radius: number, hitPart: BasePart?): number
+function PaintService.splat(
+	colorId: number,
+	point: Vector3,
+	normal: Vector3?,
+	radius: number,
+	hitPart: BasePart?
+): number
 	local up = normal or Vector3.new(0, 1, 0)
 	local from = point + up * LOS_OFFSET
 	local hitFace = if hitPart then PaintGrid.faceFromNormal(hitPart.CFrame, up) else nil
@@ -73,17 +79,24 @@ function PaintService.splat(colorId: number, point: Vector3, normal: Vector3?, r
 	for _, part in workspace:GetPartBoundsInRadius(point, radius + 1, overlapParams) do
 		local paintId = Paintables.idOf(part)
 		if paintId then
-			PaintGrid.forEachCellInRadius(part, paintId, point, radius, Config.CELL_SIZE, function(key, center, cellNormal)
-				-- Cells on the struck face itself are always visible; everything
-				-- else (other faces, neighbouring parts) needs a clear line.
-				local _, face = PaintGrid.decode(key)
-				if not (part == hitPart and face == hitFace) and not canSee(from, center, cellNormal) then
-					return
+			PaintGrid.forEachCellInRadius(
+				part,
+				paintId,
+				point,
+				radius,
+				Config.CELL_SIZE,
+				function(key, center, cellNormal)
+					-- Cells on the struck face itself are always visible; everything
+					-- else (other faces, neighbouring parts) needs a clear line.
+					local _, face = PaintGrid.decode(key)
+					if not (part == hitPart and face == hitFace) and not canSee(from, center, cellNormal) then
+						return
+					end
+					if store:paint(key, colorId, now) then
+						changed += 1
+					end
 				end
-				if store:paint(key, colorId, now) then
-					changed += 1
-				end
-			end)
+			)
 		end
 	end
 	return changed

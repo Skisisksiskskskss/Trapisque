@@ -138,7 +138,10 @@ local function slots(): { Hud.Slot }
 		})
 	end
 	local dashLeft, dashTotal = MovementController.getDashCooldown()
-	table.insert(list, { key = Keybinds.label("Dash"), name = "Dash", remaining = dashLeft, total = dashTotal, active = false })
+	table.insert(
+		list,
+		{ key = Keybinds.label("Dash"), name = "Dash", remaining = dashLeft, total = dashTotal, active = false }
+	)
 	table.insert(list, { key = Keybinds.label("Block"), name = "Block", remaining = 0, total = 0, active = blocking })
 	table.insert(list, {
 		key = Keybinds.label("Dive"),

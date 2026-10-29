@@ -78,7 +78,13 @@ function PaintGrid.faceFromNormal(cframe: CFrame, worldNormal: Vector3): number
 end
 
 -- Key of the cell under a surface hit (position + normal, e.g. a RaycastResult).
-function PaintGrid.cellAt(part: PartLike, paintId: number, worldPos: Vector3, worldNormal: Vector3, cellSize: number): number
+function PaintGrid.cellAt(
+	part: PartLike,
+	paintId: number,
+	worldPos: Vector3,
+	worldNormal: Vector3,
+	cellSize: number
+): number
 	local face = PaintGrid.faceFromNormal(part.CFrame, worldNormal)
 	local f = FACES[face]
 	local p = part.CFrame:PointToObjectSpace(worldPos)
@@ -89,7 +95,13 @@ function PaintGrid.cellAt(part: PartLike, paintId: number, worldPos: Vector3, wo
 end
 
 -- World CFrame and size of the thin slab that renders a cell.
-function PaintGrid.cellSlab(part: PartLike, key: number, cellSize: number, lift: number, thickness: number): (CFrame, Vector3)
+function PaintGrid.cellSlab(
+	part: PartLike,
+	key: number,
+	cellSize: number,
+	lift: number,
+	thickness: number
+): (CFrame, Vector3)
 	local _, face, u, v = PaintGrid.decode(key)
 	local f = FACES[face]
 	local halfN, sizeU, sizeV = faceDims(part.Size, f)

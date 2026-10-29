@@ -70,7 +70,9 @@ local function step(dt: number)
 		p.age += dt
 
 		local surface = World.raycastMap(a, delta)
-		local surfaceT = if surface then (surface.Position - a).Magnitude / math.max(delta.Magnitude, 1e-6) else math.huge
+		local surfaceT = if surface
+			then (surface.Position - a).Magnitude / math.max(delta.Magnitude, 1e-6)
+			else math.huge
 		local target, targetT = Hitbox.sweep(spec.owner, a, b, spec.hitRadius)
 
 		if target and targetT <= surfaceT then

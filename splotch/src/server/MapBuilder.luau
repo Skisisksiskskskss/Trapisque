@@ -79,7 +79,15 @@ local function zone(parent: Instance, name: string, tag: string, size: Vector3, 
 end
 
 -- A slab whose top surface runs from `low` to `high` (both top-surface points).
-local function ramp(parent: Instance, name: string, low: Vector3, high: Vector3, width: number, thickness: number, options: Options?)
+local function ramp(
+	parent: Instance,
+	name: string,
+	low: Vector3,
+	high: Vector3,
+	width: number,
+	thickness: number,
+	options: Options?
+)
 	local mid = (low + high) / 2
 	local look = CFrame.lookAt(mid, high)
 	local cframe = look * CFrame.new(0, -thickness / 2, 0)
@@ -99,13 +107,21 @@ local function hut(parent: Instance, zones: Instance, name: string, center: Vect
 	volume.CFrame = origin * CFrame.new(0, 5.5, -1)
 end
 
-local function bouncePad(parent: Instance, name: string, position: Vector3, facing: number, power: number, forward: number)
-	local pad = box(parent, name, Vector3.new(6, 0.5, 6), CFrame.new(position) * CFrame.Angles(0, math.rad(facing), 0), {
-		color = COLORS.pad,
-		material = Enum.Material.Neon,
-		paintable = false,
-		tags = { "BouncePad" },
-	})
+local function bouncePad(
+	parent: Instance,
+	name: string,
+	position: Vector3,
+	facing: number,
+	power: number,
+	forward: number
+)
+	local pad =
+		box(parent, name, Vector3.new(6, 0.5, 6), CFrame.new(position) * CFrame.Angles(0, math.rad(facing), 0), {
+			color = COLORS.pad,
+			material = Enum.Material.Neon,
+			paintable = false,
+			tags = { "BouncePad" },
+		})
 	pad:SetAttribute("Power", power)
 	pad:SetAttribute("Forward", forward)
 	return pad
@@ -238,15 +254,17 @@ function MapBuilder.build(): (Folder, Folder)
 	box(map, "WallSouthEast", Vector3.new(30, 10, 3), Vector3.new(40, 5, 75))
 	box(map, "WallNorthWest", Vector3.new(3, 12, 36), Vector3.new(-40, 6, -40))
 	box(map, "WallNorth", Vector3.new(24, 8, 3), Vector3.new(10, 4, -75))
-	for index, position in {
-		Vector3.new(20, 3, 40),
-		Vector3.new(26, 3, 40),
-		Vector3.new(23, 9, 40),
-		Vector3.new(-60, 3, -20),
-		Vector3.new(85, 3, -20),
-		Vector3.new(85, 3, -14),
-		Vector3.new(-10, 3, 60),
-	} do
+	for index, position in
+		{
+			Vector3.new(20, 3, 40),
+			Vector3.new(26, 3, 40),
+			Vector3.new(23, 9, 40),
+			Vector3.new(-60, 3, -20),
+			Vector3.new(85, 3, -20),
+			Vector3.new(85, 3, -14),
+			Vector3.new(-10, 3, 60),
+		}
+	do
 		box(map, "Crate" .. index, Vector3.new(6, 6, 6), position, accent)
 	end
 

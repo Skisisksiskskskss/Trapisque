@@ -31,7 +31,14 @@ function Hitbox.sphere(owner: Player?, center: Vector3, radius: number): { Targe
 end
 
 -- Living players inside a horizontal cone (half angle in degrees).
-function Hitbox.cone(owner: Player?, origin: Vector3, direction: Vector3, range: number, halfAngle: number, height: number?): { Target }
+function Hitbox.cone(
+	owner: Player?,
+	origin: Vector3,
+	direction: Vector3,
+	range: number,
+	halfAngle: number,
+	height: number?
+): { Target }
 	local hits = {}
 	local flatDir = Geometry.flat(direction)
 	local cosLimit = math.cos(math.rad(halfAngle))

@@ -78,7 +78,11 @@ local function card(parent: Instance, order: number, def: Characters.Character)
 	})
 
 	local lines = {
-		string.format("<font color='#ff8c28'><b>HP</b></font> %d   <font color='#ff8c28'><b>M1</b></font> %s", def.maxHealth, def.primary.name),
+		string.format(
+			"<font color='#ff8c28'><b>HP</b></font> %d   <font color='#ff8c28'><b>M1</b></font> %s",
+			def.maxHealth,
+			def.primary.name
+		),
 		"",
 	}
 	for _, skill in def.skills do

@@ -54,7 +54,8 @@ local healthText: TextLabel
 local paintFill: Frame
 local kitLabel: TextLabel
 local hotbar: Frame
-local slotFrames: { { frame: Frame, key: TextLabel, name: TextLabel, cooldown: Frame, seconds: TextLabel, stroke: UIStroke } } = {}
+local slotFrames: { { frame: Frame, key: TextLabel, name: TextLabel, cooldown: Frame, seconds: TextLabel, stroke: UIStroke } } =
+	{}
 local comboFrame: Frame
 local comboCount: TextLabel
 local comboScale: UIScale
@@ -73,7 +74,9 @@ local feedEntries: { Frame } = {}
 local FEED_MAX = 5
 
 local function tween(instance: Instance, seconds: number, goals: { [string]: any }, style: Enum.EasingStyle?)
-	TweenService:Create(instance, TweenInfo.new(seconds, style or Enum.EasingStyle.Quad, Enum.EasingDirection.Out), goals):Play()
+	TweenService
+		:Create(instance, TweenInfo.new(seconds, style or Enum.EasingStyle.Quad, Enum.EasingDirection.Out), goals)
+		:Play()
 end
 
 -- Construction ----------------------------------------------------------------------
@@ -380,7 +383,10 @@ local function buildVignette()
 		}, {
 			Ui.create("UIGradient", {
 				Rotation = edge[3],
-				Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(1, 1) }),
+				Transparency = NumberSequence.new({
+					NumberSequenceKeypoint.new(0, 0),
+					NumberSequenceKeypoint.new(1, 1),
+				}),
 			}),
 		})
 		table.insert(vignette, frame)
@@ -486,10 +492,14 @@ local function refreshVitals()
 	paintFill.BackgroundColor3 = color
 	paintMeterFill.Size = UDim2.fromScale(1, paintFraction)
 	local low = paint < kit.primary.cost
-	paintMeterFill.BackgroundColor3 = if low and math.sin(os.clock() * 14) > 0 then Color3.fromRGB(255, 60, 60) else color
+	paintMeterFill.BackgroundColor3 = if low and math.sin(os.clock() * 14) > 0
+		then Color3.fromRGB(255, 60, 60)
+		else color
 
 	-- Persistent red edge pulse when nearly dead.
-	local danger = if fraction < 0.3 and health > 0 then (0.3 - fraction) / 0.3 * (0.55 + 0.25 * math.sin(os.clock() * 6)) else 0
+	local danger = if fraction < 0.3 and health > 0
+		then (0.3 - fraction) / 0.3 * (0.55 + 0.25 * math.sin(os.clock() * 6))
+		else 0
 	local alpha = math.max(vignetteAlpha, danger)
 	for _, edge in vignette do
 		edge.BackgroundTransparency = 1 - alpha * 0.75
@@ -592,11 +602,17 @@ function Hud.feed(killerName: string, killerColorId: number, victimName: string,
 	feedOrder += 1
 	local parts = {}
 	if killerName ~= "" then
-		table.insert(parts, string.format("<font color='#%s'><b>%s</b></font>", Ui.hex(Palette.color(killerColorId)), killerName))
+		table.insert(
+			parts,
+			string.format("<font color='#%s'><b>%s</b></font>", Ui.hex(Palette.color(killerColorId)), killerName)
+		)
 	end
 	table.insert(parts, verb)
 	if victimName ~= "" then
-		table.insert(parts, string.format("<font color='#%s'><b>%s</b></font>", Ui.hex(Palette.color(victimColorId)), victimName))
+		table.insert(
+			parts,
+			string.format("<font color='#%s'><b>%s</b></font>", Ui.hex(Palette.color(victimColorId)), victimName)
+		)
 	end
 	local entry = Ui.create("Frame", {
 		LayoutOrder = -feedOrder,

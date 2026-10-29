@@ -74,13 +74,8 @@ local function setCell(key: number, colorId: number)
 		if not part then
 			return
 		end
-		local cframe, size = PaintGrid.cellSlab(
-			part,
-			key,
-			Config.CELL_SIZE,
-			Config.PAINT_VISUAL_LIFT,
-			Config.PAINT_VISUAL_THICKNESS
-		)
+		local cframe, size =
+			PaintGrid.cellSlab(part, key, Config.CELL_SIZE, Config.PAINT_VISUAL_LIFT, Config.PAINT_VISUAL_THICKNESS)
 		slab = newSlab()
 		slab.CFrame = cframe
 		slab.Size = size
@@ -165,7 +160,13 @@ function PaintRenderer.ownerAt(result: RaycastResult?): number?
 	if not paintId then
 		return nil
 	end
-	return owners[PaintGrid.cellAt(result.Instance :: BasePart, paintId, result.Position, result.Normal, Config.CELL_SIZE)]
+	return owners[PaintGrid.cellAt(
+		result.Instance :: BasePart,
+		paintId,
+		result.Position,
+		result.Normal,
+		Config.CELL_SIZE
+	)]
 end
 
 return PaintRenderer

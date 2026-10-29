@@ -147,7 +147,8 @@ Tagger[1] = function(ctx: Common.Context, payload: { [string]: any })
 				if not alreadyHit[target.player] then
 					alreadyHit[target.player] = true
 					local offset = target.root.Position - root.Position
-					local side = Geometry.flat(offset - direction * offset:Dot(direction), direction:Cross(Vector3.yAxis))
+					local side =
+						Geometry.flat(offset - direction * offset:Dot(direction), direction:Cross(Vector3.yAxis))
 					CombatService.applyHit(player, target.player, {
 						damage = STREAK.damage,
 						knockback = side * STREAK.knockback + direction * 18 + Vector3.new(0, 28, 0),

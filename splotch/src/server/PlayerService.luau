@@ -80,14 +80,21 @@ local function addKitProp(character: Model, kitName: string, color: Color3)
 	model.Name = "KitProp"
 	local sideways = CFrame.Angles(0, 0, math.rad(90))
 	if kitName == "Plaster" then
-		local bucket = prop(model, Enum.PartType.Cylinder, Vector3.new(2.2, 2, 2), Color3.fromRGB(70, 74, 86), Enum.Material.Metal)
+		local bucket =
+			prop(model, Enum.PartType.Cylinder, Vector3.new(2.2, 2, 2), Color3.fromRGB(70, 74, 86), Enum.Material.Metal)
 		weld(bucket, anchor, CFrame.new(0, 0.6, 1.4) * sideways)
 		local fill = prop(model, Enum.PartType.Cylinder, Vector3.new(0.3, 1.8, 1.8), color, Enum.Material.SmoothPlastic)
 		weld(fill, anchor, CFrame.new(0, 1.65, 1.4) * sideways)
 	else
 		local can = prop(model, Enum.PartType.Cylinder, Vector3.new(2.1, 1, 1), color, Enum.Material.SmoothPlastic)
 		weld(can, anchor, CFrame.new(0.35, 0.7, 0.9) * sideways)
-		local cap = prop(model, Enum.PartType.Cylinder, Vector3.new(0.45, 0.7, 0.7), Color3.fromRGB(240, 240, 240), Enum.Material.SmoothPlastic)
+		local cap = prop(
+			model,
+			Enum.PartType.Cylinder,
+			Vector3.new(0.45, 0.7, 0.7),
+			Color3.fromRGB(240, 240, 240),
+			Enum.Material.SmoothPlastic
+		)
 		weld(cap, anchor, CFrame.new(0.35, 1.95, 0.9) * sideways)
 	end
 	model.Parent = character

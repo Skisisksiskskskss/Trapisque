@@ -149,7 +149,14 @@ function CombatService.applyHit(attacker: Player?, victim: Player, spec: HitSpec
 	end
 
 	local attackerColor = if attackerState then attackerState.colorId else 0
-	Remotes.Hit:FireAllClients(victim.Character, spec.position or root.Position, damage, attackerColor, spec.heavy == true, blocked)
+	Remotes.Hit:FireAllClients(
+		victim.Character,
+		spec.position or root.Position,
+		damage,
+		attackerColor,
+		spec.heavy == true,
+		blocked
+	)
 
 	if attacker and attackerState then
 		if now - attackerState.comboAt > COMBO_WINDOW then
