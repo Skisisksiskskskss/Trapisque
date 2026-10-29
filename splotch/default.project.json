@@ -1,0 +1,84 @@
+{
+  "name": "Splotch",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "Shared": {
+        "$path": "src/shared"
+      }
+    },
+    "ServerScriptService": {
+      "Server": {
+        "$path": "src/server"
+      }
+    },
+    "StarterPlayer": {
+      "$properties": {
+        "EnableMouseLockOption": false,
+        "CharacterWalkSpeed": 18,
+        "CharacterUseJumpPower": true,
+        "CharacterJumpPower": 52,
+        "CameraMaxZoomDistance": 30
+      },
+      "StarterPlayerScripts": {
+        "Client": {
+          "$path": "src/client"
+        }
+      },
+      "StarterCharacterScripts": {
+        "Health": {
+          "$path": "src/character/Health.server.luau"
+        }
+      }
+    },
+    "Workspace": {
+      "$properties": {
+        "StreamingEnabled": false,
+        "FallenPartsDestroyHeight": -400
+      }
+    },
+    "Lighting": {
+      "$properties": {
+        "Technology": "Future",
+        "ClockTime": 14.5,
+        "Brightness": 2.6,
+        "Ambient": [0.33, 0.33, 0.37],
+        "OutdoorAmbient": [0.55, 0.55, 0.6],
+        "EnvironmentDiffuseScale": 0.6,
+        "EnvironmentSpecularScale": 0.6,
+        "GlobalShadows": true
+      },
+      "Atmosphere": {
+        "$className": "Atmosphere",
+        "$properties": {
+          "Density": 0.28,
+          "Offset": 0.1,
+          "Color": [0.78, 0.82, 0.9],
+          "Decay": [0.55, 0.6, 0.75],
+          "Glare": 0.15,
+          "Haze": 1.2
+        }
+      },
+      "Bloom": {
+        "$className": "BloomEffect",
+        "$properties": {
+          "Intensity": 0.6,
+          "Size": 24,
+          "Threshold": 1.4
+        }
+      },
+      "ColorCorrection": {
+        "$className": "ColorCorrectionEffect",
+        "$properties": {
+          "Saturation": 0.12,
+          "Contrast": 0.06
+        }
+      }
+    },
+    "Players": {
+      "$properties": {
+        "RespawnTime": 3
+      }
+    }
+  }
+}

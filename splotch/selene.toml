@@ -1,0 +1,5 @@
+std = "roblox_lite"
+
+[lints]
+# Kits index skills by number on the same table as named fields.
+mixed_table = "allow"
