@@ -14,20 +14,15 @@
     },
     "StarterPlayer": {
       "$properties": {
-        "EnableMouseLockOption": false,
-        "CharacterWalkSpeed": 18,
+        "EnableMouseLockOption": true,
+        "CharacterWalkSpeed": 16,
         "CharacterUseJumpPower": true,
-        "CharacterJumpPower": 52,
+        "CharacterJumpPower": 50,
         "CameraMaxZoomDistance": 30
       },
       "StarterPlayerScripts": {
         "Client": {
           "$path": "src/client"
-        }
-      },
-      "StarterCharacterScripts": {
-        "Health": {
-          "$path": "src/character/Health.server.luau"
         }
       }
     },
@@ -40,44 +35,74 @@
     "Lighting": {
       "$properties": {
         "Technology": "Future",
-        "ClockTime": 14.5,
-        "Brightness": 2.6,
-        "Ambient": [0.33, 0.33, 0.37],
-        "OutdoorAmbient": [0.55, 0.55, 0.6],
+        "ClockTime": 16.4,
+        "Brightness": 2.8,
+        "Ambient": [
+          0.36,
+          0.34,
+          0.38
+        ],
+        "OutdoorAmbient": [
+          0.6,
+          0.53,
+          0.5
+        ],
         "EnvironmentDiffuseScale": 0.6,
         "EnvironmentSpecularScale": 0.6,
-        "GlobalShadows": true
+        "GlobalShadows": true,
+        "ShadowSoftness": 0.25
       },
       "Atmosphere": {
         "$className": "Atmosphere",
         "$properties": {
-          "Density": 0.28,
-          "Offset": 0.1,
-          "Color": [0.78, 0.82, 0.9],
-          "Decay": [0.55, 0.6, 0.75],
-          "Glare": 0.15,
-          "Haze": 1.2
+          "Density": 0.3,
+          "Offset": 0.12,
+          "Color": [
+            0.9,
+            0.79,
+            0.69
+          ],
+          "Decay": [
+            0.55,
+            0.44,
+            0.38
+          ],
+          "Glare": 0.4,
+          "Haze": 1.6
         }
       },
       "Bloom": {
         "$className": "BloomEffect",
         "$properties": {
-          "Intensity": 0.6,
-          "Size": 24,
-          "Threshold": 1.4
+          "Intensity": 0.7,
+          "Size": 28,
+          "Threshold": 1.25
         }
       },
       "ColorCorrection": {
         "$className": "ColorCorrectionEffect",
         "$properties": {
-          "Saturation": 0.12,
-          "Contrast": 0.06
+          "Saturation": 0.18,
+          "Contrast": 0.12,
+          "TintColor": [
+            1,
+            0.97,
+            0.93
+          ]
+        }
+      },
+      "SunRays": {
+        "$className": "SunRaysEffect",
+        "$properties": {
+          "Intensity": 0.07,
+          "Spread": 0.5
         }
       }
     },
     "Players": {
       "$properties": {
-        "RespawnTime": 3
+        "RespawnTime": 3,
+        "CharacterAutoLoads": false
       }
     }
   }

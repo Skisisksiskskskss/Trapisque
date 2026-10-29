@@ -1,15 +1,18 @@
 --[[
-	Helpers shared by every kit: input sanitising and the primary paint shot.
+	Helpers shared by every kit: input sanitising and the dash-lane routine
+	used by charging skills.
 ]]
+
+local RunService = game:GetService("RunService")
 
 local Shared = game:GetService("ReplicatedStorage").Shared
 local Characters = require(Shared.Characters)
 local Geometry = require(Shared.Geometry)
 
-local CombatService = require(script.Parent.Parent.CombatService)
+local Hitbox = require(script.Parent.Parent.Hitbox)
 local PaintService = require(script.Parent.Parent.PaintService)
-local ProjectileService = require(script.Parent.Parent.ProjectileService)
 local State = require(script.Parent.Parent.State)
+local World = require(script.Parent.Parent.World)
 
 export type Context = {
 	player: Player,
@@ -24,6 +27,9 @@ export type Context = {
 local Common = {}
 
 local MAX_ORIGIN_OFFSET = 12
+-- The server sees a dashing player slightly late, so keep checking a bit past
+-- the dash itself.
+local LANE_LAG_GRACE = 0.2
 
 -- A finite Vector3 from the network, or nil.
 function Common.vector(value: any): Vector3?
@@ -59,33 +65,45 @@ function Common.origin(ctx: Context, value: any): Vector3
 	return ctx.root.Position + Vector3.new(0, 1.5, 0)
 end
 
-function Common.primary(ctx: Context, origin: Vector3, direction: Vector3, shotId: number)
-	local def = ctx.kit.primary
+--[[
+	Follows a dashing player for `duration`, painting a lane under them and
+	calling onTarget once per enemy that comes within `radius`. Stops early if
+	onTarget returns true ("only the first one").
+]]
+function Common.lane(
+	ctx: Context,
+	duration: number,
+	radius: number,
+	paintRadius: number,
+	onTarget: (target: Hitbox.Target, root: BasePart) -> boolean?
+)
 	local player = ctx.player
 	local colorId = ctx.colorId
-	ProjectileService.launch({
-		owner = player,
-		origin = origin,
-		velocity = direction * def.speed,
-		gravity = def.gravity,
-		lifetime = def.lifetime,
-		hitRadius = def.hitRadius,
-		style = "Paint",
-		size = def.size,
-		colorId = colorId,
-		shotId = shotId,
-		onHitCharacter = function(target, position, velocity)
-			CombatService.applyHit(player, target.player, {
-				damage = def.damage,
-				knockback = Geometry.flat(velocity) * def.knockback,
-				position = position,
-			})
-			PaintService.splatGround(colorId, target.root.Position, def.splatRadius * 0.6, 6)
-		end,
-		onHitSurface = function(result)
-			PaintService.splat(colorId, result.Position, result.Normal, def.splatRadius, result.Instance :: BasePart)
-		end,
-	})
+	local alreadyHit: { [any]: boolean } = {}
+	local started = os.clock()
+	local lastPaint = 0
+	task.spawn(function()
+		while os.clock() - started < duration + LANE_LAG_GRACE do
+			local _, _, root = World.alive(player)
+			if not root then
+				return
+			end
+			local now = os.clock()
+			if now - lastPaint >= 0.05 then
+				lastPaint = now
+				PaintService.splatGround(colorId, root.Position, paintRadius, 6)
+			end
+			for _, target in Hitbox.sphere(player, root.Position, radius) do
+				if not alreadyHit[target.key] then
+					alreadyHit[target.key] = true
+					if onTarget(target, root) then
+						return
+					end
+				end
+			end
+			RunService.Heartbeat:Wait()
+		end
+	end)
 end
 
 return Common

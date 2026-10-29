@@ -20,17 +20,22 @@ local player = Players.LocalPlayer
 
 type Payload = { [string]: any }
 
--- Where thrown things leave from: just above and in front of your head.
-local function throwOrigin(): Vector3?
+local function rootPart(): BasePart?
 	local character = player.Character
 	local root = character and character:FindFirstChild("HumanoidRootPart")
-	if not root or not root:IsA("BasePart") then
+	return if root and root:IsA("BasePart") then root else nil
+end
+
+-- Where thrown things leave from: just above and in front of your head.
+local function throwOrigin(): Vector3?
+	local root = rootPart()
+	if not root then
 		return nil
 	end
 	return root.Position + Vector3.new(0, 1.6, 0) + CameraController.flatLook() * 1.2
 end
 
--- A throw aimed so its arc lands on whatever is under the crosshair.
+-- A throw aimed so its arc lands on whatever is under the mouse.
 local function lob(speed: number, gravity: number): Payload?
 	local origin = throwOrigin()
 	if not origin then
@@ -40,6 +45,20 @@ local function lob(speed: number, gravity: number): Payload?
 		origin = origin,
 		direction = Geometry.ballisticDirection(origin, CameraController.getAimPoint(), speed, gravity),
 	}
+end
+
+-- A straight shot at whatever is under the mouse.
+local function aimed(): Payload?
+	local origin = throwOrigin()
+	if not origin then
+		return nil
+	end
+	local target = CameraController.getAimPoint()
+	local direction = target - origin
+	if direction.Magnitude < 0.1 then
+		direction = CameraController.flatLook()
+	end
+	return { origin = origin, direction = direction.Unit }
 end
 
 local TAGGER = Characters.DEFS.Tagger.skills
@@ -58,6 +77,9 @@ KitClient.Tagger = {
 	function(): Payload?
 		return lob(TAGGER[3].params.speed, TAGGER[3].params.gravity)
 	end,
+	function(): Payload?
+		return aimed()
+	end,
 }
 
 KitClient.Plaster = {
@@ -68,15 +90,16 @@ KitClient.Plaster = {
 		return {}
 	end,
 	function(): Payload?
-		local origin = throwOrigin()
-		if not origin then
-			return nil
-		end
-		local target = CameraController.getAimPoint()
-		return { origin = origin, direction = (target - origin).Unit }
+		return aimed()
 	end,
 	function(): Payload?
 		return { dir = CameraController.flatLook() }
+	end,
+	function(): Payload?
+		local direction = CameraController.flatLook()
+		local params = PLASTER[4].params
+		MovementController.skillDash(direction, params.speed, params.time)
+		return { dir = direction }
 	end,
 }
 

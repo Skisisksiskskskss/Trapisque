@@ -59,7 +59,8 @@ def shade(color, height):
 
 
 def main():
-    parts = json.load(open(sys.argv[1]))
+    # The distant skyline is scenery; leaving it out keeps the island readable.
+    parts = [p for p in json.load(open(sys.argv[1])) if p["name"] != "Skyline"]
     out = sys.argv[2]
     solid = [p for p in parts if p["group"] == "map"]
     zones = [p for p in parts if p["group"] == "zones"]

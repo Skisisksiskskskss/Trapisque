@@ -20,6 +20,9 @@ local function load(path: string): any
 end
 
 local PaintGrid = load("src/shared/PaintGrid.luau")
+local Animations = load("src/shared/Animations.luau")
+local Characters = load("src/shared/Characters.luau")
+local R6Pose = load("src/shared/R6Pose.luau")
 local PaintStore = load("src/server/PaintStore.luau")
 local Geometry = load("src/shared/Geometry.luau")
 
@@ -148,6 +151,24 @@ test("every visited cell maps back to itself through cellAt", function()
 	end
 end)
 
+test("edge cells are the ones on a face's border", function()
+	local floor = part(CFrame.new(0, 0, 0), Vector3.new(12, 2, 12))
+	-- 4 x 4 cells on the top face: only the middle 2 x 2 are interior.
+	check(PaintGrid.isEdgeCell(floor, PaintGrid.encode(1, 3, 0, 1), 3), "u = 0 is an edge")
+	check(PaintGrid.isEdgeCell(floor, PaintGrid.encode(1, 3, 3, 2), 3), "u = last is an edge")
+	check(not PaintGrid.isEdgeCell(floor, PaintGrid.encode(1, 3, 1, 2), 3), "(1,2) is interior")
+	check(not PaintGrid.isEdgeCell(floor, PaintGrid.encode(1, 3, 2, 1), 3), "(2,1) is interior")
+end)
+
+test("cell inset measures room to the face border", function()
+	local floor = part(CFrame.new(0, 0, 0), Vector3.new(12, 2, 12))
+	check(near(PaintGrid.cellInset(floor, PaintGrid.encode(1, 3, 1, 1), 3), 4.5), "interior cell")
+	check(near(PaintGrid.cellInset(floor, PaintGrid.encode(1, 3, 0, 2), 3), 1.5), "edge cell")
+	local odd = part(CFrame.new(0, 0, 0), Vector3.new(10, 2, 10))
+	-- Last cell on a 10-stud face is 1 stud wide: centre 0.5 from the border.
+	check(near(PaintGrid.cellInset(odd, PaintGrid.encode(1, 3, 3, 1), 3), 0.5), "narrow edge cell")
+end)
+
 test("faceFromNormal follows rotation", function()
 	local tilted = CFrame.Angles(0, 0, math.rad(90))
 	-- Rotating 90 degrees about Z turns local +X into world +Y.
@@ -223,6 +244,51 @@ test("clearColor removes only that color", function()
 	store:clearColor(1)
 	check(store:ownerOf(1) == nil and store:ownerOf(2) == nil and store:ownerOf(3) == 2, "clearColor")
 	check(store:countOf(1) == 0, "count reset")
+end)
+
+-- Animations --------------------------------------------------------------------------
+
+test("every animation the game plays exists", function()
+	local needed = { "DashFront", "DashLeft", "DashRight", "DashBack", "HitReact", "Evasive", "Awaken" }
+	for _, name in Characters.ORDER do
+		local def = Characters.DEFS[name]
+		for step = 1, 3 do
+			table.insert(needed, def.weapon .. "M1_" .. step)
+		end
+		for _, variant in { "Neutral", "Uppercut", "Downslam" } do
+			table.insert(needed, def.weapon .. variant)
+		end
+		for _, skill in def.skills do
+			table.insert(needed, skill.animation)
+		end
+	end
+	for _, name in needed do
+		check(Animations.CLIPS[name] ~= nil, "missing animation clip " .. name)
+	end
+end)
+
+test("clips are well formed", function()
+	for name, clip in Animations.CLIPS do
+		check(#clip.keys >= 2, name .. " needs at least two keys")
+		local last = -1
+		for _, key in clip.keys do
+			check(key.t > last, name .. " keys must be in time order")
+			last = key.t
+			for joint in key.pose do
+				check(table.find(R6Pose.JOINTS, joint) ~= nil, name .. " uses unknown joint " .. joint)
+			end
+		end
+		check(near(clip.keys[#clip.keys].t, clip.duration), name .. " must end at its duration")
+	end
+end)
+
+test("a rest pose leaves every joint at its rest frame", function()
+	local c0s = R6Pose.c0s(R6Pose.DEFAULT_C0, R6Pose.empty())
+	for joint, cframe in c0s do
+		local rest = R6Pose.DEFAULT_C0[joint]
+		check(nearVector(cframe.Position, rest.Position), joint .. " moved")
+		check(nearVector(cframe.LookVector, rest.LookVector), joint .. " rotated")
+	end
 end)
 
 -- Geometry --------------------------------------------------------------------------

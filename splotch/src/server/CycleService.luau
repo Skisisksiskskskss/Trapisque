@@ -62,10 +62,10 @@ local function advance()
 end
 
 local function stormTick(dt: number)
-	for player in State.all() do
-		local _, _, root = World.alive(player)
-		if root and not Zones.contains(Zones.SHELTER, root.Position) then
-			CombatService.drain(player, Config.STORM_DAMAGE * dt, 0, "washout")
+	for key in State.all() do
+		local _, _, root = World.alive(key)
+		if root and World.isPlayer(key) and not Zones.contains(Zones.SHELTER, root.Position) then
+			CombatService.drain(key, Config.STORM_DAMAGE * dt, 0, "washout")
 		end
 	end
 end

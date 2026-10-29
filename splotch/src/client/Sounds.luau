@@ -12,6 +12,8 @@ local SoundService = game:GetService("SoundService")
 local Shared = game:GetService("ReplicatedStorage").Shared
 local SoundIds = require(Shared.SoundIds)
 
+local Settings = require(script.Parent.Settings)
+
 local Sounds = {}
 
 local BUILTIN = {
@@ -54,6 +56,10 @@ local DEFS: { [string]: Def } = {
 	UiClick = { fallback = BUILTIN.step, volume = 0.5, pitch = { 1.8, 1.8 } },
 	Warning = { fallback = BUILTIN.getUp, volume = 0.8, pitch = { 0.6, 0.6 } },
 	Storm = { fallback = BUILTIN.wind, volume = 0.6, pitch = { 0.45, 0.45 } },
+	Swing = { fallback = BUILTIN.wind, volume = 0.45, pitch = { 2.6, 3 }, cut = 0.18 },
+	SwingHeavy = { fallback = BUILTIN.wind, volume = 0.6, pitch = { 1.6, 1.8 }, cut = 0.3 },
+	Evasive = { fallback = BUILTIN.wind, volume = 0.7, pitch = { 1.2, 1.3 }, cut = 0.35 },
+	Awaken = { fallback = BUILTIN.splash, volume = 1, pitch = { 0.35, 0.4 } },
 }
 
 -- At most this many copies of one sound may start within RATE_WINDOW, so 20
@@ -94,7 +100,7 @@ function Sounds.create(name: string, volumeScale: number?): Sound?
 		sound.SoundId = def.fallback
 		sound.PlaybackSpeed = random:NextNumber(def.pitch[1], def.pitch[2])
 	end
-	sound.Volume = def.volume * (volumeScale or 1)
+	sound.Volume = def.volume * (volumeScale or 1) * (Settings.get("sfxVolume") or 1)
 	return sound
 end
 

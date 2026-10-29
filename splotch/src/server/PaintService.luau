@@ -112,6 +112,18 @@ function PaintService.splatGround(colorId: number, position: Vector3, radius: nu
 	return true
 end
 
+-- Paints whatever is in front of a character: the wall it faces, or else the
+-- ground a few studs ahead. Every M1 swing does this, hit or miss.
+function PaintService.splatInFront(colorId: number, root: BasePart, radius: number)
+	local look = root.CFrame.LookVector
+	local wall = World.raycastMap(root.Position, look * 6)
+	if wall then
+		PaintService.splat(colorId, wall.Position, wall.Normal, radius, wall.Instance :: BasePart)
+	else
+		PaintService.splatGround(colorId, root.Position + look * 4, radius, 7)
+	end
+end
+
 -- ColorId of the paint at a raycast hit, or nil when unpainted / unpaintable.
 function PaintService.ownerAt(result: RaycastResult?): number?
 	if not result then

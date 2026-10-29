@@ -1,8 +1,10 @@
 --[[
 	PaintRenderer: mirrors the server's paint state and draws it.
 
-	Each painted cell is a thin, non-colliding, non-queryable slab hugging its
-	surface. Slabs are pooled because paint is laid and erased constantly. The
+	Interior cells are drawn as slightly oversized round splats, so neighbouring
+	cells merge into organic blobs; cells on a face's border stay square so
+	paint never hangs over an edge. Every piece is a thin, non-colliding,
+	non-queryable part, pooled because paint is laid and erased constantly. The
 	local owner table also answers "whose paint is this?" for movement checks.
 ]]
 
@@ -40,7 +42,7 @@ local function newSlab(): Part
 	slab.CanTouch = false
 	slab.CastShadow = false
 	slab.Material = Enum.Material.SmoothPlastic
-	slab.Reflectance = 0.04
+	slab.Reflectance = 0.08
 	slab.TopSurface = Enum.SurfaceType.Smooth
 	slab.BottomSurface = Enum.SurfaceType.Smooth
 	return slab
@@ -74,9 +76,15 @@ local function setCell(key: number, colorId: number)
 		if not part then
 			return
 		end
-		local cframe, size =
-			PaintGrid.cellSlab(part, key, Config.CELL_SIZE, Config.PAINT_VISUAL_LIFT, Config.PAINT_VISUAL_THICKNESS)
+		local cframe, size, round = PaintGrid.splatGeometry(
+			part,
+			key,
+			Config.CELL_SIZE,
+			Config.PAINT_VISUAL_LIFT,
+			Config.PAINT_VISUAL_THICKNESS
+		)
 		slab = newSlab()
+		slab.Shape = if round then Enum.PartType.Cylinder else Enum.PartType.Block
 		slab.CFrame = cframe
 		slab.Size = size
 		slabs[key] = slab

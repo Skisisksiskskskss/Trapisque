@@ -18,6 +18,7 @@ local env = setmetatable({
 	Enum = roblox.Enum,
 	UDim = roblox.UDim,
 	UDim2 = roblox.UDim2,
+	Vector2 = roblox.Vector2,
 }, { __index = getfenv() })
 
 local source = fs.readFile("src/server/MapBuilder.luau")

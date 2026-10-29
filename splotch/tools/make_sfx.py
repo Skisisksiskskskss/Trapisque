@@ -261,6 +261,35 @@ def storm():
     return loop[:-fade]
 
 
+def swing():
+    n = int(0.16 * RATE)
+    centre = np.concatenate([np.linspace(1800, 6500, n // 2), np.linspace(6500, 2500, n - n // 2)])
+    whoosh = lowpass(highpass(noise(0.16), 900), centre) * np.sin(np.linspace(0, np.pi, n)) ** 2
+    return whoosh
+
+
+def swing_heavy():
+    n = int(0.3 * RATE)
+    centre = np.concatenate([np.linspace(500, 3200, n // 2), np.linspace(3200, 700, n - n // 2)])
+    whoosh = lowpass(highpass(noise(0.3), 250), centre) * np.sin(np.linspace(0, np.pi, n)) ** 1.6
+    return mix(whoosh * 1.2, at(thump(0.12, 120, 60) * 0.25, 0.14))
+
+
+def evasive():
+    n = int(0.4 * RATE)
+    rise = lowpass(highpass(noise(0.4), 600), np.linspace(800, 7000, n)) * np.sin(np.linspace(0, np.pi, n)) ** 1.2
+    return mix(rise, sweep(0.35, 500, 1600) * env(0.35, 0.02, curve=2) * 0.25)
+
+
+def awaken():
+    n = int(1.6 * RATE)
+    swell = lowpass(noise(1.6), np.linspace(300, 6000, n)) * np.linspace(0, 1, n) ** 2.5
+    chord = sum(tone(1.6, f) * a for f, a in ((220, 1.0), (277, 0.7), (330, 0.6), (440, 0.4)))
+    chord = chord * np.linspace(0, 1, n) ** 3
+    boom = at(mix(saturate(thump(0.8, 110, 30), 3), lowpass(noise(0.9), 600) * env(0.9, 0.003, curve=2)), 1.15)
+    return mix(swell * 0.7, chord * 0.25, boom)
+
+
 SOUNDS = {
     "Shoot": shoot,
     "Splat": splat,
@@ -284,6 +313,10 @@ SOUNDS = {
     "UiClick": ui_click,
     "Warning": warning,
     "Storm": storm,
+    "Swing": swing,
+    "SwingHeavy": swing_heavy,
+    "Evasive": evasive,
+    "Awaken": awaken,
 }
 
 

@@ -41,6 +41,11 @@ jobs:
       - name: Map builds offline
         run: lune run tools/dump-map.luau > build/map.json
 
+      - name: Animations and paint render offline
+        run: |
+          lune run tools/dump-poses.luau > build/poses.json
+          lune run tools/dump-paint.luau > build/paint.json
+
       - name: Build place
         run: rojo build -o build/Splotch.rbxl
 

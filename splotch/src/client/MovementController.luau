@@ -2,22 +2,26 @@
 	MovementController: everything that moves your own character.
 
 	States
-		Normal    walking; you face the camera like shift lock
-		Swim      diving (hold SHIFT): fast in your own paint, crawling elsewhere
+		Normal    walking / running (double-tap W, or Auto Run)
+		Swim      diving (hold the Dive key): fast in your own paint, crawling elsewhere
 		WallSwim  diving up a wall painted your color (physics state + constraints)
-		Dash      Q dash or a dashing skill: short, fixed-speed burst
+		Dash      Q dashes and dashing skills: fixed-speed bursts, steerable with the camera
 		Slam      Plaster's Tidal Slam: rise, then crash down
 		Flight    launched (knockback, hooks, pads): the humanoid's air control is
 		          switched off so the launch carries, but you stay upright
-		Tumble    knocked back hard: ragdoll-style physics until you get up
+		Ragdoll   knocked down: real ragdoll physics until the server says get up
+
+	JJS rules: front dash 25 studs (6s) with a jab, side/back dash 17.5 studs (2s),
+	wall jumps 3/2/1 by health, run speed scales with health, dash while ragdolled
+	or stunned with a full evasive bar to break out.
 
 	The client owns its character's physics, so all movement happens here; the
-	server is told about form changes (for effects and paint healing) and does
-	hit detection from the replicated positions.
+	server is told about form changes and validates attacks.
 ]]
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
 local Shared = game:GetService("ReplicatedStorage").Shared
 local Characters = require(Shared.Characters)
@@ -26,8 +30,10 @@ local Geometry = require(Shared.Geometry)
 local Remotes = require(Shared.Remotes)
 local Zones = require(Shared.Zones)
 
+local Animator = require(script.Parent.Animator)
 local CameraController = require(script.Parent.CameraController)
 local PaintRenderer = require(script.Parent.PaintRenderer)
+local Settings = require(script.Parent.Settings)
 local Sounds = require(script.Parent.Sounds)
 
 local MovementController = {}
@@ -50,13 +56,24 @@ local diveSuppressedUntil = 0
 local rediveAt = 0
 local blocking = false
 local stunUntil = 0
-local tumbleUntil = 0
+local swingUntil = 0
+local ragdollUntil = 0
 local flightUntil = 0
 local flightStartedAt = 0
 local stateUntil = 0
 local momentumSpeed: number? = nil
 local airDashUsed = false
-local dashReadyAt = 0
+local frontDashReadyAt = 0
+local sideDashReadyAt = 0
+local dashKind = "Side"
+local dashLocal = Vector3.new(0, 0, -1) -- dash direction in camera space
+local dashSpeed = 0
+local dashStartedAt = 0
+local dashJabbed = false
+local running = false
+local lastForwardTap = 0
+local wallJumpsLeft = 3
+local lastJumpAction = 0
 local wallNormal = Vector3.new(0, 0, 1)
 local lastGoodWallAt = 0
 local bounceReadyAt = 0
@@ -71,6 +88,12 @@ local formListeners: { (string) -> () } = {}
 
 local mapParams = RaycastParams.new()
 mapParams.FilterType = Enum.RaycastFilterType.Include
+
+local JUMP_ACTION_DEBOUNCE = 0.22
+local JAB_REACH = 2.5
+local JAB_BOX = Vector3.new(6, 7, 5)
+local RAGDOLL_FALLBACK = 1.5 -- get up on our own if the server's word never arrives
+local RAGDOLL_INFLUENCE = 20 -- studs/s^2 of steering while ragdolled
 
 -- Helpers -------------------------------------------------------------------
 
@@ -105,6 +128,25 @@ local function grounded(): boolean
 	return humanoid ~= nil and humanoid.FloorMaterial ~= Enum.Material.Air
 end
 
+local function healthFraction(): number
+	if not humanoid then
+		return 1
+	end
+	return math.clamp(humanoid.Health / math.max(humanoid.MaxHealth, 1), 0, 1)
+end
+
+local function moveVector(): Vector3
+	return if controls then controls:GetMoveVector() else Vector3.zero
+end
+
+-- Camera-space direction -> world direction on the ground plane.
+local function cameraToWorld(localDirection: Vector3): Vector3
+	local look = CameraController.flatLook()
+	local right = CameraController.flatRight()
+	local world = right * localDirection.X + look * -localDirection.Z
+	return if world.Magnitude > 1e-3 then world.Unit else look
+end
+
 local function disableConstraints()
 	if wallVelocity then
 		wallVelocity.Enabled = false
@@ -124,8 +166,19 @@ local function releasePhysics()
 	end
 end
 
-local function upright(): CFrame
-	return CFrame.Angles(0, CameraController.getYaw(), 0)
+local function facingYaw(): CFrame
+	if not root then
+		return CFrame.identity
+	end
+	local look = Geometry.flat(root.CFrame.LookVector)
+	return CFrame.lookAt(Vector3.zero, look)
+end
+
+local function faceDirection(direction: Vector3)
+	if root then
+		local flat = Geometry.flat(direction)
+		root.CFrame = CFrame.lookAt(root.Position, root.Position + flat)
+	end
 end
 
 --[[
@@ -144,10 +197,10 @@ local function launch(velocity: Vector3, flight: number?)
 			dashVelocity.Enabled = false
 		end
 		state = "Flight"
-		flightStartedAt = os.clock()
+		flightStartedAt = now()
 		flightUntil = flightStartedAt + flight
 		humanoid:ChangeState(Enum.HumanoidStateType.Physics)
-		wallAlign.CFrame = upright()
+		wallAlign.CFrame = facingYaw()
 		wallAlign.Enabled = true
 		root.AssemblyLinearVelocity = velocity
 		root.AssemblyAngularVelocity = Vector3.zero
@@ -159,28 +212,15 @@ local function launch(velocity: Vector3, flight: number?)
 	pendingLaunch = velocity
 end
 
-local function faceCamera()
-	if root then
-		root.CFrame = CFrame.new(root.Position) * CFrame.Angles(0, CameraController.getYaw(), 0)
-	end
-end
-
-local function cameraRelative(moveVector: Vector3): Vector3
-	local look = CameraController.flatLook()
-	local right = Vector3.new(-look.Z, 0, look.X)
-	return right * moveVector.X + look * -moveVector.Z
-end
-
-local function moveVector(): Vector3
-	return if controls then controls:GetMoveVector() else Vector3.zero
-end
-
 -- State changes ---------------------------------------------------------------
 
 local function enterNormal(keepHumanoidState: boolean?)
 	disableConstraints()
 	if not keepHumanoidState then
 		releasePhysics()
+	end
+	if humanoid then
+		humanoid.AutoRotate = true
 	end
 	state = "Normal"
 	setForm("Normal")
@@ -205,6 +245,7 @@ local function enterWallSwim(normal: Vector3)
 	wallNormal = normal
 	lastGoodWallAt = now()
 	setForm("WallSwim")
+	humanoid.AutoRotate = false
 	humanoid:ChangeState(Enum.HumanoidStateType.Physics)
 	wallVelocity.VectorVelocity = Vector3.zero
 	wallVelocity.Enabled = true
@@ -218,7 +259,99 @@ local function leaveWall(velocity: Vector3)
 	launch(velocity)
 end
 
-local function endTumble()
+local function updateFlight(t: number)
+	if not root or not wallAlign then
+		return
+	end
+	local landed = t - flightStartedAt > 0.15 and raycast(root.Position, Vector3.new(0, -3.4, 0)) ~= nil
+	if landed or t >= flightUntil then
+		local v = root.AssemblyLinearVelocity
+		enterNormal()
+		momentumSpeed = math.max(Vector3.new(v.X, 0, v.Z).Magnitude, Config.WALK_SPEED)
+	end
+end
+
+-- Dashing ------------------------------------------------------------------------
+
+local function startDash(kind: string, localDirection: Vector3, speed: number, duration: number)
+	if not dashVelocity or not humanoid then
+		return
+	end
+	if state == "Swim" then
+		exitSwim()
+	elseif state == "Flight" or state == "WallSwim" then
+		enterNormal()
+	end
+	state = "Dash"
+	dashKind = kind
+	dashLocal = localDirection
+	dashSpeed = speed
+	dashStartedAt = now()
+	dashJabbed = false
+	stateUntil = dashStartedAt + duration
+	humanoid.AutoRotate = false
+	local world = cameraToWorld(localDirection)
+	if kind ~= "Side" then
+		faceDirection(world)
+	end
+	dashVelocity.PlaneVelocity = Vector2.new(world.X, world.Z) * speed
+	dashVelocity.Enabled = true
+	CameraController.setSpeedBoost(8)
+end
+
+-- Looks for an enemy in front during a front dash (the jab).
+local function checkJab(t: number)
+	if dashKind ~= "Front" or dashJabbed or not root then
+		return
+	end
+	local origin = root.CFrame
+	for _, other in workspace:GetChildren() do
+		if other:IsA("Model") and other ~= character then
+			local otherRoot = other:FindFirstChild("HumanoidRootPart")
+			local otherHumanoid = other:FindFirstChildOfClass("Humanoid")
+			if
+				otherRoot
+				and otherRoot:IsA("BasePart")
+				and otherHumanoid
+				and otherHumanoid.Health > 0
+				and not other:GetAttribute("Ragdolled")
+				and Geometry.inFrontBox(origin, JAB_REACH, JAB_BOX, otherRoot.Position)
+			then
+				dashJabbed = true
+				local early = t - dashStartedAt < Config.FRONT_DASH_TIME / 2
+				Remotes.Action:FireServer("DashHit", other, early)
+				Sounds.play("Swing")
+				-- The jab ends the dash.
+				stateUntil = t
+				return
+			end
+		end
+	end
+end
+
+local function updateDash(t: number)
+	if not dashVelocity or not humanoid then
+		return
+	end
+	-- Steerable: the dash keeps its direction relative to the camera.
+	local world = cameraToWorld(dashLocal)
+	dashVelocity.PlaneVelocity = Vector2.new(world.X, world.Z) * dashSpeed
+	if dashKind ~= "Side" then
+		faceDirection(world)
+	end
+	checkJab(t)
+	if t >= stateUntil then
+		enterNormal()
+		momentumSpeed = Config.WALK_SPEED * 1.3
+	end
+end
+
+-- Ragdolls ------------------------------------------------------------------------
+
+local function endRagdoll()
+	if state ~= "Ragdoll" then
+		return
+	end
 	if humanoid then
 		humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
 	end
@@ -228,20 +361,23 @@ local function endTumble()
 	enterNormal(true)
 end
 
-local function updateFlight(t: number)
-	if not root or not wallAlign then
+local function updateRagdoll(t: number, dt: number)
+	if not root then
 		return
 	end
-	wallAlign.CFrame = upright()
-	local landed = t - flightStartedAt > 0.15 and raycast(root.Position, Vector3.new(0, -3.4, 0)) ~= nil
-	if landed or t >= flightUntil then
-		local v = root.AssemblyLinearVelocity
-		enterNormal()
-		momentumSpeed = math.max(Vector3.new(v.X, 0, v.Z).Magnitude, Config.WALK_SPEED)
+	if t >= ragdollUntil + RAGDOLL_FALLBACK then
+		endRagdoll()
+		return
+	end
+	-- JJS ragdoll influence: holding a direction nudges where you land.
+	local input = moveVector()
+	if input.Magnitude > 0.1 then
+		local push = cameraToWorld(input) * RAGDOLL_INFLUENCE * dt
+		root.AssemblyLinearVelocity += push
 	end
 end
 
--- Per-frame updates -------------------------------------------------------------
+-- Other per-frame updates ---------------------------------------------------------
 
 local function probeWall(direction: Vector3): RaycastResult?
 	if not root then
@@ -337,7 +473,7 @@ local function updateWind()
 		local wind = workspace:GetAttribute("Wind")
 		if typeof(wind) == "Vector3" then
 			-- Gusty: the strength wobbles over time.
-			local gust = 0.7 + 0.5 * math.noise(os.clock() * 0.7, 3.1)
+			local gust = 0.7 + 0.5 * math.noise(now() * 0.7, 3.1)
 			windForce.Force = wind * Config.STORM_WIND_ACCEL * gust * root.AssemblyMass
 			return
 		end
@@ -345,7 +481,75 @@ local function updateWind()
 	windForce.Force = Vector3.zero
 end
 
-local function update()
+local function wallJumpsForHealth(): number
+	local fraction = healthFraction()
+	if fraction > 0.66 then
+		return Config.WALL_JUMPS[1]
+	elseif fraction > 0.33 then
+		return Config.WALL_JUMPS[2]
+	end
+	return Config.WALL_JUMPS[3]
+end
+
+local function updateSpeed(t: number, onGround: boolean)
+	if not humanoid then
+		return
+	end
+	local stunned = t < stunUntil
+	local moving = humanoid.MoveDirection.Magnitude > 0.1
+	if Settings.get("autoRun") then
+		running = moving
+	elseif not moving then
+		running = false
+	end
+
+	local speed
+	if stunned then
+		speed = Config.STUN_WALK_SPEED
+	elseif blocking then
+		speed = Config.BLOCK_WALK_SPEED
+	elseif t < swingUntil then
+		speed = Config.SWING_WALK_SPEED
+	elseif state == "Swim" then
+		if surface == "own" then
+			speed = Config.SWIM_SPEED * kit().swimSpeedMultiplier
+		elseif onGround then
+			speed = Config.FLOP_SPEED
+		else
+			speed = Config.SWIM_SPEED
+		end
+	else
+		local base = if running then Config.RUN_SPEED else Config.WALK_SPEED
+		-- JJS: you slow down as you get hurt.
+		base *= Config.LOW_HP_SPEED + (1 - Config.LOW_HP_SPEED) * healthFraction()
+		if surface == "enemy" and onGround then
+			base = math.min(base, Config.ENEMY_PAINT_SPEED)
+		end
+		speed = base
+	end
+	if momentumSpeed and not onGround then
+		speed = math.max(speed, momentumSpeed)
+	end
+	humanoid.WalkSpeed = speed
+
+	-- While diving the jump input means leap, and stunned or blocking players
+	-- can't jump, so the default Roblox jump is switched off then.
+	local canJump = state == "Normal" and not stunned and not blocking
+	if canJump ~= jumpEnabled then
+		jumpEnabled = canJump
+		humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, canJump)
+	end
+
+	local boost = 0
+	if state == "Swim" and speed > Config.WALK_SPEED * 1.5 then
+		boost = 7
+	elseif running and moving then
+		boost = 4
+	end
+	CameraController.setSpeedBoost(boost)
+end
+
+local function update(dt: number)
 	if not humanoid or not root or humanoid.Health <= 0 then
 		return
 	end
@@ -366,24 +570,19 @@ local function update()
 	local color = myColor()
 	surface = if downOwner == nil then "none" elseif downOwner == color then "own" else "enemy"
 	local onGround = grounded()
-	if onGround then
+	if onGround and state ~= "Ragdoll" then
 		airDashUsed = false
+		wallJumpsLeft = wallJumpsForHealth()
 	end
 
-	if state == "Tumble" then
-		if t >= tumbleUntil then
-			endTumble()
-		end
+	if state == "Ragdoll" then
+		updateRagdoll(t, dt)
 		return
 	elseif state == "WallSwim" then
 		updateWallSwim(t)
 		return
 	elseif state == "Dash" then
-		faceCamera()
-		if t >= stateUntil then
-			enterNormal()
-			momentumSpeed = Config.WALK_SPEED * 1.4
-		end
+		updateDash(t)
 		return
 	elseif state == "Slam" then
 		updateSlam(t)
@@ -423,106 +622,21 @@ local function update()
 	if onGround and t > rediveAt then
 		momentumSpeed = nil
 	end
-
-	local speed
-	if stunned then
-		speed = Config.STUN_WALK_SPEED
-	elseif blocking then
-		speed = Config.BLOCK_WALK_SPEED
-	elseif state == "Swim" then
-		if surface == "own" then
-			speed = Config.SWIM_SPEED * kit().swimSpeedMultiplier
-		elseif onGround then
-			speed = Config.FLOP_SPEED
-		else
-			speed = Config.SWIM_SPEED
-		end
-	elseif surface == "enemy" and onGround then
-		speed = Config.ENEMY_PAINT_SPEED
-	else
-		speed = Config.WALK_SPEED
-	end
-	if momentumSpeed and not onGround then
-		speed = math.max(speed, momentumSpeed)
-	end
-	humanoid.WalkSpeed = speed
-	-- While diving SPACE means leap (see leap()), and stunned or blocking
-	-- players can't jump, so the default Roblox jump is switched off then.
-	local canJump = state == "Normal" and not stunned and not blocking
-	if canJump ~= jumpEnabled then
-		jumpEnabled = canJump
-		humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, canJump)
-	end
-	CameraController.setSpeedBoost(if state == "Swim" and speed > Config.WALK_SPEED * 1.5 then 7 else 0)
+	updateSpeed(t, onGround)
 
 	-- Diving into a wall painted your color starts a wall swim.
 	if state == "Swim" and humanoid.MoveDirection.Magnitude > 0.1 then
 		local wall = probeWall(humanoid.MoveDirection)
 		if wall and PaintRenderer.ownerAt(wall) == color then
 			enterWallSwim(wall.Normal)
-			return
 		end
 	end
-
-	faceCamera()
 end
 
--- Public API ----------------------------------------------------------------------
+-- Jumping: leaps out of paint and wall jumps ------------------------------------------
 
-function MovementController.onFormChanged(listener: (string) -> ())
-	table.insert(formListeners, listener)
-end
-
-function MovementController.getForm(): string
-	return form
-end
-
-function MovementController.getState(): string
-	return state
-end
-
-function MovementController.getSurface(): string
-	return surface
-end
-
-function MovementController.isStunned(): boolean
-	return now() < stunUntil or state == "Tumble"
-end
-
--- True when the character can start an attack or skill right now.
-function MovementController.canAct(): boolean
-	return humanoid ~= nil
-		and humanoid.Health > 0
-		and not MovementController.isStunned()
-		and state ~= "WallSwim"
-		and state ~= "Slam"
-end
-
-function MovementController.setDiveHeld(held: boolean)
-	diveHeld = held
-end
-
--- Keeps you surfaced for a moment (firing while holding SHIFT).
-function MovementController.suppressDive(seconds: number)
-	diveSuppressedUntil = math.max(diveSuppressedUntil, now() + seconds)
-	if state == "Swim" then
-		exitSwim()
-	end
-end
-
-function MovementController.setBlocking(isBlocking: boolean)
-	blocking = isBlocking
-	if isBlocking and state == "Swim" then
-		exitSwim()
-	end
-end
-
-function MovementController.getDashCooldown(): (number, number)
-	return math.max(dashReadyAt - now(), 0), Config.DASH_COOLDOWN
-end
-
--- Leap out of paint. Returns true if SPACE was used for it.
-function MovementController.leap(): boolean
+-- Leap out of paint. Returns true if the jump input was used for it.
+local function leap(): boolean
 	if not humanoid or not root then
 		return false
 	end
@@ -554,48 +668,219 @@ function MovementController.leap(): boolean
 	return true
 end
 
-local function startDash(direction: Vector3, speed: number, duration: number)
-	if not dashVelocity then
-		return
+local function wallJump(): boolean
+	if not humanoid or not root or state ~= "Normal" or grounded() or wallJumpsLeft <= 0 then
+		return false
 	end
-	if state == "Swim" then
-		exitSwim()
-	elseif state == "Flight" then
-		enterNormal()
+	if now() < stunUntil or blocking then
+		return false
 	end
-	state = "Dash"
-	stateUntil = now() + duration
-	dashVelocity.PlaneVelocity = Vector2.new(direction.X, direction.Z) * speed
-	dashVelocity.Enabled = true
-	CameraController.setSpeedBoost(10)
+	local candidates = {
+		humanoid.MoveDirection,
+		root.CFrame.LookVector,
+		CameraController.flatRight(),
+		-CameraController.flatRight(),
+	}
+	local best: RaycastResult? = nil
+	for _, direction in candidates do
+		if direction.Magnitude > 0.1 then
+			local hit = probeWall(direction)
+			if hit and (not best or hit.Distance < best.Distance) then
+				best = hit
+			end
+		end
+	end
+	if not best then
+		return false
+	end
+	wallJumpsLeft -= 1
+	local normal = Geometry.flat(best.Normal)
+	launch(normal * Config.WALL_JUMP_OUT + Vector3.new(0, Config.WALL_JUMP_UP, 0))
+	faceDirection(normal)
+	Animator.play(character, "DashBack")
+	Sounds.play("Leap")
+	return true
 end
 
--- Q dash in the direction you are holding (forward if none). Returns success.
-function MovementController.dash(): boolean
+local function onJumpRequest()
 	local t = now()
-	if not MovementController.canAct() or blocking or t < dashReadyAt or state == "Dash" then
+	if t - lastJumpAction < JUMP_ACTION_DEBOUNCE then
+		return
+	end
+	if leap() or wallJump() then
+		lastJumpAction = t
+	end
+end
+
+-- Public API ----------------------------------------------------------------------
+
+function MovementController.onFormChanged(listener: (string) -> ())
+	table.insert(formListeners, listener)
+end
+
+function MovementController.getForm(): string
+	return form
+end
+
+function MovementController.getState(): string
+	return state
+end
+
+function MovementController.getSurface(): string
+	return surface
+end
+
+function MovementController.isRagdolled(): boolean
+	return state == "Ragdoll"
+end
+
+function MovementController.isStunned(): boolean
+	return now() < stunUntil or state == "Ragdoll"
+end
+
+function MovementController.isAirborne(): boolean
+	return not grounded()
+end
+
+function MovementController.verticalSpeed(): number
+	return if root then root.AssemblyLinearVelocity.Y else 0
+end
+
+-- True when the character can start an attack or skill right now.
+function MovementController.canAct(): boolean
+	return humanoid ~= nil
+		and humanoid.Health > 0
+		and not MovementController.isStunned()
+		and state ~= "WallSwim"
+		and state ~= "Slam"
+end
+
+function MovementController.setDiveHeld(held: boolean)
+	diveHeld = held
+end
+
+-- Keeps you surfaced for a moment (attacking while holding the Dive key).
+function MovementController.suppressDive(seconds: number)
+	diveSuppressedUntil = math.max(diveSuppressedUntil, now() + seconds)
+	if state == "Swim" then
+		exitSwim()
+	end
+end
+
+function MovementController.setBlocking(isBlocking: boolean)
+	blocking = isBlocking
+	if isBlocking and state == "Swim" then
+		exitSwim()
+	end
+end
+
+-- Slows you while an M1 winds up.
+function MovementController.swing(seconds: number)
+	swingUntil = math.max(swingUntil, now() + seconds)
+end
+
+-- Steps toward the target when an M1 lands (JJS pulls the attacker 1 stud).
+function MovementController.pull(distance: number)
+	if root and state == "Normal" then
+		local look = Geometry.flat(root.CFrame.LookVector)
+		if not raycast(root.Position, look * (distance + 1)) then
+			root.CFrame += look * distance
+		end
+	end
+end
+
+-- Remaining and total cooldowns: front dash, then side dash.
+function MovementController.getDashCooldowns(): (number, number, number, number)
+	local t = now()
+	return math.max(frontDashReadyAt - t, 0),
+		Config.FRONT_DASH_COOLDOWN,
+		math.max(sideDashReadyAt - t, 0),
+		Config.SIDE_DASH_COOLDOWN
+end
+
+--[[
+	The Dash key. Normally a front dash (holding forward or nothing) or a side
+	dash (holding A, D or S). While ragdolled or stunned it asks the server for
+	an evasive instead, which needs a full bar.
+]]
+function MovementController.dash(): boolean
+	if not humanoid or humanoid.Health <= 0 then
+		return false
+	end
+	local t = now()
+	if MovementController.isStunned() then
+		if (player:GetAttribute("Evasive") or 0) >= 100 then
+			Remotes.Action:FireServer("Evasive")
+		end
+		return false
+	end
+	if blocking or state == "Dash" or state == "WallSwim" or state == "Slam" then
 		return false
 	end
 	if not grounded() then
 		if airDashUsed then
 			return false
 		end
+	end
+
+	local input = moveVector()
+	local kind, localDirection, animation
+	if input.Magnitude < 0.2 or input.Z < -0.35 then
+		kind, localDirection, animation = "Front", Vector3.new(0, 0, -1), "DashFront"
+	elseif math.abs(input.X) >= math.abs(input.Z) then
+		kind = "Side"
+		localDirection = Vector3.new(math.sign(input.X), 0, 0)
+		animation = if input.X > 0 then "DashRight" else "DashLeft"
+	else
+		kind, localDirection, animation = "Side", Vector3.new(0, 0, 1), "DashBack"
+	end
+
+	if kind == "Front" then
+		if t < frontDashReadyAt then
+			return false
+		end
+		frontDashReadyAt = t + Config.FRONT_DASH_COOLDOWN
+		startDash("Front", localDirection, Config.FRONT_DASH_DISTANCE / Config.FRONT_DASH_TIME, Config.FRONT_DASH_TIME)
+	else
+		if t < sideDashReadyAt then
+			return false
+		end
+		sideDashReadyAt = t + Config.SIDE_DASH_COOLDOWN
+		startDash("Side", localDirection, Config.SIDE_DASH_DISTANCE / Config.SIDE_DASH_TIME, Config.SIDE_DASH_TIME)
+	end
+	if not grounded() then
 		airDashUsed = true
 	end
-	local direction = cameraRelative(moveVector())
-	if direction.Magnitude < 0.1 then
-		direction = CameraController.flatLook()
-	end
-	dashReadyAt = t + Config.DASH_COOLDOWN
-	startDash(direction.Unit, Config.DASH_SPEED, Config.DASH_TIME)
-	Remotes.Action:FireServer("Dash")
+	Animator.play(character, animation)
+	Remotes.Action:FireServer("Dash", kind, animation)
 	Sounds.play("Dash")
 	return true
 end
 
--- Dashing skills (Tagger's Streak).
+-- The server granted an evasive: get up and quick-step away.
+function MovementController.evasiveStep()
+	if not humanoid or not root then
+		return
+	end
+	stunUntil = 0
+	if state == "Ragdoll" then
+		humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+		root.AssemblyAngularVelocity = Vector3.zero
+		enterNormal(true)
+	end
+	local input = moveVector()
+	local localDirection = if input.Magnitude > 0.2 then input.Unit else Vector3.new(0, 0, 1)
+	startDash("Side", localDirection, Config.EVASIVE_DISTANCE / Config.SIDE_DASH_TIME, Config.SIDE_DASH_TIME)
+	Animator.play(character, "Evasive")
+end
+
+-- Dashing skills (Streak, Roller Rush).
 function MovementController.skillDash(direction: Vector3, speed: number, duration: number)
-	startDash(direction, speed, duration)
+	-- Express the world direction in camera space so it stays steerable.
+	local look = CameraController.flatLook()
+	local right = CameraController.flatRight()
+	local localDirection = Vector3.new(direction:Dot(right), 0, -direction:Dot(look))
+	startDash("Skill", localDirection, speed, duration)
 end
 
 -- Plaster's Tidal Slam. `onLand` gets the landing position.
@@ -605,7 +890,7 @@ function MovementController.slam(params: { [string]: number }, onLand: (Vector3)
 	end
 	if state == "Swim" then
 		exitSwim()
-	elseif state == "Flight" then
+	elseif state == "Flight" or state == "Dash" then
 		enterNormal()
 	end
 	slamParams = params
@@ -616,13 +901,13 @@ function MovementController.slam(params: { [string]: number }, onLand: (Vector3)
 	stateUntil = now() + params.rise
 end
 
--- Server-sent knockback. Ragdoll > 0 tumbles you; stun stops you acting.
+-- Server-sent knockback. Ragdoll > 0 knocks you down; stun stops you acting.
 function MovementController.applyKnockback(velocity: Vector3, ragdoll: number, stun: number)
 	if not humanoid or not root then
 		return
 	end
 	local t = now()
-	stunUntil = math.max(stunUntil, t + stun + ragdoll)
+	stunUntil = math.max(stunUntil, t + stun)
 	if state == "Slam" then
 		onSlamLand = nil
 	end
@@ -631,13 +916,13 @@ function MovementController.applyKnockback(velocity: Vector3, ragdoll: number, s
 		if form ~= "Normal" then
 			setForm("Normal")
 		end
-		state = "Tumble"
-		tumbleUntil = t + ragdoll
+		state = "Ragdoll"
+		ragdollUntil = t + ragdoll
 		humanoid:ChangeState(Enum.HumanoidStateType.Physics)
 		root.AssemblyLinearVelocity = velocity
 		local random = Random.new()
 		root.AssemblyAngularVelocity =
-			Vector3.new(random:NextNumber(-8, 8), random:NextNumber(-5, 5), random:NextNumber(-8, 8))
+			Vector3.new(random:NextNumber(-6, 6), random:NextNumber(-3, 3), random:NextNumber(-6, 6))
 		return
 	end
 	if velocity.Magnitude < 1 then
@@ -656,6 +941,11 @@ function MovementController.applyKnockback(velocity: Vector3, ragdoll: number, s
 	launch(Vector3.new(velocity.X, math.max(velocity.Y, Config.MIN_LAUNCH_UP), velocity.Z), flight)
 end
 
+-- The server ended our ragdoll (timer or evasive).
+function MovementController.endRagdoll()
+	endRagdoll()
+end
+
 -- Setup -----------------------------------------------------------------------------
 
 local function onCharacterAdded(newCharacter: Model)
@@ -668,11 +958,15 @@ local function onCharacterAdded(newCharacter: Model)
 	state = "Normal"
 	form = "Normal"
 	stunUntil = 0
+	swingUntil = 0
 	momentumSpeed = nil
 	pendingLaunch = nil
 	onSlamLand = nil
 	jumpEnabled = true
-	h.AutoRotate = false
+	running = false
+	frontDashReadyAt = 0
+	sideDashReadyAt = 0
+	h.AutoRotate = true
 	h.WalkSpeed = Config.WALK_SPEED
 	h.UseJumpPower = true
 	h.JumpPower = Config.JUMP_POWER
@@ -736,6 +1030,24 @@ function MovementController.init()
 
 	local map = workspace:WaitForChild("Map")
 	mapParams.FilterDescendantsInstances = { map }
+
+	-- Double-tap W to run (JJS).
+	UserInputService.InputBegan:Connect(function(input, processed)
+		if processed or input.KeyCode ~= Enum.KeyCode.W then
+			return
+		end
+		local t = now()
+		if t - lastForwardTap <= Config.RUN_DOUBLE_TAP then
+			running = true
+		end
+		lastForwardTap = t
+	end)
+	UserInputService.InputEnded:Connect(function(input)
+		if input.KeyCode == Enum.KeyCode.W and not Settings.get("autoRun") then
+			running = false
+		end
+	end)
+	UserInputService.JumpRequest:Connect(onJumpRequest)
 
 	player.CharacterAdded:Connect(onCharacterAdded)
 	if player.Character then

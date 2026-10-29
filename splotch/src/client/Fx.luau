@@ -1,16 +1,19 @@
 --[[
-	Fx: everything cosmetic that the server announces, plus local predictions.
+	Fx: everything cosmetic that the server announces, plus your own instant
+	feedback.
 
-	* Projectiles are drawn on the same arc the server simulates. Your own
-	  primary shots are drawn the instant you fire (predicted) and matched to
-	  the server's impact by shotId.
-	* Hits get damage numbers, a white flash, a colored burst and a sound.
-	* Skills get their own shapes: shockwave rings, bursts, traps, tethers.
+	* Hits: a white flash on the target, a hit reaction animation, a burst in
+	  the attacker's color, optional damage numbers, sounds and, for big ones,
+	  an impact frame.
+	* Swings: a ribbon trail along the weapon and a whoosh.
+	* Projectiles are drawn on the same arc the server simulates.
+	* Skills, evasives, awakenings and guard breaks get their own shapes.
 	Every visual is built from plain parts, particles, trails and beams, so no
 	uploaded assets are needed.
 ]]
 
 local Debris = game:GetService("Debris")
+local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
@@ -20,9 +23,11 @@ local Geometry = require(Shared.Geometry)
 local Palette = require(Shared.Palette)
 local Remotes = require(Shared.Remotes)
 
+local Animator = require(script.Parent.Animator)
 local CameraController = require(script.Parent.CameraController)
 local CharacterVisuals = require(script.Parent.CharacterVisuals)
 local Hud = require(script.Parent.Hud)
+local Settings = require(script.Parent.Settings)
 local Sounds = require(script.Parent.Sounds)
 
 local Fx = {}
@@ -32,6 +37,7 @@ local localPlayer = Players.LocalPlayer
 local PARTICLE_TEXTURE = "rbxasset://textures/particles/smoke_main.dds"
 local SPARK_TEXTURE = "rbxasset://textures/particles/sparkles_main.dds"
 local PROJECTILE_GRACE = 0.4 -- keep drawing this long past lifetime awaiting the server
+local SWING_TRAIL_TIME = 0.22
 
 type Projectile = {
 	part: BasePart,
@@ -49,6 +55,8 @@ local folder: Folder
 local projectiles: { [string]: Projectile } = {}
 local traps: { [number]: BasePart } = {}
 local emitters: { [string]: ParticleEmitter } = {}
+local swingTrails: { [Model]: Trail } = {}
+local impactEffect: ColorCorrectionEffect
 local mapParams = RaycastParams.new()
 mapParams.FilterType = Enum.RaycastFilterType.Include
 
@@ -74,6 +82,10 @@ local function tween(instance: Instance, seconds: number, goals: { [string]: any
 	TweenService:Create(instance, info, goals):Play()
 end
 
+local function colorFor(colorId: number): Color3
+	return if colorId > 0 then Palette.color(colorId) else Color3.fromRGB(255, 255, 255)
+end
+
 local function emitter(kind: string, colorId: number): ParticleEmitter
 	local key = kind .. colorId
 	local existing = emitters[key]
@@ -86,7 +98,7 @@ local function emitter(kind: string, colorId: number): ParticleEmitter
 	local e = Instance.new("ParticleEmitter")
 	e.Enabled = false
 	e.Rate = 0
-	e.Color = ColorSequence.new(Palette.color(colorId))
+	e.Color = ColorSequence.new(colorFor(colorId))
 	e.LightEmission = 0.05
 	e.SpreadAngle = Vector2.new(180, 180)
 	e.Rotation = NumberRange.new(0, 360)
@@ -96,6 +108,13 @@ local function emitter(kind: string, colorId: number): ParticleEmitter
 		e.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1.2), NumberSequenceKeypoint.new(1, 0) })
 		e.Lifetime = NumberRange.new(0.15, 0.3)
 		e.Drag = 6
+	elseif kind == "gust" then
+		e.Texture = PARTICLE_TEXTURE
+		e.LightEmission = 0.3
+		e.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1.5), NumberSequenceKeypoint.new(1, 4) })
+		e.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.3), NumberSequenceKeypoint.new(1, 1) })
+		e.Lifetime = NumberRange.new(0.3, 0.5)
+		e.Drag = 4
 	else
 		e.Texture = PARTICLE_TEXTURE
 		e.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.9), NumberSequenceKeypoint.new(1, 0.1) })
@@ -113,25 +132,25 @@ local function emitter(kind: string, colorId: number): ParticleEmitter
 	return e
 end
 
+local function emit(kind: string, position: Vector3, colorId: number, count: number, speed: number)
+	local e = emitter(kind, colorId)
+	local attachment = e.Parent :: Attachment
+	attachment.WorldPosition = position
+	e.Speed = NumberRange.new(speed * 0.4, speed)
+	e:Emit(count)
+end
+
 -- A burst of paint droplets (and optional sparks) at a point.
 local function burst(position: Vector3, colorId: number, count: number, speed: number, sparks: boolean?)
-	local droplets = emitter("drop", colorId)
-	local attachment = droplets.Parent :: Attachment
-	attachment.WorldPosition = position
-	droplets.Speed = NumberRange.new(speed * 0.4, speed)
-	droplets:Emit(count)
+	emit("drop", position, colorId, count, speed)
 	if sparks then
-		local spark = emitter("spark", colorId)
-		local sparkAttachment = spark.Parent :: Attachment
-		sparkAttachment.WorldPosition = position
-		spark.Speed = NumberRange.new(speed * 0.6, speed * 1.4)
-		spark:Emit(math.ceil(count / 2))
+		emit("spark", position, colorId, math.ceil(count / 2), speed * 1.4)
 	end
 end
 
 -- A flat disc that expands and fades (shockwaves, splats).
 local function ring(position: Vector3, normal: Vector3, radius: number, colorId: number, seconds: number)
-	local disc = fxPart(Enum.PartType.Cylinder, Vector3.new(0.2, 1, 1), Palette.color(colorId), Enum.Material.Neon)
+	local disc = fxPart(Enum.PartType.Cylinder, Vector3.new(0.2, 1, 1), colorFor(colorId), Enum.Material.Neon)
 	disc.Transparency = 0.2
 	-- A cylinder's axis is its X axis; point it along the surface normal.
 	local axis = if normal.Magnitude > 0.1 then normal.Unit else Vector3.yAxis
@@ -141,9 +160,9 @@ local function ring(position: Vector3, normal: Vector3, radius: number, colorId:
 	Debris:AddItem(disc, seconds + 0.05)
 end
 
--- A translucent sphere that swells and fades (explosions).
+-- A translucent sphere that swells and fades (explosions, awakenings).
 local function swell(position: Vector3, radius: number, colorId: number, seconds: number)
-	local ball = fxPart(Enum.PartType.Ball, Vector3.one * 2, Palette.color(colorId), Enum.Material.ForceField)
+	local ball = fxPart(Enum.PartType.Ball, Vector3.one * 2, colorFor(colorId), Enum.Material.ForceField)
 	ball.CFrame = CFrame.new(position)
 	tween(ball, seconds, { Size = Vector3.one * radius * 2, Transparency = 1 })
 	Debris:AddItem(ball, seconds + 0.05)
@@ -177,7 +196,7 @@ local function streakTrail(character: Model?, colorId: number, seconds: number, 
 	local trail = Instance.new("Trail")
 	trail.Attachment0 = top
 	trail.Attachment1 = bottom
-	trail.Color = ColorSequence.new(Palette.color(colorId))
+	trail.Color = ColorSequence.new(colorFor(colorId))
 	trail.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.25), NumberSequenceKeypoint.new(1, 1) })
 	trail.Lifetime = 0.25
 	trail.LightEmission = 0.3
@@ -191,10 +210,48 @@ local function streakTrail(character: Model?, colorId: number, seconds: number, 
 	end)
 end
 
+-- The weapon's swing ribbon: from the hand to the paint end, on the right arm.
+local function weaponTrail(character: Model, colorId: number): Trail?
+	local existing = swingTrails[character]
+	if existing and existing.Parent then
+		return existing
+	end
+	local arm = character:FindFirstChild("Right Arm")
+	if not arm or not arm:IsA("BasePart") then
+		return nil
+	end
+	local hand = Instance.new("Attachment")
+	hand.Name = "SwingHand"
+	hand.Position = Vector3.new(0, -1, -0.8)
+	hand.Parent = arm
+	local tip = Instance.new("Attachment")
+	tip.Name = "SwingTip"
+	tip.Position = Vector3.new(0, -1, -3.1)
+	tip.Parent = arm
+	local trail = Instance.new("Trail")
+	trail.Attachment0 = hand
+	trail.Attachment1 = tip
+	trail.Color = ColorSequence.new(colorFor(colorId), Color3.new(1, 1, 1))
+	trail.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.15),
+		NumberSequenceKeypoint.new(1, 1),
+	})
+	trail.Lifetime = 0.16
+	trail.LightEmission = 0.5
+	trail.MinLength = 0.05
+	trail.Enabled = false
+	trail.Parent = arm
+	swingTrails[character] = trail
+	character.Destroying:Connect(function()
+		swingTrails[character] = nil
+	end)
+	return trail
+end
+
 -- Projectiles ------------------------------------------------------------------------
 
 local function projectileVisual(style: string, size: number, colorId: number): BasePart
-	local color = Palette.color(colorId)
+	local color = colorFor(colorId)
 	local part
 	if style == "Can" then
 		part = fxPart(Enum.PartType.Cylinder, Vector3.new(size, size * 0.6, size * 0.6), color)
@@ -246,7 +303,7 @@ local function spawnProjectile(
 			local beam = Instance.new("Beam")
 			beam.Attachment0 = from
 			beam.Attachment1 = to
-			beam.Color = ColorSequence.new(Palette.color(colorId))
+			beam.Color = ColorSequence.new(colorFor(colorId))
 			beam.Width0 = 0.35
 			beam.Width1 = 0.35
 			beam.FaceCamera = true
@@ -307,10 +364,28 @@ end
 
 local handlers: { [string]: (...any) -> () } = {}
 
+-- Someone else's animation (yours already played the moment you pressed).
+function handlers.Anim(character: Model, name: string, userId: number)
+	if userId ~= localPlayer.UserId then
+		Animator.play(character, name)
+	end
+end
+
+function handlers.Swing(character: Model, _weapon: string, step: number, colorId: number)
+	if character == localPlayer.Character then
+		return
+	end
+	Fx.swingTrail(character, colorId, step == 4)
+	local root = rootOf(character)
+	if root then
+		Sounds.playAt(if step == 4 then "SwingHeavy" else "Swing", root.Position, 0.8)
+	end
+end
+
 function handlers.Projectile(
 	id: number,
 	ownerId: number,
-	shotId: number,
+	_shotId: number,
 	origin: Vector3,
 	velocity: Vector3,
 	gravity: number,
@@ -319,9 +394,6 @@ function handlers.Projectile(
 	size: number,
 	colorId: number
 )
-	if ownerId == localPlayer.UserId and shotId ~= 0 then
-		return -- already drawn by prediction
-	end
 	spawnProjectile(
 		"s" .. id,
 		origin,
@@ -333,26 +405,20 @@ function handlers.Projectile(
 		colorId,
 		Players:GetPlayerByUserId(ownerId)
 	)
-	if style ~= "Paint" then
-		Sounds.playAt("Skill", origin, 0.8)
-	end
+	Sounds.playAt(if style == "Paint" then "Shoot" else "Skill", origin, 0.8)
 end
 
 function handlers.ProjectileEnd(
 	id: number,
-	ownerId: number,
-	shotId: number,
+	_ownerId: number,
+	_shotId: number,
 	position: Vector3,
 	normal: Vector3,
 	style: string,
 	colorId: number,
 	hitCharacter: boolean
 )
-	if ownerId == localPlayer.UserId and shotId ~= 0 then
-		removeProjectile("l" .. shotId)
-	else
-		removeProjectile("s" .. id)
-	end
+	removeProjectile("s" .. id)
 	if style == "Paint" then
 		burst(position, colorId, if hitCharacter then 10 else 6, 22)
 		if not hitCharacter then
@@ -366,7 +432,7 @@ function handlers.ProjectileEnd(
 end
 
 function handlers.Streak(character: Model, _direction: Vector3, colorId: number)
-	streakTrail(character, colorId, 0.4, 3)
+	streakTrail(character, colorId, 0.45, 3)
 	local root = rootOf(character)
 	if root then
 		Sounds.playAt("Dash", root.Position)
@@ -384,8 +450,55 @@ function handlers.Dash(character: Model, colorId: number)
 	end
 end
 
+function handlers.Evasive(character: Model, _colorId: number)
+	local root = rootOf(character)
+	if not root then
+		return
+	end
+	ring(root.Position - Vector3.new(0, 2.8, 0), Vector3.yAxis, 9, 0, 0.35)
+	emit("gust", root.Position, 0, 14, 30)
+	if character ~= localPlayer.Character then
+		Sounds.playAt("Evasive", root.Position)
+	end
+end
+
+function handlers.Awaken(character: Model, colorId: number)
+	local root = rootOf(character)
+	if not root then
+		return
+	end
+	local position = root.Position
+	for index = 1, 3 do
+		task.delay((index - 1) * 0.12, function()
+			ring(position - Vector3.new(0, 2.8, 0), Vector3.yAxis, 10 + index * 6, colorId, 0.5)
+		end)
+	end
+	swell(position, 14, colorId, 0.6)
+	burst(position, colorId, 40, 70, true)
+	Sounds.playAt("Awaken", position)
+	shakeByDistance(position, 0.8, 90)
+	if character == localPlayer.Character then
+		Fx.impactFrame()
+	end
+end
+
+function handlers.GuardBreak(character: Model, position: Vector3)
+	for _ = 1, 8 do
+		local shard =
+			fxPart(Enum.PartType.Block, Vector3.new(0.3, 0.6, 0.1), Color3.fromRGB(190, 220, 255), Enum.Material.Glass)
+		shard.Transparency = 0.2
+		shard.CFrame = CFrame.new(position) * CFrame.Angles(math.random() * 6, math.random() * 6, 0)
+		local offset = Vector3.new(math.random(-40, 40), math.random(5, 40), math.random(-40, 40)) / 10
+		tween(shard, 0.4, { CFrame = shard.CFrame + offset, Transparency = 1 })
+		Debris:AddItem(shard, 0.45)
+	end
+	if character ~= localPlayer.Character then
+		Sounds.playAt("GuardBreak", position)
+	end
+end
+
 function handlers.TrapPlaced(id: number, position: Vector3, colorId: number)
-	local pad = fxPart(Enum.PartType.Cylinder, Vector3.new(0.3, 9, 9), Palette.color(colorId), Enum.Material.Neon)
+	local pad = fxPart(Enum.PartType.Cylinder, Vector3.new(0.3, 9, 9), colorFor(colorId), Enum.Material.Neon)
 	pad.Transparency = 0.45
 	pad.CFrame = CFrame.new(position + Vector3.new(0, 0.2, 0)) * CFrame.Angles(0, 0, math.rad(90))
 	traps[id] = pad
@@ -433,7 +546,7 @@ end
 
 function handlers.Wave(origin: Vector3, direction: Vector3, range: number, colorId: number)
 	Sounds.playAt("Skill", origin)
-	local color = Palette.color(colorId)
+	local color = colorFor(colorId)
 	for index = -3, 3 do
 		local angle = math.rad(index * 10)
 		local dir = CFrame.Angles(0, angle, 0):VectorToWorldSpace(direction)
@@ -445,7 +558,7 @@ function handlers.Wave(origin: Vector3, direction: Vector3, range: number, color
 	burst(origin + direction * range * 0.5, colorId, 20, 30)
 end
 
--- Damage numbers -------------------------------------------------------------------
+-- Hits -----------------------------------------------------------------------------
 
 local function damageNumber(position: Vector3, damage: number, heavy: boolean, blocked: boolean)
 	local anchor = fxPart(Enum.PartType.Block, Vector3.one * 0.1, Color3.new(), nil)
@@ -453,39 +566,38 @@ local function damageNumber(position: Vector3, damage: number, heavy: boolean, b
 	anchor.CFrame = CFrame.new(position + Vector3.new(math.random(-10, 10) / 10, 1.5, math.random(-10, 10) / 10))
 
 	local gui = Instance.new("BillboardGui")
-	gui.Size = UDim2.fromOffset(110, 46)
+	gui.Size = UDim2.fromOffset(100, 40)
 	gui.AlwaysOnTop = true
 	gui.LightInfluence = 0
-	gui.MaxDistance = 200
+	gui.MaxDistance = 160
 	gui.Parent = anchor
 
 	local label = Instance.new("TextLabel")
 	label.Size = UDim2.fromScale(1, 1)
 	label.BackgroundTransparency = 1
-	label.Font = Enum.Font.FredokaOne
+	label.Font = Enum.Font.Bangers
 	label.TextScaled = true
-	label.Text = if blocked then "BLOCKED " .. damage else tostring(damage)
+	label.Text = if blocked then "BLOCK" else tostring(damage)
 	label.TextColor3 = if blocked
 		then Color3.fromRGB(150, 200, 255)
-		elseif damage >= 18 then Color3.fromRGB(255, 70, 60)
-		elseif damage >= 10 then Color3.fromRGB(255, 170, 40)
+		elseif heavy then Color3.fromRGB(255, 90, 70)
 		else Color3.fromRGB(255, 255, 255)
 	label.Parent = gui
 	local stroke = Instance.new("UIStroke")
 	stroke.Thickness = 2.5
-	stroke.Color = Color3.fromRGB(20, 20, 24)
+	stroke.Color = Color3.fromRGB(15, 15, 20)
 	stroke.Parent = label
 	local scale = Instance.new("UIScale")
-	scale.Scale = if heavy then 1.9 else 1.5
+	scale.Scale = if heavy then 1.8 else 1.4
 	scale.Parent = label
 
-	tween(scale, 0.12, { Scale = if heavy then 1.25 else 1 }, Enum.EasingStyle.Back)
-	tween(gui, 0.75, { StudsOffset = Vector3.new(0, 2.6, 0) })
-	task.delay(0.35, function()
-		tween(label, 0.4, { TextTransparency = 1 })
-		tween(stroke, 0.4, { Transparency = 1 })
+	tween(scale, 0.12, { Scale = if heavy then 1.2 else 0.95 }, Enum.EasingStyle.Back)
+	tween(gui, 0.7, { StudsOffset = Vector3.new(0, 2.2, 0) })
+	task.delay(0.3, function()
+		tween(label, 0.35, { TextTransparency = 1 })
+		tween(stroke, 0.35, { Transparency = 1 })
 	end)
-	Debris:AddItem(anchor, 0.8)
+	Debris:AddItem(anchor, 0.75)
 end
 
 local function onHit(
@@ -497,16 +609,26 @@ local function onHit(
 	blocked: boolean
 )
 	CharacterVisuals.flash(victim, heavy)
-	if damage > 0 then
+	if victim and not blocked then
+		Animator.play(victim, "HitReact")
+		if victim ~= localPlayer.Character then
+			Animator.stun(victim, 0.35)
+		end
+	end
+	if (damage > 0 or blocked) and Settings.get("damageNumbers") then
 		damageNumber(position, damage, heavy, blocked)
 	end
-	burst(
-		position,
-		if attackerColorId > 0 then attackerColorId else 1,
-		if heavy then 18 else 8,
-		if heavy then 40 else 24,
-		heavy
-	)
+	if blocked then
+		emit("spark", position, 0, 10, 30)
+	else
+		burst(
+			position,
+			if attackerColorId > 0 then attackerColorId else 1,
+			if heavy then 18 else 9,
+			if heavy then 40 else 26,
+			heavy
+		)
+	end
 
 	if victim and victim == localPlayer.Character then
 		Sounds.play(if blocked then "Blocked" else "Hurt")
@@ -518,24 +640,38 @@ local function onHit(
 	end
 end
 
--- Local predictions -----------------------------------------------------------------
-
--- Draws your own primary shot the moment you fire.
-function Fx.predictShot(
-	shotId: number,
-	origin: Vector3,
-	velocity: Vector3,
-	gravity: number,
-	lifetime: number,
-	size: number,
-	colorId: number
-)
-	spawnProjectile("l" .. shotId, origin, velocity, gravity, lifetime, "Paint", size, colorId, localPlayer)
-end
+-- Local feedback --------------------------------------------------------------------
 
 -- Your own dash trail, drawn instantly.
 function Fx.localDash(colorId: number)
 	streakTrail(localPlayer.Character, colorId, 0.22, 2.4)
+end
+
+-- Shows the weapon's swing ribbon for one swing.
+function Fx.swingTrail(character: Model?, colorId: number, heavy: boolean)
+	if not character then
+		return
+	end
+	local trail = weaponTrail(character, colorId)
+	if not trail then
+		return
+	end
+	trail.Enabled = true
+	trail.Lifetime = if heavy then 0.24 else 0.16
+	task.delay(SWING_TRAIL_TIME + (if heavy then 0.12 else 0), function()
+		trail.Enabled = false
+	end)
+end
+
+-- A one-frame "impact frame" (contrast spike), skipped if Flashing Lights is off.
+function Fx.impactFrame()
+	if not Settings.get("flashingLights") or not impactEffect then
+		return
+	end
+	impactEffect.Enabled = true
+	task.delay(0.07, function()
+		impactEffect.Enabled = false
+	end)
 end
 
 function Fx.init()
@@ -543,6 +679,14 @@ function Fx.init()
 	folder.Name = "Fx"
 	folder.Parent = workspace
 	mapParams.FilterDescendantsInstances = { workspace:WaitForChild("Map") }
+
+	impactEffect = Instance.new("ColorCorrectionEffect")
+	impactEffect.Name = "ImpactFrame"
+	impactEffect.Saturation = -1
+	impactEffect.Contrast = 1.2
+	impactEffect.Brightness = 0.05
+	impactEffect.Enabled = false
+	impactEffect.Parent = Lighting
 
 	Remotes.Fx.OnClientEvent:Connect(function(kind: string, ...)
 		local handler = handlers[kind]

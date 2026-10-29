@@ -28,14 +28,14 @@ function HazardService.init()
 	local pivot = bar.Position
 	local armLength = bar:GetAttribute("ArmLength") or 21
 	local speed = bar:GetAttribute("Speed") or 1
-	local lastHit: { [Player]: number } = {}
+	local lastHit: { [any]: number } = {}
 
 	RunService.Heartbeat:Connect(function()
 		local angle = (workspace:GetServerTimeNow() * speed) % (math.pi * 2)
 		local axis = CFrame.Angles(0, angle, 0).RightVector
 		local now = os.clock()
 
-		for _, target in World.livingPlayers(nil) do
+		for _, target in World.livingTargets(nil) do
 			local offset = target.root.Position - pivot
 			local height = offset.Y
 			local flatOffset = Vector3.new(offset.X, 0, offset.Z)
@@ -46,14 +46,14 @@ function HazardService.init()
 				and height < HEIGHT_ABOVE
 				and math.abs(along) <= armLength
 				and across <= HIT_THICKNESS
-				and now - (lastHit[target.player] or 0) > REHIT_DELAY
+				and now - (lastHit[target.key] or 0) > REHIT_DELAY
 			then
-				lastHit[target.player] = now
+				lastHit[target.key] = now
 				-- The bar's velocity at this point is perpendicular to the arm.
 				local tangent = Vector3.new(flatOffset.Z, 0, -flatOffset.X)
 				tangent = if tangent.Magnitude > 0.1 then tangent.Unit else axis
 				local outward = if flatOffset.Magnitude > 0.1 then flatOffset.Unit else Vector3.zero
-				CombatService.applyHit(nil, target.player, {
+				CombatService.applyHit(nil, target.key, {
 					damage = 8,
 					knockback = tangent * 62 + outward * 22 + Vector3.new(0, 38, 0),
 					ragdoll = 0.6,

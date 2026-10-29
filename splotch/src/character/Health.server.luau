@@ -1,2 +1,0 @@
--- Replaces Roblox's default health regeneration script. Healing in Splotch is
--- handled by the server (own paint, out-of-combat regen, KOs).

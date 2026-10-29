@@ -1,14 +1,17 @@
 --[[
-	CharacterVisuals: how every character looks on this client.
+	CharacterVisuals: how every character looks on this client (players and
+	training dummies).
 
 	* Diving players turn invisible and become a paint blob (camouflaged in
 	  their own paint). Your own form is applied instantly; others come from the
 	  server's "Form" attribute.
-	* Blocking players get a force-field bubble.
-	* Other players get an overhead name and health bar (hidden while diving).
+	* Awakened players glow in their paint color.
+	* Everyone but you gets an overhead name and health bar (hidden while
+	  diving).
 	* flash() gives the white hit flash on the paint outline.
 ]]
 
+local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
@@ -23,13 +26,13 @@ local CharacterVisuals = {}
 local localPlayer = Players.LocalPlayer
 
 type Entry = {
-	player: Player,
+	player: Player?,
 	character: Model,
 	humanoid: Humanoid,
 	root: BasePart,
 	blob: Part,
 	blobMesh: SpecialMesh,
-	bubble: Part,
+	aura: ParticleEmitter,
 	nameplate: BillboardGui?,
 	healthFill: Frame?,
 	hidden: boolean,
@@ -41,10 +44,14 @@ local fxFolder: Folder
 local groundParams = RaycastParams.new()
 groundParams.FilterType = Enum.RaycastFilterType.Include
 
-local FLASH_TWEEN = TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+local FLASH_TWEEN = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
 local function colorOf(entry: Entry): Color3
-	return Palette.color(entry.character:GetAttribute("ColorId") or entry.player:GetAttribute("ColorId"))
+	local colorId = entry.character:GetAttribute("ColorId")
+	if colorId == 0 then
+		return Color3.fromRGB(235, 235, 240)
+	end
+	return Palette.color(colorId or (entry.player and entry.player:GetAttribute("ColorId")))
 end
 
 local function formOf(entry: Entry): string
@@ -61,7 +68,7 @@ local function setHidden(entry: Entry, hidden: boolean)
 	entry.hidden = hidden
 	if hidden then
 		for _, item in entry.character:GetDescendants() do
-			if item:IsA("BasePart") or item:IsA("Decal") then
+			if (item:IsA("BasePart") or item:IsA("Decal")) and item.Name ~= "RagCollider" then
 				entry.saved[item] = item.Transparency
 				item.Transparency = 1
 			end
@@ -83,52 +90,49 @@ local function setHidden(entry: Entry, hidden: boolean)
 	end
 end
 
-local function makeNameplate(entry: Entry)
+local function makeNameplate(entry: Entry, title: string)
 	local head = entry.character:FindFirstChild("Head")
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "Nameplate"
 	gui.Adornee = if head and head:IsA("BasePart") then head else entry.root
-	gui.Size = UDim2.fromOffset(150, 34)
-	gui.StudsOffset = Vector3.new(0, 2.6, 0)
-	gui.MaxDistance = 160
+	gui.Size = UDim2.fromOffset(160, 34)
+	gui.StudsOffset = Vector3.new(0, 2.4, 0)
+	gui.MaxDistance = 140
 	gui.LightInfluence = 0
 
 	local name = Instance.new("TextLabel")
 	name.BackgroundTransparency = 1
 	name.Size = UDim2.new(1, 0, 0, 18)
-	name.Font = Enum.Font.GothamBold
-	name.TextSize = 15
-	name.Text = entry.player.DisplayName
+	name.Font = Enum.Font.Oswald
+	name.TextSize = 16
+	name.Text = string.upper(title)
 	name.TextColor3 = colorOf(entry)
-	name.TextStrokeTransparency = 0.4
+	name.TextStrokeTransparency = 0.35
 	name.Parent = gui
 
 	local back = Instance.new("Frame")
-	back.Position = UDim2.new(0.15, 0, 0, 22)
-	back.Size = UDim2.new(0.7, 0, 0, 7)
-	back.BackgroundColor3 = Color3.fromRGB(20, 20, 26)
-	back.BackgroundTransparency = 0.2
+	back.Position = UDim2.new(0.18, 0, 0, 21)
+	back.Size = UDim2.new(0.64, 0, 0, 6)
+	back.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+	back.BackgroundTransparency = 0.15
 	back.BorderSizePixel = 0
 	back.Parent = gui
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(1, 0)
-	corner.Parent = back
 
 	local fill = Instance.new("Frame")
 	fill.Size = UDim2.fromScale(1, 1)
 	fill.BackgroundColor3 = Color3.fromRGB(110, 235, 120)
 	fill.BorderSizePixel = 0
 	fill.Parent = back
-	local fillCorner = Instance.new("UICorner")
-	fillCorner.CornerRadius = UDim.new(1, 0)
-	fillCorner.Parent = fill
 
 	gui.Parent = fxFolder
 	entry.nameplate = gui
 	entry.healthFill = fill
 end
 
-local function track(player: Player, character: Model)
+local function track(player: Player?, character: Model)
+	if entries[character] then
+		return
+	end
 	local humanoid = character:WaitForChild("Humanoid", 10)
 	local root = character:WaitForChild("HumanoidRootPart", 10)
 	if not humanoid or not root or not humanoid:IsA("Humanoid") or not root:IsA("BasePart") then
@@ -151,18 +155,21 @@ local function track(player: Player, character: Model)
 	mesh.Parent = blob
 	blob.Parent = fxFolder
 
-	local bubble = Instance.new("Part")
-	bubble.Name = "BlockBubble"
-	bubble.Shape = Enum.PartType.Ball
-	bubble.Size = Vector3.one * 7.5
-	bubble.Anchored = true
-	bubble.CanCollide = false
-	bubble.CanQuery = false
-	bubble.CanTouch = false
-	bubble.CastShadow = false
-	bubble.Material = Enum.Material.ForceField
-	bubble.Transparency = 1
-	bubble.Parent = fxFolder
+	-- Awakening aura: sparkles rising off the torso.
+	local auraAttachment = Instance.new("Attachment")
+	auraAttachment.Name = "AuraAttachment"
+	auraAttachment.Parent = root
+	local aura = Instance.new("ParticleEmitter")
+	aura.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	aura.Rate = 18
+	aura.Lifetime = NumberRange.new(0.5, 0.9)
+	aura.Speed = NumberRange.new(3, 7)
+	aura.SpreadAngle = Vector2.new(25, 25)
+	aura.EmissionDirection = Enum.NormalId.Top
+	aura.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.6), NumberSequenceKeypoint.new(1, 0) })
+	aura.LightEmission = 0.8
+	aura.Enabled = false
+	aura.Parent = auraAttachment
 
 	local entry: Entry = {
 		player = player,
@@ -171,7 +178,7 @@ local function track(player: Player, character: Model)
 		root = root,
 		blob = blob,
 		blobMesh = mesh,
-		bubble = bubble,
+		aura = aura,
 		nameplate = nil,
 		healthFill = nil,
 		hidden = false,
@@ -179,14 +186,13 @@ local function track(player: Player, character: Model)
 	}
 	entries[character] = entry
 	if player ~= localPlayer then
-		makeNameplate(entry)
+		makeNameplate(entry, if player then player.DisplayName else character.Name)
 	end
 
 	character.AncestryChanged:Connect(function()
 		if not character:IsDescendantOf(workspace) then
 			entries[character] = nil
 			blob:Destroy()
-			bubble:Destroy()
 			if entry.nameplate then
 				entry.nameplate:Destroy()
 			end
@@ -194,7 +200,8 @@ local function track(player: Player, character: Model)
 	end)
 end
 
-local function updateEntry(entry: Entry)
+local function updateEntry(entry: Entry, now: number)
+	local character = entry.character
 	local form = formOf(entry)
 	local alive = entry.humanoid.Health > 0
 	local diving = alive and form ~= "Normal"
@@ -207,11 +214,10 @@ local function updateEntry(entry: Entry)
 		entry.blob.Transparency = if entry.player == localPlayer then 0.1 else 0.3
 		local speed = root.AssemblyLinearVelocity.Magnitude
 		local stretch = math.min(speed / 12, 2.5)
+		entry.blobMesh.Scale = Vector3.new(3.6, 0.8, 4 + stretch)
 		if form == "WallSwim" then
-			entry.blobMesh.Scale = Vector3.new(3.6, 0.8, 4 + stretch)
 			entry.blob.CFrame = root.CFrame * CFrame.new(0, 0, -0.8) * CFrame.Angles(math.rad(90), 0, 0)
 		else
-			entry.blobMesh.Scale = Vector3.new(3.6, 0.8, 4 + stretch)
 			local ground = workspace:Raycast(root.Position, Vector3.new(0, -6, 0), groundParams)
 			local position = if ground then ground.Position + Vector3.new(0, 0.3, 0) else root.Position
 			entry.blob.CFrame = CFrame.new(position) * root.CFrame.Rotation
@@ -220,13 +226,20 @@ local function updateEntry(entry: Entry)
 		entry.blob.Transparency = 1
 	end
 
-	local blocking = alive and entry.character:GetAttribute("Blocking") == true
-	if blocking then
-		entry.bubble.Color = color
-		entry.bubble.Transparency = 0
-		entry.bubble.CFrame = CFrame.new(root.Position)
-	else
-		entry.bubble.Transparency = 1
+	-- Awakened: colored glow that pulses.
+	local awakened = alive and character:GetAttribute("Awakened") == true and not diving
+	entry.aura.Enabled = awakened
+	local outline = character:FindFirstChild("PaintOutline")
+	if outline and outline:IsA("Highlight") and outline:GetAttribute("Flashing") ~= true then
+		if awakened then
+			outline.FillColor = color
+			outline.FillTransparency = 0.72 + 0.12 * math.sin(now * 6)
+		elseif outline.FillTransparency < 1 then
+			outline.FillTransparency = 1
+		end
+	end
+	if awakened then
+		entry.aura.Color = ColorSequence.new(color)
 	end
 
 	if entry.healthFill then
@@ -245,9 +258,14 @@ function CharacterVisuals.flash(character: Model?, heavy: boolean?)
 	if not outline or not outline:IsA("Highlight") then
 		return
 	end
+	outline:SetAttribute("Flashing", true)
 	outline.FillColor = if heavy then Color3.fromRGB(255, 240, 200) else Color3.fromRGB(255, 255, 255)
-	outline.FillTransparency = if heavy then 0 else 0.25
-	TweenService:Create(outline, FLASH_TWEEN, { FillTransparency = 1 }):Play()
+	outline.FillTransparency = if heavy then 0 else 0.2
+	local fade = TweenService:Create(outline, FLASH_TWEEN, { FillTransparency = 1 })
+	fade.Completed:Connect(function()
+		outline:SetAttribute("Flashing", false)
+	end)
+	fade:Play()
 end
 
 function CharacterVisuals.init()
@@ -269,9 +287,17 @@ function CharacterVisuals.init()
 	end
 	Players.PlayerAdded:Connect(watch)
 
+	for _, dummy in CollectionService:GetTagged("Dummy") do
+		task.spawn(track, nil, dummy)
+	end
+	CollectionService:GetInstanceAddedSignal("Dummy"):Connect(function(dummy)
+		task.spawn(track, nil, dummy)
+	end)
+
 	RunService.RenderStepped:Connect(function()
+		local now = os.clock()
 		for _, entry in entries do
-			updateEntry(entry)
+			updateEntry(entry, now)
 		end
 	end)
 end

@@ -16,8 +16,8 @@ type Look = { lighting: { [string]: any }, atmosphere: { [string]: any } }
 
 local LOOKS: { [string]: Look } = {
 	Dry = {
-		lighting = { Brightness = 2.6, ClockTime = 14.5, OutdoorAmbient = Color3.fromRGB(140, 140, 153) },
-		atmosphere = { Density = 0.28, Haze = 1.2, Color = Color3.fromRGB(199, 209, 230) },
+		lighting = { Brightness = 2.8, ClockTime = 16.4, OutdoorAmbient = Color3.fromRGB(153, 135, 128) },
+		atmosphere = { Density = 0.3, Haze = 1.6, Color = Color3.fromRGB(230, 201, 176) },
 	},
 	Warning = {
 		lighting = { Brightness = 1.6, ClockTime = 16.8, OutdoorAmbient = Color3.fromRGB(110, 110, 130) },

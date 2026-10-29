@@ -1,84 +1,120 @@
 --[[
-	Per-player server state. Other services read and write it directly; it is
-	created when a player joins and dropped when they leave.
+	Per-combatant server state (players and training dummies). Other services
+	read and write it directly; it is created when a combatant appears and
+	dropped when it leaves.
 ]]
 
 export type PlayerState = {
-	player: Player,
+	key: any, -- the Player, or the dummy Model
 	colorId: number,
 	kit: string,
-	paint: number,
 	form: string, -- "Normal" | "Swim" | "WallSwim"
 	blocking: boolean,
 	stunUntil: number,
-	nextPrimaryAt: number,
+	ragdollUntil: number,
+	ragdollToken: number,
+	meleeImmuneUntil: number, -- no M1 stun right after waking up
+	invulnerableUntil: number,
+	m1Step: number,
+	m1At: number, -- when the current swing started
+	m1ReadyAt: number,
+	m1Variant: string,
+	m1Hit: boolean, -- whether the current swing already landed
 	skillReadyAt: { number },
-	dashReadyAt: number,
+	frontDashReadyAt: number,
+	sideDashReadyAt: number,
+	frontDashAt: number,
+	frontDashHit: boolean,
 	lastHitBy: Player?,
 	lastHitAt: number,
 	lastDamagedAt: number,
-	combo: number,
+	comboDamage: number,
 	comboAt: number,
+	evasive: number, -- 0..100
+	awakening: number, -- 0..100
+	awakenedUntil: number,
 	streak: number,
 	spawnProtectedUntil: number,
 	deathCause: string?,
 	surface: string, -- "none" | "own" | "enemy"
-	traps: { any },
 	pendingSlamUntil: number,
+	pendingRushUntil: number,
 }
 
 local State = {}
 
-local states: { [Player]: PlayerState } = {}
+local states: { [any]: PlayerState } = {}
 
-function State.create(player: Player, colorId: number): PlayerState
-	local st: PlayerState = {
-		player = player,
+local function fresh(key: any, colorId: number): PlayerState
+	return {
+		key = key,
 		colorId = colorId,
 		kit = "Tagger",
-		paint = 100,
 		form = "Normal",
 		blocking = false,
 		stunUntil = 0,
-		nextPrimaryAt = 0,
-		skillReadyAt = { 0, 0, 0 },
-		dashReadyAt = 0,
+		ragdollUntil = 0,
+		ragdollToken = 0,
+		meleeImmuneUntil = 0,
+		invulnerableUntil = 0,
+		m1Step = 0,
+		m1At = 0,
+		m1ReadyAt = 0,
+		m1Variant = "Neutral",
+		m1Hit = false,
+		skillReadyAt = { 0, 0, 0, 0 },
+		frontDashReadyAt = 0,
+		sideDashReadyAt = 0,
+		frontDashAt = 0,
+		frontDashHit = false,
 		lastHitBy = nil,
 		lastHitAt = -math.huge,
 		lastDamagedAt = -math.huge,
-		combo = 0,
+		comboDamage = 0,
 		comboAt = 0,
+		evasive = 100,
+		awakening = 0,
+		awakenedUntil = 0,
 		streak = 0,
 		spawnProtectedUntil = 0,
 		deathCause = nil,
 		surface = "none",
-		traps = {},
 		pendingSlamUntil = 0,
+		pendingRushUntil = 0,
 	}
-	states[player] = st
+end
+
+function State.create(key: any, colorId: number): PlayerState
+	local st = fresh(key, colorId)
+	states[key] = st
 	return st
 end
 
-function State.get(player: Player): PlayerState?
-	return states[player]
+-- Resets everything that should not survive a respawn.
+function State.resetForSpawn(st: PlayerState)
+	local keep = fresh(st.key, st.colorId)
+	keep.kit = st.kit
+	keep.awakening = st.awakening
+	keep.streak = st.streak
+	for key, value in keep do
+		(st :: any)[key] = value
+	end
 end
 
-function State.remove(player: Player)
-	states[player] = nil
+function State.get(key: any): PlayerState?
+	return states[key]
 end
 
-function State.all(): { [Player]: PlayerState }
+function State.remove(key: any)
+	states[key] = nil
+end
+
+function State.all(): { [any]: PlayerState }
 	return states
 end
 
--- The player currently using `colorId`, if any.
-function State.playerWithColor(colorId: number): Player?
-	for player, st in states do
-		if st.colorId == colorId then
-			return player
-		end
-	end
-	return nil
+function State.isAwakened(st: PlayerState): boolean
+	return os.clock() < st.awakenedUntil
 end
 
 return State

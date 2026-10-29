@@ -2,15 +2,18 @@
 	All RemoteEvents in one place. The server creates them; clients wait for them.
 
 	Client -> server
-		Action(name, ...)        every player input (fire, skills, dash, block, dive, kit select)
+		Action(name, ...)        every player input (M1s, skills, dashes, block, dive, evasive, awaken)
 		PaintReady()             ask for the full paint snapshot once the client can render it
+		SaveSettings(data)       persist the player's settings and keybinds
 
 	Server -> client
 		PaintSync(mode, keys, colors)   mode: "snapshot" | "delta" | "clear"
-		Fx(kind, ...)                   cosmetic events (projectiles, skills, dashes)
+		Fx(kind, ...)                   cosmetic events (projectiles, skills, dashes, animations)
 		Hit(victimCharacter, position, damage, attackerColorId, heavy, blocked)
-		HitConfirm(damage, combo, ko)   only to the attacker
-		Knockback(velocity, ragdollTime, stunTime)   only to the victim
+		HitConfirm(damage, comboDamage, ko, blocked)   only to the attacker
+		Knockback(velocity, ragdollTime, stunTime)     only to the victim
+		State(kind, ...)                 the victim's own state changes (ragdoll end, evasive, awakening)
+		Settings(data)                   saved settings, sent once after joining
 		Feed(killerName, killerColorId, victimName, victimColorId, verb)
 		Notify(text, kind)
 ]]
@@ -26,6 +29,9 @@ local NAMES = {
 	"Hit",
 	"HitConfirm",
 	"Knockback",
+	"State",
+	"Settings",
+	"SaveSettings",
 	"Feed",
 	"Notify",
 }

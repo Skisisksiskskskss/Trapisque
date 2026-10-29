@@ -1,9 +1,13 @@
 --[[
-	PlayerService: joining, colors, leaderstats, spawning, and the 10 Hz loop
-	that applies paint effects (healing, refills, enemy paint), void and hazard
-	deaths.
+	PlayerService: joining, colors, leaderstats, R6 spawning and respawning, and
+	the 10 Hz loop that applies regen, paint effects, void and hazard deaths.
+
+	Characters are always R6: CharacterAutoLoads is off and every spawn builds
+	an R6 rig from the player's own avatar description. There is no default
+	Animate script; client/Animator animates every character procedurally.
 ]]
 
+local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
@@ -15,17 +19,25 @@ local Zones = require(Shared.Zones)
 
 local CombatService = require(script.Parent.CombatService)
 local PaintService = require(script.Parent.PaintService)
+local Ragdoll = require(script.Parent.Ragdoll)
 local State = require(script.Parent.State)
+local Weapons = require(script.Parent.Weapons)
 local World = require(script.Parent.World)
 
 local PlayerService = {}
 
 local TICK = 0.1
+local SPAWN_TAG = "SpawnPad"
+
+local descriptions: { [Player]: HumanoidDescription } = {}
+local spawning: { [Player]: boolean } = {}
 
 local function pickColor(): number
 	local used = {}
-	for _, st in State.all() do
-		used[st.colorId] = true
+	for key, st in State.all() do
+		if World.isPlayer(key) then
+			used[st.colorId] = true
+		end
 	end
 	for colorId = 1, #Palette do
 		if not used[colorId] then
@@ -38,7 +50,7 @@ end
 local function makeLeaderstats(player: Player)
 	local stats = Instance.new("Folder")
 	stats.Name = "leaderstats"
-	for _, name in { "Splashes", "Streak" } do
+	for _, name in { "Kills", "Streak" } do
 		local value = Instance.new("IntValue")
 		value.Name = name
 		value.Parent = stats
@@ -46,103 +58,134 @@ local function makeLeaderstats(player: Player)
 	stats.Parent = player
 end
 
-local function weld(part: BasePart, to: BasePart, offset: CFrame)
-	part.CFrame = to.CFrame * offset
-	local w = Instance.new("WeldConstraint")
-	w.Part0 = to
-	w.Part1 = part
-	w.Parent = part
+local function descriptionFor(player: Player): HumanoidDescription
+	local cached = descriptions[player]
+	if not cached then
+		if player.UserId > 0 then
+			local ok, result = pcall(function()
+				return Players:GetHumanoidDescriptionFromUserId(player.UserId)
+			end)
+			if ok and result then
+				cached = result
+			end
+		end
+		-- Studio test players (negative ids) and failed lookups get a default look.
+		cached = cached or Instance.new("HumanoidDescription")
+		descriptions[player] = cached
+	end
+	return cached:Clone()
 end
 
-local function prop(parent: Instance, shape: Enum.PartType, size: Vector3, color: Color3, material: Enum.Material): Part
-	local part = Instance.new("Part")
-	part.Shape = shape
-	part.Size = size
-	part.Color = color
-	part.Material = material
-	part.CanCollide = false
-	part.CanQuery = false
-	part.CanTouch = false
-	part.Massless = true
-	part.Parent = parent
-	return part
+-- Builds an R6 rig from a description, falling back to a default look.
+function PlayerService.buildR6(description: HumanoidDescription): Model?
+	local ok, model = pcall(function()
+		return Players:CreateHumanoidModelFromDescription(description, Enum.HumanoidRigType.R6)
+	end)
+	if not ok or not model then
+		ok, model = pcall(function()
+			return Players:CreateHumanoidModelFromDescription(
+				Instance.new("HumanoidDescription"),
+				Enum.HumanoidRigType.R6
+			)
+		end)
+	end
+	if not ok or not model then
+		warn("Splotch: could not build an R6 character:", model)
+		return nil
+	end
+	-- Our own animator drives every character.
+	local animate = model:FindFirstChild("Animate")
+	if animate then
+		animate:Destroy()
+	end
+	return model
 end
 
--- A small back-mounted prop so each character reads at a glance.
-local function addKitProp(character: Model, kitName: string, color: Color3)
-	-- Weld to the root: unlike torso parts it is never swapped out when the
-	-- avatar's appearance loads, and it exists on both R6 and R15 rigs.
-	local anchor = character:WaitForChild("HumanoidRootPart", 5)
-	if not anchor or not anchor:IsA("BasePart") then
-		return
+local function spawnCFrame(): CFrame
+	local pads = CollectionService:GetTagged(SPAWN_TAG)
+	local pad = pads[math.random(1, math.max(#pads, 1))]
+	if pad and pad:IsA("BasePart") then
+		-- Face the middle of the map.
+		local position = pad.Position + Vector3.new(0, 3.3, 0)
+		local look = Vector3.new(-position.X, 0, -position.Z)
+		return CFrame.lookAt(position, position + (if look.Magnitude > 1 then look.Unit else Vector3.zAxis))
 	end
-	local model = Instance.new("Model")
-	model.Name = "KitProp"
-	local sideways = CFrame.Angles(0, 0, math.rad(90))
-	if kitName == "Plaster" then
-		local bucket =
-			prop(model, Enum.PartType.Cylinder, Vector3.new(2.2, 2, 2), Color3.fromRGB(70, 74, 86), Enum.Material.Metal)
-		weld(bucket, anchor, CFrame.new(0, 0.6, 1.4) * sideways)
-		local fill = prop(model, Enum.PartType.Cylinder, Vector3.new(0.3, 1.8, 1.8), color, Enum.Material.SmoothPlastic)
-		weld(fill, anchor, CFrame.new(0, 1.65, 1.4) * sideways)
-	else
-		local can = prop(model, Enum.PartType.Cylinder, Vector3.new(2.1, 1, 1), color, Enum.Material.SmoothPlastic)
-		weld(can, anchor, CFrame.new(0.35, 0.7, 0.9) * sideways)
-		local cap = prop(
-			model,
-			Enum.PartType.Cylinder,
-			Vector3.new(0.45, 0.7, 0.7),
-			Color3.fromRGB(240, 240, 240),
-			Enum.Material.SmoothPlastic
-		)
-		weld(cap, anchor, CFrame.new(0.35, 1.95, 0.9) * sideways)
-	end
-	model.Parent = character
+	return CFrame.new(0, 10, 0)
 end
 
-local function onCharacterAdded(player: Player, character: Model)
-	local st = State.get(player)
-	if not st then
-		return
-	end
-	local humanoid = character:WaitForChild("Humanoid") :: Humanoid
-	local kit = Characters.get(st.kit)
-	local now = os.clock()
-
-	st.paint = Config.TANK_MAX
-	st.form = "Normal"
-	st.blocking = false
-	st.stunUntil = 0
-	st.nextPrimaryAt = 0
-	st.skillReadyAt = { 0, 0, 0 }
-	st.dashReadyAt = 0
-	st.pendingSlamUntil = 0
-	st.lastDamagedAt = -math.huge
-	st.spawnProtectedUntil = now + Config.SPAWN_PROTECTION
-
+-- Shared character setup for players and dummies.
+function PlayerService.prepareCharacter(model: Model, colorId: number, kitName: string)
+	local humanoid = model:FindFirstChildOfClass("Humanoid") :: Humanoid
+	local kit = Characters.get(kitName)
+	humanoid.BreakJointsOnDeath = false
+	humanoid.RequiresNeck = false
 	humanoid.MaxHealth = kit.maxHealth
 	humanoid.Health = kit.maxHealth
 	humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
-	character:SetAttribute("Form", "Normal")
-	character:SetAttribute("Blocking", false)
-	character:SetAttribute("Kit", kit.name)
-	character:SetAttribute("ColorId", st.colorId)
-	player:SetAttribute("Paint", Config.TANK_MAX)
+	humanoid.UseJumpPower = true
+	humanoid.JumpPower = Config.JUMP_POWER
+	humanoid.WalkSpeed = Config.WALK_SPEED
+	model:SetAttribute("Form", "Normal")
+	model:SetAttribute("Blocking", false)
+	model:SetAttribute("Ragdolled", false)
+	model:SetAttribute("Awakened", false)
+	model:SetAttribute("Kit", kit.name)
+	model:SetAttribute("ColorId", colorId)
 
-	local color = Palette.color(st.colorId)
+	local color = Palette.color(colorId)
 	local outline = Instance.new("Highlight")
 	outline.Name = "PaintOutline"
 	outline.FillTransparency = 1
 	outline.OutlineColor = color
-	outline.OutlineTransparency = 0.15
+	outline.OutlineTransparency = 0.35
 	outline.DepthMode = Enum.HighlightDepthMode.Occluded
-	outline.Parent = character
+	outline.Parent = model
 
-	task.spawn(addKitProp, character, kit.name, color)
+	Ragdoll.setup(model)
+	Weapons.attach(model, kit.weapon, color)
+end
 
+local function spawnPlayer(player: Player)
+	local st = State.get(player)
+	if not st or spawning[player] or player.Parent ~= Players then
+		return
+	end
+	spawning[player] = true
+	local model = PlayerService.buildR6(descriptionFor(player))
+	spawning[player] = nil
+	if not model or player.Parent ~= Players then
+		return
+	end
+	model.Name = player.Name
+
+	State.resetForSpawn(st)
+	st.spawnProtectedUntil = os.clock() + Config.SPAWN_PROTECTION
+	PlayerService.prepareCharacter(model, st.colorId, st.kit)
+	CombatService.syncMeters(st)
+	player:SetAttribute("AwakenEnds", 0)
+
+	local old = player.Character
+	model:PivotTo(spawnCFrame())
+	player.Character = model
+	model.Parent = workspace
+	if old and old ~= model then
+		old:Destroy()
+	end
+
+	local humanoid = model:FindFirstChildOfClass("Humanoid") :: Humanoid
 	humanoid.Died:Connect(function()
 		CombatService.onDied(player)
+		task.delay(Config.RESPAWN_TIME, function()
+			if player.Character == model then
+				spawnPlayer(player)
+			end
+		end)
 	end)
+end
+
+-- Respawns a player right now (used when they switch characters).
+function PlayerService.respawn(player: Player)
+	task.spawn(spawnPlayer, player)
 end
 
 local function onPlayerAdded(player: Player)
@@ -150,14 +193,8 @@ local function onPlayerAdded(player: Player)
 	local st = State.create(player, colorId)
 	player:SetAttribute("ColorId", colorId)
 	player:SetAttribute("Kit", st.kit)
-	player:SetAttribute("Paint", Config.TANK_MAX)
 	makeLeaderstats(player)
-	player.CharacterAdded:Connect(function(character)
-		onCharacterAdded(player, character)
-	end)
-	if player.Character then
-		onCharacterAdded(player, player.Character)
-	end
+	spawnPlayer(player)
 end
 
 local function onPlayerRemoving(player: Player)
@@ -166,24 +203,29 @@ local function onPlayerRemoving(player: Player)
 		PaintService.clearColor(st.colorId)
 	end
 	State.remove(player)
+	descriptions[player] = nil
 end
 
-local function heal(humanoid: Humanoid, amount: number)
-	humanoid.Health = math.min(humanoid.Health + amount, humanoid.MaxHealth)
-end
-
-local function tickPlayer(player: Player, st: State.PlayerState, dt: number, now: number)
-	local _, humanoid, root = World.alive(player)
+local function tick(key: World.Combatant, st: State.PlayerState, dt: number, now: number)
+	local _, humanoid, root = World.alive(key)
 	if not humanoid or not root then
 		return
 	end
 
 	if root.Position.Y < Config.VOID_Y then
-		CombatService.kill(player, "void")
+		CombatService.kill(key, "void")
 		return
 	end
 	if Zones.contains(Zones.HAZARD, root.Position, 2.5) then
-		CombatService.kill(player, "rinse")
+		CombatService.kill(key, "rinse")
+		return
+	end
+
+	if not World.isPlayer(key) then
+		-- Training dummies heal back to full when left alone.
+		if now - st.lastDamagedAt > 3 then
+			humanoid.Health = humanoid.MaxHealth
+		end
 		return
 	end
 
@@ -194,28 +236,23 @@ local function tickPlayer(player: Player, st: State.PlayerState, dt: number, now
 	end
 	st.surface = if owner == nil then "none" elseif owner == st.colorId then "own" else "enemy"
 
-	local diving = st.form ~= "Normal"
-	if st.surface == "own" and diving then
-		st.paint += Config.TANK_REGEN_SWIM * dt
-		heal(humanoid, Config.SWIM_HEAL * dt)
-	else
-		st.paint += Config.TANK_REGEN * dt
+	if now - st.lastDamagedAt > Config.REGEN_DELAY then
+		CombatService.heal(key, Config.REGEN * dt)
 	end
-	st.paint = math.min(st.paint, Config.TANK_MAX)
-
-	if st.surface == "enemy" and not CombatService.isProtected(player) then
-		CombatService.drain(player, Config.ENEMY_PAINT_DAMAGE * dt, Config.ENEMY_PAINT_FLOOR)
-	elseif now - st.lastDamagedAt > Config.OUT_OF_COMBAT_DELAY then
-		heal(humanoid, Config.OUT_OF_COMBAT_REGEN * dt)
+	if st.surface == "own" and st.form ~= "Normal" then
+		CombatService.heal(key, Config.SWIM_HEAL * dt)
+	elseif st.surface == "enemy" and not CombatService.isProtected(key) then
+		CombatService.drain(key, Config.ENEMY_PAINT_DAMAGE * dt, Config.ENEMY_PAINT_FLOOR)
 	end
 
-	local shownPaint = math.floor(st.paint)
-	if player:GetAttribute("Paint") ~= shownPaint then
-		player:SetAttribute("Paint", shownPaint)
+	if st.awakenedUntil > 0 and now >= st.awakenedUntil then
+		st.awakenedUntil = 0
+		(key :: Player):SetAttribute("AwakenEnds", 0)
 	end
 end
 
 function PlayerService.init()
+	Players.CharacterAutoLoads = false
 	Players.PlayerAdded:Connect(onPlayerAdded)
 	Players.PlayerRemoving:Connect(onPlayerRemoving)
 	for _, player in Players:GetPlayers() do
@@ -229,8 +266,8 @@ function PlayerService.init()
 			return
 		end
 		local now = os.clock()
-		for player, st in State.all() do
-			tickPlayer(player, st, elapsed, now)
+		for key, st in State.all() do
+			tick(key, st, elapsed, now)
 		end
 		elapsed = 0
 	end)

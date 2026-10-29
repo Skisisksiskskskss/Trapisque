@@ -3,6 +3,7 @@
 		1 Tidal Slam   leap and crash down; the client reports the landing
 		2 Hook Line    hook an enemy and yank them in, or zip yourself to a surface
 		3 Drench Wave  cone of paint that soaks the ground and shoves enemies back
+		4 Roller Rush  charge that flattens and launches the first enemy hit
 ]]
 
 local Shared = game:GetService("ReplicatedStorage").Shared
@@ -21,6 +22,7 @@ local SKILLS = Characters.DEFS.Plaster.skills
 local SLAM = SKILLS[1].params
 local HOOK = SKILLS[2].params
 local WAVE = SKILLS[3].params
+local RUSH = SKILLS[4].params
 
 -- How long the server waits for the client to report a slam landing.
 local SLAM_WINDOW = 2.2
@@ -55,10 +57,10 @@ function Plaster.events.land(ctx: Common.Context, data: any)
 	for _, target in Hitbox.sphere(ctx.player, impact + Vector3.new(0, 2, 0), SLAM.radius) do
 		local offset = target.root.Position - impact
 		local falloff = 1 - 0.4 * math.clamp(offset.Magnitude / SLAM.radius, 0, 1)
-		CombatService.applyHit(ctx.player, target.player, {
+		CombatService.applyHit(ctx.player, target.key, {
 			damage = SLAM.damage * falloff,
 			knockback = Geometry.flat(offset) * SLAM.knockback * falloff + Vector3.new(0, SLAM.launchUp, 0),
-			ragdoll = 0.7,
+			ragdoll = 0.9,
 			guardBreak = true,
 			heavy = true,
 			position = target.root.Position,
@@ -90,7 +92,7 @@ Plaster[2] = function(ctx: Common.Context, payload: { [string]: any })
 			local toOwner = root.Position - target.root.Position
 			local distance = toOwner.Magnitude
 			local pull = Geometry.flat(toOwner) * math.clamp(distance * 2.6, 40, 135)
-			CombatService.applyHit(player, target.player, {
+			CombatService.applyHit(player, target.key, {
 				damage = HOOK.damage,
 				knockback = pull + Vector3.new(0, 16 + distance * 0.3, 0),
 				stun = HOOK.stun,
@@ -121,10 +123,10 @@ Plaster[3] = function(ctx: Common.Context, payload: { [string]: any })
 	Remotes.Fx:FireAllClients("Wave", origin, direction, WAVE.range, ctx.colorId)
 
 	for _, target in Hitbox.cone(ctx.player, origin, direction, WAVE.range, WAVE.halfAngle) do
-		CombatService.applyHit(ctx.player, target.player, {
+		CombatService.applyHit(ctx.player, target.key, {
 			damage = WAVE.damage,
 			knockback = direction * WAVE.knockback + Vector3.new(0, WAVE.up, 0),
-			ragdoll = 0.5,
+			ragdoll = 0.7,
 			heavy = true,
 			position = target.root.Position,
 		})
@@ -135,6 +137,24 @@ Plaster[3] = function(ctx: Common.Context, payload: { [string]: any })
 			PaintService.splatGround(ctx.colorId, origin + rowDirection * distance, 3.8, 9)
 		end
 	end
+end
+
+-- 4: Roller Rush -------------------------------------------------------------
+Plaster[4] = function(ctx: Common.Context, payload: { [string]: any })
+	local direction = Common.flatDirection(ctx, payload.dir)
+	Remotes.Fx:FireAllClients("Streak", ctx.character, direction, ctx.colorId)
+	Common.lane(ctx, RUSH.time, RUSH.radius, 4.6, function(target)
+		CombatService.applyHit(ctx.player, target.key, {
+			damage = RUSH.damage,
+			knockback = direction * RUSH.knockback + Vector3.new(0, RUSH.up, 0),
+			ragdoll = 1,
+			heavy = true,
+			position = target.root.Position,
+		})
+		Remotes.Fx:FireAllClients("Slam", target.root.Position - Vector3.new(0, 2.5, 0), 6, ctx.colorId)
+		-- Only the first enemy gets flattened.
+		return true
+	end)
 end
 
 return Plaster

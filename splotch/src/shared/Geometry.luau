@@ -91,4 +91,13 @@ function Geometry.ballisticPosition(origin: Vector3, velocity: Vector3, gravity:
 	return origin + velocity * t + Vector3.new(0, -0.5 * gravity * t * t, 0)
 end
 
+-- True when `point` is inside a box of `size` centred `reach` studs in front of `cframe`.
+function Geometry.inFrontBox(cframe: CFrame, reach: number, size: Vector3, point: Vector3, slack: number?): boolean
+	local localPoint = cframe:PointToObjectSpace(point) - Vector3.new(0, 0, -reach)
+	local extra = slack or 0
+	return math.abs(localPoint.X) <= size.X / 2 + extra
+		and math.abs(localPoint.Y) <= size.Y / 2 + extra
+		and math.abs(localPoint.Z) <= size.Z / 2 + extra
+end
+
 return Geometry

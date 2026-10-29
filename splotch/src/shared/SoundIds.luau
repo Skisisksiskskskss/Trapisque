@@ -30,4 +30,8 @@ return {
 	UiClick = "",
 	Warning = "",
 	Storm = "",
+	Swing = "",
+	SwingHeavy = "",
+	Evasive = "",
+	Awaken = "",
 }

@@ -3,6 +3,7 @@
 		1 Streak        dash that paints a lane and knocks people aside
 		2 Stencil Trap  sticky trap that roots, then pops the victim into the air
 		3 Burst Can     lobbed can that bursts into a big splat (rocket-jumpable)
+		4 Spray Volley  four quick paint shots that each stun briefly
 ]]
 
 local RunService = game:GetService("RunService")
@@ -23,10 +24,7 @@ local SKILLS = Characters.DEFS.Tagger.skills
 local STREAK = SKILLS[1].params
 local TRAP = SKILLS[2].params
 local CAN = SKILLS[3].params
-
--- The server sees the dasher's position slightly late, so keep checking a bit
--- past the dash itself.
-local STREAK_LAG_GRACE = 0.2
+local VOLLEY = SKILLS[4].params
 
 type Trap = { id: number, owner: Player, colorId: number, position: Vector3, expiresAt: number }
 
@@ -42,14 +40,14 @@ local function removeTrap(index: number)
 	end
 end
 
-local function springTrap(trap: Trap, victim: Player)
+local function springTrap(trap: Trap, victim: World.Combatant)
 	Remotes.Fx:FireAllClients("TrapSnap", trap.position, trap.colorId)
 	local landed = CombatService.applyHit(trap.owner, victim, {
 		damage = TRAP.damage,
 		stun = TRAP.stickTime + 0.15,
 		position = trap.position,
 	})
-	if not landed then
+	if landed ~= "hit" then
 		return
 	end
 	task.delay(TRAP.stickTime, function()
@@ -100,12 +98,12 @@ local function checkTraps()
 		if now >= trap.expiresAt then
 			removeTrap(index)
 		else
-			for _, target in World.livingPlayers(trap.owner) do
+			for _, target in World.livingTargets(trap.owner) do
 				local offset = target.root.Position - trap.position
 				local flatDistance = Vector3.new(offset.X, 0, offset.Z).Magnitude
 				if flatDistance <= TRAP.triggerRadius and offset.Y > -2 and offset.Y < 6 then
 					removeTrap(index)
-					springTrap(trap, target.player)
+					springTrap(trap, target.key)
 					break
 				end
 			end
@@ -125,52 +123,26 @@ end)
 -- 1: Streak ------------------------------------------------------------------
 Tagger[1] = function(ctx: Common.Context, payload: { [string]: any })
 	local direction = Common.flatDirection(ctx, payload.dir)
-	local player = ctx.player
-	local colorId = ctx.colorId
-	Remotes.Fx:FireAllClients("Streak", ctx.character, direction, colorId)
-
-	local alreadyHit: { [Player]: boolean } = {}
-	local started = os.clock()
-	local lastPaint = 0
-	task.spawn(function()
-		while os.clock() - started < STREAK.time + STREAK_LAG_GRACE do
-			local _, _, root = World.alive(player)
-			if not root then
-				return
-			end
-			local now = os.clock()
-			if now - lastPaint >= 0.05 then
-				lastPaint = now
-				PaintService.splatGround(colorId, root.Position, 3.4, 6)
-			end
-			for _, target in Hitbox.sphere(player, root.Position, STREAK.radius) do
-				if not alreadyHit[target.player] then
-					alreadyHit[target.player] = true
-					local offset = target.root.Position - root.Position
-					local side =
-						Geometry.flat(offset - direction * offset:Dot(direction), direction:Cross(Vector3.yAxis))
-					CombatService.applyHit(player, target.player, {
-						damage = STREAK.damage,
-						knockback = side * STREAK.knockback + direction * 18 + Vector3.new(0, 28, 0),
-						ragdoll = 0.35,
-						stun = 0.1,
-						position = target.root.Position,
-					})
-				end
-			end
-			RunService.Heartbeat:Wait()
-		end
+	Remotes.Fx:FireAllClients("Streak", ctx.character, direction, ctx.colorId)
+	Common.lane(ctx, STREAK.time, STREAK.radius, 3.4, function(target, root)
+		local offset = target.root.Position - root.Position
+		local side = Geometry.flat(offset - direction * offset:Dot(direction), direction:Cross(Vector3.yAxis))
+		CombatService.applyHit(ctx.player, target.key, {
+			damage = STREAK.damage,
+			knockback = side * STREAK.knockback + direction * 18 + Vector3.new(0, 28, 0),
+			ragdoll = 0.5,
+			position = target.root.Position,
+		})
+		return false
 	end)
 end
 
 -- 2: Stencil Trap ------------------------------------------------------------
 Tagger[2] = function(ctx: Common.Context, payload: { [string]: any })
-	local origin = Common.origin(ctx, payload.origin)
-	local direction = Common.direction(ctx, payload.direction)
 	ProjectileService.launch({
 		owner = ctx.player,
-		origin = origin,
-		velocity = direction * TRAP.speed,
+		origin = Common.origin(ctx, payload.origin),
+		velocity = Common.direction(ctx, payload.direction) * TRAP.speed,
 		gravity = TRAP.gravity,
 		lifetime = 2.5,
 		hitRadius = 0.8,
@@ -186,7 +158,7 @@ Tagger[2] = function(ctx: Common.Context, payload: { [string]: any })
 				colorId = ctx.colorId,
 				position = position,
 				expiresAt = 0,
-			}, target.player)
+			}, target.key)
 		end,
 		onHitSurface = function(result)
 			PaintService.splat(ctx.colorId, result.Position, result.Normal, 5, result.Instance :: BasePart)
@@ -203,10 +175,10 @@ local function burst(ctx: Common.Context, position: Vector3, normal: Vector3?)
 	for _, target in Hitbox.sphere(player, position, CAN.radius) do
 		local offset = target.root.Position - position
 		local falloff = 1 - 0.5 * math.clamp(offset.Magnitude / CAN.radius, 0, 1)
-		CombatService.applyHit(player, target.player, {
+		CombatService.applyHit(player, target.key, {
 			damage = CAN.damage * falloff,
 			knockback = Geometry.flat(offset) * CAN.knockback * falloff + Vector3.new(0, CAN.up, 0),
-			ragdoll = 0.6,
+			ragdoll = 0.8,
 			heavy = true,
 			position = target.root.Position,
 		})
@@ -220,12 +192,10 @@ local function burst(ctx: Common.Context, position: Vector3, normal: Vector3?)
 end
 
 Tagger[3] = function(ctx: Common.Context, payload: { [string]: any })
-	local origin = Common.origin(ctx, payload.origin)
-	local direction = Common.direction(ctx, payload.direction)
 	ProjectileService.launch({
 		owner = ctx.player,
-		origin = origin,
-		velocity = direction * CAN.speed,
+		origin = Common.origin(ctx, payload.origin),
+		velocity = Common.direction(ctx, payload.direction) * CAN.speed,
 		gravity = CAN.gravity,
 		lifetime = 2.5,
 		hitRadius = 0.9,
@@ -242,6 +212,50 @@ Tagger[3] = function(ctx: Common.Context, payload: { [string]: any })
 			burst(ctx, position, nil)
 		end,
 	})
+end
+
+-- 4: Spray Volley ------------------------------------------------------------
+Tagger[4] = function(ctx: Common.Context, payload: { [string]: any })
+	local direction = Common.direction(ctx, payload.direction)
+	for shot = 1, VOLLEY.shots do
+		task.delay((shot - 1) * VOLLEY.interval, function()
+			local _, _, root = World.alive(ctx.player)
+			if not root then
+				return
+			end
+			local spread = CFrame.Angles(0, math.rad((shot - (VOLLEY.shots + 1) / 2) * 2.5), 0)
+			local aim = spread:VectorToWorldSpace(direction)
+			ProjectileService.launch({
+				owner = ctx.player,
+				origin = root.Position + Vector3.new(0, 1.5, 0) + aim * 1.5,
+				velocity = aim * VOLLEY.speed,
+				gravity = VOLLEY.gravity,
+				lifetime = 0.8,
+				hitRadius = 0.6,
+				style = "Paint",
+				size = 0.7,
+				colorId = ctx.colorId,
+				onHitCharacter = function(target, position, velocity)
+					CombatService.applyHit(ctx.player, target.key, {
+						damage = VOLLEY.damage,
+						knockback = Geometry.flat(velocity) * 6,
+						stun = VOLLEY.stun,
+						position = position,
+					})
+					PaintService.splatGround(ctx.colorId, target.root.Position, VOLLEY.splat, 6)
+				end,
+				onHitSurface = function(result)
+					PaintService.splat(
+						ctx.colorId,
+						result.Position,
+						result.Normal,
+						VOLLEY.splat,
+						result.Instance :: BasePart
+					)
+				end,
+			})
+		end)
+	end
 end
 
 return Tagger

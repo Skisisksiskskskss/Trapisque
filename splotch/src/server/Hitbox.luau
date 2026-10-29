@@ -1,6 +1,7 @@
 --[[
-	Hitbox queries against living characters. Characters are treated as vertical
-	capsules around their root part, which is forgiving and cheap.
+	Hitbox queries against living combatants (players and dummies). Characters
+	are treated as vertical capsules around their root part, which is
+	forgiving and cheap.
 ]]
 
 local Shared = game:GetService("ReplicatedStorage").Shared
@@ -14,12 +15,12 @@ local CAPSULE_DOWN = 2.6 -- from root to feet
 local CAPSULE_UP = 1.8 -- from root to top of head
 local CAPSULE_RADIUS = 1.4
 
-export type Target = { player: Player, root: BasePart, humanoid: Humanoid }
+export type Target = World.Target
 
--- Living players (other than `owner`) whose capsule touches the sphere.
-function Hitbox.sphere(owner: Player?, center: Vector3, radius: number): { Target }
+-- Living combatants (other than `owner`) whose capsule touches the sphere.
+function Hitbox.sphere(owner: World.Combatant?, center: Vector3, radius: number): { Target }
 	local hits = {}
-	for _, target in World.livingPlayers(owner) do
+	for _, target in World.livingTargets(owner) do
 		local rootPos = target.root.Position
 		local closestY = math.clamp(center.Y, rootPos.Y - CAPSULE_DOWN, rootPos.Y + CAPSULE_UP)
 		local closest = Vector3.new(rootPos.X, closestY, rootPos.Z)
@@ -30,9 +31,9 @@ function Hitbox.sphere(owner: Player?, center: Vector3, radius: number): { Targe
 	return hits
 end
 
--- Living players inside a horizontal cone (half angle in degrees).
+-- Living combatants inside a horizontal cone (half angle in degrees).
 function Hitbox.cone(
-	owner: Player?,
+	owner: World.Combatant?,
 	origin: Vector3,
 	direction: Vector3,
 	range: number,
@@ -42,7 +43,7 @@ function Hitbox.cone(
 	local hits = {}
 	local flatDir = Geometry.flat(direction)
 	local cosLimit = math.cos(math.rad(halfAngle))
-	for _, target in World.livingPlayers(owner) do
+	for _, target in World.livingTargets(owner) do
 		local offset = target.root.Position - origin
 		local flatOffset = Vector3.new(offset.X, 0, offset.Z)
 		local distance = flatOffset.Magnitude
@@ -56,12 +57,12 @@ function Hitbox.cone(
 	return hits
 end
 
--- Earliest living player (not `owner`) touched by a moving sphere a -> b.
+-- Earliest living combatant (not `owner`) touched by a moving sphere a -> b.
 -- Returns the target and the 0..1 fraction along the segment.
-function Hitbox.sweep(owner: Player?, a: Vector3, b: Vector3, radius: number): (Target?, number)
+function Hitbox.sweep(owner: World.Combatant?, a: Vector3, b: Vector3, radius: number): (Target?, number)
 	local best: Target? = nil
 	local bestT = math.huge
-	for _, target in World.livingPlayers(owner) do
+	for _, target in World.livingTargets(owner) do
 		local rootPos = target.root.Position
 		local distance, t = Geometry.segmentSegment(
 			a,

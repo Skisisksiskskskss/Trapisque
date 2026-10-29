@@ -113,6 +113,54 @@ function PaintGrid.cellSlab(
 	return part.CFrame * localCFrame, Vector3.new(hiU - loU, thickness, hiV - loV)
 end
 
+-- True for cells touching an edge of their face (drawn square so paint never
+-- overhangs a part); interior cells can be drawn as round splats.
+function PaintGrid.isEdgeCell(part: PartLike, key: number, cellSize: number): boolean
+	local _, face, u, v = PaintGrid.decode(key)
+	local _, sizeU, sizeV = faceDims(part.Size, FACES[face])
+	return u == 0 or v == 0 or u >= cellCount(sizeU, cellSize) - 1 or v >= cellCount(sizeV, cellSize) - 1
+end
+
+-- Distance from a cell's centre to the nearest edge of its face.
+function PaintGrid.cellInset(part: PartLike, key: number, cellSize: number): number
+	local _, face, u, v = PaintGrid.decode(key)
+	local _, sizeU, sizeV = faceDims(part.Size, FACES[face])
+	local _, _, cu = cellSpan(u, sizeU, cellSize)
+	local _, _, cv = cellSpan(v, sizeV, cellSize)
+	return math.min(sizeU / 2 - math.abs(cu), sizeV / 2 - math.abs(cv))
+end
+
+local SPLAT_SCALE = 1.55 -- round splat diameter, in cells
+local SPLAT_ROTATION = CFrame.Angles(0, 0, math.rad(90)) -- cylinder axis onto the normal
+
+--[[
+	How a painted cell is drawn: border cells as their clipped square slab,
+	interior cells as an oversized round splat (cylinder) so neighbours merge
+	into blobs. A per-cell hash varies each splat's size, nudge and height so
+	they look hand-thrown and overlapping splats never z-fight.
+	Returns the CFrame, size and whether it is round.
+]]
+function PaintGrid.splatGeometry(
+	part: PartLike,
+	key: number,
+	cellSize: number,
+	lift: number,
+	thickness: number
+): (CFrame, Vector3, boolean)
+	local cframe, size = PaintGrid.cellSlab(part, key, cellSize, lift, thickness)
+	if PaintGrid.isEdgeCell(part, key, cellSize) then
+		return cframe, size, false
+	end
+	local hash = key % 9973
+	local nudgeU = ((hash % 7) / 6 - 0.5) * 0.3
+	local nudgeV = ((hash // 7 % 7) / 6 - 0.5) * 0.3
+	local raise = (hash // 49 % 6) * 0.012
+	local wobble = 1 + ((hash // 294 % 5) - 2) * 0.06
+	local inset = PaintGrid.cellInset(part, key, cellSize) - math.max(math.abs(nudgeU), math.abs(nudgeV))
+	local diameter = math.min(cellSize * SPLAT_SCALE * wobble, inset * 2)
+	return cframe * CFrame.new(nudgeU, raise, nudgeV) * SPLAT_ROTATION, Vector3.new(size.Y, diameter, diameter), true
+end
+
 --[[
 	Calls visit(key, worldCenter, worldNormal) for every cell on any face of
 	`part` within `radius` of `worldPoint`. Faces the point is behind (inside the
