@@ -1,0 +1,55 @@
+name: Splotch
+
+on:
+  push:
+    paths:
+      - "splotch/**"
+      - ".github/workflows/splotch.yml"
+  pull_request:
+    paths:
+      - "splotch/**"
+      - ".github/workflows/splotch.yml"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: splotch
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install toolchain
+        run: |
+          tools/install-tools.sh .tools/bin
+          echo "$PWD/.tools/bin" >> "$GITHUB_PATH"
+
+      - name: Format
+        run: stylua --check src tests tools
+
+      - name: Lint
+        run: selene src tests tools
+
+      - name: Unit tests
+        run: lune run tests/run.luau
+
+      - name: Roblox API check
+        run: |
+          tools/fetch_api_dump.sh build/api-dump.json
+          python3 tools/check_api.py build/api-dump.json src
+
+      - name: Map builds offline
+        run: lune run tools/dump-map.luau > build/map.json
+
+      - name: Animations and paint render offline
+        run: |
+          lune run tools/dump-poses.luau > build/poses.json
+          lune run tools/dump-paint.luau > build/paint.json
+
+      - name: Build place
+        run: rojo build -o build/Splotch.rbxl
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Splotch.rbxl
+          path: splotch/build/Splotch.rbxl
