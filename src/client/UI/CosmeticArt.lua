@@ -1,0 +1,775 @@
+--[[
+	CosmeticArt
+	Draws the cosmetics in Shared/Meta/Cosmetics: dice, trail particles, titles, emote
+	bubbles, and previews of everything (a finish shows the piece you play, made of it:
+	PieceArt). Dice and trail particles are illustrations from the art sheets (art/dice.py,
+	art/trails.py); without the art they're drawn from shapes instead.
+]]
+
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Cosmetics = require(ReplicatedStorage.Shared.Meta.Cosmetics)
+local Util = require(script.Parent.Util)
+local Theme = require(script.Parent.Theme)
+local Shapes = require(script.Parent.Shapes)
+local Icons = require(script.Parent.Icons)
+local IconData = require(script.Parent.IconData)
+local PawnPatterns = require(script.Parent.PawnPatterns) -- (the dice pips live here)
+local PieceArt = require(script.Parent.PieceArt)
+local Art = require(script.Parent.Art)
+local ArtAtlas = require(script.Parent.ArtAtlas)
+
+local CosmeticArt = {}
+
+local function hex(s: string?, fallback: Color3): Color3
+	if type(s) == "string" and string.sub(s, 1, 1) == "#" then
+		return Color3.fromHex(s)
+	end
+	return fallback
+end
+
+local RAINBOW = Util.seq({
+	Color3.fromHex("FF5E5E"),
+	Color3.fromHex("FFB13B"),
+	Color3.fromHex("FFE45C"),
+	Color3.fromHex("5EE07A"),
+	Color3.fromHex("4FC3FF"),
+	Color3.fromHex("8E7CFF"),
+	Color3.fromHex("FF6FD8"),
+})
+CosmeticArt.RAINBOW = RAINBOW
+
+-- Keeps a UIGradient slowly rotating (used for "spin" skins and rainbow titles).
+local spinning = {}
+RunService.RenderStepped:Connect(function(dt)
+	for g, speed in spinning do
+		if g.Parent == nil then
+			spinning[g] = nil
+		else
+			g.Rotation = (g.Rotation + dt * speed) % 360
+		end
+	end
+end)
+function CosmeticArt.spin(g: UIGradient, speed: number?)
+	spinning[g] = speed or 60
+end
+
+function CosmeticArt.rarityColor(rarity: string): Color3
+	local r = Cosmetics.rarityById[rarity]
+	return if r then Color3.fromHex(r.color) else Theme.C.inkSoft
+end
+
+---------------------------------------------------------------------------
+-- Characters
+---------------------------------------------------------------------------
+
+function CosmeticArt.characterBadge(parent: Instance, character: string, props: { [string]: any }?): Frame
+	local color = Theme.Character[character] or Theme.C.inkSoft
+	return Icons.medallion(parent, character, color, props)
+end
+
+--[[
+	The emblem to draw for `character` as someone wears it: "mage", or "mage:ghost".
+	`emblems` is their equipped emblems ([character] = emblem id), from a look or a profile.
+]]
+function CosmeticArt.emblemId(character: string, emblems: { [string]: string }?): string
+	local def = Cosmetics.get(Cosmetics.emblemOf(emblems, character))
+	return if def and def.look and def.look.emblem then def.look.emblem else character
+end
+
+---------------------------------------------------------------------------
+-- Dice
+---------------------------------------------------------------------------
+
+function CosmeticArt.dieLook(skinId: string?)
+	local def = Cosmetics.get(skinId or "") or Cosmetics.get(Cosmetics.defaults.dice)
+	local look = def.look
+	return {
+		face = hex(look.face, Theme.C.parchment),
+		face2 = hex(look.face2, Theme.C.parchmentMid),
+		pip = hex(look.pip, Theme.C.ink),
+		edge = hex(look.edge, Theme.C.inkSoft),
+		spin = look.spin == true,
+		gradient = look.gradient == true,
+	}
+end
+
+-- The skin's art: "dice/<this>" and "dice/<this>_pip" (art/dice.py), from its id.
+function CosmeticArt.diceArt(skinId: string?): string
+	local def = Cosmetics.get(skinId or "")
+	local id = if def and def.category == "dice" then def.id else Cosmetics.defaults.dice
+	return (string.gsub(id, "^dice_", ""))
+end
+
+--[[
+	A die face showing `value` (1-6). Returns root and a setter:
+		local die, setValue = CosmeticArt.die(parent, "dice_gold", 4)
+	The illustrated die is its body and one pip drawn wherever the value has a spot (the
+	face is x 0.08 to 0.92, y 0.042 to 0.882 of it, as the drawn one's).
+]]
+function CosmeticArt.die(parent: Instance?, skinId: string?, value: number, props: { [string]: any }?): (Frame, (number) -> ())
+	local look = CosmeticArt.dieLook(skinId)
+	local root = Util.frame(nil, {
+		Name = "Die",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		SizeConstraint = Enum.SizeConstraint.RelativeYY,
+	})
+	if props then
+		for k, v in props do
+			(root :: any)[k] = v
+		end
+	end
+	local art = "dice/" .. CosmeticArt.diceArt(skinId)
+	if not Art.has(art) then
+		-- (the later skins are on a sheet of their own)
+		art = "dice_more/" .. CosmeticArt.diceArt(skinId)
+	end
+	if Art.has(art) and Art.has(art .. "_pip") then
+		Art.image(root, art, { Name = "Body", ZIndex = root.ZIndex })
+		local face = Util.frame(root, {
+			Name = "Pips",
+			Position = UDim2.fromScale(0.08, 0.042),
+			Size = UDim2.fromScale(0.84, 0.84),
+			ZIndex = root.ZIndex + 1,
+		})
+		local spots = {}
+		for i = 1, 6 do
+			spots[i] = Art.image(face, art .. "_pip", {
+				Name = "Pip" .. i,
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				Size = UDim2.fromScale(0.19, 0.19),
+				ZIndex = root.ZIndex + 1,
+				Visible = false,
+			}) :: Frame
+		end
+		local function setArtValue(v: number)
+			local places = PawnPatterns.pips[math.clamp(math.floor(v), 1, 6)]
+			for i, pip in spots do
+				local at = places[i]
+				pip.Visible = at ~= nil
+				if at then
+					pip.Position = UDim2.fromScale(at[1], at[2])
+				end
+			end
+		end
+		setArtValue(value)
+		root.Parent = parent
+		return root, setArtValue
+	end
+	-- side peeking out below the face and its edge stroke (0.84 + 2 x 0.05 x 0.84 = 0.924)
+	Shapes.rect(root, 0.5, 0.538, 0.924, 0.924, Util.shade(look.face2, -0.35), { r = 0.24, name = "Side" })
+	local face = Shapes.rect(root, 0.5, 0.462, 0.84, 0.84, look.face, { r = 0.22, name = "Face" })
+	if look.gradient then
+		local g = Util.grad(face, { look.face, look.face2 }, 70)
+		if look.spin then
+			CosmeticArt.spin(g, 70)
+		end
+	end
+	Util.scaledStroke(face, look.edge, 0.05, 2)
+	local pips = Shapes.canvas(face, { Name = "Pips", ZIndex = 3 })
+
+	local function setValue(v: number)
+		Util.clear(pips)
+		pips:SetAttribute("Z", 0)
+		for _, p in PawnPatterns.pips[math.clamp(math.floor(v), 1, 6)] do
+			Shapes.circle(pips, p[1], p[2], 0.19, look.pip)
+		end
+	end
+	setValue(value)
+	root.Parent = parent
+	return root, setValue
+end
+
+---------------------------------------------------------------------------
+-- Trails (particles behind a hopping pawn)
+---------------------------------------------------------------------------
+
+local function particle(layer: Instance, pos: Vector2, size: number, draw: (Frame) -> (), life: number, drift: Vector2, spin: number?)
+	local f = Util.frame(layer, {
+		Name = "Particle",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromOffset(pos.X, pos.Y),
+		Size = UDim2.fromOffset(size, size),
+		SizeConstraint = Enum.SizeConstraint.RelativeXY,
+		ZIndex = 30,
+	})
+	local c = Shapes.canvas(f)
+	draw(c)
+	Util.tween(f, life, {
+		Position = UDim2.fromOffset(pos.X + drift.X, pos.Y + drift.Y),
+		Rotation = spin or 0,
+		Size = UDim2.fromOffset(size * 0.4, size * 0.4),
+	}, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	for _, child in c:GetChildren() do
+		if child:IsA("Frame") then
+			Util.tween(child, life, { BackgroundTransparency = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+			local st = child:FindFirstChildOfClass("UIStroke")
+			if st then
+				Util.tween(st, life, { Transparency = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+			end
+		end
+	end
+	task.delay(life, function()
+		f:Destroy()
+	end)
+end
+
+--[[
+	How each kind of trail's particles go: how many a hop, how big (in tiles), how long
+	they last, and how they move:
+		rise    float up and away        fall    flutter down
+		drop    tumble out and land      stay    left on the ground where you stepped
+		wander  drift about, lit up      swim    dart off to one side
+		burst   flash out round you
+	spin: how far they turn (degrees), sway: they rock as they go.
+]]
+local MOTION = {
+	puff = { n = 3, size = 0.36, life = 0.8, move = "rise", slow = true },
+	bubble = { n = 4, size = 0.24, life = 0.9, move = "rise" },
+	leaf = { n = 4, size = 0.26, life = 1.0, move = "fall", spin = 220 },
+	sparkle = { n = 4, size = 0.26, life = 0.7, move = "rise", spin = 90 },
+	ember = { n = 4, size = 0.22, life = 0.8, move = "rise" },
+	heart = { n = 4, size = 0.24, life = 0.9, move = "rise", sway = true },
+	star = { n = 4, size = 0.26, life = 0.8, move = "rise", spin = 120 },
+	rainbow = { n = 3, size = 0.32, life = 0.9, move = "rise" },
+	shell = { n = 3, size = 0.26, life = 1.0, move = "drop", spin = 60 },
+	confetti = { n = 6, size = 0.2, life = 1.0, move = "fall", spin = 300 },
+	feather = { n = 3, size = 0.32, life = 1.2, move = "fall", spin = 120, sway = true },
+	snow = { n = 4, size = 0.24, life = 1.1, move = "fall", spin = 90 },
+	blossom = { n = 4, size = 0.26, life = 1.1, move = "fall", spin = 160, sway = true },
+	ink = { n = 3, size = 0.28, life = 0.9, move = "drop" },
+	paw = { n = 1, size = 0.38, life = 1.8, move = "stay" },
+	firefly = { n = 4, size = 0.26, life = 1.3, move = "wander" },
+	note = { n = 3, size = 0.3, life = 1.0, move = "rise", sway = true },
+	wisp = { n = 3, size = 0.32, life = 1.1, move = "rise", sway = true },
+	coin = { n = 3, size = 0.28, life = 0.9, move = "drop", spin = 40 },
+	gem = { n = 3, size = 0.26, life = 0.9, move = "rise", spin = 60 },
+	bolt = { n = 3, size = 0.32, life = 0.5, move = "burst" },
+	fishy = { n = 3, size = 0.32, life = 1.2, move = "swim" },
+}
+CosmeticArt.TrailMotion = MOTION
+
+-- The illustrated particles of each kind: trails/<kind>_1, _2... (art/trails.py)
+local variantCache: { [string]: { string } } = {}
+function CosmeticArt.trailSprites(kind: string): { string }
+	local list = variantCache[kind]
+	if not list then
+		list = {}
+		local n = 1
+		while ArtAtlas.sprites["trails/" .. kind .. "_" .. n] do
+			table.insert(list, "trails/" .. kind .. "_" .. n)
+			n += 1
+		end
+		variantCache[kind] = list
+	end
+	if #list == 0 or not Art.has(list[1]) then
+		return {}
+	end
+	return list
+end
+
+-- The paw prints go left, right, left...
+local pawSide = 1
+
+-- One illustrated particle: sprite `name` `size` pixels across at `pos`, moving as `m` says.
+local function spriteParticle(layer: Instance, name: string, pos: Vector2, size: number, unit: number, m)
+	local life = m.life * (0.8 + math.random() * 0.4)
+	local flip = false
+	local drift
+	if m.move == "fall" then
+		drift = Vector2.new((math.random() - 0.5) * unit * 0.9, unit * (0.25 + math.random() * 0.35))
+	elseif m.move == "drop" then
+		drift = Vector2.new((math.random() - 0.5) * unit * 0.9, unit * (0.05 + math.random() * 0.15))
+	elseif m.move == "stay" then
+		drift = Vector2.zero
+	elseif m.move == "wander" then
+		drift = Vector2.new((math.random() - 0.5) * unit * 1.2, -unit * (0.1 + math.random() * 0.5))
+	elseif m.move == "swim" then
+		local dir = if math.random() < 0.5 then -1 else 1
+		flip = dir < 0
+		drift = Vector2.new(dir * unit * (0.8 + math.random() * 0.6), (math.random() - 0.5) * unit * 0.3)
+	elseif m.move == "burst" then
+		drift = Vector2.zero
+	else
+		drift = Vector2.new((math.random() - 0.5) * unit * 0.5, -unit * (0.2 + math.random() * 0.4))
+	end
+	if m.slow then
+		drift *= 0.5
+	end
+	local img = Art.label(layer, name, pos, size, flip, { ZIndex = 30 })
+	if not img then
+		return
+	end
+	local label = img :: ImageLabel
+	label.Rotation = if m.move == "stay" then 0 else (math.random() - 0.5) * 40
+	local turn = label.Rotation + (if m.spin then (math.random() - 0.5) * 2 * m.spin else 0)
+	if m.sway then
+		turn = label.Rotation + (if math.random() < 0.5 then -25 else 25)
+	end
+	local start = label.Position
+	local endSize = if m.move == "stay" or m.move == "drop" then label.Size else UDim2.fromOffset(label.Size.X.Offset * 0.55, label.Size.Y.Offset * 0.55)
+	if m.move == "burst" then
+		local s = Util.scaler(label)
+		s.Scale = 0.3
+		Util.tween(s, life * 0.4, { Scale = 1.15 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+	end
+	Util.tween(label, life, {
+		Position = start + UDim2.fromOffset(drift.X, drift.Y),
+		Rotation = turn,
+		Size = endSize,
+	}, if m.move == "drop" then Enum.EasingStyle.Bounce else Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	-- fade toward the end (the ones left on the ground hold a while first)
+	local hold = if m.move == "stay" or m.move == "drop" then life * 0.55 else life * 0.25
+	Util.tween(label, life - hold, { ImageTransparency = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In, hold)
+	task.delay(life + 0.05, function()
+		label:Destroy()
+	end)
+end
+
+-- The plainer particles a kind falls back to without its art (the trails drawn in code).
+local FALLBACK = {
+	shell = "puff",
+	confetti = "ember",
+	feather = "leaf",
+	snow = "sparkle",
+	blossom = "heart",
+	ink = "puff",
+	paw = "puff",
+	firefly = "ember",
+	note = "star",
+	wisp = "bubble",
+	coin = "ember",
+	gem = "star",
+	bolt = "sparkle",
+	fishy = "leaf",
+}
+
+--[[
+	Spawns a puff of the trail's particles at `pos` (pixels in `layer`).
+	`unit` is roughly a tile's size in pixels.
+]]
+function CosmeticArt.trailBurst(layer: Instance, trailId: string?, pos: Vector2, unit: number)
+	local def = Cosmetics.get(trailId or "")
+	if not def or def.look.kind == "none" then
+		return
+	end
+	local look = def.look
+	local kindArt = look.kind
+	local sprites = CosmeticArt.trailSprites(kindArt)
+	local m = MOTION[kindArt]
+	if m and #sprites > 0 then
+		for i = 1, m.n do
+			local name = sprites[((i - 1) % #sprites) + 1]
+			if #sprites > 1 and math.random() < 0.35 then
+				name = sprites[math.random(1, #sprites)]
+			end
+			local p = pos
+			if m.move == "stay" then
+				-- a print where the foot came down, a little to one side of the last
+				pawSide = -pawSide
+				p = pos + Vector2.new(pawSide * unit * 0.12, unit * 0.08)
+			else
+				local a = math.random() * math.pi * 2
+				p = pos + Vector2.new(math.cos(a), math.sin(a) * 0.5) * unit * 0.25 * math.random()
+			end
+			spriteParticle(layer, name, p, unit * m.size * (0.8 + math.random() * 0.45), unit, m)
+		end
+		return
+	end
+	local color = hex(look.color, Theme.C.white)
+	local color2 = hex(look.color2, color)
+	local kind = FALLBACK[kindArt] or kindArt
+	local n = if kind == "puff" then 3 else 4
+	for i = 1, n do
+		local a = math.random() * math.pi * 2
+		local spread = unit * 0.25
+		local p = pos + Vector2.new(math.cos(a), math.sin(a) * 0.5) * spread * math.random()
+		local drift = Vector2.new((math.random() - 0.5) * unit * 0.5, -unit * (0.2 + math.random() * 0.4))
+		local size = unit * (0.16 + math.random() * 0.12)
+		local life = 0.6 + math.random() * 0.4
+		local pick = if i % 2 == 0 then color2 else color
+		if kind == "puff" then
+			particle(layer, p, size * 1.3, function(c)
+				Shapes.circle(c, 0.5, 0.5, 1, pick, { t = 0.25 })
+			end, life, drift * 0.5)
+		elseif kind == "bubble" then
+			particle(layer, p, size, function(c)
+				Shapes.ring(c, 0.5, 0.5, 1, 0.14, pick, { px = size })
+			end, life, drift)
+		elseif kind == "leaf" then
+			particle(layer, p, size, function(c)
+				Icons.draw(c, { { "drop", 0.5, 0.55, 0.3, dir = 45 } }, { ink = pick })
+			end, life, drift + Vector2.new(0, unit * 0.6), (math.random() - 0.5) * 220)
+		elseif kind == "sparkle" then
+			particle(layer, p, size, function(c)
+				Shapes.sparkle(c, 0.5, 0.5, 1, pick)
+			end, life, drift, 90)
+		elseif kind == "ember" then
+			particle(layer, p, size * 0.6, function(c)
+				Shapes.circle(c, 0.5, 0.5, 1, pick)
+			end, life, drift * 1.4)
+		elseif kind == "heart" then
+			particle(layer, p, size, function(c)
+				Icons.draw(c, IconData.heart, { ink = pick })
+			end, life, drift)
+		elseif kind == "star" then
+			particle(layer, p, size, function(c)
+				Shapes.star(c, 0.5, 0.5, 1, pick)
+			end, life, drift, 120)
+		elseif kind == "rainbow" then
+			local hue = ((os.clock() * 0.5) + i / n) % 1
+			particle(layer, p, size, function(c)
+				Shapes.circle(c, 0.5, 0.5, 1, Color3.fromHSV(hue, 0.6, 1))
+			end, life, drift)
+		end
+	end
+end
+
+---------------------------------------------------------------------------
+-- Titles & emotes
+---------------------------------------------------------------------------
+
+-- Titles are plates of something (Cosmetics look.plate): wood, metal, parchment, a
+-- ribbon, glowing fog, bone... each in its own shape and lettering, lit from above and
+-- outlined like the art, with the title's badge (look.icon, art/ui.py) or a
+-- character's emblem (look.emblem) at its left end.
+local PLATES = {
+	scroll = { face = "#F3E2B8", text = "#4A3424", line = "#7A5A36", shape = "scroll" },
+	map = { face = "#E9D29C", text = "#6B2A1C", line = "#7A5A36", shape = "scroll" },
+	plank = { face = "#A8703C", text = "#FFF3DC", line = "#4A2E16", shape = "plank" },
+	driftwood = { face = "#9C8F7E", text = "#FFFFFF", line = "#4A4238", shape = "plank" },
+	mahogany = { face = "#7A3324", text = "#FFD9B0", line = "#2E120A", shape = "plank" },
+	iron = { face = "#4F5563", text = "#EEF1F5", line = "#1E2128", shape = "plaque" },
+	brass = { face = "#D9A441", text = "#3B2A10", line = "#6E4F12", shape = "plaque" },
+	bronze = { face = "#C47A44", text = "#FFF1E0", line = "#5E3315", shape = "plaque" },
+	silver = { face = "#C9D3E6", text = "#26324A", line = "#56627A", shape = "plaque" },
+	verdigris = { face = "#5E9C8A", text = "#F0FFF8", line = "#21463C", shape = "plaque" },
+	gold = { face = "#F2C230", text = "#5A2A08", line = "#8A5A0A", shape = "ribbon" },
+	ribbon = { face = "#C8443A", text = "#FFFFFF", line = "#5E1712", shape = "ribbon" },
+	tide = { face = "#2F8FD0", text = "#FFFFFF", line = "#0E3554", shape = "ribbon" },
+	ghost = { face = "#1E3A34", text = "#BFFFE4", line = "#57E0A8", shape = "ghost" },
+	glass = { face = "#2F7A45", text = "#E9FFD6", line = "#123A1E", shape = "glass" },
+	coral = { face = "#F49AB8", text = "#5A1830", line = "#8E3A5A", shape = "pill" },
+	ice = { face = "#CFEFFF", text = "#1D4B73", line = "#3F8FC0", shape = "ice" },
+	flame = { face = "#FF8A1C", text = "#FFE45C", line = "#3A0A04", shape = "flame" },
+	bone = { face = "#EDE6D3", text = "#2A2620", line = "#6F6656", shape = "bone" },
+	royal = { face = "#5A189A", text = "#FFD60A", line = "#2A0A4A", shape = "royal" },
+	navy = { face = "#24395E", text = "#FFE7A0", line = "#0C1628", shape = "royal" },
+	sea = { face = "#1F6FA8", text = "#E6F7FF", line = "#0E3554", shape = "wave" },
+}
+CosmeticArt.PLATES = PLATES
+local DISPLAY = { ribbon = true, royal = true, flame = true, ghost = true, bone = true, pill = true }
+local CORNER = { scroll = 3, plank = 3, plaque = 5, ribbon = 3, ghost = 10, glass = 8, pill = 0.5, ice = 1, flame = 7, bone = 0.5, royal = 6, wave = 6 }
+
+local function bit(parent: Instance, props: { [string]: any }, corner: number?, stroke: Color3?, width: number?): Frame
+	local f = Util.new("Frame", { BorderSizePixel = 0, ZIndex = 2, Parent = parent })
+	for k, v in props do
+		(f :: any)[k] = v
+	end
+	if corner then
+		Util.corner(f, corner)
+	end
+	if stroke then
+		Util.new("UIStroke", { Color = stroke, Thickness = width or 1.5, Parent = f })
+	end
+	return f
+end
+
+-- what each shape adds to the plate
+local function decorate(plate: Frame, shape: string, face: Color3, line: Color3)
+	if shape == "plank" then
+		for _, y in { 0.34, 0.68 } do
+			bit(plate, { Size = UDim2.new(1, -10, 0, 1), Position = UDim2.new(0, 5, y, 0), BackgroundColor3 = Util.shade(face, -0.4), BackgroundTransparency = 0.55 })
+		end
+	elseif shape == "plaque" then
+		for _, c in { { 0, 0 }, { 1, 0 }, { 0, 1 }, { 1, 1 } } do
+			bit(plate, {
+				AnchorPoint = Vector2.new(c[1], c[2]),
+				Position = UDim2.new(c[1], if c[1] == 0 then 4 else -4, c[2], if c[2] == 0 then 4 else -4),
+				Size = UDim2.fromOffset(4, 4),
+				BackgroundColor3 = Util.shade(face, 0.45),
+				ZIndex = 5,
+			}, 0.5, line, 1)
+		end
+	elseif shape == "ribbon" then
+		-- the ends folded back, peeking out below either side
+		for _, side in { 0, 1 } do
+			bit(plate, {
+				AnchorPoint = Vector2.new(1 - side, 0),
+				Position = UDim2.new(side, 0, 0.32, 0),
+				Size = UDim2.new(0, 10, 0.68, 2),
+				BackgroundColor3 = Util.shade(face, -0.3),
+				ZIndex = 0,
+			}, nil, line, 2)
+		end
+	elseif shape == "scroll" then
+		-- rolled up at either end
+		for _, side in { 0, 1 } do
+			bit(plate, {
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				Position = UDim2.fromScale(side, 0.5),
+				Size = UDim2.new(0, 7, 1, 6),
+				BackgroundColor3 = Util.shade(face, -0.12),
+				ZIndex = 5,
+			}, 3, line, 1.5)
+		end
+	elseif shape == "bone" then
+		-- the knobs of a bone at either end
+		for _, side in { 0, 1 } do
+			for _, y in { 0.2, 0.8 } do
+				bit(plate, {
+					AnchorPoint = Vector2.new(0.5, 0.5),
+					Position = UDim2.new(side, if side == 0 then 2 else -2, y, 0),
+					Size = UDim2.fromScale(0.62, 0.62),
+					SizeConstraint = Enum.SizeConstraint.RelativeYY,
+					BackgroundColor3 = face,
+					ZIndex = 0,
+				}, 0.5, line, 2)
+			end
+		end
+	elseif shape == "glass" then
+		bit(plate, { Size = UDim2.new(1, -14, 0.28, 0), Position = UDim2.fromOffset(7, 3), BackgroundColor3 = Color3.new(1, 1, 1), BackgroundTransparency = 0.72 }, 4)
+	elseif shape == "ice" then
+		for i, x in { 0.82, 0.88 } do
+			bit(plate, {
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				Position = UDim2.fromScale(x, 0.5),
+				Size = UDim2.new(0, if i == 1 then 3 else 2, 1.3, 0),
+				Rotation = 28,
+				BackgroundColor3 = Color3.new(1, 1, 1),
+				BackgroundTransparency = 0.35,
+			})
+		end
+	elseif shape == "royal" then
+		bit(plate, { Size = UDim2.new(1, -6, 1, -6), Position = UDim2.fromOffset(3, 3), BackgroundTransparency = 1 }, 4, hex("#F2C230", face), 1.4)
+	elseif shape == "wave" then
+		for i, y in { 0.74, 0.86 } do
+			bit(plate, { Size = UDim2.new(1, -16, 0, 1), Position = UDim2.new(0, 8, y, 0), BackgroundColor3 = Color3.new(1, 1, 1), BackgroundTransparency = 0.45 + i * 0.15 })
+		end
+	end
+end
+
+-- With `textSize` the plate hugs its words (left-aligned in its parent); without it
+-- the plate fills the parent and the words scale to fit.
+function CosmeticArt.title(parent: Instance, titleId: string?, props: { [string]: any }?, textSize: number?): Frame?
+	local def = Cosmetics.get(titleId or "")
+	if not def or def.look.text == "" then
+		return nil
+	end
+	local look = def.look
+	local P = PLATES[look.plate or ""] or PLATES.scroll
+	local face, ink, line = hex(P.face, Theme.C.panel), hex(P.text, Theme.C.text), hex(P.line, Theme.C.ink)
+	local shape = P.shape
+	local plate = Util.new("Frame", {
+		Name = "Title",
+		BorderSizePixel = 0,
+		Size = UDim2.fromScale(1, 1),
+	})
+	Util.corner(plate, CORNER[shape] or 4)
+	if shape == "flame" then
+		-- embers below, smouldering dark red above
+		plate.BackgroundColor3 = face
+		Util.grad(plate, { Color3.fromRGB(120, 28, 18), Color3.fromRGB(190, 60, 30), Color3.new(1, 1, 1) }, 90)
+		Util.new("UIStroke", { Color = hex("#FFB000", face), Thickness = 2, Parent = plate })
+	else
+		plate.BackgroundColor3 = Util.shade(face, 0.14)
+		Util.grad(plate, { Color3.new(1, 1, 1), Color3.fromRGB(205, 205, 205) }, 90)
+		Util.new("UIStroke", {
+			Color = line,
+			Thickness = if shape == "ghost" then 2.5 else 2,
+			Transparency = if shape == "ghost" then 0.1 else 0,
+			Parent = plate,
+		})
+		if shape == "ghost" then
+			plate.BackgroundTransparency = 0.12
+		end
+	end
+	decorate(plate, shape, face, line)
+
+	-- the badge at its left end
+	local badge: GuiObject? = nil
+	local badgeProps = {
+		Name = "Badge",
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.new(0, -3, 0.5, 0),
+		Size = UDim2.fromScale(1.35, 1.35),
+		SizeConstraint = Enum.SizeConstraint.RelativeYY,
+		ZIndex = 6,
+	}
+	if look.emblem then
+		badge = Icons.emblem(plate, look.emblem, badgeProps)
+	elseif look.icon and Art.has("ui/" .. look.icon) then
+		badge = Art.image(plate, "ui/" .. look.icon, badgeProps)
+	end
+
+	-- the words sit in a holder of their own, so their padding moves nothing else
+	local words = Util.frame(plate, { Name = "Words", ZIndex = 4 })
+	local label = Util.new("TextLabel", {
+		Name = "Text",
+		BackgroundTransparency = 1,
+		Text = look.text,
+		TextColor3 = if look.rainbow then Theme.C.white else ink,
+		FontFace = if DISPLAY[shape] then Theme.Font.Display else Theme.Font.Chunky,
+		ZIndex = 4,
+		Parent = words,
+	})
+	-- light lettering on a dark plate keeps the plate's outline
+	local r, g, b = ink.R, ink.G, ink.B
+	if r * 0.3 + g * 0.59 + b * 0.11 > 0.6 or look.rainbow then
+		Util.new("UIStroke", { Color = line, Thickness = 1.2, ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual, Parent = label })
+	end
+	local endPad = if shape == "scroll" or shape == "bone" then 10 else 8
+	if textSize then
+		plate.AutomaticSize = Enum.AutomaticSize.X
+		plate.Size = UDim2.fromScale(0, 1)
+		words.AutomaticSize = Enum.AutomaticSize.X
+		words.Size = UDim2.fromScale(0, 1)
+		Util.pad(words, if badge then math.floor(textSize * 2.1 + 4) else endPad, 0, endPad, 0)
+		label.AutomaticSize = Enum.AutomaticSize.X
+		label.Size = UDim2.fromScale(0, 1)
+		label.TextSize = textSize
+	else
+		-- one size for every title; only long ones shrink to fit (beside the badge,
+		-- which is as wide as the plate is tall)
+		label.TextScaled = true
+		Util.new("UITextSizeConstraint", { MaxTextSize = 20, Parent = label })
+		local function fit()
+			local k = Util.inheritedScale(plate, true)
+			local h = plate.AbsoluteSize.Y / math.max(k, 0.01)
+			local lead = if badge then math.floor(h * 1.3) else endPad
+			label.Position = UDim2.new(0, lead, 0, 4)
+			label.Size = UDim2.new(1, -lead - endPad, 1, -8)
+		end
+		plate:GetPropertyChangedSignal("AbsoluteSize"):Connect(fit)
+		fit()
+		task.defer(fit)
+	end
+	if props then
+		for k, v in props do
+			(plate :: any)[k] = v
+		end
+	end
+	if look.rainbow then
+		CosmeticArt.spin(Util.grad(label, RAINBOW, 0), 80)
+	end
+	plate.Parent = parent
+	return plate
+end
+
+function CosmeticArt.emoteBubble(parent: Instance, emoteId: string, props: { [string]: any }?): Frame?
+	local def = Cosmetics.get(emoteId)
+	if not def then
+		return nil
+	end
+	local color = Color3.fromHex(string.sub(def.look.color, 2))
+	local bubble = Util.new("Frame", {
+		Name = "Emote",
+		BackgroundColor3 = Theme.C.parchment,
+		BorderSizePixel = 0,
+		AnchorPoint = Vector2.new(0.5, 1),
+		AutomaticSize = Enum.AutomaticSize.X,
+		Size = UDim2.fromOffset(0, 34),
+	})
+	Util.corner(bubble, 12)
+	Util.stroke(bubble, color, 3)
+	Util.pad(bubble, 12, 4, 12, 4)
+	Util.new("TextLabel", {
+		BackgroundTransparency = 1,
+		AutomaticSize = Enum.AutomaticSize.X,
+		Size = UDim2.fromScale(0, 1),
+		Text = def.look.text,
+		TextColor3 = Theme.C.textDark,
+		FontFace = Theme.Font.Chunky,
+		TextSize = 20,
+		Parent = bubble,
+	})
+	if props then
+		for k, v in props do
+			(bubble :: any)[k] = v
+		end
+	end
+	bubble.Parent = parent
+	return bubble
+end
+
+-- Whose piece shows finishes in previews (the Locker sets it to the character you play).
+CosmeticArt.previewCharacter = "mage"
+
+-- A preview tile for any cosmetic (locker grid, chest reveals, shop).
+function CosmeticArt.preview(parent: Instance, itemId: string, _seatColor: Color3?, props: { [string]: any }?): Frame
+	local def = Cosmetics.get(itemId)
+	local holder = Util.frame(parent, props)
+	holder.Name = "Preview"
+	if not def then
+		return holder
+	end
+	if def.category == "finish" then
+		-- the piece you play, made of it
+		PieceArt.icon(holder, CosmeticArt.previewCharacter, itemId, {
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.5, 0.5),
+			Size = UDim2.fromScale(0.84, 0.84),
+		})
+	elseif def.category == "dice" then
+		CosmeticArt.die(holder, itemId, 5, { Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromScale(0.7, 0.7) })
+	elseif def.category == "emblem" then
+		Icons.emblem(holder, def.look.emblem, {
+			Position = UDim2.fromScale(0.5, 0.5),
+			Size = UDim2.fromScale(0.86, 0.86),
+		})
+	elseif def.category == "trail" and #CosmeticArt.trailSprites(def.look.kind) > 0 then
+		-- three of its particles, spilling up and to the right
+		local sprites = CosmeticArt.trailSprites(def.look.kind)
+		for i = 0, 2 do
+			local d = 0.42 - i * 0.05
+			Art.image(holder, sprites[(i % #sprites) + 1], {
+				Name = "Particle" .. i,
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				Position = UDim2.fromScale(0.26 + i * 0.25, 0.66 - i * 0.17),
+				Size = UDim2.fromScale(d, d),
+				Rotation = (i - 1) * 14,
+			})
+		end
+	elseif def.category == "trail" then
+		local look = def.look
+		local color = hex(look.color, Theme.C.white)
+		local c = Shapes.canvas(holder, { Size = UDim2.fromScale(0.8, 0.8) })
+		if look.kind == "none" then
+			Icons.draw(c, IconData.close, { ink = Theme.C.inkFaint })
+		elseif look.kind == "rainbow" then
+			for i = 0, 5 do
+				Shapes.circle(c, 0.18 + i * 0.13, 0.62 - math.sin(i * 0.9) * 0.18, 0.16 - i * 0.012, Color3.fromHSV(i / 6, 0.6, 1))
+			end
+		else
+			local plain = FALLBACK[look.kind] or look.kind
+			local glyph = ({ puff = "circle", bubble = "ring", leaf = "drop", sparkle = "sparkle", ember = "circle", heart = "heart", star = "star" })[plain]
+			for i = 0, 2 do
+				local x, y, d = 0.24 + i * 0.27, 0.66 - i * 0.18, 0.3 - i * 0.05
+				if glyph == "heart" then
+					Icons.draw(c, { { "group", s = d, dx = x - 0.5, dy = y - 0.5, ops = IconData.heart } }, { ink = color })
+				elseif glyph == "ring" then
+					Shapes.ring(c, x, y, d, d * 0.15, color)
+				elseif glyph == "drop" then
+					Icons.draw(c, { { "drop", x, y, d * 0.45, dir = 45 } }, { ink = if i == 1 then hex(look.color2, color) else color })
+				elseif glyph == "sparkle" then
+					Shapes.sparkle(c, x, y, d, color)
+				elseif glyph == "star" then
+					Shapes.star(c, x, y, d, if i == 1 then hex(look.color2, color) else color)
+				else
+					Shapes.circle(c, x, y, d * 0.8, if i == 1 then hex(look.color2, color) else color)
+				end
+			end
+		end
+	elseif def.category == "emote" then
+		local b = CosmeticArt.emoteBubble(holder, itemId, { Position = UDim2.fromScale(0.5, 0.75) })
+		if b then
+			b.Size = UDim2.fromOffset(0, 30)
+		end
+	elseif def.category == "title" then
+		CosmeticArt.title(holder, itemId, { Size = UDim2.fromScale(0.9, 0.3), Position = UDim2.fromScale(0.05, 0.35) })
+	end
+	return holder
+end
+
+return CosmeticArt

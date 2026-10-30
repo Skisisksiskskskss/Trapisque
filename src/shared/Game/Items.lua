@@ -1,0 +1,389 @@
+--[[
+	Items
+	Every card in Trapisque. A card has:
+		category  trap | assist | neutral | potion | coin
+		use       how the card is played (each turn you may play ONE card):
+		            place     - put it on a tile near you (traps are hidden from opponents)
+		            boost     - changes the move you're about to make (speed, bounce, moonwalk)
+		            passive   - stays in your hand and works by itself (Shield, Bridge...)
+		            juice     - fills your Power bar
+		            reroll    - roll your dice again
+		            compass   - turn one of your dice to any number
+		            steal     - Thief Potion: take a random card from someone's hand
+		            anchor    - Time Travel: drop an anchor where you stand
+		            telepathy - move any player 1-3 tiles
+		            jeopardy  - Double Jeopardy
+		            xray      - see every hidden trap
+		hidden    traps that opponents can't see once placed (everything else is visible)
+]]
+
+local Items = {}
+
+local defs = {
+	-- Traps (hidden from opponents) ---------------------------------------------
+	{
+		id = "spike",
+		name = "Spike",
+		category = "trap",
+		use = "place",
+		hidden = true,
+		short = "Back to Start",
+		text = "Hide it near you. Whoever lands here is knocked out and goes back to the Start.",
+	},
+	{
+		id = "grog",
+		name = "Grog",
+		category = "trap",
+		use = "place",
+		hidden = true,
+		short = "Roll 4+ or get eaten",
+		text = "Hide a hungry Grog near you. Whoever lands here rolls a die: 1 to 3 and the Grog eats them (back to the Start).",
+	},
+	{
+		id = "fire",
+		name = "Fire",
+		category = "trap",
+		use = "place",
+		hidden = true,
+		short = "Burns them",
+		text = "Hide it near you. Whoever lands here is Burning: they hop back 1 tile at the start of their next 2 turns.",
+	},
+	{
+		id = "ice",
+		name = "Ice",
+		category = "trap",
+		use = "place",
+		hidden = true,
+		short = "Freezes them",
+		text = "Hide it near you. Whoever lands here is Frozen: their next 2 turns they roll just one die and charge no Power.",
+	},
+	{
+		id = "snare",
+		name = "Snare",
+		category = "trap",
+		use = "place",
+		hidden = true,
+		short = "Roll 4+ or lose a turn",
+		text = "Hide it near you. Whoever lands here is caught: at the start of their next turn they roll a die, and on 1 to 3 they lose that turn.",
+	},
+	{
+		id = "mudslide",
+		name = "Mudslide",
+		category = "trap",
+		use = "place",
+		hidden = true,
+		short = "Slide back 3",
+		text = "Hide it near you. Whoever lands here slides back 3 tiles.",
+	},
+	{
+		id = "banana",
+		name = "Banana Peel",
+		nick = "Banana", -- on cards too small for the whole name
+		category = "trap",
+		use = "place",
+		hidden = true,
+		short = "Slip back 2, drop a card",
+		text = "Hide it near you. Whoever lands here slips back 2 tiles and drops a random card.",
+	},
+	{
+		id = "wall",
+		name = "Wall",
+		category = "trap",
+		use = "place",
+		short = "Blocks moves under 5",
+		text = "Build it near you, where everyone can see it. Nobody gets past unless they move 5 or more. It crumbles once someone gets over it.",
+	},
+
+	-- Assist cards ----------------------------------------------------------------
+	{
+		id = "speed_boost",
+		name = "Speed Boost",
+		nick = "Boost", -- on cards too small for the whole name
+		category = "assist",
+		use = "boost",
+		boost = "double",
+		short = "Double your move",
+		text = "Play before you move: the die you pick counts double.",
+	},
+	{
+		id = "bounce_pad",
+		name = "Bounce Pad",
+		nick = "Bounce", -- on cards too small for the whole name
+		category = "assist",
+		use = "boost",
+		boost = "plus",
+		amount = 3,
+		short = "+3 to your move",
+		text = "Play before you move: move 3 extra tiles.",
+	},
+	{
+		id = "moonwalk",
+		name = "Moonwalk",
+		category = "assist",
+		use = "boost",
+		boost = "back",
+		short = "Move backwards",
+		text = "Play before you move: this turn you move backwards. Great for grabbing a token or bonking someone behind you.",
+	},
+	{
+		id = "clover",
+		name = "Lucky Clover",
+		nick = "Clover", -- on cards too small for the whole name
+		category = "assist",
+		use = "reroll",
+		short = "Reroll your dice",
+		text = "Don't like your dice? Roll them again.",
+	},
+	{
+		id = "compass",
+		name = "Compass",
+		category = "assist",
+		use = "compass",
+		short = "Set a die to any number",
+		text = "Turn one of your dice to any number you like. The needle won't move while you're Frozen.",
+	},
+	{
+		id = "juice",
+		name = "Regeneration",
+		nick = "Regen", -- on cards too small for the whole name
+		category = "assist",
+		use = "juice",
+		short = "Refill your Power",
+		text = "Refills your Power bar, so your ability is ready right now.",
+	},
+	{
+		id = "shield",
+		name = "Shield",
+		category = "assist",
+		use = "passive",
+		short = "Blocks a trap or bonk",
+		text = "Works by itself: blocks the next trap you land on or the next bonk that hits you.",
+	},
+	{
+		id = "bridge",
+		name = "Bridge",
+		category = "assist",
+		use = "passive",
+		short = "Cross a river",
+		text = "Works by itself: carries you across one river.",
+	},
+	{
+		id = "key",
+		name = "Key",
+		category = "assist",
+		use = "passive",
+		short = "Open a gate",
+		text = "Works by itself: opens one locked gate or gated shortcut.",
+	},
+	{
+		id = "boots",
+		name = "Boots",
+		category = "assist",
+		use = "passive",
+		short = "Walk through slime",
+		text = "Works by itself: carries you through one slime pool.",
+	},
+	{
+		id = "lantern",
+		name = "Lantern",
+		category = "assist",
+		use = "passive",
+		short = "Scare off a ghost",
+		text = "Works by itself: shines a ghost out of your way, so it can't scare you back.",
+	},
+	{
+		id = "cloak",
+		name = "Fire Cloak",
+		nick = "Cloak", -- on cards too small for the whole name
+		category = "assist",
+		use = "passive",
+		short = "Lava can't hurt you",
+		text = "Works by itself: carries you across one stream of molten lava, or keeps you safe from one eruption.",
+	},
+	{
+		id = "skates",
+		name = "Ice Skates",
+		nick = "Skates",
+		category = "assist",
+		use = "passive",
+		short = "Glide over thin ice",
+		text = "Works by itself: glides you over one patch of cracked ice or open water instead of falling in.",
+	},
+	{
+		id = "harpoon",
+		name = "Harpoon",
+		category = "assist",
+		use = "passive",
+		short = "Fend off the Kraken",
+		text = "Works by itself: when the Kraken's tentacle comes down on you, you fend it off and stay put.",
+	},
+	{
+		id = "grapple",
+		name = "Grappling Hook",
+		nick = "Grapple",
+		category = "assist",
+		use = "passive",
+		short = "Swing over a raised bridge",
+		text = "Works by itself: swings you across the drawbridge while it's up.",
+	},
+
+	-- Neutral cards (visible board pieces) -----------------------------------------
+	{
+		id = "teleporter",
+		name = "Teleporter",
+		category = "neutral",
+		use = "place",
+		short = "Linked pairs",
+		text = "Place it near you, at least 8 tiles from the treasure. Teleporters link in pairs: landing on one sends you to its partner.",
+	},
+	{
+		id = "spore_warper",
+		name = "Spore Warper",
+		nick = "Spores", -- on cards too small for the whole name
+		category = "neutral",
+		use = "place",
+		short = "Swap with nearest",
+		text = "Place it near you. Whoever lands here swaps places with the nearest other player.",
+	},
+	{
+		id = "conveyor",
+		name = "Conveyor Belt",
+		nick = "Conveyor", -- on cards too small for the whole name
+		category = "neutral",
+		use = "place",
+		short = "3-tile belt",
+		text = "Place a 3-tile belt near you, facing forward or back. Anyone landing on it rides it off the end. It wears out after 3 rides.",
+	},
+	{
+		id = "sands",
+		name = "Shifting Sands",
+		nick = "Sands", -- on cards too small for the whole name
+		category = "neutral",
+		use = "place",
+		short = "Slide 3, forward or back",
+		text = "Place it near you. Whoever lands here slides 3 tiles: forward in even rounds, backwards in odd rounds. It sinks after 3 slides.",
+	},
+
+	-- Potions (Potion Seller) ---------------------------------------------------------
+	{
+		id = "thief_potion",
+		name = "Thief Potion",
+		nick = "Thief", -- on cards too small for the whole name
+		category = "potion",
+		use = "steal",
+		price = 2,
+		short = "Steal a card",
+		text = "Drink it to steal a random card from another player's hand.",
+	},
+	{
+		id = "phoenix_potion",
+		name = "Phoenix Potion",
+		nick = "Phoenix", -- on cards too small for the whole name
+		category = "potion",
+		use = "passive",
+		price = 2,
+		short = "Survive a knockout",
+		text = "Works by itself: the next time you'd be knocked out (Spike, Grog), you survive instead.",
+	},
+	{
+		id = "xray_potion",
+		name = "X-Ray Potion",
+		nick = "X-Ray", -- on cards too small for the whole name
+		category = "potion",
+		use = "xray",
+		price = 2,
+		short = "See hidden traps",
+		text = "Drink it to see every trap that's hidden on the board right now.",
+	},
+	{
+		id = "telepathy_potion",
+		name = "Telepathy Potion",
+		nick = "Telepathy", -- on cards too small for the whole name
+		category = "potion",
+		use = "telepathy",
+		price = 3,
+		short = "Move anyone 1-3",
+		text = "Move any player 1 to 3 tiles forward or back. Push someone onto your trap!",
+	},
+	{
+		id = "time_potion",
+		name = "Time Travel Potion",
+		nick = "Time", -- on cards too small for the whole name
+		category = "potion",
+		use = "anchor",
+		price = 4,
+		short = "Anchor & recall",
+		text = "Drop a time anchor where you stand. On a later turn you can warp back to it instead of moving. Everyone can see it, and it breaks when you reach the treasure.",
+	},
+	{
+		id = "jeopardy_potion",
+		name = "Double Jeopardy",
+		nick = "Jeopardy", -- on cards too small for the whole name
+		category = "potion",
+		use = "jeopardy",
+		price = 5,
+		short = "Swap hands, 6 & 6",
+		text = "Swap hands with a player, push them back 6 tiles and jump forward 6 yourself.",
+	},
+
+	-- Not a card: coins are tracked separately ------------------------------------
+	{
+		id = "coin",
+		name = "Coin",
+		category = "coin",
+		use = "none",
+		short = "+1 coin",
+		text = "Spend coins at the Potion Seller.",
+	},
+}
+
+Items.byId = {}
+Items.list = {}
+for i, def in defs do
+	def.order = i
+	def.hidden = def.hidden == true
+	Items.byId[def.id] = def
+	table.insert(Items.list, def)
+end
+
+-- The three spinners. "bkb" is replaced by the map's counter card (Bridge, Key, Boots,
+-- Lantern or Fire Cloak).
+Items.wheels = {
+	trap = { "spike", "grog", "fire", "ice", "snare", "mudslide", "banana", "wall", "coin" },
+	assist = { "speed_boost", "bounce_pad", "moonwalk", "clover", "compass", "juice", "shield", "bkb", "coin" },
+	neutral = { "teleporter", "spore_warper", "conveyor", "sands", "coin" },
+}
+
+Items.potions = { "thief_potion", "phoenix_potion", "xray_potion", "telepathy_potion", "time_potion", "jeopardy_potion" }
+
+Items.trapIds = { "spike", "grog", "fire", "ice", "snare", "mudslide", "banana", "wall" }
+
+-- Natural hazard kind -> the card that counters it
+Items.naturalCounter = {
+	river = "bridge",
+	gate = "key",
+	slime = "boots",
+	ghost = "lantern",
+	lava = "cloak",
+	thinice = "skates",
+	hole = "skates",
+	kraken = "harpoon",
+	drawbridge = "grapple",
+}
+
+function Items.get(id: string)
+	return Items.byId[id]
+end
+
+function Items.isTrap(id: string): boolean
+	local def = Items.byId[id]
+	return def ~= nil and def.category == "trap"
+end
+
+-- Is this card hidden from opponents once it's on the board?
+function Items.isHidden(id: string): boolean
+	local def = Items.byId[id]
+	return def ~= nil and def.hidden
+end
+
+return Items
