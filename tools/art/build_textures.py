@@ -358,34 +358,19 @@ def songwood_planks() -> Image.Image:
 
 
 def songwood_leaves(seed: int = 63) -> Image.Image:
-    """The teasers' pale canopy, drawn as vanilla draws leaves (owner playtest 3: the clump version
-    read as cobble, and darker than the drapes): a fine per-pixel grain in the ramp's pale end, small
-    leaf dabs lit on the upper left with a shade below, and scattered gaps where the sky shows
-    through. The same pale shades as the drapes, so canopy and strands read as one tree."""
+    """The teasers' white trees (owner playtest 6): canon draws their canopies as smooth, pale boxes
+    (White_tree_leaves), so a soft, low-contrast grain in four close shades of the ramp's middle, with
+    a few faint lighter streaks running down as the weeping foliage does. No gaps: holes showed the
+    canopy's dark inside as black speckle."""
     rnd = random.Random(seed)
-    v = grain(seed, clumps=0.35, cells=4, fine=8, jitter=0.55)
-    bands = by_rank(v, [0.06, 0.18, 0.32, 0.28, 0.16])
+    v = grain(seed, clumps=0.25, cells=4, fine=8, jitter=0.4)
+    bands = by_rank(v, [0.12, 0.38, 0.36, 0.14])
     im = paint("songwood_leaves", bands, 3)
     px = im.load()
-    for x, y in scatter(seed * 5 + 3, 22, 2.6):  # leaf dabs
-        px[x % W, y % H] = rgba("songwood_leaves", 7)
-        px[(x + 1) % W, y % H] = rgba("songwood_leaves", 6)
-        px[(x + 1) % W, (y + 1) % H] = rgba("songwood_leaves", 3)
-    # Fewer, evenly spread gaps (owner playtest 4): pixel noise over the canopy's dark inside read as
-    # black speckle on these pale leaves. Single pixels and pairs, spaced apart as vanilla's leaf gaps.
-    gaps = set()
-    for k, (x, y) in enumerate(scatter(seed * 3 + 11, 14, 3.4)):
-        gaps.add((x % W, y % H))
-        if k % 2 == 0:
-            gaps.add(((x + 1) % W, y % H))
-    for y in range(H):
-        for x in range(W):
-            if (x, y) in gaps:
-                # A gap keeps a deep leaf colour under zero alpha, as vanilla's leaves do (mipmaps and
-                # Fast graphics read it).
-                px[x, y] = rgba("songwood_leaves", 2, 0)
-            elif rnd.random() < 0.04:
-                px[x, y] = rgba("songwood_leaves", 2)  # a deep shadow pixel now and then, as vanilla's
+    for x in rnd.sample(range(W), 4):  # streaks
+        y = rnd.randrange(H)
+        for k in range(2 + rnd.randrange(3)):
+            px[x, (y + k) % H] = rgba("songwood_leaves", 6 if k else 5)
     return im
 
 
@@ -898,6 +883,140 @@ def membrane_frames(n: int = 32) -> list[Image.Image]:
     return frames
 
 
+# ---------------------------------------------------------------- canon flora (owner playtest 6)
+# Drawn to Dungeons II's Singer's Meadow and its ichor pools: a yellow fern with broad pointed fronds,
+# little yellow flowers lying on the ground as leaf litter, and a glowing pale-blue bulb on a thin stem.
+def _frond_points(base, ctrl, tip, n=24):
+    return [((1 - t) ** 2 * base[0] + 2 * (1 - t) * t * ctrl[0] + t * t * tip[0],
+             (1 - t) ** 2 * base[1] + 2 * (1 - t) * t * ctrl[1] + t * t * tip[1], t) for t in (i / n for i in range(n + 1))]
+
+
+def goldfrond() -> Image.Image:
+    """The Meadow's yellow fern: five broad, pointed fronds fanning up from the root, deep orange at the
+    base to yellow at the tips, lit on their left halves, with a darker rib down each."""
+    im = _blank()
+    px = im.load()
+    # Back to front: the low side fronds first, the upright one last.
+    fronds = [((7.2, 15.6), (1.5, 14.0), (0.4, 9.0)), ((8.8, 15.6), (14.5, 14.0), (15.6, 8.6)),
+              ((7.4, 15.6), (4.2, 9.5), (2.4, 2.6)), ((8.6, 15.6), (11.8, 9.5), (13.6, 2.2)),
+              ((8.0, 15.6), (8.8, 8.0), (7.8, 0.6))]
+    for base, ctrl, tip in fronds:
+        pts = _frond_points(base, ctrl, tip)
+        for y in range(H):
+            for x in range(W):
+                cx, cy = x + 0.5, y + 0.5
+                best = min(pts, key=lambda q: (q[0] - cx) ** 2 + (q[1] - cy) ** 2)
+                d = math.hypot(best[0] - cx, best[1] - cy)
+                t = best[2]
+                half = 1.3 * math.sin(math.pi * min(1.0, t * 1.1)) ** 0.8 + 0.12
+                if d > half or t < 0.06:
+                    continue
+                # Which side of the rib: the frond's direction crossed with the offset.
+                i = pts.index(best)
+                a, b = pts[max(0, i - 1)], pts[min(len(pts) - 1, i + 1)]
+                side = (b[0] - a[0]) * (cy - best[1]) - (b[1] - a[1]) * (cx - best[0])
+                shade = 1 if t < 0.25 else 2 if t < 0.5 else 3 if t < 0.78 else 4
+                if d < 0.55 and 0.15 < t < 0.85:
+                    shade = max(0, shade - 2)  # the rib
+                elif side > 0:
+                    shade = min(5, shade + 1)  # the lit half
+                px[x, y] = rgba("goldfrond", shade)
+    return im
+
+
+_GOLD_FLOWERS = [(1, 1), (4, 4), (1, 5), (9, 1), (12, 4), (13, 1), (2, 9), (5, 12), (1, 13), (10, 10), (13, 13), (9, 13)]
+
+
+def gold_petals() -> Image.Image:
+    """Gold petals, as vanilla's flower bed lays them (one quarter of the texture per patch): little
+    four-petalled yellow flowers with orange hearts, and loose petals between them as fallen leaves."""
+    im = _blank()
+    for i, (x, y) in enumerate(_GOLD_FLOWERS):
+        put(im, [(x + 1, y + 1)], rgba("gold_petals", 2))
+        put(im, [(x + 1, y), (x, y + 1)], rgba("gold_petals", 5 if i % 3 else 4))
+        put(im, [(x + 2, y + 1), (x + 1, y + 2)], rgba("gold_petals", 3))
+    for x, y in [(6, 1), (3, 7), (14, 7), (10, 6), (7, 14), (6, 9)]:
+        put(im, [(x, y)], rgba("gold_petals", 4))
+    return im
+
+
+def gold_petals_stem() -> Image.Image:
+    """The stems vanilla's flower bed draws from column 0, rows 4 to 6."""
+    im = _blank()
+    put(im, [(0, 4)], rgba("gold_petals", 1))
+    put(im, [(0, 5), (0, 6)], rgba("gold_petals", 0))
+    return im
+
+
+def gold_petals_item() -> Image.Image:
+    im = _blank()
+    for x, y in [(3, 3), (8, 2), (5, 8), (10, 7), (7, 11), (2, 10), (11, 12)]:
+        put(im, [(x + 1, y + 1)], rgba("gold_petals", 2))
+        put(im, [(x + 1, y), (x, y + 1)], rgba("gold_petals", 5))
+        put(im, [(x + 2, y + 1), (x + 1, y + 2)], rgba("gold_petals", 3))
+    return im
+
+
+def bluebulb_stem() -> Image.Image:
+    """The bluebulb's stem, for the cross planes: a thin dark-blue stalk from the ground to the bulb
+    (which the model hangs at its top) with two small leaves; transparent above it."""
+    im = _blank()
+    for y in range(7, 16):
+        put(im, [(8, y)], rgba("bluebulb", 1 if y % 3 else 0))
+        if y > 12:
+            put(im, [(7, y)], rgba("bluebulb", 0))
+    put(im, [(9, 11), (10, 10), (11, 10)], rgba("bluebulb", 2))
+    put(im, [(10, 11)], rgba("bluebulb", 1))
+    put(im, [(7, 13), (6, 12), (5, 12)], rgba("bluebulb", 2))
+    put(im, [(6, 13)], rgba("bluebulb", 1))
+    return im
+
+
+def bluebulb_bulb() -> Image.Image:
+    """The bulb's faces: pale glowing blue, lit on the upper left, a shade on the lower right (each face
+    of the 5-pixel cube uses the top-left 5 x 5; the rest repeats it, for the break particles)."""
+    face = ["LHLLM", "HLLMM", "LLMMS", "LMMSS", "MMSSD"]
+    key = {"H": 6, "L": 5, "M": 4, "S": 3, "D": 2}
+    im = _blank()
+    for y in range(H):
+        for x in range(W):
+            put(im, [(x, y)], rgba("bluebulb", key[face[y % 5][x % 5]]))
+    return im
+
+
+def bluebulb_item() -> Image.Image:
+    im = bluebulb_stem()
+    face = ["..LH..", ".LHLM.", "LLLMMS", "LLMMSS", ".MMSS.", "..SS.."]
+    key = {"H": 6, "L": 5, "M": 4, "S": 3}
+    for y, row in enumerate(face):
+        for x, ch in enumerate(row):
+            if ch != ".":
+                put(im, [(5 + x, 2 + y)], rgba("bluebulb", key[ch]))
+    return im
+
+
+def bounce_jelly() -> Image.Image:
+    """Bounce jelly (owner playtest 6): a see-through blue jelly with a firmer rim, a lighter core and a
+    few bubbles, as vanilla's slime block shows its inner cube."""
+    im = _blank()
+    for y in range(H):
+        for x in range(W):
+            edge = min(x, y, W - 1 - x, H - 1 - y)
+            if edge == 0:
+                shade, alpha = (3 if (x + y) % 5 else 4), 225
+            elif 4 <= x <= 11 and 4 <= y <= 11:
+                inner = min(x - 4, y - 4, 11 - x, 11 - y)
+                shade, alpha = (2 if inner == 0 else 3), 205
+            else:
+                shade, alpha = 1, 165
+            px_ = rgba("bounce_jelly", shade, alpha)
+            im.putpixel((x, y), px_)
+    for x, y in [(2, 2), (13, 3), (6, 6), (9, 12), (3, 12), (12, 9)]:
+        im.putpixel((x, y), rgba("bounce_jelly", 5, 240))
+    im.putpixel((7, 7), rgba("bounce_jelly", 4, 230))
+    return im
+
+
 # ---------------------------------------------------------------- souls (owner playtest 6)
 # The Sift's own soul particle (never vanilla's): a little pale-blue wailing ghost, as Dungeons II draws
 # its souls (Dungeons2Sprite_soul: one pale steel blue, a rounded head, two eyes, an open mouth), in
@@ -957,55 +1076,49 @@ def box_faces(u: int, v: int, w: int, h: int, d: int) -> dict[str, tuple[int, in
 
 
 def blub_texture() -> Image.Image:
-    """64 x 32, laid out for BlubModel, drawn as vanilla draws its mobs (owner playtest 3, D-029: "drawn
-    more like vanilla, less cell shaded"): every face a soft gradient, lit at the top and shaded toward
-    the ground, with low-contrast fur clumps; round dark eyes with a catch-light, a small mouth always
-    there, a touch of blush; paler inner ears, darker feet, a fluffy pale tail."""
+    """64 x 32, laid out for BlubModel, drawn to the Sift's vanilla teaser (owner playtest 6: canon's
+    Blub, The_Sift_instagram): a blue cube with a grey-blue top, its face blue above and teal below,
+    two indigo slit eyes and a small indigo mouth; tall ears, grey-blue with a blue-to-teal inner panel;
+    stubby teal feet. Each face a soft gradient with low-contrast clumps, as vanilla draws its mobs."""
     im = Image.new("RGBA", (64, 32), (0, 0, 0, 0))
     px = im.load()
-    fur = [rgba("blub_fur", i) for i in range(10)]
+    coat = [rgba("blub_coat", i) for i in range(11)]
     clumps = grain(131, w=64, h=32, clumps=0.5, cells=8, fine=16, jitter=0.25)
     dither = random.Random(137)
 
-    def paint_face(rect, top_shade, bottom_shade):
+    def paint_face(rect, shades):
+        """Rows top to bottom run through `shades` (coat indices), with clumps nudging a step either way."""
         x0, y0, w, h = rect
         for y in range(y0, y0 + h):
-            k = (y - y0) / max(1, h - 1)
-            base = top_shade + (bottom_shade - top_shade) * k
+            row = shades[min(len(shades) - 1, (y - y0) * len(shades) // max(1, h))]
             for x in range(x0, x0 + w):
-                v = clumps[y][x]
-                # Fur clumps and a little dither break the gradient's rows, as on vanilla's mobs.
-                i = base + (0.8 if v > 0.66 else -0.8 if v < 0.32 else 0.0) + (dither.random() - 0.5) * 0.7
-                px[x, y] = fur[max(0, min(9, int(round(i))))]
+                v = clumps[y][x] + (dither.random() - 0.5) * 0.2
+                i = row[2] if v > 0.72 else row[0] if v < 0.26 else row[1]
+                px[x, y] = coat[i]
 
+    BLUE, BLUE_DARK, TEAL, TEAL_DARK = (3, 3, 4), (1, 2, 2), (6, 7, 7), (5, 5, 6)
+    TOP, TOP_LIGHT, UNDER = (8, 8, 9), (8, 9, 10), (0, 0, 1)
     body = box_faces(0, 0, 9, 7, 8)
-    paint_face(body["top"], 8, 7)
-    paint_face(body["bottom"], 2, 2)
-    for face in ("right", "front", "left", "back"):
-        paint_face(body[face], 6.8, 3.6)
-    for u in (36, 42):  # ears: lit at the tip, a pale inner face
-        ear = box_faces(u, 0, 2, 5, 1)
+    paint_face(body["top"], [TOP_LIGHT, TOP])
+    paint_face(body["bottom"], [UNDER])
+    paint_face(body["front"], [BLUE, BLUE, BLUE, (3, 3, 6), TEAL, TEAL, TEAL])
+    for face in ("right", "left", "back"):
+        paint_face(body[face], [BLUE_DARK, BLUE_DARK, BLUE_DARK, (2, 5, 5), TEAL_DARK, TEAL_DARK, TEAL_DARK])
+    for u in (36, 44):  # ears: grey-blue, the inner panel blue fading to teal
+        ear = box_faces(u, 0, 3, 6, 1)
         for face, rect in ear.items():
-            paint_face(rect, 8, 4)
+            paint_face(rect, [TOP_LIGHT, TOP])
         x0, y0, w, h = ear["front"]
-        for y in range(y0 + 1, y0 + h - 1):
-            px[x0, y] = fur[9]
-            px[x0 + 1, y] = fur[8]
-    for face, rect in box_faces(48, 0, 2, 1, 2).items():  # feet
-        paint_face(rect, 3, 1)
+        for y in range(y0 + 1, y0 + h):
+            px[x0 + 1, y] = coat[3 if y < y0 + 3 else 4 if y < y0 + 4 else 6]
+    for face, rect in box_faces(52, 0, 2, 1, 2).items():  # feet
+        paint_face(rect, [TEAL] if face == "top" else [TEAL_DARK])
     for face, rect in box_faces(36, 8, 2, 2, 1).items():  # tail tuft
-        paint_face(rect, 9, 7)
+        paint_face(rect, [TOP_LIGHT])
     fx, fy, fw, fh = body["front"]
-    # Eyes: 2 x 2, dark violet, a catch-light at the upper outer corner.
-    for ex, light_x in ((fx + 1, fx + 1), (fx + 6, fx + 7)):
-        for dx in (0, 1):
-            put(im, [(ex + dx, fy + 3)], rgba("blub_eye", 0))
-            put(im, [(ex + dx, fy + 4)], rgba("blub_eye", 1 if dx == (1 if ex == fx + 1 else 0) else 0))
-        put(im, [(light_x, fy + 3)], rgba("blub_eye", 2))
-    # A small mouth between and below the eyes, always there; cheeks just outside it.
-    put(im, [(fx + 3, fy + 5), (fx + 5, fy + 5)], rgba("blub_mouth", 1))
-    put(im, [(fx + 4, fy + 5)], rgba("blub_mouth", 0))
-    put(im, [(fx + 1, fy + 5), (fx + 7, fy + 5)], rgba("blub_blush", 0))
+    # Two indigo slits for eyes, sleepy and wide apart, and a small indigo mouth below between them.
+    put(im, [(fx + 1, fy + 4), (fx + 2, fy + 4), (fx + 6, fy + 4), (fx + 7, fy + 4)], rgba("blub_eye", 0))
+    put(im, [(fx + 4, fy + 5)], rgba("blub_eye", 1))
     return im
 
 
@@ -1363,7 +1476,7 @@ _ORE_SHAPES = {
 _ORE_COUNTS = {"coal": 5, "copper": 5, "iron": 5, "gold": 4, "redstone": 6, "lapis": 5, "diamond": 4, "emerald": 3}
 
 
-def _cluster(im: Image.Image, x0: int, y0: int, shape: list[str], ramp: str, lift: int = 0) -> set:
+def _cluster(im: Image.Image, x0: int, y0: int, shape: list[str], ramp: str, lift: int = 0, seat=("hymnstone", 2)) -> set:
     px = im.load()
     n = len(RAMPS[ramp])
     hit = set()
@@ -1376,7 +1489,7 @@ def _cluster(im: Image.Image, x0: int, y0: int, shape: list[str], ramp: str, lif
     for x, y in hit:  # a dark seat below and right of the cluster, as vanilla's ores have
         q = ((x + 1) % W, (y + 1) % H)
         if q not in hit:
-            px[q] = rgba("hymnstone", 2)
+            px[q] = rgba(*seat)
     return hit
 
 
@@ -1385,6 +1498,15 @@ def hymnstone_ore(kind: str) -> Image.Image:
     shapes = _ORE_SHAPES[kind]
     for i, (x, y) in enumerate(scatter(sum(map(ord, kind)), _ORE_COUNTS[kind], 5.5)):
         _cluster(im, x, y, shapes[i % len(shapes)], "ore_" + kind)
+    return im
+
+
+def carapace_ore(kind: str) -> Image.Image:
+    """The Carapace's ores (owner playtest 6): the same veins as hymnstone's, set in carapace stone."""
+    im = carapace_stone()
+    shapes = _ORE_SHAPES[kind]
+    for i, (x, y) in enumerate(scatter(sum(map(ord, kind)) + 7, _ORE_COUNTS[kind], 5.5)):
+        _cluster(im, x, y, shapes[i % len(shapes)], "ore_" + kind, seat=("carapace_stone", 0))
     return im
 
 
@@ -1849,6 +1971,7 @@ def main() -> None:
     save(chiseled_hymnstone_bricks(), "block/chiseled_hymnstone_bricks.png")
     for kind in _ORE_SHAPES:
         save(hymnstone_ore(kind), f"block/hymnstone_{kind}_ore.png")
+        save(carapace_ore(kind), f"block/carapace_{kind}_ore.png")
     save(strip(echo_ore_frames()), "block/echo_ore.png")
     save_mcmeta("block/echo_ore.png", '{\n  "animation": {\n    "frametime": 4,\n    "interpolate": true\n  }\n}\n')
     for stage in range(4):
@@ -1941,6 +2064,14 @@ def main() -> None:
     save(trill(), "particle/trill.png")
     for i, frame in enumerate(soul_frames()):
         save(frame, f"particle/soul_{i}.png")
+    save(goldfrond(), "block/goldfrond.png")
+    save(bounce_jelly(), "block/bounce_jelly.png")
+    save(gold_petals(), "block/gold_petals.png")
+    save(gold_petals_stem(), "block/gold_petals_stem.png")
+    save(gold_petals_item(), "item/gold_petals.png")
+    save(bluebulb_stem(), "block/bluebulb_stem.png")
+    save(bluebulb_bulb(), "block/bluebulb_bulb.png")
+    save(bluebulb_item(), "item/bluebulb.png")
     print("textures written")
 
 

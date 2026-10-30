@@ -3,7 +3,6 @@ package thesift.datagen;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.OptionalInt;
 
 import com.mojang.datafixers.util.Pair;
 
@@ -12,9 +11,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.core.HolderSet;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.data.worldgen.BlockStateProviders;
 import net.minecraft.data.worldgen.BootstrapContext;
 import net.minecraft.data.worldgen.material.VanillaMaterialConditions;
 import net.minecraft.data.worldgen.material.VanillaMaterialRules;
@@ -27,9 +24,7 @@ import net.minecraft.util.EasingType;
 import net.minecraft.util.TriState;
 import net.minecraft.util.random.WeightedList;
 import net.minecraft.util.valueproviders.ConstantInt;
-import net.minecraft.util.valueproviders.IntProvider;
 import net.minecraft.util.valueproviders.UniformInt;
-import net.minecraft.util.valueproviders.WeightedListInt;
 import net.minecraft.world.attribute.AmbientAdditionsSettings;
 import net.minecraft.world.attribute.AmbientParticle;
 import net.minecraft.world.attribute.AmbientSounds;
@@ -44,7 +39,7 @@ import net.minecraft.world.level.biome.Climate;
 import net.minecraft.world.level.biome.MobSpawnSettings;
 import net.minecraft.world.level.biome.MultiNoiseBiomeSource;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.FlowerBedBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.dimension.LevelStem;
@@ -65,16 +60,10 @@ import net.minecraft.world.level.levelgen.feature.Feature;
 import net.minecraft.world.level.levelgen.feature.LakeFeature;
 import net.minecraft.world.level.levelgen.feature.OreFeature;
 import net.minecraft.world.level.levelgen.feature.SimpleBlockFeature;
-import net.minecraft.world.level.levelgen.feature.TreeFeature;
 import net.minecraft.world.level.levelgen.feature.WeightedRandomSelectorFeature;
-import net.minecraft.world.level.levelgen.feature.featuresize.TwoLayersFeatureSize;
-import net.minecraft.world.level.levelgen.feature.foliageplacers.CherryFoliagePlacer;
-import net.minecraft.world.level.levelgen.feature.foliageplacers.FancyFoliagePlacer;
 import net.minecraft.world.level.levelgen.feature.stateproviders.BlockStateProvider;
 import net.minecraft.world.level.levelgen.feature.stateproviders.SimpleStateProvider;
 import net.minecraft.world.level.levelgen.feature.stateproviders.WeightedStateProvider;
-import net.minecraft.world.level.levelgen.feature.trunkplacers.CherryTrunkPlacer;
-import net.minecraft.world.level.levelgen.feature.trunkplacers.FancyTrunkPlacer;
 import net.minecraft.world.level.levelgen.heightproviders.UniformHeight;
 import net.minecraft.world.level.levelgen.material.MaterialRules;
 import net.minecraft.world.level.levelgen.material.condition.MaterialCondition;
@@ -107,13 +96,14 @@ import thesift.registry.ModSounds;
 import thesift.world.SiftFeatures;
 import thesift.world.SiftKeys;
 import thesift.world.Tide;
-import thesift.world.feature.DrapesDecorator;
+import thesift.world.feature.CarapacePillarFeature;
 import thesift.world.feature.HuskFossilFeature;
 import thesift.world.feature.HymnstoneSpireFeature;
 import thesift.world.feature.IchorFlatsFeature;
 import thesift.world.feature.LumenBloomFeature;
 import thesift.world.feature.EndureBloomsFeature;
 import thesift.world.feature.SingerGroveFeature;
+import thesift.world.feature.SongwoodTreeFeature;
 import thesift.world.feature.TideBasinFeature;
 import thesift.world.feature.TideRootsShoreFeature;
 
@@ -146,13 +136,16 @@ final class SiftWorldgen {
 	 * basins and the aquifers' cave pools.
 	 */
 	static final int SEA_LEVEL = -64;
-	/** The Ichor Flats: wet lowlands where vegetation (humidity) is high and erosion flattens the land. */
-	private static final float FLATS_HUMIDITY = 0.15F;
-	private static final float FLATS_EROSION = -0.2F;
-	/** Dry and flat land (low humidity, high erosion) is the Carapace; dry, steeper land (low erosion) Lullaby Hills (D-035). */
-	private static final float CARAPACE_HUMIDITY = -0.3F;
-	private static final float CARAPACE_EROSION = 0.3F;
-	private static final float HILLS_EROSION = -0.35F;
+	/**
+	 * The surface biomes by humidity (vegetation) and erosion (owner playtest 6: the Meadow took two
+	 * thirds of the Sift). Flat land (erosion above STEEP) runs dry to wet: the Carapace, Singer's
+	 * Meadow, the Ichor Flats. Steep land is Lullaby Hills where it's dry, the Meadow where it's wet.
+	 * Measured over 65 536 samples (SiftDimensionTest): Meadow 30%, Flats 24%, Carapace 23.5%, Hills 22.5%.
+	 */
+	private static final float STEEP_EROSION = -0.1F;
+	private static final float DRY_HUMIDITY = -0.1F;
+	private static final float WET_HUMIDITY = 0.1F;
+	private static final float HILLS_HUMIDITY = 0.15F;
 	/** Added to vanilla's continentalness: oceans become lakes and inland seas, the rest is land. */
 	private static final float CONTINENTS_SHIFT = 0.3F;
 	/** The biome source's depth (vanilla's: 0 at the surface) at which the Hollows begin, as caves biomes. */
@@ -324,10 +317,14 @@ final class SiftWorldgen {
 						MaterialRules.state(dust))),
 				MaterialRules.ifTrue(underFloor, MaterialRules.state(dust)),
 				MaterialRules.ifTrue(MaterialRules.stoneDepthCheck(8, true, 0, CaveSurface.FLOOR), MaterialRules.state(blueStone))));
+		// Under the Carapace the whole crust is carapace stone, down to the Hollows (owner playtest 6: its own caves).
+		MaterialRule carapaceCrust = MaterialRules.ifTrue(MaterialRules.isBiome(context.lookup(Registries.BIOME), SiftKeys.CARAPACE),
+				MaterialRules.state(blueStone));
 		context.register(SiftKeys.MATERIAL_RULE, MaterialRules.sequence(
 				MaterialRules.getRule(rules, VanillaMaterialRules.BEDROCK_FLOOR),
 				hollowsFloor,
 				MaterialRules.ifTrue(MaterialRules.abovePreliminarySurface(), MaterialRules.sequence(carapace, surface)),
+				carapaceCrust,
 				MaterialRules.state(hymnstone)));
 	}
 
@@ -391,6 +388,9 @@ final class SiftWorldgen {
 		generation.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.LUMEN_MEADOW);
 		generation.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.ENDURE_BLOOMS_MEADOW);
 		generation.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.CHIME_BELLS_MEADOW);
+		generation.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.GOLDFRONDS_MEADOW);
+		generation.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.GOLD_PETALS_MEADOW);
+		generation.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.BLUEBULBS_MEADOW);
 		generation.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.GRASS_MEADOW);
 		generation.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.TIDE_ROOTS_SHORES);
 		ores(generation);
@@ -450,6 +450,8 @@ final class SiftWorldgen {
 		hills.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.LUMEN_HILLS);
 		hills.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.ENDURE_BLOOMS_MEADOW);
 		hills.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.CHIME_BELLS_HILLS);
+		hills.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.GOLDFRONDS_HILLS);
+		hills.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.BLUEBULBS_HILLS);
 		hills.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.GRASS_MEADOW);
 		hills.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.TIDE_ROOTS_SHORES);
 		ores(hills, SiftFeatures.ORE_EMERALD_PLACED);
@@ -472,6 +474,7 @@ final class SiftWorldgen {
 		BiomeGenerationSettings.Builder carapace = new BiomeGenerationSettings.Builder(placed, context.lookup(Registries.CARVER));
 		carapace.addFeature(GenerationStep.Decoration.LAKES, SiftFeatures.ICHOR_POOLS_UNDERGROUND);
 		carapace.addFeature(GenerationStep.Decoration.SURFACE_STRUCTURES, SiftFeatures.HUSK_FOSSILS_CARAPACE);
+		carapace.addFeature(GenerationStep.Decoration.SURFACE_STRUCTURES, SiftFeatures.CARAPACE_PILLARS);
 		carapace.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SiftFeatures.CARAPACE_GRASS_PATCHES);
 		ores(carapace);
 		context.register(SiftKeys.CARAPACE, new Biome.BiomeBuilder()
@@ -506,40 +509,12 @@ final class SiftWorldgen {
 	@SuppressWarnings("deprecation") // LakeFeature: deprecated, yet still what vanilla's lava lakes use in 26.3
 	static void features(BootstrapContext<Feature> context) {
 		HolderGetter<BlockStateProvider> providers = context.lookup(Registries.BLOCK_STATE_PROVIDER);
-		// Songwood, after the teasers' trees (owner playtest 2, D-026: "more complex shapes and
-		// canopies"): a tall dark trunk that branches into one to three rounded canopies of pale leaves,
-		// as a cherry tree branches, with drapes hanging from their undersides.
-		Holder<BlockStateProvider> soil = Holder.direct(BlockStateProvider.of(ModBlocks.SIFT_SOIL));
-		context.register(SiftFeatures.SONGWOOD_TREE, new TreeFeature.Builder(
-				BlockStateProvider.of(ModBlocks.SONGWOOD_LOG),
-				new CherryTrunkPlacer(8, 2, 1,
-						new WeightedListInt(WeightedList.<IntProvider>builder().add(ConstantInt.of(1), 1).add(ConstantInt.of(2), 2).add(ConstantInt.of(3), 2).build()),
-						UniformInt.of(2, 5),
-						UniformInt.of(-5, -3),
-						UniformInt.of(-1, 1)),
-				BlockStateProvider.of(ModBlocks.SONGWOOD_LEAVES),
-				new CherryFoliagePlacer(ConstantInt.of(4), ConstantInt.of(0), ConstantInt.of(5), 0.25F, 0.5F, 0.2F, 0.33F),
-				new TwoLayersFeatureSize(1, 0, 2),
-				soil)
-				.decorators(List.of(new DrapesDecorator(0.3F)))
-				.ignoreVines()
-				.build());
-		// And the tall kind: a trunk that scatters into many small canopies on its branches, as a big
-		// oak does, so a grove has more than one silhouette.
-		context.register(SiftFeatures.TALL_SONGWOOD_TREE, new TreeFeature.Builder(
-				BlockStateProvider.of(ModBlocks.SONGWOOD_LOG),
-				new FancyTrunkPlacer(9, 7, 0),
-				BlockStateProvider.of(ModBlocks.SONGWOOD_LEAVES),
-				new FancyFoliagePlacer(ConstantInt.of(2), ConstantInt.of(4), 4),
-				new TwoLayersFeatureSize(0, 0, 0, OptionalInt.of(4)),
-				soil)
-				.decorators(List.of(new DrapesDecorator(0.25F)))
-				.ignoreVines()
-				.build());
+		// Songwood after the teasers' white trees (owner playtest 6): tall boxes of pale leaves on a dark
+		// trunk and its branches, two to four of them, now and then a grand tree of five.
+		context.register(SiftFeatures.SONGWOOD_TREE, SongwoodTreeFeature.INSTANCE);
 		HolderGetter<PlacedFeature> placed = context.lookup(Registries.PLACED_FEATURE);
 		context.register(SiftFeatures.MEADOW_TREES, new WeightedRandomSelectorFeature(WeightedList.<Holder<PlacedFeature>>builder()
-				.add(placed.getOrThrow(SiftFeatures.SONGWOOD_CHECKED), 3)
-				.add(placed.getOrThrow(SiftFeatures.TALL_SONGWOOD_CHECKED), 2)
+				.add(placed.getOrThrow(SiftFeatures.SONGWOOD_CHECKED), 1)
 				.build()));
 		context.register(SiftFeatures.ICHOR_FLATS_POOLS, IchorFlatsFeature.INSTANCE);
 		context.register(SiftFeatures.HEALTHY_SCULK_GRASS_PATCH, new SimpleBlockFeature(new WeightedStateProvider(
@@ -553,26 +528,37 @@ final class SiftWorldgen {
 		context.register(SiftFeatures.LUMEN_BLOOM, LumenBloomFeature.INSTANCE);
 		context.register(SiftFeatures.CHIME_BELL_PATCH, new SimpleBlockFeature(new SimpleStateProvider(ModBlocks.CHIME_BELL_FLOWER.defaultBlockState())));
 		context.register(SiftFeatures.GLOWCAP_PATCH, new SimpleBlockFeature(new SimpleStateProvider(ModBlocks.GLOWCAP.defaultBlockState())));
+		context.register(SiftFeatures.GOLDFROND_PATCH, new SimpleBlockFeature(new SimpleStateProvider(ModBlocks.GOLDFROND.defaultBlockState())));
+		context.register(SiftFeatures.BLUEBULB_PATCH, new SimpleBlockFeature(new SimpleStateProvider(ModBlocks.BLUEBULB.defaultBlockState())));
+		// Gold petals lie in ones to fours, turned every way, as pink petals do.
+		WeightedList.Builder<BlockState> petals = WeightedList.builder();
+		for (int amount = 1; amount <= 4; amount++) {
+			for (Direction facing : Direction.Plane.HORIZONTAL) {
+				petals.add(ModBlocks.GOLD_PETALS.defaultBlockState().setValue(FlowerBedBlock.AMOUNT, amount).setValue(FlowerBedBlock.FACING, facing), 1);
+			}
+		}
+		context.register(SiftFeatures.GOLD_PETALS_PATCH, new SimpleBlockFeature(new WeightedStateProvider(petals.build())));
 		context.register(SiftFeatures.ICHOR_LILY_PATCH, new SimpleBlockFeature(new SimpleStateProvider(ModBlocks.ICHOR_LILY.defaultBlockState())));
 		context.register(SiftFeatures.HYMNSTONE_SPIRE, HymnstoneSpireFeature.INSTANCE);
 		// Ores (survival_sift.md §4): vanilla's vein sizes and air-exposure discards, in hymnstone.
-		ore(context, SiftFeatures.ORE_COAL, ModBlocks.HYMNSTONE_COAL_ORE, 17, 0.0F);
-		ore(context, SiftFeatures.ORE_COAL_BURIED, ModBlocks.HYMNSTONE_COAL_ORE, 17, 0.5F);
-		ore(context, SiftFeatures.ORE_COPPER, ModBlocks.HYMNSTONE_COPPER_ORE, 10, 0.0F);
-		ore(context, SiftFeatures.ORE_IRON, ModBlocks.HYMNSTONE_IRON_ORE, 9, 0.0F);
-		ore(context, SiftFeatures.ORE_IRON_SMALL, ModBlocks.HYMNSTONE_IRON_ORE, 4, 0.0F);
-		ore(context, SiftFeatures.ORE_GOLD_BURIED, ModBlocks.HYMNSTONE_GOLD_ORE, 9, 0.5F);
-		ore(context, SiftFeatures.ORE_REDSTONE, ModBlocks.HYMNSTONE_REDSTONE_ORE, 8, 0.0F);
-		ore(context, SiftFeatures.ORE_LAPIS, ModBlocks.HYMNSTONE_LAPIS_ORE, 7, 0.0F);
-		ore(context, SiftFeatures.ORE_LAPIS_BURIED, ModBlocks.HYMNSTONE_LAPIS_ORE, 7, 1.0F);
-		ore(context, SiftFeatures.ORE_DIAMOND_SMALL, ModBlocks.HYMNSTONE_DIAMOND_ORE, 4, 0.5F);
-		ore(context, SiftFeatures.ORE_DIAMOND_LARGE, ModBlocks.HYMNSTONE_DIAMOND_ORE, 12, 0.7F);
-		ore(context, SiftFeatures.ORE_DIAMOND_BURIED, ModBlocks.HYMNSTONE_DIAMOND_ORE, 8, 1.0F);
-		ore(context, SiftFeatures.ORE_EMERALD, ModBlocks.HYMNSTONE_EMERALD_ORE, 3, 0.0F);
+		ore(context, SiftFeatures.ORE_COAL, ModBlocks.HYMNSTONE_COAL_ORE, ModBlocks.CARAPACE_COAL_ORE, 17, 0.0F);
+		ore(context, SiftFeatures.ORE_COAL_BURIED, ModBlocks.HYMNSTONE_COAL_ORE, ModBlocks.CARAPACE_COAL_ORE, 17, 0.5F);
+		ore(context, SiftFeatures.ORE_COPPER, ModBlocks.HYMNSTONE_COPPER_ORE, ModBlocks.CARAPACE_COPPER_ORE, 10, 0.0F);
+		ore(context, SiftFeatures.ORE_IRON, ModBlocks.HYMNSTONE_IRON_ORE, ModBlocks.CARAPACE_IRON_ORE, 9, 0.0F);
+		ore(context, SiftFeatures.ORE_IRON_SMALL, ModBlocks.HYMNSTONE_IRON_ORE, ModBlocks.CARAPACE_IRON_ORE, 4, 0.0F);
+		ore(context, SiftFeatures.ORE_GOLD_BURIED, ModBlocks.HYMNSTONE_GOLD_ORE, ModBlocks.CARAPACE_GOLD_ORE, 9, 0.5F);
+		ore(context, SiftFeatures.ORE_REDSTONE, ModBlocks.HYMNSTONE_REDSTONE_ORE, ModBlocks.CARAPACE_REDSTONE_ORE, 8, 0.0F);
+		ore(context, SiftFeatures.ORE_LAPIS, ModBlocks.HYMNSTONE_LAPIS_ORE, ModBlocks.CARAPACE_LAPIS_ORE, 7, 0.0F);
+		ore(context, SiftFeatures.ORE_LAPIS_BURIED, ModBlocks.HYMNSTONE_LAPIS_ORE, ModBlocks.CARAPACE_LAPIS_ORE, 7, 1.0F);
+		ore(context, SiftFeatures.ORE_DIAMOND_SMALL, ModBlocks.HYMNSTONE_DIAMOND_ORE, ModBlocks.CARAPACE_DIAMOND_ORE, 4, 0.5F);
+		ore(context, SiftFeatures.ORE_DIAMOND_LARGE, ModBlocks.HYMNSTONE_DIAMOND_ORE, ModBlocks.CARAPACE_DIAMOND_ORE, 12, 0.7F);
+		ore(context, SiftFeatures.ORE_DIAMOND_BURIED, ModBlocks.HYMNSTONE_DIAMOND_ORE, ModBlocks.CARAPACE_DIAMOND_ORE, 8, 1.0F);
+		ore(context, SiftFeatures.ORE_EMERALD, ModBlocks.HYMNSTONE_EMERALD_ORE, ModBlocks.CARAPACE_EMERALD_ORE, 3, 0.0F);
 		ore(context, SiftFeatures.ORE_ECHO, ModBlocks.ECHO_ORE, 4, 0.5F);
 		context.register(SiftFeatures.TIDE_ROOTS_PATCH, TideRootsShoreFeature.INSTANCE);
 		// The Carapace (D-035): husk fossils, and red and yellow grass in patches.
 		context.register(SiftFeatures.HUSK_FOSSIL, HuskFossilFeature.INSTANCE);
+		context.register(SiftFeatures.CARAPACE_PILLAR, CarapacePillarFeature.INSTANCE);
 		context.register(SiftFeatures.SINGER_GROVE, SingerGroveFeature.INSTANCE);
 		context.register(SiftFeatures.CARAPACE_GRASS, new SimpleBlockFeature(new WeightedStateProvider(
 				WeightedList.<BlockState>builder()
@@ -597,6 +583,12 @@ final class SiftWorldgen {
 
 	private static void ore(BootstrapContext<Feature> context, ResourceKey<Feature> key, Block ore, int size, float discard) {
 		context.register(key, new OreFeature(List.of(new BlockReplacement(new BlockMatchTest(ModBlocks.HYMNSTONE), ore.defaultBlockState())), size, discard));
+	}
+
+	/** A vein in hymnstone or in the Carapace's carapace stone, each with its own ore, as deepslate's veins are. */
+	private static void ore(BootstrapContext<Feature> context, ResourceKey<Feature> key, Block ore, Block carapaceOre, int size, float discard) {
+		context.register(key, new OreFeature(List.of(new BlockReplacement(new BlockMatchTest(ModBlocks.HYMNSTONE), ore.defaultBlockState()),
+				new BlockReplacement(new BlockMatchTest(ModBlocks.CARAPACE_STONE), carapaceOre.defaultBlockState())), size, discard));
 	}
 
 	private static void placeOre(BootstrapContext<PlacedFeature> context, ResourceKey<PlacedFeature> key, ResourceKey<Feature> ore,
@@ -648,6 +640,8 @@ final class SiftWorldgen {
 				PlacementUtils.HEIGHTMAP_WORLD_SURFACE,
 				BiomeFilter.biome());
 		// The Carapace (D-035): a husk fossil every ten chunks or so; grass in patches on the dust.
+		PlacementUtils.register(context, SiftFeatures.CARAPACE_PILLARS, context.lookup(Registries.FEATURE).getOrThrow(SiftFeatures.CARAPACE_PILLAR),
+				RarityFilter.onAverageOnceEvery(2), InSquarePlacement.spread(), PlacementUtils.HEIGHTMAP, BiomeFilter.biome());
 		PlacementUtils.register(context, SiftFeatures.HUSK_FOSSILS_CARAPACE, context.lookup(Registries.FEATURE).getOrThrow(SiftFeatures.HUSK_FOSSIL),
 				RarityFilter.onAverageOnceEvery(10),
 				InSquarePlacement.spread(),
@@ -670,8 +664,6 @@ final class SiftWorldgen {
 		HolderGetter<Feature> features = context.lookup(Registries.FEATURE);
 		Holder<Feature> tree = features.getOrThrow(SiftFeatures.SONGWOOD_TREE);
 		PlacementUtils.register(context, SiftFeatures.SONGWOOD_CHECKED, tree, PlacementUtils.filteredByBlockSurvival(ModBlocks.SONGWOOD_SAPLING));
-		PlacementUtils.register(context, SiftFeatures.TALL_SONGWOOD_CHECKED, features.getOrThrow(SiftFeatures.TALL_SONGWOOD_TREE),
-				PlacementUtils.filteredByBlockSurvival(ModBlocks.SONGWOOD_SAPLING));
 		Holder<Feature> trees = features.getOrThrow(SiftFeatures.MEADOW_TREES);
 		// Woods that thicken and thin out across the land (owner playtest 2: the groves looked
 		// synthetic): vanilla's flower noise sets each chunk's count, 0 to 5, so a wood fades into
@@ -716,6 +708,22 @@ final class SiftWorldgen {
 					PlacementUtils.HEIGHTMAP_WORLD_SURFACE,
 					BiomeFilter.biome(),
 					CountPlacement.of(12),
+					OffsetPlacement.ofTriangle(6, 2),
+					BlockPredicateFilter.forPredicate(BlockPredicate.ONLY_IN_AIR_PREDICATE));
+		}
+		// Canon flora (owner playtest 6): goldfronds and gold petals through the Meadow, bluebulbs in its
+		// green hollows and over Lullaby Hills.
+		for (var patch : List.of(Map.entry(SiftFeatures.GOLDFRONDS_MEADOW, Map.entry(SiftFeatures.GOLDFROND_PATCH, 3)),
+				Map.entry(SiftFeatures.GOLDFRONDS_HILLS, Map.entry(SiftFeatures.GOLDFROND_PATCH, 6)),
+				Map.entry(SiftFeatures.GOLD_PETALS_MEADOW, Map.entry(SiftFeatures.GOLD_PETALS_PATCH, 2)),
+				Map.entry(SiftFeatures.BLUEBULBS_MEADOW, Map.entry(SiftFeatures.BLUEBULB_PATCH, 5)),
+				Map.entry(SiftFeatures.BLUEBULBS_HILLS, Map.entry(SiftFeatures.BLUEBULB_PATCH, 3)))) {
+			PlacementUtils.register(context, patch.getKey(), features.getOrThrow(patch.getValue().getKey()),
+					RarityFilter.onAverageOnceEvery(patch.getValue().getValue()),
+					InSquarePlacement.spread(),
+					PlacementUtils.HEIGHTMAP_WORLD_SURFACE,
+					BiomeFilter.biome(),
+					CountPlacement.of(10),
 					OffsetPlacement.ofTriangle(6, 2),
 					BlockPredicateFilter.forPredicate(BlockPredicate.ONLY_IN_AIR_PREDICATE));
 		}
@@ -818,14 +826,11 @@ final class SiftWorldgen {
 		HolderGetter<NoiseGeneratorSettings> noise = context.lookup(Registries.NOISE_SETTINGS);
 		context.register(SiftKeys.LEVEL_STEM, new LevelStem(types.getOrThrow(SiftKeys.DIMENSION_TYPE),
 				new NoiseBasedChunkGenerator(MultiNoiseBiomeSource.createFromList(new Climate.ParameterList<>(List.of(
-						surface(CARAPACE_HUMIDITY, FLATS_HUMIDITY, HILLS_EROSION, CARAPACE_EROSION, biomes.getOrThrow(SiftKeys.SINGERS_MEADOW)),
-						surface(-2.0F, CARAPACE_HUMIDITY, -0.2F, CARAPACE_EROSION, biomes.getOrThrow(SiftKeys.SINGERS_MEADOW)),
-						surface(-2.0F, CARAPACE_HUMIDITY, CARAPACE_EROSION, 2.0F, biomes.getOrThrow(SiftKeys.CARAPACE)),
-						surface(CARAPACE_HUMIDITY, FLATS_HUMIDITY, CARAPACE_EROSION, 2.0F, biomes.getOrThrow(SiftKeys.SINGERS_MEADOW)),
-						surface(-2.0F, FLATS_HUMIDITY, -2.0F, HILLS_EROSION, biomes.getOrThrow(SiftKeys.LULLABY_HILLS)),
-						surface(-2.0F, CARAPACE_HUMIDITY, HILLS_EROSION, -0.2F, biomes.getOrThrow(SiftKeys.LULLABY_HILLS)),
-						surface(FLATS_HUMIDITY, 2.0F, -2.0F, FLATS_EROSION, biomes.getOrThrow(SiftKeys.SINGERS_MEADOW)),
-						surface(FLATS_HUMIDITY, 2.0F, FLATS_EROSION, 2.0F, biomes.getOrThrow(SiftKeys.ICHOR_FLATS)),
+						surface(-2.0F, DRY_HUMIDITY, STEEP_EROSION, 2.0F, biomes.getOrThrow(SiftKeys.CARAPACE)),
+						surface(DRY_HUMIDITY, WET_HUMIDITY, STEEP_EROSION, 2.0F, biomes.getOrThrow(SiftKeys.SINGERS_MEADOW)),
+						surface(WET_HUMIDITY, 2.0F, STEEP_EROSION, 2.0F, biomes.getOrThrow(SiftKeys.ICHOR_FLATS)),
+						surface(-2.0F, HILLS_HUMIDITY, -2.0F, STEEP_EROSION, biomes.getOrThrow(SiftKeys.LULLABY_HILLS)),
+						surface(HILLS_HUMIDITY, 2.0F, -2.0F, STEEP_EROSION, biomes.getOrThrow(SiftKeys.SINGERS_MEADOW)),
 						byDepth(HOLLOWS_DEPTH, 2.0F, biomes.getOrThrow(SiftKeys.SIFT_HOLLOWS))))),
 						noise.getOrThrow(SiftKeys.NOISE))));
 	}

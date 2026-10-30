@@ -16,7 +16,9 @@ import thesift.registry.ModBlocks;
 /**
  * The teasers' signature (owner playtest rework): a tall rose spire of hymnstone, swaying a little as
  * it rises, with ledges where its layers jut out and, on most, a wide mushroom-like cap grown over
- * with healthy sculk. 14 to 33 blocks tall; it stays within a block of its chunk's neighbours.
+ * with healthy sculk. 14 to 33 blocks tall; it stays within a block of its chunk's neighbours. Up to
+ * three blocks of emerald ore lie in its shaft, some showing on its face, as in vanilla's mountains
+ * (owner playtest 6: emeralds in the pink biome's tall pillars).
  */
 public record HymnstoneSpireFeature() implements Feature {
 	public static final HymnstoneSpireFeature INSTANCE = new HymnstoneSpireFeature();
@@ -50,6 +52,8 @@ public record HymnstoneSpireFeature() implements Feature {
 		}
 		double cx = origin.getX();
 		double cz = origin.getZ();
+		int[] centreX = new int[height];
+		int[] centreZ = new int[height];
 		for (int y = 0; y < height; y++) {
 			float t = (float) y / height;
 			// Ledges where a harder layer juts out, a little every few blocks.
@@ -57,7 +61,18 @@ public record HymnstoneSpireFeature() implements Feature {
 			float r = Mth.lerp(t, baseRadius, topRadius) + ledge;
 			cx += swayX;
 			cz += swayZ;
-			disc(level, p, (int) Math.round(cx), origin.getY() + y, (int) Math.round(cz), r, stone, false);
+			centreX[y] = (int) Math.round(cx);
+			centreZ[y] = (int) Math.round(cz);
+			disc(level, p, centreX[y], origin.getY() + y, centreZ[y], r, stone, false);
+		}
+		for (int i = random.nextInt(4); i > 0; i--) {
+			int y = 2 + random.nextInt(height - 4);
+			float r = Mth.lerp((float) y / height, baseRadius, topRadius);
+			p.set(centreX[y] + Math.round((random.nextFloat() * 2.0F - 1.0F) * r), origin.getY() + y,
+					centreZ[y] + Math.round((random.nextFloat() * 2.0F - 1.0F) * r));
+			if (level.getBlockState(p).is(ModBlocks.HYMNSTONE)) {
+				level.setBlock(p, ModBlocks.HYMNSTONE_EMERALD_ORE.defaultBlockState(), Block.UPDATE_CLIENTS);
+			}
 		}
 		int top = origin.getY() + height;
 		int tx = (int) Math.round(cx);

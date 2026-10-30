@@ -852,3 +852,63 @@ The enduring Nester takes the soul corrupted Nester's pale glowing cyan. The spi
 - **Behaviour.** Full bright and translucent. It keeps the motion it is sent with and slows by 0.96 a tick, as vanilla's souls do, so cues that aim it still land; then it sways and lifts.
 
 **Revisit if** official Sift footage shows souls drawn differently from Dungeons II's.
+
+## D-039 The Sift's biomes rebalanced; the Carapace's crust and ores; emeralds in the spires (2026-10-30) [owner playtest 6] [amends D-035]
+**Context.** The owner: Singer's Meadow takes far too much of the Sift. Emerald ore should be found in the pink biome's tall pillars. The Carapace should have carapace stone ores, its own caves and more of its own. Measured over a 16 384-block square, the old layout gave the Meadow 67%, the Ichor Flats 21%, Lullaby Hills 9% and the Carapace 2.5%.
+
+**Decision.**
+- **Climate layout.** Flat land runs dry to wet: the Carapace, then the Meadow, then the Flats. Steep land is Lullaby Hills where it's dry and the Meadow where it's wet. The thresholds were fitted to 65 536 sampled climate points: erosion −0.1, humidity −0.1 / 0.1, hills up to 0.15. Shares are now Meadow 30%, Flats 24%, Carapace 23.5% and Hills 22.5%. `SiftDimensionTest.surfaceBiomesShareTheSift` keeps every surface biome between a seventh and two fifths.
+- **The Carapace's crust** is carapace stone, all the way down to the Hollows, so its caves are blue-stone caves.
+- **Carapace ores.** Every ore vein that meets carapace stone makes a carapace ore: coal, copper, iron, gold, redstone, lapis, diamond and emerald. They drop, smelt, are tagged and need the same tools as vanilla's.
+- **Emeralds in the spires.** Each hymnstone spire holds 0 to 3 blocks of hymnstone emerald ore, some showing on its face.
+
+**Revisit if** the Carapace's own caves need more than stone (see the Carapace's next decision), or emeralds come too easily from spires.
+
+## D-040 Songwood redrawn as the teasers' white trees (2026-10-30) [owner playtest 6] [supersedes D-026 on songwood's shape]
+**Context.** The owner: the canopies are too wide and too few. There should be 2 to 4, and rarely a large tree of 5 that is a little thicker and taller. Each canopy should be a box with an even, square top, taller than wide, with the bottom edges drooping a little. Canon (the Instagram teaser, Singer's Meadow, White_tree*) draws smooth, pale canopies on dark trunks.
+
+**Decision.** `SongwoodTreeFeature` replaces the cherry-shaped and fancy songwood trees, for worldgen and saplings alike.
+- **Shape.** A trunk 7 to 9 tall is crowned by a box of leaves. Branches hold more boxes around it: 2 to 4 canopies in all. Each box is 4 or 5 wide and two or three blocks taller than wide.
+- **Edges.** Leaves droop one or two blocks along the bottom edges, and drapes hang below.
+- **Grand trees.** One tree in twelve has a 2 × 2 trunk, 11 to 14 tall, with five canopies that are a little bigger.
+- **Leaves.** A log runs up inside each box, so the leaves stay. The texture is smooth, pale and low-contrast with no holes, after White_tree_leaves.
+
+**Revisit if** groves look too uniform (vary the box sizes more) or grand trees are too common.
+
+## D-041 Canon flora: the goldfrond, gold petals and the bluebulb (2026-10-30) [owner playtest 6] [pulls world.md's "Meadow flowers" forward]
+**Context.** The owner asked for the flora Dungeons II shows: the yellow flower in the pink biome, the small yellow flower patches that look like leaf litter, and the blue flower with a bulb on top. They are in MCD2_Singers_Meadow and on the banks of MCD2_Pool_of_ichor. The bible's "Meadow flowers" row cites canon's "yellow flower patches".
+
+**Decision.** Three plants, drawn to those screenshots:
+- **Goldfrond.** A yellow-orange fern of broad pointed fronds. It is a flower: yellow dye, and a short saturation stew.
+- **Gold petals.** Little four-petalled yellow flowers lying flat, 1 to 4 per block, turned every way. They use vanilla's flower-bed rules (pink petals') and give yellow dye.
+- **Bluebulb.** A pale-blue cube bulb on a thin dark-blue stem, with a hand-made model. The bulb is emissive and the block gives light 6. Light blue dye, and a night-vision stew.
+- **Ground.** All three grow on the Sift's ground: healthy sculk and dirt.
+- **Where they grow.** Goldfronds and gold petals through Singer's Meadow. Bluebulbs in the Meadow and over Lullaby Hills, with goldfronds there too.
+
+**Inventions, kept small.** The names, the stews, and where each grows.
+
+## D-042 The Carapace's pillars and bounce jelly (2026-10-30) [owner playtest 6] [amends D-035, D-039]
+**Context.** The owner wants the Carapace to have more of its own than its fossils. Canon shows blue-teal stone pillars over pale dust (S-I5) and says "bouncy slimes [are] used to access higher areas" there.
+
+**Decision.**
+- **Pillars.** Carapace stone, 5 to 10 tall (one in eight a tall one, to 20), about once every two chunks. They narrow as they rise, jut out in ledges, and are capped with Sift dust and red and yellow grass.
+- **Bounce jelly.** A see-through blue block that throws whoever steps on it about ten blocks up (an upward speed of 1.35). Sneaking stands on it safely, and landing on it does no fall damage. Half of the pillars up to 10 tall have one at their foot, so their tops can be reached. It drops itself.
+- **Caves.** The Carapace's own caves are D-039's blue-stone crust.
+
+**Inventions, kept small.** Bounce jelly stands in for canon's bouncy slimes, whose form isn't shown. The pillars' shape is ours.
+
+**Revisit if** official footage shows the bouncy slimes (a mob, a plant) or the Echo Den.
+
+## D-043 The Blub redrawn to the vanilla teaser (2026-10-30) [owner playtest 6] [amends D-029's face]
+**Context.** The owner: the mobs look described rather than drawn from the real images. The Sift's vanilla teaser (The_Sift_instagram) shows the Blub plainly:
+- a blue cube, its face blue above and teal below, with a grey-blue top;
+- two indigo slit eyes and a small indigo mouth;
+- tall ears, grey-blue with a blue-to-teal inner panel;
+- stubby feet.
+
+**Decision.** The texture is redrawn to those colours (the new `blub_coat` ramp, sampled from the teaser). The eyes are indigo slits; the round eyes with a catch-light, the separate mouth colour and the blush are gone. The ears grow to 3 × 6. The body, hitbox and animations are unchanged.
+
+## D-044 GameTests at a fixed place (2026-10-30) [test infrastructure]
+**Context.** Vanilla's GameTest server lays its tests out from a random point (its seed is fixed at 0). In the Sift that point is at y 4, in random ground: ichor aquifers, unlit stone. A few tests failed now and then, on CI and locally, depending on where they landed.
+
+**Decision.** A test-only mixin (`GameTestStartMixin`, never shipped) starts the layout at (1 000 000, 4, 1 000 000). Every run builds in the same ground, so a test passes or fails the same way each time. Two fresh runs both passed all 106. The dawn burrow test also sets the clock itself: a fresh world can spend thousands of ticks generating a batch's chunks after its environment set the clock.

@@ -2,6 +2,31 @@
 
 Step-by-step checklists the owner can run in-game. Produced at every gate.
 
+## `v0.1.12-alpha` (2026-10-30): your sixth playtest's notes
+Everything from your last message (D-037 to D-044). Use a **new world** for the land changes.
+- **Ichor (your top priority).**
+  - Find any pond, or the Ichor Flats. The surface is one big swirling oil-slick picture: mostly turquoise, with pink, violet and blue swirls, a little green and gold, and white glitter.
+  - It runs across blocks with no seams, and the colours move.
+  - Glimmers rise now and then.
+  - Pour some off a ledge: falls pour in ribbons of the same colours.
+  - Try it with your shaders (Sodium and Iris): it now draws there too, as a translucent surface.
+  - The **ichor bucket** is vanilla's bucket with ichor in it.
+- **Souls:** every soul wisp is the Sift's own pale-blue ghost now: Nesters, the Singer, the grove, frames, ichor. None is vanilla's.
+- **Biomes:**
+  - Singer's Meadow is now about a third of the Sift. The Carapace, Lullaby Hills and the Ichor Flats are about a quarter each.
+  - The **Carapace** has blue-teal **pillars**, some with **bounce jelly** at their foot: step on it to be thrown up onto the pillar, and sneak to stand on it.
+  - The Carapace's ground is carapace stone all the way down, so its **caves are blue**, with **carapace ores** of all eight kinds.
+- **Emeralds** show in the Meadow's tall pink spires.
+- **Trees:** songwood is now the teasers' white trees.
+  - Two to four tall, flat-topped boxes of pale leaves on a dark trunk, with drooping edges and drapes.
+  - Now and then a grand tree, thicker and taller, with five.
+- **Flora:**
+  - **goldfronds**, the yellow fern in the Meadow;
+  - **gold petals**, little yellow flowers lying like leaf litter;
+  - **bluebulbs**, glowing blue bulbs on thin stems, in the Meadow and Lullaby Hills.
+  - All three make dye.
+- **The Blub:** redrawn to the vanilla teaser, with a blue face going teal below, indigo slit eyes and taller ears.
+
 ## `v0.1.11-alpha` (2026-10-03): the Singer
 The canon Singer and the gift of song (D-036). In a **new world**, in Singer's Meadow:
 - **Find a grove:** a round clearing of healthy sculk ringed by chime bells. At its centre is a **grove heart**, with three dark **chorus stones** around it and a tall, shaggy, mint-green **Singer**, drawn after the Dungeons II ad. Play a note block near it and it hums a broken phrase. (`/locate` can't find groves; `/summon thesift:singer` shows one.)

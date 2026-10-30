@@ -13,10 +13,8 @@ import thesift.TheSift;
 public final class SiftFeatures {
 	public static final ResourceKey<Feature> SONGWOOD_TREE = ResourceKey.create(Registries.FEATURE, TheSift.id("songwood"));
 	/** Owner playtest 2 (D-026): a tall songwood whose trunk scatters into many small canopies, as a big oak. */
-	public static final ResourceKey<Feature> TALL_SONGWOOD_TREE = ResourceKey.create(Registries.FEATURE, TheSift.id("tall_songwood"));
 	public static final ResourceKey<Feature> MEADOW_TREES = ResourceKey.create(Registries.FEATURE, TheSift.id("meadow_trees"));
 	public static final ResourceKey<Feature> ICHOR_FLATS_POOLS = ResourceKey.create(Registries.FEATURE, TheSift.id("ichor_flats_pools"));
-	public static final ResourceKey<PlacedFeature> TALL_SONGWOOD_CHECKED = ResourceKey.create(Registries.PLACED_FEATURE, TheSift.id("tall_songwood_checked"));
 	public static final ResourceKey<PlacedFeature> TREES_FLATS = ResourceKey.create(Registries.PLACED_FEATURE, TheSift.id("trees_ichor_flats"));
 	public static final ResourceKey<PlacedFeature> POOLS_FLATS = ResourceKey.create(Registries.PLACED_FEATURE, TheSift.id("pools_ichor_flats"));
 	public static final ResourceKey<PlacedFeature> PONDS_MEADOW = ResourceKey.create(Registries.PLACED_FEATURE, TheSift.id("ichor_ponds"));
@@ -35,6 +33,18 @@ public final class SiftFeatures {
 	public static final ResourceKey<PlacedFeature> CHIME_BELLS_FLATS = ResourceKey.create(Registries.PLACED_FEATURE, TheSift.id("chime_bells_ichor_flats"));
 	public static final ResourceKey<PlacedFeature> GLOWCAPS_HOLLOWS = ResourceKey.create(Registries.PLACED_FEATURE, TheSift.id("glowcaps_sift_hollows"));
 	// Owner playtest 3 (D-029): the Flats' lights, and their own plant.
+	// The Carapace's pillars, with bounce jelly at their feet (owner playtest 6).
+	public static final ResourceKey<Feature> CARAPACE_PILLAR = ResourceKey.create(Registries.FEATURE, TheSift.id("carapace_pillar"));
+	public static final ResourceKey<PlacedFeature> CARAPACE_PILLARS = ResourceKey.create(Registries.PLACED_FEATURE, TheSift.id("carapace_pillars"));
+	// Canon flora (owner playtest 6).
+	public static final ResourceKey<Feature> GOLDFROND_PATCH = ResourceKey.create(Registries.FEATURE, TheSift.id("goldfrond_patch"));
+	public static final ResourceKey<Feature> GOLD_PETALS_PATCH = ResourceKey.create(Registries.FEATURE, TheSift.id("gold_petals_patch"));
+	public static final ResourceKey<Feature> BLUEBULB_PATCH = ResourceKey.create(Registries.FEATURE, TheSift.id("bluebulb_patch"));
+	public static final ResourceKey<PlacedFeature> GOLDFRONDS_MEADOW = ResourceKey.create(Registries.PLACED_FEATURE, TheSift.id("goldfronds_singers_meadow"));
+	public static final ResourceKey<PlacedFeature> GOLDFRONDS_HILLS = ResourceKey.create(Registries.PLACED_FEATURE, TheSift.id("goldfronds_lullaby_hills"));
+	public static final ResourceKey<PlacedFeature> GOLD_PETALS_MEADOW = ResourceKey.create(Registries.PLACED_FEATURE, TheSift.id("gold_petals_singers_meadow"));
+	public static final ResourceKey<PlacedFeature> BLUEBULBS_MEADOW = ResourceKey.create(Registries.PLACED_FEATURE, TheSift.id("bluebulbs_singers_meadow"));
+	public static final ResourceKey<PlacedFeature> BLUEBULBS_HILLS = ResourceKey.create(Registries.PLACED_FEATURE, TheSift.id("bluebulbs_lullaby_hills"));
 	public static final ResourceKey<Feature> ICHOR_LILY_PATCH = ResourceKey.create(Registries.FEATURE, TheSift.id("ichor_lily_patch"));
 	public static final ResourceKey<PlacedFeature> ICHOR_LILIES_FLATS = ResourceKey.create(Registries.PLACED_FEATURE, TheSift.id("ichor_lilies_ichor_flats"));
 	public static final ResourceKey<PlacedFeature> GLOWCAPS_FLATS = ResourceKey.create(Registries.PLACED_FEATURE, TheSift.id("glowcaps_ichor_flats"));

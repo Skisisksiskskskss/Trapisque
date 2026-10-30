@@ -32,6 +32,14 @@
     "thesift:hymnstone_lapis_ore",
     "thesift:hymnstone_diamond_ore",
     "thesift:hymnstone_emerald_ore",
-    "thesift:echo_ore"
+    "thesift:echo_ore",
+    "thesift:carapace_coal_ore",
+    "thesift:carapace_copper_ore",
+    "thesift:carapace_iron_ore",
+    "thesift:carapace_gold_ore",
+    "thesift:carapace_redstone_ore",
+    "thesift:carapace_lapis_ore",
+    "thesift:carapace_diamond_ore",
+    "thesift:carapace_emerald_ore"
   ]
 }

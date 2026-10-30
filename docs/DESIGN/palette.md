@@ -10,7 +10,7 @@ below allows.
 - A texture uses roughly 6–12 of these colours, as vanilla does (animated liquids: per frame). Owner playtest 2 (D-026): vanilla's
   look is per-pixel grain in many close shades with small clumps, not flat bands of three or four tones.
 - Alpha is free for fully transparent pixels (cutout plants, leaves, particles) and for the two translucent strips
-  (membrane 176–224; ichor 225, its glitter 245–255; souls 75–240); every visible pixel's RGB must still come from a ramp. Ichor's
+  (membrane 176–224; ichor 225, its glitter 245–255; souls 75–240; bounce jelly 165–240); every visible pixel's RGB must still come from a ramp. Ichor's
   field is the one texture drawn in a whole ramp at once (D-037): one picture spanning 16 x 16 blocks, not a block's tile.
 - Hue shifts along a ramp on purpose: shadows lean cooler, highlights warmer, as vanilla ramps do.
 - **Tiling:** every block texture tiles seamlessly and avoids features the eye can follow from block to block (no lines or tufts on a grid). Ground blocks ship variants (`_2`, `_3`), and healthy sculk's top also takes random rotations, as vanilla grass does.
@@ -32,12 +32,14 @@ below allows.
 | `ichor_marble` | `#c8dc78` `#84d28c` `#65ca96` `#3cc19f` `#32bdaa` `#26b9b5` `#18b5c0` `#1fb2c5` `#25afc9` `#2aabce` `#2ea8d2` `#3ea0d3` `#4998d5` `#5290d6` `#6585d3` `#7479d0` `#8876ce` `#9a72cc` `#a96cc7` `#b766c2` `#c66bc1` `#d670c0` `#e182c0` `#ec93c0` `#efaab4` `#f2bfa6` `#f3d97e` | Ichor (owner playtest 6, D-037), sampled from Dungeons II's ichor pools (MCD2_Pool_of_ichor): an oil slick's colours in one path, lime, green, sea-green, turquoise, cyan, blue, periwinkle, violet, purple, magenta, pink, peach, gold, in close OKLab steps so the bands meet softly. Turquoise and its neighbours hold most entries, so most of a pool is turquoise, as in canon; the ends (lime, gold) are rare. Not dark → light. Translucent in the fluid (alpha 225) |
 | `ichor_glint` | `#ffffff` `#e8f8f6` `#eee4fa` | Ichor's glitter: white, with pale cyan and pale lilac for a glint's fading frames and a star's arms |
 | `soul_wisp` | `#3e6688` `#6f9fc2` `#89b6d2` `#b4d6ea` `#e4f3fa` | The Sift's soul particle (owner playtest 6: never vanilla's soul): Dungeons II's soul blue (`#89b6d2`, from Dungeons2Sprite_soul) with a deep shade for the eyes and mouth, a rim, and two lights. Translucent (alpha 75–240) |
+| `goldfrond` | `#7a3f12` `#a85a18` `#d07f22` `#e8a72f` `#f5cb45` `#fbe67f` | The goldfrond (owner playtest 6): the Singer's Meadow's yellow fern in Dungeons II, deep orange at the root to pale yellow at the tips |
+| `gold_petals` | `#4f6420` `#6f8a2c` `#c9861c` `#efb92e` `#f9d955` `#fff0a3` | Gold petals (owner playtest 6): canon's yellow flower patches lying on the ground as leaf litter; two stem greens, an orange heart, three yellows |
+| `bluebulb` | `#17304d` `#24496f` `#2f6a8f` `#4f9bd0` `#7cc2ee` `#aee0fa` `#e6f7ff` | The bluebulb (owner playtest 6): canon's glowing pale-blue bulb on a thin dark-blue stem, from the green banks of Dungeons II's ichor pools |
+| `bounce_jelly` | `#1f6a8c` `#3f93b8` `#5fb4d4` `#86d2e6` `#b5e9f3` `#e8fbff` | Bounce jelly (owner playtest 6): the Carapace's see-through blue launch pads. Translucent (alpha 165–240) |
 | `membrane` | `#0b3f55` `#13687e` `#2598a8` `#55c8cc` `#a3eee8` `#e0fffa` | The Sift membrane's cyan shimmer (translucent) |
 | `blub` | `#3f6a8e` `#4f81a8` `#5f95ba` `#7aabc8` `#9cc2d6` `#c4dde8` | The Blub's blue, sampled from the first look (owner rework): the only blue mob in the Sift |
-| `blub_eye` | `#24204a` `#3d3570` `#eaf4ff` | The Blub's dark violet eyes (first look), and their catch-light (D-029) |
-| `blub_fur` | `#3f6a8e` `#4a789c` `#5486aa` `#5f95ba` `#6da0c1` `#7aabc8` `#8bb7cf` `#9cc2d6` `#b0d0df` `#c4dde8` | The Blub's coat drawn as vanilla's mobs are (D-029, owner playtest 3: "less cell shaded"): the `blub` ramp with a shade between each pair, for soft gradients |
-| `blub_mouth` | `#2a2246` `#4a3a68` | Its small mouth, always visible (D-029) |
-| `blub_blush` | `#a7a3d9` | Its cheeks |
+| `blub_eye` | `#2c2456` `#3d3577` | The Blub's indigo slit eyes and its mouth (owner playtest 6, from the Sift's vanilla teaser) |
+| `blub_coat` | `#2f5f8c` `#376fa0` `#4180b8` `#4c8fcb` `#5c9fd6` `#3a8fa8` `#44a3bd` `#52b6cc` `#7e9fc4` `#9cb6cf` `#b9cddd` | The Blub's coat, sampled from the Sift's vanilla teaser (owner playtest 6): two blues for the face's upper half and its sides, three teals for the lower half, three grey-blues for the top and the ears' rims. Not dark → light |
 | `nester` | `#2a6470` `#357987` `#3f8796` `#4b9bac` `#4fa5b7` `#66b8c6` | The Nester's hide (D-034): Dungeons II's teal |
 | `nester_jaw` | `#7f6648` `#9b805d` `#b8976d` `#d3b081` `#e6caa0` | Its lower jaw and feet: tan, speckled darker |
 | `nester_mouth` | `#5a2420` `#8a3b2a` `#c4683a` `#e39a4a` | Inside its mouth: dark at the back, warm at the lips |
@@ -143,6 +145,14 @@ below allows.
 | `particle/soul_3.png` | soul_wisp |
 | `particle/soul_4.png` | soul_wisp |
 | `particle/soul_5.png` | soul_wisp |
+| `block/goldfrond.png` | goldfrond |
+| `block/gold_petals.png` | gold_petals |
+| `block/gold_petals_stem.png` | gold_petals |
+| `item/gold_petals.png` | gold_petals |
+| `block/bluebulb_stem.png` | bluebulb |
+| `block/bluebulb_bulb.png` | bluebulb |
+| `item/bluebulb.png` | bluebulb |
+| `block/bounce_jelly.png` | bounce_jelly |
 | `item/lumen_lantern.png` | hymnstone, lumen |
 | `item/ichor_bucket_liquid.png` | ichor_marble, ichor_glint |
 | `particle/glow_petal.png` | healthy_sculk, particle |
@@ -160,6 +170,14 @@ below allows.
 | `block/hymnstone_lapis_ore.png` | hymnstone, ore_lapis |
 | `block/hymnstone_diamond_ore.png` | hymnstone, ore_diamond |
 | `block/hymnstone_emerald_ore.png` | hymnstone, ore_emerald |
+| `block/carapace_coal_ore.png` | carapace_stone, sift_dust, ore_coal |
+| `block/carapace_copper_ore.png` | carapace_stone, sift_dust, ore_copper |
+| `block/carapace_iron_ore.png` | carapace_stone, sift_dust, ore_iron |
+| `block/carapace_gold_ore.png` | carapace_stone, sift_dust, ore_gold |
+| `block/carapace_redstone_ore.png` | carapace_stone, sift_dust, ore_redstone |
+| `block/carapace_lapis_ore.png` | carapace_stone, sift_dust, ore_lapis |
+| `block/carapace_diamond_ore.png` | carapace_stone, sift_dust, ore_diamond |
+| `block/carapace_emerald_ore.png` | carapace_stone, sift_dust, ore_emerald |
 | `block/echo_ore.png` | hymnstone, echo |
 | `block/tide_roots_stage0.png` | tidewrack_underside, tide_root |
 | `block/tide_roots_stage1.png` | tidewrack_underside, tide_root |
@@ -187,7 +205,7 @@ below allows.
 | `block/grove_heart_side.png` | healthy_sculk, hymnstone, soul |
 | `block/grove_heart_top.png` | healthy_sculk, soul |
 | `item/singers_horn.png` | singer_antler, singer_gold |
-| `entity/blub/blub.png` | blub_fur, blub_eye, blub_mouth, blub_blush |
+| `entity/blub/blub.png` | blub_coat, blub_eye |
 | `entity/blub/blub_glow.png` | membrane |
 | `entity/nester/nester.png` | nester, nester_jaw, nester_mouth, nester_tooth, nester_eye |
 | `entity/nester/nester_soul.png` | nester_soul, nester_mouth, nester_tooth, nester_eye |

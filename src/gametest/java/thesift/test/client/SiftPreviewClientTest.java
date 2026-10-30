@@ -49,6 +49,14 @@ public final class SiftPreviewClientTest implements FabricClientGameTest {
 			}
 			return;
 		}
+		// For songwood's look (SIFT_TREES_ONLY=1 tools/dev/client-previews.sh): only the tree shots.
+		if ("1".equals(System.getenv("SIFT_TREES_ONLY"))) {
+			try (TestSingleplayerContext world = context.worldBuilder().create()) {
+				world.getServer().runCommand("gamerule advance_time false");
+				treeShots(context, world);
+			}
+			return;
+		}
 		// For ichor's look (SIFT_ICHOR_ONLY=1 tools/dev/client-previews.sh): only the ichor shots.
 		if ("1".equals(System.getenv("SIFT_ICHOR_ONLY"))) {
 			try (TestSingleplayerContext world = context.worldBuilder().create()) {
@@ -464,6 +472,59 @@ public final class SiftPreviewClientTest implements FabricClientGameTest {
 		world.getServer().runCommand("item replace entity @a hotbar.0 with thesift:ichor_bucket");
 		context.waitTicks(10);
 		context.takeScreenshot("ichor_bucket_held");
+	}
+
+	/** Owner playtest 6: nine songwood trees grown on a platform in the sky, from afar and from below. */
+	private static void treeShots(ClientGameTestContext context, TestSingleplayerContext world) {
+		world.getServer().runCommand("execute in thesift:the_sift run time of thesift:tides set thesift:thrive");
+		int x = 500;
+		int y = 120;
+		int z = 500;
+		world.getServer().runCommand("gamemode spectator @a");
+		run(world, "tp @a %d %d %d -45 20", x - 30, y + 18, z - 30);
+		world.getConnection().waitForChunksRender();
+		run(world, "fill %d %d %d %d %d %d thesift:sift_soil", x - 20, y - 2, z - 20, x + 20, y - 2, z + 20);
+		run(world, "fill %d %d %d %d %d %d thesift:healthy_sculk", x - 20, y - 1, z - 20, x + 20, y - 1, z + 20);
+		for (int i = -1; i <= 1; i++) {
+			for (int j = -1; j <= 1; j++) {
+				run(world, "place feature thesift:songwood %d %d %d", x + i * 13, y, z + j * 13);
+			}
+		}
+		// Canon flora in a bed in front of the grove (owner playtest 6).
+		for (int i = 0; i < 9; i++) {
+			run(world, "setblock %d %d %d thesift:goldfrond", x - 18 + i, y, z - 18);
+			run(world, "setblock %d %d %d thesift:bluebulb", x - 18 + i, y, z - 16);
+			run(world, "setblock %d %d %d thesift:gold_petals[flower_amount=%d,facing=%s]", x - 18 + i, y, z - 17, 1 + i % 4,
+					new String[] {"north", "east", "south", "west"}[i % 4]);
+		}
+		world.getConnection().waitForChunksRender();
+		context.waitTicks(20);
+		context.takeScreenshot("trees_grove");
+		// The Carapace's pillars on a bed of dust beside the grove (owner playtest 6).
+		run(world, "fill %d %d %d %d %d %d thesift:sift_dust", x + 22, y - 1, z - 20, x + 40, y - 1, z + 20);
+		for (int i = 0; i < 4; i++) {
+			run(world, "place feature thesift:carapace_pillar %d %d %d", x + 26 + (i % 2) * 9, y, z - 12 + i * 8);
+		}
+		world.getConnection().waitForChunksRender();
+		context.waitTicks(10);
+		run(world, "tp @a %d %d %d 60 20", x + 50, y + 10, z - 22);
+		world.getConnection().waitForChunksRender();
+		context.waitTicks(5);
+		context.takeScreenshot("carapace_pillars");
+		run(world, "tp @a %d %d %d -20 45", x - 16, y + 3, z - 20);
+		world.getConnection().waitForChunksRender();
+		context.waitTicks(5);
+		context.takeScreenshot("flora_bed");
+		// The Blub, redrawn to the vanilla teaser (owner playtest 6), face on and three-quarters.
+		run(world, "summon thesift:blub %d %d %d {NoAI:1b,Rotation:[180f,0f]}", x - 14, y, z - 9);
+		run(world, "summon thesift:blub %d %d %d {NoAI:1b,Rotation:[215f,0f]}", x - 11, y, z - 9);
+		run(world, "tp @a %.1f %.1f %.1f 0 12", x - 12.0, y + 1.6, z - 13.5);
+		context.waitTicks(10);
+		context.takeScreenshot("blub_face");
+		run(world, "tp @a %d %d %d -30 -12", x - 22, y + 3, z - 14);
+		world.getConnection().waitForChunksRender();
+		context.waitTicks(5);
+		context.takeScreenshot("trees_side");
 	}
 
 	private static void ichorFogShot(ClientGameTestContext context, TestSingleplayerContext world) {

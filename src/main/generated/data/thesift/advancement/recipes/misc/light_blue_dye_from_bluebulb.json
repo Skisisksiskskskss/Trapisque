@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_bluebulb": {
+      "conditions": {
+        "items": [
+          {
+            "items": "thesift:bluebulb"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipes": "thesift:light_blue_dye_from_bluebulb"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_bluebulb"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "thesift:light_blue_dye_from_bluebulb"
+    ]
+  }
+}

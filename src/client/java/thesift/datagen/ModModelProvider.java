@@ -170,9 +170,17 @@ final class ModModelProvider extends FabricModelProvider {
 		g.blockStateOutput.accept(BlockModelGenerators.createSimpleBlock(ModBlocks.LUMEN_BLOOM, BlockModelGenerators.plainVariant(lumen)));
 		g.registerSimpleFlatItemModel(ModBlocks.LUMEN_BLOOM);
 		g.createLantern(ModBlocks.LUMEN_LANTERN);
+		g.createTrivialCube(ModBlocks.BOUNCE_JELLY);
+		// Canon flora (owner playtest 6): a cross fern, a flower bed, and the bluebulb's hand-made model (a stem and a bulb).
+		g.createCrossBlockWithDefaultItem(ModBlocks.GOLDFROND, BlockModelGenerators.PlantType.NOT_TINTED);
+		g.createFlowerBed(ModBlocks.GOLD_PETALS);
+		g.blockStateOutput.accept(BlockModelGenerators.createSimpleBlock(ModBlocks.BLUEBULB, BlockModelGenerators.plainVariant(TheSift.id("block/bluebulb"))));
+		g.registerSimpleFlatItemModel(ModBlocks.BLUEBULB.asItem());
 		// Living in the Sift: ores, the tide-root crop.
 		for (Block ore : new Block[] {ModBlocks.HYMNSTONE_COAL_ORE, ModBlocks.HYMNSTONE_COPPER_ORE, ModBlocks.HYMNSTONE_IRON_ORE, ModBlocks.HYMNSTONE_GOLD_ORE,
-				ModBlocks.HYMNSTONE_REDSTONE_ORE, ModBlocks.HYMNSTONE_LAPIS_ORE, ModBlocks.HYMNSTONE_DIAMOND_ORE, ModBlocks.HYMNSTONE_EMERALD_ORE, ModBlocks.ECHO_ORE}) {
+				ModBlocks.HYMNSTONE_REDSTONE_ORE, ModBlocks.HYMNSTONE_LAPIS_ORE, ModBlocks.HYMNSTONE_DIAMOND_ORE, ModBlocks.HYMNSTONE_EMERALD_ORE, ModBlocks.ECHO_ORE,
+				ModBlocks.CARAPACE_COAL_ORE, ModBlocks.CARAPACE_COPPER_ORE, ModBlocks.CARAPACE_IRON_ORE, ModBlocks.CARAPACE_GOLD_ORE,
+				ModBlocks.CARAPACE_REDSTONE_ORE, ModBlocks.CARAPACE_LAPIS_ORE, ModBlocks.CARAPACE_DIAMOND_ORE, ModBlocks.CARAPACE_EMERALD_ORE}) {
 			g.createTrivialCube(ore);
 		}
 		g.createCropBlock(ModBlocks.TIDE_ROOTS, TideRootsBlock.AGE, 0, 1, 2, 3);

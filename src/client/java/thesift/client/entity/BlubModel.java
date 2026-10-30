@@ -10,8 +10,8 @@ import net.minecraft.client.model.geom.builders.PartDefinition;
 import net.minecraft.util.Mth;
 
 /**
- * The Blub: a rounded 7 x 6 x 7 box with two upright ear tufts, four little feet and a tail tuft
- * (mob_blub.md). No separate head: its face is the body's front, as the Dungeons II first look shows.
+ * The Blub: a 9 x 7 x 8 box with two tall upright ears, four stubby feet and a tail tuft (mob_blub.md),
+ * drawn to the Sift's vanilla teaser (owner playtest 6). No separate head: its face is the body's front.
  * The clips (mob_blub.md, animations) are procedural, driven by synced state and entity events:
  * idle, walk, hop, listen, sing, bathe, curl and the stack wobble; hurt and death are vanilla's.
  */
@@ -49,11 +49,12 @@ public class BlubModel extends EntityModel<BlubRenderState> {
 				CubeListBuilder.create().texOffs(0, 0).addBox(-4.5F, -7.0F, -4.0F, 9.0F, 7.0F, 8.0F)
 						.texOffs(36, 8).addBox(-1.0F, -3.0F, 4.0F, 2.0F, 2.0F, 1.0F),
 				PartPose.offset(0.0F, 23.0F, 0.0F));
-		body.addOrReplaceChild("left_ear", CubeListBuilder.create().texOffs(36, 0).addBox(-1.0F, -5.0F, -0.5F, 2.0F, 5.0F, 1.0F),
-				PartPose.offset(2.25F, -7.0F, -1.5F));
-		body.addOrReplaceChild("right_ear", CubeListBuilder.create().texOffs(42, 0).addBox(-1.0F, -5.0F, -0.5F, 2.0F, 5.0F, 1.0F),
-				PartPose.offset(-2.25F, -7.0F, -1.5F));
-		CubeListBuilder foot = CubeListBuilder.create().texOffs(48, 0).addBox(-1.0F, 0.0F, -1.0F, 2.0F, 1.0F, 2.0F);
+		// The teaser's ears: three wide, six tall, over the outer halves of the eyes.
+		body.addOrReplaceChild("left_ear", CubeListBuilder.create().texOffs(36, 0).addBox(-1.5F, -6.0F, -0.5F, 3.0F, 6.0F, 1.0F),
+				PartPose.offset(2.5F, -7.0F, -1.5F));
+		body.addOrReplaceChild("right_ear", CubeListBuilder.create().texOffs(44, 0).addBox(-1.5F, -6.0F, -0.5F, 3.0F, 6.0F, 1.0F),
+				PartPose.offset(-2.5F, -7.0F, -1.5F));
+		CubeListBuilder foot = CubeListBuilder.create().texOffs(52, 0).addBox(-1.0F, 0.0F, -1.0F, 2.0F, 1.0F, 2.0F);
 		root.addOrReplaceChild("front_left_foot", foot, PartPose.offset(2.5F, 23.0F, -2.5F));
 		root.addOrReplaceChild("front_right_foot", foot, PartPose.offset(-2.5F, 23.0F, -2.5F));
 		root.addOrReplaceChild("back_left_foot", foot, PartPose.offset(2.5F, 23.0F, 2.5F));

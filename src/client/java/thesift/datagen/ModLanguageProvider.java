@@ -70,6 +70,10 @@ final class ModLanguageProvider extends FabricLanguageProvider {
 		builder.add(ModBlocks.GLOWCAP, "Glowcap");
 		builder.add(ModBlocks.POTTED_GLOWCAP, "Potted Glowcap");
 		builder.add(ModBlocks.CHIME_BELL_FLOWER, "Chime Bell Flower");
+		builder.add(ModBlocks.GOLDFROND, "Goldfrond");
+		builder.add(ModBlocks.BOUNCE_JELLY, "Bounce Jelly");
+		builder.add(ModBlocks.GOLD_PETALS, "Gold Petals");
+		builder.add(ModBlocks.BLUEBULB, "Bluebulb");
 		builder.add(ModBlocks.POTTED_CHIME_BELL_FLOWER, "Potted Chime Bell Flower");
 		builder.add(ModBlocks.LUMEN_BLOOM, "Lumen Bloom");
 		builder.add(ModBlocks.LUMEN_LANTERN, "Lumen Lantern");
@@ -82,6 +86,14 @@ final class ModLanguageProvider extends FabricLanguageProvider {
 		builder.add(ModBlocks.HYMNSTONE_LAPIS_ORE, "Hymnstone Lapis Lazuli Ore");
 		builder.add(ModBlocks.HYMNSTONE_DIAMOND_ORE, "Hymnstone Diamond Ore");
 		builder.add(ModBlocks.HYMNSTONE_EMERALD_ORE, "Hymnstone Emerald Ore");
+		builder.add(ModBlocks.CARAPACE_COAL_ORE, "Carapace Coal Ore");
+		builder.add(ModBlocks.CARAPACE_COPPER_ORE, "Carapace Copper Ore");
+		builder.add(ModBlocks.CARAPACE_IRON_ORE, "Carapace Iron Ore");
+		builder.add(ModBlocks.CARAPACE_GOLD_ORE, "Carapace Gold Ore");
+		builder.add(ModBlocks.CARAPACE_REDSTONE_ORE, "Carapace Redstone Ore");
+		builder.add(ModBlocks.CARAPACE_LAPIS_ORE, "Carapace Lapis Lazuli Ore");
+		builder.add(ModBlocks.CARAPACE_DIAMOND_ORE, "Carapace Diamond Ore");
+		builder.add(ModBlocks.CARAPACE_EMERALD_ORE, "Carapace Emerald Ore");
 		builder.add(ModBlocks.ECHO_ORE, "Echo Ore");
 		builder.add(ModBlocks.TIDE_ROOTS, "Tide Roots");
 		builder.add(ModItems.TIDE_ROOT, "Tide Root");

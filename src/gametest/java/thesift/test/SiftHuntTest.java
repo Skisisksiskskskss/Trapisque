@@ -3,6 +3,7 @@ package thesift.test;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -16,6 +17,7 @@ import thesift.entity.nester.NesterState;
 import thesift.registry.ModBlocks;
 import thesift.registry.ModEntities;
 import thesift.world.Tide;
+import thesift.world.TideClock;
 
 /** The hunt (system_hunt.md) and the Nester (mob_nester.md), WP-066/067. */
 public final class SiftHuntTest {
@@ -118,6 +120,11 @@ public final class SiftHuntTest {
 	 */
 	@GameTest(dimension = SIFT, structure = SiftBasinTest.BIG, maxTicks = 400, environment = DAWN) // past every moment (27 000-28 999); a check, a walk, a 60-tick dig
 	public void nestersBurrowAtDawn(GameTestHelper helper) {
+		// The environment sets the clock when its batch begins, but a fresh world can spend thousands of
+		// ticks generating the batch's chunks before the test starts, past dawn: set it again (the
+		// environment still restores the clock after the batch).
+		MinecraftServer server = helper.getLevel().getServer();
+		server.clockManager().setTotalTicks(TideClock.clock(server), 29_100);
 		floor(helper);
 		Nester nester = wildNester(helper, 8.5, 8.5);
 		helper.succeedWhen(() -> helper.assertFalse(nester.isAlive(), "dug away (state " + nester.state() + ", return by "

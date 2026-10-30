@@ -65,14 +65,20 @@ final class ModTagProviders {
 			tag(BlockTags.NEEDS_STONE_TOOL, ModBlocks.HYMNSTONE_COPPER_ORE, ModBlocks.HYMNSTONE_IRON_ORE, ModBlocks.HYMNSTONE_LAPIS_ORE);
 			tag(BlockTags.NEEDS_IRON_TOOL, ModBlocks.HYMNSTONE_GOLD_ORE, ModBlocks.HYMNSTONE_REDSTONE_ORE, ModBlocks.HYMNSTONE_DIAMOND_ORE,
 					ModBlocks.HYMNSTONE_EMERALD_ORE, ModBlocks.ECHO_ORE);
-			tag(BlockItemTags.COAL_ORES.block(), ModBlocks.HYMNSTONE_COAL_ORE);
-			tag(BlockItemTags.COPPER_ORES.block(), ModBlocks.HYMNSTONE_COPPER_ORE);
-			tag(BlockItemTags.IRON_ORES.block(), ModBlocks.HYMNSTONE_IRON_ORE);
-			tag(BlockItemTags.GOLD_ORES.block(), ModBlocks.HYMNSTONE_GOLD_ORE);
-			tag(BlockItemTags.REDSTONE_ORES.block(), ModBlocks.HYMNSTONE_REDSTONE_ORE);
-			tag(BlockItemTags.LAPIS_ORES.block(), ModBlocks.HYMNSTONE_LAPIS_ORE);
-			tag(BlockItemTags.DIAMOND_ORES.block(), ModBlocks.HYMNSTONE_DIAMOND_ORE);
-			tag(BlockItemTags.EMERALD_ORES.block(), ModBlocks.HYMNSTONE_EMERALD_ORE);
+			tag(BlockTags.MINEABLE_WITH_PICKAXE, ModBlocks.CARAPACE_COAL_ORE, ModBlocks.CARAPACE_COPPER_ORE, ModBlocks.CARAPACE_IRON_ORE,
+					ModBlocks.CARAPACE_GOLD_ORE, ModBlocks.CARAPACE_REDSTONE_ORE, ModBlocks.CARAPACE_LAPIS_ORE, ModBlocks.CARAPACE_DIAMOND_ORE,
+					ModBlocks.CARAPACE_EMERALD_ORE);
+			tag(BlockTags.NEEDS_STONE_TOOL, ModBlocks.CARAPACE_COPPER_ORE, ModBlocks.CARAPACE_IRON_ORE, ModBlocks.CARAPACE_LAPIS_ORE);
+			tag(BlockTags.NEEDS_IRON_TOOL, ModBlocks.CARAPACE_GOLD_ORE, ModBlocks.CARAPACE_REDSTONE_ORE, ModBlocks.CARAPACE_DIAMOND_ORE,
+					ModBlocks.CARAPACE_EMERALD_ORE);
+			tag(BlockItemTags.COAL_ORES.block(), ModBlocks.HYMNSTONE_COAL_ORE, ModBlocks.CARAPACE_COAL_ORE);
+			tag(BlockItemTags.COPPER_ORES.block(), ModBlocks.HYMNSTONE_COPPER_ORE, ModBlocks.CARAPACE_COPPER_ORE);
+			tag(BlockItemTags.IRON_ORES.block(), ModBlocks.HYMNSTONE_IRON_ORE, ModBlocks.CARAPACE_IRON_ORE);
+			tag(BlockItemTags.GOLD_ORES.block(), ModBlocks.HYMNSTONE_GOLD_ORE, ModBlocks.CARAPACE_GOLD_ORE);
+			tag(BlockItemTags.REDSTONE_ORES.block(), ModBlocks.HYMNSTONE_REDSTONE_ORE, ModBlocks.CARAPACE_REDSTONE_ORE);
+			tag(BlockItemTags.LAPIS_ORES.block(), ModBlocks.HYMNSTONE_LAPIS_ORE, ModBlocks.CARAPACE_LAPIS_ORE);
+			tag(BlockItemTags.DIAMOND_ORES.block(), ModBlocks.HYMNSTONE_DIAMOND_ORE, ModBlocks.CARAPACE_DIAMOND_ORE);
+			tag(BlockItemTags.EMERALD_ORES.block(), ModBlocks.HYMNSTONE_EMERALD_ORE, ModBlocks.CARAPACE_EMERALD_ORE);
 			tag(BlockTags.CROPS, ModBlocks.TIDE_ROOTS);
 			// Soil (system_hunt.md): hunters come up out of it and dig back in; stone and planks are safe floors.
 			tag(ModTags.HUNTER_BURROWABLE, ModBlocks.HEALTHY_SCULK, ModBlocks.SIFT_SOIL, ModBlocks.SIFT_DUST);
@@ -105,8 +111,10 @@ final class ModTagProviders {
 			// Flora II (block_flora_ii.md): the chime bell is a small flower (bees, stew, endermen); it and the
 			// glowcap wash away as vanilla's flowers and mushrooms do; the two wild blooms hold fluids back.
 			tag(ModTags.TIDE_FLORA, ModBlocks.TIDEWRACK, ModBlocks.ENDURE_BLOOM);
-			tag(BlockTags.SMALL_FLOWERS, ModBlocks.CHIME_BELL_FLOWER);
-			tag(BlockTags.BEE_ATTRACTIVE, ModBlocks.CHIME_BELL_FLOWER);
+			tag(BlockTags.SMALL_FLOWERS, ModBlocks.CHIME_BELL_FLOWER, ModBlocks.GOLDFROND, ModBlocks.BLUEBULB);
+			tag(BlockTags.BEE_ATTRACTIVE, ModBlocks.CHIME_BELL_FLOWER, ModBlocks.GOLDFROND, ModBlocks.BLUEBULB, ModBlocks.GOLD_PETALS);
+			tag(BlockTags.FLOWERS, ModBlocks.GOLD_PETALS);
+			tag(BlockTags.INSIDE_STEP_SOUND_BLOCKS, ModBlocks.GOLD_PETALS);
 			tag(BlockTags.WASHED_AWAY_BY_FLUIDS, ModBlocks.CHIME_BELL_FLOWER, ModBlocks.GLOWCAP);
 			tag(BlockTags.FLOWER_POTS, ModBlocks.POTTED_GLOWCAP, ModBlocks.POTTED_CHIME_BELL_FLOWER);
 		}
@@ -140,8 +148,9 @@ final class ModTagProviders {
 			tag(ItemTags.STONE_CRAFTING_MATERIALS, ModBlocks.COBBLED_HYMNSTONE);
 			tag(ModTags.SONGWOOD_LOGS_ITEM, ModBlocks.SONGWOOD_LOG);
 			builder(ItemTags.LOGS_THAT_BURN).addTag(ModTags.SONGWOOD_LOGS_ITEM);
-			tag(BlockItemTags.SMALL_FLOWERS.item(), ModBlocks.CHIME_BELL_FLOWER);
-			tag(BlockItemTags.BEE_FOOD.item(), ModBlocks.CHIME_BELL_FLOWER);
+			tag(BlockItemTags.SMALL_FLOWERS.item(), ModBlocks.CHIME_BELL_FLOWER, ModBlocks.GOLDFROND, ModBlocks.BLUEBULB);
+			tag(BlockItemTags.BEE_FOOD.item(), ModBlocks.CHIME_BELL_FLOWER, ModBlocks.GOLDFROND, ModBlocks.BLUEBULB, ModBlocks.GOLD_PETALS);
+			tag(BlockItemTags.FLOWERS.item(), ModBlocks.GOLD_PETALS);
 		}
 	}
 

@@ -17,6 +17,7 @@ import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.FlowerBedBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
@@ -219,5 +220,27 @@ public final class SiftFloraTest {
 				helper.setBlock(new BlockPos(x, 0, z), ModBlocks.HEALTHY_SCULK);
 			}
 		}
+	}
+
+	/** Owner playtest 6: canon's flora grows on the Sift's soil and drops itself (gold petals by the count). */
+	@GameTest(dimension = SIFT)
+	public void canonFloraGrowsOnSiftSoil(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		BlockState petals = ModBlocks.GOLD_PETALS.defaultBlockState().setValue(FlowerBedBlock.AMOUNT, 3);
+		for (Block ground : new Block[] {ModBlocks.HEALTHY_SCULK, ModBlocks.SIFT_SOIL}) {
+			helper.setBlock(GROUND, ground);
+			BlockPos at = helper.absolutePos(PLANT);
+			for (BlockState plant : new BlockState[] {ModBlocks.GOLDFROND.defaultBlockState(), ModBlocks.BLUEBULB.defaultBlockState(), petals}) {
+				helper.assertTrue(plant.canSurvive(level, at), plant.getBlock() + " grows on " + ground);
+			}
+		}
+		helper.setBlock(PLANT, petals);
+		BlockPos at = helper.absolutePos(PLANT);
+		List<ItemStack> drops = Block.getDrops(level.getBlockState(at), level, at, null);
+		helper.assertTrue(drops.size() == 1 && drops.getFirst().is(ModBlocks.GOLD_PETALS.asItem()) && drops.getFirst().getCount() == 3,
+				"three gold petals drop three: " + drops);
+		helper.setBlock(PLANT, ModBlocks.BLUEBULB);
+		helper.assertTrue(level.getLightEmission(at) == 6, "the bluebulb glows");
+		helper.succeed();
 	}
 }

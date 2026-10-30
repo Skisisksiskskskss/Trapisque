@@ -99,6 +99,10 @@ final class ModRecipeProvider extends FabricRecipeProvider {
 				simpleCookingRecipe("smelting", SmeltingRecipe::new, 200, ModItems.TIDE_ROOT, ModItems.BAKED_TIDE_ROOT, 0.35F);
 				simpleCookingRecipe("smoking", SmokingRecipe::new, 100, ModItems.TIDE_ROOT, ModItems.BAKED_TIDE_ROOT, 0.35F);
 				simpleCookingRecipe("campfire_cooking", CampfireCookingRecipe::new, 600, ModItems.TIDE_ROOT, ModItems.BAKED_TIDE_ROOT, 0.35F);
+				// Canon flora's dyes (owner playtest 6).
+				oneToOneConversionRecipe(Items.DYE.yellow(), ModBlocks.GOLDFROND, "yellow_dye");
+				oneToOneConversionRecipe(Items.DYE.yellow(), ModBlocks.GOLD_PETALS, "yellow_dye");
+				oneToOneConversionRecipe(Items.DYE.lightBlue(), ModBlocks.BLUEBULB, "light_blue_dye");
 				smeltOre(ModBlocks.HYMNSTONE_COAL_ORE, Items.COAL, 0.1F, "coal");
 				smeltOre(ModBlocks.HYMNSTONE_COPPER_ORE, Items.COPPER_INGOT, 0.7F, "copper_ingot");
 				smeltOre(ModBlocks.HYMNSTONE_IRON_ORE, Items.IRON_INGOT, 0.7F, "iron_ingot");
@@ -107,6 +111,14 @@ final class ModRecipeProvider extends FabricRecipeProvider {
 				smeltOre(ModBlocks.HYMNSTONE_LAPIS_ORE, Items.LAPIS_LAZULI, 0.2F, "lapis_lazuli");
 				smeltOre(ModBlocks.HYMNSTONE_DIAMOND_ORE, Items.DIAMOND, 1.0F, "diamond");
 				smeltOre(ModBlocks.HYMNSTONE_EMERALD_ORE, Items.EMERALD, 1.0F, "emerald");
+				smeltOre(ModBlocks.CARAPACE_COAL_ORE, Items.COAL, 0.1F, "coal");
+				smeltOre(ModBlocks.CARAPACE_COPPER_ORE, Items.COPPER_INGOT, 0.7F, "copper_ingot");
+				smeltOre(ModBlocks.CARAPACE_IRON_ORE, Items.IRON_INGOT, 0.7F, "iron_ingot");
+				smeltOre(ModBlocks.CARAPACE_GOLD_ORE, Items.GOLD_INGOT, 1.0F, "gold_ingot");
+				smeltOre(ModBlocks.CARAPACE_REDSTONE_ORE, Items.REDSTONE, 0.7F, "redstone");
+				smeltOre(ModBlocks.CARAPACE_LAPIS_ORE, Items.LAPIS_LAZULI, 0.2F, "lapis_lazuli");
+				smeltOre(ModBlocks.CARAPACE_DIAMOND_ORE, Items.DIAMOND, 1.0F, "diamond");
+				smeltOre(ModBlocks.CARAPACE_EMERALD_ORE, Items.EMERALD, 1.0F, "emerald");
 				shaped(RecipeCategory.DECORATIONS, ModBlocks.LUMEN_LANTERN)
 						.define('P', ModItems.ENDURE_PETAL).define('H', ModBlocks.HYMNSTONE)
 						.pattern(" P ").pattern("PHP").pattern(" P ")

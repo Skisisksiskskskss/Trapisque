@@ -2,6 +2,9 @@
   "values": [
     "thesift:hymnstone_copper_ore",
     "thesift:hymnstone_iron_ore",
-    "thesift:hymnstone_lapis_ore"
+    "thesift:hymnstone_lapis_ore",
+    "thesift:carapace_copper_ore",
+    "thesift:carapace_iron_ore",
+    "thesift:carapace_lapis_ore"
   ]
 }

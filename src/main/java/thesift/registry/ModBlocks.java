@@ -13,10 +13,12 @@ import net.minecraft.util.ColorRGBA;
 import net.minecraft.util.random.WeightedList;
 import net.minecraft.util.valueproviders.ConstantInt;
 import net.minecraft.util.valueproviders.UniformInt;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.ColoredFallingBlock;
 import net.minecraft.world.level.block.DropExperienceBlock;
+import net.minecraft.world.level.block.FlowerBlock;
 import net.minecraft.world.level.block.HangingMossBlock;
 import net.minecraft.world.level.block.FlowerPotBlock;
 import net.minecraft.world.level.block.LanternBlock;
@@ -37,16 +39,19 @@ import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.level.storage.loot.providers.number.ints.ContextIntProviders;
 
 import thesift.TheSift;
+import thesift.block.BounceJellyBlock;
 import thesift.block.CarapaceGrassBlock;
 import thesift.block.ChimeBellFlowerBlock;
 import thesift.block.ChorusStoneBlock;
 import thesift.block.EndureBloomBlock;
 import thesift.block.GlowcapBlock;
+import thesift.block.GoldPetalsBlock;
 import thesift.block.GroveHeartBlock;
 import thesift.block.HealthySculkBlock;
 import thesift.block.HealthySculkGrassBlock;
 import thesift.block.IchorLilyBlock;
 import thesift.block.LumenBloomBlock;
+import thesift.block.SiftFlowerBlock;
 import thesift.block.SiftMembraneBlock;
 import thesift.block.SongwoodLogBlock;
 import thesift.block.SongwoodSaplingBlock;
@@ -100,6 +105,9 @@ public final class ModBlocks {
 	public static final Block CARAPACE_STONE = register("carapace_stone", Block::new, BlockBehaviour.Properties.of()
 			.mapColor(MapColor.COLOR_BLUE).instrument(NoteBlockInstrument.BASEDRUM).requiresCorrectToolForDrops().strength(1.5F, 6.0F)
 			.sound(SoundType.STONE));
+	/** Bounce jelly (owner playtest 6): the Carapace's launch pads at the feet of its pillars. */
+	public static final Block BOUNCE_JELLY = register("bounce_jelly", BounceJellyBlock::new, BlockBehaviour.Properties.of()
+			.mapColor(MapColor.COLOR_LIGHT_BLUE).strength(0.5F).friction(0.8F).sound(SoundType.SLIME_BLOCK).noOcclusion().lightLevel(s -> 3));
 	public static final Block SIFT_DUST = register("sift_dust", p -> new ColoredFallingBlock(new ColorRGBA(0xB8D8D9), p),
 			BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_LIGHT_BLUE).instrument(NoteBlockInstrument.SNARE).strength(0.5F).sound(SoundType.SAND));
 	public static final Block HUSK_BONE_BLOCK = register("husk_bone_block", RotatedPillarBlock::new, BlockBehaviour.Properties.of()
@@ -168,6 +176,19 @@ public final class ModBlocks {
 	public static final Block CHIME_BELL_FLOWER = register("chime_bell_flower", ChimeBellFlowerBlock::new, BlockBehaviour.Properties.of()
 			.mapColor(MapColor.PLANT).noCollision().instabreak().sound(SoundType.SMALL_AMETHYST_BUD).offsetType(BlockBehaviour.OffsetType.XZ)
 			.ignitedByLava().pushReaction(PushReaction.POPPED), ModBlocks::compostMedium);
+	// Canon flora (owner playtest 6), drawn to Dungeons II's Singer's Meadow and its ichor pools.
+	/** The Meadow's yellow fern: broad yellow-orange fronds. A flower: yellow dye, a short stew of saturation. */
+	public static final Block GOLDFROND = register("goldfrond", p -> new SiftFlowerBlock(MobEffects.SATURATION, 0.35F, p), BlockBehaviour.Properties.of()
+			.mapColor(MapColor.GOLD).noCollision().instabreak().sound(SoundType.GRASS).offsetType(BlockBehaviour.OffsetType.XZ)
+			.ignitedByLava().pushReaction(PushReaction.POPPED), ModBlocks::compostMedium);
+	/** Little yellow flowers lying on the ground as leaf litter: vanilla's flower bed (pink petals' rules). */
+	public static final Block GOLD_PETALS = register("gold_petals", GoldPetalsBlock::new, BlockBehaviour.Properties.of()
+			.mapColor(MapColor.COLOR_YELLOW).noCollision().sound(SoundType.PINK_PETALS).pushReaction(PushReaction.POPPED),
+			ModBlocks::compostMedium);
+	/** A glowing pale-blue bulb on a thin dark stem. A flower: light blue dye, a stew of night vision. */
+	public static final Block BLUEBULB = register("bluebulb", p -> new SiftFlowerBlock(MobEffects.NIGHT_VISION, 5.0F, p), BlockBehaviour.Properties.of()
+			.mapColor(MapColor.COLOR_LIGHT_BLUE).noCollision().instabreak().sound(SoundType.SMALL_AMETHYST_BUD)
+			.offsetType(BlockBehaviour.OffsetType.XZ).lightLevel(s -> 6).pushReaction(PushReaction.POPPED), ModBlocks::compostMedium);
 	public static final Block POTTED_CHIME_BELL_FLOWER = registerNoItem("potted_chime_bell_flower", p -> new FlowerPotBlock(CHIME_BELL_FLOWER, p),
 			BlockBehaviour.Properties.of().instabreak().noOcclusion().pushReaction(PushReaction.POPPED));
 	public static final Block LUMEN_BLOOM = register("lumen_bloom", LumenBloomBlock::new, BlockBehaviour.Properties.of()
@@ -183,6 +204,16 @@ public final class ModBlocks {
 	public static final Block HYMNSTONE_LAPIS_ORE = ore("hymnstone_lapis_ore", p -> new DropExperienceBlock(UniformInt.of(2, 5), p));
 	public static final Block HYMNSTONE_DIAMOND_ORE = ore("hymnstone_diamond_ore", p -> new DropExperienceBlock(UniformInt.of(3, 7), p));
 	public static final Block HYMNSTONE_EMERALD_ORE = ore("hymnstone_emerald_ore", p -> new DropExperienceBlock(UniformInt.of(3, 7), p));
+	// The Carapace's crust is carapace stone (owner playtest 6, D-039), so the ores in it are carapace ores.
+	public static final Block CARAPACE_COAL_ORE = carapaceOre("carapace_coal_ore", p -> new DropExperienceBlock(UniformInt.of(0, 2), p));
+	public static final Block CARAPACE_COPPER_ORE = carapaceOre("carapace_copper_ore", p -> new DropExperienceBlock(ConstantInt.of(0), p));
+	public static final Block CARAPACE_IRON_ORE = carapaceOre("carapace_iron_ore", p -> new DropExperienceBlock(ConstantInt.of(0), p));
+	public static final Block CARAPACE_GOLD_ORE = carapaceOre("carapace_gold_ore", p -> new DropExperienceBlock(ConstantInt.of(0), p));
+	public static final Block CARAPACE_REDSTONE_ORE = register("carapace_redstone_ore", RedStoneOreBlock::new, carapaceOreProperties()
+			.randomTicks().lightLevel(s -> s.getValue(RedStoneOreBlock.LIT) ? 9 : 0));
+	public static final Block CARAPACE_LAPIS_ORE = carapaceOre("carapace_lapis_ore", p -> new DropExperienceBlock(UniformInt.of(2, 5), p));
+	public static final Block CARAPACE_DIAMOND_ORE = carapaceOre("carapace_diamond_ore", p -> new DropExperienceBlock(UniformInt.of(3, 7), p));
+	public static final Block CARAPACE_EMERALD_ORE = carapaceOre("carapace_emerald_ore", p -> new DropExperienceBlock(UniformInt.of(3, 7), p));
 	/** Echo ore: the Sift's own, deep in the Hollows; a faint glow, as deepslate ores are hard. Echo shards. */
 	public static final Block ECHO_ORE = register("echo_ore", p -> new DropExperienceBlock(UniformInt.of(3, 7), p), oreProperties()
 			.strength(4.5F, 3.0F).lightLevel(s -> 3));
@@ -221,6 +252,16 @@ public final class ModBlocks {
 
 	private static Block ore(String name, Function<BlockBehaviour.Properties, Block> factory) {
 		return register(name, factory, oreProperties());
+	}
+
+	/** Carapace stone's ores: the stone's colour and sound, an ore's hardness. */
+	private static BlockBehaviour.Properties carapaceOreProperties() {
+		return BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_BLUE).instrument(NoteBlockInstrument.BASEDRUM)
+				.requiresCorrectToolForDrops().strength(3.0F, 3.0F).sound(SoundType.STONE);
+	}
+
+	private static Block carapaceOre(String name, Function<BlockBehaviour.Properties, Block> factory) {
+		return register(name, factory, carapaceOreProperties());
 	}
 
 	private static Block stairs(String name, Block base) {

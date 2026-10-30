@@ -1,5 +1,12 @@
 package thesift.test;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Locale;
+import java.util.Map;
+import java.util.TreeMap;
+
 import net.fabricmc.fabric.api.entity.event.v1.EntitySleepEvents;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
@@ -13,9 +20,12 @@ import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.biome.Climate;
 import net.minecraft.world.level.gamerules.GameRules;
+import net.minecraft.world.level.levelgen.densityfunction.SamplerContext;
 import net.minecraft.world.level.saveddata.WeatherData;
 
+import thesift.TheSift;
 import thesift.registry.ModAttributes;
 import thesift.world.SiftKeys;
 import thesift.world.Tide;
@@ -115,5 +125,48 @@ public final class SiftDimensionTest {
 		EntitySleepEvents.ALLOW_SETTING_SPAWN.invoker().allowSettingSpawn(player, bed);
 		server.clockManager().setTotalTicks(TideClock.clock(server), Tide.THRIVE.startTick());
 		return player;
+	}
+
+	/**
+	 * Owner playtest 6: Singer's Meadow took far too much of the Sift. Each surface biome's share of a
+	 * 16 384-block square, from the biome source alone (one sample per 64 blocks, high enough that none is
+	 * the Hollows): no biome over two fifths, none under a seventh. The climate samples are written to
+	 * biome_climate.csv (humidity, erosion) for tuning the layout.
+	 */
+	@GameTest(dimension = SIFT)
+	public void surfaceBiomesShareTheSift(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		var randomState = level.getChunkSource().randomState();
+		var resolver = level.getChunkSource().getGenerator().getBiomeSource().createUncachedResolver(randomState);
+		Climate.Sampler sampler = randomState.createClimateSampler(SamplerContext.EMPTY_UNCACHED);
+		Map<String, Integer> counts = new TreeMap<>();
+		StringBuilder climate = new StringBuilder("humidity,erosion\n");
+		int samples = 0;
+		for (int i = 0; i < 256; i++) {
+			for (int j = 0; j < 256; j++) {
+				int qx = (i - 128) * 16;
+				int qz = (j - 128) * 16;
+				String name = resolver.getNoiseBiome(qx, 75, qz).unwrapKey().map(k -> k.identifier().getPath()).orElse("?");
+				counts.merge(name, 1, Integer::sum);
+				Climate.TargetPoint point = sampler.sample(qx, 75, qz);
+				climate.append(Climate.unquantizeCoord(point.humidity())).append(',').append(Climate.unquantizeCoord(point.erosion())).append('\n');
+				samples++;
+			}
+		}
+		StringBuilder shares = new StringBuilder();
+		for (Map.Entry<String, Integer> e : counts.entrySet()) {
+			shares.append(String.format(Locale.ROOT, "%s %.1f%%  ", e.getKey(), 100.0 * e.getValue() / samples));
+		}
+		TheSift.LOGGER.info("Surface biome shares: {}", shares);
+		try {
+			Files.writeString(Path.of("biome_climate.csv"), climate);
+		} catch (IOException e) {
+			TheSift.LOGGER.warn("Couldn't write the climate samples", e);
+		}
+		for (String biome : new String[] {"singers_meadow", "ichor_flats", "carapace", "lullaby_hills"}) {
+			double share = counts.getOrDefault(biome, 0) / (double) samples;
+			helper.assertTrue(share <= 0.4 && share >= 1.0 / 7, biome + " has " + Math.round(share * 100) + "% of the surface");
+		}
+		helper.succeed();
 	}
 }

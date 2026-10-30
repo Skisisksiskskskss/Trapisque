@@ -11,6 +11,8 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.CraftingInput;
@@ -23,6 +25,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
+import net.minecraft.world.phys.Vec3;
 
 import thesift.TheSift;
 import thesift.registry.ModBlocks;
@@ -82,6 +85,15 @@ public final class SiftSurvivalTest {
 		helper.assertTrue(only(drops(helper, ModBlocks.HYMNSTONE_LAPIS_ORE, pick), Items.LAPIS_LAZULI), "lapis");
 		helper.assertTrue(only(drops(helper, ModBlocks.HYMNSTONE_DIAMOND_ORE, pick), Items.DIAMOND), "diamond");
 		helper.assertTrue(only(drops(helper, ModBlocks.HYMNSTONE_EMERALD_ORE, pick), Items.EMERALD), "emerald");
+		// The Carapace's ores drop the same (owner playtest 6).
+		helper.assertTrue(only(drops(helper, ModBlocks.CARAPACE_COAL_ORE, pick), Items.COAL), "carapace coal");
+		helper.assertTrue(only(drops(helper, ModBlocks.CARAPACE_IRON_ORE, pick), Items.RAW_IRON), "carapace raw iron");
+		helper.assertTrue(only(drops(helper, ModBlocks.CARAPACE_COPPER_ORE, pick), Items.RAW_COPPER), "carapace raw copper");
+		helper.assertTrue(only(drops(helper, ModBlocks.CARAPACE_GOLD_ORE, pick), Items.RAW_GOLD), "carapace raw gold");
+		helper.assertTrue(only(drops(helper, ModBlocks.CARAPACE_REDSTONE_ORE, pick), Items.REDSTONE), "carapace redstone");
+		helper.assertTrue(only(drops(helper, ModBlocks.CARAPACE_LAPIS_ORE, pick), Items.LAPIS_LAZULI), "carapace lapis");
+		helper.assertTrue(only(drops(helper, ModBlocks.CARAPACE_DIAMOND_ORE, pick), Items.DIAMOND), "carapace diamond");
+		helper.assertTrue(only(drops(helper, ModBlocks.CARAPACE_EMERALD_ORE, pick), Items.EMERALD), "carapace emerald");
 		List<ItemStack> echo = drops(helper, ModBlocks.ECHO_ORE, pick);
 		int shards = echo.stream().mapToInt(ItemStack::getCount).sum();
 		helper.assertTrue(only(echo, Items.ECHO_SHARD) && shards >= 1 && shards <= 2, "echo ore drops 1-2 echo shards: " + echo);
@@ -184,5 +196,15 @@ public final class SiftSurvivalTest {
 		helper.assertTrue(counts.getOrDefault(ModBlocks.HYMNSTONE_IRON_ORE, 0) > counts.getOrDefault(ModBlocks.HYMNSTONE_DIAMOND_ORE, 0),
 				"iron is commoner than diamond");
 		helper.succeed();
+	}
+
+	/** Owner playtest 6: bounce jelly throws whoever steps on it high up, so the Carapace's pillars can be climbed. */
+	@GameTest(dimension = SIFT, structure = SiftBasinTest.BIG, maxTicks = 60)
+	public void bounceJellyThrowsUp(GameTestHelper helper) {
+		BlockPos pad = new BlockPos(8, 0, 8);
+		helper.setBlock(pad, ModBlocks.BOUNCE_JELLY);
+		Zombie zombie = helper.spawn(EntityTypes.ZOMBIE, new Vec3(8.5, 1, 8.5));
+		double start = zombie.getY();
+		helper.succeedWhen(() -> helper.assertTrue(zombie.getY() > start + 4.0, "thrown up (at " + (zombie.getY() - start) + ")"));
 	}
 }

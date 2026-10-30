@@ -77,6 +77,14 @@ final class ModLootProvider extends FabricBlockLootSubProvider {
 		add(ModBlocks.HYMNSTONE_LAPIS_ORE, createLapisOreDrops(ModBlocks.HYMNSTONE_LAPIS_ORE));
 		add(ModBlocks.HYMNSTONE_DIAMOND_ORE, createOreDrop(ModBlocks.HYMNSTONE_DIAMOND_ORE, Items.DIAMOND));
 		add(ModBlocks.HYMNSTONE_EMERALD_ORE, createOreDrop(ModBlocks.HYMNSTONE_EMERALD_ORE, Items.EMERALD));
+		add(ModBlocks.CARAPACE_COAL_ORE, createOreDrop(ModBlocks.CARAPACE_COAL_ORE, Items.COAL));
+		add(ModBlocks.CARAPACE_COPPER_ORE, createCopperOreDrops(ModBlocks.CARAPACE_COPPER_ORE));
+		add(ModBlocks.CARAPACE_IRON_ORE, createOreDrop(ModBlocks.CARAPACE_IRON_ORE, Items.RAW_IRON));
+		add(ModBlocks.CARAPACE_GOLD_ORE, createOreDrop(ModBlocks.CARAPACE_GOLD_ORE, Items.RAW_GOLD));
+		add(ModBlocks.CARAPACE_REDSTONE_ORE, createRedstoneOreDrops(ModBlocks.CARAPACE_REDSTONE_ORE));
+		add(ModBlocks.CARAPACE_LAPIS_ORE, createLapisOreDrops(ModBlocks.CARAPACE_LAPIS_ORE));
+		add(ModBlocks.CARAPACE_DIAMOND_ORE, createOreDrop(ModBlocks.CARAPACE_DIAMOND_ORE, Items.DIAMOND));
+		add(ModBlocks.CARAPACE_EMERALD_ORE, createOreDrop(ModBlocks.CARAPACE_EMERALD_ORE, Items.EMERALD));
 		// Echo ore: one or two echo shards, Fortune adding as on any ore.
 		add(ModBlocks.ECHO_ORE, createSilkTouchDispatchTable(ModBlocks.ECHO_ORE, applyExplosionDecay(ModBlocks.ECHO_ORE,
 				LootItem.lootTableItem(Items.ECHO_SHARD).apply(SetItemCountFunction.setCount(ContextIntProviders.between(1, 2)))
@@ -101,6 +109,10 @@ final class ModLootProvider extends FabricBlockLootSubProvider {
 		dropSelf(ModBlocks.GLOWCAP);
 		dropPottedContents(ModBlocks.POTTED_GLOWCAP);
 		dropSelf(ModBlocks.CHIME_BELL_FLOWER);
+		dropSelf(ModBlocks.GOLDFROND);
+		dropSelf(ModBlocks.BOUNCE_JELLY);
+		dropSelf(ModBlocks.BLUEBULB);
+		add(ModBlocks.GOLD_PETALS, createSegmentedBlockDrops(ModBlocks.GOLD_PETALS));
 		dropPottedContents(ModBlocks.POTTED_CHIME_BELL_FLOWER);
 	}
 

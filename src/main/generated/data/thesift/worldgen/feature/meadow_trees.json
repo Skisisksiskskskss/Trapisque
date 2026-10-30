@@ -3,11 +3,7 @@
   "features": [
     {
       "data": "thesift:songwood_checked",
-      "weight": 3
-    },
-    {
-      "data": "thesift:tall_songwood_checked",
-      "weight": 2
+      "weight": 1
     }
   ]
 }

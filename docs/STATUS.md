@@ -1,7 +1,7 @@
 # STATUS (session 1, 2026-10-02)
 - **Phase / Milestone:** M1 done; the owner's playtest reworks (`v0.1.1-alpha` to `v0.1.4-alpha`) done; M2 under way (flora, materials and items in code; the hunt next).
-- **Autonomy:** **full-auto** (D-014). **The build to try:** https://github.com/Skisisksiskskskss/Trapisque/releases/tag/v0.1.11-alpha: the Singer, its groves, soul blocks and the Singer's horn (D-036), on top of v0.1.10's rifts, Sift start and canon biomes (D-032, D-035), v0.1.8's Nester and v0.1.7's ores and food; steps in `docs/PLAYTEST.md` (top sections).
-- **Current WP:** waiting on the owner's playtest of v0.1.7-v0.1.11. Canon-first next: sculkers in the Carapace, echo golems in Lullaby Hills, the other Sifters (baby, bearded, tall). WP-066/067 leftovers (Quiet Waters, cost measurements) wait behind them.
+- **Autonomy:** **full-auto** (D-014). **The build to try:** https://github.com/Skisisksiskskskss/Trapisque/releases/tag/v0.1.12-alpha: the owner's sixth playtest notes (D-037 to D-044): ichor redrawn as one big seamless swirling picture that also draws under Sodium and Iris, the Sift's own soul particle, rebalanced biomes, the Carapace's blue caves, ores, pillars and bounce jelly, emeralds in the spires, the teasers' white trees, canon flora (goldfrond, gold petals, bluebulb), and the Blub redrawn to the vanilla teaser.
+- **Current WP:** waiting on the owner's playtest of v0.1.12. Next: the Nester and the Singer rechecked against their images; canon content next: sculkers in the Carapace, echo golems in Lullaby Hills, the other Sifters.
 - **Done this session:**
   - Phases 0–3 and M1 (WP-040..053).
   - The owner's playtest rework:
@@ -21,7 +21,7 @@
   2. WP-064: the M2 blocks' design doc and critique (the "Sift has no buds" constraint binds its flora).
   3. The M2 code: WP-063 (Hollows, glowcap pools), WP-066 (the hunt system), WP-067/068 (Nester, Bloombud).
 - **Build:** ✅ `./gradlew build` (with GameTests) · datagen no-diff ✅ · `check_bible.py` ✅ · `check_palette.py` ✅ (86 textures) · `check_lang.py` ✅
-- **Tests:** 105 server GameTests on CI (rifts, survival materials, biomes). The client GameTest walks the entry, the Tides, a basin and the blubs, and takes the landscape shots (`look_*`).
+- **Tests:** 108 server GameTests on CI, laid out at a fixed place (D-044) so runs repeat. The client GameTest has look-only modes for ichor (SIFT_ICHOR_ONLY) and for trees, flora, pillars and the Blub (SIFT_TREES_ONLY).
 - **Server boot:** ✅ (the GameTest dedicated server on every build).
 - **Blockers:** none. The Netlify site `magnificent-gelato-563c55` fails on every PR because of its own configuration (owner-side; see the PR comment).
 - **Awaiting owner:** nothing (full-auto). The playtest questions are in `docs/PLAYTEST.md`.

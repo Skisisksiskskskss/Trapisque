@@ -9,6 +9,13 @@
         "block": "thesift:hymnstone",
         "predicate_type": "minecraft:block_match"
       }
+    },
+    {
+      "state": "thesift:carapace_gold_ore",
+      "target": {
+        "block": "thesift:carapace_stone",
+        "predicate_type": "minecraft:block_match"
+      }
     }
   ]
 }
