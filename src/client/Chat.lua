@@ -78,9 +78,6 @@ end
 -- Whether you can type your own lines, and if not, why.
 function Chat.typing(): string
 	local status = State.get("chat") or {}
-	if not State.hasPass("Chat") then
-		return "pass"
-	end
 	if status.allowed == false then
 		return "settings"
 	end

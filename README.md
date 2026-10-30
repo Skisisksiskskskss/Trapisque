@@ -100,11 +100,13 @@ rendered offline (see [Screenshots](#screenshots)).
   for Gems, a new set every day).
 - **Match lengths.** Quick (2 treasures), Standard (3) and Classic (4).
 - **Quick Play matchmaking.** Queue for any mode on your own or as a party. Queues are
-  shared by every server, and bots fill empty seats if you wait long enough. Every
-  Quick Play match opens with a vote between three maps (a picture of each, what it
-  does to you and the card that gets you past it; everyone's vote shows as their
-  emblem), and in its first few rounds someone new in the queue can drop into a bot's
-  seat.
+  shared by every server. A full table starts at once; otherwise, after about 10
+  seconds, bots fill the empty seats. Every Quick Play match opens with a vote between
+  three maps (a picture of each, what it does to you and the card that gets you past
+  it; everyone's vote shows as their emblem). Anyone who queues later takes over a
+  random bot in a running match (never the bot in first place), so the bots give way
+  to people as they arrive; once all six seats are people, the next searchers get a
+  new match.
 - **Parties.** Create a party and invite friends with Roblox invites, or share its
   6-letter code. A party can be open to its code or invite-only. Joining a party on
   another server takes you to that server.
@@ -134,11 +136,11 @@ rendered offline (see [Screenshots](#screenshots)).
 - **Chat that everyone can see.** The gold CHAT button (or T on a keyboard) opens it,
   in the lobby and in matches. Lines pop up as big speech bubbles over the speaker's
   character on the board (in the lobby, under the chat button with their avatar), with
-  their name on a tab in their colour. Twelve quick lines ("Ahoy!", "Good luck!",
-  "Watch out!", "GG!"...) are free for everyone, whatever their Roblox chat settings:
-  they're how players Roblox doesn't let type (by age, parental controls or country)
-  still talk. Typing anything else is the Chat pass, and needs chat switched on in your
-  Roblox settings (a game can't overrule that). Every typed line goes through the
+  their name on a tab in their colour. Typing is free. 24 quick lines ("Ahoy!", "Good
+  luck!", "Watch out!", "GG!"...) work for everyone, whatever their Roblox chat
+  settings: they're how players Roblox doesn't let type (by age, parental controls or
+  country) still talk. Typing needs chat switched on in your Roblox settings (a game
+  can't overrule that). Every typed line goes through the
   game's own filter first (insults, even spelt l1ke th1s or s p a c e d, links and
   handles, long numbers, SHOUTING, a key held down, the same line twice), then
   Roblox's filter for each person who reads it. Bubbles can be switched off in
@@ -337,31 +339,30 @@ Store text to paste:
 
 ## Gamepasses and Gem packs
 
-Create the gamepasses on the Creator Dashboard (**Monetization → Passes**) at the price
-shown and put their ids in `Config.GamePasses`. A pass left at `0` shows as "Soon" in
-the in-game Shop.
+The gamepasses are on the Creator Dashboard (**Monetization → Passes**) at the price
+shown, with their ids in `Config.GamePasses`. A pass left at `0` isn't for sale yet: it's
+hidden from the Shop (Studio shows it as "Soon").
 
 | Key | Name | Price | What it gives |
 | --- | --- | --- | --- |
 | `StarterPack` | Starter Pack | 49 | 1,500 Gems and 3 free Explorer Chests, once. |
 | `VIP` | VIP | 129 | +25% Gems from every match, a free Explorer Chest every day, the Royal finish and the VIP title, a gold name, and cannons, streamers and a fanfare over your piece when you win. |
-| `DoubleGems` | 2x Gems | 99 | Double Gems from every match (stacks with VIP). |
-| `CaptainsChest` | Captain's Chest | 79 | The Admiralty finish, the Golden Doubloon dice, the Captain title and 500 Gems. |
-| `LuckyCharm` | Lucky Charm | 49 | Legendary and Mythic chest odds ×1.5. |
-| `EmotePack` | Emote Pack | 25 | 6 extra emotes, and up to 6 equipped in matches. |
-| `Chat` | Chat | 10 | Type your own lines in the game chat. Quick lines are free for everyone. |
+| `DoubleGems` | 2x Gems | 79 | Double Gems from every match (stacks with VIP). |
+| `CaptainsChest` | Captain's Chest | 29 | The Admiralty finish, the Golden Doubloon dice, the Captain title and 500 Gems. |
+| `LuckyCharm` | Lucky Charm | 49 | Legendary and Mythic chest odds ×1.5. (Not created yet: its id is `0`.) |
+| `EmotePack` | Emote Pack | 9 | 6 extra emotes, and up to 6 equipped in matches. |
 
 Gem packs are **developer products** (**Monetization → Developer Products**), bought as
-often as you like: create them at these prices and put their ids in
-`Config.DevProducts` (a pack left at `0` shows as "Soon").
+often as you like, at these prices, with their ids in `Config.DevProducts` (a pack left
+at `0` is hidden).
 
 | Key | Gems | Price |
 | --- | --- | --- |
-| `Gems250` | 250 | 25 |
-| `Gems600` | 600 | 49 |
-| `Gems1400` | 1,400 | 99 |
-| `Gems3000` | 3,000 | 199 |
-| `Gems8000` | 8,000 | 449 |
+| `Gems250` | 250 | 10 |
+| `Gems600` | 600 | 22 |
+| `Gems1400` | 1,400 | 49 |
+| `Gems3000` | 3,000 | 99 |
+| `Gems8000` | 8,000 | 198 |
 
 Each purchase is granted once (its purchase id is kept with the profile) and only
 reported to Roblox as granted after the profile is saved. Gems open Treasure Chests, so

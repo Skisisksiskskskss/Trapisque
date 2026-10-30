@@ -824,30 +824,37 @@ end
 -- drop-in: a Quick Play searcher takes over a bot
 ---------------------------------------------------------------------------
 
--- The bot seat a newcomer would take (the one furthest along), or nil when this match
--- can't take anyone: only public free-for-alls, early on, before any treasure.
-function Match:dropInSeat(): number?
+-- The bot seats a newcomer could take: every bot but the one in first place (a
+-- newcomer never inherits a lead). Empty when this match can't take anyone: only public
+-- free-for-alls that are still being played.
+function Match:openSeats(): { number }
+	local open = {}
 	if self.closed or self.finished or self.kind ~= "public" or self.mode.isTeam or self.tutorial then
-		return nil
+		return open
 	end
 	local engine = self.engine
-	if not engine or self.phase ~= "playing" or engine:isOver() or engine.round > Config.Matchmaking.DropInRounds then
-		return nil
+	if not engine or self.phase ~= "playing" or engine:isOver() then
+		return open
 	end
-	local best, bestProgress = nil, -math.huge
+	local leader, best = nil, -math.huge
+	for seat, p in engine.players do
+		local pr = engine:progress(p)
+		if pr > best then
+			leader, best = seat, pr
+		end
+	end
 	for seat, info in self.seats do
-		local p = engine.players[seat]
-		if p.treasures > 0 then
-			return nil
-		end
-		if info.isBot and info.player == nil and not info.left then
-			local pr = engine:progress(p)
-			if pr > bestProgress then
-				best, bestProgress = seat, pr
-			end
+		if info.isBot and info.player == nil and not info.left and seat ~= leader then
+			table.insert(open, seat)
 		end
 	end
-	return best
+	return open
+end
+
+-- The seat a newcomer takes: a random one of the open seats, or nil when there's none.
+function Match:dropInSeat(): number?
+	local open = self:openSeats()
+	return if #open > 0 then open[math.random(#open)] else nil
 end
 
 function Match:dropIn(player: Player): (boolean, string?)

@@ -257,7 +257,7 @@ How the new pieces were tuned:
 | Character unlocks | Four characters free, four unlocked at levels 3, 5, 7 and 10: a reason to keep playing the first week, and fewer rules to learn at once. | Character picker |
 | Mastery bases | The character's own base under them on the board at mastery 5, gold at 10. Not for sale, so it says "I know this one" to everyone in the match. | `UI/BaseArt`, `Meta/Progress` |
 | Badges | 20 Roblox badges for funny or rare moments (Snake Eyes, getting scared by a ghost, the Golden Fish, playing with the owner), never for grinding. They show on players' Roblox profiles, which brings their friends. | `Meta/Badges`, Collection |
-| Fishing | Something to do on other players' turns that never changes the match (one coin a round at most). Each map has its own waters (three local fish, a few shared), so the log is a reason to play every map; a shadow hints at the size, nibbles punish an early pull, rarer fish give less time to hook, and the log keeps your biggest of each. Hooking it starts a short fight, a skill game: tap while the sweeping needle is over the green, a notch at a time; rarer fish take more notches, with a smaller green and a faster needle, and three slips snap the line. The server checks the fight couldn't have been won faster than it can be. Half the log earns the Fish School trail, all of it Master Angler. | `Meta/Fishing`, `Match/FishingRod` |
+| Fishing | Something to do on other players' turns that never changes the match (one coin a round at most). Each map has its own waters (three local fish, a few shared), so the log is a reason to play every map; a shadow hints at the size, nibbles punish an early pull, rarer fish give less time to hook, and the log keeps your biggest of each. Hooking it starts a short fight, a skill game: tap while the sweeping needle is over the green, a notch at a time; rarer fish take more notches, with a smaller green and a faster needle, and four slips snap the line. The server checks the fight couldn't have been won faster than it can be. Half the log earns the Fish School trail, all of it Master Angler. | `Meta/Fishing`, `Match/FishingRod` |
 | Rematch | The results screen's Rematch: when everyone still at the table asks, the same players start again on the same map. A good table stays together instead of scattering back to the queue. | `Match:voteRematch`, `MatchService` |
 | Daily deals | Four cosmetics for Gems, new every day, so there's always a reason to open the Shop. | `Meta/DailyShop`, Shop |
 | The first match | A guided Blitz game with the Overseer as coach, scripted for a win. New players learn the dice, the cards and the Power bar by doing, in five minutes. | `Meta/Tutorial`, `Match/Coach` |
@@ -395,13 +395,11 @@ chat at all, so the game has its own:
 
 - **Quick lines are free for everyone.** Six fixed lines ("Ahoy!", "Good luck!",
   "Nice move!", "Oops!", "Thanks!", "GG!") need no filtering, so anyone can use them
-  whatever their settings. Six is enough to be friendly; anything more is what the
-  Chat pass is for. Bots use them too (an "Oops!" when they're sent home, a "GG!" at
+  whatever their settings; more lines came later (24 now), for players who can't type. Bots use them too (an "Oops!" when they're sent home, a "GG!" at
   the end), which keeps a table of bots from feeling dead.
 - **Easy to reach.** A gold CHAT button in the lobby's top bar, the speech-bubble
   button in a match, and T on a keyboard everywhere.
-- **Typing is the Chat pass** (10 Robux), and only for accounts whose Roblox settings
-  allow chat. Every typed line is filtered for each reader and only reaches people
+- **Typing is free**, but only for accounts whose Roblox settings allow chat. Every typed line is filtered for each reader and only reaches people
   who may chat with the speaker. Staff mutes stop typing but not quick lines.
 - **Bubbles come from the players.** A line pops up over the speaker's character on
   the board, bigger than anything else on it, with their name on a tab in their

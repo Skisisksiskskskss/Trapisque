@@ -33,25 +33,25 @@
 
 local Fishing = {}
 
-Fishing.BiteMin = 3 -- seconds after a cast before the real bite
-Fishing.BiteMax = 7
-Fishing.Nibbles = { 1, 2 } -- fake bites before the real one (at least, at most)
+Fishing.BiteMin = 1.5 -- seconds after a cast before the real bite
+Fishing.BiteMax = 3.5
+Fishing.Nibbles = { 0, 1 } -- fake bites before the real one (at least, at most)
 Fishing.Grace = 0.35 -- for the trip to the server and back
-Fishing.Slips = 3 -- pulls off the green before the line snaps
+Fishing.Slips = 4 -- pulls off the green before the line snaps
 Fishing.FightTime = 10 -- seconds to land it once it's hooked, at most
 Fishing.ReelGap = 0.2 -- the least time a notch takes (the server checks the fight wasn't faster)
 
 -- how long you have to hook it once it bites, and the shadow it throws, by rarity
-local WINDOW = { common = 1.3, uncommon = 1.1, rare = 0.9, legendary = 0.75, junk = 1.3, coin = 1.3 }
+local WINDOW = { common = 1.8, uncommon = 1.6, rare = 1.35, legendary = 1.1, junk = 1.8, coin = 1.8 }
 local SHADOW = { common = "small", uncommon = "medium", rare = "large", legendary = "large", junk = "small", coin = "small" }
 -- how hard it fights once hooked
 local FIGHT = {
-	common = { reels = 1, zone = 0.42, speed = 0.9 },
-	uncommon = { reels = 2, zone = 0.32, speed = 1.25 },
-	rare = { reels = 3, zone = 0.24, speed = 1.6 },
-	legendary = { reels = 4, zone = 0.17, speed = 2.0 },
-	junk = { reels = 1, zone = 0.5, speed = 0.8 },
-	coin = { reels = 1, zone = 0.45, speed = 0.9 },
+	common = { reels = 1, zone = 0.5, speed = 0.7 },
+	uncommon = { reels = 1, zone = 0.42, speed = 0.9 },
+	rare = { reels = 2, zone = 0.34, speed = 1.1 },
+	legendary = { reels = 3, zone = 0.26, speed = 1.35 },
+	junk = { reels = 1, zone = 0.55, speed = 0.6 },
+	coin = { reels = 1, zone = 0.55, speed = 0.7 },
 }
 -- what landing one pays: Gems (Fishing.GemsPerDay at most a day) and Power in the match
 local REWARD = {
@@ -211,7 +211,7 @@ function Fishing.fight(id: string, cm: number?)
 		big = math.clamp((cm - c.size[1]) / (c.size[2] - c.size[1]), 0, 1)
 	end
 	local reels = f.reels + (if big >= 0.7 and c and c.rarity ~= "common" then 1 else 0)
-	return { reels = reels, zone = f.zone * (1 - 0.25 * big), speed = f.speed * (1 + 0.35 * big) }
+	return { reels = reels, zone = f.zone * (1 - 0.15 * big), speed = f.speed * (1 + 0.2 * big) }
 end
 
 function Fishing.reward(id: string)

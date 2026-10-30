@@ -435,16 +435,8 @@ end
 -- A match running on this server that `players` could drop into right now.
 local function localDropIn(modeId: string, count: number)
 	for _, match in matches do
-		if match.mode.id == modeId and match.kind == "public" and match:dropInSeat() ~= nil then
-			local open = 0
-			for _, info in match.seats do
-				if info.isBot and not info.left then
-					open += 1
-				end
-			end
-			if open >= count then
-				return match
-			end
+		if match.mode.id == modeId and #match:openSeats() >= count then
+			return match
 		end
 	end
 	return nil
@@ -578,15 +570,9 @@ local function advertise()
 				MemoryUtil.set(WHERE_MAP, tostring(p.UserId), where, 90)
 			end
 			if ServerInfo.isReserved and match.kind == "public" and reserved.info and reserved.info.code then
-				local seat = match:dropInSeat()
+				local open = #match:openSeats()
 				local key = OPEN_PREFIX .. match.mode.id
-				if seat then
-					local open = 0
-					for _, info in match.seats do
-						if info.isBot and not info.left then
-							open += 1
-						end
-					end
+				if open > 0 then
 					MemoryUtil.set(key, game.PrivateServerId, { psid = game.PrivateServerId, code = reserved.info.code, seats = open, round = match.engine.round }, 20)
 				else
 					MemoryUtil.remove(key, game.PrivateServerId)

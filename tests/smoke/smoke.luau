@@ -382,12 +382,12 @@ do
 		local sheet = modals()
 		shot("owner-sheet")
 		-- (offline every pass reads as bought, so it may already say ON)
-		check(pressScrolled(sheet[#sheet], "^GIVE CHAT$") or pressScrolled(sheet[#sheet], "^CHAT: ON$"), "no Chat pass button on a player's sheet")
+		check(pressScrolled(sheet[#sheet], "^GIVE VIP$") or pressScrolled(sheet[#sheet], "^VIP: ON$"), "no VIP pass button on a player's sheet")
 		F.run(1.5)
 		check(pressScrolled(sheet[#sheet], "^%+100 GEMS$"), "no +100 GEMS button on a player's sheet")
 		F.run(1.5)
 		closeModals()
-		check(State.hasPass("Chat"), "the owner panel didn't give the Chat pass")
+		check(State.hasPass("VIP"), "the owner panel didn't give the VIP pass")
 		noProblems("the owner panel")
 	end
 
@@ -397,7 +397,7 @@ do
 	local box = F.findAll(top[#top], function(d)
 		return d:IsA("TextBox")
 	end)[1]
-	check(box ~= nil, "no text box in the chat window with the Chat pass")
+	check(box ~= nil, "no text box in the chat window (typing is free)")
 	box.Text = "Ahoy from the smoke test"
 	check(press(top[#top], "^SEND$"), "no SEND button in the chat window")
 	F.run(1.5)

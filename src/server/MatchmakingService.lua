@@ -9,10 +9,11 @@
 		local   an in-server queue. Used in Studio (teleports don't work there) and as a
 		        fallback if MemoryStore is down. Matches run right on this server.
 
-	Free-for-all searches drop into a running match first when one has a bot seat
-	early enough in the game (Match:dropInSeat): on this server straight away, or on a
-	match server the matchmaker finds in TrapisqueOpen_<mode>. New Quick Play matches
-	open with a map vote.
+	Free-for-all searches drop into a running match first when one has a bot to take
+	over (any bot but the leader, Match:dropInSeat): on this server straight away, or on
+	a match server the matchmaker finds in TrapisqueOpen_<mode>. Otherwise a new match
+	starts once a full table is found or after a short wait, with bots in the empty
+	seats (Matchmaker). New Quick Play matches open with a map vote.
 ]]
 
 local Players = game:GetService("Players")

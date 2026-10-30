@@ -3390,7 +3390,7 @@ function MatchScreen:_emote(data)
 	Sound.play("pop")
 end
 
--- The say button: your emotes, the quick lines and (with the Chat pass) your own words.
+-- The say button: your emotes, the quick lines and your own words.
 function MatchScreen:_emotePicker()
 	local profile = State.get("profile")
 	local emotes = profile and profile.equipped and profile.equipped.emotes or { "emote_gg" }

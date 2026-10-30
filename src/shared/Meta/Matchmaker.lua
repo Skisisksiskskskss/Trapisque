@@ -195,13 +195,10 @@ function Matchmaker.form(mode, tickets, now: number, cfg)
 		local oldestWait = now - pending[1].created
 		local match = nil
 		if not mode.isTeam then
-			local total = sizeOf(pending)
-			if total >= cfg.ChaosTarget or (oldestWait >= cfg.ChaosWait and total >= cfg.ChaosMin) then
-				local chosen = greedy(pending, mode.maxPlayers)
-				match = ffaMatch(chosen, 0)
-			elseif oldestWait >= cfg.BotFillAfter then
+			-- a full table starts at once; otherwise, after a short wait, bots fill the rest
+			if sizeOf(pending) >= mode.maxPlayers or oldestWait >= cfg.BotFillAfter then
 				local chosen, count = greedy(pending, mode.maxPlayers)
-				match = ffaMatch(chosen, math.max(0, math.max(cfg.ChaosTarget, 2) - count))
+				match = ffaMatch(chosen, math.max(0, mode.maxPlayers - count))
 			end
 		else
 			local chosen, assignment = packTeams(pending, mode.teams, mode.teamSize)

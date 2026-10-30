@@ -154,16 +154,11 @@ Config.Matchmaking = {
 	TicketTTL = 120, -- tickets expire if their server stops refreshing them
 	TicketRefresh = 30,
 	LockTTL = 12,
-	-- Chaos starts as soon as this many players are found...
-	ChaosTarget = 4,
-	-- ...or with at least ChaosMin players once the oldest ticket waited this long:
-	ChaosMin = 2,
-	ChaosWait = 25,
-	-- (digital) if a human waits this long, empty seats are filled with bots
-	BotFillAfter = 45,
-	-- a free-for-all searcher can drop into a bot's seat in a running Quick Play match
-	-- up to this round (and only before anyone has banked a treasure)
-	DropInRounds = 6,
+	-- Quick Play waits this long for other players, then fills the empty seats with bots
+	-- (a free-for-all starts at once when a full table is found). Later searchers take
+	-- over a random bot that isn't in first place (Match:dropInSeat), so the bots give
+	-- way to people as they arrive; a table of humans only is full.
+	BotFillAfter = 10,
 	AssignmentTTL = 60,
 	MatchInfoTTL = 600,
 }
@@ -178,27 +173,26 @@ Config.Server = {
 ---------------------------------------------------------------------------
 -- Meta game: gems, levels, gamepasses
 ---------------------------------------------------------------------------
--- Create these gamepasses on the Creator Dashboard (Monetization > Passes) and paste
--- their ids here. A pass left at 0 is simply hidden from the Shop.
--- (Shared/Meta/Passes has the price to set for each.)
+-- The gamepasses' ids (Creator Dashboard > Monetization > Passes). A pass left at 0
+-- isn't for sale yet: it's hidden from the Shop (Studio shows it as "Soon").
+-- (Shared/Meta/Passes has the price set for each.)
 Config.GamePasses = {
-	StarterPack = 0,
-	VIP = 0,
-	DoubleGems = 0,
-	CaptainsChest = 0,
+	StarterPack = 2057448319,
+	VIP = 2061934843,
+	DoubleGems = 2062618567,
+	CaptainsChest = 2057298330,
 	LuckyCharm = 0,
-	EmotePack = 0,
-	Chat = 0,
+	EmotePack = 2061904877,
 }
 
--- Gem packs: create these as developer products (Monetization > Developer Products)
--- and paste their ids here. A pack left at 0 is hidden from the Shop.
+-- Gem packs: developer products (Monetization > Developer Products). A pack left at 0
+-- is hidden from the Shop (Studio shows it as "Soon").
 Config.DevProducts = {
-	Gems250 = 0,
-	Gems600 = 0,
-	Gems1400 = 0,
-	Gems3000 = 0,
-	Gems8000 = 0,
+	Gems250 = 3723784941,
+	Gems600 = 3723785350,
+	Gems1400 = 3723785563,
+	Gems3000 = 3723785869,
+	Gems8000 = 3723786222,
 }
 
 -- Staff: the owner (and admins the owner picks) get the staff panel. The game's creator
@@ -256,7 +250,8 @@ Config.DailyShop = {
 	Prices = { common = 120, rare = 280, epic = 650, legendary = 1400, mythic = 3000 },
 }
 
--- The game chat (ChatService): quick lines for everyone, typed lines with the Chat pass.
+-- The game chat (ChatService): quick lines and typed lines, free for everyone (typing
+-- needs chat switched on in your Roblox settings).
 Config.Chat = {
 	MaxLength = 120,
 	Cooldown = 1.2, -- seconds between lines
@@ -301,6 +296,6 @@ Config.Data = {
 -- In Studio, pretend the player owns every gamepass so all features can be tested.
 Config.StudioOwnsAllPasses = true
 
-Config.Version = "1.5.0"
+Config.Version = "1.6.0"
 
 return Config

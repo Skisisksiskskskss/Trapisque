@@ -1,15 +1,16 @@
 --[[
 	Passes
 	What the Shop sells for Robux. None of it changes how a match plays: it speeds up
-	or adds to the cosmetic collection, or adds ways to talk and show off.
+	or adds to the cosmetic collection, or adds ways to show off.
 
 	  Passes.list      gamepasses (bought once). Ids in Config.GamePasses; a pass at 0
-	                   shows as "Soon". `gift` is handed over once, the first time the
-	                   owner joins after buying it (Gems, free chests).
+	                   isn't for sale yet (hidden; Studio shows it as "Soon"). `gift` is
+	                   handed over once, the first time the owner joins after buying it
+	                   (Gems, free chests).
 	  Passes.gemPacks  Gem packs: developer products, bought as often as you like. Ids
 	                   in Config.DevProducts; a pack at 0 is hidden.
 
-	`robux` is the price to set on the Creator Dashboard (the Shop shows Roblox's own
+	`robux` is the price set on the Creator Dashboard (the Shop shows Roblox's own
 	price). Anything that buys a random item (Gems open Treasure Chests) is
 	`randomItems`: hidden for players whose region doesn't allow paid random items.
 ]]
@@ -55,7 +56,7 @@ Passes.list = {
 		color = "#3FA7F5",
 		icon = "gem",
 		picture = "ui/gem",
-		robux = 99,
+		robux = 79,
 		perks = {
 			"Double Gems from every match",
 			"Stacks with VIP",
@@ -67,7 +68,7 @@ Passes.list = {
 		color = "#2B4C7E",
 		icon = "chest",
 		picture = "ui/locker",
-		robux = 79,
+		robux = 29,
 		gift = { gems = 500 },
 		perks = {
 			"The Admiralty finish (navy and gold)",
@@ -94,34 +95,21 @@ Passes.list = {
 		color = "#FF9F1C",
 		icon = "bubble",
 		picture = "ui/chat",
-		robux = 25,
+		robux = 9,
 		perks = {
 			"6 extra emotes, yours forever",
 			"Equip up to 6 emotes in matches",
-		},
-	},
-	{
-		key = "Chat",
-		name = "Chat",
-		color = "#2E8FB3",
-		icon = "bubble",
-		picture = "ui/chat",
-		robux = 10,
-		perks = {
-			"Type your own lines in the game chat",
-			"Quick lines are free for everyone",
-			"Needs chat on in your Roblox settings",
 		},
 	},
 }
 
 -- Gems for Robux, as often as you like: more Gems per Robux the bigger the pack.
 Passes.gemPacks = {
-	{ key = "Gems250", gems = 250, robux = 25, pile = 1 },
-	{ key = "Gems600", gems = 600, robux = 49, pile = 2 },
-	{ key = "Gems1400", gems = 1400, robux = 99, pile = 3, badge = "Popular" },
-	{ key = "Gems3000", gems = 3000, robux = 199, pile = 4 },
-	{ key = "Gems8000", gems = 8000, robux = 449, pile = 5, badge = "Best value" },
+	{ key = "Gems250", gems = 250, robux = 10, pile = 1 },
+	{ key = "Gems600", gems = 600, robux = 22, pile = 2 },
+	{ key = "Gems1400", gems = 1400, robux = 49, pile = 3, badge = "Popular" },
+	{ key = "Gems3000", gems = 3000, robux = 99, pile = 4 },
+	{ key = "Gems8000", gems = 8000, robux = 198, pile = 5, badge = "Best value" },
 }
 
 Passes.byKey = {}

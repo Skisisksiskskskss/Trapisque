@@ -5,7 +5,7 @@
 	Two kinds of line:
 	  quick   one of the ready-made lines (Meta/QuickChat): fixed text, so anyone can
 	          say them whatever their Roblox chat settings, and anyone can see them
-	  typed   your own words: needs the Chat pass and chat switched on in your Roblox
+	  typed   your own words, free for everyone with chat switched on in their Roblox
 	          settings (Roblox decides who may chat, by age, parental controls and
 	          country, and a game can't overrule it: quick lines are for everyone).
 	          Every line goes through the game's own filter (Meta/ChatFilter: insults,
@@ -172,7 +172,6 @@ end
 function ChatService.status(player: Player)
 	return {
 		allowed = canChat(player),
-		pass = DataService.hasPass(player, "Chat"),
 		muted = ChatService.isMuted(player),
 	}
 end
@@ -218,9 +217,6 @@ local function send(player: Player, payload): (boolean, string?)
 	end
 	if #text > Config.Chat.MaxLength then
 		text = string.sub(text, 1, Config.Chat.MaxLength)
-	end
-	if not DataService.hasPass(player, "Chat") then
-		return false, "Typing your own lines needs the Chat pass. Quick lines are free!"
 	end
 	if not canChat(player) then
 		return false, "Chat is off in your Roblox settings. Quick lines still work!"

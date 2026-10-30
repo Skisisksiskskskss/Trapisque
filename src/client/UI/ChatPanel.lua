@@ -1,9 +1,9 @@
 --[[
 	ChatPanel
 	The chat window. The latest lines (each speaker's name in their colour), the quick
-	lines anyone can say with one tap, your emotes (in a match) and, with the Chat pass,
-	a box to type your own. Without the pass the box is a BUY button; with chat off in
-	your Roblox settings (or while muted) it says so, and quick lines still work.
+	lines anyone can say with one tap, your emotes (in a match) and a box to type your
+	own. With chat off in your Roblox settings (or while muted) the box says so, and
+	quick lines still work.
 
 	Tap someone's line for what you can do about them: hide their lines (just for you),
 	block them on Roblox, or report them to the game's staff.
@@ -12,13 +12,11 @@
 			closeOnSend?, onClose? }) -> close
 ]]
 
-local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage.Shared
 local Config = require(Shared.Config)
-local Passes = require(Shared.Meta.Passes)
 local QuickChat = require(Shared.Meta.QuickChat)
 
 local UI = script.Parent
@@ -354,65 +352,21 @@ function ChatPanel.open(layer: Instance, o: { [string]: any })
 			})
 			return
 		end
-		local text = if why == "settings"
-			then "Chat is off in your Roblox settings, so typing is too. Quick lines still work!"
-			elseif why == "muted" then "You're muted for a while. Quick lines still work."
-			else "Type your own lines with the Chat pass. Quick lines are free for everyone!"
-		local hasBuy = why == "pass"
+		local text = if why == "muted"
+			then "You're muted for a while. Quick lines still work."
+			else "Chat is off in your Roblox settings, so typing is too. Quick lines still work!"
 		Widgets.label(input, {
 			text = text,
 			font = "heavy",
 			size = if narrow then 13 else 15,
 			color = C.textSoft,
 			wrap = true,
-			sizeUDim = UDim2.new(1, if hasBuy then -150 else 0, 1, 0),
+			sizeUDim = UDim2.new(1, 0, 1, 0),
 		})
-		if hasBuy then
-			local id = Passes.id("Chat")
-			local buy = Widgets.button(input, {
-				text = if id == 0 then "Soon" else "R$ 10",
-				icon = "bubble",
-				style = "green",
-				textSize = 18,
-				size = UDim2.new(0, 140, 1, 0),
-				anchor = Vector2.new(1, 0),
-				position = UDim2.fromScale(1, 0),
-				onClick = function()
-					if id == 0 then
-						return
-					end
-					local ok = pcall(function()
-						MarketplaceService:PromptGamePassPurchase(player, id)
-					end)
-					if not ok then
-						Widgets.toast("The Roblox store didn't open. Try again in a moment.", "error")
-					end
-				end,
-			})
-			if id == 0 then
-				buy:setEnabled(false)
-			else
-				task.spawn(function()
-					local ok, info = pcall(function()
-						return MarketplaceService:GetProductInfo(id, Enum.InfoType.GamePass)
-					end)
-					if ok and info and info.PriceInRobux and buy.root.Parent then
-						buy:setText("R$ " .. tostring(info.PriceInRobux))
-					end
-				end)
-			end
-		end
 	end
 	renderInput()
-	-- buying the pass (or a mute ending) switches the box on
+	-- a mute ending switches the box back on
 	local last = Chat.typing()
-	maid:add(State.watch("profile", function()
-		local now = Chat.typing()
-		if now ~= last then
-			last = now
-			renderInput()
-		end
-	end))
 	maid:add(State.watch("chat", function()
 		local now = Chat.typing()
 		if now ~= last then

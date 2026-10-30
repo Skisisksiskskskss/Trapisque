@@ -13,6 +13,7 @@
 local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local Shared = ReplicatedStorage.Shared
 local Passes = require(Shared.Meta.Passes)
@@ -339,6 +340,9 @@ function Pages.shop(layer: Instance): () -> ()
 		local packs = shopGrid(list, "GemPacks", packCols, 236, 4)
 		local base = Passes.gemPacks[1].gems / Passes.gemPacks[1].robux
 		for i, pack in Passes.gemPacks do
+			if Passes.productId(pack.key) == 0 and not RunService:IsStudio() then
+				continue -- not on sale yet (no product id): only Studio shows it, as "Soon"
+			end
 			local color = hex("3FA7F5")
 			local card, band = shopCard(packs, pack.key, color, i, 112)
 			for _, g in PILES[pack.pile] or PILES[1] do
@@ -403,6 +407,9 @@ function Pages.shop(layer: Instance): () -> ()
 	for i, pass in Passes.list do
 		if pass.randomItems and restricted then
 			continue -- paid random items (chests, chest odds) are hidden where they're restricted
+		end
+		if Passes.id(pass.key) == 0 and not RunService:IsStudio() then
+			continue -- not on sale yet (no pass id): only Studio shows it, as "Soon"
 		end
 		local color = hex(string.sub(pass.color, 2))
 		local card, band = shopCard(passes, pass.key, color, i, 118)
