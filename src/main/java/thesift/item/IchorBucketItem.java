@@ -25,6 +25,7 @@ import net.minecraft.world.phys.HitResult;
 import thesift.block.TidewrackBlock;
 import thesift.registry.ModAttributes;
 import thesift.registry.ModFluids;
+import thesift.registry.ModParticles;
 import thesift.registry.ModSounds;
 
 /**
@@ -81,7 +82,7 @@ public class IchorBucketItem extends BucketItem {
 		}
 		level.playSound(user, pos, ModSounds.ICHOR_EVAPORATE, SoundSource.BLOCKS, 1.0F, 0.9F + level.getRandom().nextFloat() * 0.2F);
 		if (level instanceof ServerLevel serverLevel) {
-			serverLevel.sendParticles(ParticleTypes.SOUL, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 8, 0.4, 0.4, 0.4, 0.02);
+			serverLevel.sendParticles(ModParticles.SOUL, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 8, 0.4, 0.4, 0.4, 0.02);
 			serverLevel.sendParticles(ParticleTypes.LARGE_SMOKE, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 6, 0.4, 0.4, 0.4, 0.0);
 		}
 		return true;

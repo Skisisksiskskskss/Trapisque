@@ -19,6 +19,7 @@ import thesift.client.entity.RiftRenderer;
 import thesift.client.entity.SingerModel;
 import thesift.client.entity.SingerRenderer;
 import thesift.client.particle.SiftMoteParticle;
+import thesift.client.particle.SiftSoulParticle;
 import thesift.registry.ModEntities;
 import thesift.registry.ModFluids;
 import thesift.registry.ModParticles;
@@ -38,6 +39,7 @@ public final class TheSiftClient implements ClientModInitializer {
 				new IchorSheen());
 		ParticleProviderRegistry.getInstance().register(ModParticles.TRILL, SiftMoteParticle.TrillProvider::new);
 		ParticleProviderRegistry.getInstance().register(ModParticles.GLIMMER, FireflyParticle.FireflyProvider::new);
+		ParticleProviderRegistry.getInstance().register(ModParticles.SOUL, SiftSoulParticle.Provider::new);
 		ParticleProviderRegistry.getInstance().register(ModParticles.GLOW_PETAL, SiftMoteParticle.GlowPetalProvider::new);
 		ModelLayerRegistry.registerModelLayer(BlubRenderer.LAYER, BlubModel::createBodyLayer);
 		ModelLayerRegistry.registerModelLayer(NesterRenderer.LAYER, NesterModel::createBodyLayer);

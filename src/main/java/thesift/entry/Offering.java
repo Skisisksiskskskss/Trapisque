@@ -16,6 +16,7 @@ import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
+import thesift.registry.ModParticles;
 import thesift.registry.ModSounds;
 import thesift.world.SiftAdvancements;
 import thesift.world.SoulPoints;
@@ -104,7 +105,7 @@ public final class Offering {
 		Vec3 dir = Vec3.atCenterOf(touched).subtract(from).normalize().scale(0.12);
 		for (int i = 0; i < 2; i++) {
 			// count 0: the offsets are the particle's velocity
-			level.sendParticles(ParticleTypes.SCULK_SOUL, from.x + (level.getRandom().nextDouble() - 0.5) * 0.4, from.y,
+			level.sendParticles(ModParticles.SOUL, from.x + (level.getRandom().nextDouble() - 0.5) * 0.4, from.y,
 					from.z + (level.getRandom().nextDouble() - 0.5) * 0.4, 0, dir.x, dir.y, dir.z, 1.0);
 		}
 		// The charge shows on the frame as faint cyan specks, more of them as it fills.

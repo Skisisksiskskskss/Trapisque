@@ -843,3 +843,12 @@ The enduring Nester takes the soul corrupted Nester's pale glowing cyan. The spi
 **Consequences.** The `ichor_sheen` and `pail` ramps are gone. The old still, flow, film, overlay and bucket textures are replaced. Ichor has no tint source. Checked in the client preview (SIFT_ICHOR_ONLY=1 tools/dev/client-previews.sh): pool, close-up, falls, glass and the held bucket.
 
 **Revisit if** the 16-block repeat shows on the Sift's ichor seas (more frames are cheap; a wider tile costs memory), or packs that tag water (`mc_Entity`) should give ichor water's waves.
+
+## D-038 The Sift's own soul particle (2026-10-30) [owner playtest 6]
+**Context.** The owner: never use vanilla's soul particle for anything in the mod. Use a particle of our own that looks like the souls in the teasers and in Dungeons II. Dungeons II draws a soul as a little pale steel-blue ghost (Dungeons2Sprite_soul): a rounded head, two eyes and an open, wailing mouth.
+
+**Decision.** `thesift:soul` (`SiftSoulParticle`) replaces every use of vanilla's `soul` and `sculk_soul`: ichor's wisps, the Nester's, the Singer's fading, the chorus stone and grove heart, the bucket, the membrane in Endure, the frames' cues and the offering's stream.
+- **Look.** Six frames of our own pixel ghost in the new `soul_wisp` ramp, around canon's soul blue `#89b6d2`. It gathers, forms, waves its wisps, rises and dissolves.
+- **Behaviour.** Full bright and translucent. It keeps the motion it is sent with and slows by 0.96 a tick, as vanilla's souls do, so cues that aim it still land; then it sways and lifts.
+
+**Revisit if** official Sift footage shows souls drawn differently from Dungeons II's.

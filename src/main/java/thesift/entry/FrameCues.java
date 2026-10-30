@@ -10,7 +10,6 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.protocol.game.ClientboundSoundPacket;
@@ -30,6 +29,7 @@ import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.phys.Vec3;
 
+import thesift.registry.ModParticles;
 import thesift.registry.ModSounds;
 import thesift.world.SiftAdvancements;
 import thesift.world.SoulPoints;
@@ -211,7 +211,7 @@ public final class FrameCues {
 		boolean alongX = frame.axis() == Direction.Axis.X;
 		Vec3 from = Vec3.atCenterOf(cell).add(alongX ? 0 : side, random.nextDouble() - 0.5, alongX ? side : 0);
 		Vec3 v = new Vec3(alongX ? 0 : -side, 0.02, alongX ? -side : 0).normalize().scale(0.06);
-		level.sendParticles(ParticleTypes.SOUL, true, false, from.x, from.y, from.z, 0, v.x, v.y, v.z, 1.0);
+		level.sendParticles(ModParticles.SOUL, true, false, from.x, from.y, from.z, 0, v.x, v.y, v.z, 1.0);
 	}
 
 	/**
@@ -225,7 +225,7 @@ public final class FrameCues {
 			Vec3 toward = frame.center().subtract(player.position()).normalize();
 			Vec3 from = player.position().add(toward.scale(0.6)).add(0, 0.5 + level.getRandom().nextDouble() * 0.5, 0);
 			Vec3 v = frame.center().subtract(from).normalize().scale(0.08);
-			level.sendParticles(ParticleTypes.SOUL, from.x, from.y, from.z, 0, v.x, v.y, v.z, 1.0);
+			level.sendParticles(ModParticles.SOUL, from.x, from.y, from.z, 0, v.x, v.y, v.z, 1.0);
 		}
 		if (now % 80 == 0 && player.connection != null) {
 			player.connection.send(new ClientboundSoundPacket(BuiltInRegistries.SOUND_EVENT.wrapAsHolder(ModSounds.FRAME_NOTICE),

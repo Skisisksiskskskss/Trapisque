@@ -56,6 +56,7 @@ import net.minecraft.world.phys.Vec3;
 import thesift.TheSift;
 import thesift.entity.blub.Blub;
 import thesift.entity.hunt.Hunt;
+import thesift.registry.ModParticles;
 import thesift.registry.ModSounds;
 import thesift.registry.ModTags;
 import thesift.world.SiftAdvancements;
@@ -430,13 +431,13 @@ public class Nester extends Monster implements VibrationSystem, Hunt.Hunter {
 		if (this.persistent()) {
 			if (this.isEnduring()) {
 				this.setEnduring(false);
-				level.sendParticles(ParticleTypes.SOUL, this.getX(), this.getY() + 1.0, this.getZ(), 6, 0.3, 0.4, 0.3, 0.02);
+				level.sendParticles(ModParticles.SOUL, this.getX(), this.getY() + 1.0, this.getZ(), 6, 0.3, 0.4, 0.3, 0.02);
 			}
 			this.returnBy = Hunt.nextThrive(level);
 			return;
 		}
 		// The tide takes it: a burst of soul wisps and the burrow sound; no drops, no XP.
-		level.sendParticles(ParticleTypes.SOUL, this.getX(), this.getY() + 0.8, this.getZ(), 14, 0.4, 0.5, 0.4, 0.03);
+		level.sendParticles(ModParticles.SOUL, this.getX(), this.getY() + 0.8, this.getZ(), 14, 0.4, 0.5, 0.4, 0.03);
 		level.playSound(null, this.blockPosition(), ModSounds.NESTER_BURROW, SoundSource.HOSTILE, 1.0F, 1.0F);
 		this.discard();
 	}
@@ -476,7 +477,7 @@ public class Nester extends Monster implements VibrationSystem, Hunt.Hunter {
 				this.clientStateTicks++;
 			}
 			if (this.isEnduring() && this.tickCount % 10 == 0) { // the trail of soul wisps
-				this.level().addParticle(ParticleTypes.SOUL, this.getRandomX(0.6), this.getY() + 0.6 + this.random.nextDouble() * 0.6,
+				this.level().addParticle(ModParticles.SOUL, this.getRandomX(0.6), this.getY() + 0.6 + this.random.nextDouble() * 0.6,
 						this.getRandomZ(0.6), 0.0, 0.02, 0.0);
 			}
 			if (state == NesterState.EMERGE || state == NesterState.DIG) {

@@ -13,6 +13,8 @@ public final class ModParticles {
 	public static final SimpleParticleType GLOW_PETAL = Registry.register(BuiltInRegistries.PARTICLE_TYPE, TheSift.id("glow_petal"), FabricParticleTypes.simple(false));
 	/** Drifting lights over the Ichor Flats, let go by ichor lilies (D-029); drawn as vanilla's fireflies. */
 	public static final SimpleParticleType GLIMMER = Registry.register(BuiltInRegistries.PARTICLE_TYPE, TheSift.id("glimmer"), FabricParticleTypes.simple(false));
+	/** The Sift's souls (owner playtest 6): its own pale-blue ghost wisp, never vanilla's soul particle. */
+	public static final SimpleParticleType SOUL = Registry.register(BuiltInRegistries.PARTICLE_TYPE, TheSift.id("soul"), FabricParticleTypes.simple(false));
 
 	private ModParticles() {
 	}

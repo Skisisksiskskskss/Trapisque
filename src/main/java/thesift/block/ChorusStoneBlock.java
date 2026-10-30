@@ -1,7 +1,6 @@
 package thesift.block;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
@@ -18,6 +17,7 @@ import net.minecraft.world.phys.BlockHitResult;
 
 import thesift.entity.singer.Singer;
 import thesift.registry.ModBlocks;
+import thesift.registry.ModParticles;
 import thesift.registry.ModSounds;
 
 /**
@@ -48,7 +48,7 @@ public class ChorusStoneBlock extends Block {
 			stack.consume(1, player);
 			server.setBlock(pos, state.setValue(FILLED, true), Block.UPDATE_ALL);
 			server.playSound(null, pos, ModSounds.CHORUS_STONE_FILL, SoundSource.BLOCKS, 1.5F, 1.0F);
-			server.sendParticles(ParticleTypes.SOUL, pos.getX() + 0.5, pos.getY() + 1.2, pos.getZ() + 0.5, 12, 0.3, 0.4, 0.3, 0.02);
+			server.sendParticles(ModParticles.SOUL, pos.getX() + 0.5, pos.getY() + 1.2, pos.getZ() + 0.5, 12, 0.3, 0.4, 0.3, 0.02);
 			int filled = GroveHeartBlock.filledStones(server, pos, 8);
 			for (Singer singer : server.getEntitiesOfClass(Singer.class, new AABB(pos).inflate(16))) {
 				singer.sing(ModSounds.SINGER_HUM, 20 + 15 * filled, 0.8F + 0.12F * filled); // one more bar

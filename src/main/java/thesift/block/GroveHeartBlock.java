@@ -3,7 +3,6 @@ package thesift.block;
 import org.jspecify.annotations.Nullable;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionResult;
@@ -18,6 +17,7 @@ import net.minecraft.world.phys.BlockHitResult;
 
 import thesift.block.entity.GroveHeartBlockEntity;
 import thesift.registry.ModBlocks;
+import thesift.registry.ModParticles;
 import thesift.registry.ModSounds;
 
 /**
@@ -57,7 +57,7 @@ public class GroveHeartBlock extends BaseEntityBlock {
 				player.spawnAtLocation(server, soul);
 			}
 			server.playSound(null, pos, ModSounds.GROVE_HEART_CONDENSE, SoundSource.BLOCKS, 1.2F, 1.0F);
-			server.sendParticles(ParticleTypes.SOUL, pos.getX() + 0.5, pos.getY() + 1.1, pos.getZ() + 0.5, 16, 0.3, 0.3, 0.3, 0.03);
+			server.sendParticles(ModParticles.SOUL, pos.getX() + 0.5, pos.getY() + 1.1, pos.getZ() + 0.5, 16, 0.3, 0.3, 0.3, 0.03);
 		}
 		return InteractionResult.SUCCESS;
 	}

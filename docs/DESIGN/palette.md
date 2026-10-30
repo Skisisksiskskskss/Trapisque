@@ -10,7 +10,7 @@ below allows.
 - A texture uses roughly 6–12 of these colours, as vanilla does (animated liquids: per frame). Owner playtest 2 (D-026): vanilla's
   look is per-pixel grain in many close shades with small clumps, not flat bands of three or four tones.
 - Alpha is free for fully transparent pixels (cutout plants, leaves, particles) and for the two translucent strips
-  (membrane 176–224; ichor 225, its glitter 245–255); every visible pixel's RGB must still come from a ramp. Ichor's
+  (membrane 176–224; ichor 225, its glitter 245–255; souls 75–240); every visible pixel's RGB must still come from a ramp. Ichor's
   field is the one texture drawn in a whole ramp at once (D-037): one picture spanning 16 x 16 blocks, not a block's tile.
 - Hue shifts along a ramp on purpose: shadows lean cooler, highlights warmer, as vanilla ramps do.
 - **Tiling:** every block texture tiles seamlessly and avoids features the eye can follow from block to block (no lines or tufts on a grid). Ground blocks ship variants (`_2`, `_3`), and healthy sculk's top also takes random rotations, as vanilla grass does.
@@ -31,6 +31,7 @@ below allows.
 | `ichor` | `#1f7a92` `#23879d` `#2f96aa` `#3fa7b6` `#56b9c0` `#72c8c3` `#93d4bf` `#b6dcae` `#d4dd9f` `#ecd79a` `#f2c7a2` `#f1b4b5` `#e8a7c8` `#d7a3dc` `#bea5ea` `#a3aaf0` `#889fe4` `#6d97d2` `#5590c3` `#3a86ae` `#155a73` `#e8f8f6` | The first ichor's soap-film cycle (D-026): the first twenty run once round turquoise, mint, gold, rose, lilac, periwinkle and back, then a deep shade and a highlight. Since owner playtest 6 (D-037) ichor itself is drawn in `ichor_marble`; this ramp stays for what ichor stains, the tide vents and the rifts |
 | `ichor_marble` | `#c8dc78` `#84d28c` `#65ca96` `#3cc19f` `#32bdaa` `#26b9b5` `#18b5c0` `#1fb2c5` `#25afc9` `#2aabce` `#2ea8d2` `#3ea0d3` `#4998d5` `#5290d6` `#6585d3` `#7479d0` `#8876ce` `#9a72cc` `#a96cc7` `#b766c2` `#c66bc1` `#d670c0` `#e182c0` `#ec93c0` `#efaab4` `#f2bfa6` `#f3d97e` | Ichor (owner playtest 6, D-037), sampled from Dungeons II's ichor pools (MCD2_Pool_of_ichor): an oil slick's colours in one path, lime, green, sea-green, turquoise, cyan, blue, periwinkle, violet, purple, magenta, pink, peach, gold, in close OKLab steps so the bands meet softly. Turquoise and its neighbours hold most entries, so most of a pool is turquoise, as in canon; the ends (lime, gold) are rare. Not dark → light. Translucent in the fluid (alpha 225) |
 | `ichor_glint` | `#ffffff` `#e8f8f6` `#eee4fa` | Ichor's glitter: white, with pale cyan and pale lilac for a glint's fading frames and a star's arms |
+| `soul_wisp` | `#3e6688` `#6f9fc2` `#89b6d2` `#b4d6ea` `#e4f3fa` | The Sift's soul particle (owner playtest 6: never vanilla's soul): Dungeons II's soul blue (`#89b6d2`, from Dungeons2Sprite_soul) with a deep shade for the eyes and mouth, a rim, and two lights. Translucent (alpha 75–240) |
 | `membrane` | `#0b3f55` `#13687e` `#2598a8` `#55c8cc` `#a3eee8` `#e0fffa` | The Sift membrane's cyan shimmer (translucent) |
 | `blub` | `#3f6a8e` `#4f81a8` `#5f95ba` `#7aabc8` `#9cc2d6` `#c4dde8` | The Blub's blue, sampled from the first look (owner rework): the only blue mob in the Sift |
 | `blub_eye` | `#24204a` `#3d3570` `#eaf4ff` | The Blub's dark violet eyes (first look), and their catch-light (D-029) |
@@ -136,6 +137,12 @@ below allows.
 | `block/ichor_lily_bud.png` | ichor_lily_bud, ichor_lily |
 | `item/ichor_lily.png` | ichor_lily, ichor_lily_bud |
 | `particle/glimmer.png` | ichor_lily_bud |
+| `particle/soul_0.png` | soul_wisp |
+| `particle/soul_1.png` | soul_wisp |
+| `particle/soul_2.png` | soul_wisp |
+| `particle/soul_3.png` | soul_wisp |
+| `particle/soul_4.png` | soul_wisp |
+| `particle/soul_5.png` | soul_wisp |
 | `item/lumen_lantern.png` | hymnstone, lumen |
 | `item/ichor_bucket_liquid.png` | ichor_marble, ichor_glint |
 | `particle/glow_petal.png` | healthy_sculk, particle |

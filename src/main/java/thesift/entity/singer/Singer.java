@@ -28,6 +28,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 
+import thesift.registry.ModParticles;
 import thesift.registry.ModSounds;
 import thesift.world.Tide;
 
@@ -155,7 +156,7 @@ public class Singer extends PathfinderMob {
 
 	/** At zero health: it fades into its grove (soul wisps, "Singer fades") until the next Thrive. */
 	private void fade(ServerLevel level) {
-		level.sendParticles(ParticleTypes.SOUL, this.getX(), this.getY() + 1.5, this.getZ(), 30, 0.4, 1.0, 0.4, 0.02);
+		level.sendParticles(ModParticles.SOUL, this.getX(), this.getY() + 1.5, this.getZ(), 30, 0.4, 1.0, 0.4, 0.02);
 		this.playSound(ModSounds.SINGER_FADE, 2.0F, 1.0F);
 		this.entityData.set(DATA_FADED, true);
 		this.entityData.set(DATA_SINGING, 0);
@@ -171,7 +172,7 @@ public class Singer extends PathfinderMob {
 		this.entityData.set(DATA_FADED, false);
 		this.setInvisible(false);
 		this.returnAtClock = -1L;
-		level.sendParticles(ParticleTypes.SOUL, this.getX(), this.getY() + 1.5, this.getZ(), 20, 0.4, 1.0, 0.4, 0.02);
+		level.sendParticles(ModParticles.SOUL, this.getX(), this.getY() + 1.5, this.getZ(), 20, 0.4, 1.0, 0.4, 0.02);
 	}
 
 	@Override

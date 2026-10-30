@@ -100,7 +100,7 @@ public abstract class IchorFluid extends FlowingFluid {
 		}
 		// A soul wisp now and then from open, still ichor.
 		if (fluidState.isSource() && random.nextInt(400) == 0 && level.getBlockState(pos.above()).isAir()) {
-			level.addParticle(ParticleTypes.SOUL, pos.getX() + random.nextDouble(), pos.getY() + 1.0, pos.getZ() + random.nextDouble(),
+			level.addParticle(ModParticles.SOUL, pos.getX() + random.nextDouble(), pos.getY() + 1.0, pos.getZ() + random.nextDouble(),
 					0.0, 0.03, 0.0);
 		}
 	}

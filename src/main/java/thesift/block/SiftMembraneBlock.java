@@ -33,6 +33,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
+import thesift.registry.ModParticles;
 import thesift.registry.ModSounds;
 import thesift.entry.SiftGates;
 import thesift.registry.ModTags;
@@ -117,7 +118,7 @@ public class SiftMembraneBlock extends Block implements Portal {
 		if (tide == null || tide == Tide.THRIVE) {
 			return ParticleTypes.SPORE_BLOSSOM_AIR;
 		}
-		return tide == Tide.ENDURE ? ParticleTypes.SOUL : ParticleTypes.WAX_ON;
+		return tide == Tide.ENDURE ? ModParticles.SOUL : ParticleTypes.WAX_ON;
 	}
 
 	/** No fluid washes it out (a bucket aimed at the sill would otherwise replace it), as with the end portal. */

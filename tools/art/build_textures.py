@@ -898,6 +898,54 @@ def membrane_frames(n: int = 32) -> list[Image.Image]:
     return frames
 
 
+# ---------------------------------------------------------------- souls (owner playtest 6)
+# The Sift's own soul particle (never vanilla's): a little pale-blue wailing ghost, as Dungeons II draws
+# its souls (Dungeons2Sprite_soul: one pale steel blue, a rounded head, two eyes, an open mouth), in
+# six frames: it gathers, forms, waves its wisps, rises and dissolves. Our own pixels and colours.
+_SOUL_FACE = [
+    "................",
+    ".....oooooo.....",
+    "....obbbbbbo....",
+    "...obllllllbo...",
+    "...oblwwwwlbo...",
+    "...obeelleebo...",
+    "...obeelleebo...",
+    "...obllllllbo...",
+    "...obbleelbbo...",
+    "...obbleelbbo...",
+    "...obbleelbbo...",
+    "...obbllllbbo...",
+    "....obbbbbbo....",
+]
+_SOUL_FRAMES = [
+    (["......", "......", "......", "......", "......", "......",
+      "......oooo......", ".....olwwlo.....", ".....olwwlo.....", "......oooo......"], 0.55),
+    (["......", "......", "......",
+      "......oooo......", ".....obllbo.....", "....oblwwlbo....", "....obellebo....", "....obllllbo....",
+      "....obleelbo....", "....obbllbbo....", ".....obbbbo.....", "......o..o......"], 0.8),
+    (_SOUL_FACE + ["....ob.bb.bo....", ".....o..o..o...."], 1.0),
+    (_SOUL_FACE + ["....obb.bb.o....", "....o..o..o....."], 1.0),
+    (_SOUL_FACE[1:] + ["...obbbbbbbo....", ".....ob..bo.....", ".....o....o.....", "......o..o......"], 0.75),
+    (["................", ".....o....o.....", "....o.b..b......", "...o..l..l..o...", "......w.........",
+      "...o.e....e.o...", "....b..l.....o..", "...o...l..b.....", ".....b....l..o..", "...o..e..e......",
+      "......b..b..o...", "....o.....l.....", ".....b..o.......", "........o.......", "......o........."], 0.5),
+]
+_SOUL_ALPHA = {"o": 150, "b": 205, "l": 225, "w": 240, "e": 170}
+_SOUL_SHADE = {"e": 0, "o": 1, "b": 2, "l": 3, "w": 4}
+
+
+def soul_frames() -> list[Image.Image]:
+    frames = []
+    for rows, fade in _SOUL_FRAMES:
+        im = _blank()
+        for y, row in enumerate(rows):
+            for x, ch in enumerate(row):
+                if ch in _SOUL_SHADE:
+                    put(im, [(x, y)], rgba("soul_wisp", _SOUL_SHADE[ch], round(_SOUL_ALPHA[ch] * fade)))
+        frames.append(im)
+    return frames
+
+
 # ---------------------------------------------------------------- blub
 def box_faces(u: int, v: int, w: int, h: int, d: int) -> dict[str, tuple[int, int, int, int]]:
     """The UV rectangles (x, y, width, height) of a model box at texOffs(u, v), vanilla's layout."""
@@ -1891,6 +1939,8 @@ def main() -> None:
     save(nester_spawn_egg(), "item/nester_spawn_egg.png")
     save(blub_spawn_egg(), "item/blub_spawn_egg.png")
     save(trill(), "particle/trill.png")
+    for i, frame in enumerate(soul_frames()):
+        save(frame, f"particle/soul_{i}.png")
     print("textures written")
 
 
