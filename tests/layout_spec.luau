@@ -278,8 +278,9 @@ test("every dice skin, trail, catch, chest and status mark has its art in the sh
 	local Gacha = requireModule("Shared/Meta/Gacha")
 	for _, def in Cosmetics.byCategory.dice do
 		local skin = string.gsub(def.id, "^dice_", "")
-		truthy(ArtAtlas.sprites["dice/" .. skin], "no die for " .. def.id)
-		truthy(ArtAtlas.sprites["dice/" .. skin .. "_pip"], "no pip for " .. def.id)
+		local group = if ArtAtlas.sprites["dice/" .. skin] then "dice/" else "dice_more/"
+		truthy(ArtAtlas.sprites[group .. skin], "no die for " .. def.id)
+		truthy(ArtAtlas.sprites[group .. skin .. "_pip"], "no pip for " .. def.id)
 	end
 	for _, def in Cosmetics.byCategory.trail do
 		if def.look.kind ~= "none" then
@@ -366,7 +367,7 @@ test("every prop, ground sprite, piece, stand, emblem, card badge and Kraken fra
 	for _, def in Cosmetics.byCategory.emblem do
 		local char, set = string.match(def.look.emblem, "^([%w_]+):([%w_]+)$")
 		local name = if char then "emblems/" .. char .. "_" .. set else "emblems/" .. def.look.emblem
-		truthy(ArtAtlas.sprites[name], "no art for the " .. def.id)
+		truthy(ArtAtlas.sprites[name] or (char and ArtAtlas.sprites["emblems_more/" .. char .. "_" .. set]), "no art for the " .. def.id)
 	end
 	local ItemList = requireModule("Shared/Game/Items")
 	for _, def in ItemList.list do

@@ -1091,11 +1091,11 @@ function Match:_finish()
 			look = info.look,
 		})
 	end
-	-- winners with the Victory Parade pass get their parade, seen by everyone
+	-- VIP winners get their victory parade, seen by everyone
 	local parade = {}
 	for seat, info in self.seats do
 		local p = engine.players[seat]
-		if info.player and p.team == engine.winnerTeam and DataService.hasPass(info.player, "VictoryParade") then
+		if info.player and p.team == engine.winnerTeam and DataService.hasPass(info.player, "VIP") then
 			table.insert(parade, seat)
 		end
 	end

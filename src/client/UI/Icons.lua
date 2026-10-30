@@ -542,9 +542,12 @@ end
 function Icons.emblemSprite(id: string): string
 	local char, set = Icons.splitEmblem(id)
 	if set then
-		local name = "emblems/" .. char .. "_" .. set
-		if Art.has(name) then
-			return name
+		-- (the later sets are on a sheet of their own)
+		for _, group in { "emblems/", "emblems_more/" } do
+			local name = group .. char .. "_" .. set
+			if Art.has(name) then
+				return name
+			end
 		end
 	end
 	return "emblems/" .. char

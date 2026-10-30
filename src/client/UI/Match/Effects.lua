@@ -324,7 +324,7 @@ function Effects.gotcha(view, owner: number, victim: number)
 	end)
 end
 
--- The Victory Parade pass: cannons either side of the winner, streamers in every
+-- A VIP's victory parade: cannons either side of the winner, streamers in every
 -- crew's colours and a brass fanfare.
 function Effects.parade(view, seat: number)
 	local at = view:pawnWorld(seat)

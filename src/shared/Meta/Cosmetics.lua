@@ -60,6 +60,10 @@ local defs = {
 	{ id = "fin_glow", category = "finish", name = "Glowstone", rarity = "mythic", look = { finish = "glow" } },
 	{ id = "fin_royal", category = "finish", name = "Royal", rarity = "legendary", source = "vip", look = { finish = "royal" } },
 	{ id = "fin_admiralty", category = "finish", name = "Admiralty", rarity = "legendary", source = "captain", look = { finish = "admiralty" } },
+	{ id = "fin_candy", category = "finish", name = "Candy Stripe", rarity = "rare", look = { finish = "candy" } },
+	{ id = "fin_tortoise", category = "finish", name = "Tortoiseshell", rarity = "rare", look = { finish = "tortoise" } },
+	{ id = "fin_patina", category = "finish", name = "Copper Patina", rarity = "epic", look = { finish = "patina" } },
+	{ id = "fin_galaxy", category = "finish", name = "Galaxy", rarity = "legendary", look = { finish = "galaxy" } },
 
 	-------------------------------------------------------------------------
 	-- Dice: how your die looks when you roll
@@ -89,6 +93,15 @@ local defs = {
 		look = { face = "#F5B700", face2 = "#C98F00", pip = "#1C1A24", edge = "#FFE7A3" } },
 	{ id = "dice_cosmic", category = "dice", name = "Cosmic", rarity = "mythic",
 		look = { gradient = true, face = "#240046", face2 = "#7B2CBF", pip = "#FFFFFF", edge = "#E0AAFF", spin = true } },
+	-- (their art is on a sheet of its own: art/dice_more.py)
+	{ id = "dice_ocean", category = "dice", name = "Ocean", rarity = "common",
+		look = { face = "#3FA7D6", face2 = "#1D6E9E", pip = "#FFFFFF", edge = "#0E3F5C" } },
+	{ id = "dice_candy", category = "dice", name = "Candy", rarity = "rare",
+		look = { face = "#FFF5F8", face2 = "#FF5D8F", pip = "#B0124A", edge = "#E3477A" } },
+	{ id = "dice_sunset", category = "dice", name = "Sunset", rarity = "epic",
+		look = { gradient = true, face = "#FF8A5C", face2 = "#FFC46B", pip = "#3A1E4A", edge = "#FFE08A" } },
+	{ id = "dice_lava", category = "dice", name = "Lava", rarity = "legendary",
+		look = { face = "#2B2422", face2 = "#1A1412", pip = "#FFB000", edge = "#FF6A1C" } },
 
 	-------------------------------------------------------------------------
 	-- Trails: little particles that follow your character as it hops
@@ -252,27 +265,30 @@ end
 
 --[[
 	Emblems: the badge that stands for a character on their cards, chips and results (no
-	faces: a symbol of theirs). Each character has three, each a different design in a
-	different colour scheme, worn per character (your Mage can wear the Golden Moon
-	while your Trapper keeps the Bear Trap). Classic is the one everyone has; the Ghost
-	Crew is in Treasure Chests; Gilded comes with character mastery
-	(Progress.EmblemMastery). art/emblems.py draws them: emblems/<character>_<set>.
+	faces: a symbol of theirs). Each character has five, each in its own colour scheme,
+	worn per character (your Mage can wear the Golden Moon while your Trapper keeps the
+	Bear Trap). Classic is the one everyone has; the Ghost Crew, Parchment and Storm are
+	in Treasure Chests; Gilded comes with character mastery (Progress.EmblemMastery).
+	art/emblems.py draws emblems/<character>_<set>, art/emblems_more.py the last two.
 ]]
 Cosmetics.emblemSets = {
 	{ id = "classic", name = "Classic", rarity = "common", source = "default" },
 	{ id = "ghost", name = "Ghost Crew", rarity = "epic" },
 	{ id = "gilded", name = "Gilded", rarity = "legendary", source = "mastery" },
+	-- (these two are on a sheet of their own: art/emblems_more.py)
+	{ id = "parchment", name = "Parchment", rarity = "rare" },
+	{ id = "storm", name = "Storm", rarity = "epic" },
 }
--- each emblem's symbol: classic, Ghost Crew, Gilded
+-- each emblem's symbol: classic, Ghost Crew, Gilded, Parchment, Storm
 local emblemNames = {
-	mage = { "Snowflake", "Ghost Crystal", "Golden Moon" },
-	trapper = { "Bear Trap", "Ghost Lasso", "Golden Star" },
-	fire_starter = { "Flame", "Ghost Match", "Golden Rocket" },
-	naturalist = { "Sprout", "Ghost Paw", "Golden Feather" },
-	warper = { "Spiral", "Ghost Hourglass", "Golden Comet" },
-	overseer = { "Spyglass", "Ghost Eye", "Golden Wheel" },
-	gambler = { "Dice", "Ghost Spade", "Golden Chip" },
-	cannoneer = { "Cannonball", "Ghost Cannon", "Golden Burst" },
+	mage = { "Snowflake", "Ghost Crystal", "Golden Moon", "Paper Snowflake", "Icicles" },
+	trapper = { "Bear Trap", "Ghost Lasso", "Golden Star", "Paper Trap", "Storm Anchor" },
+	fire_starter = { "Flame", "Ghost Match", "Golden Rocket", "Paper Flame", "Torch" },
+	naturalist = { "Sprout", "Ghost Paw", "Golden Feather", "Paper Sprout", "Toadstool" },
+	warper = { "Spiral", "Ghost Hourglass", "Golden Comet", "Paper Spiral", "Storm Key" },
+	overseer = { "Spyglass", "Ghost Eye", "Golden Wheel", "Paper Spyglass", "Compass" },
+	gambler = { "Dice", "Ghost Spade", "Golden Chip", "Paper Dice", "Horseshoe" },
+	cannoneer = { "Cannonball", "Ghost Cannon", "Golden Burst", "Paper Cannonball", "Powder Keg" },
 }
 for _, charId in { "mage", "trapper", "fire_starter", "naturalist", "warper", "overseer", "gambler", "cannoneer" } do
 	for i, set in Cosmetics.emblemSets do

@@ -46,7 +46,7 @@ Passes.list = {
 			"+25% Gems from every match",
 			"A free Explorer Chest every day",
 			"The Royal finish and the VIP title",
-			"A gold name in parties and matches",
+			"A gold name, and a victory parade when you win",
 		},
 	},
 	{
@@ -98,18 +98,6 @@ Passes.list = {
 		perks = {
 			"6 extra emotes, yours forever",
 			"Equip up to 6 emotes in matches",
-		},
-	},
-	{
-		key = "VictoryParade",
-		name = "Victory Parade",
-		color = "#D35A9C",
-		icon = "star",
-		picture = "ui/party",
-		robux = 25,
-		perks = {
-			"Cannons, streamers and a brass fanfare when you win",
-			"Everyone in the match sees it",
 		},
 	},
 	{

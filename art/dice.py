@@ -77,8 +77,8 @@ def paint(a, d, fill, stroke=None, width=None, opacity=1.0):
     a.parts.append(f'<path d="{d}" fill="{fill}"{op}{st}/>')
 
 
-def die(skin):
-    face, face2, pip, edge, material = SKINS[skin]
+def die(skin, spec=None):
+    face, face2, pip, edge, material = spec or SKINS[skin]
     rng = random.Random(skin)
     a = Art(PX, UNITS)
     line = mix(face2, INK, 0.62)
@@ -106,6 +106,8 @@ def die(skin):
         fill = linear(a, [(0, face2, 1), (0.55, mix(face, face2, 0.4), 1), (1, face, 1)], 0.0, 0.0, 1.0, 1.0)
     elif material == "neon":
         fill = linear(a, [(0, face2, 1), (1, face, 1)])
+    elif material == "sunset":
+        fill = linear(a, [(0, "#5E3C99", 1), (0.5, face, 1), (1, face2, 1)], 0.5, 0.0, 0.5, 1.0)
     else:
         fill = linear(a, [(0, mix(face, "#FFFFFF", 0.35), 1), (0.5, face, 1), (1, face2, 1)])
     paint(a, face_path(), fill, line, a.ow)
@@ -206,6 +208,31 @@ def surface(a, material, face, face2, edge, rng):
             a.fill(circ(cx, cy, rng.uniform(0.5, 1.2)), "#FFFFFF", rng.uniform(0.55, 0.95))
         for cx, cy, r in ((x + 14, y + 66, 4.5), (x + 70, y + 14, 3.5)):
             a.fill(star(cx, cy, r, r * 0.25, 4, -90), "#FFFFFF", 0.9)
+    elif material == "ocean":
+        # rolling waves across it, foam on their crests
+        for k in range(4):
+            yy = y + 18 + k * 20
+            d = f"M {x - 4} {yy} C {x + 14} {yy - 8}, {x + 28} {yy + 8}, {x + 42} {yy} C {x + 56} {yy - 8}, {x + 70} {yy + 8}, {x + w + 4} {yy}"
+            a.line(d, mix(face, "#FFFFFF", 0.55), 2.2, 0.55)
+            a.line(d.replace(f"{yy}", f"{yy + 3}"), face2, 2.0, 0.35)
+    elif material == "candy":
+        # stripes, wound diagonally
+        for k in range(-4, 9):
+            x0 = x + k * 14
+            a.fill(poly([(x0, y + h + 2), (x0 + 7, y + h + 2), (x0 + 7 + h, y - 2), (x0 + h, y - 2)]), face2, 0.85)
+    elif material == "lava":
+        # cooled rock, split by glowing cracks
+        for pts in (((x + 6, y + 20), (x + 26, y + 30), (x + 34, y + 52), (x + 56, y + 58)), ((x + 50, y + 4), (x + 48, y + 22), (x + 66, y + 34), (x + 80, y + 30)),
+                    ((x + 20, y + 80), (x + 34, y + 66), (x + 56, y + 70), (x + 70, y + 84))):
+            d = smooth(list(pts))
+            a.line(d, edge, 5.2, 0.35)
+            a.line(d, mix(edge, "#FFFFFF", 0.4), 1.8, 0.95)
+    elif material == "sunset":
+        # a low sun and its stripes of light on the water
+        a.fill(circ(x + w / 2, y + h * 0.62, 18), mix(edge, "#FFFFFF", 0.3), 0.85)
+        for k in range(4):
+            yy = y + h * 0.66 + k * 6
+            a.line(f"M {x + 16 + k * 4} {yy} L {x + w - 16 - k * 4} {yy}", face2, 2.4, 0.6)
     elif material == "gloss":
         a.parts.append(f'<rect x="{x}" y="{y + h * 0.55}" width="{w}" height="{h * 0.45}" fill="{linear(a, [(0, "#FFFFFF", 0), (1, "#FFFFFF", 0.14)], 0.5, 0, 0.5, 1)}"/>')
 
@@ -225,10 +252,10 @@ def square_point(t, inset):
     return x0, y0
 
 
-def pip(skin):
+def pip(skin, spec=None):
     """A pip: a dimple in the face, painted. Lit from the upper left, so its upper left
     inside is in shade and its lower right inside catches the light."""
-    face, face2, color, edge, material = SKINS[skin]
+    face, face2, color, edge, material = spec or SKINS[skin]
     a = Art(PIP_PX, 1.0)
     r = 44
     if material == "neon":

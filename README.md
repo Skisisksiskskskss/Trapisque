@@ -124,8 +124,10 @@ rendered offline (see [Screenshots](#screenshots)).
   each character per match: if two players want the same one, a random one of them
   gets it and the other gets a free pick.
 - **Treasure Chests.** A cosmetic-only collection: finishes for your playing piece
-  (oak, clay, marble, sea glass, obsidian, solid gold, crystal, glowstone; always in
-  your character's colour), dice (ivory, ruby, jade, neon, frost, gold, cosmic...),
+  (oak, clay, marble, pearl, candy, tortoiseshell, verdigris, galaxy, solid gold,
+  crystal...; always in your character's colour), dice (ivory, ruby, jade, ocean,
+  candy, sunset, lava, cosmic...), emblem sets (parchment, and the storm set with new
+  symbols),
   22 trails (from seashells and confetti to fireflies, doubloons and thunder), emotes
   and titles. You open chests with Gems, which you earn by playing.
 - **Gamepasses** that never touch gameplay (see below).
@@ -249,7 +251,7 @@ In Studio:
    all work in a published experience without extra setup.
 3. Create the gamepasses (next section) and paste their ids into
    `src/shared/Config.lua`.
-4. Upload the eleven art sheets (`art/sheets`) as Decals (create.roblox.com → Creations →
+4. Upload the fourteen art sheets (`art/sheets`) as Decals (create.roblox.com → Creations →
    Decals) or with Studio's Asset Manager, then paste their ids into the art note the
    lobby shows you (the owner), in any order, and press **Save ids**: every server keeps
    them ([art/README.md](art/README.md) has the details; `tools/upload_art.py` can
@@ -342,12 +344,11 @@ the in-game Shop.
 | Key | Name | Price | What it gives |
 | --- | --- | --- | --- |
 | `StarterPack` | Starter Pack | 49 | 1,500 Gems and 3 free Explorer Chests, once. |
-| `VIP` | VIP | 129 | +25% Gems from every match, a free Explorer Chest every day, the Royal finish and the VIP title, a gold name. |
+| `VIP` | VIP | 129 | +25% Gems from every match, a free Explorer Chest every day, the Royal finish and the VIP title, a gold name, and cannons, streamers and a fanfare over your piece when you win. |
 | `DoubleGems` | 2x Gems | 99 | Double Gems from every match (stacks with VIP). |
 | `CaptainsChest` | Captain's Chest | 79 | The Admiralty finish, the Golden Doubloon dice, the Captain title and 500 Gems. |
 | `LuckyCharm` | Lucky Charm | 49 | Legendary and Mythic chest odds ×1.5. |
 | `EmotePack` | Emote Pack | 25 | 6 extra emotes, and up to 6 equipped in matches. |
-| `VictoryParade` | Victory Parade | 25 | Cannons, streamers and a fanfare over your piece when you win. |
 | `Chat` | Chat | 10 | Type your own lines in the game chat. Quick lines are free for everyone. |
 
 Gem packs are **developer products** (**Monetization → Developer Products**), bought as

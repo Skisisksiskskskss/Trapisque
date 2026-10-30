@@ -184,8 +184,8 @@ test("portrait outfits become the emblems of their sets, worn the same way", fun
 	eq(equipped.emblems.mage, "emblem_mage_ghost", "the Mage wears the Ghost Crew emblem")
 	eq(equipped.emblems.trapper, "emblem_trapper_gilded", "the Trapper wears the Gilded one")
 	eq(equipped.outfits, nil, "no outfit slot left")
-	-- every character has three, each its own design: the classic one, the Ghost Crew's
-	-- and the Gilded one
+	-- every character has one in each set: the classic one, the Ghost Crew's, the Gilded
+	-- one, Parchment and Storm
 	for _, id in requireModule("Shared/Game/Characters").ids do
 		for _, set in Cosmetics.emblemSets do
 			local def = Cosmetics.get("emblem_" .. id .. "_" .. set.id)

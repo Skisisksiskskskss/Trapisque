@@ -188,7 +188,6 @@ Config.GamePasses = {
 	CaptainsChest = 0,
 	LuckyCharm = 0,
 	EmotePack = 0,
-	VictoryParade = 0,
 	Chat = 0,
 }
 
@@ -302,6 +301,6 @@ Config.Data = {
 -- In Studio, pretend the player owns every gamepass so all features can be tested.
 Config.StudioOwnsAllPasses = true
 
-Config.Version = "1.4.0"
+Config.Version = "1.5.0"
 
 return Config

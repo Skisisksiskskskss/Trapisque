@@ -135,17 +135,30 @@ def palette(color, finish):
     if finish == "paint":
         return mix(c, "#FFFFFF", 0.38), c, mix(c, "#000000", 0.34), mix(c, INK, 0.62)
     if finish == "oak":
-        wood = mix(c, "#A8743F", 0.42)
-        return mix(wood, "#FFF3DC", 0.3), wood, mix(wood, "#2B1A0E", 0.38), mix(wood, INK, 0.62)
+        # real wood, only a little stained with their colour (the emblem keeps it)
+        wood = mix("#B27A42", c, 0.18)
+        return mix(wood, "#FFE7C2", 0.38), wood, mix(wood, "#3A2210", 0.48), mix(wood, INK, 0.65)
     if finish == "clay":
-        clay = mix(c, "#C8B6A2", 0.32)
-        return mix(clay, "#FFFFFF", 0.22), clay, mix(clay, "#3A2A20", 0.28), mix(clay, INK, 0.55)
+        # fired clay: warm and matte, tinted with their colour
+        clay = mix(c, "#C97B52", 0.45)
+        return mix(clay, "#FFE2CC", 0.3), clay, mix(clay, "#3A1E12", 0.32), mix(clay, INK, 0.6)
     if finish == "pearl":
-        p = mix(c, "#FFFFFF", 0.42)
-        return mix(p, "#FFFFFF", 0.55), p, mix(p, c, 0.55), mix(c, INK, 0.5)
+        p = mix(c, "#FFFFFF", 0.6)
+        return mix(p, "#FFFFFF", 0.7), p, mix(p, c, 0.4), mix(c, INK, 0.5)
     if finish == "marble":
-        m = mix(c, "#FFFFFF", 0.62)
-        return mix(m, "#FFFFFF", 0.6), m, mix(m, c, 0.45), mix(c, INK, 0.55)
+        m = mix(c, "#FFFFFF", 0.8)
+        return "#FFFFFF", m, mix(m, c, 0.3), mix(c, INK, 0.5)
+    if finish == "candy":
+        k = mix(c, "#FFFFFF", 0.88)
+        return "#FFFFFF", k, mix(k, c, 0.25), mix(c, INK, 0.5)
+    if finish == "patina":
+        return "#F0B07A", "#C27A44", "#6E3A1A", "#4A2410"
+    if finish == "galaxy":
+        g = mix(c, "#0D0A24", 0.72)
+        return mix(g, c, 0.35), g, mix(g, "#000000", 0.5), mix(g, "#000000", 0.45)
+    if finish == "tortoise":
+        t = mix("#C9822F", c, 0.15)
+        return mix(t, "#FFE0A8", 0.35), t, mix(t, "#3A1A08", 0.5), mix(t, INK, 0.65)
     if finish == "glass":
         return mix(c, "#FFFFFF", 0.55), c, mix(c, "#000000", 0.3), mix(c, INK, 0.55)
     if finish == "porcelain":
@@ -174,11 +187,16 @@ def palette(color, finish):
 FINISHES = [
     "paint", "oak", "clay", "pearl", "marble", "glass", "porcelain",
     "metallic", "obsidian", "gold", "crystal", "glow", "royal", "admiralty",
+    "candy", "patina", "galaxy", "tortoise",
 ]
 
-GLOSS = {"paint": 0.42, "oak": 0.14, "clay": 0.0, "pearl": 0.5, "marble": 0.4, "glass": 0.7,
-         "porcelain": 0.55, "metallic": 0.65, "obsidian": 0.55, "gold": 0.6, "crystal": 0.65,
-         "glow": 0.18, "royal": 0.22, "admiralty": 0.48}
+GLOSS = {"paint": 0.42, "oak": 0.12, "clay": 0.0, "pearl": 0.6, "marble": 0.5, "glass": 0.7,
+         "porcelain": 0.55, "metallic": 0.0, "obsidian": 0.55, "gold": 0.0, "crystal": 0.7,
+         "glow": 0.18, "royal": 0.22, "admiralty": 0.48, "candy": 0.6, "patina": 0.15,
+         "galaxy": 0.3, "tortoise": 0.55}
+
+# finishes whose emblem is enamelled in the player's colour (the body isn't theirs)
+ENAMEL = ("gold", "oak", "patina", "tortoise")
 
 
 class Svg:
@@ -229,36 +247,88 @@ def texture(svg, finish, color, area, light, mid, dark):
     clip = svg.clip(area)
     out = []
     if finish == "oak":
-        for i, y in enumerate(range(84, 146, 7)):
-            wob = 3 if i % 2 else -3
-            out.append(f'<path d="M 10 {y} C 40 {y + wob}, 70 {y - wob}, 118 {y + wob}" fill="none" stroke="{dark}" stroke-opacity="0.28" stroke-width="1.3"/>')
-        out.append(f'<path d="M 70 98 C 74 104, 74 112, 70 118" fill="none" stroke="{dark}" stroke-opacity="0.35" stroke-width="1.5"/>')
+        # grain flowing round a knot, darker lines and lighter streaks between
+        out.append(f'<ellipse cx="74" cy="112" rx="5.5" ry="3.6" fill="{dark}" fill-opacity="0.55"/>')
+        out.append(f'<ellipse cx="74" cy="112" rx="9" ry="6.5" fill="none" stroke="{dark}" stroke-opacity="0.45" stroke-width="1.3"/>')
+        for i, y in enumerate(range(82, 150, 6)):
+            bend = 6 if 100 < y < 124 else 2
+            d = f"M 10 {y} C 40 {y - 2}, 60 {y + (bend if y > 112 else -bend)}, 74 {y + (bend if y > 112 else -bend)} C 90 {y + (bend if y > 112 else -bend)}, 100 {y - 1}, 118 {y + 1}"
+            out.append(f'<path d="{d}" fill="none" stroke="{dark if i % 2 == 0 else light}" stroke-opacity="{0.42 if i % 2 == 0 else 0.35}" stroke-width="{1.4 if i % 2 == 0 else 1.0}"/>')
     elif finish == "clay":
+        # the rings it was thrown with on the wheel, and a fingerprint of a dent
+        for i, y in enumerate(range(88, 148, 8)):
+            out.append(f'<path d="M 10 {y} C 50 {y + 1.5}, 80 {y + 1.5}, 118 {y}" fill="none" stroke="{dark}" stroke-opacity="0.22" stroke-width="2.2"/>')
+            out.append(f'<path d="M 10 {y + 2.2} C 50 {y + 3.7}, 80 {y + 3.7}, 118 {y + 2.2}" fill="none" stroke="{light}" stroke-opacity="0.3" stroke-width="1.2"/>')
         rnd = random.Random(7)
-        for _ in range(60):
-            x, y = rnd.uniform(10, 118), rnd.uniform(10, 150)
-            out.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{rnd.uniform(0.5, 1.1):.2f}" fill="{dark}" fill-opacity="0.25"/>')
+        for _ in range(26):
+            x, y = rnd.uniform(10, 118), rnd.uniform(80, 150)
+            out.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{rnd.uniform(0.5, 1.0):.2f}" fill="{dark}" fill-opacity="0.3"/>')
+    elif finish == "pearl":
+        # its sheen shifts colour as it turns
+        sheen = svg.linear([(0, "#FFC8E4", 0.0), (0.3, "#FFC8E4", 0.45), (0.5, "#FFFFFF", 0.1), (0.7, "#BFF0FF", 0.45), (1, "#D8C8FF", 0.3)], 0, 0, 1, 0.4)
+        out.append(f'<rect x="0" y="0" width="128" height="160" fill="{sheen}"/>')
     elif finish == "marble":
-        vein = mix(color, INK, 0.25)
-        for d in ("M 30 150 C 44 128, 40 112, 58 96 C 66 88, 62 72, 74 58",
-                  "M 96 150 C 88 132, 98 118, 84 104 C 76 96, 84 84, 78 70",
-                  "M 50 120 C 58 118, 64 122, 72 116"):
-            out.append(f'<path d="{d}" fill="none" stroke="{vein}" stroke-opacity="0.5" stroke-width="1.2"/>')
+        # dark veins, branching, and fainter ones between
+        vein = mix(color, INK, 0.45)
+        for d, w, op in (("M 22 150 C 36 132, 34 118, 50 106 C 58 100, 56 88, 66 78", 1.8, 0.75),
+                         ("M 50 106 C 58 110, 66 108, 72 100", 1.2, 0.7),
+                         ("M 104 150 C 96 134, 104 120, 90 108 C 82 100, 88 90, 80 80", 1.6, 0.7),
+                         ("M 90 108 C 84 114, 78 124, 80 136", 1.1, 0.6),
+                         ("M 34 138 C 48 140, 60 132, 74 140", 0.8, 0.4),
+                         ("M 60 92 C 70 96, 80 90, 92 96", 0.8, 0.35)):
+            out.append(f'<path d="{d}" fill="none" stroke="{vein}" stroke-opacity="{op}" stroke-width="{w}" stroke-linecap="round"/>')
+    elif finish == "candy":
+        # stripes wound round it, in their colour
+        for k in range(-6, 10):
+            x = k * 16
+            out.append(f'<path d="M {x} 160 L {x + 9} 160 L {x + 59} 60 L {x + 50} 60 Z" fill="{color}" fill-opacity="0.9"/>')
+    elif finish == "patina":
+        # green weathering creeping up from its foot and settling in the creases
+        rnd = random.Random(5)
+        for _ in range(16):
+            x, y = rnd.uniform(12, 116), rnd.uniform(118, 152)
+            out.append(f'<ellipse cx="{x:.1f}" cy="{y:.1f}" rx="{rnd.uniform(5, 11):.1f}" ry="{rnd.uniform(3, 6):.1f}" fill="#5FB89A" fill-opacity="{rnd.uniform(0.45, 0.75):.2f}"/>')
+        for _ in range(8):
+            x, y = rnd.uniform(30, 98), rnd.uniform(86, 118)
+            out.append(f'<ellipse cx="{x:.1f}" cy="{y:.1f}" rx="{rnd.uniform(3, 6):.1f}" ry="{rnd.uniform(2, 4):.1f}" fill="#7FD1B4" fill-opacity="{rnd.uniform(0.35, 0.6):.2f}"/>')
+    elif finish == "galaxy":
+        # clouds of their colour and a scatter of stars
+        for cx, cy, rx, ry, col, op in ((44, 126, 30, 18, color, 0.65), (86, 106, 26, 16, "#FF5FA2", 0.45), (70, 142, 22, 12, "#4FC3FF", 0.45)):
+            neb = svg.radial([(0, col, op), (1, col, 0)])
+            out.append(f'<ellipse cx="{cx}" cy="{cy}" rx="{rx}" ry="{ry}" fill="{neb}"/>')
+        rnd = random.Random(3)
+        for _ in range(26):
+            x, y = rnd.uniform(14, 114), rnd.uniform(82, 152)
+            out.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{rnd.uniform(0.5, 1.3):.2f}" fill="#FFFFFF" fill-opacity="{rnd.uniform(0.6, 1):.2f}"/>')
+        for x, y, r in ((40, 104, 3.4), (88, 132, 2.6)):
+            out.append(f'<path d="M {x} {y - r * 2} L {x + r * 0.4} {y - r * 0.4} L {x + r * 2} {y} L {x + r * 0.4} {y + r * 0.4} L {x} {y + r * 2} L {x - r * 0.4} {y + r * 0.4} L {x - r * 2} {y} L {x - r * 0.4} {y - r * 0.4} Z" fill="#FFFFFF"/>')
+    elif finish == "tortoise":
+        # dark mottling, as in a polished shell
+        rnd = random.Random(9)
+        for _ in range(22):
+            x, y = rnd.uniform(10, 118), rnd.uniform(80, 152)
+            out.append(f'<ellipse cx="{x:.1f}" cy="{y:.1f}" rx="{rnd.uniform(3, 9):.1f}" ry="{rnd.uniform(2, 6):.1f}" transform="rotate({rnd.uniform(-40, 40):.0f} {x:.1f} {y:.1f})" fill="#3A1A08" fill-opacity="{rnd.uniform(0.35, 0.7):.2f}"/>')
     elif finish == "porcelain":
         out.append(f'<path d="M 10 124 L 118 124 L 118 129 L 10 129 Z" fill="{color}" fill-opacity="0.9"/>')
         for x in range(36, 100, 9):
             out.append(f'<circle cx="{x}" cy="114" r="1.8" fill="{color}" fill-opacity="0.85"/>')
         out.append(f'<path d="M 10 99 L 118 99 L 118 101.5 L 10 101.5 Z" fill="{color}" fill-opacity="0.85"/>')
-    elif finish == "metallic":
+    elif finish in ("metallic", "gold"):
+        # brushed: fine streaks running down it
         rnd = random.Random(11)
-        for _ in range(70):
-            x, y = rnd.uniform(10, 118), rnd.uniform(10, 150)
-            out.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="0.7" fill="#FFFFFF" fill-opacity="{rnd.uniform(0.15, 0.5):.2f}"/>')
+        for _ in range(26):
+            x = rnd.uniform(14, 114)
+            out.append(f'<path d="M {x:.1f} 80 L {x + rnd.uniform(-6, 6):.1f} 150" fill="none" stroke="#FFFFFF" stroke-opacity="{rnd.uniform(0.08, 0.22):.2f}" stroke-width="0.8"/>')
     elif finish == "crystal":
-        for d, a in (("M 64 79 L 52 139 L 27 139 Z", 0.18), ("M 64 79 L 76 139 L 101 139 Z", -0.22),
-                     ("M 64 79 L 52 139 L 76 139 Z", 0.08)):
+        # cut facets, each catching the light differently, and two glints
+        for d, a in (("M 64 79 L 40 112 L 27 139 Z", 0.3), ("M 64 79 L 52 139 L 40 112 Z", 0.12),
+                     ("M 64 79 L 76 139 L 52 139 Z", 0.05), ("M 64 79 L 88 112 L 76 139 Z", -0.14),
+                     ("M 64 79 L 101 139 L 88 112 Z", -0.26), ("M 27 139 L 40 112 L 52 139 Z", 0.2),
+                     ("M 76 139 L 88 112 L 101 139 Z", -0.18)):
             col = "#FFFFFF" if a > 0 else "#000000"
-            out.append(f'<path d="{d}" fill="{col}" fill-opacity="{abs(a)}"/>')
+            out.append(f'<path d="{d}" fill="{col}" fill-opacity="{abs(a)}" stroke="#FFFFFF" stroke-opacity="0.35" stroke-width="0.8"/>')
+        for x, y, r in ((44, 104, 3.6), (84, 126, 2.6)):
+            out.append(f'<path d="M {x} {y - r * 2} L {x + r * 0.35} {y - r * 0.35} L {x + r * 2} {y} L {x + r * 0.35} {y + r * 0.35} L {x} {y + r * 2} L {x - r * 0.35} {y + r * 0.35} L {x - r * 2} {y} L {x - r * 0.35} {y - r * 0.35} Z" fill="#FFFFFF"/>')
     elif finish == "glow":
         hot = mix(color, "#FFFFFF", 0.35)
         for d in ("M 40 140 L 46 124 L 42 112 L 52 98", "M 88 140 L 82 128 L 88 116 L 78 100 L 80 88",
@@ -292,8 +362,12 @@ def piece(character, finish):
     top = ellipse_path(*BASE_TOP)
     svg.add(f'<path d="{top}" fill="{svg.radial([(0, light, alpha), (0.6, mid, alpha), (1, dark, alpha)], 0.42, 0.3, 0.75)}" stroke="{outline}" stroke-width="2.2"/>')
 
-    # the body, its texture, its shine
-    shaded(svg, BODY, light, mid, dark, outline, alpha)
+    # the body, its texture, its shine (polished metal reflects in bands)
+    if finish in ("metallic", "gold"):
+        bands = svg.linear([(0, dark, 1), (0.18, light, 1), (0.32, mid, 1), (0.5, mix(light, "#FFFFFF", 0.4), 1), (0.62, mid, 1), (0.85, dark, 1), (1, mix(dark, "#000000", 0.2), 1)], 0, 0, 1, 0)
+        svg.add(f'<path d="{BODY}" fill="{bands}" stroke="{outline}" stroke-width="2.2" stroke-linejoin="round"/>')
+    else:
+        shaded(svg, BODY, light, mid, dark, outline, alpha)
     texture(svg, finish, color, BODY, light, mid, dark)
     gloss = GLOSS[finish]
     if gloss > 0:
@@ -316,7 +390,7 @@ def piece(character, finish):
 
     # the emblem (enamelled in the player's colour on a gold piece)
     e = EMBLEMS[character]
-    el, em, ed, eo = (palette(color, "paint") if finish == "gold" else (light, mid, dark, outline))
+    el, em, ed, eo = (palette(color, "paint") if finish in ENAMEL else (light, mid, dark, outline))
     for kind, d in e["parts"]:
         if kind == "top":
             svg.add(f'<path d="{d}" fill="{el}" fill-opacity="{alpha}" stroke="{eo}" stroke-width="2.2" stroke-linejoin="round"/>')

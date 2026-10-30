@@ -62,7 +62,7 @@ STRIP = 256  # rows per strip of a sheet's pixels in ArtData (each unpacks to 1 
 # art/marks.py); the fish (art/fish.py).
 # A run added later goes on sheets of its own, so the sheets already uploaded keep their
 # uploads.
-GROUPS = ["props", "ground", "maps", "pieces", "items", "tiles", "emblems", "cards", "kraken", "dice", "trails", "fishing", "chests", "marks", "fish", "ui"]
+GROUPS = ["props", "ground", "maps", "pieces", "items", "tiles", "emblems", "cards", "kraken", "dice", "trails", "fishing", "chests", "marks", "fish", "ui", "dice_more", "emblems_more"]
 RUNS = [
     ("scenery", ["props", "ground", "maps"]),
     ("pieces", ["pieces", "items", "tiles"]),
@@ -70,6 +70,7 @@ RUNS = [
     ("extras", ["dice", "trails", "fishing", "chests", "marks"]),
     ("fish", ["fish"]),
     ("ui", ["ui"]),
+    ("more", ["dice_more", "emblems_more"]),
 ]
 
 

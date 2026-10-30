@@ -121,6 +121,10 @@ function CosmeticArt.die(parent: Instance?, skinId: string?, value: number, prop
 		end
 	end
 	local art = "dice/" .. CosmeticArt.diceArt(skinId)
+	if not Art.has(art) then
+		-- (the later skins are on a sheet of their own)
+		art = "dice_more/" .. CosmeticArt.diceArt(skinId)
+	end
 	if Art.has(art) and Art.has(art .. "_pip") then
 		Art.image(root, art, { Name = "Body", ZIndex = root.ZIndex })
 		local face = Util.frame(root, {
