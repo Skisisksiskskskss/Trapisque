@@ -1,0 +1,49 @@
+{
+  "ambient_light": 0.05,
+  "attributes": {
+    "minecraft:gameplay/bed_rule": {
+      "can_set_spawn": "always",
+      "can_sleep": "never",
+      "error_message": {
+        "translate": "thesift.bed.no_sleep"
+      }
+    },
+    "minecraft:gameplay/can_start_raid": false,
+    "minecraft:gameplay/cat_waking_up_gift_chance": 0.0,
+    "minecraft:gameplay/creaking_active": false,
+    "minecraft:gameplay/monsters_burn": false,
+    "minecraft:gameplay/respawn_anchor_works": false,
+    "minecraft:gameplay/straw_bed_rule": {
+      "can_set_spawn": "never",
+      "can_sleep": "never",
+      "destroy_on_leave": true,
+      "error_message": {
+        "translate": "thesift.bed.no_sleep"
+      }
+    },
+    "minecraft:gameplay/surface_slime_spawn_chance": 0.0,
+    "minecraft:visual/ambient_light_color": "#0a0a1a",
+    "minecraft:visual/fog_color": "#bde8e0",
+    "minecraft:visual/sky_color": "#60d5c8",
+    "minecraft:visual/sunrise_sunset_color": "#00000000",
+    "minecraft:visual/water_fog_color": "#1f8fa8",
+    "minecraft:visual/water_fog_end_distance": 64.0,
+    "thesift:gameplay/sift_life": true
+  },
+  "coordinate_scale": 1.0,
+  "default_clock": "thesift:tides",
+  "has_ceiling": false,
+  "has_ender_dragon_fight": false,
+  "has_skylight": true,
+  "height": 384,
+  "infiniburn": "#minecraft:infiniburn_overworld",
+  "logical_height": 384,
+  "min_y": -64,
+  "monster_spawn_block_light_limit": 0,
+  "monster_spawn_light_level": {
+    "type": "minecraft:uniform",
+    "max_inclusive": 7,
+    "min_inclusive": 0
+  },
+  "timelines": "thesift:tides"
+}

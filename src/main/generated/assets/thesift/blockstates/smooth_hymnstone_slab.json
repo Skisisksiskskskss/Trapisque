@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "thesift:block/smooth_hymnstone_slab"
+    },
+    "type=double": {
+      "model": "thesift:block/smooth_hymnstone"
+    },
+    "type=top": {
+      "model": "thesift:block/smooth_hymnstone_slab_top"
+    }
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "parent": "thesift:sift/where_souls_drift",
+  "criteria": {
+    "has_horn": {
+      "conditions": {
+        "items": [
+          {
+            "items": "thesift:singers_horn"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.thesift.the_singers_gift.description"
+    },
+    "frame": "goal",
+    "icon": {
+      "id": "thesift:singers_horn"
+    },
+    "title": {
+      "translate": "advancements.thesift.the_singers_gift.title"
+    }
+  },
+  "requirements": [
+    [
+      "has_horn"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

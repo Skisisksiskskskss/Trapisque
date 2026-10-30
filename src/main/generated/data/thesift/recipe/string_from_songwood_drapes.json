@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    "thesift:songwood_drapes",
+    "thesift:songwood_drapes",
+    "thesift:songwood_drapes"
+  ],
+  "result": {
+    "id": "minecraft:string"
+  }
+}

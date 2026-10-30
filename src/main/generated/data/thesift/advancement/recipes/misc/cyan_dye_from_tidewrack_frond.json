@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_the_recipe": {
+      "conditions": {
+        "recipes": "thesift:cyan_dye_from_tidewrack_frond"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    },
+    "has_tidewrack_frond": {
+      "conditions": {
+        "items": [
+          {
+            "items": "thesift:tidewrack_frond"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_tidewrack_frond"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "thesift:cyan_dye_from_tidewrack_frond"
+    ]
+  }
+}

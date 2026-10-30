@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "tip=false": {
+      "model": "thesift:block/songwood_drapes"
+    },
+    "tip=true": {
+      "model": "thesift:block/songwood_drapes_tip"
+    }
+  }
+}

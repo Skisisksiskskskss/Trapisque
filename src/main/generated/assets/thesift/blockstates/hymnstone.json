@@ -1,0 +1,15 @@
+{
+  "variants": {
+    "": [
+      {
+        "model": "thesift:block/hymnstone"
+      },
+      {
+        "model": "thesift:block/hymnstone_2"
+      },
+      {
+        "model": "thesift:block/hymnstone_3"
+      }
+    ]
+  }
+}

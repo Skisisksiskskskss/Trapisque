@@ -1,0 +1,100 @@
+{
+  "variants": {
+    "open=false,picked_cycle=0": {
+      "model": "thesift:block/endure_bloom_closed"
+    },
+    "open=false,picked_cycle=1": {
+      "model": "thesift:block/endure_bloom_closed"
+    },
+    "open=false,picked_cycle=10": {
+      "model": "thesift:block/endure_bloom_closed"
+    },
+    "open=false,picked_cycle=11": {
+      "model": "thesift:block/endure_bloom_closed"
+    },
+    "open=false,picked_cycle=12": {
+      "model": "thesift:block/endure_bloom_closed"
+    },
+    "open=false,picked_cycle=13": {
+      "model": "thesift:block/endure_bloom_closed"
+    },
+    "open=false,picked_cycle=14": {
+      "model": "thesift:block/endure_bloom_closed"
+    },
+    "open=false,picked_cycle=15": {
+      "model": "thesift:block/endure_bloom_closed"
+    },
+    "open=false,picked_cycle=2": {
+      "model": "thesift:block/endure_bloom_closed"
+    },
+    "open=false,picked_cycle=3": {
+      "model": "thesift:block/endure_bloom_closed"
+    },
+    "open=false,picked_cycle=4": {
+      "model": "thesift:block/endure_bloom_closed"
+    },
+    "open=false,picked_cycle=5": {
+      "model": "thesift:block/endure_bloom_closed"
+    },
+    "open=false,picked_cycle=6": {
+      "model": "thesift:block/endure_bloom_closed"
+    },
+    "open=false,picked_cycle=7": {
+      "model": "thesift:block/endure_bloom_closed"
+    },
+    "open=false,picked_cycle=8": {
+      "model": "thesift:block/endure_bloom_closed"
+    },
+    "open=false,picked_cycle=9": {
+      "model": "thesift:block/endure_bloom_closed"
+    },
+    "open=true,picked_cycle=0": {
+      "model": "thesift:block/endure_bloom"
+    },
+    "open=true,picked_cycle=1": {
+      "model": "thesift:block/endure_bloom_picked"
+    },
+    "open=true,picked_cycle=10": {
+      "model": "thesift:block/endure_bloom_picked"
+    },
+    "open=true,picked_cycle=11": {
+      "model": "thesift:block/endure_bloom_picked"
+    },
+    "open=true,picked_cycle=12": {
+      "model": "thesift:block/endure_bloom_picked"
+    },
+    "open=true,picked_cycle=13": {
+      "model": "thesift:block/endure_bloom_picked"
+    },
+    "open=true,picked_cycle=14": {
+      "model": "thesift:block/endure_bloom_picked"
+    },
+    "open=true,picked_cycle=15": {
+      "model": "thesift:block/endure_bloom_picked"
+    },
+    "open=true,picked_cycle=2": {
+      "model": "thesift:block/endure_bloom_picked"
+    },
+    "open=true,picked_cycle=3": {
+      "model": "thesift:block/endure_bloom_picked"
+    },
+    "open=true,picked_cycle=4": {
+      "model": "thesift:block/endure_bloom_picked"
+    },
+    "open=true,picked_cycle=5": {
+      "model": "thesift:block/endure_bloom_picked"
+    },
+    "open=true,picked_cycle=6": {
+      "model": "thesift:block/endure_bloom_picked"
+    },
+    "open=true,picked_cycle=7": {
+      "model": "thesift:block/endure_bloom_picked"
+    },
+    "open=true,picked_cycle=8": {
+      "model": "thesift:block/endure_bloom_picked"
+    },
+    "open=true,picked_cycle=9": {
+      "model": "thesift:block/endure_bloom_picked"
+    }
+  }
+}

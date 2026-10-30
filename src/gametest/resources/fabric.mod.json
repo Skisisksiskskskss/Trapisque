@@ -1,0 +1,35 @@
+{
+	"schemaVersion": 1,
+	"id": "thesift-gametest",
+	"version": "1.0.0",
+	"name": "The Sift GameTests",
+	"description": "Server GameTests for The Sift. Development only; never shipped.",
+	"license": "MIT",
+	"environment": "*",
+	"entrypoints": {
+		"fabric-gametest": [
+			"thesift.test.SmokeTest",
+			"thesift.test.SiftDimensionTest",
+			"thesift.test.SiftBlocksTest",
+			"thesift.test.SiftFloraTest",
+			"thesift.test.SiftSurvivalTest",
+			"thesift.test.SiftRiftTest",
+			"thesift.test.SiftHuntTest",
+			"thesift.test.SiftEntryTest",
+			"thesift.test.SiftIchorTest",
+			"thesift.test.SiftBasinTest",
+      "thesift.test.SiftHollowsTest",
+			"thesift.test.SiftBlubTest",
+			"thesift.test.SiftPerfTest"
+		],
+		"fabric-client-gametest": [
+			"thesift.test.client.SiftPreviewClientTest"
+		]
+	},
+	"depends": {
+		"thesift": "*"
+	},
+	"mixins": [
+		"thesift-gametest.mixins.json"
+	]
+}

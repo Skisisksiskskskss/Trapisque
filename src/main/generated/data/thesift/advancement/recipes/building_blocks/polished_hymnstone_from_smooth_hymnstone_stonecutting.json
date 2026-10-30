@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_smooth_hymnstone": {
+      "conditions": {
+        "items": [
+          {
+            "items": "thesift:smooth_hymnstone"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipes": "thesift:polished_hymnstone_from_smooth_hymnstone_stonecutting"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_smooth_hymnstone"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "thesift:polished_hymnstone_from_smooth_hymnstone_stonecutting"
+    ]
+  }
+}

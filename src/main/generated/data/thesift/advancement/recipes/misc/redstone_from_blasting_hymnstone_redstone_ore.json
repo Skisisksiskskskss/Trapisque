@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_hymnstone_redstone_ore": {
+      "conditions": {
+        "items": [
+          {
+            "items": "thesift:hymnstone_redstone_ore"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipes": "thesift:redstone_from_blasting_hymnstone_redstone_ore"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_hymnstone_redstone_ore"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "thesift:redstone_from_blasting_hymnstone_redstone_ore"
+    ]
+  }
+}

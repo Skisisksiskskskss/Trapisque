@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "condition": {
+        "type": "minecraft:survives_explosion"
+      },
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "thesift:polished_hymnstone_stairs"
+        }
+      ],
+      "rolls": 1
+    }
+  ]
+}

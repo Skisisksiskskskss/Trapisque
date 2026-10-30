@@ -1,0 +1,8 @@
+{
+  "type": "minecraft:cache",
+  "input": {
+    "type": "minecraft:add",
+    "left": "minecraft:overworld/continents",
+    "right": 0.3
+  }
+}

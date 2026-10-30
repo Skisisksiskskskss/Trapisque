@@ -1,0 +1,32 @@
+{
+  "parent": "thesift:sift/where_souls_drift",
+  "criteria": {
+    "has_frond": {
+      "conditions": {
+        "items": [
+          {
+            "items": "thesift:tidewrack_frond"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.thesift.low_tide.description"
+    },
+    "icon": {
+      "id": "thesift:tidewrack_frond"
+    },
+    "title": {
+      "translate": "advancements.thesift.low_tide.title"
+    }
+  },
+  "requirements": [
+    [
+      "has_frond"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

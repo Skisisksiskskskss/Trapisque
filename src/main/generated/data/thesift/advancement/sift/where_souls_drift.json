@@ -1,0 +1,28 @@
+{
+  "parent": "thesift:sift/an_offering",
+  "criteria": {
+    "entered_sift": {
+      "conditions": {
+        "to": "thesift:the_sift"
+      },
+      "trigger": "minecraft:changed_dimension"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.thesift.where_souls_drift.description"
+    },
+    "icon": {
+      "id": "thesift:healthy_sculk"
+    },
+    "title": {
+      "translate": "advancements.thesift.where_souls_drift.title"
+    }
+  },
+  "requirements": [
+    [
+      "entered_sift"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:weighted_random_selector",
+  "features": [
+    {
+      "data": "thesift:songwood_checked",
+      "weight": 1
+    }
+  ]
+}

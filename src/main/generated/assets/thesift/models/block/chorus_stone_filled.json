@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "end": "thesift:block/chorus_stone_top_filled",
+    "side": "thesift:block/chorus_stone_side_filled"
+  }
+}

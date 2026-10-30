@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:stonecutting",
+  "ingredient": "thesift:smooth_hymnstone",
+  "result": {
+    "id": "thesift:polished_hymnstone"
+  }
+}

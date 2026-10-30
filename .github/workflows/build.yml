@@ -1,0 +1,76 @@
+# Build, GameTests, datagen no-diff and the content-bible check (D-019, WP-033).
+name: build
+
+on:
+  push:
+  pull_request:
+  # Manual runs can publish a build as a pre-release; the tag is created by GitHub on the built commit.
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Publish this build as a pre-release with this tag (e.g. v0.1.0-alpha.preview); empty = no release"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 25
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build and run GameTests
+        run: ./gradlew build --console=plain
+
+      - name: Content bible check
+        run: python3 tools/docs/check_bible.py
+
+      - name: Lang check (names, subtitles, keys)
+        run: python3 tools/docs/check_lang.py
+
+      - name: Datagen no-diff check
+        run: tools/dev/datagen.sh --check
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: thesift-jar
+          path: build/libs/*.jar
+          if-no-files-found: ignore
+
+  # A pushed v* tag, or a manual run with release_tag, publishes the jar as a GitHub pre-release
+  # (the playable previews, D-018).
+  release:
+    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.release_tag != '')
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: thesift-jar
+          path: dist
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.release_tag || github.ref_name }}
+          target_commitish: ${{ github.sha }}
+          name: The Sift ${{ inputs.release_tag || github.ref_name }}
+          prerelease: true
+          files: dist/*.jar
+          body: |
+            Playable preview of The Sift for Minecraft Java 26.3 (Fabric Loader 0.19.5+, Fabric API 0.161.0+26.3).
+            How to play it and what to report: docs/PLAYTEST.md in this tag.
+
+            Unofficial fan project, not affiliated with or endorsed by Mojang Studios or Microsoft.

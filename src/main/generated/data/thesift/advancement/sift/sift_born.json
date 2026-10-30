@@ -1,0 +1,42 @@
+{
+  "parent": "thesift:sift/where_souls_drift",
+  "criteria": {
+    "diamond_in_sift": {
+      "conditions": {
+        "items": [
+          {
+            "items": "minecraft:diamond"
+          }
+        ],
+        "player": {
+          "type": "minecraft:entity_properties",
+          "entity": "this",
+          "predicate": {
+            "minecraft:location": {
+              "dimension": "thesift:the_sift"
+            }
+          }
+        }
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.thesift.sift_born.description"
+    },
+    "frame": "goal",
+    "icon": {
+      "id": "minecraft:diamond"
+    },
+    "title": {
+      "translate": "advancements.thesift.sift_born.title"
+    }
+  },
+  "requirements": [
+    [
+      "diamond_in_sift"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

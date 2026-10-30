@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cross",
+  "textures": {
+    "cross": "thesift:block/songwood_drapes_tip"
+  }
+}

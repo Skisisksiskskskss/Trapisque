@@ -1,0 +1,25 @@
+{
+  "parent": "thesift:sift/root",
+  "criteria": {
+    "awarded": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.thesift.an_offering.description"
+    },
+    "icon": {
+      "id": "minecraft:experience_bottle"
+    },
+    "title": {
+      "translate": "advancements.thesift.an_offering.title"
+    }
+  },
+  "requirements": [
+    [
+      "awarded"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

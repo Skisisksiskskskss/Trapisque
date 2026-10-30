@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_goldfrond": {
+      "conditions": {
+        "items": [
+          {
+            "items": "thesift:goldfrond"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipes": "thesift:yellow_dye_from_goldfrond"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_goldfrond"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "thesift:yellow_dye_from_goldfrond"
+    ]
+  }
+}

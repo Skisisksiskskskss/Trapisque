@@ -1,0 +1,25 @@
+{
+  "parent": "thesift:sift/where_souls_drift",
+  "criteria": {
+    "awarded": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.thesift.through_the_rift.description"
+    },
+    "icon": {
+      "id": "minecraft:echo_shard"
+    },
+    "title": {
+      "translate": "advancements.thesift.through_the_rift.title"
+    }
+  },
+  "requirements": [
+    [
+      "awarded"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

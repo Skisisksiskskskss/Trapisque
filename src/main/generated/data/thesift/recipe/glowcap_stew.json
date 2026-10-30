@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    "minecraft:bowl",
+    "thesift:glowcap",
+    "thesift:glowcap"
+  ],
+  "result": {
+    "id": "thesift:glowcap_stew"
+  }
+}

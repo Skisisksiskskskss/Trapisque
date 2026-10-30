@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:stonecutting",
+  "ingredient": "thesift:cobbled_hymnstone",
+  "result": {
+    "id": "thesift:cobbled_hymnstone_wall"
+  }
+}

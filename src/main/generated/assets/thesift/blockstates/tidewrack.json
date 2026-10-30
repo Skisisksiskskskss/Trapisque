@@ -1,0 +1,196 @@
+{
+  "variants": {
+    "open=false,picked_cycle=0,submerged=false": {
+      "model": "thesift:block/tidewrack_closed"
+    },
+    "open=false,picked_cycle=0,submerged=true": {
+      "model": "thesift:block/tidewrack_closed"
+    },
+    "open=false,picked_cycle=1,submerged=false": {
+      "model": "thesift:block/tidewrack_closed"
+    },
+    "open=false,picked_cycle=1,submerged=true": {
+      "model": "thesift:block/tidewrack_closed"
+    },
+    "open=false,picked_cycle=10,submerged=false": {
+      "model": "thesift:block/tidewrack_closed"
+    },
+    "open=false,picked_cycle=10,submerged=true": {
+      "model": "thesift:block/tidewrack_closed"
+    },
+    "open=false,picked_cycle=11,submerged=false": {
+      "model": "thesift:block/tidewrack_closed"
+    },
+    "open=false,picked_cycle=11,submerged=true": {
+      "model": "thesift:block/tidewrack_closed"
+    },
+    "open=false,picked_cycle=12,submerged=false": {
+      "model": "thesift:block/tidewrack_closed"
+    },
+    "open=false,picked_cycle=12,submerged=true": {
+      "model": "thesift:block/tidewrack_closed"
+    },
+    "open=false,picked_cycle=13,submerged=false": {
+      "model": "thesift:block/tidewrack_closed"
+    },
+    "open=false,picked_cycle=13,submerged=true": {
+      "model": "thesift:block/tidewrack_closed"
+    },
+    "open=false,picked_cycle=14,submerged=false": {
+      "model": "thesift:block/tidewrack_closed"
+    },
+    "open=false,picked_cycle=14,submerged=true": {
+      "model": "thesift:block/tidewrack_closed"
+    },
+    "open=false,picked_cycle=15,submerged=false": {
+      "model": "thesift:block/tidewrack_closed"
+    },
+    "open=false,picked_cycle=15,submerged=true": {
+      "model": "thesift:block/tidewrack_closed"
+    },
+    "open=false,picked_cycle=2,submerged=false": {
+      "model": "thesift:block/tidewrack_closed"
+    },
+    "open=false,picked_cycle=2,submerged=true": {
+      "model": "thesift:block/tidewrack_closed"
+    },
+    "open=false,picked_cycle=3,submerged=false": {
+      "model": "thesift:block/tidewrack_closed"
+    },
+    "open=false,picked_cycle=3,submerged=true": {
+      "model": "thesift:block/tidewrack_closed"
+    },
+    "open=false,picked_cycle=4,submerged=false": {
+      "model": "thesift:block/tidewrack_closed"
+    },
+    "open=false,picked_cycle=4,submerged=true": {
+      "model": "thesift:block/tidewrack_closed"
+    },
+    "open=false,picked_cycle=5,submerged=false": {
+      "model": "thesift:block/tidewrack_closed"
+    },
+    "open=false,picked_cycle=5,submerged=true": {
+      "model": "thesift:block/tidewrack_closed"
+    },
+    "open=false,picked_cycle=6,submerged=false": {
+      "model": "thesift:block/tidewrack_closed"
+    },
+    "open=false,picked_cycle=6,submerged=true": {
+      "model": "thesift:block/tidewrack_closed"
+    },
+    "open=false,picked_cycle=7,submerged=false": {
+      "model": "thesift:block/tidewrack_closed"
+    },
+    "open=false,picked_cycle=7,submerged=true": {
+      "model": "thesift:block/tidewrack_closed"
+    },
+    "open=false,picked_cycle=8,submerged=false": {
+      "model": "thesift:block/tidewrack_closed"
+    },
+    "open=false,picked_cycle=8,submerged=true": {
+      "model": "thesift:block/tidewrack_closed"
+    },
+    "open=false,picked_cycle=9,submerged=false": {
+      "model": "thesift:block/tidewrack_closed"
+    },
+    "open=false,picked_cycle=9,submerged=true": {
+      "model": "thesift:block/tidewrack_closed"
+    },
+    "open=true,picked_cycle=0,submerged=false": {
+      "model": "thesift:block/tidewrack"
+    },
+    "open=true,picked_cycle=0,submerged=true": {
+      "model": "thesift:block/tidewrack"
+    },
+    "open=true,picked_cycle=1,submerged=false": {
+      "model": "thesift:block/tidewrack_picked"
+    },
+    "open=true,picked_cycle=1,submerged=true": {
+      "model": "thesift:block/tidewrack_picked"
+    },
+    "open=true,picked_cycle=10,submerged=false": {
+      "model": "thesift:block/tidewrack_picked"
+    },
+    "open=true,picked_cycle=10,submerged=true": {
+      "model": "thesift:block/tidewrack_picked"
+    },
+    "open=true,picked_cycle=11,submerged=false": {
+      "model": "thesift:block/tidewrack_picked"
+    },
+    "open=true,picked_cycle=11,submerged=true": {
+      "model": "thesift:block/tidewrack_picked"
+    },
+    "open=true,picked_cycle=12,submerged=false": {
+      "model": "thesift:block/tidewrack_picked"
+    },
+    "open=true,picked_cycle=12,submerged=true": {
+      "model": "thesift:block/tidewrack_picked"
+    },
+    "open=true,picked_cycle=13,submerged=false": {
+      "model": "thesift:block/tidewrack_picked"
+    },
+    "open=true,picked_cycle=13,submerged=true": {
+      "model": "thesift:block/tidewrack_picked"
+    },
+    "open=true,picked_cycle=14,submerged=false": {
+      "model": "thesift:block/tidewrack_picked"
+    },
+    "open=true,picked_cycle=14,submerged=true": {
+      "model": "thesift:block/tidewrack_picked"
+    },
+    "open=true,picked_cycle=15,submerged=false": {
+      "model": "thesift:block/tidewrack_picked"
+    },
+    "open=true,picked_cycle=15,submerged=true": {
+      "model": "thesift:block/tidewrack_picked"
+    },
+    "open=true,picked_cycle=2,submerged=false": {
+      "model": "thesift:block/tidewrack_picked"
+    },
+    "open=true,picked_cycle=2,submerged=true": {
+      "model": "thesift:block/tidewrack_picked"
+    },
+    "open=true,picked_cycle=3,submerged=false": {
+      "model": "thesift:block/tidewrack_picked"
+    },
+    "open=true,picked_cycle=3,submerged=true": {
+      "model": "thesift:block/tidewrack_picked"
+    },
+    "open=true,picked_cycle=4,submerged=false": {
+      "model": "thesift:block/tidewrack_picked"
+    },
+    "open=true,picked_cycle=4,submerged=true": {
+      "model": "thesift:block/tidewrack_picked"
+    },
+    "open=true,picked_cycle=5,submerged=false": {
+      "model": "thesift:block/tidewrack_picked"
+    },
+    "open=true,picked_cycle=5,submerged=true": {
+      "model": "thesift:block/tidewrack_picked"
+    },
+    "open=true,picked_cycle=6,submerged=false": {
+      "model": "thesift:block/tidewrack_picked"
+    },
+    "open=true,picked_cycle=6,submerged=true": {
+      "model": "thesift:block/tidewrack_picked"
+    },
+    "open=true,picked_cycle=7,submerged=false": {
+      "model": "thesift:block/tidewrack_picked"
+    },
+    "open=true,picked_cycle=7,submerged=true": {
+      "model": "thesift:block/tidewrack_picked"
+    },
+    "open=true,picked_cycle=8,submerged=false": {
+      "model": "thesift:block/tidewrack_picked"
+    },
+    "open=true,picked_cycle=8,submerged=true": {
+      "model": "thesift:block/tidewrack_picked"
+    },
+    "open=true,picked_cycle=9,submerged=false": {
+      "model": "thesift:block/tidewrack_picked"
+    },
+    "open=true,picked_cycle=9,submerged=true": {
+      "model": "thesift:block/tidewrack_picked"
+    }
+  }
+}

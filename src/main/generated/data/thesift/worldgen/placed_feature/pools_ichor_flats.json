@@ -1,0 +1,12 @@
+{
+  "feature": "thesift:ichor_flats_pools",
+  "placement": [
+    {
+      "type": "minecraft:heightmap",
+      "heightmap": "WORLD_SURFACE_WG"
+    },
+    {
+      "type": "minecraft:biome"
+    }
+  ]
+}
