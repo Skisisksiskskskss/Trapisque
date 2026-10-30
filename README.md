@@ -316,9 +316,10 @@ Before switching the experience to **Public**:
    `Config.Badges`. Roblox gives a few free badges a day and charges Robux for more,
    so this can be spread over a few days: a badge left at 0 is still earned and shown
    in the game, just not on Roblox.
-7. **The group**: make a Roblox group for the game (or publish the game under one) and
-   put its id in `Config.Community.GroupId`. Left at 0, a group-owned game uses its own
-   group; a game owned by a person has no group to join until you set one.
+7. **The group**: [Overcast Games](https://www.roblox.com/communities/990352202/Overcast-Games),
+   already set in `Config.Community.GroupId`. Joining it is worth the Shop's free Gems,
+   so let anyone join without approval. (Left at 0, a group-owned game would use its own
+   group.)
 8. Set the experience to **Public**.
 
 Store text to paste:

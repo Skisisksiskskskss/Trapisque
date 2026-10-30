@@ -246,7 +246,7 @@ Config.Badges = {
 -- The community reward: join the game's Roblox group (and like the game) for Gems,
 -- once. GroupId 0 uses the group that owns the game, if a group does.
 Config.Community = {
-	GroupId = 0,
+	GroupId = 990352202, -- Overcast Games (roblox.com/communities/990352202)
 	Gems = 150,
 }
 
