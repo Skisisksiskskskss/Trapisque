@@ -521,6 +521,12 @@ public final class SiftPreviewClientTest implements FabricClientGameTest {
 		run(world, "tp @a %.1f %.1f %.1f 0 12", x - 12.0, y + 1.6, z - 13.5);
 		context.waitTicks(10);
 		context.takeScreenshot("blub_face");
+		// The Nester and the Singer beside the Blubs, for the same check against their images.
+		run(world, "summon thesift:nester %d %d %d {NoAI:1b,Rotation:[160f,0f],PersistenceRequired:1b}", x - 20, y, z - 4);
+		run(world, "summon thesift:singer %d %d %d {NoAI:1b,Rotation:[200f,0f],PersistenceRequired:1b}", x - 15, y, z - 3);
+		run(world, "tp @a %.1f %.1f %.1f -10 8", x - 19.0, y + 2.2, z - 11.5);
+		context.waitTicks(10);
+		context.takeScreenshot("nester_singer");
 		run(world, "tp @a %d %d %d -30 -12", x - 22, y + 3, z - 14);
 		world.getConnection().waitForChunksRender();
 		context.waitTicks(5);
