@@ -899,7 +899,7 @@ The enduring Nester takes the soul corrupted Nester's pale glowing cyan. The spi
 
 **Revisit if** official footage shows the bouncy slimes (a mob, a plant) or the Echo Den.
 
-## D-043 The Blub redrawn to the vanilla teaser (2026-10-30) [owner playtest 6] [amends D-029's face]
+## D-043 The Blub redrawn to the vanilla teaser; the Singer's coat to its render (2026-10-30) [owner playtest 6] [amends D-029's face, D-036's look]
 **Context.** The owner: the mobs look described rather than drawn from the real images. The Sift's vanilla teaser (The_Sift_instagram) shows the Blub plainly:
 - a blue cube, its face blue above and teal below, with a grey-blue top;
 - two indigo slit eyes and a small indigo mouth;
@@ -907,6 +907,14 @@ The enduring Nester takes the soul corrupted Nester's pale glowing cyan. The spi
 - stubby feet.
 
 **Decision.** The texture is redrawn to those colours (the new `blub_coat` ramp, sampled from the teaser). The eyes are indigo slits; the round eyes with a catch-light, the separate mouth colour and the blush are gone. The ears grow to 3 × 6. The body, hitbox and animations are unchanged.
+
+**The Singer**, checked against MCD2_Singer beside our in-game render, keeps its shape. Its coat is redrawn:
+- a tiny cream face mask with dark eyes high on the neck (the eyes were drawn on bare fur);
+- a cream diamond low on the belly instead of a gold star on the chest;
+- cream feet;
+- fur laid in feathered chevrons.
+
+**The Nester**, checked the same way, already matches its render (D-034).
 
 ## D-044 GameTests at a fixed place (2026-10-30) [test infrastructure]
 **Context.** Vanilla's GameTest server lays its tests out from a random point (its seed is fixed at 0). In the Sift that point is at y 4, in random ground: ichor aquifers, unlit stone. A few tests failed now and then, on CI and locally, depending on where they landed.

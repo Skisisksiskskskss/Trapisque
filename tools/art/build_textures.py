@@ -1777,9 +1777,10 @@ _SINGER_BODY, _SINGER_ARM, _SINGER_LEG = (0, 19, 8, 12, 6), (28, 19, 4, 14, 4), 
 
 
 def singer_texture() -> Image.Image:
-    """64 x 64 for SingerModel, after Dungeons II's ad (RESEARCH.md S-I8): pale mint shag in overlapping
-    rows, as the ad's layered fur, lit at the top of each face; a tiny face high on the neck with a
-    pale beard; a cream star on the chest; cream feathery antlers."""
+    """64 x 64 for SingerModel, after Dungeons II's render and ad (MCD2_Singer, RESEARCH.md S-I8; owner
+    playtest 6: drawn from the images): pale mint shag laid in rows of feathered chevrons, darker at each
+    row's lower edge, lit at the top of each face; a tiny cream face high on the neck with two dark eyes
+    and a pale beard below it; a cream diamond low on the belly; cream feet; cream feathery antlers."""
     im = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
     px = im.load()
     n = len(RAMPS["singer_fur"])
@@ -1792,33 +1793,49 @@ def singer_texture() -> Image.Image:
             row = (y - y0) // 3
             for x in range(x0, x0 + w):
                 i = base
-                if (y - y0) % 3 == 2:
-                    i -= 1.2 if (x + row * 2) % 4 else -0.6  # the lower edge of a row of locks; their tips catch light
+                # Chevrons: each row of feathers dips to a point every four pixels, its edge a shade darker.
+                v = abs(((x - x0) + 2 * (row % 2)) % 4 - 1.5)
+                if (y - y0) % 3 == (2 if v < 1.0 else 1):
+                    i -= 1.3
+                elif (y - y0) % 3 == 0 and v < 1.0:
+                    i += 0.6  # the feather tips catch the light
                 px[x, y] = rgba("singer_fur", max(0, min(n - 1, int(round(i)))))
 
     for spec, top, bottom in ((_SINGER_HEAD, 5.0, 3.5), (_SINGER_BODY, 4.6, 3.0), (_SINGER_ARM, 4.2, 2.6), (_SINGER_LEG, 3.0, 1.6)):
         for name, rect in box_faces(*spec).items():
             if rect[2] > 0 and rect[3] > 0:
                 shag(rect, top + (0.6 if name == "top" else 0.0), bottom if name != "bottom" else bottom - 0.5)
-    # The tiny face at the top of the neck: a pale brow, two dark eyes, and a beard of pale strands.
+    # The tiny face high on the neck: a cream mask with two dark eyes, and a beard of pale strands below.
     fx, fy, fw, fh = box_faces(*_SINGER_HEAD)["front"]
-    for x in range(fx, fx + fw):
-        px[x, fy + 1] = rgba("singer_fur", 6)
+    for x in range(fx + 1, fx + fw - 1):
+        for y in range(fy + 1, fy + 4):
+            px[x, y] = rgba("singer_antler", 3 if y < fy + 3 else 2)
     for ex in (fx + 1, fx + fw - 2):
         px[ex, fy + 2] = rgba("singer_face", 1)
-        px[ex, fy + 3] = rgba("singer_face", 0)
+    px[fx + fw // 2 - 1, fy + 3] = rgba("singer_antler", 1)
+    px[fx + fw // 2, fy + 3] = rgba("singer_antler", 1)
     for x in range(fx + 1, fx + fw - 1):
-        for y in range(fy + 4, fy + 9):
-            if (x + y) % 2 == 0 or y < fy + 6:
+        for y in range(fy + 4, fy + 8):
+            if (x + y) % 2 == 0 or y == fy + 4:
                 px[x, y] = rgba("singer_fur", 6 if (x + y) % 3 else 5)
-    # The cream star on the chest.
+    # The cream diamond low on the belly.
     bx, by, bw, bh = box_faces(*_SINGER_BODY)["front"]
-    cx, cy = bx + bw // 2, by + 3
-    for dx, dy, c in ((0, 0, 3), (-1, 0, 2), (1, 0, 2), (0, -1, 2), (0, 1, 2), (-2, -1, 1), (2, -1, 1), (-2, 1, 1), (2, 1, 1),
-                      (0, -2, 1), (0, 2, 0)):
+    cx, cy = bx + bw // 2, by + bh - 4
+    for dx, dy, c in ((0, -2, 2), (-1, -1, 2), (0, -1, 3), (1, -1, 2), (-2, 0, 2), (-1, 0, 3), (0, 0, 4), (1, 0, 3),
+                      (-1, 1, 2), (0, 1, 3), (1, 1, 2), (0, 2, 2)):
         if bx <= cx + dx < bx + bw:
-            px[cx + dx, cy + dy] = rgba("singer_gold", c)
-    # Antlers: a cream stalk with feathered barbs swept up and out, transparent around.
+            px[cx + dx, cy + dy] = rgba("singer_antler", c)
+    # Cream feet: the legs' last row and soles.
+    for name, (x0, y0, w, h) in box_faces(*_SINGER_LEG).items():
+        if name == "bottom":
+            for y in range(y0, y0 + h):
+                for x in range(x0, x0 + w):
+                    px[x, y] = rgba("singer_antler", 1)
+        elif name != "top" and w > 0 and h > 0:
+            for x in range(x0, x0 + w):
+                px[x, y0 + h - 1] = rgba("singer_antler", 2 if (x - x0) % 2 else 3)
+    # Antlers: a cream stalk with feathered barbs swept up and out, transparent around; light enough that
+    # the side away from the light still reads cream.
     for name in ("left", "right"):
         x0, y0, w, h = box_faces(*_SINGER_ANTLER)[name]
         for y in range(y0, y0 + h):
@@ -1826,10 +1843,10 @@ def singer_texture() -> Image.Image:
                 px[x, y] = (0, 0, 0, 0)
         mid = x0 + w // 2
         for y in range(y0 + 1, y0 + h):
-            px[mid, y] = rgba("singer_antler", 1 if y > y0 + h - 3 else 2)
+            px[mid, y] = rgba("singer_antler", 2 if y > y0 + h - 3 else 3)
         for i, y in enumerate(range(y0 + 1, y0 + h - 2, 2)):
             for side in (-1, 1):
-                px[mid + side, y] = rgba("singer_antler", 3)
+                px[mid + side, y] = rgba("singer_antler", 4)
                 if mid + 2 * side in range(x0, x0 + w):
                     px[mid + 2 * side, y - 1] = rgba("singer_antler", 4)
     return im

@@ -5,11 +5,14 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.gameevent.GameEvent;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 import thesift.entity.nester.Nester;
@@ -40,6 +43,25 @@ public final class SiftHuntTest {
 		return helper.spawn(ModEntities.NESTER, new Vec3(x, 1, z));
 	}
 
+	/**
+	 * A Nester only hears while it has no prey in sight, and what other tests leave behind can come near
+	 * enough to draw it off the sound: blubs (persistent ones stay, and they wander) and survival mock
+	 * players. Blubs near are sent away; players are made spectators, which no hunter sees. Only the Endure
+	 * batch uses this, and none of its tests has a player of its own.
+	 */
+	private static void keepPreyAway(GameTestHelper helper) {
+		helper.onEachTick(() -> {
+			for (LivingEntity prey : helper.getLevel().getEntitiesOfClass(LivingEntity.class,
+					new AABB(helper.absolutePos(BlockPos.ZERO)).inflate(64.0), Nester::isPrey)) {
+				if (prey instanceof ServerPlayer player) {
+					player.setGameMode(GameType.SPECTATOR);
+				} else {
+					prey.discard();
+				}
+			}
+		});
+	}
+
 	/** A Nester as the world makes one: not persistent (helper.spawn marks its mobs persistent, and persistent hunters stay). */
 	private static Nester wildNester(GameTestHelper helper, double x, double z) {
 		Nester nester = ModEntities.NESTER.create(helper.getLevel(), EntitySpawnReason.COMMAND);
@@ -68,18 +90,20 @@ public final class SiftHuntTest {
 	@GameTest(dimension = SIFT, structure = SiftBasinTest.BIG, maxTicks = 300, environment = ENDURE)
 	public void aNesterGoesToTheSound(GameTestHelper helper) {
 		floor(helper);
+		keepPreyAway(helper);
 		Nester nester = nester(helper, 2.5, 2.5);
 		BlockPos sound = new BlockPos(13, 1, 13);
 		helper.runAfterDelay(5, () -> helper.getLevel().gameEvent(GameEvent.BLOCK_PLACE, helper.absolutePos(sound),
 				GameEvent.Context.of(ModBlocks.HEALTHY_SCULK.defaultBlockState())));
 		helper.succeedWhen(() -> helper.assertTrue(nester.position().distanceTo(helper.absoluteVec(Vec3.atBottomCenterOf(sound))) < 3.0,
-				"at the sound"));
+				"at the sound (state " + nester.state() + ", target " + nester.getTarget() + ", Tide " + Tide.current(helper.getLevel()) + ")"));
 	}
 
 	/** §6: a sound inside lumen's radius brings it to the rim, never inside 6 blocks. */
 	@GameTest(dimension = SIFT, structure = SiftBasinTest.BIG, maxTicks = 300, environment = ENDURE)
 	public void lumenKeepsItAtTheRim(GameTestHelper helper) {
 		floor(helper);
+		keepPreyAway(helper);
 		BlockPos lantern = new BlockPos(14, 1, 14);
 		helper.setBlock(lantern, ModBlocks.LUMEN_LANTERN);
 		Nester nester = nester(helper, 3.5, 3.5); // 13 blocks from the sound: within hearing
@@ -93,7 +117,8 @@ public final class SiftHuntTest {
 			closest[0] = Math.min(closest[0], d);
 		});
 		helper.runAfterDelay(200, () -> {
-			helper.assertTrue(closest[0] < 9.0, "it came to the rim (closest " + closest[0] + ")");
+			helper.assertTrue(closest[0] < 9.0, "it came to the rim (closest " + closest[0] + ", state " + nester.state() + ", target "
+					+ nester.getTarget() + ", Tide " + Tide.current(helper.getLevel()) + ")");
 			helper.succeed();
 		});
 	}
