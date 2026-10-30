@@ -15,6 +15,7 @@ import thesift.entity.nester.Nester;
 import thesift.entity.nester.NesterState;
 import thesift.registry.ModBlocks;
 import thesift.registry.ModEntities;
+import thesift.world.Tide;
 
 /** The hunt (system_hunt.md) and the Nester (mob_nester.md), WP-066/067. */
 public final class SiftHuntTest {
@@ -111,12 +112,16 @@ public final class SiftHuntTest {
 		helper.succeed();
 	}
 
-	/** §4: at its moment in falling Flow it digs into the soil and is gone. */
+	/**
+	 * §4: at its moment in falling Flow it digs into the soil and is gone. It watches its own Nester: a
+	 * persistent one left by another test (they never retreat) may wander into this area.
+	 */
 	@GameTest(dimension = SIFT, structure = SiftBasinTest.BIG, maxTicks = 400, environment = DAWN) // past every moment (27 000-28 999); a check, a walk, a 60-tick dig
 	public void nestersBurrowAtDawn(GameTestHelper helper) {
 		floor(helper);
-		wildNester(helper, 8.5, 8.5);
-		helper.succeedWhen(() -> helper.assertTrue(helper.getEntities(ModEntities.NESTER).isEmpty(), "dug away"));
+		Nester nester = wildNester(helper, 8.5, 8.5);
+		helper.succeedWhen(() -> helper.assertFalse(nester.isAlive(), "dug away (state " + nester.state() + ", return by "
+				+ nester.returnBy() + ", clock " + Tide.clockTicks(helper.getLevel()) + ", target " + nester.getTarget() + ")"));
 	}
 
 	/** §4, §5: past its return-by in Thrive it's taken by the tide; a persistent enduring one stays, no longer enduring. */
@@ -133,6 +138,7 @@ public final class SiftHuntTest {
 			helper.assertFalse(gone.isAlive(), "the tide took it");
 			helper.assertTrue(kept.isAlive(), "a name-tagged one stays");
 			helper.assertFalse(kept.isEnduring(), "and stops enduring");
+			kept.discard(); // persistent hunters never leave on their own: don't let it wander into a later test
 		});
 	}
 
