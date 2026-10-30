@@ -11,6 +11,7 @@ import net.minecraft.client.data.models.BlockModelGenerators;
 import net.minecraft.client.data.models.ItemModelGenerators;
 import net.minecraft.client.data.models.blockstates.MultiVariantGenerator;
 import net.minecraft.client.data.models.blockstates.PropertyDispatch;
+import net.minecraft.client.data.models.model.ItemModelUtils;
 import net.minecraft.client.data.models.model.ModelLocationUtils;
 import net.minecraft.client.resources.model.sprite.Material;
 import net.minecraft.core.Direction;
@@ -118,7 +119,7 @@ final class ModModelProvider extends FabricModelProvider {
 		g.createTrivialBlock(ModBlocks.GATESTONE, TexturedModel.COLUMN.updateTexture(m -> m
 				.put(TextureSlot.SIDE, TextureMapping.getBlockTexture(ModBlocks.GATESTONE))
 				.put(TextureSlot.END, TextureMapping.getBlockTexture(ModBlocks.GATESTONE, "_top"))));
-		g.createAirLikeBlock(ModBlocks.ICHOR, new Material(TheSift.id("block/ichor_still")));
+		g.createAirLikeBlock(ModBlocks.ICHOR, new Material(TheSift.id("block/ichor_field")));
 		flora(g);
 		// Like the Nether portal: hand-written thin models (assets/thesift/models/block/sift_membrane_{ns,ew}.json).
 		g.blockStateOutput.accept(MultiVariantGenerator.dispatch(ModBlocks.SIFT_MEMBRANE).with(
@@ -221,7 +222,9 @@ final class ModModelProvider extends FabricModelProvider {
 
 	@Override
 	public void generateItemModels(ItemModelGenerators g) {
-		g.generateFlatItem(ModItems.ICHOR_BUCKET, ModelTemplates.FLAT_ITEM);
+		// Owner playtest 6: vanilla's own bucket, with the ichor drawn into its opening as water is.
+		g.itemModelOutput.accept(ModItems.ICHOR_BUCKET, ItemModelUtils.plainModel(g.generateLayeredItem(ModItems.ICHOR_BUCKET,
+				new Material(Identifier.withDefaultNamespace("item/bucket")), new Material(TheSift.id("item/ichor_bucket_liquid")))));
 		g.generateFlatItem(ModItems.BLUB_SPAWN_EGG, ModelTemplates.FLAT_ITEM);
 		// The tide root's flat item model comes with its crop (createCropBlock), as the carrot's does.
 		for (Item food : new Item[] {ModItems.BAKED_TIDE_ROOT, ModItems.SONGFRUIT, ModItems.GLOWCAP_STEW}) {

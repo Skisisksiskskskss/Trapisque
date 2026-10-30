@@ -30,12 +30,12 @@ import thesift.registry.ModParticles;
 public final class TheSiftClient implements ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
-		// Like vanilla water: translucent still and flowing sprites (their alpha puts them in the
-		// translucent layer), an overlay for faces seen through glass, and pale textures that are
-		// coloured as they are drawn: here by IchorSheen's bubble film, blended corner to corner (D-026).
+		// Ichor meshes itself (IchorSheen, D-037): one big seamless field over every block. The model's
+		// sprites are the field and the fall (translucent, so the translucent layer), with no overlay
+		// and no tint: the colour is the texture's own.
 		FluidRenderingRegistry.register(ModFluids.ICHOR, ModFluids.FLOWING_ICHOR, new FluidModel.Unbaked(
-				new Material(TheSift.id("block/ichor_still")), new Material(TheSift.id("block/ichor_flow")),
-				new Material(TheSift.id("block/ichor_overlay")), IchorSheen.TINT), new IchorSheen());
+				new Material(TheSift.id("block/ichor_field")), new Material(TheSift.id("block/ichor_fall")), null, null),
+				new IchorSheen());
 		ParticleProviderRegistry.getInstance().register(ModParticles.TRILL, SiftMoteParticle.TrillProvider::new);
 		ParticleProviderRegistry.getInstance().register(ModParticles.GLIMMER, FireflyParticle.FireflyProvider::new);
 		ParticleProviderRegistry.getInstance().register(ModParticles.GLOW_PETAL, SiftMoteParticle.GlowPetalProvider::new);

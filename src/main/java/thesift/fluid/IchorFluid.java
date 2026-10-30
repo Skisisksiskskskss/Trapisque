@@ -35,6 +35,7 @@ import net.minecraft.world.phys.Vec3;
 import thesift.registry.ModBlocks;
 import thesift.registry.ModFluids;
 import thesift.registry.ModItems;
+import thesift.registry.ModParticles;
 import thesift.registry.ModSounds;
 
 /**
@@ -91,6 +92,11 @@ public abstract class IchorFluid extends FlowingFluid {
 		if (random.nextInt(10) == 0) {
 			level.addParticle(ParticleTypes.UNDERWATER, pos.getX() + random.nextDouble(), pos.getY() + random.nextDouble(),
 					pos.getZ() + random.nextDouble(), 0.0, 0.0, 0.0);
+		}
+		// Glimmers over open, still ichor, as the glitter over Dungeons II's pools (owner playtest 6).
+		if (fluidState.isSource() && random.nextInt(120) == 0 && level.getBlockState(pos.above()).isAir()) {
+			level.addParticle(ModParticles.GLIMMER, pos.getX() + random.nextDouble(), pos.getY() + 0.95, pos.getZ() + random.nextDouble(),
+					0.0, 0.0, 0.0);
 		}
 		// A soul wisp now and then from open, still ichor.
 		if (fluidState.isSource() && random.nextInt(400) == 0 && level.getBlockState(pos.above()).isAir()) {

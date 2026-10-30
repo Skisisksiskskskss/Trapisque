@@ -10,7 +10,8 @@ below allows.
 - A texture uses roughly 6–12 of these colours, as vanilla does (animated liquids: per frame). Owner playtest 2 (D-026): vanilla's
   look is per-pixel grain in many close shades with small clumps, not flat bands of three or four tones.
 - Alpha is free for fully transparent pixels (cutout plants, leaves, particles) and for the two translucent strips
-  (membrane 176–224, ichor 200–230, its overlay 150); every visible pixel's RGB must still come from a ramp.
+  (membrane 176–224; ichor 225, its glitter 245–255); every visible pixel's RGB must still come from a ramp. Ichor's
+  field is the one texture drawn in a whole ramp at once (D-037): one picture spanning 16 x 16 blocks, not a block's tile.
 - Hue shifts along a ramp on purpose: shadows lean cooler, highlights warmer, as vanilla ramps do.
 - **Tiling:** every block texture tiles seamlessly and avoids features the eye can follow from block to block (no lines or tufts on a grid). Ground blocks ship variants (`_2`, `_3`), and healthy sculk's top also takes random rotations, as vanilla grass does.
 
@@ -27,10 +28,10 @@ below allows.
 | `songwood_planks` | `#2f4246` `#3a5054` `#4b6266` `#5d767a` `#708a8e` `#86a0a3` | Teal-grey planks cut from the dark trunks |
 | `songwood_leaves` | `#3f5361` `#50677a` `#66808f` `#7f99a6` `#99b2bd` `#b3c9d2` `#cddde4` `#e6f0f3` | Pale icy grey-blue canopy of the teasers' trees, with blue shade inside the clumps so it reads as leaves (owner playtest 2; untinted) |
 | `tide_sand` | `#5f5873` `#6e6680` `#857d98` `#9b94ac` `#afa9bf` `#c3bed1` `#d6d2e1` | Pale grey-violet silt |
-| `ichor` | `#1f7a92` `#23879d` `#2f96aa` `#3fa7b6` `#56b9c0` `#72c8c3` `#93d4bf` `#b6dcae` `#d4dd9f` `#ecd79a` `#f2c7a2` `#f1b4b5` `#e8a7c8` `#d7a3dc` `#bea5ea` `#a3aaf0` `#889fe4` `#6d97d2` `#5590c3` `#3a86ae` `#155a73` `#e8f8f6` | Ichor, the Sift's water (D-024) with a soap bubble's sheen (owner playtest 2, D-026): the first twenty run once round the film's colour cycle (turquoise, mint, gold, rose, lilac, periwinkle and back), so neighbouring entries are close and the sheen flows without hard edges; then a deep shade and a highlight. Not dark → light. The fluid renderer (`thesift.client.IchorSheen`) lays the film cycle across the world in broad bands, blended corner to corner; the bucket and the vents draw from the ramp directly |
-| `ichor_sheen` | `#b4c8ce` `#c3d5da` `#d0dfe3` `#dce8ea` `#e6eff0` `#eff5f4` `#f7faf8` | Ichor's shimmer: the pale, nearly grey still, flowing and overlay textures that the tint colours, as vanilla's water textures are grey under the biome's tint. Translucent (alpha 150–230) |
+| `ichor` | `#1f7a92` `#23879d` `#2f96aa` `#3fa7b6` `#56b9c0` `#72c8c3` `#93d4bf` `#b6dcae` `#d4dd9f` `#ecd79a` `#f2c7a2` `#f1b4b5` `#e8a7c8` `#d7a3dc` `#bea5ea` `#a3aaf0` `#889fe4` `#6d97d2` `#5590c3` `#3a86ae` `#155a73` `#e8f8f6` | The first ichor's soap-film cycle (D-026): the first twenty run once round turquoise, mint, gold, rose, lilac, periwinkle and back, then a deep shade and a highlight. Since owner playtest 6 (D-037) ichor itself is drawn in `ichor_marble`; this ramp stays for what ichor stains, the tide vents and the rifts |
+| `ichor_marble` | `#c8dc78` `#84d28c` `#65ca96` `#3cc19f` `#32bdaa` `#26b9b5` `#18b5c0` `#1fb2c5` `#25afc9` `#2aabce` `#2ea8d2` `#3ea0d3` `#4998d5` `#5290d6` `#6585d3` `#7479d0` `#8876ce` `#9a72cc` `#a96cc7` `#b766c2` `#c66bc1` `#d670c0` `#e182c0` `#ec93c0` `#efaab4` `#f2bfa6` `#f3d97e` | Ichor (owner playtest 6, D-037), sampled from Dungeons II's ichor pools (MCD2_Pool_of_ichor): an oil slick's colours in one path, lime, green, sea-green, turquoise, cyan, blue, periwinkle, violet, purple, magenta, pink, peach, gold, in close OKLab steps so the bands meet softly. Turquoise and its neighbours hold most entries, so most of a pool is turquoise, as in canon; the ends (lime, gold) are rare. Not dark → light. Translucent in the fluid (alpha 225) |
+| `ichor_glint` | `#ffffff` `#e8f8f6` `#eee4fa` | Ichor's glitter: white, with pale cyan and pale lilac for a glint's fading frames and a star's arms |
 | `membrane` | `#0b3f55` `#13687e` `#2598a8` `#55c8cc` `#a3eee8` `#e0fffa` | The Sift membrane's cyan shimmer (translucent) |
-| `pail` | `#2b2b33` `#4b4b56` `#6d6d7a` `#9696a2` `#c2c2cb` `#e6e6ec` | Bucket metal |
 | `blub` | `#3f6a8e` `#4f81a8` `#5f95ba` `#7aabc8` `#9cc2d6` `#c4dde8` | The Blub's blue, sampled from the first look (owner rework): the only blue mob in the Sift |
 | `blub_eye` | `#24204a` `#3d3570` `#eaf4ff` | The Blub's dark violet eyes (first look), and their catch-light (D-029) |
 | `blub_fur` | `#3f6a8e` `#4a789c` `#5486aa` `#5f95ba` `#6da0c1` `#7aabc8` `#8bb7cf` `#9cc2d6` `#b0d0df` `#c4dde8` | The Blub's coat drawn as vanilla's mobs are (D-029, owner playtest 3: "less cell shaded"): the `blub` ramp with a shade between each pair, for soft gradients |
@@ -113,10 +114,8 @@ below allows.
 | `block/gatestone.png` | gatestone, hymnstone, glyph |
 | `block/gatestone_top.png` | gatestone, hymnstone, glyph |
 | `block/sift_membrane.png` | membrane |
-| `block/ichor_still.png` | ichor_sheen |
-| `block/ichor_flow.png` | ichor_sheen |
-| `block/ichor_film.png` | ichor, ichor_sheen |
-| `block/ichor_overlay.png` | ichor_sheen |
+| `block/ichor_field.png` | ichor_marble, ichor_glint |
+| `block/ichor_fall.png` | ichor_marble, ichor_glint |
 | `block/tidewrack.png` | tidewrack, tidewrack_underside |
 | `block/tidewrack_closed.png` | tidewrack |
 | `block/tidewrack_knot.png` | tidewrack |
@@ -138,7 +137,7 @@ below allows.
 | `item/ichor_lily.png` | ichor_lily, ichor_lily_bud |
 | `particle/glimmer.png` | ichor_lily_bud |
 | `item/lumen_lantern.png` | hymnstone, lumen |
-| `item/ichor_bucket.png` | pail, ichor |
+| `item/ichor_bucket_liquid.png` | ichor_marble, ichor_glint |
 | `particle/glow_petal.png` | healthy_sculk, particle |
 | `particle/trill.png` | particle |
 | `block/cobbled_hymnstone.png` | hymnstone |

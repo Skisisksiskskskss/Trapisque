@@ -898,115 +898,6 @@ def membrane_frames(n: int = 32) -> list[Image.Image]:
     return frames
 
 
-# ---------------------------------------------------------------- ichor
-# Ten tileable waves for ichor's shimmer: whole-number frequencies in many directions, so the field
-# tiles exactly yet has no lattice; each drifts at its own whole-number speed, so the loop closes.
-_ICHOR_WAVES = [(1, 0), (0, 1), (1, 1), (1, -1), (2, 1), (1, -2), (2, -1), (1, 2), (3, 1), (1, 3)]
-_ICHOR_RND = random.Random(214)
-_ICHOR_PHASES = [(_ICHOR_RND.random(), _ICHOR_RND.choice([-2, -1, 1, 2]), 1.0 / (1 + 0.5 * (abs(a) + abs(b))))
-                 for a, b in _ICHOR_WAVES]
-
-
-# The ichor film (owner playtest 5): the colour bands must move. Vertex colours are fixed when a chunk
-# is meshed, so the moving colour lives in an animated texture instead: an 8 x 8-block seamless tile
-# that still ichor maps by world position (thesift.client.IchorSheen), so the pattern spans many blocks.
-ICHOR_FILM_TILE = 8
-ICHOR_FILM_FRAMES = 32
-_FILM_WALK = [2, 3, 4, 5, 4, 3, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 0, 1]
-
-
-def ichor_film() -> Image.Image:
-    """The soap-film colours of still ichor, animated. Two swirled layers drift across the tile in
-    different directions (one tile per loop each, so the loop and the tile both stay seamless) and
-    interfere, so the bands wander and change shape rather than slide; a rare pale glint rides on them.
-    Drawn in the ichor ramp's film stops only, as pixel-art bands."""
-    size = 16 * ICHOR_FILM_TILE
-    tau2 = 2 * math.pi
-    im = Image.new("RGBA", (size, size * ICHOR_FILM_FRAMES))
-    px = im.load()
-    for f in range(ICHOR_FILM_FRAMES):
-        t = tau2 * f / ICHOR_FILM_FRAMES
-        for y in range(size):
-            Z = tau2 * (y + 0.5) / size
-            for x in range(size):
-                X = tau2 * (x + 0.5) / size
-                a = X - t + 1.1 * math.sin(Z + t + 1.3) + 0.4 * math.sin(2 * Z - X + t)
-                b = Z + t + 1.1 * math.sin(X - t + 0.7) + 0.4 * math.sin(2 * X + Z - 2 * t + 2.0)
-                p = 1.6 * (0.5 + 0.28 * math.sin(a + b) + 0.22 * math.sin(2 * a - b + 1.7))
-                s = (p - math.floor(p)) * len(_FILM_WALK)
-                colour = rgba("ichor", _FILM_WALK[int(s) % len(_FILM_WALK)], 214)
-                if math.sin(3 * a + 2 * b - t) * math.sin(2 * a - 3 * b + 2 * t) > 0.92:
-                    colour = rgba("ichor_sheen", 6, 214)
-                px[x, f * size + y] = colour
-    return im
-
-
-def ichor_frame(w: int, h: int, t: float, flow: bool) -> Image.Image:
-    """Ichor (owner playtest 2, D-026): a faint, pale shimmer, as vanilla's water texture is grey.
-    The colour is laid on as it is drawn (thesift.client.IchorSheen), which lays a soap bubble's bands across
-    the whole pond, so this texture must not draw a pattern of its own that repeats block to block:
-    ten soft waves interfere into a smooth field drawn in only three close shades, with a rare
-    highlight where the field peaks. Alpha 214, a little less see-through than water."""
-    tau = 2 * math.pi
-    vals = []
-    for y in range(h):
-        for x in range(w):
-            u, v = x / w, y / h
-            if flow:
-                v -= t
-            vals.append(sum(amp * math.sin(tau * (a * u + b * v + phase + speed * t))
-                            for (a, b), (phase, speed, amp) in zip(_ICHOR_WAVES, _ICHOR_PHASES)))
-    lo, hi = min(vals), max(vals)
-    im = Image.new("RGBA", (w, h))
-    px = im.load()
-    for y in range(h):
-        for x in range(w):
-            n = (vals[y * w + x] - lo) / (hi - lo)
-            shade = 6 if n > 0.93 else 5 if n > 0.72 else 4 if n > 0.35 else 3
-            px[x, y] = rgba("ichor_sheen", shade, 214)
-    return im
-
-
-def ichor_overlay() -> Image.Image:
-    """The face of ichor seen through glass or leaves, as vanilla's water overlay: the body, fainter."""
-    im = ichor_frame(16, 16, 0.0, flow=False)
-    px = im.load()
-    for y in range(16):
-        for x in range(16):
-            r, g, b, a = px[x, y]
-            px[x, y] = (r, g, b, 150)
-    return im
-
-
-def ichor_bucket() -> Image.Image:
-    rows = [
-        "................",
-        "................",
-        "....5555555.....",
-        "...5.......5....",
-        "..5.........5...",
-        "..4tTtvVvtTt4...",
-        "..43tvvVvvt34...",
-        "..4433333332....",
-        "...433333322....",
-        "...44333332.....",
-        "....4333322.....",
-        "....4433322.....",
-        ".....433322.....",
-        ".....222221.....",
-        "................",
-        "................",
-    ]
-    c = {"5": rgba("pail", 4), "4": rgba("pail", 4), "3": rgba("pail", 3), "2": rgba("pail", 2), "1": rgba("pail", 1),
-         "t": rgba("ichor", 3), "T": rgba("ichor", 4), "v": rgba("ichor", 2), "V": rgba("ichor", 5)}
-    im = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    for y, row in enumerate(rows):
-        for x, ch in enumerate(row):
-            if ch != ".":
-                put(im, [(x, y)], c[ch])
-    return im
-
-
 # ---------------------------------------------------------------- blub
 def box_faces(u: int, v: int, w: int, h: int, d: int) -> dict[str, tuple[int, int, int, int]]:
     """The UV rectangles (x, y, width, height) of a model box at texOffs(u, v), vanilla's layout."""
@@ -1962,14 +1853,14 @@ def main() -> None:
     save(strip(membrane_frames()), "block/sift_membrane.png")
     save_mcmeta("block/sift_membrane.png", '{\n  "animation": {\n    "frametime": 2,\n    "interpolate": true\n  }\n}\n')
     # One turn of the sheen's colour cycle in 12 s (48 frames of 5 ticks), smoothed between frames.
-    save(strip([ichor_frame(16, 16, f / 48, flow=False) for f in range(48)]), "block/ichor_still.png")
-    save_mcmeta("block/ichor_still.png", '{\n  "animation": {\n    "frametime": 3,\n    "interpolate": true\n  }\n}\n')
-    save(strip([ichor_frame(32, 32, f / 48, flow=True) for f in range(48)]), "block/ichor_flow.png")
-    save(ichor_film(), "block/ichor_film.png")
-    save_mcmeta("block/ichor_film.png", '{\n  "animation": {\n    "frametime": 5,\n    "interpolate": true\n  }\n}\n')
-    save_mcmeta("block/ichor_flow.png", '{\n  "animation": {\n    "frametime": 2,\n    "interpolate": true\n  }\n}\n')
-    save(ichor_overlay(), "block/ichor_overlay.png")
-    save(ichor_bucket(), "item/ichor_bucket.png")
+    # Ichor (owner playtest 6, D-037) is drawn by ichor_art, which needs numpy.
+    import ichor_art
+    save(ichor_art.ichor_field(), "block/ichor_field.png")
+    save_mcmeta("block/ichor_field.png", '{\n  "animation": {\n    "frametime": 6,\n    "interpolate": true\n  }\n}\n')
+    save(ichor_art.ichor_fall(), "block/ichor_fall.png")
+    save_mcmeta("block/ichor_fall.png", '{\n  "animation": {\n    "frametime": 2,\n    "interpolate": true\n  }\n}\n')
+    save(ichor_art.ichor_bucket_liquid(), "item/ichor_bucket_liquid.png")
+    save_mcmeta("item/ichor_bucket_liquid.png", '{\n  "animation": {\n    "frametime": 12,\n    "interpolate": true\n  }\n}\n')
     save(tidewrack("open"), "block/tidewrack.png")
     save(tidewrack("closed"), "block/tidewrack_closed.png")
     save(tidewrack("picked"), "block/tidewrack_picked.png")

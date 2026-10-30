@@ -14,7 +14,7 @@ from sift_art import TEX_ROOT
 
 BLOCKS = ["hymnstone", "hymnstone_bricks", "healthy_sculk_top", "healthy_sculk_side", "songwood_log",
           "songwood_log_top", "songwood_planks", "songwood_leaves", "tide_sand", "tide_vent_top",
-          "tide_vent_side", "gatestone", "gatestone_top", "sift_membrane", "ichor_still"]
+          "tide_vent_side", "gatestone", "gatestone_top", "sift_membrane"]
 CUTOUTS = ["healthy_sculk_grass", "tall_healthy_sculk_grass_bottom", "tall_healthy_sculk_grass_top",
            "songwood_sapling", "songwood_leaves"]
 TIDES = {"thrive": (1.0, 1.0, 1.0), "flow": (0.95, 0.82, 0.72), "endure": (0.30, 0.30, 0.45)}
@@ -63,7 +63,7 @@ def main() -> None:
     for tide, rgb in TIDES.items():
         sheet(BLOCKS, out / f"wp041_blocks_{tide}.png", rgb)
     sheet(CUTOUTS, out / "wp041_plants.png")
-    for name in ("item/ichor_bucket", "particle/glow_petal", "particle/trill"):
+    for name in ("item/ichor_bucket_liquid", "particle/glow_petal", "particle/trill"):
         im = Image.open(TEX_ROOT / f"{name}.png").convert("RGBA")
         bg = Image.new("RGBA", im.size, BG)
         bg.alpha_composite(im)

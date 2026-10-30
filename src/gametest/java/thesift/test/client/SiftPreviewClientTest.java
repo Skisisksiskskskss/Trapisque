@@ -49,6 +49,14 @@ public final class SiftPreviewClientTest implements FabricClientGameTest {
 			}
 			return;
 		}
+		// For ichor's look (SIFT_ICHOR_ONLY=1 tools/dev/client-previews.sh): only the ichor shots.
+		if ("1".equals(System.getenv("SIFT_ICHOR_ONLY"))) {
+			try (TestSingleplayerContext world = context.worldBuilder().create()) {
+				world.getServer().runCommand("gamerule advance_time false");
+				ichorShots(context, world);
+			}
+			return;
+		}
 		try (TestSingleplayerContext world = context.worldBuilder().create()) {
 			world.getServer().runCommand("gamerule advance_time false");
 			world.getServer().runCommand("gamemode spectator @a");
@@ -416,6 +424,48 @@ public final class SiftPreviewClientTest implements FabricClientGameTest {
 	}
 
 	/** WP-044: the view from inside ichor (creative: spectators see through liquids, as with lava). */
+	/**
+	 * Owner playtest 6 (D-037): a 27-block pool built in the sky, with an island, ichor pouring off a
+	 * ledge and a glass wall, from above and up close; the close shot again later, to see it move.
+	 */
+	private static void ichorShots(ClientGameTestContext context, TestSingleplayerContext world) {
+		world.getServer().runCommand("execute in thesift:the_sift run time of thesift:tides set thesift:thrive");
+		int x = 300;
+		int y = 150;
+		int z = 300;
+		world.getServer().runCommand("gamemode spectator @a");
+		run(world, "tp @a %d %d %d -45 35", x - 20, y + 14, z - 20); // load the chunks before building in them
+		world.getConnection().waitForChunksRender();
+		run(world, "fill %d %d %d %d %d %d thesift:tide_sand", x - 14, y - 2, z - 14, x + 14, y - 1, z + 14);
+		run(world, "fill %d %d %d %d %d %d thesift:hymnstone", x - 14, y, z - 14, x + 14, y, z + 14);
+		run(world, "fill %d %d %d %d %d %d thesift:ichor", x - 13, y, z - 13, x + 13, y, z + 13);
+		run(world, "fill %d %d %d %d %d %d glass", x - 14, y, z - 6, x - 14, y, z + 6);
+		run(world, "fill %d %d %d %d %d %d thesift:hymnstone", x - 1, y, z - 1, x + 1, y + 1, z + 1);
+		run(world, "fill %d %d %d %d %d %d thesift:hymnstone", x + 6, y, z - 13, x + 9, y + 4, z - 10);
+		run(world, "setblock %d %d %d thesift:ichor", x + 7, y + 5, z - 11);
+		context.waitTicks(100); // the ledge's ichor pours down and spreads
+		world.getConnection().waitForChunksRender();
+		context.takeScreenshot("ichor_pool");
+		run(world, "tp @a %d %d %d -60 28", x - 6, y + 4, z - 8);
+		world.getConnection().waitForChunksRender();
+		context.waitTicks(5);
+		context.takeScreenshot("ichor_close");
+		context.waitTicks(60);
+		context.takeScreenshot("ichor_close_later");
+		run(world, "tp @a %d %d %d 90 12", x - 10, y + 1, z);
+		world.getConnection().waitForChunksRender();
+		context.waitTicks(5);
+		context.takeScreenshot("ichor_glass");
+		run(world, "tp @a %d %d %d -150 20", x + 3, y + 3, z - 3);
+		world.getConnection().waitForChunksRender();
+		context.waitTicks(5);
+		context.takeScreenshot("ichor_fall");
+		world.getServer().runCommand("gamemode creative @a");
+		world.getServer().runCommand("item replace entity @a hotbar.0 with thesift:ichor_bucket");
+		context.waitTicks(10);
+		context.takeScreenshot("ichor_bucket_held");
+	}
+
 	private static void ichorFogShot(ClientGameTestContext context, TestSingleplayerContext world) {
 		world.getServer().runCommand("execute in thesift:the_sift run time of thesift:tides set thesift:thrive");
 		BlockPos ground = world.getServer().computeOnServer(server -> {

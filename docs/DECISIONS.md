@@ -828,3 +828,18 @@ The enduring Nester takes the soul corrupted Nester's pale glowing cyan. The spi
 
 **Inventions, kept small.** The 5-level cost, the outpost loot chance, the grove's layout, the chorus stone and grove heart looks, and the horn's look. Each is recorded in BALANCE.md or here.
 
+
+## D-037 Ichor redrawn as one big seamless picture, meshed by the mod (2026-10-30) [owner playtest 6] [supersedes D-026 and D-031 on ichor's look, D-028 on its tint]
+**Context.** The owner: the colours aren't moving and the texture is poor. It should be "a large noise wiggly texture over all the ichor blocks", seamless, with gradients inside a block, not a colour per block. It should look good with shaders (reflections, transparency, glimmers) and in vanilla, without looking shader-made. The owner plays with shaders, so through Sodium and Iris. Sodium meshes fluids itself: it ignored D-031's re-mapped film and showed D-026's per-block tint, a mosaic that never moved. Canon (MCD2_Pool_of_ichor and the Singer's Meadow alcove) shows an oil slick's marbled colours: mostly turquoise and sea-green, with pink, magenta, violet and blue swirls, rare green and gold, and white glitter.
+
+**Decision.** `thesift.client.IchorSheen` meshes ichor itself. The faces, heights and culling are vanilla's; only the texture mapping and colour are ours. A handler's own geometry is what Sodium (and Iris through it) does draw: Sodium hands it a consumer and keeps it.
+- **The field.** `block/ichor_field` is one 16 × 16-block tile (256 px a frame), drawn by tools/art/ichor_art.py. A twice domain-warped noise, ranked onto the new `ichor_marble` ramp (sampled from the screenshots; turquoise holds most of the area, the lime and gold ends little). White glints twinkle over three frames, a few as stars. Each face takes its part of the tile by world position, so neighbours continue each other's colours and gradients run through blocks.
+- **The motion.** The warps circle once or twice a loop, and a slow wave sloshes the colours along the ramp: 32 frames at 6 ticks, interpolated, a 9.6-second loop. Two in-game shots 60 ticks apart differ in a third of their pixels.
+- **Falls and flowing sides** take `block/ichor_fall`: the same colours drawn out into ribbons over a 4-block tile, falling a pixel every 2 ticks.
+- **Faces against glass or leaves** show the field and are one-sided, as vanilla's overlay is.
+- **Shaders.** Vertex colours are white except for vanilla's face shading and a faint brightness drift over a few dozen blocks, which keeps the 16-block repeats from being exact. The colour is all texture, at alpha 225, so packs reflect and refract it as any translucent surface. Glimmer particles rise now and then from open still ichor.
+- **The bucket** is vanilla's bucket texture with a layer of our ichor in its opening (the pixels vanilla's water bucket fills), animated as a window of the field.
+
+**Consequences.** The `ichor_sheen` and `pail` ramps are gone. The old still, flow, film, overlay and bucket textures are replaced. Ichor has no tint source. Checked in the client preview (SIFT_ICHOR_ONLY=1 tools/dev/client-previews.sh): pool, close-up, falls, glass and the held bucket.
+
+**Revisit if** the 16-block repeat shows on the Sift's ichor seas (more frames are cheap; a wider tile costs memory), or packs that tag water (`mc_Entity`) should give ichor water's waves.
