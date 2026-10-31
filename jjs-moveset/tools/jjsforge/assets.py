@@ -12,6 +12,10 @@ Long library sounds are trimmed with SFX START / END / FADE OUT.
 Meshes: Roblox mesh assets load in any experience. Shapes were identified
 from their thumbnails; scale hints are the SIZE ranges creators use for them
 (meshes have very different native sizes, so these hints matter).
+
+Particle textures: every id is a Roblox *Image* asset (AssetTypeId 1, checked
+with the economy API - a Decal page number would not render) that several
+creators already use as a PARTICLE texture in exported JJS movesets.
 """
 
 
@@ -117,3 +121,18 @@ class MESH:
     CRATER = 134013476158446      # crater ring                 SIZE2 (100,40,100)
     CRACKS = 106613812363639      # ground crack lines          0.35 / 20..40
     CONE_DISC = 7423457269        # flat cone shockwave         0.01 -> 2000
+
+
+class TEX:
+    # Image id                      name on Roblox / look            (#movesets using it)
+    SPARK = 7814053668            # "spark big border": long bright streak       (3)
+    LINE = 8985611391             # "Line": thin vertical streak                 (3)
+    HIT_STAR = 16910627138        # "hit effect 2": radial impact star           (4)
+    SPIKE_STAR = 10357935135      # spiky impact star                            (9)
+    OUTLINE = 16170732926         # "outline1": soft-edged circle (ground wave)  (3)
+    WIND_RING = 15269685466       # "wind": thin ring                            (3)
+    SHOCKWAVE = 10176632695       # "Shockwave7": ring of radial streaks         (7)
+    GLOW = 4509687978             # "mariball": soft round glow                  (8)
+    FLARE = 14684195806           # "Guiding light particle": lens flare         (3)
+    SMOKE = 2870800851            # "Smoke": puff                                (4)
+    CIRCLE = 1084982817           # "circle_64": solid dot                       (4)

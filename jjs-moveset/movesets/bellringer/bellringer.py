@@ -28,7 +28,8 @@ from jjsforge.nodes import (AIR, BAR, HOLD, JUMP, ULT, Anim, Awaken, Branch,  # 
                             SetMelee, Sfx, State, Tag, TagCheck, TagSet, Velo, Visual, Wait)
 
 from fx import (BRONZE, DUSK, GOLD, GROUND, HRP, IVORY, JADE, PALE, afterimage, aura,  # noqa: E402,F401
-                bell, bell_ring, burst, chime, flash, fov, glow, gong, light, ripple, shake,
+                bell, bell_ring, burst, chime, flash, fov, glow, gong, light, p_cancel, p_dust,
+                p_flare, p_motes, p_rings, p_shock, p_sparks, p_star, ripple, shake,
                 sound_ring, spark, tok, trail)
 
 NAME = "The Bellringer"
@@ -62,10 +63,13 @@ def toll_readout(level: int, announce: bool = True) -> list:
     if announce:
         out += [chime(0.85 + 0.15 * level, vol=1.4 + 0.2 * level),
                 glow(0.25, GOLD, op=0.7 if level < 3 else 0.45)]
-        if level >= 3:   # RESONANT: a deeper bell answers
+        if level < 3:    # golden motes rise from the palm that just lit up
+            out += [p_motes(0.5, n=6, part=arms[-1], box=(1, 2, 1), life=(0.5, 0.9), rise=4)]
+        else:            # RESONANT: a deeper bell answers, the body sparkles
             out += [Sfx(S.BRASS_HANDBELL_2, vol=1.6, speed=0.75, end=2.4, fade_out=1.0),
                     Visual("Wind Ring", time=0.6, size=1.4, alt_size=3, amount=3, col=GOLD,
-                           alt_col=JADE, opacity=0.8, alt_opacity=1)]
+                           alt_col=JADE, opacity=0.8, alt_opacity=1),
+                    p_motes(1.0, n=16), p_flare(0.9, pos=(0, 2.4, 0))]
     return out
 
 
@@ -104,6 +108,9 @@ def funeral_toll(post=()) -> Br:
         Sfx(S.DEATH_TOLL, vol=2.2, end=3.0, fade_out=1.2, global_=True),
         *bell(1.2, z=6, time=2.2, op=0.45, rise=35, ease="Sine", ease_dir="In"),
         aura(HRP, 1.0, 2.2, GOLD, JADE, op=0.3, hold=False),
+        p_flare(1.6, pos=(0, 3, 6)),
+        p_motes(1.4, n=0, rate=18, duration=1.8, pos=(0, 0, 6), box=(6, 3, 6),
+                life=(1.2, 1.8), rise=9),
         Wait(0.75),
         Sfx(S.DEATH_TOLL, vol=1.8, speed=0.95, end=2.5, fade_out=1.0),
         ripple(1.2, col=JADE, time=0.8),
@@ -116,6 +123,7 @@ def funeral_toll(post=()) -> Br:
 # ================================================================ SPAWN ====
 def build_spawn():
     line = toll_reset() + [
+        p_cancel(AWK_P),
         chime(1.0, vol=1.2),
         ripple(0.6, op=0.5, time=0.7),
         light(HRP, size=12, bright=2, time=0.6),
@@ -423,7 +431,8 @@ def build_reverb_palm():
                               sound_ring((0, 0, 0), 0.8 + 0.3 * i, JADE, 0.35, forward=False),
                               Velo((0, 2, 2), 0.06, rel_branch=True)])
     br["kburst"] = Br([*bell(0.8, time=0.45, op=0.4, grow=1.15), *bell_ring(0.7, col=GOLD),
-                       *burst(1.6), Velo((0, 35, 30), 0.15, rel_branch=True, ragdoll=1.3)])
+                       *burst(1.6), p_flare(1.4),
+                       Velo((0, 35, 30), 0.15, rel_branch=True, ragdoll=1.3)])
     line = [TagCheck(TOLL, "3", "knell"),
             State("NoM1", 1.0), *_palm_windup(),
             Wait(0.3),
@@ -479,6 +488,7 @@ def build_toll_wave():
                    stun=0.8, stun_anim=True, atk="Bullet", continue_=True, filter_interval=0.3,
                    hit_ragdoll=False, branch="shit", target="sung"),
         *_wave_fx("BR_NOTE", 0.9, 1.8, JADE),
+        p_rings(1.6, n=4, col=(PALE, JADE), pos=(0, 0, 3), life=0.6, travel=24),
         Wait(0.5),
     ], req=[HOLD()])
     line = [
@@ -496,6 +506,7 @@ def build_toll_wave():
                    ignore_wakeup=True, branch="phit", target="rung"),   # can pick up OTG
         *_wave_fx("BR_WAVE", 0.4, 1.0, GOLD),
         sound_ring((0, 0, 2.5), 0.8, GOLD, 0.3),
+        p_rings(1.0, n=3, pos=(0, 0, 2.5), life=0.4, travel=30),
         Wait(0.4),
     ]
     return Skill("Toll Wave", key=3, cooldown=9, line=line, branches=br, props=BASE(),
@@ -570,7 +581,7 @@ def build_bell_toll():
     br["fin"] = funeral_toll([*gong("big", 2.4), shake("Heavy", 0.7, 6), flash(PALE, 0.08),
                               *_crater(5)])
     br["crushed"] = Br([*bell(1.35, drop=10, time=0.3, op=0.35, ease="Quad", ease_dir="In"),
-                        *burst(2.0), Sfx(S.IMPACT_FRAMES, vol=2),
+                        *burst(2.0), p_flare(1.6, pos=(0, 3, 0)), Sfx(S.IMPACT_FRAMES, vol=2),
                         Velo((0, -110, 0), 0.2, rel_branch=True, ragdoll=2.0)])
     line = [TagCheck(TOLL, "3", "knell")] + _rising_palm("up", "launched")
     return Skill("Bell Toll", key=4, cooldown=14, line=line, branches=br, props=BASE(),
@@ -591,6 +602,7 @@ def _grand_knell(consume: bool):
                ignore_wakeup=True, blockable=False, debree=4, target="knelled", finisher="fin"),
         *bell(2.2, time=0.7, op=0.35, grow=1.12, ease="Exponential", ease_dir="Out"),
         *bell_ring(2.0), ripple(2.4, time=0.9),
+        p_flare(2.0, pos=(0, 5, 0)), p_sparks(2.2, n=20, up=True),
         Awaken(12),
         Wait(0.5),
     ]
@@ -632,6 +644,7 @@ def build_special():
 # ===================================================== AWAKENING (G) ====
 AWK_DURATION = 100
 AWK_FX = "BR_AWKFX"
+AWK_P = "BR_AWKP"          # CANCEL TAG of the awakening's mote stream
 
 
 def build_awakening():
@@ -656,6 +669,7 @@ def build_awakening():
                ignore_wakeup=True, target="awk_push"),
         *bell(2.4, time=1.1, op=0.4, grow=1.08, ease="Exponential", ease_dir="Out"),
         *bell_ring(2.4), ripple(3.0, time=1.0),
+        p_flare(2.4, pos=(0, 4, 0)), p_sparks(2.0, n=24, up=True),
         Wait(0.6),
         # --- the tolls keep coming ----------------------------------------------
         chime(0.9, vol=2), sound_ring((0, 1, 0), 2.0, GOLD, 0.5, forward=False),
@@ -674,6 +688,9 @@ def build_awakening():
         light("Left Arm", 7, 1.8, hold_time, PALE, hold=True, vtag=AWK_FX),
         # the bell that hangs over the Bellringer for the whole awakening
         *bell(0.42, y=8.8, z=-1.5, time=hold_time, op=0.45, fade=False, vtag=AWK_FX),
+        # and golden motes keep drifting up off the body
+        p_motes(0.9, n=0, rate=6, duration=hold_time, life=(1.0, 1.6), rise=4, lock=True,
+                tag=AWK_P),
     ]
     return Awakening("Joya no Kane: 108 Tolls", AWK_DURATION, line, br,
                      props=Props(invincible=True, no_cancel=True), req=[BAR(99)],
@@ -712,7 +729,7 @@ def build_hundredfold():
     br["fl_a"] = Br([*spark(0.7, col=GOLD), Velo((0, 0, 1), 0.05, rel_branch=True)])
     br["fl_b"] = Br([*spark(0.7, col=JADE), sound_ring((0, 0, 0), 0.6, JADE, 0.2)])
     br["gonged"] = Br([*bell(0.9, time=0.4, op=0.4, grow=1.15, ease="Exponential",
-                             ease_dir="Out"), *burst(1.8), *bell_ring(0.8),
+                             ease_dir="Out"), *burst(1.8), *bell_ring(0.8), p_flare(1.4),
                        Velo((0, 15, 70), 0.15, rel_branch=True, ragdoll=1.4)])
     line = [
         State("NoM1", 0.9), State("NoJump", 0.9), State("NoSprint", 0.9),
@@ -759,6 +776,7 @@ def build_kanemaki():
                         Velo((0, 25, 60), 0.15, rel_branch=True, ragdoll=1.6)])
     shatter = [CancelVisual(PRISON_FX), Sfx(S.GLASS_BREAK, vol=1.8, speed=0.8),
                *bell(1.3, z=7, time=0.35, op=0.3, grow=1.35, ease="Exponential", ease_dir="Out"),
+               p_sparks(1.8, n=22, pos=(0, 1, 7)), p_flare(1.8, pos=(0, 3, 7)),
                flash(PALE, 0.08), shake("Heavy", 0.6, 6)]
     br["trapped"] = Br([
         Grab(time=1.8, pos=(0, 0, 7), rot=(0, 180, 0), last_hit=1),   # releases just before the shatter
@@ -808,6 +826,7 @@ def _cascade_ring(n: int, width: float, dmg: float, stun: float, target: str, co
         Visual("Mesh", amount=M.THIN_RINGS, time=0.6, size=0.5 * scale, alt_size=8, col=col,
                alt_col=PALE, opacity=0.4, alt_opacity=1, pos=(0, GROUND + 1, 0),
                ease="Exponential", ease_dir="Out"),
+        p_shock(width / 14.0, col=(PALE, col), life=0.5),      # matches the hitbox width
         shake("Medium" if n < 3 else "Heavy", 0.35, 3 + n),
     ]
 
@@ -866,6 +885,7 @@ def build_108th_toll():
     }
     after = [*bell(3.2, z=3, time=0.9, op=0.35, grow=1.25, ease="Exponential", ease_dir="Out"),
              *bell_ring(3.0, z=6), ripple(3.5, time=1.0),
+             p_flare(2.6, pos=(0, 4, 6)), p_sparks(2.6, n=28, pos=(0, 1, 6), up=True),
              Visual("Mesh", amount=M.CRACKS, time=5, size=0.45, alt_size=1, col=DUSK, opacity=0,
                     alt_opacity=1, pos=(0, GROUND + 0.05, 6), rot=(90, 0, 0),
                     ease="Exponential", ease_dir="In")]

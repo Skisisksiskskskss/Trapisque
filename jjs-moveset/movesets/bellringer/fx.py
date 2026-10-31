@@ -14,7 +14,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 
 from jjsforge.assets import MESH as M  # noqa: E402
 from jjsforge.assets import SFX as S  # noqa: E402
-from jjsforge.nodes import Sfx, Visual  # noqa: E402
+from jjsforge.assets import TEX as T  # noqa: E402
+from jjsforge.nodes import CancelParticle, Particle, Sfx, Visual  # noqa: E402
 
 # ------------------------------------------------------------- palette ----
 GOLD = (255, 196, 92)       # bell bronze, lit
@@ -58,23 +59,26 @@ def gong(size: str = "small", vol: float = 2.0, **kw):
 
 # ------------------------------------------------------------- effects ----
 def spark(scale: float = 1.0, col=GOLD, alt=PALE, part: str = HRP, **kw):
-    """Compact impact flash (Clash + Mass Hit) at the part."""
+    """Compact impact flash (Clash + Mass Hit) at the part, plus a spray of
+    bronze sparks."""
     return [
         Visual("Clash", time=0.2, size=0.5 * scale, alt_size=2, amount=0.07, col=col,
                alt_col=alt, opacity=0, alt_opacity=1, part=part, **kw),
         Visual("Mass Hit", time=0.45, size=0.6 * scale, alt_size=0.2, amount=0.03, col=alt,
                alt_col=col, opacity=0, alt_opacity=1.5, part=part, **kw),
+        p_sparks(0.8 * scale, col=(IVORY, col, BRONZE), part=part),
     ]
 
 
 def burst(scale: float = 1.0, col=GOLD, alt=PALE, part: str = HRP, **kw):
-    """Heavier impact: sparks + star + ring of wind."""
+    """Heavier impact: sparks + star + ring of wind + a textured impact star."""
     return spark(scale * 1.6, col, alt, part, **kw) + [
         Visual("Star", time=0.25, size=0.35 * scale, alt_size=2, amount=1, col=alt,
                alt_col=col, opacity=0, alt_opacity=1, ease="Exponential", ease_dir="Out",
                part=part, **kw),
         Visual("Wind Ring", time=0.45, size=1.2 * scale, alt_size=3, amount=3, col=col,
                alt_col=alt, opacity=0.85, alt_opacity=1, part=part, **kw),
+        p_star(scale, col=(IVORY, col), part=part),
     ]
 
 
@@ -187,4 +191,83 @@ def bell_ring(scale: float = 1.0, z: float = 0.0, col=GOLD, **kw):
         Visual("Mesh", amount=M.THIN_RINGS, time=0.7, size=0.5 * scale, alt_size=12,
                col=col, alt_col=PALE, opacity=0.5, alt_opacity=1, pos=(0, GROUND + 1, z),
                ease="Exponential", ease_dir="Out", **kw),
+        p_shock(scale, col=(PALE, col), z=z),
+        p_dust(scale, z=z),
     ]
+
+
+# ----------------------------------------------------------- particles ----
+# Particle Emitter blocks (Skill Builder V1.8+). Textures are Roblox Image
+# assets other JJS creators already use for particles (see assets.TEX). All
+# of these are one-shot bursts (duration 0) unless a duration is given.
+def p_sparks(scale: float = 1.0, n: int | None = None, col=(IVORY, GOLD, BRONZE),
+             part: str = HRP, pos=(0, 0, 0), up: bool = False):
+    """Streaks of bright bronze flying out of a hit and falling."""
+    return Particle(T.SPARK, part, pos, col=col, size=(1.6 * scale, 0.2 * scale),
+                    transparency=(0, 0.2, 1), lifetime=(0.18, 0.35),
+                    speed=(30 * scale + 10, 60 * scale + 15), drag=7,
+                    emit=n if n is not None else max(4, round(6 * scale)),
+                    spread=(60, 60, 0) if up else (180, 180, 0),
+                    accel=(0, -45, 0), orientation="VelocityParallel", rotation=0,
+                    brightness=4, zoffset=1.5)
+
+
+def p_star(scale: float = 1.0, col=(IVORY, GOLD), part: str = HRP, pos=(0, 0, 0),
+           life: float = 0.14):
+    """Textured impact star that snaps open in front of the body."""
+    return Particle(T.HIT_STAR, part, pos, col=col, size=(2 * scale, 8 * scale),
+                    transparency=(0, 1), lifetime=life, speed=0, emit=1,
+                    brightness=3, zoffset=2.5)
+
+
+def p_flare(scale: float = 1.0, col=(IVORY, GOLD), part: str = HRP, pos=(0, 0, 0),
+            life: float = 0.25):
+    """Horizontal lens-flare glint - the 'ding' of struck bronze."""
+    return Particle(T.FLARE, part, pos, col=col, size=(3 * scale, 12 * scale, 0),
+                    transparency=(0, 0.2, 1), lifetime=life, speed=0, emit=1, rotation=0,
+                    brightness=4, zoffset=3)
+
+
+def p_shock(scale: float = 1.0, col=(PALE, GOLD), y: float = GROUND, z: float = 0.0,
+            life: float = 0.45, tex: int = T.OUTLINE):
+    """Shockwave lying flat on the floor (velocity-perpendicular, emitted up)."""
+    w = 14 * scale
+    return Particle(tex, HRP, (0, y + 0.15, z), col=col, size=(0, 0.7 * w, 0.92 * w, w),
+                    transparency=(0, 0.4, 1), lifetime=life, speed=0.01, emit=1,
+                    spread=(0, 0, 0), orientation="VelocityPerpendicular", direction="Top",
+                    brightness=2)
+
+
+def p_rings(scale: float = 1.0, n: int = 3, col=(PALE, GOLD), pos=(0, 0, 2),
+            life: float = 0.45, travel: float = 16, part: str = HRP):
+    """Rings of sound leaving the palm forward, spreading out as they travel."""
+    return Particle(T.WIND_RING, part, pos, col=col, size=(1.5 * scale, 7 * scale),
+                    transparency=(0, 1), lifetime=(0.8 * life, life),
+                    speed=(0.4 * travel, travel), drag=2, emit=n, spread=(0, 0, 0),
+                    orientation="VelocityPerpendicular", direction="Front",
+                    brightness=2)
+
+
+def p_motes(scale: float = 1.0, n: int = 12, col=(PALE, GOLD, JADE), part: str = HRP,
+            pos=(0, 0, 0), box=(3, 5, 3), life=(0.9, 1.5), rise: float = 5,
+            duration: float = 0, rate: float = 0, lock: bool = False, tag: str | None = None):
+    """Glowing motes drifting upward from a volume (burst, or a stream with a
+    duration - tag it so CancelParticle can end it)."""
+    return Particle(T.GLOW, part, pos, col=col, size=(0.6 * scale, 0.15 * scale),
+                    transparency=(1, 0, 1), lifetime=life, speed=(1, 3), drag=0.5,
+                    emit=n, rate=rate, duration=duration, spread=(25, 25, 0),
+                    accel=(0, rise, 0), part_size=box, brightness=3, zoffset=0.5,
+                    lock=lock, cancel_tag=tag)
+
+
+def p_dust(scale: float = 1.0, y: float = GROUND, z: float = 0.0):
+    """Dust kicked up from the floor around an impact (lit by the map)."""
+    return Particle(T.SMOKE, HRP, (0, y + 0.5, z), col=((150, 128, 100), (95, 85, 75)),
+                    size=(2.5 * scale, 6 * scale), transparency=(0.45, 1), lifetime=(0.6, 1.0),
+                    speed=(18 * scale, 34 * scale), drag=5, emit=max(4, round(7 * scale)),
+                    spread=(85, 85, 0), accel=(0, 3, 0), rot_speed=(-60, 60),
+                    light_emission=0, light_influence=1)
+
+
+def p_cancel(tag: str):
+    return CancelParticle(tag)

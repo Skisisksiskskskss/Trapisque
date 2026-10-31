@@ -39,14 +39,15 @@ Every milestone file is regenerated from the current source, so fixes found late
 | v0.9 | + **Ult 2 Kanemaki** (trap the target in a bell, strike it thrice, shatter) | `dist/bellringer_v0.9.txt` |
 | v0.10 | + **Ult 3 Sympathetic Cascade** (stomp, three expanding resonance rings) | `dist/bellringer_v0.10.txt` |
 | v0.11 | + **Ult 4 The 108th Toll** (finisher cinematic) — every slot filled | `dist/bellringer_v0.11.txt` |
-| **v1.0** | + awakened dash, **kill flourish** on big finishers, lockouts end with each move, verified combo guide | **`dist/bellringer_v1.0.txt`** |
+| **v1.0** | + awakened dash, **kill flourish** on big finishers, lockouts end with each move, verified combo guide, **particle VFX** (spark sprays, impact stars, floor shockwaves, sound rings, mote auras) | **`dist/bellringer_v1.0.txt`** |
 
 ## How it was built — and what is (not) verified
 
 - The code format was reverse-engineered from 224 real game exports and cross-checked with the open-source `libjjs` library: [`docs/FORMAT.md`](docs/FORMAT.md).
 - `tools/jjsforge` emits exactly the field names and value types the game exports (every field's JSON type is checked against the types real exports use), validates every build (branch references, loop bounds, animation ids seen in real exports) and simulates timings; `tools/test_jjsforge.py` runs the checks. `tools/verify_codes.js` re-decodes every code with a second, independent zstd implementation (Node's).
 - Animations are built-in JJS clips; impact timings come from where hundreds of creators place hitboxes on each clip. Sounds are the JJS developer's own uploads plus Roblox's licensed ProSoundEffects/APM bell & gong library — all checked as public and approved.
-- **Not yet imported in-game.** Everything is structurally identical to working exports and the combos are verified against the timelines, but visual sizes (the spectral bell is built from Cylinder/Sphere effects) and exact feel should get one pass in a private server.
+- Particle effects use the Particle Emitter block (V1.8+). Each texture is a Roblox **Image** asset (checked with Roblox's asset API) that other creators already use as a particle texture, and every emitter matches the field layout real exports use.
+- **Not yet imported in-game.** Everything is structurally identical to working exports and the combos are verified against the timelines, but visual sizes (the spectral bell is built from Cylinder/Sphere effects, particle sizes are in studs) and exact feel should get one pass in a private server.
 
 ## Rebuild from source
 

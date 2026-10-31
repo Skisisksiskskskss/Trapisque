@@ -81,10 +81,36 @@ An empty Prop is written as `[]` (empty Lua table).
 | `SETMELEE` | `COMBO` (M1 counter), `OFFSET`, `LAST HIT` |
 | `SETCD` | `KEY` (-1 = this move), `COOLDOWN` (-1 = default) |
 | `HPGIB` / `ULTGIB` / `EVGIB` | `AMOUNT` (health / awakening / evasive), `CAN KILL` for HPGIB |
-| `PARTICLE` | a full ParticleEmitter (`TEXTURE`, `RATE`, `EMIT COUNT`, sequences as strings) |
+| `PARTICLE` | Particle Emitter block (V1.8+), a Roblox ParticleEmitter — see below |
 | `CONNECT` | `SIGNAL`, `TIME`, `RANGE` (Build Mode signals) |
 
 Infinite numbers appear as `{"m": null, "t": "numeric", "v": "inf"}` (Roblox's JSON form of `math.huge`).
+
+### PARTICLE (3,422 nodes in 34 exports)
+
+The usual export writes 37 fields (+ `CANCEL TAG` / `PROJECTILE TAG` when set):
+
+| Field | Form | Meaning |
+|---|---|---|
+| `TEXTURE` | number | a Roblox **Image** id (a Decal page id renders nothing) |
+| `BODY PART`, `POSITION` | string, `"x, y, z"` | where the emitter sits (+Z = forward, like VISUAL) |
+| `PART SIZE` | `"x, y, z"` | spawn volume; `"0, 0, 0"` = a point |
+| `EMIT COUNT`, `RATE`, `DURATION` | numbers | burst size; stream rate per second while `DURATION` > 0 (0 = burst only) |
+| `SIZE`, `TRANSPARENCY`, `SQUASH` | `"a, b, c…"` | number sequences, keypoints spread evenly over a particle's life |
+| `COLOR` | `"r,g,b r,g,b …"` | colour keys (no spaces inside a key), spread evenly |
+| `LIFETIME`, `SPEED`, `ROTATION`, `ROT SPEED` | `"min, max"` | ranges |
+| `SPREAD ANGLE`, `ACCELERATION` | `"x, y, z"` | spread in degrees (180 = every direction); studs/s² |
+| `DRAG`, `LIGHT EMISSION`, `LIGHT INFLUENCE`, `BRIGHTNESS`, `ZOFFSET`, `SHAPE PARTIAL` | numbers | as on a ParticleEmitter |
+| `ORIENTATION TYPE` | `FacingCamera` / `FacingCameraWorldUp` / `VelocityParallel` / `VelocityPerpendicular` | velocity-perpendicular + `EMISSION DIRECTION: Top` and a tiny speed lays a particle flat on the floor (ground shockwaves) |
+| `EMISSION DIRECTION` | `Top` `Bottom` `Front` `Back` `Left` `Right` | face of the emitter particles leave from |
+| `SHAPE`, `SHAPE INOUT` | `Box`/`Sphere`/`Cylinder`/`Disc`, `Outward`/`Inward`/`InAndOut` | |
+| `FLIPBOOK SIZE`, `FLIPBOOK FRAMERATE`, `FLIPBOOK MODE` | `"4, 4"`, `"10, 10"`, `OneShot`/`Loop`/`PingPong`/`Random` | sprite-sheet textures |
+| `LOCK TO PART` | bool | particles move with the part (auras) |
+| `RUN ON SERVER`, `CLIENT SIDED`, `CANCEL ON INTERRUPT` | bools | |
+| `CANCEL TAG`, `CANCEL` | string, bool | an emitter is named by its `CANCEL TAG`; a PARTICLE block with `CANCEL: true` and the same tag stops it (also from another skill) |
+| `LAST HIT`, `PROJECTILE TAG` | number, string | as on other nodes; with a projectile tag the emitter rides that projectile |
+
+Particles in a `BRANCH TARGET` branch play on the victim (299 such nodes in 16 exports).
 
 ## Animations
 

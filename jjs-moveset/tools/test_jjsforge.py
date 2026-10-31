@@ -43,6 +43,28 @@ def test_node_types():
         raise AssertionError("bad effect accepted")
 
 
+def test_particle_node():
+    p = nodes.Particle(123, col=((255, 0, 0), (0, 0, 255)), size=(1, 0), lifetime=0.3,
+                       speed=0)
+    assert p["COLOR"] == "255,0,0 0,0,255" and p["SIZE"] == "1, 0"
+    assert p["LIFETIME"] == "0.3, 0.3" and p["SPEED"] == "0, 0"
+    assert len(p) == 37 and "CANCEL TAG" not in p       # the game's usual 37-field layout
+    rep = validate.Report()
+    validate.check_node(p, "p", rep)
+    assert rep.ok, rep.summary()
+    rep = validate.Report()
+    validate.check_node(dict(p, **{"ORIENTATION TYPE": "Sideways"}), "p", rep)
+    assert not rep.ok
+    c = nodes.CancelParticle("aura")
+    assert c["CANCEL"] is True and c["CANCEL TAG"] == "aura"
+    try:
+        nodes.Particle(123, orientation="Sideways")
+    except nodes.NodeError:
+        pass
+    else:
+        raise AssertionError("bad orientation accepted")
+
+
 def test_validator_catches_dangling_branch():
     s = Skill("t", 1, 1, [nodes.Branch("nope")], props=BASE())
     rep = validate.validate(Character("t").add(s).document())

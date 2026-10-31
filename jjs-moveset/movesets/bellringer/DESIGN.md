@@ -2,7 +2,7 @@
 
 > *"Every blow I land is a bell I've struck. Strike enough of them, and your body forgets how to stop ringing."*
 
-An original Jujutsu Shenanigans character for the Skill Builder. A temple-bell monk whose cursed technique, **Bonshō (梵鐘, Temple Bell Technique)**, turns every strike into a lingering vibration. Bronze-gold and patina-jade palette; palm-strike martial style; a soundscape of the game's own punch/energy SFX layered with licensed temple bells, gongs and wooden temple blocks.
+An original Jujutsu Shenanigans character for the Skill Builder. A temple-bell monk whose cursed technique, **Bonshō (梵鐘, Temple Bell Technique)**, turns every strike into a lingering vibration. Bronze-gold and patina-jade palette; palm-strike martial style; a soundscape of the game's own punch/energy SFX layered with licensed temple bells, gongs and wooden temple blocks; bronze spark sprays, impact stars, lens-flare glints and floor shockwaves from the Particle Emitter block.
 
 - Timings: [`FRAMEDATA.md`](FRAMEDATA.md) · Combos (machine-verified): [`COMBOS.md`](COMBOS.md) · Source: [`bellringer.py`](bellringer.py), [`fx.py`](fx.py)
 
@@ -11,7 +11,7 @@ An original Jujutsu Shenanigans character for the Skill Builder. A temple-bell m
 | | |
 |---|---|
 | **Tolls (0–3)** | Landing hits rings you like a bell. **M1 #2, M1 #4 (any direction), Striking Log, Reverb Palm, Toll Wave, Bell Toll, the dash and the R pulse** each add **+1 Toll** (max 3) when they connect. Tolls fade **12 s** after your last gain. |
-| **Readout** | 1 Toll: right palm glows gold. 2 Tolls: both palms. **3 Tolls = RESONANT**: bronze/jade body aura and **a small spectral bell hangs over your head** (both players can see the Knell is ready). Each gain rings a small temple bell that rises in pitch; reaching 3 answers with a deeper brass bell. |
+| **Readout** | 1 Toll: right palm glows gold. 2 Tolls: both palms (golden motes rise from the palm that lights up). **3 Tolls = RESONANT**: bronze/jade body aura, a burst of rising motes, and **a small spectral bell hangs over your head** (both players can see the Knell is ready). Each gain rings a small temple bell that rises in pitch; reaching 3 answers with a deeper brass bell. |
 | **Knell** | At 3 Tolls the moves marked ★ — **Reverb Palm, Bell Toll, Strike the Bell (R)** — become their **Knell** version. Reverb Palm and Bell Toll consume the Tolls **only if they connect**; the R Grand Knell consumes on use (it doubles as an escape). |
 | **Awakening** | *Joya no Kane*: the bell never stops ringing. Awakened M1s chime, the M1 finisher releases an echo ring, the dash echoes, and **every R is a Grand Knell** (12 s cooldown). |
 
@@ -41,7 +41,7 @@ Front dash that checks for a hit every 0.08 s. On hit: 3 dmg, short stun, +1 Tol
 
 ## Awakening — "Joya no Kane: One Hundred and Eight Tolls" · 100 s
 
-Named after the Buddhist New-Year rite of striking the temple bell 108 times to dispel the 108 earthly desires. Requires a full bar. Invulnerable 2.2 s activation: a hollow gong swells, a colossal bell descends over the Bellringer and tolls (global), blasting nearby enemies upward; a bronze/jade aura and a spectral bell hanging over the Bellringer then last the whole awakening. Base Tolls are cleared — awakened moves are always at full power.
+Named after the Buddhist New-Year rite of striking the temple bell 108 times to dispel the 108 earthly desires. Requires a full bar. Invulnerable 2.2 s activation: a hollow gong swells, a colossal bell descends over the Bellringer and tolls (global), blasting nearby enemies upward; a bronze/jade aura, golden motes drifting off the body and a spectral bell hanging over the Bellringer then last the whole awakening. Base Tolls are cleared — awakened moves are always at full power.
 
 | Key | Ultimate | CD | What it does |
 |---|---|---|---|
@@ -69,6 +69,13 @@ When a big move lands the killing blow (Knell Reverb burst, Knell Bell Toll, Gra
 | **One Hundred and Eight** | awakened | `M1×3 → 4` | 37 |
 
 Thrice-Rung is the signature: it builds exactly three Tolls (M1 #2, Striking Log, M1 #2) and cashes them in the same combo.
+
+## Look
+
+- **Every hit** sprays bronze spark streaks (Particle Emitter, velocity-aligned, falling); heavy hits add a textured impact star.
+- **Every bell that rings** lays a golden shockwave flat on the floor and kicks up dust; Knell finishers and the ultimates' last hits flash a lens-flare glint, the "ding" of struck bronze.
+- **Toll Wave** sends visible rings of sound out of the palm; **Sympathetic Cascade**'s floor waves are drawn exactly as wide as their hitboxes.
+- Particle textures are Roblox Image assets other JJS creators already use for particles; every emitter is a short burst except the awakening's mote stream, which the spawn passive also clears.
 
 ## Why it plays like a JJS character
 

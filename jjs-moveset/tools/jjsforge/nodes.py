@@ -444,43 +444,123 @@ def Evasive(amount: float) -> dict:
     return {"K_NAME": "EVGIB", "AMOUNT": _num(amount, "AMOUNT")}
 
 
-def Particle(texture: int, part: str = "HumanoidRootPart", pos=(0, 0, 0),
-             color_seq: str = "255,255,255", size: str = "1, 0",
-             transparency: str = "0, 1", lifetime: str = "0.3, 0.5",
-             speed: str = "10, 20", rate: float = 0, emit: int = 10,
-             duration: float = 0, spread: str = "360, 360, 0",
-             rotation: str = "-360, 360", rot_speed: str = "0, 0",
-             accel: str = "0, 0, 0", drag: float = 0, light_emission: float = 1,
+PARTICLE_ORIENTATIONS = ("FacingCamera", "FacingCameraWorldUp", "VelocityParallel",
+                         "VelocityPerpendicular")
+PARTICLE_DIRECTIONS = ("Top", "Bottom", "Front", "Back", "Left", "Right")
+PARTICLE_SHAPES = ("Box", "Sphere", "Cylinder", "Disc")
+PARTICLE_SHAPE_INOUT = ("Outward", "Inward", "InAndOut")
+FLIPBOOK_MODES = ("OneShot", "Loop", "PingPong", "Random")
+
+
+def seq(v, field="sequence", n=None) -> str:
+    """Number sequence in the game's string form: 2 -> "2", (1, 0) -> "1, 0".
+    Keypoints are spread evenly over the particle's life. `n` forces a length
+    (a single number is repeated, e.g. a range 0.3 -> "0.3, 0.3")."""
+    if isinstance(v, str):
+        parts = [p.strip() for p in v.split(",")]
+        try:
+            [float(p) for p in parts]
+        except ValueError:
+            raise NodeError(f"{field} is not a number sequence: {v!r}") from None
+        vals = parts
+    elif isinstance(v, (int, float)) and not isinstance(v, bool):
+        vals = [_fmt(_num(v, field))]
+    else:
+        vals = [_fmt(_num(x, field)) for x in v]
+    if not vals:
+        raise NodeError(f"{field} is empty")
+    if n is not None:
+        if len(vals) == 1:
+            vals = vals * n
+        if len(vals) != n:
+            raise NodeError(f"{field} needs {n} values: {v!r}")
+    return ", ".join(vals)
+
+
+def color_seq(c, field="COLOR") -> str:
+    """Particle colour: one key (255, 0, 0) -> "255,0,0", or a gradient of keys spread
+    evenly over the particle's life ((255, 0, 0), (0, 0, 255)) -> "255,0,0 0,0,255"
+    (the exported form: no spaces inside a key, one space between keys)."""
+    if isinstance(c, str):
+        keys = [k.split(",") for k in c.split()]
+    else:
+        c = list(c)
+        keys = [list(k) for k in c] if c and isinstance(c[0], (tuple, list)) else [c]
+    if not keys:
+        raise NodeError(f"{field} is empty")
+    out = []
+    for k in keys:
+        try:
+            k = [int(str(x).strip()) for x in k]
+        except ValueError:
+            raise NodeError(f"{field} key must be r,g,b: {c!r}") from None
+        if len(k) != 3 or not all(0 <= x <= 255 for x in k):
+            raise NodeError(f"{field} key must be r,g,b in 0-255: {c!r}")
+        out.append(",".join(map(str, k)))
+    return " ".join(out)
+
+
+def Particle(texture: int, part: str = "HumanoidRootPart", pos=(0, 0, 0), *,
+             col=(255, 255, 255), size=(1, 0), transparency=(0, 1), lifetime=(0.3, 0.5),
+             speed=(10, 20), rate: float = 0, emit: int = 10, duration: float = 0,
+             spread=(360, 360, 0), rotation=(-360, 360), rot_speed=(0, 0),
+             accel=(0, 0, 0), drag: float = 0, light_emission: float = 1,
              light_influence: float = 0, brightness: float = 1, zoffset: float = 0,
-             orientation: str = "FacingCamera", flip_size: str = "0, 0",
-             flip_rate: str = "10, 10", flip_mode: str = "OneShot", squash: str = "0, 0",
-             part_size: str = "0, 0, 0", shape: str = "Box", shape_inout: str = "Outward",
-             shape_partial: float = 0, direction: str = "Top", lock: bool = False,
-             server: bool = False, client: bool = False, cancel: bool = False,
-             cancel_on_interrupt: bool = False, cancel_tag: str | None = None,
-             last_hit: float = -1, ptag: str | None = None) -> dict:
-    """A Roblox ParticleEmitter. Sequences use the game's string forms: numbers
-    "a, b" (start, end), colours "r,g,b" or "r,g,b r,g,b"."""
+             orientation: str = "FacingCamera", flip_size=(0, 0), flip_rate=(10, 10),
+             flip_mode: str = "OneShot", squash=(0, 0), part_size=(0, 0, 0),
+             shape: str = "Box", shape_inout: str = "Outward", shape_partial: float = 0,
+             direction: str = "Top", lock: bool = False, server: bool = False,
+             client: bool = False, cancel: bool = False, cancel_on_interrupt: bool = False,
+             cancel_tag: str | None = None, last_hit: float = -1,
+             ptag: str | None = None) -> dict:
+    """Particle Emitter block (Skill Builder V1.8+), i.e. a Roblox ParticleEmitter.
+
+    Burst: duration 0 and `emit` particles at once. Stream: duration > 0 at `rate`
+    per second. size / transparency / squash are number sequences, lifetime /
+    speed / rotation / rot_speed are (min, max) ranges, `col` is one colour or a
+    (start, end) pair. Emitters with a `cancel_tag` can be stopped later by
+    CancelParticle(tag); `lock` keeps the particles moving with the part."""
     _choice(part, BODY_PARTS, "BODY PART")
+    _choice(orientation, PARTICLE_ORIENTATIONS, "ORIENTATION TYPE")
+    _choice(direction, PARTICLE_DIRECTIONS, "EMISSION DIRECTION")
+    _choice(shape, PARTICLE_SHAPES, "SHAPE")
+    _choice(shape_inout, PARTICLE_SHAPE_INOUT, "SHAPE INOUT")
+    _choice(flip_mode, FLIPBOOK_MODES, "FLIPBOOK MODE")
+    if not cancel and int(texture) <= 0:
+        raise NodeError("PARTICLE needs a texture id")
+    sp = list(spread) if not isinstance(spread, str) else spread
+    if not isinstance(sp, str) and len(sp) == 2:
+        sp = sp + [0]
     d = {"K_NAME": "PARTICLE", "TEXTURE": int(texture), "BODY PART": part,
-         "POSITION": vec(pos, "POSITION"), "COLOR": color_seq, "SIZE": size,
-         "TRANSPARENCY": transparency, "LIFETIME": lifetime, "SPEED": speed,
+         "POSITION": vec(pos, "POSITION"), "COLOR": color_seq(col),
+         "SIZE": seq(size, "SIZE"), "TRANSPARENCY": seq(transparency, "TRANSPARENCY"),
+         "LIFETIME": seq(lifetime, "LIFETIME", 2), "SPEED": seq(speed, "SPEED", 2),
          "RATE": _num(rate, "RATE"), "EMIT COUNT": int(emit),
-         "DURATION": _num(duration, "DURATION"), "SPREAD ANGLE": spread,
-         "ROTATION": rotation, "ROT SPEED": rot_speed, "ACCELERATION": accel,
-         "DRAG": _num(drag, "DRAG"), "LIGHT EMISSION": _num(light_emission, "LIGHT EMISSION"),
+         "DURATION": _num(duration, "DURATION"), "SPREAD ANGLE": vec(sp, "SPREAD ANGLE"),
+         "ROTATION": seq(rotation, "ROTATION", 2), "ROT SPEED": seq(rot_speed, "ROT SPEED", 2),
+         "ACCELERATION": vec(accel, "ACCELERATION"), "DRAG": _num(drag, "DRAG"),
+         "LIGHT EMISSION": _num(light_emission, "LIGHT EMISSION"),
          "LIGHT INFLUENCE": _num(light_influence, "LIGHT INFLUENCE"),
          "BRIGHTNESS": _num(brightness, "BRIGHTNESS"), "ZOFFSET": _num(zoffset, "ZOFFSET"),
-         "ORIENTATION TYPE": orientation, "FLIPBOOK SIZE": flip_size,
-         "FLIPBOOK FRAMERATE": flip_rate, "FLIPBOOK MODE": flip_mode, "SQUASH": squash,
-         "PART SIZE": part_size, "SHAPE": shape, "SHAPE INOUT": shape_inout,
-         "SHAPE PARTIAL": _num(shape_partial, "SHAPE PARTIAL"), "EMISSION DIRECTION": direction,
-         "LOCK TO PART": bool(lock), "RUN ON SERVER": bool(server),
-         "CLIENT SIDED": bool(client), "CANCEL": bool(cancel),
-         "CANCEL ON INTERRUPT": bool(cancel_on_interrupt),
+         "ORIENTATION TYPE": orientation, "FLIPBOOK SIZE": seq(flip_size, "FLIPBOOK SIZE", 2),
+         "FLIPBOOK FRAMERATE": seq(flip_rate, "FLIPBOOK FRAMERATE", 2),
+         "FLIPBOOK MODE": flip_mode, "SQUASH": seq(squash, "SQUASH"),
+         "PART SIZE": vec(part_size, "PART SIZE"), "SHAPE": shape,
+         "SHAPE INOUT": shape_inout, "SHAPE PARTIAL": _num(shape_partial, "SHAPE PARTIAL"),
+         "EMISSION DIRECTION": direction, "LOCK TO PART": bool(lock),
+         "RUN ON SERVER": bool(server), "CLIENT SIDED": bool(client),
+         "CANCEL": bool(cancel), "CANCEL ON INTERRUPT": bool(cancel_on_interrupt),
          "LAST HIT": _num(last_hit, "LAST HIT")}
     _ref(d, "CANCEL TAG", cancel_tag)
     return _ref(d, "PROJECTILE TAG", ptag)
+
+
+def CancelParticle(tag: str) -> dict:
+    """Stop the emitters created with CANCEL TAG `tag` (a PARTICLE block with CANCEL on,
+    the way creators end a smoke or aura emitter from another branch or skill)."""
+    if not tag:
+        raise NodeError("CancelParticle needs a tag")
+    return Particle(0, emit=0, speed=0, cancel=True, cancel_tag=tag)
 
 
 # --------------------------------------------------------- conditions ----

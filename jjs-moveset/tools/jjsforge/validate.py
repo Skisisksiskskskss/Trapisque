@@ -9,12 +9,14 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field
 
-from .nodes import ATTACK_TYPES, BODY_PARTS, EFFECTS, STATES
+from .nodes import (ATTACK_TYPES, BODY_PARTS, EFFECTS, FLIPBOOK_MODES, PARTICLE_DIRECTIONS,
+                    PARTICLE_ORIENTATIONS, PARTICLE_SHAPE_INOUT, PARTICLE_SHAPES, STATES)
 
 ENTRY_KINDS = {"SKILL", "MELEE", "CHASE", "SPECIAL", "AWAKENING"}
 COND_KINDS = {"AIR", "JUMP", "AIM", "ULT", "HOLD", "DOMAIN", "BAR", "HP", "DUR"}
 
 NUM, BOOL, STR, VEC3, VEC2, LIST, ANY = "num", "bool", "str", "vec3", "vec2", "list", "any"
+NSEQ, RANGE, CSEQ = "number sequence", "range", "colour sequence"
 
 # field -> expected type, per node kind (only fields we know; extra fields warn)
 SPEC = {
@@ -78,8 +80,23 @@ SPEC = {
     "ULTGIB": {"AMOUNT": NUM},
     "EVGIB": {"AMOUNT": NUM},
     "CONNECT": {"SIGNAL": STR, "TIME": NUM, "RANGE": ANY},
-    "PARTICLE": None,   # many free-form string sequences; only light checks
+    "PARTICLE": {"TEXTURE": NUM, "BODY PART": STR, "POSITION": VEC3, "COLOR": CSEQ,
+                 "SIZE": NSEQ, "TRANSPARENCY": NSEQ, "LIFETIME": RANGE, "SPEED": RANGE,
+                 "RATE": NUM, "EMIT COUNT": NUM, "DURATION": NUM, "SPREAD ANGLE": VEC3,
+                 "ROTATION": RANGE, "ROT SPEED": RANGE, "ACCELERATION": VEC3, "DRAG": NUM,
+                 "LIGHT EMISSION": NUM, "LIGHT INFLUENCE": NUM, "BRIGHTNESS": NUM,
+                 "ZOFFSET": NUM, "ORIENTATION TYPE": STR, "FLIPBOOK SIZE": RANGE,
+                 "FLIPBOOK FRAMERATE": RANGE, "FLIPBOOK MODE": STR, "SQUASH": NSEQ,
+                 "PART SIZE": VEC3, "SHAPE": STR, "SHAPE INOUT": STR, "SHAPE PARTIAL": NUM,
+                 "EMISSION DIRECTION": STR, "LOCK TO PART": BOOL, "RUN ON SERVER": BOOL,
+                 "CLIENT SIDED": BOOL, "CANCEL": BOOL, "CANCEL ON INTERRUPT": BOOL,
+                 "CANCEL TAG": STR, "LAST HIT": NUM, "PROJECTILE TAG": STR},
 }
+
+PARTICLE_ENUMS = {"ORIENTATION TYPE": PARTICLE_ORIENTATIONS,
+                  "EMISSION DIRECTION": PARTICLE_DIRECTIONS, "SHAPE": PARTICLE_SHAPES,
+                  "SHAPE INOUT": PARTICLE_SHAPE_INOUT, "FLIPBOOK MODE": FLIPBOOK_MODES,
+                  "BODY PART": BODY_PARTS}
 
 # fields whose value names a branch of the same entry
 BRANCH_REFS = {
@@ -140,10 +157,33 @@ def _is_vec(v, n):
     return True
 
 
+def _is_nseq(v, n=None):
+    if not isinstance(v, str):
+        return False
+    try:
+        vals = [float(p) for p in v.split(",")]
+    except ValueError:
+        return False
+    return len(vals) == n if n else len(vals) >= 1
+
+
+def _is_cseq(v):
+    if not isinstance(v, str):
+        return False
+    keys = v.split()
+    try:
+        return len(keys) >= 1 and all(
+            len(k.split(",")) == 3 and all(0 <= int(x) <= 255 for x in k.split(","))
+            for k in keys)
+    except ValueError:
+        return False
+
+
 def _check_type(v, t):
     return {NUM: _is_num, BOOL: lambda x: isinstance(x, bool), STR: lambda x: isinstance(x, str),
             VEC3: lambda x: _is_vec(x, 3), VEC2: lambda x: _is_vec(x, 2),
-            LIST: lambda x: isinstance(x, list), ANY: lambda x: True}[t](v)
+            LIST: lambda x: isinstance(x, list), ANY: lambda x: True,
+            NSEQ: _is_nseq, RANGE: lambda x: _is_nseq(x, 2), CSEQ: _is_cseq}[t](v)
 
 
 def check_node(n, where, rep: Report, known_anims=None):
@@ -194,6 +234,24 @@ def check_node(n, where, rep: Report, known_anims=None):
             rep.err(where, f"bad ANIM_USE {use!r}")
     if k == "SFX" and _is_num(n.get("ID")) and n["ID"] <= 0:
         rep.err(where, "SFX ID must be a positive asset id")
+    if k == "PARTICLE":
+        for f, options in PARTICLE_ENUMS.items():
+            if f in n and n[f] not in options:
+                rep.err(where, f"PARTICLE {f}={n[f]!r} is not one of {options}")
+        if not n.get("CANCEL") and not (_is_num(n.get("TEXTURE")) and n["TEXTURE"] > 0):
+            rep.err(where, "PARTICLE emitter needs a texture id")
+        if n.get("CANCEL") and not n.get("CANCEL TAG"):
+            rep.err(where, "PARTICLE cancel block needs a CANCEL TAG")
+        # particles alive at once ~ burst + rate x longest lifetime (what costs frames)
+        try:
+            life = max(float(x) for x in str(n.get("LIFETIME", "0")).split(","))
+        except ValueError:
+            life = 0
+        stream = n["RATE"] * life if (_is_num(n.get("RATE")) and _is_num(n.get("DURATION"))
+                                      and n["DURATION"] > 0) else 0
+        alive = (n["EMIT COUNT"] if _is_num(n.get("EMIT COUNT")) else 0) + stream
+        if alive > 150:
+            rep.warn(where, f"PARTICLE keeps ~{alive:.0f} particles alive at once")
 
 
 def _refs(n):
