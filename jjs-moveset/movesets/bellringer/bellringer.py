@@ -647,7 +647,7 @@ def build_hundredfold():
     ]
     br["flurry"] = Br([
         Velo((0, 0.01, 0), 0.05), Sfx(S.PUNCH_3, vol=2.2), shake("Light", 0.3, 2),
-        Grab(time=1.75, pos=(0, 0, 4.5), rot=(0, 180, 0), last_hit=1),
+        Grab(time=1.7, pos=(0, 0, 4.5), rot=(0, 180, 0), last_hit=1),   # releases before the gong
         Anim(A.RAPID_PUNCHES, end=2.2, speed=1.1),
         trail("Right Arm", 1.6, JADE), trail("Left Arm", 1.6, GOLD),
         aura(HRP, 1.4, 1.6, GOLD, JADE, op=0.25, hold=False),
@@ -682,6 +682,64 @@ def build_hundredfold():
                  props=AWAKENED(), tooltip="Catch, then 10 palms and a gong")
 
 
+# ============================================ U2  KANEMAKI (DOJO-JI) ====
+PRISON_FX = "BR_PRISON"
+
+
+def _bell_strike(clip, start, wait_hit, dmg, target, pitch, size="medium"):
+    return [
+        Anim(clip, start=start, speed=0.9), Sfx(S.SWING, vol=1.6, speed=0.9),
+        trail("Right Arm", 0.4, GOLD),
+        Wait(wait_hit),
+        Hitbox(dmg, size=(10, 10, 10), pos=(0, 0, 7), stun=1.3, stun_anim=True,
+               blockable=False, ignore_wakeup=True, hit_ragdoll=True, target=target),
+        *gong(size, 2.2), chime(pitch, vol=1.6), shake("Medium", 0.4, 4), fov(-6, 0.3),
+        *bell_ring(1.1, z=7), light(HRP, 16, 3, 0.3, GOLD, pos=(0, 2, 7)),
+    ]
+
+
+def build_kanemaki():
+    """Awakened 2: drop a bell on the target, strike it three times, shatter it."""
+    br = {}
+    br["inside"] = Br([Velo((0, 0.01, 0), 0.05), *spark(1.0), Sfx(S.HEAVY_HIT, vol=1.8)])
+    for i in (1, 2):
+        br[f"rung{i}"] = Br([Visual("Distortion", time=0.3, size=4, alt_size=1.4, amount=1,
+                                    opacity=0, alt_opacity=1), *spark(1.0 + 0.2 * i),
+                             aura(HRP, 1.0, 0.5, GOLD, JADE, op=0.3, hold=False)])
+    br["shatter"] = Br([*burst(2.0), Sfx(S.GLASS_BREAK, vol=2), Sfx(S.IMPACT_FRAMES, vol=2),
+                        Velo((0, 25, 60), 0.15, rel_branch=True, ragdoll=1.6)])
+    br["trapped"] = Br([
+        Grab(time=1.8, pos=(0, 0, 7), rot=(0, 180, 0), last_hit=1),   # releases just before the shatter
+        CancelVisual(PRISON_FX),
+        *bell(1.3, z=7, time=2.4, op=0.3, fade=False, vtag=PRISON_FX),
+        Sfx(S.CHURCH_BELL_SOFT, vol=1.6, end=2, fade_out=0.6),
+        Wait(0.25),
+        *_bell_strike(A.M1_1, 0, 0.2, 5, "rung1", 1.0), Wait(0.45),
+        *_bell_strike(A.M1_3, 0, 0.2, 5, "rung2", 1.15), Wait(0.45),
+        *_bell_strike(A.DIVERGENT_1, 0.25, 0.3, 7, "shatter", 1.3, size="big"),
+        CancelVisual(PRISON_FX), Sfx(S.GLASS_BREAK, vol=1.8, speed=0.8),
+        *bell(1.3, z=7, time=0.35, op=0.3, grow=1.35, ease="Exponential", ease_dir="Out"),
+        flash(PALE, 0.08), shake("Heavy", 0.6, 6),
+        Wait(0.4),
+    ])
+    line = [
+        State("NoM1", 1.0), State("NoJump", 1.0), State("NoSprint", 1.0),
+        Anim(A.CLAP_1), Sfx(S.CLAP, vol=2.2), chime(0.8, vol=1.6),
+        glow(0.3, GOLD, 0.5), light(HRP, 12, 3, 0.4),
+        Wait(0.2),
+        *bell(1.3, z=8, drop=16, time=0.3, op=0.35, ease="Quad", ease_dir="In"),
+        Wait(0.3),
+        *gong("medium", 2.2), shake("Medium", 0.4, 4),
+        Hitbox(5, size=(12, 12, 12), pos=(0, 0, 8), stun=1.4, stun_anim=True, blockable=False,
+               ignore_wakeup=True, branch="trapped", target="inside"),
+        *bell(1.3, z=8, time=0.45, op=0.35, grow=1.05),
+        *bell_ring(1.0, z=8),
+        Wait(0.35), State("Stun", 0.3), Wait(0.3),
+    ]
+    return Skill("Kanemaki", key=2, cooldown=20, line=line, branches=br, props=AWAKENED(),
+                 tooltip="The Bell of Dojo-ji: trap, strike thrice, shatter")
+
+
 # ============================================================ MILESTONES ====
 def milestone_entries(stage: int):
     """Entries included at each milestone (cumulative)."""
@@ -700,6 +758,8 @@ def milestone_entries(stage: int):
         entries.append(build_awakening())
     if stage >= 8:
         entries.append(build_hundredfold())
+    if stage >= 9:
+        entries.append(build_kanemaki())
     return entries
 
 
@@ -712,6 +772,7 @@ MILESTONES = [
     (6, "0.6", "R - Strike the Bell / Grand Knell"),
     (7, "0.7", "Awakening - Joya no Kane: 108 Tolls"),
     (8, "0.8", "Ultimate 1 - Hundredfold Strikes"),
+    (9, "0.9", "Ultimate 2 - Kanemaki, the Bell of Dojo-ji"),
 ]
 
 
@@ -760,6 +821,8 @@ def frame_rows(ch: Character):
     add("R ★ Grand Knell (ragdoll)", "Strike the Bell", {"tag:BR_TOLL": "grand"})
     add("U1 Hundredfold Strikes (ragdoll)", "Hundredfold Strikes", {"hit": "flurry"})
     add("U1 Hundredfold Strikes (whiff)", "Hundredfold Strikes", W)
+    add("U2 Kanemaki (trapped, ragdoll)", "Kanemaki", {"hit": "trapped"})
+    add("U2 Kanemaki (whiff)", "Kanemaki", W)
     return rows
 
 

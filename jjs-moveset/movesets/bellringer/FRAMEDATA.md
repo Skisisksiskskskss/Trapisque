@@ -1,4 +1,4 @@
-# Frame data - The Bellringer v0.8
+# Frame data - The Bellringer v0.9
 
 Generated from the actual timelines by `jjsforge.analyze` (WAIT sums; hitstun from each HITBOX). *Advantage* = target stun left when you recover; a follow-up whose first hit comes out faster than that is a true combo.
 
@@ -31,5 +31,7 @@ Generated from the actual timelines by `jjsforge.analyze` (WAIT sums; hitstun fr
 | R ★ Grand Knell (ragdoll) | 0.35s | 0.35s: 12/1.2 | 12 | 0.85s | +0.70s |
 | U1 Hundredfold Strikes (ragdoll) | 0.18s | 0.18s: 3/1.5, 0.18s: 1.4/0.6, 0.33s: 1.4/0.6, 0.48s: 1.4/0.6, 0.63s: 1.4/0.6, 0.78s: 1.4/0.6, 0.93s: 1.4/0.6, 1.08s: 1.4/0.6, 1.23s: 1.4/0.6, 1.38s: 1.4/0.6, 1.53s: 1.4/0.6, 1.93s: 8/1.2 | 25 | 2.33s | +0.80s |
 | U1 Hundredfold Strikes (whiff) | - | - | 0 | 0.93s | - |
+| U2 Kanemaki (trapped, ragdoll) | 0.50s | 0.50s: 5/1.4, 0.95s: 5/1.3, 1.60s: 5/1.3, 2.35s: 7/1.3 | 22 | 2.75s | +0.90s |
+| U2 Kanemaki (whiff) | - | - | 0 | 1.15s | - |
 
 Rows marked *ragdoll* end in knockback/launch: their advantage is decided by the ragdoll time rather than hitstun.
