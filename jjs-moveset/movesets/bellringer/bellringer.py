@@ -21,7 +21,7 @@ from jjsforge import analyze, codec, validate  # noqa: E402
 from jjsforge.assets import MESH as M  # noqa: E402
 from jjsforge.assets import SFX as S  # noqa: E402
 from jjsforge.model import (AWAKENED, BASE, PASSIVE, Awakening, Br, Character,  # noqa: E402,F401
-                            Chase, Melee, Skill, Special)
+                            Chase, Melee, Props, Skill, Special)
 from jjsforge.nodes import (AIR, BAR, HOLD, JUMP, ULT, Anim, Awaken, Branch,  # noqa: E402,F401
                             Grab, Teleport, Counter,
                             CancelVisual, Hitbox, HitCancel, Loop, Projectile, SetCooldown,
@@ -584,6 +584,55 @@ def build_special():
                          "Grand Knell, 12 s cooldown.")
 
 
+# ===================================================== AWAKENING (G) ====
+AWK_DURATION = 100
+AWK_FX = "BR_AWKFX"
+
+
+def build_awakening():
+    """Joya no Kane - the bell is struck 108 times to dispel the 108 desires."""
+    hold_time = AWK_DURATION
+    br = {"awk_push": Br([Velo((0, 45, 0), 0.15, rel_branch=True, ragdoll=1.4), *burst(1.3),
+                          Sfx(S.HEAVY_HIT, vol=1.8)])}
+    line = [
+        State("IFrame", 2.4), State("Stun", 2.1), State("NoM1", 2.2), State("NoJump", 2.2),
+        *toll_reset(),
+        Anim(A.VESSEL_ULT),
+        Sfx(S.APOCALYPSE_GONG, vol=2.2, end=4.5, fade_out=1.5, global_=True),
+        Sfx(S.AMP_IGNITION, vol=2), chime(0.7, vol=2),
+        glow(1.0, GOLD, 0.4), flash(DUSK, 0.6), fov(8, 1.0),
+        aura(HRP, 1.6, 1.0, GOLD, JADE, op=0.2, hold=False), light(HRP, 20, 3, 1.0),
+        *bell(2.4, drop=30, time=1.0, op=0.4, ease="Quad", ease_dir="In"),
+        Wait(1.0),
+        # --- first toll: the bell lands over the Bellringer -------------------
+        *gong("huge", 2.6, global_=True), shake("Heavy", 1.0, 7), flash(PALE, 0.1),
+        fov(-16, 0.6),
+        Hitbox(5, size=(26, 12, 26), pos=(0, 1, 0), stun=1.0, stun_anim=True, blockable=False,
+               ignore_wakeup=True, target="awk_push"),
+        *bell(2.4, time=1.1, op=0.4, grow=1.08, ease="Exponential", ease_dir="Out"),
+        *bell_ring(2.4), ripple(3.0, time=1.0),
+        Wait(0.6),
+        # --- the tolls keep coming ----------------------------------------------
+        chime(0.9, vol=2), sound_ring((0, 1, 0), 2.0, GOLD, 0.5, forward=False),
+        ripple(1.6, col=JADE, time=0.6),
+        Wait(0.3),
+        chime(1.1, vol=2), sound_ring((0, 2, 0), 2.4, JADE, 0.5, forward=False),
+        ripple(2.0, col=GOLD, time=0.6),
+        Wait(0.3),
+        # --- the aura that lasts the whole awakening ------------------------------
+        CancelVisual(AWK_FX),
+        aura(HRP, 1.3, hold_time, GOLD, JADE, op=0.35, vtag=AWK_FX),
+        aura("Right Arm", 0.7, hold_time, GOLD, JADE, op=0.3, vtag=AWK_FX),
+        aura("Left Arm", 0.7, hold_time, GOLD, JADE, op=0.3, vtag=AWK_FX),
+        light(HRP, 16, 1.5, hold_time, GOLD, hold=True, vtag=AWK_FX),
+        light("Right Arm", 7, 1.8, hold_time, PALE, hold=True, vtag=AWK_FX),
+        light("Left Arm", 7, 1.8, hold_time, PALE, hold=True, vtag=AWK_FX),
+    ]
+    return Awakening("Joya no Kane: 108 Tolls", AWK_DURATION, line, br,
+                     props=Props(invincible=True, no_cancel=True), req=[BAR(99)],
+                     delay=2.2, color="255,196,92 92,224,186")
+
+
 # ============================================================ MILESTONES ====
 def milestone_entries(stage: int):
     """Entries included at each milestone (cumulative)."""
@@ -598,6 +647,8 @@ def milestone_entries(stage: int):
         entries.append(build_bell_toll())
     if stage >= 6:
         entries.append(build_special())
+    if stage >= 7:
+        entries.append(build_awakening())
     return entries
 
 
@@ -608,6 +659,7 @@ MILESTONES = [
     (4, "0.4", "Move 3 - Toll Wave (projectile, hold variant)"),
     (5, "0.5", "Move 4 - Bell Toll (launcher, Knell)"),
     (6, "0.6", "R - Strike the Bell / Grand Knell"),
+    (7, "0.7", "Awakening - Joya no Kane: 108 Tolls"),
 ]
 
 
