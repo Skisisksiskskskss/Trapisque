@@ -144,12 +144,12 @@ def afterimage(time: float = 0.4, col=GOLD, **kw):
 def bell(scale: float = 1.0, y: float = 0.0, z: float = 0.0, drop: float = 0.0,
          time: float = 0.5, col=GOLD, op: float = 0.45, fade: bool = True,
          ease: str = "Quad", ease_dir: str = "In", grow: float = 1.0, rise: float = 0.0,
-         **kw):
+         x: float = 0.0, **kw):
     """A spectral temple bell (bonshō) built from Cylinder + Sphere primitives.
 
-    Its rim sits on the floor under the part (plus `y`), `z` studs in front.
-    drop > 0: the bell falls from `drop` studs higher during `time`;
-    rise > 0: it lifts `rise` studs into the sky instead."""
+    Its rim sits on the floor under the part (plus `y`), `z` studs in front and
+    `x` to the right. drop > 0: the bell falls from `drop` studs higher during
+    `time`; rise > 0: it lifts `rise` studs into the sky instead."""
     s = scale
     bottom = GROUND + y
     end_op = 1 if fade else op
@@ -158,7 +158,7 @@ def bell(scale: float = 1.0, y: float = 0.0, z: float = 0.0, drop: float = 0.0,
         return Visual("Cylinder", time=time, size=1, alt_size=1,
                       size2=(length, dia, dia), alt_size2=(length, dia * grow, dia * grow),
                       col=c, alt_col=PALE, opacity=o, alt_opacity=end_op,
-                      pos=(0, cy + drop, z), alt_pos=(0, cy + rise, z), rot=(0, 0, 90),
+                      pos=(x, cy + drop, z), alt_pos=(x, cy + rise, z), rot=(0, 0, 90),
                       ease=ease, ease_dir=ease_dir, **kw)
 
     crown_y = bottom + 7.6 * s
@@ -168,11 +168,19 @@ def bell(scale: float = 1.0, y: float = 0.0, z: float = 0.0, drop: float = 0.0,
         cyl(0.35 * s, 6.3 * s, bottom + 5.4 * s, BRONZE, op * 0.8),  # band
         cyl(0.35 * s, 6.3 * s, bottom + 2.2 * s, BRONZE, op * 0.8),  # band
         Visual("Sphere", time=time, size=5.2 * s, alt_size=grow, col=col, alt_col=PALE,
-               opacity=op, alt_opacity=end_op, pos=(0, crown_y + drop, z),
-               alt_pos=(0, crown_y + rise, z), ease=ease, ease_dir=ease_dir, **kw),
+               opacity=op, alt_opacity=end_op, pos=(x, crown_y + drop, z),
+               alt_pos=(x, crown_y + rise, z), ease=ease, ease_dir=ease_dir, **kw),
         Visual("Light", time=time, size=14 * s, opacity=2.5, alt_opacity=0, col=GOLD,
-               pos=(0, bottom + 4 * s + drop, z), alt_pos=(0, bottom + 4 * s + rise, z), **kw),
+               pos=(x, bottom + 4 * s + drop, z), alt_pos=(x, bottom + 4 * s + rise, z), **kw),
     ]
+
+
+def pillar(x: float, z: float, height: float = 30, dia: float = 2.4, col=BRONZE,
+           time: float = 1.0, op: float = 0.4, **kw):
+    """An upright temple pillar standing on the floor (vertical Cylinder)."""
+    return Visual("Cylinder", time=time, size=1, alt_size=1, size2=(height, dia, dia),
+                  alt_size2=(height, dia, dia), col=col, alt_col=PALE, opacity=op,
+                  alt_opacity=1, pos=(x, GROUND + height / 2, z), rot=(0, 0, 90), **kw)
 
 
 def bell_ring(scale: float = 1.0, z: float = 0.0, col=GOLD, **kw):
@@ -229,13 +237,16 @@ def p_flare(scale: float = 1.0, col=(IVORY, GOLD), part: str = HRP, pos=(0, 0, 0
 
 
 def p_shock(scale: float = 1.0, col=(PALE, GOLD), y: float = GROUND, z: float = 0.0,
-            life: float = 0.45, tex: int = T.OUTLINE):
-    """Shockwave lying flat on the floor (velocity-perpendicular, emitted up)."""
+            life: float = 0.45, tex: int = T.OUTLINE, rate: float = 0, duration: float = 0,
+            ptag: str | None = None, tag: str | None = None):
+    """Shockwave lying flat on the floor (velocity-perpendicular, emitted up).
+    With a rate and duration it repeats - one wave every 1/rate seconds."""
     w = 14 * scale
     return Particle(tex, HRP, (0, y + 0.15, z), col=col, size=(0, 0.7 * w, 0.92 * w, w),
                     transparency=(0, 0.4, 1), lifetime=life, speed=0.01, emit=1,
-                    spread=(0, 0, 0), orientation="VelocityPerpendicular", direction="Top",
-                    brightness=2)
+                    rate=rate, duration=duration, spread=(0, 0, 0),
+                    orientation="VelocityPerpendicular", direction="Top", brightness=2,
+                    ptag=ptag, cancel_tag=tag)
 
 
 def p_rings(scale: float = 1.0, n: int = 3, col=(PALE, GOLD), pos=(0, 0, 2),
@@ -250,14 +261,15 @@ def p_rings(scale: float = 1.0, n: int = 3, col=(PALE, GOLD), pos=(0, 0, 2),
 
 def p_motes(scale: float = 1.0, n: int = 12, col=(PALE, GOLD, JADE), part: str = HRP,
             pos=(0, 0, 0), box=(3, 5, 3), life=(0.9, 1.5), rise: float = 5,
-            duration: float = 0, rate: float = 0, lock: bool = False, tag: str | None = None):
+            duration: float = 0, rate: float = 0, lock: bool = False, tag: str | None = None,
+            ptag: str | None = None):
     """Glowing motes drifting upward from a volume (burst, or a stream with a
     duration - tag it so CancelParticle can end it)."""
     return Particle(T.GLOW, part, pos, col=col, size=(0.6 * scale, 0.15 * scale),
                     transparency=(1, 0, 1), lifetime=life, speed=(1, 3), drag=0.5,
                     emit=n, rate=rate, duration=duration, spread=(25, 25, 0),
                     accel=(0, rise, 0), part_size=box, brightness=3, zoffset=0.5,
-                    lock=lock, cancel_tag=tag)
+                    lock=lock, cancel_tag=tag, ptag=ptag)
 
 
 def p_dust(scale: float = 1.0, y: float = GROUND, z: float = 0.0):

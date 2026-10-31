@@ -70,6 +70,25 @@ def _expand(line):
     return out
 
 
+def _hit_times(n, t):
+    """A stationary projectile (SPEED 0) with CONTINUE re-hits whoever stays inside
+    every FILTER INTERVAL for its whole TIME - a sure-hit zone. Everything else
+    is modelled as one hit when it is spawned."""
+    try:
+        speed = float(n.get("SPEED", 1) or 0)
+        fi = float(n.get("FILTER INTERVAL", 0) or 0)
+        life = float(n.get("TIME", 0) or 0)
+    except (TypeError, ValueError):
+        return [t]
+    if n.get("K_NAME") == "PROJECTILE" and n.get("CONTINUE") and speed == 0 and 0 < fi < life:
+        out, j = [], 0
+        while j * fi < life - 1e-9:
+            out.append(t + j * fi)
+            j += 1
+        return out
+    return [t]
+
+
 def walk(line, start=0.0, label="main", branches=None, take=None, depth=0):
     """Simulate one line. `take` is a dict {jump-key: branch} deciding which jump
     points are taken; jump keys are 'hit', 'miss', 'branch:<name>', 'tag:<name>',
@@ -103,9 +122,10 @@ def walk(line, start=0.0, label="main", branches=None, take=None, depth=0):
                 for m in (branches.get(tb) or {}).get("Line", []) if tb else []:
                     if isinstance(m, dict) and m.get("K_NAME") == "VELO":
                         rag = max(rag, float(m.get("RAGDOLL", 0) or 0))
-                p.hits.append(Hit(round(t, 3), float(n.get("DAMAGE", 0) or 0),
-                                  float(n.get("STUN", 0) or 0), k, tb,
-                                  hit_ragdoll=bool(n.get("HIT RAGDOLL")), ragdoll=rag))
+                for th in _hit_times(n, t):
+                    p.hits.append(Hit(round(th, 3), float(n.get("DAMAGE", 0) or 0),
+                                      float(n.get("STUN", 0) or 0), k, tb,
+                                      hit_ragdoll=bool(n.get("HIT RAGDOLL")), ragdoll=rag))
             hit_happened = True
             b = n.get("BRANCH")
             if b and take.get("hit") == b and b in branches and depth < 8:
@@ -228,7 +248,8 @@ def table(rows) -> str:
     head = "| Move / path | Startup | Hits (t: dmg / stun) | Total dmg | Recovery | Advantage |\n|---|---|---|---|---|---|"
     lines = [head]
     for name, p in rows:
-        hits = ", ".join(f"{h.t:.2f}s: {h.dmg:g}/{h.stun:g}" for h in p.hits) or "-"
+        hits = ", ".join(f"{h.t:.2f}s: {h.dmg:g}/{h.stun:g}"
+                         for h in sorted(p.hits, key=lambda h: h.t)) or "-"
         dmg = sum(h.dmg for h in p.hits)
         fh = p.first_hit()
         adv = p.advantage()

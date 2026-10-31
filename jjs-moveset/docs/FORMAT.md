@@ -112,6 +112,10 @@ The usual export writes 37 fields (+ `CANCEL TAG` / `PROJECTILE TAG` when set):
 
 Particles in a `BRANCH TARGET` branch play on the victim (299 such nodes in 16 exports).
 
+### Domains
+
+There is no domain entry or block. Creators build a domain from ordinary nodes, usually on an awakened skill (or by running a built-in one with `SKILL MOVE: "Malevolent Shrine"` etc.). The sure-hit is a **stationary projectile**: `SPEED 0`, `CONTINUE: true` and a `FILTER INTERVAL` re-hit everyone inside every *n* seconds for its `TIME`, usually with `ATTACK TYPE: "Domain"` (494 stationary projectiles and 1,319 Domain-type attacks in exports). Visuals, sounds and particles carrying the same `PROJECTILE TAG` ride it, so the domain stays where it was cast. The `DOMAIN` condition (`Req`) tests whether a domain is active.
+
 ## Animations
 
 `ANIM_USE: [c, i]` — `c` is the base character folder (1 Honored One, 2 Vessel, 3 Restless Gambler, 4 Ten Shadows, 5 Mahoraga, 6 Perfection, 7 Blood Manipulator, 8 Switcher, 9 Locust Guy, 10 Defense Attorney, 11 Star Rage, 12 Heian, 13 Cursed Partners, 14 Aspiring Mangaka, 15 Puppet Master, 16 Head of the Hei, 17 Salaryman, 18 Monkey Kid, 19 Lucky Coward, 20 Crow Charmer, 21 Disaster Plants, 22 True Cannon, 23 Black Death, later characters after), `i` the clip's index in that folder. `tools/data/anim_catalog.json` lists every pair seen in exports with clip length and the median impact frame (where creators put the first hitbox).

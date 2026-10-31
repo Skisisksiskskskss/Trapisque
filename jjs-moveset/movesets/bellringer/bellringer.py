@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import sys
 
@@ -29,7 +30,7 @@ from jjsforge.nodes import (AIR, BAR, HOLD, JUMP, ULT, Anim, Awaken, Branch,  # 
 
 from fx import (BRONZE, DUSK, GOLD, GROUND, HRP, IVORY, JADE, PALE, afterimage, aura,  # noqa: E402,F401
                 bell, bell_ring, burst, chime, flash, fov, glow, gong, light, p_cancel, p_dust,
-                p_flare, p_motes, p_rings, p_shock, p_sparks, p_star, ripple, shake,
+                p_flare, p_motes, p_rings, p_shock, p_sparks, p_star, pillar, ripple, shake,
                 sound_ring, spark, tok, trail)
 
 NAME = "The Bellringer"
@@ -121,8 +122,9 @@ def funeral_toll(post=()) -> Br:
 
 
 # ================================================================ SPAWN ====
-def build_spawn():
-    line = toll_reset() + [
+def build_spawn(domain: bool = False):
+    line = toll_reset() + ([TagSet(GARAN_USED, "0", time=0.05), p_cancel(GARAN_P)]
+                           if domain else []) + [
         p_cancel(AWK_P),
         chime(1.0, vol=1.2),
         ripple(0.6, op=0.5, time=0.7),
@@ -608,8 +610,9 @@ def _grand_knell(consume: bool):
     ]
 
 
-def build_special():
-    """R (★): resonant clap pulse; at 3 Tolls (or awakened) the Grand Knell."""
+def build_special(domain: bool = False):
+    """R (★): resonant clap pulse; at 3 Tolls (or awakened) the Grand Knell.
+    With the domain: awakened, HOLD R expands Hyakusho Garan (once per awakening)."""
     br = {}
     gl, gb = toll_gain("pt", [SetMelee(0, 1.5), Wait(0.3)])
     br.update(gb)
@@ -617,7 +620,12 @@ def build_special():
                      Velo((0, 1, 8), 0.1, rel_branch=True)])
     br["whiff"] = Br([Wait(0.3)])
     br["grand"] = Br(_grand_knell(consume=True))
-    br["awk"] = Br(_grand_knell(consume=False), req=[ULT()])
+    if domain:
+        br["awk"] = Br([Wait(0.2), Branch("garan")] + _grand_knell(consume=False), req=[ULT()])
+        br["awk_gk"] = Br(_grand_knell(consume=False))
+        br.update(garan_branches())
+    else:
+        br["awk"] = Br(_grand_knell(consume=False), req=[ULT()])
     br["fin"] = funeral_toll([*bell(2.2, time=0.7, op=0.35, grow=1.12, ease="Exponential",
                                     ease_dir="Out"), *bell_ring(2.0), ripple(2.4, time=0.9)])
     br["knelled"] = Br([Velo((0, 60, 0), 0.15, rel_branch=True, ragdoll=1.6), *burst(1.4),
@@ -638,7 +646,9 @@ def build_special():
     ] + gl
     return Special("Strike the Bell", 7, line, br,
                    notes="Base: clap pulse. 3 Tolls: Grand Knell (consumes). Awakened: always "
-                         "Grand Knell, 12 s cooldown.")
+                         "Grand Knell, 12 s cooldown"
+                         + ("; hold R: Domain Expansion Hyakusho Garan (once per awakening)."
+                            if domain else "."))
 
 
 # ===================================================== AWAKENING (G) ====
@@ -647,7 +657,7 @@ AWK_FX = "BR_AWKFX"
 AWK_P = "BR_AWKP"          # CANCEL TAG of the awakening's mote stream
 
 
-def build_awakening():
+def build_awakening(domain: bool = False):
     """Joya no Kane - the bell is struck 108 times to dispel the 108 desires."""
     hold_time = AWK_DURATION
     br = {"awk_push": Br([Velo((0, 45, 0), 0.15, rel_branch=True, ragdoll=1.4), *burst(1.3),
@@ -655,6 +665,7 @@ def build_awakening():
     line = [
         State("IFrame", 2.4), State("Stun", 2.1), State("NoM1", 2.2), State("NoJump", 2.2),
         *toll_reset(),
+        *([TagSet(GARAN_USED, "0", time=0.05)] if domain else []),   # one domain per awakening
         Anim(A.VESSEL_ULT),
         Sfx(S.HOLLOW_GONG, vol=2.2, end=2.5, fade_out=1.0, global_=True),
         Sfx(S.AMP_IGNITION, vol=2), chime(0.7, vol=2),
@@ -695,6 +706,102 @@ def build_awakening():
     return Awakening("Joya no Kane: 108 Tolls", AWK_DURATION, line, br,
                      props=Props(invincible=True, no_cancel=True), req=[BAR(99)],
                      delay=2.2, color="255,196,92 92,224,186")
+
+
+# ================================== DOMAIN EXPANSION: HYAKUSHO GARAN ====
+# The Temple of a Hundred Bells. Awakened, HOLD R (once per awakening).
+# The domain is a stationary Domain-type projectile that re-hits everyone
+# inside every GARAN_TICK seconds for GARAN_TIME seconds (sure-hit); the
+# temple's visuals, sound and particles ride the same projectile tag, so the
+# temple stays where it was cast while the Bellringer fights freely inside.
+GARAN = "BR_GARAN"           # projectile tag: the domain itself
+GARAN_USED = "BR_GARANUSED"  # set while this awakening's domain has been spent
+GARAN_P = "BR_GARANP"        # CANCEL TAG of the temple's particle streams
+GARAN_TIME = 8.3             # lifetime: the opening toll + 5 more (6 sure-hit tolls)
+GARAN_TICK = 1.4             # seconds between sure-hit tolls
+GARAN_W = 84                 # barrier / floor diameter (studs)
+GARAN_BOX = (74, 36, 74)     # sure-hit volume (fits inside the colonnade)
+
+
+def garan_temple(t: float = GARAN_TIME) -> list:
+    """The temple: barrier, floor sigil, a ring of pillars, six hanging bells, the
+    great bell overhead, the tolling, a floor wave on every toll, drifting motes.
+    Everything holds, then fades in the last moments (exponential-in easing)."""
+    stay = dict(ease="Exponential", ease_dir="In", ptag=GARAN)
+    w = GARAN_W
+    out = [
+        Visual("Sphere", time=t, size=w, alt_size=1, col=DUSK, alt_col=BRONZE, opacity=0.8,
+               alt_opacity=1, **stay),                                         # barrier
+        Visual("Cylinder", time=t, size=1, alt_size=1, size2=(0.2, w, w),
+               alt_size2=(0.2, w, w), col=BRONZE, alt_col=GOLD, opacity=0.6,
+               alt_opacity=1, pos=(0, GROUND + 0.06, 0), rot=(0, 0, 90), **stay),  # floor
+        Visual("Cylinder", time=t, size=1, alt_size=1, size2=(0.25, 34, 34),
+               alt_size2=(0.25, 34, 34), col=JADE, alt_col=PALE, opacity=0.55,
+               alt_opacity=1, pos=(0, GROUND + 0.1, 0), rot=(0, 0, 90), **stay),   # sigil
+        light(HRP, size=70, bright=1.6, time=t, col=GOLD, hold=True, pos=(0, 12, 0),
+              ptag=GARAN),
+        Sfx(S.CHURCH_TOLLING, vol=2.0, end=t, fade_out=1.5, ptag=GARAN),
+        p_shock(w / 14.0, col=(PALE, GOLD), life=0.9, rate=round(1 / GARAN_TICK, 3),
+                duration=t - 0.3, ptag=GARAN, tag=GARAN_P),        # a floor wave per toll
+        p_motes(1.2, n=0, rate=24, duration=t, pos=(0, GROUND + 1, 0), box=(76, 2, 76),
+                life=(2.0, 3.0), rise=3, ptag=GARAN, tag=GARAN_P),   # incense motes
+    ]
+    for i in range(12):                              # the colonnade on the boundary
+        a = math.radians(i * 30)
+        out.append(pillar(round(39 * math.sin(a), 2), round(39 * math.cos(a), 2),
+                          height=32, time=t, op=0.45, **stay))
+    for i in range(6):                               # six bells between the pillars
+        a = math.radians(30 + i * 60)
+        out += bell(0.55, y=12, x=round(28 * math.sin(a), 2), z=round(28 * math.cos(a), 2),
+                    time=t, op=0.4, **stay)
+    out += bell(2.2, y=20, time=t, op=0.3, **stay)   # the hundredth bell, overhead
+    return out
+
+
+def garan_branches() -> dict:
+    """Branches of the R special that make up the domain (entered from 'awk')."""
+    br = {}
+    br["garan"] = Br([
+        TagCheck(GARAN_USED, "1", "awk_gk"),            # already spent: Grand Knell
+        TagSet(GARAN_USED, "1", AWK_DURATION),
+        State("IFrame", 1.9), State("NoM1", 1.7), State("NoJump", 1.7),
+        State("NoSprint", 1.7), State("DirectionLock", 1.7),
+        Anim(A.CLAP_1, start=0.35, speed=0),            # palms pressed: the incantation
+        Sfx(S.GONG_APM, vol=2.4, end=4.0, fade_out=1.6, global_=True),
+        Sfx(S.AMP_IGNITION, vol=1.8), chime(0.55, vol=2.0),
+        flash(DUSK, 1.3), fov(10, 1.3),
+        aura(HRP, 1.7, 1.3, GOLD, JADE, op=0.2, hold=False), light(HRP, 24, 3, 1.3),
+        p_motes(1.3, n=26, box=(14, 4, 14), life=(0.8, 1.3), rise=10),
+        Wait(0.9),
+        # --- Ryoiki Tenkai: the clap opens the temple -------------------------
+        Anim(A.CLAP_3), Sfx(S.CLAP, vol=2.6), *gong("big", 2.6),
+        flash(PALE, 0.1), shake("Heavy", 1.0, 7), fov(-16, 0.6),
+        Visual("Sphere", time=0.5, size=8, alt_size=GARAN_W / 8, col=GOLD, alt_col=DUSK,
+               opacity=0.3, alt_opacity=0.8, ease="Quad", ease_dir="Out"),   # barrier blooms
+        p_shock(GARAN_W / 14.0, life=0.6),
+        Wait(0.45),
+        # --- the temple stands: sure-hit toll every GARAN_TICK s ---------------
+        Projectile(GARAN, dmg=2, size=GARAN_BOX, pos=(0, 0, 0), speed=0, time=GARAN_TIME,
+                   stun=1.0, stun_anim=True, atk="Domain", continue_=True,
+                   filter_interval=GARAN_TICK, hit_ragdoll=True, ignore_wakeup=True,
+                   blockable=False, target="garan_toll"),
+        *garan_temple(),
+        Hitbox(6, size=GARAN_BOX, pos=(0, 0, 0), stun=1.6, stun_anim=True, atk="Domain",
+               blockable=False, ignore_wakeup=True, hit_ragdoll=True, target="garan_open",
+               finisher="garan_fin"),                   # the opening toll
+        SetCooldown(-1, 30),
+        Wait(0.3),
+    ], req=[HOLD()])
+    br["garan_open"] = Br([*burst(1.2), Sfx(S.HEAVY_HIT, vol=1.8), flash(DUSK, 0.5),
+                           shake("Medium", 0.4, 4),
+                           Velo((0, 16, 0), 0.12, rel_branch=True, ragdoll=1.0)])
+    br["garan_toll"] = Br([chime(1.05, vol=1.2), Sfx(S.HIT_KICK_L, vol=1.3),
+                           *spark(0.7, col=JADE),
+                           Visual("Distortion", time=0.2, size=3, alt_size=1.3, amount=1,
+                                  opacity=0, alt_opacity=1),
+                           flash(BRONZE, 0.1)])
+    br["garan_fin"] = funeral_toll()
+    return br
 
 
 # ============================================ U1  HUNDREDFOLD STRIKES ====
@@ -928,7 +1035,8 @@ def build_108th_toll():
 # ============================================================ MILESTONES ====
 def milestone_entries(stage: int):
     """Entries included at each milestone (cumulative)."""
-    entries = [build_spawn(), build_m1(1), build_m1(2), build_m1(3), build_m4(),
+    domain = stage >= 13
+    entries = [build_spawn(domain), build_m1(1), build_m1(2), build_m1(3), build_m4(),
                build_dash(polish=stage >= 12)]
     if stage >= 2:
         entries.append(build_striking_log())
@@ -939,9 +1047,9 @@ def milestone_entries(stage: int):
     if stage >= 5:
         entries.append(build_bell_toll())
     if stage >= 6:
-        entries.append(build_special())
+        entries.append(build_special(domain))
     if stage >= 7:
-        entries.append(build_awakening())
+        entries.append(build_awakening(domain))
     if stage >= 8:
         entries.append(build_hundredfold())
     if stage >= 9:
@@ -966,6 +1074,7 @@ MILESTONES = [
     (10, "0.10", "Ultimate 3 - Sympathetic Cascade"),
     (11, "0.11", "Ultimate 4 - The 108th Toll"),
     (12, "1.0", "Release: awakened dash, kill flourish, verified combo guide"),
+    (13, "1.1", "Domain Expansion - Hyakusho Garan, the Temple of a Hundred Bells"),
 ]
 
 
@@ -1029,6 +1138,8 @@ def frame_rows(ch: Character):
     add("R Strike the Bell (pulse hit)", "Strike the Bell", {"tag:BR_TOLL": "pt_1"})
     add("R Strike the Bell (whiff)", "Strike the Bell", {"miss": "whiff", **W})
     add("R ★ Grand Knell (ragdoll)", "Strike the Bell", {"tag:BR_TOLL": "grand"})
+    add("R ◆ Domain: Hyakushō Garan (awakened, hold R; sure-hit tolls)", "Strike the Bell",
+        {"branch:awk": True, "branch:garan": True})
     add("U1 Hundredfold Strikes (ragdoll)", "Hundredfold Strikes", {"hit": "flurry"})
     add("U1 Hundredfold Strikes (whiff)", "Hundredfold Strikes", W)
     add("U2 Kanemaki (trapped, ragdoll)", "Kanemaki", {"hit": "trapped"})

@@ -89,6 +89,43 @@ def test_combo_checker_respects_nom1():
     assert not ok                     # 0.9 + 0.2 > 0.2 + 0.75 -> a gap
 
 
+def test_stationary_projectile_is_a_sure_hit_zone():
+    from jjsforge import analyze
+    zone = nodes.Projectile("Z", dmg=2, speed=0, time=3, stun=1, continue_=True,
+                            filter_interval=1)
+    p = analyze.walk([zone])
+    assert [h.t for h in p.hits] == [0, 1, 2]            # re-hits every FILTER INTERVAL
+    moving = nodes.Projectile("M", dmg=2, speed=50, time=3, continue_=True,
+                              filter_interval=1)
+    assert len(analyze.walk([moving]).hits) == 1           # travelling: one modelled hit
+
+
+def test_domain_expansion_wiring():
+    import bellringer
+    doc = {e["NAME"]: e for e in bellringer.build(13).document()}
+    data = json.loads(doc["Strike the Bell"]["DATA"])
+    br = data["Branch"]
+    awk = br["awk"]["Line"]
+    assert awk[0]["K_NAME"] == "WAIT" and awk[1] == nodes.Branch("garan")
+    assert br["garan"]["Req"] == [nodes.HOLD()]            # hold R while awakened
+    garan = br["garan"]["Line"]
+    assert garan[0]["K_NAME"] == "TAG" and garan[0]["CHECK"] and garan[0]["BRANCH"] == "awk_gk"
+    zone = [n for n in garan if n["K_NAME"] == "PROJECTILE"]
+    assert len(zone) == 1 and zone[0]["SPEED"] == 0 and zone[0]["CONTINUE"]
+    assert zone[0]["ATTACK TYPE"] == "Domain" and zone[0]["TIME"] > zone[0]["FILTER INTERVAL"]
+    riders = [n for n in garan if n.get("PROJECTILE TAG") == bellringer.GARAN
+              and n["K_NAME"] != "PROJECTILE"]
+    assert len(riders) > 40                                # the temple rides the domain
+    # one domain per awakening: the flag is cleared on spawn and on awakening
+    for name in ("Bonsho", "Joya no Kane: 108 Tolls"):
+        line = json.loads(doc[name]["DATA"])["Line"]
+        assert any(n.get("TAG") == bellringer.GARAN_USED and n.get("VALUE") == "0"
+                   for n in line), name
+    # v1.0 has no domain
+    old = {e["NAME"]: e for e in bellringer.build(12).document()}
+    assert "garan" not in json.loads(old["Strike the Bell"]["DATA"])["Branch"]
+
+
 def test_skill_lockouts_end_with_skill():
     import bellringer
     ch = bellringer.build(bellringer.MILESTONES[-1][0])

@@ -1,4 +1,4 @@
-# THE BELLRINGER — design document (v1.0)
+# THE BELLRINGER — design document (v1.1)
 
 > *"Every blow I land is a bell I've struck. Strike enough of them, and your body forgets how to stop ringing."*
 
@@ -13,7 +13,7 @@ An original Jujutsu Shenanigans character for the Skill Builder. A temple-bell m
 | **Tolls (0–3)** | Landing hits rings you like a bell. **M1 #2, M1 #4 (any direction), Striking Log, Reverb Palm, Toll Wave, Bell Toll, the dash and the R pulse** each add **+1 Toll** (max 3) when they connect. Tolls fade **12 s** after your last gain. |
 | **Readout** | 1 Toll: right palm glows gold. 2 Tolls: both palms (golden motes rise from the palm that lights up). **3 Tolls = RESONANT**: bronze/jade body aura, a burst of rising motes, and **a small spectral bell hangs over your head** (both players can see the Knell is ready). Each gain rings a small temple bell that rises in pitch; reaching 3 answers with a deeper brass bell. |
 | **Knell** | At 3 Tolls the moves marked ★ — **Reverb Palm, Bell Toll, Strike the Bell (R)** — become their **Knell** version. Reverb Palm and Bell Toll consume the Tolls **only if they connect**; the R Grand Knell consumes on use (it doubles as an escape). |
-| **Awakening** | *Joya no Kane*: the bell never stops ringing. Awakened M1s chime, the M1 finisher releases an echo ring, the dash echoes, and **every R is a Grand Knell** (12 s cooldown). |
+| **Awakening** | *Joya no Kane*: the bell never stops ringing. Awakened M1s chime, the M1 finisher releases an echo ring, the dash echoes, **every R is a Grand Knell** (12 s cooldown), and **holding R expands the Domain** once per awakening. |
 
 The decision every exchange: spend the Knell on **Reverb Palm** (longest extension, 18 dmg), **Bell Toll** (biggest single hit + awakening meter, 18 dmg) or **R Grand Knell** (AoE launch, i-frames, +12 awakening) — or keep stacking toward the awakening.
 
@@ -50,9 +50,21 @@ Named after the Buddhist New-Year rite of striking the temple bell 108 times to 
 | 3 | **Sympathetic Cascade** | 16 s | Stomp → three resonance rings expand across the floor (≈8 / 15 / 22 studs, 0.3 s apart, hit downed targets); the third pops everyone up. **Up to 13 dmg.** |
 | 4 | **The 108th Toll** | 30 s | Palm thrust; on hit you turn invulnerable, a colossal bell descends over you both, seven rapid tolls ring, the 108th detonates. **26 dmg.** |
 
+## Domain Expansion — *Hyakushō Garan*, the Temple of a Hundred Bells
+
+**Awakened: hold R** (instead of tapping it for the Grand Knell). Once per awakening; afterwards R rests for 30 s.
+
+1. **Incantation (0.9 s, invulnerable):** palms pressed in prayer, a deep gong (heard map-wide), the world dims and golden motes gather.
+2. **Ryōiki Tenkai:** a clap, a giant bell crash, and the barrier blooms: an 84-stud bronze dome.
+3. **The temple stands for 8.3 s where it was cast:** a bronze floor with a jade sigil, a colonnade of twelve pillars on the boundary, six spectral bells hanging between them, the great Hundredth Bell overhead, incense motes drifting up and the endless tolling of temple bells.
+4. **Sure-hit:** the opening toll hits everyone inside for **6** (1.6 s stun, kill flourish on a kill). Then the temple **tolls every 1.4 s**, and each toll hits everyone inside for **2** with a 1.0 s stun. It can't be blocked, it hits downed targets, and a golden wave crosses the floor each time. That's **18 sure-hit damage** over the domain.
+5. **You are free** 1.85 s after the hold (+1.3 s advantage on the opening toll): the temple keeps everyone ringing while you fight inside it. Every toll re-stuns, so a dropped combo can always be re-opened before the next bell.
+
+How it's built: the domain is a **stationary Domain-type projectile** (speed 0, `CONTINUE`, `FILTER INTERVAL` 1.4 s), which is how creators build domain sure-hits. Every visual, sound and particle of the temple rides its projectile tag, so the temple stays put while the Bellringer moves. Everything holds, then fades in the last moments.
+
 ## Kill flourish
 
-When a big move lands the killing blow (Knell Reverb burst, Knell Bell Toll, Grand Knell, and the final hits of all ultimates), the Bellringer presses palms in prayer while a funeral bell tolls three times and a spectral bell rises over the fallen.
+When a big move lands the killing blow (Knell Reverb burst, Knell Bell Toll, Grand Knell, the Domain's opening toll, and the final hits of all ultimates), the Bellringer presses palms in prayer while a funeral bell tolls three times and a spectral bell rises over the fallen.
 
 ## Combo routes (all verified — see COMBOS.md for the frame-by-frame)
 
@@ -84,4 +96,5 @@ Thrice-Rung is the signature: it builds exactly three Tolls (M1 #2, Striking Log
 - Moves reset the M1 counter (`SETMELEE`) so routes chain M1 strings instead of `1 2 3 4`.
 - Hitboxes that should catch knocked-down bodies say so (`HIT RAGDOLL`), and only those: Log, Falling Log, Toll Wave, the bells and the cascade.
 - Lockouts (NoM1 / NoJump / NoSprint / direction lock) end with the move, so recovery is exactly the timeline length.
-- Damage and stun live in the base roster's range (100 HP; 3–4 per M1, 6–18 per move, 22–26 per ultimate).
+- Damage and stun live in the base roster's range (100 HP; 3–4 per M1, 6–18 per move, 22–26 per ultimate, 18 sure-hit for the domain).
+- Like the roster's domain users, the awakening has a Domain Expansion, kept off the hotbar (hold R) so the kit stays 4 + 4.

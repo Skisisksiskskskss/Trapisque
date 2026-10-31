@@ -1,4 +1,4 @@
-# Combos — The Bellringer v1.0
+# Combos — The Bellringer v1.1
 
 Every route below is simulated from the real timelines by `jjsforge.analyze.check_combo` on each build (the build fails if one breaks). Each step starts the moment the previous one recovers. *True combo* = the first hit lands while the target is still in hitstun (spare time shown); *OTG* = it lands on a ragdolled target with a hitbox that can hit ragdolls. Assumes the target is in range (lunges and pulls handle most spacing) and no burst/evasive is used.
 

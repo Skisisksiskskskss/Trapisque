@@ -1,6 +1,6 @@
 # The Bellringer — a custom Jujutsu Shenanigans moveset
 
-An original JJS character for the in-game **Skill Builder**: a temple-bell monk whose hits build **Tolls** that cash out as **Knells**. 4 base moves, 4 ultimates, an R special, custom M1s (uptilt/downslam), dash, awakening, a kill flourish, and nine machine-verified combo routes.
+An original JJS character for the in-game **Skill Builder**: a temple-bell monk whose hits build **Tolls** that cash out as **Knells**. 4 base moves, 4 ultimates, a **Domain Expansion**, an R special, custom M1s (uptilt/downslam), dash, awakening, a kill flourish, and nine machine-verified combo routes.
 
 - Design: [`movesets/bellringer/DESIGN.md`](movesets/bellringer/DESIGN.md)
 - Combos (verified frame by frame): [`movesets/bellringer/COMBOS.md`](movesets/bellringer/COMBOS.md)
@@ -8,7 +8,7 @@ An original JJS character for the in-game **Skill Builder**: a temple-bell monk 
 
 ## Import it
 
-1. Open **`dist/bellringer_latest.txt`** (= v1.0) and copy the whole single line (it starts with `KLUv/`).
+1. Open **`dist/bellringer_latest.txt`** (= v1.1) and copy the whole single line (it starts with `KLUv/`).
 2. In JJS, open a **private server** with Build Mode, open your **Character Block → Configure** (the Skill Builder) and paste the code into **Import**.
 3. Any base character works (every slot is custom). A fist-fighter base such as **Vessel** gives the best idle/run animations.
 
@@ -20,7 +20,8 @@ The code must be pasted complete; one missing character breaks it. The `.json` n
 - At 3 Tolls, **2 Reverb Palm**, **4 Bell Toll** and **R** become **Knells** (much stronger versions).
 - **Hold 1** for a charged ram, use **1 in the air** to dive. **Hold 3** for the multi-hit Sustained Note.
 - BnB: `M1 M1 M1 → 2 → M1 M1 M1 M4 → 1`. Signature: `M1 M1 → 1 → M1 M1 M1 → 2 (Knell) → 3`.
-- **G** (full bar): *Joya no Kane* — four new ultimates; R is always the Grand Knell.
+- **G** (full bar): *Joya no Kane* — four new ultimates; tapping R is always the Grand Knell.
+- **Awakened, hold R**: Domain Expansion *Hyakushō Garan* (once per awakening). A temple of bells stands for 8 s where you cast it; everyone inside is tolled (sure-hit) every 1.4 s while you fight.
 
 ## Milestones
 
@@ -39,7 +40,8 @@ Every milestone file is regenerated from the current source, so fixes found late
 | v0.9 | + **Ult 2 Kanemaki** (trap the target in a bell, strike it thrice, shatter) | `dist/bellringer_v0.9.txt` |
 | v0.10 | + **Ult 3 Sympathetic Cascade** (stomp, three expanding resonance rings) | `dist/bellringer_v0.10.txt` |
 | v0.11 | + **Ult 4 The 108th Toll** (finisher cinematic) — every slot filled | `dist/bellringer_v0.11.txt` |
-| **v1.0** | + awakened dash, **kill flourish** on big finishers, lockouts end with each move, verified combo guide, **particle VFX** (spark sprays, impact stars, floor shockwaves, sound rings, mote auras) | **`dist/bellringer_v1.0.txt`** |
+| v1.0 | + awakened dash, **kill flourish** on big finishers, lockouts end with each move, verified combo guide, **particle VFX** (spark sprays, impact stars, floor shockwaves, sound rings, mote auras) | `dist/bellringer_v1.0.txt` |
+| **v1.1** | + **Domain Expansion: Hyakushō Garan** (awakened, hold R): a sure-hit temple of bells that tolls every 1.4 s while you fight inside it | **`dist/bellringer_v1.1.txt`** |
 
 ## How it was built — and what is (not) verified
 
