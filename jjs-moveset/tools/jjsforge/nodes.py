@@ -225,6 +225,10 @@ def State(state: str, time: float = 1, value=1, cancel_on_end: bool = False,
     _choice(state, STATES, "STATE")
     if isinstance(value, bool) or not isinstance(value, (int, float, str)):
         raise NodeError("STATE VALUE must be a number or numeric string")
+    if isinstance(value, float):
+        # game exports hold integer VALUEs as numbers and anything else as the
+        # string the player typed ("0.3") - never as a JSON float
+        value = int(value) if value.is_integer() else _fmt(value)
     d = {"K_NAME": "STATE", "STATE": state, "VALUE": value, "TIME": _num(time, "TIME"),
          "CANCEL ON END": bool(cancel_on_end), "DISABLE BURST": bool(disable_burst),
          "LAST HIT": _num(last_hit, "LAST HIT"), "CHECK": bool(check)}

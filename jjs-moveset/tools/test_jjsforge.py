@@ -81,6 +81,15 @@ def test_skill_lockouts_end_with_skill():
                     assert n["CANCEL ON END"], (e["NAME"], n)
 
 
+def test_value_types_match_real_exports():
+    import bellringer
+    with open(os.path.join(HERE, "data", "field_types.json")) as f:
+        table = json.load(f)
+    doc = bellringer.build(bellringer.MILESTONES[-1][0]).document()
+    issues = validate.check_export_types(doc, table)
+    assert not issues, "\n".join(issues[:10])
+
+
 def test_bellringer_builds():
     import bellringer
     for stage, version, _ in bellringer.MILESTONES:

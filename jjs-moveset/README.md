@@ -44,7 +44,7 @@ Every milestone file is regenerated from the current source, so fixes found late
 ## How it was built — and what is (not) verified
 
 - The code format was reverse-engineered from 224 real game exports and cross-checked with the open-source `libjjs` library: [`docs/FORMAT.md`](docs/FORMAT.md).
-- `tools/jjsforge` emits exactly the field names and value types the game exports, validates every build (branch references, loop bounds, value types, animation ids seen in real exports) and simulates timings; `tools/test_jjsforge.py` runs the checks.
+- `tools/jjsforge` emits exactly the field names and value types the game exports (every field's JSON type is checked against the types real exports use), validates every build (branch references, loop bounds, animation ids seen in real exports) and simulates timings; `tools/test_jjsforge.py` runs the checks. `tools/verify_codes.js` re-decodes every code with a second, independent zstd implementation (Node's).
 - Animations are built-in JJS clips; impact timings come from where hundreds of creators place hitboxes on each clip. Sounds are the JJS developer's own uploads plus Roblox's licensed ProSoundEffects/APM bell & gong library — all checked as public and approved.
 - **Not yet imported in-game.** Everything is structurally identical to working exports and the combos are verified against the timelines, but visual sizes (the spectral bell is built from Cylinder/Sphere effects) and exact feel should get one pass in a private server.
 
@@ -60,4 +60,8 @@ python3 movesets/bellringer/bellringer.py
 
 ```bash
 python3 tools/test_jjsforge.py
+```
+
+```bash
+node tools/verify_codes.js dist/*.txt
 ```

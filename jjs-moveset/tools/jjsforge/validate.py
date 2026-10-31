@@ -244,6 +244,37 @@ def check_cond(c, where, rep):
         rep.err(where, f"bad condition {c!r}")
 
 
+def _jtype(v):
+    if isinstance(v, bool):
+        return "bool"
+    if isinstance(v, int):
+        return "int"
+    return {float: "float", str: "str", list: "list", dict: "dict"}.get(type(v), type(v).__name__)
+
+
+def check_export_types(document, table: dict) -> list:
+    """Fields whose JSON value type never occurs in real game exports
+    (table: tools/data/field_types.json). Returns a list of messages."""
+    issues = []
+    for e in document:
+        try:
+            data = json.loads(e["DATA"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        lines = [data.get("Line", [])] + [b.get("Line", []) for b in
+                                          (data.get("Branch") or {}).values()]
+        for line in lines:
+            for n in line:
+                known = table.get(n.get("K_NAME"), {})
+                for f, v in n.items():
+                    if f == "K_NAME" or f not in known:
+                        continue
+                    if _jtype(v) not in known[f]:
+                        issues.append(f"{e.get('NAME')}: {n['K_NAME']}.{f} is {_jtype(v)} "
+                                      f"({v!r}); exports only use {known[f]}")
+    return issues
+
+
 def validate(document, known_anims=None, layout=True) -> Report:
     rep = Report()
     if not isinstance(document, list):

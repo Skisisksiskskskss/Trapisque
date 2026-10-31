@@ -14007,7 +14007,7 @@
       {
        "K_NAME": "STATE",
        "STATE": "SpeedMultiplier",
-       "VALUE": 0.35,
+       "VALUE": "0.35",
        "TIME": 0.6,
        "CANCEL ON END": true,
        "DISABLE BURST": false,
@@ -22867,7 +22867,7 @@
       {
        "K_NAME": "STATE",
        "STATE": "SpeedMultiplier",
-       "VALUE": 0.4,
+       "VALUE": "0.4",
        "TIME": 0.45,
        "CANCEL ON END": true,
        "DISABLE BURST": false,

@@ -1,0 +1,805 @@
+{
+"AIR": {
+"FLIP": [
+"bool"
+]
+},
+"ANIM": {
+"ANIM_USE": [
+"list",
+"str"
+],
+"FADE IN": [
+"float",
+"int"
+],
+"FADE OUT": [
+"float",
+"int"
+],
+"LAST HIT": [
+"float",
+"int"
+],
+"LOOPED": [
+"bool"
+],
+"PREVIEW": [
+"list"
+],
+"SPEED": [
+"float",
+"int"
+]
+},
+"BRANCH": {
+"BRANCH": [
+"str"
+],
+"LAST HIT": [
+"float",
+"int"
+],
+"RANDOM": [
+"str"
+]
+},
+"CONNECT": {
+"RANGE": [
+"NoneType"
+],
+"SIGNAL": [
+"str"
+],
+"TIME": [
+"float",
+"int"
+]
+},
+"COUNTER": {
+"ATTACK TYPE2": [
+"str"
+],
+"BRANCH": [
+"str"
+],
+"BRANCH TARGET": [
+"str"
+],
+"CANCEL ENEMY": [
+"bool"
+],
+"CONTINUE": [
+"bool"
+],
+"REFLECT": [
+"bool"
+],
+"REMOVE ON HIT": [
+"bool"
+],
+"STUN": [
+"float",
+"int"
+],
+"TIME": [
+"float",
+"int"
+]
+},
+"EVGIB": {
+"AMOUNT": [
+"float",
+"int"
+]
+},
+"GRAB": {
+"BODY PART": [
+"str"
+],
+"BODY PART2": [
+"str"
+],
+"LAST HIT": [
+"float",
+"int"
+],
+"POSITION": [
+"str"
+],
+"ROTATION": [
+"str"
+],
+"TIME": [
+"float",
+"int"
+]
+},
+"HITBOX": {
+"360 BLOCK": [
+"bool"
+],
+"ATTACK TYPE": [
+"str"
+],
+"BLOCKABLE": [
+"bool"
+],
+"BRANCH": [
+"str"
+],
+"BRANCH FINISHER": [
+"str"
+],
+"BRANCH TARGET": [
+"str"
+],
+"CAN KILL": [
+"bool"
+],
+"CANCEL ENEMY": [
+"bool"
+],
+"CLEAR KNOCKBACK": [
+"bool"
+],
+"DAMAGE": [
+"float",
+"int"
+],
+"DEBREE": [
+"float",
+"int"
+],
+"HIT RAGDOLL": [
+"bool"
+],
+"HIT USER": [
+"bool"
+],
+"IGNORE WAKEUP": [
+"bool"
+],
+"LINK USER": [
+"float",
+"int"
+],
+"POSITION": [
+"str"
+],
+"PREVIEW": [
+"list"
+],
+"PROJECTILE TAG": [
+"str"
+],
+"ROTATION": [
+"str"
+],
+"SINGLE TARGET": [
+"bool"
+],
+"SIZE": [
+"str"
+],
+"STUN": [
+"float",
+"int"
+],
+"STUN ANIM": [
+"bool"
+]
+},
+"HITCNCL": {
+"BRANCH": [
+"str"
+],
+"ENDLAG": [
+"float",
+"int"
+],
+"FLIP": [
+"bool"
+],
+"TIME": [
+"float",
+"int"
+]
+},
+"HPGIB": {
+"AMOUNT": [
+"float",
+"int"
+],
+"CAN KILL": [
+"bool"
+]
+},
+"LOOK": {
+"CAMERA DIRECTION": [
+"bool"
+],
+"GROUNDED": [
+"bool"
+],
+"HORIZONTAL ONLY": [
+"bool"
+],
+"LAST HIT": [
+"float",
+"int"
+],
+"PROJECTILE TAG": [
+"str"
+],
+"RELATIVE FROM BRANCH": [
+"bool"
+],
+"SMOOTHNESS": [
+"int"
+],
+"TIME": [
+"float",
+"int"
+]
+},
+"LOOP": {
+"HOLD": [
+"bool"
+],
+"LOOP AMOUNT": [
+"float",
+"int"
+],
+"LOOP BACK": [
+"float",
+"int"
+]
+},
+"PARTICLE": {
+"ACCELERATION": [
+"str"
+],
+"BODY PART": [
+"str"
+],
+"BRIGHTNESS": [
+"float",
+"int"
+],
+"CANCEL": [
+"bool"
+],
+"CANCEL ON INTERRUPT": [
+"bool"
+],
+"CANCEL TAG": [
+"str"
+],
+"CLIENT SIDED": [
+"bool"
+],
+"COLOR": [
+"str"
+],
+"DRAG": [
+"float",
+"int"
+],
+"DURATION": [
+"float",
+"int"
+],
+"EMISSION DIRECTION": [
+"str"
+],
+"EMIT COUNT": [
+"float",
+"int"
+],
+"FLIPBOOK FRAMERATE": [
+"str"
+],
+"FLIPBOOK MODE": [
+"str"
+],
+"FLIPBOOK SIZE": [
+"str"
+],
+"LAST HIT": [
+"float",
+"int"
+],
+"LIFETIME": [
+"str"
+],
+"LIGHT EMISSION": [
+"float",
+"int"
+],
+"LIGHT INFLUENCE": [
+"float",
+"int"
+],
+"LOCK TO PART": [
+"bool"
+],
+"ORIENTATION TYPE": [
+"str"
+],
+"PART SIZE": [
+"str"
+],
+"POSITION": [
+"str"
+],
+"PROJECTILE TAG": [
+"str"
+],
+"RATE": [
+"float",
+"int"
+],
+"ROT SPEED": [
+"str"
+],
+"ROTATION": [
+"str"
+],
+"RUN IN SERVER": [
+"bool"
+],
+"RUN ON SERVER": [
+"bool"
+],
+"SHAPE": [
+"str"
+],
+"SHAPE INOUT": [
+"str"
+],
+"SHAPE PARTIAL": [
+"float",
+"int"
+],
+"SIZE": [
+"str"
+],
+"SPEED": [
+"str"
+],
+"SPREAD ANGLE": [
+"str"
+],
+"SQUASH": [
+"str"
+],
+"TEXTURE": [
+"int",
+"str"
+],
+"TRANSPARENCY": [
+"str"
+],
+"ZOFFSET": [
+"float",
+"int"
+]
+},
+"PROJECTILE": {
+"360 BLOCK": [
+"bool"
+],
+"AIM LAST HIT": [
+"float",
+"int"
+],
+"ATTACK TYPE": [
+"str"
+],
+"BLOCKABLE": [
+"bool"
+],
+"BRANCH": [
+"str"
+],
+"BRANCH COLLIDED": [
+"str"
+],
+"BRANCH TARGET": [
+"str"
+],
+"CACHE": [
+"bool"
+],
+"CAN KILL": [
+"bool"
+],
+"CANCEL ENEMY": [
+"bool"
+],
+"CANCEL PROJECTILE": [
+"bool"
+],
+"CLEAR KNOCKBACK": [
+"bool"
+],
+"CONTINUE": [
+"bool"
+],
+"DAMAGE": [
+"float",
+"int"
+],
+"DEBREE": [
+"float",
+"int"
+],
+"FILTER INTERVAL": [
+"float",
+"int"
+],
+"HIT RAGDOLL": [
+"bool"
+],
+"HIT USER": [
+"bool"
+],
+"ID CHECK": [
+"bool"
+],
+"IGNORE WAKEUP": [
+"bool"
+],
+"POSITION": [
+"str"
+],
+"PROJECTILE TAG": [
+"str"
+],
+"REFLECT COUNT": [
+"float",
+"int"
+],
+"ROTATION": [
+"str"
+],
+"SIZE": [
+"str"
+],
+"SPAWN AT PROJECTILE TAG": [
+"str"
+],
+"SPEED": [
+"float",
+"int"
+],
+"STUN": [
+"float",
+"int"
+],
+"STUN ANIM": [
+"bool"
+],
+"TIME": [
+"float",
+"int"
+]
+},
+"SETCD": {
+"COOLDOWN": [
+"float",
+"int"
+],
+"KEY": [
+"int"
+]
+},
+"SETMELEE": {
+"COMBO": [
+"int"
+],
+"LAST HIT": [
+"int"
+],
+"OFFSET": [
+"float",
+"int"
+]
+},
+"SFX": {
+"CANCEL": [
+"bool"
+],
+"CLIENT SIDED": [
+"bool"
+],
+"END": [
+"float",
+"int"
+],
+"FADE IN": [
+"float",
+"int"
+],
+"FADE OUT": [
+"float",
+"int"
+],
+"GLOBAL": [
+"bool"
+],
+"ID": [
+"int"
+],
+"LAST HIT": [
+"int"
+],
+"PROJECTILE TAG": [
+"str"
+],
+"SPEED": [
+"float",
+"int"
+],
+"START": [
+"float",
+"int"
+],
+"VOLUME": [
+"float",
+"int"
+]
+},
+"SKILL": {
+"CANCEL LAST": [
+"bool"
+],
+"ENABLE VARIANTS": [
+"bool"
+],
+"HOLD FOR": [
+"float",
+"int"
+],
+"MOVE": [
+"str"
+],
+"SPEED": [
+"float",
+"int"
+],
+"START": [
+"float",
+"int"
+]
+},
+"SPECIAL": {
+"CANCEL LAST": [
+"bool"
+],
+"ENABLE VARIANTS": [
+"bool"
+],
+"SPEC": [
+"str"
+],
+"SPEED": [
+"float",
+"int"
+]
+},
+"STATE": {
+"BRANCH": [
+"str"
+],
+"CANCEL ON END": [
+"bool"
+],
+"CHECK": [
+"bool"
+],
+"DISABLE BURST": [
+"bool"
+],
+"LAST HIT": [
+"float",
+"int"
+],
+"STATE": [
+"str"
+],
+"STATE TAG": [
+"str"
+],
+"TIME": [
+"float",
+"int"
+],
+"VALUE": [
+"int",
+"str"
+]
+},
+"TAG": {
+"ADD/REMOVE": [
+"bool"
+],
+"BRANCH": [
+"str"
+],
+"CHECK": [
+"bool"
+],
+"LAST HIT": [
+"float",
+"int"
+],
+"SET": [
+"bool"
+],
+"TAG": [
+"str"
+],
+"TIME": [
+"float",
+"int"
+],
+"VALUE": [
+"str"
+]
+},
+"TELEPORT": {
+"IGNORE WALLS": [
+"bool"
+],
+"LAST HIT": [
+"float",
+"int"
+],
+"POSITION": [
+"str"
+],
+"PROJECTILE TAG": [
+"str"
+],
+"RELATIVE FROM BRANCH": [
+"bool"
+],
+"ROTATION": [
+"str"
+]
+},
+"ULTGIB": {
+"AMOUNT": [
+"float",
+"int"
+]
+},
+"VELO": {
+"FADE": [
+"bool"
+],
+"FORCE": [
+"str"
+],
+"LAST HIT": [
+"float",
+"int"
+],
+"RAGDOLL": [
+"float",
+"int"
+],
+"RELATIVE FROM BRANCH": [
+"bool"
+],
+"TIME": [
+"float",
+"int"
+],
+"TRACK": [
+"bool"
+],
+"TRUE RAGDOLL": [
+"bool"
+]
+},
+"VISUAL": {
+"ALT COLOR": [
+"str"
+],
+"ALT OPACITY": [
+"float",
+"int"
+],
+"ALT POSITION": [
+"str"
+],
+"ALT ROTATION": [
+"str"
+],
+"ALT SIZE": [
+"float",
+"int"
+],
+"ALT SIZE 2": [
+"str"
+],
+"AMOUNT": [
+"float",
+"int"
+],
+"BODY PART": [
+"str"
+],
+"CAN COLLIDE": [
+"bool"
+],
+"CANCEL ON INTERRUPT": [
+"bool"
+],
+"CLIENT SIDED": [
+"bool"
+],
+"COLOR": [
+"str"
+],
+"EASING DIRECTION": [
+"str"
+],
+"EASING STYLE": [
+"str"
+],
+"EFFECT": [
+"str"
+],
+"LAST HIT": [
+"float",
+"int"
+],
+"OPACITY": [
+"float",
+"int"
+],
+"POSITION": [
+"str"
+],
+"PROJECTILE TAG": [
+"str"
+],
+"RELATIVE FROM BRANCH": [
+"bool"
+],
+"ROTATION": [
+"str"
+],
+"RUN ON SERVER": [
+"bool"
+],
+"SIZE": [
+"float",
+"int"
+],
+"SIZE 2": [
+"str"
+],
+"TEXTURE": [
+"float",
+"int"
+],
+"TIME": [
+"float",
+"int"
+],
+"VISUAL TAG": [
+"str"
+]
+},
+"WAIT": {
+"TIME": [
+"float",
+"int"
+]
+}
+}
