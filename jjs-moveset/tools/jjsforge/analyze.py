@@ -89,6 +89,8 @@ def walk(line, start=0.0, label="main", branches=None, take=None, depth=0):
             elif st == "NoM1":
                 p.no_m1_until = max(p.no_m1_until, t + dur)
         elif k in ("HITBOX", "PROJECTILE"):
+            if take.get("whiff"):
+                continue     # whiff scenario: nothing connects, only recovery matters
             if float(n.get("DAMAGE", 0) or 0) > 0 or float(n.get("STUN", 0) or 0) > 0:
                 p.hits.append(Hit(round(t, 3), float(n.get("DAMAGE", 0) or 0),
                                   float(n.get("STUN", 0) or 0), k, n.get("BRANCH TARGET")))
@@ -152,6 +154,9 @@ def table(rows) -> str:
         dmg = sum(h.dmg for h in p.hits)
         fh = p.first_hit()
         adv = p.advantage()
-        lines.append(f"| {name} | {'-' if fh is None else f'{fh:.2f}s'} | {hits} | {dmg:g} | "
-                     f"{p.recovery:.2f}s | {'-' if adv is None else f'{adv:+.2f}s'} |")
+        lines.append(f"| {name} | {'-' if fh is None else f'{fh:.2f}s'} | {hits} | "
+                     f"{dmg:g} | {p.recovery:.2f}s | {'-' if adv is None else f'{adv:+.2f}s'} |")
+    lines.append("")
+    lines.append("Rows marked *ragdoll* end in knockback/launch: their advantage is decided by "
+                 "the ragdoll time rather than hitstun.")
     return "\n".join(lines)

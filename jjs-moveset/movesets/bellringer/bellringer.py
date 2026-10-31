@@ -244,15 +244,96 @@ def build_dash():
     return Chase("Shumoku Step", 6, line, br)
 
 
+# ====================================================== 1  STRIKING LOG ====
+def _lunge_checks(dmg, size, pos, stun, branch, target, checks=3, **kw):
+    """A hitbox re-checked every 0.06 s while the user travels."""
+    return [Hitbox(dmg, size=size, pos=pos, stun=stun, stun_anim=True, branch=branch,
+                   target=target, **kw),
+            Wait(0.06), Loop(2, checks)]
+
+
+def build_striking_log():
+    """Move 1: ram the log into the bell. Starter that resets the M1 string."""
+    br = {}
+    # ---- tap -----------------------------------------------------------
+    gl, gb = toll_gain("lt", [SetMelee(0, 1.5), Wait(0.3)])
+    br.update(gb)
+    br["hit"] = Br([Velo((0, 0.01, 0), 0.05), shake("Medium", 0.35, 3), fov(-6, 0.3),
+                    light("Right Arm", 10, 4, 0.3)] + gl)
+    br["struck"] = Br([Sfx(S.PUNCH_3, vol=2.4), Sfx(S.HEAVY_HIT, vol=1.8), *gong("small", 1.8),
+                       Velo((0, 2, 16), 0.12, rel_branch=True), *burst(1.1),
+                       sound_ring((0, 0, 0), 1.2, GOLD, 0.35)])
+    # ---- hold: charged ram (ender) ----------------------------------------
+    cgl, cgb = toll_gain("ct", [Wait(0.35)])
+    br.update(cgb)
+    br["hold"] = Br([
+        State("SpeedMultiplier", 0.6, value=0.35), State("NoJump", 0.6),
+        Anim(A.DIVERGENT_1, start=0.25, speed=0),            # hold the wind-up pose
+        Sfx(S.LUCK_CHARGE, vol=2), aura("Right Arm", 0.8, 0.7, GOLD, PALE, op=0.2, hold=False),
+        light("Right Arm", 9, 3, 0.7), glow(0.6, GOLD, 0.75),
+        Wait(0.6),
+        Sfx(S.FULL_CHARGE_DASH, vol=2.2), Sfx(S.WHOOSH_FAST, vol=1.2),
+        Anim(A.DIVERGENT_1, start=0.25, speed=1.3), afterimage(0.4),
+        trail("Right Arm", 0.5), State("NoM1", 0.9), State("NoJump", 0.9),
+        Velo((0, 0, 120), 0.25, fade=True, track=True),
+        Wait(0.06),
+        *_lunge_checks(9, (9, 9, 10), (0, 0, 4), 1.2, "chit", "cstruck", checks=4),
+        Velo((0, 0.01, 0), 0.05), State("Stun", 0.4), Wait(0.4),
+    ], req=[HOLD()])
+    br["chit"] = Br([Velo((0, 0.01, 0), 0.05), shake("Heavy", 0.5, 4), fov(-10, 0.4),
+                     flash(PALE, 0.06)] + cgl)
+    br["cstruck"] = Br([Sfx(S.PUNCH_3, vol=2.6), Sfx(S.IMPACT_FRAMES, vol=2),
+                        *gong("medium", 2.0), Velo((0, 10, 70), 0.15, rel_branch=True, ragdoll=1.2),
+                        *burst(1.6), *bell_ring(0.6, col=GOLD)])
+    # ---- air: falling log -----------------------------------------------
+    agl, agb = toll_gain("at", [Wait(0.3)])
+    br.update(agb)
+    br["air"] = Br([
+        State("NoM1", 0.75), State("NoJump", 0.75),
+        Sfx(S.WHOOSH_FAST, vol=1.6, speed=0.9), Sfx(S.CURSED_STRIKE_STARTUP, vol=1.6),
+        Anim(A.M1_DOWN, speed=0.8), trail("Right Arm", 0.5), afterimage(0.35),
+        Velo((0, -55, 45), 0.3, track=True),
+        Wait(0.06),
+        *_lunge_checks(6, (8, 10, 8), (0, -2, 3), 1.0, "ahit", "aspike", checks=4,
+                       hit_ragdoll=True),
+        Velo((0, 0.01, 0), 0.05), ripple(0.5, time=0.4), Sfx(S.ROCK_IMPACT, vol=1.2),
+        State("Stun", 0.3), Wait(0.3),
+    ], req=[AIR()])
+    br["ahit"] = Br([Velo((0, 12, 0), 0.1), shake("Medium", 0.35, 3)] + agl)
+    br["aspike"] = Br([Sfx(S.PUNCH_3, vol=2.4), Sfx(S.AIR_SLAMMED, vol=2), *gong("small", 1.6),
+                       Velo((0, -80, 6), 0.15, rel_branch=True, ragdoll=1.1), *burst(1.2),
+                       ripple(0.8, time=0.5), Sfx(S.ROCK_IMPACT, vol=1.6)])
+    line = [
+        Branch("air"),
+        State("NoM1", 0.75), State("NoJump", 0.75), State("NoSprint", 0.75),
+        Sfx(S.CURSED_STRIKE_STARTUP, vol=1.8), tok(1, 1.2),
+        Anim(A.DIVERGENT_1, speed=1.2),
+        light("Right Arm", 8, 2.5, 0.4), aura("Right Arm", 0.6, 0.4, GOLD, PALE, hold=False),
+        Wait(0.18),
+        Branch("hold"),
+        Sfx(S.WHOOSH_FAST, vol=1.4), afterimage(0.35), trail("Right Arm", 0.45),
+        Velo((0, 0, 80), 0.25, fade=True, track=True),
+        Wait(0.08),
+        *_lunge_checks(6, (8, 8, 9), (0, 0, 3.5), 1.0, "hit", "struck", checks=3),
+        Velo((0, 0.01, 0), 0.05), Anim(A.DIVERGENT_1, start=0.6, end=1.4),
+        State("Stun", 0.3), Wait(0.35),
+    ]
+    return Skill("Striking Log", key=1, cooldown=10, line=line, branches=br, props=BASE(),
+                 tooltip="Hold: Charged Log | Air: Falling Log")
+
+
 # ============================================================ MILESTONES ====
 def milestone_entries(stage: int):
     """Entries included at each milestone (cumulative)."""
     entries = [build_spawn(), build_m1(1), build_m1(2), build_m1(3), build_m4(), build_dash()]
+    if stage >= 2:
+        entries.append(build_striking_log())
     return entries
 
 
 MILESTONES = [
     (1, "0.1", "M1s, dash and the Toll system"),
+    (2, "0.2", "Move 1 - Striking Log (hold + air variants)"),
 ]
 
 
@@ -272,15 +353,21 @@ def frame_rows(ch: Character):
         if ename in doc:
             rows.append((label, analyze.entry_paths(doc[ename], {"x": take})["x"]))
 
+    W = {"whiff": True}
     add("M1 #1 (hit)", "Palm 1", {})
     add("M1 #2 (hit, +Toll)", "Palm 2", {"tag:BR_TOLL": "t_1"})
     add("M1 #3 (hit)", "Palm 3", {})
-    add("M1 #1 (whiff)", "Palm 1", {"miss": "miss"})
-    add("M4 normal (hit)", "Gong Palm", {"branch:normal": True})
-    add("M4 up (hit)", "Gong Palm", {"branch:up": True})
-    add("M4 down (hit)", "Gong Palm", {"branch:down": True})
-    add("M4 normal (whiff)", "Gong Palm", {"branch:normal": True, "miss": "normal_miss"})
+    add("M1 (whiff)", "Palm 1", {"miss": "miss", **W})
+    add("M4 normal (hit, ragdoll)", "Gong Palm", {"branch:normal": True})
+    add("M4 up (hit, ragdoll)", "Gong Palm", {"branch:up": True})
+    add("M4 down (hit, ragdoll)", "Gong Palm", {"branch:down": True})
+    add("M4 (whiff)", "Gong Palm", {"branch:normal": True, "miss": "normal_miss", **W})
     add("Dash (hit at first check)", "Shumoku Step", {"hit": "dhit"})
+    add("Dash (whiff)", "Shumoku Step", W)
+    add("1 Striking Log (hit)", "Striking Log", {"hit": "hit"})
+    add("1 Striking Log (whiff)", "Striking Log", W)
+    add("1 Charged Log (hold, hit, ragdoll)", "Striking Log", {"branch:hold": True, "hit": "chit"})
+    add("1 Falling Log (air, hit, ragdoll)", "Striking Log", {"branch:air": True, "hit": "ahit"})
     return rows
 
 
