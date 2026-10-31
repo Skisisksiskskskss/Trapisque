@@ -1,5 +1,7 @@
 # The Bellringer — a custom Jujutsu Shenanigans moveset
 
+> **Just want the code?** Open **[`CODES.md`](CODES.md)** and press **Copy** on the top block (the latest version), or copy all of `dist/bellringer_latest.txt`. Paste it into the Skill Builder's **Import** box: Character Block → Configure → Import.
+
 An original JJS character for the in-game **Skill Builder**: a temple-bell monk whose hits build **Tolls** that cash out as **Knells**. 4 base moves, 4 ultimates, a **Domain Expansion**, an R special, custom M1s (uptilt/downslam), dash, awakening, a kill flourish, and nine machine-verified combo routes.
 
 - Design: [`movesets/bellringer/DESIGN.md`](movesets/bellringer/DESIGN.md)
@@ -8,7 +10,7 @@ An original JJS character for the in-game **Skill Builder**: a temple-bell monk 
 
 ## Import it
 
-1. Open **`dist/bellringer_latest.txt`** (= v1.1) and copy the whole single line (it starts with `KLUv/`).
+1. Open **[`CODES.md`](CODES.md)** and press **Copy** on the latest block, or open **`dist/bellringer_latest.txt`** (= v1.1) and copy all of it (one line, starts with `KLUv/`).
 2. In JJS, open a **private server** with Build Mode, open your **Character Block → Configure** (the Skill Builder) and paste the code into **Import**.
 3. Any base character works (every slot is custom). A fist-fighter base such as **Vessel** gives the best idle/run animations.
 
