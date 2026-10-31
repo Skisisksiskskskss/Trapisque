@@ -23,6 +23,7 @@ The code must be pasted complete; one missing character breaks it. The `.json` f
 | v0.7 | + **Awakening: Joya no Kane** (bell-drop activation, 100 s aura; awakened M1s/R). Ultimate slots fill in from v0.8 | `dist/bellringer_v0.7.txt` |
 | v0.8 | + **Ult 1 Hundredfold Strikes** (catch, 10 chiming palms, gong launcher) | `dist/bellringer_v0.8.txt` |
 | v0.9 | + **Ult 2 Kanemaki** (trap the target in a bell, strike it thrice, shatter) | `dist/bellringer_v0.9.txt` |
+| v0.10 | + **Ult 3 Sympathetic Cascade** (stomp, three expanding resonance rings) | `dist/bellringer_v0.10.txt` |
 
 ## Rebuild from source
 

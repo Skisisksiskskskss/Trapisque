@@ -740,6 +740,58 @@ def build_kanemaki():
                  tooltip="The Bell of Dojo-ji: trap, strike thrice, shatter")
 
 
+# =========================================== U3  SYMPATHETIC CASCADE ====
+def _cascade_ring(n: int, width: float, dmg: float, stun: float, target: str, col):
+    scale = width / 16.0
+    return [
+        *gong("small" if n < 3 else "medium", 1.8 + 0.2 * n), chime(0.9 + 0.15 * n, vol=1.6),
+        Hitbox(dmg, size=(width, 6, width), pos=(0, -1, 0), stun=stun, stun_anim=True,
+               blockable=False, hit_ragdoll=True, ignore_wakeup=True, target=target),
+        Visual("Cylinder", time=0.5, size=1, alt_size=1, size2=(0.3, 2, 2),
+               alt_size2=(0.05, width * 1.1, width * 1.1), col=col, alt_col=PALE, opacity=0.25,
+               alt_opacity=1, pos=(0, GROUND + 0.1, 0), rot=(0, 0, 90), ease="Exponential",
+               ease_dir="Out"),
+        Visual("Mesh", amount=M.SOUND_RIPPLE, time=0.7, size=0.4 * scale, alt_size=3, col=col,
+               alt_col=PALE, opacity=0.3, alt_opacity=1, pos=(0, GROUND + 0.4, 0),
+               ease="Exponential", ease_dir="Out"),
+        Visual("Mesh", amount=M.THIN_RINGS, time=0.6, size=0.5 * scale, alt_size=8, col=col,
+               alt_col=PALE, opacity=0.4, alt_opacity=1, pos=(0, GROUND + 1, 0),
+               ease="Exponential", ease_dir="Out"),
+        shake("Medium" if n < 3 else "Heavy", 0.35, 3 + n),
+    ]
+
+
+def build_cascade():
+    """Awakened 3: stomp, three expanding resonance rings."""
+    br = {f"w{i}": Br([*spark(0.9, col=JADE if i % 2 else GOLD),
+                       Visual("Distortion", time=0.2, size=3, alt_size=1.3, amount=1, opacity=0,
+                              alt_opacity=1), Sfx(S.PUNCH_1, vol=1.6)]) for i in (1, 2)}
+    br["w3"] = Br([*burst(1.3), Velo((0, 32, 0), 0.12, rel_branch=True, ragdoll=1.1),
+                   Sfx(S.HEAVY_HIT, vol=1.8)])
+    line = [
+        State("NoM1", 1.6), State("NoJump", 1.6), State("NoSprint", 1.6),
+        State("DirectionLock", 1.4),
+        Anim(A.EARTHQUAKE),                                   # stomp lands at ~0.49 s
+        Sfx(S.EARTHQUAKE_START, vol=1.8), chime(0.7, vol=1.6),
+        aura(HRP, 1.4, 0.6, GOLD, JADE, op=0.25, hold=False), glow(0.4, JADE, 0.5),
+        light(HRP, 14, 3, 0.6, JADE),
+        Wait(0.45),
+        Sfx(S.EARTHQUAKE, vol=2), Sfx(S.ROCK_IMPACT, vol=1.8), flash(PALE, 0.05),
+        Visual("Mesh", amount=M.CRACKS, time=3, size=0.25, alt_size=1, col=DUSK, opacity=0,
+               alt_opacity=1, pos=(0, GROUND + 0.05, 0), rot=(90, 0, 0),
+               ease="Exponential", ease_dir="In"),
+        *_cascade_ring(1, 16, 4, 0.9, "w1", GOLD),
+        Wait(0.3),
+        *_cascade_ring(2, 30, 4, 0.9, "w2", JADE),
+        Wait(0.3),
+        *_cascade_ring(3, 44, 5, 1.2, "w3", GOLD),
+        fov(-10, 0.4),
+        Wait(0.4),
+    ]
+    return Skill("Sympathetic Cascade", key=3, cooldown=16, line=line, branches=br,
+                 props=AWAKENED(), tooltip="Three expanding resonance rings")
+
+
 # ============================================================ MILESTONES ====
 def milestone_entries(stage: int):
     """Entries included at each milestone (cumulative)."""
@@ -760,6 +812,8 @@ def milestone_entries(stage: int):
         entries.append(build_hundredfold())
     if stage >= 9:
         entries.append(build_kanemaki())
+    if stage >= 10:
+        entries.append(build_cascade())
     return entries
 
 
@@ -773,6 +827,7 @@ MILESTONES = [
     (7, "0.7", "Awakening - Joya no Kane: 108 Tolls"),
     (8, "0.8", "Ultimate 1 - Hundredfold Strikes"),
     (9, "0.9", "Ultimate 2 - Kanemaki, the Bell of Dojo-ji"),
+    (10, "0.10", "Ultimate 3 - Sympathetic Cascade"),
 ]
 
 
@@ -823,6 +878,7 @@ def frame_rows(ch: Character):
     add("U1 Hundredfold Strikes (whiff)", "Hundredfold Strikes", W)
     add("U2 Kanemaki (trapped, ragdoll)", "Kanemaki", {"hit": "trapped"})
     add("U2 Kanemaki (whiff)", "Kanemaki", W)
+    add("U3 Sympathetic Cascade (all rings)", "Sympathetic Cascade", {})
     return rows
 
 

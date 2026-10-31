@@ -1,4 +1,4 @@
-# Frame data - The Bellringer v0.9
+# Frame data - The Bellringer v0.10
 
 Generated from the actual timelines by `jjsforge.analyze` (WAIT sums; hitstun from each HITBOX). *Advantage* = target stun left when you recover; a follow-up whose first hit comes out faster than that is a true combo.
 
@@ -33,5 +33,6 @@ Generated from the actual timelines by `jjsforge.analyze` (WAIT sums; hitstun fr
 | U1 Hundredfold Strikes (whiff) | - | - | 0 | 0.93s | - |
 | U2 Kanemaki (trapped, ragdoll) | 0.50s | 0.50s: 5/1.4, 0.95s: 5/1.3, 1.60s: 5/1.3, 2.35s: 7/1.3 | 22 | 2.75s | +0.90s |
 | U2 Kanemaki (whiff) | - | - | 0 | 1.15s | - |
+| U3 Sympathetic Cascade (all rings) | 0.45s | 0.45s: 4/0.9, 0.75s: 4/0.9, 1.05s: 5/1.2 | 13 | 1.45s | +0.80s |
 
 Rows marked *ragdoll* end in knockback/launch: their advantage is decided by the ragdoll time rather than hitstun.
