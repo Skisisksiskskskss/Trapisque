@@ -17,6 +17,7 @@ The code must be pasted complete; one missing character breaks it. The `.json` f
 | v0.1 | M1 string (4 palms, uptilt, downslam, awakened variants), dash, **Toll system** | `dist/bellringer_v0.1.txt` |
 | v0.2 | + **1 Striking Log** (lunge palm; hold = Charged Log, air = Falling Log) | `dist/bellringer_v0.2.txt` |
 | v0.3 | + **2 ★ Reverb Palm** (palm + delayed echo; Knell = triple echo + launch) | `dist/bellringer_v0.3.txt` |
+| v0.4 | + **3 Toll Wave** (ring-of-sound projectile that pulls; hold = Sustained Note multi-hit) | `dist/bellringer_v0.4.txt` |
 
 ## Rebuild from source
 

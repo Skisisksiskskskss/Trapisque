@@ -18,12 +18,13 @@ sys.path.insert(0, HERE)
 
 from jjsforge import anims as A  # noqa: E402
 from jjsforge import analyze, codec, validate  # noqa: E402
+from jjsforge.assets import MESH as M  # noqa: E402
 from jjsforge.assets import SFX as S  # noqa: E402
 from jjsforge.model import (AWAKENED, BASE, PASSIVE, Awakening, Br, Character,  # noqa: E402,F401
                             Chase, Melee, Skill, Special)
 from jjsforge.nodes import (AIR, BAR, HOLD, JUMP, ULT, Anim, Awaken, Branch,  # noqa: E402,F401
-                            CancelVisual, Hitbox, HitCancel, Loop, SetCooldown, SetMelee, Sfx,
-                            State, Tag, TagCheck, TagSet, Velo, Visual, Wait)
+                            CancelVisual, Hitbox, HitCancel, Loop, Projectile, SetCooldown,
+                            SetMelee, Sfx, State, Tag, TagCheck, TagSet, Velo, Visual, Wait)
 
 from fx import (BRONZE, GOLD, GROUND, HRP, IVORY, JADE, PALE, afterimage, aura,  # noqa: E402,F401
                 bell, bell_ring, burst, chime, flash, fov, glow, gong, light, ripple, shake,
@@ -396,6 +397,75 @@ def build_reverb_palm():
                  tooltip="★ Knell at 3 Tolls: the echo rings three times")
 
 
+# ========================================================= 3  TOLL WAVE ====
+def _wave_fx(ptag: str, time: float, scale: float = 1.0, col=GOLD):
+    """Ring of sound riding a projectile."""
+    return [
+        Visual("Mesh", amount=M.RING_LINE, time=time, size=0.12 * scale, alt_size=1.3, col=col,
+               alt_col=PALE, opacity=0.1, alt_opacity=0.7, rot=(90, 0, 0), ptag=ptag),
+        Visual("Mesh", amount=M.RING_LINE, time=time, size=0.09 * scale, alt_size=1.3,
+               col=JADE, alt_col=PALE, opacity=0.3, alt_opacity=0.8, pos=(0, 0, -2.5),
+               rot=(90, 0, 0), ptag=ptag),
+        Visual("Wind Ring", time=time, size=1.4 * scale, alt_size=1.3, amount=3, col=col,
+               alt_col=PALE, opacity=0.8, alt_opacity=1, ptag=ptag),
+        Visual("Light", time=time, size=14 * scale, opacity=2, alt_opacity=0.5, col=col,
+               ptag=ptag),
+        Sfx(S.WHOOSH_FAST, vol=1.4, speed=1.2, ptag=ptag),
+    ]
+
+
+def build_toll_wave():
+    """Move 3: push a ring of sound forward. Hold: Sustained Note (multi-hit)."""
+    br = {}
+    pgl, pgb = toll_gain("wt", [Wait(0.05)])
+    br.update(pgb)
+    br["phit"] = Br(list(pgl))
+    br["rung"] = Br([Sfx(S.PUNCH_1, vol=2), chime(1.15, vol=1.6), *spark(0.9),
+                     sound_ring((0, 0, 0), 1.0, GOLD, 0.35),
+                     Velo((0, 2, -45), 0.15, rel_branch=True)])        # sympathetic pull
+    # ---- hold: Sustained Note -------------------------------------------
+    sgl, sgb = toll_gain("st", [Wait(0.05)])
+    br.update(sgb)
+    br["shit"] = Br(list(sgl))
+    br["sung"] = Br([Sfx(S.PUNCH_2, vol=1.6), chime(1.0, vol=1.3), *spark(0.8, col=JADE),
+                     Velo((0, 1, 18), 0.1, rel_branch=True)])
+    br["hold"] = Br([
+        State("NoM1", 1.3), State("NoJump", 1.3), State("SpeedMultiplier", 0.45, value=0.4),
+        Anim(A.LAPSE_BLUE, start=0.2, speed=0), Sfx(S.RED_MAX_CHARGE, vol=1.6, end=0.9,
+                                                   fade_out=0.3),
+        aura("Right Arm", 0.9, 0.5, GOLD, JADE, op=0.2, hold=False),
+        light("Right Arm", 10, 3, 0.5), sound_ring((0, 0, 3), 0.6, JADE, 0.45),
+        Wait(0.45),
+        Anim(A.LAPSE_BLUE, start=0.2, end=1.2, speed=1.2),
+        *gong("small", 1.6), Sfx(S.RED_MAX_SHOOT, vol=1.4, end=1.2, fade_out=0.4),
+        shake("Light", 0.3, 2), fov(4, 0.3),
+        Projectile("BR_NOTE", dmg=3, size=(16, 10, 8), pos=(0, 0, 4), speed=45, time=0.9,
+                   stun=0.8, stun_anim=True, atk="Bullet", continue_=True, filter_interval=0.3,
+                   hit_ragdoll=False, branch="shit", target="sung"),
+        *_wave_fx("BR_NOTE", 0.9, 1.8, JADE),
+        Wait(0.5),
+    ], req=[HOLD()])
+    line = [
+        State("NoM1", 0.75), State("NoJump", 0.75), State("DirectionLock", 0.3),
+        Sfx(S.ENERGY_WINDUP_2, vol=1.6), chime(1.0, vol=1.1),
+        Anim(A.LAPSE_BLUE, end=1.2, speed=1.3),            # palm forward at ~0.31 s
+        light("Right Arm", 8, 2.5, 0.4),
+        Wait(0.15),
+        Branch("hold"),
+        Wait(0.16),
+        Sfx(S.CLAP, vol=1.6, speed=0.9), *gong("small", 1.4),
+        shake("Light", 0.25, 1.5),
+        Projectile("BR_WAVE", dmg=4, size=(9, 9, 5), pos=(0, 0, 3), speed=140, time=0.4,
+                   stun=1.1, stun_anim=True, atk="Bullet", hit_ragdoll=False, branch="phit",
+                   target="rung"),
+        *_wave_fx("BR_WAVE", 0.4, 1.0, GOLD),
+        sound_ring((0, 0, 2.5), 0.8, GOLD, 0.3),
+        Wait(0.4),
+    ]
+    return Skill("Toll Wave", key=3, cooldown=9, line=line, branches=br, props=BASE(),
+                 tooltip="Hold: Sustained Note")
+
+
 # ============================================================ MILESTONES ====
 def milestone_entries(stage: int):
     """Entries included at each milestone (cumulative)."""
@@ -404,6 +474,8 @@ def milestone_entries(stage: int):
         entries.append(build_striking_log())
     if stage >= 3:
         entries.append(build_reverb_palm())
+    if stage >= 4:
+        entries.append(build_toll_wave())
     return entries
 
 
@@ -411,6 +483,7 @@ MILESTONES = [
     (1, "0.1", "M1s, dash and the Toll system"),
     (2, "0.2", "Move 1 - Striking Log (hold + air variants)"),
     (3, "0.3", "Move 2 - Reverb Palm (delayed echo, Knell)"),
+    (4, "0.4", "Move 3 - Toll Wave (projectile, hold variant)"),
 ]
 
 
@@ -448,6 +521,8 @@ def frame_rows(ch: Character):
     add("2 Reverb Palm (hit + echo)", "Reverb Palm", {"tag:BR_TOLL": "rt_1"})
     add("2 Reverb Palm (whiff)", "Reverb Palm", {"miss": "miss", **W})
     add("2 ★ Knell Reverb Palm (hit, ragdoll)", "Reverb Palm", {"tag:BR_TOLL": "knell"})
+    add("3 Toll Wave (point blank)", "Toll Wave", {})
+    add("3 Sustained Note (hold)", "Toll Wave", {"branch:hold": True})
     return rows
 
 

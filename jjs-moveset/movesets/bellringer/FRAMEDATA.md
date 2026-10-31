@@ -1,4 +1,4 @@
-# Frame data - The Bellringer v0.3
+# Frame data - The Bellringer v0.4
 
 Generated from the actual timelines by `jjsforge.analyze` (WAIT sums; hitstun from each HITBOX). *Advantage* = target stun left when you recover; a follow-up whose first hit comes out faster than that is a true combo.
 
@@ -21,5 +21,7 @@ Generated from the actual timelines by `jjsforge.analyze` (WAIT sums; hitstun fr
 | 2 Reverb Palm (hit + echo) | 0.30s | 0.30s: 4/1.4, 0.80s: 5/1 | 9 | 1.00s | +0.80s |
 | 2 Reverb Palm (whiff) | - | - | 0 | 0.65s | - |
 | 2 ★ Knell Reverb Palm (hit, ragdoll) | 0.30s | 0.30s: 4/1.4, 0.75s: 3/0.9, 1.20s: 3/0.9, 1.65s: 4/0.9, 2.10s: 4/1.2 | 18 | 2.35s | +0.95s |
+| 3 Toll Wave (point blank) | 0.31s | 0.31s: 4/1.1 | 4 | 0.71s | +0.70s |
+| 3 Sustained Note (hold) | 0.60s | 0.60s: 3/0.8 | 3 | 1.10s | +0.30s |
 
 Rows marked *ragdoll* end in knockback/launch: their advantage is decided by the ragdoll time rather than hitstun.
