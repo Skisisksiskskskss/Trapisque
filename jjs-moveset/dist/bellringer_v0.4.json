@@ -19598,7 +19598,7 @@
      "REFLECT COUNT": 0,
      "FILTER INTERVAL": 1,
      "CONTINUE": false,
-     "HIT RAGDOLL": false,
+     "HIT RAGDOLL": true,
      "STUN ANIM": true,
      "HIT USER": false,
      "BLOCKABLE": true,

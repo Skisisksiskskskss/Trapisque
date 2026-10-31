@@ -26,7 +26,7 @@ from jjsforge.nodes import (AIR, BAR, HOLD, JUMP, ULT, Anim, Awaken, Branch,  # 
                             CancelVisual, Hitbox, HitCancel, Loop, Projectile, SetCooldown,
                             SetMelee, Sfx, State, Tag, TagCheck, TagSet, Velo, Visual, Wait)
 
-from fx import (BRONZE, GOLD, GROUND, HRP, IVORY, JADE, PALE, afterimage, aura,  # noqa: E402,F401
+from fx import (BRONZE, DUSK, GOLD, GROUND, HRP, IVORY, JADE, PALE, afterimage, aura,  # noqa: E402,F401
                 bell, bell_ring, burst, chime, flash, fov, glow, gong, light, ripple, shake,
                 sound_ring, spark, tok, trail)
 
@@ -456,14 +456,81 @@ def build_toll_wave():
         Sfx(S.CLAP, vol=1.6, speed=0.9), *gong("small", 1.4),
         shake("Light", 0.25, 1.5),
         Projectile("BR_WAVE", dmg=4, size=(9, 9, 5), pos=(0, 0, 3), speed=140, time=0.4,
-                   stun=1.1, stun_anim=True, atk="Bullet", hit_ragdoll=False, branch="phit",
-                   target="rung"),
+                   stun=1.1, stun_anim=True, atk="Bullet", hit_ragdoll=True,
+                   ignore_wakeup=True, branch="phit", target="rung"),   # can pick up OTG
         *_wave_fx("BR_WAVE", 0.4, 1.0, GOLD),
         sound_ring((0, 0, 2.5), 0.8, GOLD, 0.3),
         Wait(0.4),
     ]
     return Skill("Toll Wave", key=3, cooldown=9, line=line, branches=br, props=BASE(),
                  tooltip="Hold: Sustained Note")
+
+
+# ========================================================= 4  BELL TOLL ====
+def _rising_palm(target: str, branch: str):
+    return [
+        State("NoM1", 1.1), State("NoJump", 1.1), State("NoSprint", 1.1),
+        Sfx(S.WHOOSH_FAST, vol=1.6), Sfx(S.CURSED_STRIKE_STARTUP, vol=1.6),
+        Anim(A.M1_UP, speed=0.9),                       # strike at ~0.22 s
+        trail("Right Arm", 0.45), trail("Left Arm", 0.45),
+        Velo((0, 0, 18), 0.1),
+        Wait(0.22),
+        Hitbox(4, size=(8, 9, 8), pos=(0, 1, 4), stun=1.2, stun_anim=True, branch=branch,
+               target=target),
+        HitCancel("miss", time=0.1, missed=True),
+    ]
+
+
+def build_bell_toll():
+    """Move 4 (★): rising palm launches, a spectral bell slams the target back down.
+    Knell: a giant bell crushes them into a crater."""
+    br = {}
+    slam_rest = [
+        Anim(A.CLAP_1), Sfx(S.CLAP, vol=2), chime(0.8, vol=1.6),
+        light(HRP, 12, 3, 0.4),
+        Wait(0.3),
+        Hitbox(6, size=(12, 22, 12), pos=(0, 9, 5), stun=1.0, stun_anim=True, hit_ragdoll=True,
+               ignore_wakeup=True, blockable=False, target="slammed"),
+        *gong("medium", 2.0), shake("Medium", 0.45, 4), fov(-8, 0.4),
+        Wait(0.2),
+        ripple(0.9, time=0.6), *bell_ring(0.7, z=5),
+        Wait(0.15),
+    ]
+    gl, gb = toll_gain("bt", slam_rest)
+    br.update(gb)
+    br["launched"] = Br([Sfx(S.PUNCH_3, vol=2.2), shake("Light", 0.3, 2)] + gl)
+    br["up"] = Br([Velo((0, 55, 4), 0.12, rel_branch=True, ragdoll=1.6), *burst(1.0),
+                   Sfx(S.HIT_KICK_H, vol=1.8)])
+    br["slammed"] = Br([*bell(0.9, drop=6, time=0.35, op=0.4, ease="Quad", ease_dir="In"),
+                        *burst(1.3), Sfx(S.HEAVY_HIT, vol=2),
+                        Velo((0, -90, 0), 0.15, rel_branch=True, ragdoll=1.3)])
+    br["miss"] = Br([State("Stun", 0.45), Anim(A.M1_UP, start=0.2, speed=0.5), Wait(0.35)])
+    # ---- Knell: the giant bell -------------------------------------------
+    br["knell"] = Br(_rising_palm("up", "klaunched"))
+    br["klaunched"] = Br([
+        Sfx(S.PUNCH_3, vol=2.2), *toll_reset(),
+        Anim(A.CLAP_3), Sfx(S.CLAP, vol=2.2), Sfx(S.AMP_IGNITION, vol=1.6),
+        aura(HRP, 1.6, 0.6, GOLD, JADE, op=0.2, hold=False), glow(0.5, GOLD, 0.4),
+        light(HRP, 18, 4, 0.6),
+        Wait(0.3),
+        Hitbox(14, size=(14, 24, 14), pos=(0, 9, 5), stun=1.2, stun_anim=True,
+               hit_ragdoll=True, ignore_wakeup=True, blockable=False, debree=6,
+               target="crushed"),
+        *gong("big", 2.4), shake("Heavy", 0.7, 6), fov(-14, 0.5), flash(PALE, 0.08),
+        Awaken(10),
+        Wait(0.2),
+        ripple(1.6, time=0.8), *bell_ring(1.2, z=5),
+        Visual("Mesh", amount=M.CRACKS, time=4, size=0.35, alt_size=1, col=DUSK,
+               opacity=0, alt_opacity=1, pos=(0, GROUND + 0.05, 5), rot=(90, 0, 0),
+               ease="Exponential", ease_dir="In"),
+        Sfx(S.ROCK_IMPACT, vol=2), Wait(0.3),
+    ])
+    br["crushed"] = Br([*bell(1.35, drop=10, time=0.3, op=0.35, ease="Quad", ease_dir="In"),
+                        *burst(2.0), Sfx(S.IMPACT_FRAMES, vol=2),
+                        Velo((0, -110, 0), 0.2, rel_branch=True, ragdoll=2.0)])
+    line = [TagCheck(TOLL, "3", "knell")] + _rising_palm("up", "launched")
+    return Skill("Bell Toll", key=4, cooldown=14, line=line, branches=br, props=BASE(),
+                 tooltip="★ Knell at 3 Tolls: the giant bell")
 
 
 # ============================================================ MILESTONES ====
@@ -476,6 +543,8 @@ def milestone_entries(stage: int):
         entries.append(build_reverb_palm())
     if stage >= 4:
         entries.append(build_toll_wave())
+    if stage >= 5:
+        entries.append(build_bell_toll())
     return entries
 
 
@@ -484,6 +553,7 @@ MILESTONES = [
     (2, "0.2", "Move 1 - Striking Log (hold + air variants)"),
     (3, "0.3", "Move 2 - Reverb Palm (delayed echo, Knell)"),
     (4, "0.4", "Move 3 - Toll Wave (projectile, hold variant)"),
+    (5, "0.5", "Move 4 - Bell Toll (launcher, Knell)"),
 ]
 
 
@@ -523,6 +593,10 @@ def frame_rows(ch: Character):
     add("2 ★ Knell Reverb Palm (hit, ragdoll)", "Reverb Palm", {"tag:BR_TOLL": "knell"})
     add("3 Toll Wave (point blank)", "Toll Wave", {})
     add("3 Sustained Note (hold)", "Toll Wave", {"branch:hold": True})
+    add("4 Bell Toll (launch + bell slam, ragdoll)", "Bell Toll",
+        {"hit": "launched", "tag:BR_TOLL": "bt_1"})
+    add("4 Bell Toll (whiff)", "Bell Toll", {"miss": "miss", **W})
+    add("4 ★ Knell Bell Toll (ragdoll)", "Bell Toll", {"tag:BR_TOLL": "knell", "hit": "klaunched"})
     return rows
 
 
