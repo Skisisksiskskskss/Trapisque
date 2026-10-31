@@ -56,6 +56,8 @@ def toll_readout(level: int, announce: bool = True) -> list:
         out += [
             aura(HRP, size=1.1, time=TOLL_TIME, col=GOLD, alt=JADE, op=0.45, vtag=TOLL_FX),
             light(HRP, size=16, bright=1.2, time=TOLL_TIME, hold=True, vtag=TOLL_FX),
+            # RESONANT: a small spectral bell hangs over your head - "Knell ready"
+            *bell(0.28, y=8.4, time=TOLL_TIME, op=0.4, fade=False, vtag=TOLL_FX),
         ]
     if announce:
         out += [chime(0.85 + 0.15 * level, vol=1.4 + 0.2 * level),
@@ -670,6 +672,8 @@ def build_awakening():
         light(HRP, 16, 1.5, hold_time, GOLD, hold=True, vtag=AWK_FX),
         light("Right Arm", 7, 1.8, hold_time, PALE, hold=True, vtag=AWK_FX),
         light("Left Arm", 7, 1.8, hold_time, PALE, hold=True, vtag=AWK_FX),
+        # the bell that hangs over the Bellringer for the whole awakening
+        *bell(0.42, y=8.8, z=-1.5, time=hold_time, op=0.45, fade=False, vtag=AWK_FX),
     ]
     return Awakening("Joya no Kane: 108 Tolls", AWK_DURATION, line, br,
                      props=Props(invincible=True, no_cancel=True), req=[BAR(99)],

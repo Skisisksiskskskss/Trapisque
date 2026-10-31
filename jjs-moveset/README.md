@@ -16,7 +16,7 @@ The code must be pasted complete; one missing character breaks it. The `.json` n
 
 ## Play it in 30 seconds
 
-- Land hits to stack **Tolls** (max 3): M1 #2, M1 #4, any move that connects, the dash hit, the R pulse. Your palms glow per Toll; at 3 your whole body glows and a deep bell answers.
+- Land hits to stack **Tolls** (max 3): M1 #2, M1 #4, any move that connects, the dash hit, the R pulse. Your palms glow per Toll; at 3 your whole body glows, a deep bell answers and a small bell hangs over your head.
 - At 3 Tolls, **2 Reverb Palm**, **4 Bell Toll** and **R** become **Knells** (much stronger versions).
 - **Hold 1** for a charged ram, use **1 in the air** to dive. **Hold 3** for the multi-hit Sustained Note.
 - BnB: `M1 M1 M1 → 2 → M1 M1 M1 M4 → 1`. Signature: `M1 M1 → 1 → M1 M1 M1 → 2 (Knell) → 3`.
