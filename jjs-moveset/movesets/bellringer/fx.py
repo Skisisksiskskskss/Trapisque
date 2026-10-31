@@ -139,11 +139,13 @@ def afterimage(time: float = 0.4, col=GOLD, **kw):
 
 def bell(scale: float = 1.0, y: float = 0.0, z: float = 0.0, drop: float = 0.0,
          time: float = 0.5, col=GOLD, op: float = 0.45, fade: bool = True,
-         ease: str = "Quad", ease_dir: str = "In", grow: float = 1.0, **kw):
+         ease: str = "Quad", ease_dir: str = "In", grow: float = 1.0, rise: float = 0.0,
+         **kw):
     """A spectral temple bell (bonshō) built from Cylinder + Sphere primitives.
 
     Its rim sits on the floor under the part (plus `y`), `z` studs in front.
-    With drop > 0 the bell falls from `drop` studs higher during `time`."""
+    drop > 0: the bell falls from `drop` studs higher during `time`;
+    rise > 0: it lifts `rise` studs into the sky instead."""
     s = scale
     bottom = GROUND + y
     end_op = 1 if fade else op
@@ -152,7 +154,7 @@ def bell(scale: float = 1.0, y: float = 0.0, z: float = 0.0, drop: float = 0.0,
         return Visual("Cylinder", time=time, size=1, alt_size=1,
                       size2=(length, dia, dia), alt_size2=(length, dia * grow, dia * grow),
                       col=c, alt_col=PALE, opacity=o, alt_opacity=end_op,
-                      pos=(0, cy + drop, z), alt_pos=(0, cy, z), rot=(0, 0, 90),
+                      pos=(0, cy + drop, z), alt_pos=(0, cy + rise, z), rot=(0, 0, 90),
                       ease=ease, ease_dir=ease_dir, **kw)
 
     crown_y = bottom + 7.6 * s
@@ -163,9 +165,9 @@ def bell(scale: float = 1.0, y: float = 0.0, z: float = 0.0, drop: float = 0.0,
         cyl(0.35 * s, 6.3 * s, bottom + 2.2 * s, BRONZE, op * 0.8),  # band
         Visual("Sphere", time=time, size=5.2 * s, alt_size=grow, col=col, alt_col=PALE,
                opacity=op, alt_opacity=end_op, pos=(0, crown_y + drop, z),
-               alt_pos=(0, crown_y, z), ease=ease, ease_dir=ease_dir, **kw),
+               alt_pos=(0, crown_y + rise, z), ease=ease, ease_dir=ease_dir, **kw),
         Visual("Light", time=time, size=14 * s, opacity=2.5, alt_opacity=0, col=GOLD,
-               pos=(0, bottom + 4 * s + drop, z), alt_pos=(0, bottom + 4 * s, z), **kw),
+               pos=(0, bottom + 4 * s + drop, z), alt_pos=(0, bottom + 4 * s + rise, z), **kw),
     ]
 
 

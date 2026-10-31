@@ -25,6 +25,8 @@ class Hit:
     kind: str = "HITBOX"
     target_branch: str | None = None
     note: str = ""
+    hit_ragdoll: bool = False      # can connect on a ragdolled target
+    ragdoll: float = 0.0           # ragdoll the target branch applies (s)
 
 
 @dataclass
@@ -33,7 +35,8 @@ class Path:
     hits: list = field(default_factory=list)
     end: float = 0.0          # when the timeline finishes
     self_lock: float = 0.0    # when self Stun / skill lock ends
-    no_m1_until: float = 0.0
+    no_m1_until: float = 0.0  # NoM1 that persists (CANCEL ON END false)
+    no_m1_cancel: float = 0.0  # NoM1 that ends with the move (clamped in _finish)
     jumps: list = field(default_factory=list)
 
     @property
@@ -87,13 +90,22 @@ def walk(line, start=0.0, label="main", branches=None, take=None, depth=0):
             if st == "Stun":
                 p.self_lock = max(p.self_lock, t + dur)
             elif st == "NoM1":
-                p.no_m1_until = max(p.no_m1_until, t + dur)
+                if n.get("CANCEL ON END"):
+                    p.no_m1_cancel = max(p.no_m1_cancel, t + dur)
+                else:
+                    p.no_m1_until = max(p.no_m1_until, t + dur)
         elif k in ("HITBOX", "PROJECTILE"):
             if take.get("whiff"):
                 continue     # whiff scenario: nothing connects, only recovery matters
             if float(n.get("DAMAGE", 0) or 0) > 0 or float(n.get("STUN", 0) or 0) > 0:
+                tb = n.get("BRANCH TARGET")
+                rag = 0.0
+                for m in (branches.get(tb) or {}).get("Line", []) if tb else []:
+                    if isinstance(m, dict) and m.get("K_NAME") == "VELO":
+                        rag = max(rag, float(m.get("RAGDOLL", 0) or 0))
                 p.hits.append(Hit(round(t, 3), float(n.get("DAMAGE", 0) or 0),
-                                  float(n.get("STUN", 0) or 0), k, n.get("BRANCH TARGET")))
+                                  float(n.get("STUN", 0) or 0), k, tb,
+                                  hit_ragdoll=bool(n.get("HIT RAGDOLL")), ragdoll=rag))
             hit_happened = True
             b = n.get("BRANCH")
             if b and take.get("hit") == b and b in branches and depth < 8:
@@ -122,15 +134,24 @@ def walk(line, start=0.0, label="main", branches=None, take=None, depth=0):
                 sub = walk(branches[b]["Line"], t, label, branches, take, depth + 1)
                 return _merge(p, sub, f"{name}->{b}@{t:.2f}")
     p.end = round(t, 3)
+    if depth == 0:
+        _finish(p)
     return p
+
+
+def _finish(p: Path):
+    """Cancel-on-end NoM1 windows stop when the move ends."""
+    p.no_m1_until = max(p.no_m1_until, min(p.no_m1_cancel, p.end))
 
 
 def _merge(head: Path, tail: Path, jump: str) -> Path:
     tail.hits = head.hits + tail.hits
     tail.self_lock = max(head.self_lock, tail.self_lock)
     tail.no_m1_until = max(head.no_m1_until, tail.no_m1_until)
+    tail.no_m1_cancel = max(head.no_m1_cancel, tail.no_m1_cancel)
     tail.jumps = head.jumps + [jump] + tail.jumps
     tail.label = head.label
+    _finish(tail)
     return tail
 
 
@@ -143,6 +164,63 @@ def entry_paths(entry: dict, scenarios: dict) -> dict:
         start_line = data["Line"]
         out[label] = walk(start_line, 0.0, label, br, take)
     return out
+
+
+@dataclass
+class ComboStep:
+    label: str
+    path: Path
+    is_m1: bool = False
+    delay: float = 0.0        # deliberate wait before this step (e.g. a jump)
+
+
+def check_combo(steps, slack: float = 0.0):
+    """Simulate a route. Each step starts as soon as the previous one recovers
+    (+ its own delay). A step's first hit is a true follow-up if the target is
+    still in hitstun, or ragdolled and the hitbox can hit ragdolls. Returns
+    (rows, total_damage, ok). Positioning/range is not modelled."""
+    rows, now, stun_end, rag_end, total, ok = [], 0.0, None, None, 0.0, True
+    m1_free = 0.0                     # absolute time the user may M1 again
+    for i, st in enumerate(steps):
+        start = now + st.delay
+        if st.is_m1:
+            start = max(start, m1_free)
+        p = st.path
+        first = p.hits[0] if p.hits else None
+        verdict = "starter"
+        if i > 0 and first is not None:
+            t_hit = start + first.t
+            if rag_end is not None and t_hit <= rag_end:
+                verdict = "OTG (hits ragdoll)" if first.hit_ragdoll else "MISSES: target ragdolled"
+            elif stun_end is not None and t_hit <= stun_end + slack:
+                verdict = f"true combo ({stun_end - t_hit:+.2f}s spare)"
+            else:
+                gap = t_hit - max(x for x in (stun_end, rag_end) if x is not None)
+                verdict = f"GAP {gap:.2f}s"
+            if verdict.startswith(("GAP", "MISSES")):
+                ok = False
+        for h in p.hits:
+            th = start + h.t
+            total += h.dmg
+            stun_end = th + h.stun
+            if h.ragdoll > 0:
+                rag_end = th + h.ragdoll
+            elif rag_end is not None and th > rag_end:
+                rag_end = None
+        rows.append((st.label, round(start, 2), None if first is None else round(start + first.t, 2),
+                     verdict, round(sum(h.dmg for h in p.hits), 2)))
+        now = start + p.recovery
+        m1_free = max(m1_free, start + p.no_m1_until)
+    return rows, round(total, 2), ok
+
+
+def combo_table(name: str, rows, total: float, ok: bool) -> str:
+    out = [f"**{name}** — {total:g} dmg — {'✅ verified' if ok else '❌ broken'}", "",
+           "| Step | Starts | First hit | Connects as | Dmg |", "|---|---|---|---|---|"]
+    for label, start, fh, verdict, dmg in rows:
+        out.append(f"| {label} | {start:.2f}s | {'-' if fh is None else f'{fh:.2f}s'} | "
+                   f"{verdict} | {dmg:g} |")
+    return "\n".join(out)
 
 
 def table(rows) -> str:

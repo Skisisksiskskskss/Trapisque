@@ -91,6 +91,26 @@ def toll_reset() -> list:
     return [TagSet(TOLL, "0", time=0.05), CancelVisual(TOLL_FX)]
 
 
+def funeral_toll(post=()) -> Br:
+    """Kill flourish (HITBOX BRANCH FINISHER): palms pressed in prayer, the
+    funeral bell tolls three times and a spectral bell rises over the fallen.
+    `post` replays the effects the move would have played after its last hit."""
+    return Br(list(post) + [
+        State("IFrame", 2.2), State("NoM1", 2.2), State("NoJump", 2.2), State("NoSprint", 2.2),
+        Anim(A.CLAP_1, start=0.35, speed=0),
+        flash(DUSK, 1.2), fov(6, 1.2),
+        Sfx(S.DEATH_TOLL, vol=2.2, end=3.0, fade_out=1.2, global_=True),
+        *bell(1.2, z=6, time=2.2, op=0.45, rise=35, ease="Sine", ease_dir="In"),
+        aura(HRP, 1.0, 2.2, GOLD, JADE, op=0.3, hold=False),
+        Wait(0.75),
+        Sfx(S.DEATH_TOLL, vol=1.8, speed=0.95, end=2.5, fade_out=1.0),
+        ripple(1.2, col=JADE, time=0.8),
+        Wait(0.75),
+        Sfx(S.DEATH_TOLL, vol=1.5, speed=0.9, end=2.5, fade_out=1.2), chime(0.7, vol=1.6),
+        Wait(0.6),
+    ])
+
+
 # ================================================================ SPAWN ====
 def build_spawn():
     line = toll_reset() + [
@@ -186,8 +206,7 @@ def _m4_body(p: str, kind: str, awk: bool):
     rest = [Velo((0, 0, 8), 0.1), Wait(0.2)]
     if awk:   # the bell never stops ringing: the finisher sends out an echo ring
         rest = [*bell_ring(0.55, z=4, col=JADE), *gong("small", vol=1.4),
-                Hitbox(1.5, size=(14, 8, 14), pos=(0, 0, 4), stun=0.5, stun_anim=True,
-                       blockable=False, single=False)] + rest
+                chime(1.2, vol=1.4)] + rest     # audiovisual only: never re-hits the launch
         line += rest
     else:
         gl, gb = toll_gain(f"{p}{kind}t", rest)
@@ -220,7 +239,26 @@ def build_m4():
 
 
 # ================================================================= DASH ====
-def build_dash():
+def _dash_body(p: str, col, awk: bool):
+    return [
+        Sfx(S.DASH, vol=2), Sfx(S.WHOOSH_FAST, vol=1, speed=1.1),
+        State("NoM1", 0.25),
+        afterimage(0.45, col), trail("Right Arm", 0.6, col), light(HRP, 8, 1.5, 0.5, col),
+        *([aura(HRP, 0.9, 0.5, JADE, GOLD, op=0.3, hold=False), chime(1.3, vol=1)] if awk else []),
+        Anim(A.CHASE, end=0.95, speed=1.1),
+        Velo((0, 0, 72), 0.5, fade=True, track=True),
+        Wait(0.08),
+        Hitbox(3, size=(7, 7, 9), pos=(0, 0, 3), stun=0.8, stun_anim=True, branch=f"{p}dhit",
+               target=f"{p}dtgt"),
+        Wait(0.08),
+        Loop(2, 5),
+        Velo((0, 0.01, 0), 0.08),
+        Anim(A.CHASE, start=1.22, speed=1.2),
+        Wait(0.2),
+    ]
+
+
+def build_dash(polish: bool = False):
     br = {}
     rest = [SetMelee(0, 1), Anim(A.CHASE, start=1.22, speed=1.2), Wait(0.15)]
     gl, gb = toll_gain("dt", rest)
@@ -228,21 +266,14 @@ def build_dash():
     br["dhit"] = Br([Velo((0, 0.01, 0), 0.05), Sfx(S.PUNCH_2, vol=2), tok(2)] + gl)
     br["dtgt"] = Br([Velo((0, 0, 10), 0.1, rel_branch=True), *spark(0.9),
                      sound_ring((0, 0, 0), 0.7, GOLD, 0.3)])
-    line = [
-        Sfx(S.DASH, vol=2), Sfx(S.WHOOSH_FAST, vol=1, speed=1.1),
-        State("NoM1", 0.25),
-        afterimage(0.45), trail("Right Arm", 0.6), light(HRP, 8, 1.5, 0.5),
-        Anim(A.CHASE, end=0.95, speed=1.1),
-        Velo((0, 0, 72), 0.5, fade=True, track=True),
-        Wait(0.08),
-        Hitbox(3, size=(7, 7, 9), pos=(0, 0, 3), stun=0.8, stun_anim=True, branch="dhit",
-               target="dtgt"),
-        Wait(0.08),
-        Loop(2, 5),
-        Velo((0, 0.01, 0), 0.08),
-        Anim(A.CHASE, start=1.22, speed=1.2),
-        Wait(0.2),
-    ]
+    line = _dash_body("", GOLD, awk=False)
+    if polish:   # v1.0: awakened dash - jade afterimages, an echo instead of a Toll
+        br["awk"] = Br(_dash_body("a", JADE, awk=True), req=[ULT()])
+        br["adhit"] = Br([Velo((0, 0.01, 0), 0.05), Sfx(S.PUNCH_2, vol=2), chime(1.2, vol=1.4),
+                          *bell_ring(0.5, z=3, col=JADE)] + rest)
+        br["adtgt"] = Br([Velo((0, 0, 10), 0.1, rel_branch=True), *spark(0.9, col=JADE),
+                          sound_ring((0, 0, 0), 0.8, JADE, 0.3)])
+        line = [Branch("awk")] + line
     return Chase("Shumoku Step", 6, line, br)
 
 
@@ -316,7 +347,8 @@ def build_striking_log():
         Sfx(S.WHOOSH_FAST, vol=1.4), afterimage(0.35), trail("Right Arm", 0.45),
         Velo((0, 0, 80), 0.25, fade=True, track=True),
         Wait(0.08),
-        *_lunge_checks(6, (8, 8, 9), (0, 0, 3.5), 1.0, "hit", "struck", checks=3),
+        *_lunge_checks(6, (8, 8, 9), (0, 0, 3.5), 1.0, "hit", "struck", checks=3,
+                       hit_ragdoll=True),                  # can chase a knocked-back body
         Velo((0, 0.01, 0), 0.05), Anim(A.DIVERGENT_1, start=0.6, end=1.4),
         State("Stun", 0.3), Wait(0.35),
     ]
@@ -377,9 +409,10 @@ def build_reverb_palm():
         *_echo(4, 0.9, "kecho3", 1.3), Wait(0.45),
         *gong("medium", 2.2), shake("Medium", 0.5, 4), fov(-10, 0.45), flash(PALE, 0.06),
         Hitbox(4, size=(9, 9, 9), pos=(0, 0, 5), stun=1.2, stun_anim=True, blockable=False,
-               ignore_wakeup=True, target="kburst"),
+               ignore_wakeup=True, target="kburst", finisher="fin"),
         Awaken(6), SetMelee(0, 1.5), Wait(0.25),
     ], req=[])
+    br["fin"] = funeral_toll()
     br["kplant"] = Br(br["planted"].line + [aura(HRP, 1.2, 2.0, GOLD, JADE, op=0.35, hold=False)])
     for i in (1, 2, 3):
         br[f"kecho{i}"] = Br([Visual("Distortion", time=0.25, size=3 + i, alt_size=1.5,
@@ -468,6 +501,15 @@ def build_toll_wave():
 
 
 # ========================================================= 4  BELL TOLL ====
+def _crater(z: float = 5, scale: float = 1.0):
+    """Ground impact: ripple, bell ring, lingering cracks, rock sound."""
+    return [ripple(1.6 * scale, time=0.8), *bell_ring(1.2 * scale, z=z),
+            Visual("Mesh", amount=M.CRACKS, time=4, size=0.35 * scale, alt_size=1, col=DUSK,
+                   opacity=0, alt_opacity=1, pos=(0, GROUND + 0.05, z), rot=(90, 0, 0),
+                   ease="Exponential", ease_dir="In"),
+            Sfx(S.ROCK_IMPACT, vol=2)]
+
+
 def _rising_palm(target: str, branch: str):
     return [
         State("NoM1", 1.1), State("NoJump", 1.1), State("NoSprint", 1.1),
@@ -516,16 +558,15 @@ def build_bell_toll():
         Wait(0.3),
         Hitbox(14, size=(14, 24, 14), pos=(0, 9, 5), stun=1.2, stun_anim=True,
                hit_ragdoll=True, ignore_wakeup=True, blockable=False, debree=6,
-               target="crushed"),
+               target="crushed", finisher="fin"),
         *gong("big", 2.4), shake("Heavy", 0.7, 6), fov(-14, 0.5), flash(PALE, 0.08),
         Awaken(10),
         Wait(0.2),
-        ripple(1.6, time=0.8), *bell_ring(1.2, z=5),
-        Visual("Mesh", amount=M.CRACKS, time=4, size=0.35, alt_size=1, col=DUSK,
-               opacity=0, alt_opacity=1, pos=(0, GROUND + 0.05, 5), rot=(90, 0, 0),
-               ease="Exponential", ease_dir="In"),
-        Sfx(S.ROCK_IMPACT, vol=2), Wait(0.3),
+        *_crater(5),
+        Wait(0.3),
     ])
+    br["fin"] = funeral_toll([*gong("big", 2.4), shake("Heavy", 0.7, 6), flash(PALE, 0.08),
+                              *_crater(5)])
     br["crushed"] = Br([*bell(1.35, drop=10, time=0.3, op=0.35, ease="Quad", ease_dir="In"),
                         *burst(2.0), Sfx(S.IMPACT_FRAMES, vol=2),
                         Velo((0, -110, 0), 0.2, rel_branch=True, ragdoll=2.0)])
@@ -545,7 +586,7 @@ def _grand_knell(consume: bool):
         Wait(0.35),
         *gong("big", 2.6), shake("Heavy", 0.8, 6), fov(-14, 0.55), flash(PALE, 0.08),
         Hitbox(12, size=(30, 14, 30), pos=(0, 1, 0), stun=1.2, stun_anim=True, hit_ragdoll=True,
-               ignore_wakeup=True, blockable=False, debree=4, target="knelled"),
+               ignore_wakeup=True, blockable=False, debree=4, target="knelled", finisher="fin"),
         *bell(2.2, time=0.7, op=0.35, grow=1.12, ease="Exponential", ease_dir="Out"),
         *bell_ring(2.0), ripple(2.4, time=0.9),
         Awaken(12),
@@ -563,6 +604,8 @@ def build_special():
     br["whiff"] = Br([Wait(0.3)])
     br["grand"] = Br(_grand_knell(consume=True))
     br["awk"] = Br(_grand_knell(consume=False), req=[ULT()])
+    br["fin"] = funeral_toll([*bell(2.2, time=0.7, op=0.35, grow=1.12, ease="Exponential",
+                                    ease_dir="Out"), *bell_ring(2.0), ripple(2.4, time=0.9)])
     br["knelled"] = Br([Velo((0, 60, 0), 0.15, rel_branch=True, ragdoll=1.6), *burst(1.4),
                         Sfx(S.HEAVY_HIT, vol=2), *bell(1.0, time=0.4, op=0.5, grow=1.2,
                                                       ease="Exponential", ease_dir="Out")])
@@ -598,7 +641,7 @@ def build_awakening():
         State("IFrame", 2.4), State("Stun", 2.1), State("NoM1", 2.2), State("NoJump", 2.2),
         *toll_reset(),
         Anim(A.VESSEL_ULT),
-        Sfx(S.APOCALYPSE_GONG, vol=2.2, end=4.5, fade_out=1.5, global_=True),
+        Sfx(S.HOLLOW_GONG, vol=2.2, end=2.5, fade_out=1.0, global_=True),
         Sfx(S.AMP_IGNITION, vol=2), chime(0.7, vol=2),
         glow(1.0, GOLD, 0.4), flash(DUSK, 0.6), fov(8, 1.0),
         aura(HRP, 1.6, 1.0, GOLD, JADE, op=0.2, hold=False), light(HRP, 20, 3, 1.0),
@@ -656,10 +699,11 @@ def build_hundredfold():
         light("Right Arm", 10, 4, 0.4),
         Wait(0.25),
         Hitbox(8, size=(9, 9, 9), pos=(0, 0, 4.5), stun=1.2, stun_anim=True, blockable=False,
-               ignore_wakeup=True, target="gonged"),
+               ignore_wakeup=True, target="gonged", finisher="fin"),
         *gong("big", 2.4), shake("Heavy", 0.6, 5), fov(-12, 0.45), flash(PALE, 0.07),
         Wait(0.4),
     ])
+    br["fin"] = funeral_toll([*gong("big", 2.4), shake("Heavy", 0.6, 5), flash(PALE, 0.07)])
     br["caught"] = Br([Sfx(S.PUNCH_3, vol=2), *spark(1.0, col=JADE)])
     br["fl_a"] = Br([*spark(0.7, col=GOLD), Velo((0, 0, 1), 0.05, rel_branch=True)])
     br["fl_b"] = Br([*spark(0.7, col=JADE), sound_ring((0, 0, 0), 0.6, JADE, 0.2)])
@@ -686,13 +730,14 @@ def build_hundredfold():
 PRISON_FX = "BR_PRISON"
 
 
-def _bell_strike(clip, start, wait_hit, dmg, target, pitch, size="medium"):
+def _bell_strike(clip, start, wait_hit, dmg, target, pitch, size="medium", finisher=None):
     return [
         Anim(clip, start=start, speed=0.9), Sfx(S.SWING, vol=1.6, speed=0.9),
         trail("Right Arm", 0.4, GOLD),
         Wait(wait_hit),
         Hitbox(dmg, size=(10, 10, 10), pos=(0, 0, 7), stun=1.3, stun_anim=True,
-               blockable=False, ignore_wakeup=True, hit_ragdoll=True, target=target),
+               blockable=False, ignore_wakeup=True, hit_ragdoll=True, target=target,
+               finisher=finisher),
         *gong(size, 2.2), chime(pitch, vol=1.6), shake("Medium", 0.4, 4), fov(-6, 0.3),
         *bell_ring(1.1, z=7), light(HRP, 16, 3, 0.3, GOLD, pos=(0, 2, 7)),
     ]
@@ -708,20 +753,22 @@ def build_kanemaki():
                              aura(HRP, 1.0, 0.5, GOLD, JADE, op=0.3, hold=False)])
     br["shatter"] = Br([*burst(2.0), Sfx(S.GLASS_BREAK, vol=2), Sfx(S.IMPACT_FRAMES, vol=2),
                         Velo((0, 25, 60), 0.15, rel_branch=True, ragdoll=1.6)])
+    shatter = [CancelVisual(PRISON_FX), Sfx(S.GLASS_BREAK, vol=1.8, speed=0.8),
+               *bell(1.3, z=7, time=0.35, op=0.3, grow=1.35, ease="Exponential", ease_dir="Out"),
+               flash(PALE, 0.08), shake("Heavy", 0.6, 6)]
     br["trapped"] = Br([
         Grab(time=1.8, pos=(0, 0, 7), rot=(0, 180, 0), last_hit=1),   # releases just before the shatter
         CancelVisual(PRISON_FX),
         *bell(1.3, z=7, time=2.4, op=0.3, fade=False, vtag=PRISON_FX),
         Sfx(S.CHURCH_BELL_SOFT, vol=1.6, end=2, fade_out=0.6),
         Wait(0.25),
-        *_bell_strike(A.M1_1, 0, 0.2, 5, "rung1", 1.0), Wait(0.45),
-        *_bell_strike(A.M1_3, 0, 0.2, 5, "rung2", 1.15), Wait(0.45),
-        *_bell_strike(A.DIVERGENT_1, 0.25, 0.3, 7, "shatter", 1.3, size="big"),
-        CancelVisual(PRISON_FX), Sfx(S.GLASS_BREAK, vol=1.8, speed=0.8),
-        *bell(1.3, z=7, time=0.35, op=0.3, grow=1.35, ease="Exponential", ease_dir="Out"),
-        flash(PALE, 0.08), shake("Heavy", 0.6, 6),
+        *_bell_strike(A.M1_1, 0, 0.2, 5, "rung1", 1.0, finisher="fin"), Wait(0.45),
+        *_bell_strike(A.M1_3, 0, 0.2, 5, "rung2", 1.15, finisher="fin"), Wait(0.45),
+        *_bell_strike(A.DIVERGENT_1, 0.25, 0.3, 7, "shatter", 1.3, size="big", finisher="fin"),
+        *shatter,
         Wait(0.4),
     ])
+    br["fin"] = funeral_toll(shatter)
     line = [
         State("NoM1", 1.0), State("NoJump", 1.0), State("NoSprint", 1.0),
         Anim(A.CLAP_1), Sfx(S.CLAP, vol=2.2), chime(0.8, vol=1.6),
@@ -731,7 +778,7 @@ def build_kanemaki():
         Wait(0.3),
         *gong("medium", 2.2), shake("Medium", 0.4, 4),
         Hitbox(5, size=(12, 12, 12), pos=(0, 0, 8), stun=1.4, stun_anim=True, blockable=False,
-               ignore_wakeup=True, branch="trapped", target="inside"),
+               ignore_wakeup=True, hit_ragdoll=True, branch="trapped", target="inside"),
         *bell(1.3, z=8, time=0.45, op=0.35, grow=1.05),
         *bell_ring(1.0, z=8),
         Wait(0.35), State("Stun", 0.3), Wait(0.3),
@@ -813,6 +860,11 @@ def build_108th_toll():
                      Sfx(S.IMPACT_FRAMES, vol=2.2)]),
         "miss": Br([Anim(A.PIERCING_BLOOD, start=0.7, speed=1.0), Wait(0.5)]),
     }
+    after = [*bell(3.2, z=3, time=0.9, op=0.35, grow=1.25, ease="Exponential", ease_dir="Out"),
+             *bell_ring(3.0, z=6), ripple(3.5, time=1.0),
+             Visual("Mesh", amount=M.CRACKS, time=5, size=0.45, alt_size=1, col=DUSK, opacity=0,
+                    alt_opacity=1, pos=(0, GROUND + 0.05, 6), rot=(90, 0, 0),
+                    ease="Exponential", ease_dir="In")]
     br["toll108"] = Br([
         State("IFrame", 2.6), Grab(time=1.8, pos=(0, 0, 6), rot=(0, 180, 0), last_hit=1),
         flash(DUSK, 0.6), fov(10, 1.2),
@@ -825,17 +877,14 @@ def build_108th_toll():
         Anim(A.DIVERGENT_1, start=0.25, speed=1.2), Sfx(S.CURSED_STRIKE_STARTUP, vol=2),
         Wait(0.25),
         # --- the 108th toll ----------------------------------------------------
-        *gong("huge", 2.8, global_=True), Sfx(S.DEATH_TOLL, vol=2.4, end=4, fade_out=1.5),
+        *gong("huge", 2.8, global_=True),
         flash(IVORY, 0.12), shake("Heavy", 1.2, 9), fov(-20, 0.7),
         Hitbox(15, size=(14, 14, 14), pos=(0, 0, 6), stun=1.5, stun_anim=True, blockable=False,
-               ignore_wakeup=True, hit_ragdoll=True, debree=8, target="final"),
-        *bell(3.2, z=3, time=0.9, op=0.35, grow=1.25, ease="Exponential", ease_dir="Out"),
-        *bell_ring(3.0, z=6), ripple(3.5, time=1.0),
-        Visual("Mesh", amount=M.CRACKS, time=5, size=0.45, alt_size=1, col=DUSK, opacity=0,
-               alt_opacity=1, pos=(0, GROUND + 0.05, 6), rot=(90, 0, 0),
-               ease="Exponential", ease_dir="In"),
+               ignore_wakeup=True, hit_ragdoll=True, debree=8, target="final", finisher="fin"),
+        *after,
         Wait(0.6),
     ])
+    br["fin"] = funeral_toll(after)
     line = [
         State("NoM1", 1.0), State("NoJump", 1.0), State("NoSprint", 1.0),
         State("DirectionLock", 0.45),
@@ -855,7 +904,8 @@ def build_108th_toll():
 # ============================================================ MILESTONES ====
 def milestone_entries(stage: int):
     """Entries included at each milestone (cumulative)."""
-    entries = [build_spawn(), build_m1(1), build_m1(2), build_m1(3), build_m4(), build_dash()]
+    entries = [build_spawn(), build_m1(1), build_m1(2), build_m1(3), build_m4(),
+               build_dash(polish=stage >= 12)]
     if stage >= 2:
         entries.append(build_striking_log())
     if stage >= 3:
@@ -891,13 +941,31 @@ MILESTONES = [
     (9, "0.9", "Ultimate 2 - Kanemaki, the Bell of Dojo-ji"),
     (10, "0.10", "Ultimate 3 - Sympathetic Cascade"),
     (11, "0.11", "Ultimate 4 - The 108th Toll"),
+    (12, "1.0", "Release: awakened dash, kill flourish, verified combo guide"),
 ]
+
+
+LOCKOUTS = {"NoM1", "NoJump", "NoSprint", "DirectionLock", "SpeedMultiplier"}
+
+
+def end_lockouts_with_skill(entry):
+    """Policy: in moves (not M1s), lockout states never outlive the move.
+    STATE nodes default to CANCEL ON END = false, so a 0.75 s NoM1 on a move
+    that recovers at 0.56 s would otherwise delay the M1 follow-up."""
+    if entry.kind == "MELEE":
+        return entry
+    lines = [entry.line] + [b.line for b in entry.branches.values()]
+    for line in lines:
+        for n in line:
+            if n.get("K_NAME") == "STATE" and n.get("STATE") in LOCKOUTS and not n.get("CHECK"):
+                n["CANCEL ON END"] = True
+    return entry
 
 
 def build(stage: int) -> Character:
     version = dict((s, v) for s, v, _ in MILESTONES)[stage]
     ch = Character(NAME, version)
-    ch.add(*milestone_entries(stage))
+    ch.add(*[end_lockouts_with_skill(e) for e in milestone_entries(stage)])
     return ch
 
 
@@ -947,6 +1015,97 @@ def frame_rows(ch: Character):
     return rows
 
 
+def combo_routes(ch: Character):
+    """The documented combos as data. Each is simulated with analyze.check_combo
+    against the real timelines; the build fails if one stops working."""
+    doc = {e.name: e.to_json() for e in ch.entries}
+
+    def P(ename, take=None):
+        return analyze.entry_paths(doc[ename], {"x": take or {}})["x"]
+
+    Step = analyze.ComboStep
+
+    def m1(i, awk=False):
+        take = {"branch:awk": True} if awk else ({"tag:BR_TOLL": "t_1"} if i == 2 else {})
+        return Step(f"M1 #{i}", P(f"Palm {i}", take), is_m1=True)
+
+    def m4(kind="normal", awk=False):
+        p = "a" if awk else ""
+        return Step({"normal": "M4", "up": "M4 ↑ uptilt", "down": "M4 ↓ downslam"}[kind],
+                    P("Gong Palm", {f"branch:{p}{kind}": True, "tag:BR_TOLL": f"{kind}t_1"}),
+                    is_m1=True)
+
+    def mv(label, ename, take=None, delay=0.0):
+        return Step(label, P(ename, take), delay=delay)
+
+    m1x3 = [m1(1), m1(2), m1(3)]
+    am1x3 = [m1(1, True), m1(2, True), m1(3, True)]
+    log = lambda: mv("1 Striking Log", "Striking Log", {"hit": "hit"})  # noqa: E731
+    wave = lambda: mv("3 Toll Wave (OTG)", "Toll Wave")                   # noqa: E731
+    fall = lambda: mv("jump → 1 Falling Log", "Striking Log",              # noqa: E731
+                      {"branch:air": True, "hit": "ahit"}, delay=0.25)
+    routes = []
+    if "Reverb Palm" in doc:
+        routes.append(("First Toll — BnB", "Base", "Any Tolls. Ends with 2 Tolls.",
+                       m1x3 + [mv("2 Reverb Palm (echo)", "Reverb Palm", {"tag:BR_TOLL": "rt_1"})]
+                       + [m1(1), m1(2), m1(3), m4(), log()]))
+    if "Bell Toll" in doc and "Toll Wave" in doc:
+        routes.append(("Rising Knell", "Base", "Launcher route; the wave picks them up off the "
+                       "floor.", m1x3 + [mv("4 Bell Toll", "Bell Toll", {"hit": "launched",
+                                                                         "tag:BR_TOLL": "bt_1"}),
+                                         wave()]))
+        routes.append(("Bell Drop", "Base", "Uptilt into an air spike.",
+                       m1x3 + [m4("up"), fall(), wave()]))
+    if "Strike the Bell" in doc and "Reverb Palm" in doc:
+        routes.append(("Clap Chain", "Base", "R pulse resets the M1 string.",
+                       m1x3 + [mv("R Strike the Bell", "Strike the Bell", {"tag:BR_TOLL": "pt_1"})]
+                       + m1x3 + [mv("2 Reverb Palm (echo)", "Reverb Palm",
+                                    {"tag:BR_TOLL": "rt_1"})]))
+    if "Strike the Bell" in doc and "Toll Wave" in doc:
+        routes.append(("Grand Knell", "Base, 3 Tolls", "Spend the Knell on R, chase the launch.",
+                       m1x3 + [mv("R ★ Grand Knell", "Strike the Bell", {"tag:BR_TOLL": "grand"}),
+                               fall(), wave()]))
+    if "Reverb Palm" in doc and "Toll Wave" in doc:
+        routes.append(("Thrice-Rung", "Base, from 0 Tolls", "Builds exactly 3 Tolls (M1 #2, Log, "
+                       "M1 #2) and cashes them in the same combo.",
+                       [m1(1), m1(2), log(), m1(1), m1(2), m1(3),
+                        mv("2 ★ Knell Reverb Palm", "Reverb Palm", {"tag:BR_TOLL": "knell"}),
+                        wave()]))
+    if "Hundredfold Strikes" in doc and "Sympathetic Cascade" in doc:
+        routes.append(("Hundred Tolls", "Awakened", "",
+                       am1x3 + [mv("U1 Hundredfold Strikes", "Hundredfold Strikes",
+                                   {"hit": "flurry"}),
+                                mv("U3 Sympathetic Cascade (OTG)", "Sympathetic Cascade")]))
+    if "Kanemaki" in doc and "Sympathetic Cascade" in doc:
+        routes.append(("Dōjō-ji", "Awakened", "The bell drops over the body the cascade threw.",
+                       am1x3 + [mv("U3 Sympathetic Cascade", "Sympathetic Cascade"),
+                                mv("U2 Kanemaki (OTG capture)", "Kanemaki", {"hit": "trapped"})]))
+    if "The 108th Toll" in doc:
+        routes.append(("One Hundred and Eight", "Awakened", "The finisher.",
+                       am1x3 + [mv("U4 The 108th Toll", "The 108th Toll", {"hit": "toll108"})]))
+    return routes
+
+
+def write_combos(ch: Character, path: str):
+    out = [f"# Combos — {NAME} v{ch.version}", "",
+           "Every route below is simulated from the real timelines by "
+           "`jjsforge.analyze.check_combo` on each build (the build fails if one breaks). "
+           "Each step starts the moment the previous one recovers. *True combo* = the first hit "
+           "lands while the target is still in hitstun (spare time shown); *OTG* = it lands on a "
+           "ragdolled target with a hitbox that can hit ragdolls. Assumes the target is in range "
+           "(lunges and pulls handle most spacing) and no burst/evasive is used.", ""]
+    broken = []
+    for name, mode, note, steps in combo_routes(ch):
+        rows, total, ok = analyze.check_combo(steps)
+        out += [f"## {name}  ·  _{mode}_", ""] + ([note, ""] if note else [])
+        out += [analyze.combo_table(" → ".join(s.label for s in steps), rows, total, ok), ""]
+        if not ok:
+            broken.append(name)
+    with open(path, "w") as f:
+        f.write("\n".join(out) + "\n")
+    return broken
+
+
 def write_outputs(stage: int, outdir: str, known):
     ch = build(stage)
     doc = ch.document()
@@ -992,6 +1151,10 @@ def main():
                     "left when you recover; a follow-up whose first hit comes out "
                     "faster than that is a true combo.\n\n")
             f.write(analyze.table(frame_rows(ch)) + "\n")
+        broken = write_combos(ch, os.path.join(HERE, "COMBOS.md"))
+        if broken:
+            raise SystemExit(f"documented combos broke: {broken}")
+        print("combos verified:", len(combo_routes(ch)))
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-# Frame data - The Bellringer v0.11
+# Frame data - The Bellringer v1.0
 
 Generated from the actual timelines by `jjsforge.analyze` (WAIT sums; hitstun from each HITBOX). *Advantage* = target stun left when you recover; a follow-up whose first hit comes out faster than that is a true combo.
 

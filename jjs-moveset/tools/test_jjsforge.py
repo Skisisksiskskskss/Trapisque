@@ -57,6 +57,30 @@ def test_loop_bounds():
     assert any("LOOP BACK" in e for e in rep.errors)
 
 
+def test_combo_checker_respects_nom1():
+    from jjsforge import analyze
+    p1 = analyze.Path("a", hits=[analyze.Hit(0.2, 3, 0.75)], end=0.35, no_m1_until=0.9)
+    p2 = analyze.Path("b", hits=[analyze.Hit(0.2, 3, 0.75)], end=0.35)
+    rows, _, ok = analyze.check_combo([analyze.ComboStep("a", p1),
+                                       analyze.ComboStep("b", p2, is_m1=True)])
+    assert rows[1][1] == 0.9          # the M1 waits for NoM1 to expire
+    assert not ok                     # 0.9 + 0.2 > 0.2 + 0.75 -> a gap
+
+
+def test_skill_lockouts_end_with_skill():
+    import bellringer
+    ch = bellringer.build(bellringer.MILESTONES[-1][0])
+    for e in ch.document():
+        if e["K_NAME"] == "MELEE":
+            continue
+        data = json.loads(e["DATA"])
+        for line in [data["Line"]] + [b["Line"] for b in (data.get("Branch") or {}).values()]:
+            for n in line:
+                if (n["K_NAME"] == "STATE" and n["STATE"] in bellringer.LOCKOUTS
+                        and not n["CHECK"]):
+                    assert n["CANCEL ON END"], (e["NAME"], n)
+
+
 def test_bellringer_builds():
     import bellringer
     for stage, version, _ in bellringer.MILESTONES:
