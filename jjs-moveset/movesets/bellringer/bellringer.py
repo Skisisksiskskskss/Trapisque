@@ -1253,10 +1253,30 @@ def write_outputs(stage: int, outdir: str, known):
     os.makedirs(outdir, exist_ok=True)
     base = f"bellringer_v{ch.version}"
     with open(os.path.join(outdir, base + ".txt"), "w") as f:
-        f.write(code + "\n")
+        f.write(code)          # the bare code: nothing extra can sneak into a paste
     with open(os.path.join(outdir, base + ".json"), "w") as f:
         f.write(ch.readable_json() + "\n")
     return ch, code, rep
+
+
+def write_codes_page(built, path):
+    """CODES.md: every import code in its own block (GitHub adds a Copy button to
+    each), the latest first."""
+    about = {s: text for s, _, text in MILESTONES}
+    st, version, code = built[-1]
+    out = [f"# {NAME} - import codes", "",
+           "Copy a code (GitHub shows a **Copy** button at the top right of each box), "
+           "then in a JJS private server open your **Character Block -> Configure** "
+           "(the Skill Builder) and paste it into **Import**. Each code is one line "
+           "starting with `KLUv/`; paste all of it.", "",
+           f"## Latest: v{version} - the full character", "",
+           f"Everything up to: {about[st]}. ({len(code):,} characters)", "",
+           "```text", code, "```", "", "## Every milestone", ""]
+    for st, version, code in built:
+        out += [f"### v{version} - {about[st]}", "", f"{len(code):,} characters", "",
+                "```text", code, "```", ""]
+    with open(path, "w") as f:
+        f.write("\n".join(out))
 
 
 def main():
@@ -1268,9 +1288,11 @@ def main():
     known = A.known_pairs(args.catalog if os.path.exists(args.catalog) else None)
     stages = [args.stage] if args.stage else [s for s, _, _ in MILESTONES]
     last = None
+    built = []
     for st in stages:
         ch, code, rep = write_outputs(st, args.out, known)
         last = (ch, code)
+        built.append((st, ch.version, code))
         print(f"v{ch.version}: {len(ch.entries)} entries, code {len(code):,} chars, "
               f"{len(rep.warnings)} warning(s)")
         for w in rep.warnings:
@@ -1278,7 +1300,8 @@ def main():
     if last and not args.stage:
         ch, code = last
         with open(os.path.join(args.out, "bellringer_latest.txt"), "w") as f:
-            f.write(code + "\n")
+            f.write(code)
+        write_codes_page(built, os.path.join(ROOT, "CODES.md"))
         with open(os.path.join(HERE, "FRAMEDATA.md"), "w") as f:
             f.write(f"# Frame data - {NAME} v{ch.version}\n\n")
             f.write("Generated from the actual timelines by `jjsforge.analyze` "
