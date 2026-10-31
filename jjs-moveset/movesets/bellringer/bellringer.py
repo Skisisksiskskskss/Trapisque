@@ -21,9 +21,9 @@ from jjsforge import analyze, codec, validate  # noqa: E402
 from jjsforge.assets import SFX as S  # noqa: E402
 from jjsforge.model import (AWAKENED, BASE, PASSIVE, Awakening, Br, Character,  # noqa: E402,F401
                             Chase, Melee, Skill, Special)
-from jjsforge.nodes import (AIR, BAR, HOLD, JUMP, ULT, Anim, Branch, CancelVisual,  # noqa: E402,F401
-                            Hitbox, HitCancel, Loop, SetCooldown, SetMelee, Sfx, State, Tag,
-                            TagCheck, TagSet, Velo, Visual, Wait)
+from jjsforge.nodes import (AIR, BAR, HOLD, JUMP, ULT, Anim, Awaken, Branch,  # noqa: E402,F401
+                            CancelVisual, Hitbox, HitCancel, Loop, SetCooldown, SetMelee, Sfx,
+                            State, Tag, TagCheck, TagSet, Velo, Visual, Wait)
 
 from fx import (BRONZE, GOLD, GROUND, HRP, IVORY, JADE, PALE, afterimage, aura,  # noqa: E402,F401
                 bell, bell_ring, burst, chime, flash, fov, glow, gong, light, ripple, shake,
@@ -322,18 +322,95 @@ def build_striking_log():
                  tooltip="Hold: Charged Log | Air: Falling Log")
 
 
+# ======================================================= 2  REVERB PALM ====
+def _palm_windup(col=GOLD, big=False):
+    return [
+        State("NoJump", 0.9), State("NoSprint", 0.9), State("DirectionLock", 0.35),
+        Sfx(S.ENERGY_WINDUP, vol=1.8), chime(0.9 if not big else 0.75, vol=1.2),
+        Anim(A.PIERCING_BLOOD, speed=2.0),           # palms meet, thrust at ~0.34 s
+        light("Right Arm", 7, 3, 0.4, col), light("Left Arm", 7, 3, 0.4, col),
+        aura("Right Arm", 0.6, 0.4, col, PALE, hold=False),
+        aura("Left Arm", 0.6, 0.4, col, PALE, hold=False),
+    ] + ([glow(0.35, GOLD, 0.5), aura(HRP, 1.2, 0.5, GOLD, JADE, op=0.3, hold=False)]
+         if big else [])
+
+
+def _echo(dmg: float, stun: float, target: str, pitch: float, bell_sound: bool = False):
+    """A vibration detonating inside the (stunned) target in front of the user."""
+    return [
+        chime(pitch, vol=1.8), Sfx(S.ENERGY_HIT, vol=1.8, speed=pitch),
+        *(gong("small", 1.6) if bell_sound else []),
+        Hitbox(dmg, size=(9, 9, 9), pos=(0, 0, 5), stun=stun, stun_anim=True,
+               blockable=False, ignore_wakeup=True, target=target),
+    ]
+
+
+def build_reverb_palm():
+    """Move 2 (★): double palm plants a vibration; the echo detonates 0.5 s later.
+    Knell: the echo rings three times and bursts into a launch."""
+    br = {}
+    echo_rest = [Velo((0, 0, 4), 0.06), Wait(0.5),
+                 *_echo(5, 1.0, "echo", 1.0, bell_sound=True),
+                 SetMelee(0, 1.5), Wait(0.2)]
+    gl, gb = toll_gain("rt", echo_rest)
+    br.update(gb)
+    br["planted"] = Br([Sfx(S.PUNCH_2, vol=2.2), tok(2, 1.4), Velo((0, 0, 6), 0.08, rel_branch=True),
+                        *spark(0.9), sound_ring((0, 0, 0), 1.0, GOLD, 0.4),
+                        aura(HRP, 0.9, 0.55, GOLD, JADE, op=0.4, hold=False)])
+    br["echo"] = Br([Visual("Distortion", time=0.25, size=3.5, alt_size=1.5, amount=1,
+                            opacity=0, alt_opacity=1), *burst(1.0, col=JADE, alt=PALE),
+                     ripple(0.5, col=JADE, time=0.45), Velo((0, 4, 4), 0.1, rel_branch=True)])
+    br["miss"] = Br([State("Stun", 0.35), Anim(A.PIERCING_BLOOD, start=0.7, speed=1.2),
+                     Wait(0.3)])
+    # ---- Knell (3 Tolls): spent only if the palm connects ----------------
+    br["knell"] = Br(_palm_windup(GOLD, big=True) + [
+        Wait(0.3),
+        Hitbox(4, size=(7, 7, 7), pos=(0, 0, 4), stun=1.4, stun_anim=True, target="kplant"),
+        HitCancel("miss", time=0.1, missed=True),
+        *toll_reset(),
+        Sfx(S.BRASS_HANDBELL_1, vol=1.6, speed=0.8, end=2, fade_out=0.8),
+        shake("Light", 0.3, 2), Wait(0.45),
+        *_echo(3, 0.9, "kecho1", 1.0), Wait(0.45),
+        *_echo(3, 0.9, "kecho2", 1.15), Wait(0.45),
+        *_echo(4, 0.9, "kecho3", 1.3), Wait(0.45),
+        *gong("medium", 2.2), shake("Medium", 0.5, 4), fov(-10, 0.45), flash(PALE, 0.06),
+        Hitbox(4, size=(9, 9, 9), pos=(0, 0, 5), stun=1.2, stun_anim=True, blockable=False,
+               ignore_wakeup=True, target="kburst"),
+        Awaken(6), SetMelee(0, 1.5), Wait(0.25),
+    ], req=[])
+    br["kplant"] = Br(br["planted"].line + [aura(HRP, 1.2, 2.0, GOLD, JADE, op=0.35, hold=False)])
+    for i in (1, 2, 3):
+        br[f"kecho{i}"] = Br([Visual("Distortion", time=0.25, size=3 + i, alt_size=1.5,
+                                     amount=1, opacity=0, alt_opacity=1),
+                              *spark(0.8 + 0.2 * i, col=JADE, alt=PALE),
+                              sound_ring((0, 0, 0), 0.8 + 0.3 * i, JADE, 0.35, forward=False),
+                              Velo((0, 2, 2), 0.06, rel_branch=True)])
+    br["kburst"] = Br([*bell(0.8, time=0.45, op=0.4, grow=1.15), *bell_ring(0.7, col=GOLD),
+                       *burst(1.6), Velo((0, 35, 30), 0.15, rel_branch=True, ragdoll=1.3)])
+    line = [TagCheck(TOLL, "3", "knell"),
+            State("NoM1", 1.0), *_palm_windup(),
+            Wait(0.3),
+            Hitbox(4, size=(7, 7, 7), pos=(0, 0, 4), stun=1.4, stun_anim=True, target="planted"),
+            HitCancel("miss", time=0.1, missed=True)] + gl
+    return Skill("Reverb Palm", key=2, cooldown=12, line=line, branches=br, props=BASE(),
+                 tooltip="★ Knell at 3 Tolls: the echo rings three times")
+
+
 # ============================================================ MILESTONES ====
 def milestone_entries(stage: int):
     """Entries included at each milestone (cumulative)."""
     entries = [build_spawn(), build_m1(1), build_m1(2), build_m1(3), build_m4(), build_dash()]
     if stage >= 2:
         entries.append(build_striking_log())
+    if stage >= 3:
+        entries.append(build_reverb_palm())
     return entries
 
 
 MILESTONES = [
     (1, "0.1", "M1s, dash and the Toll system"),
     (2, "0.2", "Move 1 - Striking Log (hold + air variants)"),
+    (3, "0.3", "Move 2 - Reverb Palm (delayed echo, Knell)"),
 ]
 
 
@@ -368,6 +445,9 @@ def frame_rows(ch: Character):
     add("1 Striking Log (whiff)", "Striking Log", W)
     add("1 Charged Log (hold, hit, ragdoll)", "Striking Log", {"branch:hold": True, "hit": "chit"})
     add("1 Falling Log (air, hit, ragdoll)", "Striking Log", {"branch:air": True, "hit": "ahit"})
+    add("2 Reverb Palm (hit + echo)", "Reverb Palm", {"tag:BR_TOLL": "rt_1"})
+    add("2 Reverb Palm (whiff)", "Reverb Palm", {"miss": "miss", **W})
+    add("2 ★ Knell Reverb Palm (hit, ragdoll)", "Reverb Palm", {"tag:BR_TOLL": "knell"})
     return rows
 
 
