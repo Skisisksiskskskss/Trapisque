@@ -23,6 +23,7 @@ from jjsforge.assets import SFX as S  # noqa: E402
 from jjsforge.model import (AWAKENED, BASE, PASSIVE, Awakening, Br, Character,  # noqa: E402,F401
                             Chase, Melee, Skill, Special)
 from jjsforge.nodes import (AIR, BAR, HOLD, JUMP, ULT, Anim, Awaken, Branch,  # noqa: E402,F401
+                            Grab, Teleport, Counter,
                             CancelVisual, Hitbox, HitCancel, Loop, Projectile, SetCooldown,
                             SetMelee, Sfx, State, Tag, TagCheck, TagSet, Velo, Visual, Wait)
 
@@ -533,6 +534,56 @@ def build_bell_toll():
                  tooltip="★ Knell at 3 Tolls: the giant bell")
 
 
+# ================================================== R  STRIKE THE BELL ====
+def _grand_knell(consume: bool):
+    """A colossal bell drops around the user and rings everyone inside upward."""
+    return ([*toll_reset()] if consume else [SetCooldown(-1, 12)]) + [
+        State("IFrame", 0.6), State("NoM1", 1.1), State("NoJump", 1.1), State("NoSprint", 1.1),
+        Anim(A.CLAP_3), Sfx(S.CLAP, vol=2.4), Sfx(S.AMP_IGNITION, vol=1.8),
+        glow(0.4, GOLD, 0.35), aura(HRP, 1.8, 0.8, GOLD, JADE, op=0.15, hold=False),
+        *bell(2.2, drop=18, time=0.35, op=0.35, ease="Quad", ease_dir="In"),
+        Wait(0.35),
+        *gong("big", 2.6), shake("Heavy", 0.8, 6), fov(-14, 0.55), flash(PALE, 0.08),
+        Hitbox(12, size=(30, 14, 30), pos=(0, 1, 0), stun=1.2, stun_anim=True, hit_ragdoll=True,
+               ignore_wakeup=True, blockable=False, debree=4, target="knelled"),
+        *bell(2.2, time=0.7, op=0.35, grow=1.12, ease="Exponential", ease_dir="Out"),
+        *bell_ring(2.0), ripple(2.4, time=0.9),
+        Awaken(12),
+        Wait(0.5),
+    ]
+
+
+def build_special():
+    """R (★): resonant clap pulse; at 3 Tolls (or awakened) the Grand Knell."""
+    br = {}
+    gl, gb = toll_gain("pt", [SetMelee(0, 1.5), Wait(0.3)])
+    br.update(gb)
+    br["rung"] = Br([Sfx(S.PUNCH_1, vol=1.8), chime(1.2, vol=1.4), *spark(0.8),
+                     Velo((0, 1, 8), 0.1, rel_branch=True)])
+    br["whiff"] = Br([Wait(0.3)])
+    br["grand"] = Br(_grand_knell(consume=True))
+    br["awk"] = Br(_grand_knell(consume=False), req=[ULT()])
+    br["knelled"] = Br([Velo((0, 60, 0), 0.15, rel_branch=True, ragdoll=1.6), *burst(1.4),
+                        Sfx(S.HEAVY_HIT, vol=2), *bell(1.0, time=0.4, op=0.5, grow=1.2,
+                                                      ease="Exponential", ease_dir="Out")])
+    line = [
+        Branch("awk"),
+        TagCheck(TOLL, "3", "grand"),
+        State("NoM1", 0.45), State("NoJump", 0.45),
+        Anim(A.CLAP_2), Sfx(S.CLAP, vol=2), chime(1.0, vol=1.5),
+        Wait(0.15),
+        ripple(0.7, time=0.45), sound_ring((0, 0, 0), 1.2, GOLD, 0.35, forward=False),
+        Visual("Wind Ring", time=0.4, size=1.2, alt_size=2.5, amount=3, col=GOLD, alt_col=PALE,
+               opacity=0.8, alt_opacity=1),
+        light(HRP, 12, 3, 0.3),
+        Hitbox(2, size=(13, 8, 13), pos=(0, 0, 1), stun=0.8, stun_anim=True, target="rung"),
+        HitCancel("whiff", time=0.1, missed=True, endlag=0.25),
+    ] + gl
+    return Special("Strike the Bell", 7, line, br,
+                   notes="Base: clap pulse. 3 Tolls: Grand Knell (consumes). Awakened: always "
+                         "Grand Knell, 12 s cooldown.")
+
+
 # ============================================================ MILESTONES ====
 def milestone_entries(stage: int):
     """Entries included at each milestone (cumulative)."""
@@ -545,6 +596,8 @@ def milestone_entries(stage: int):
         entries.append(build_toll_wave())
     if stage >= 5:
         entries.append(build_bell_toll())
+    if stage >= 6:
+        entries.append(build_special())
     return entries
 
 
@@ -554,6 +607,7 @@ MILESTONES = [
     (3, "0.3", "Move 2 - Reverb Palm (delayed echo, Knell)"),
     (4, "0.4", "Move 3 - Toll Wave (projectile, hold variant)"),
     (5, "0.5", "Move 4 - Bell Toll (launcher, Knell)"),
+    (6, "0.6", "R - Strike the Bell / Grand Knell"),
 ]
 
 
@@ -597,6 +651,9 @@ def frame_rows(ch: Character):
         {"hit": "launched", "tag:BR_TOLL": "bt_1"})
     add("4 Bell Toll (whiff)", "Bell Toll", {"miss": "miss", **W})
     add("4 ★ Knell Bell Toll (ragdoll)", "Bell Toll", {"tag:BR_TOLL": "knell", "hit": "klaunched"})
+    add("R Strike the Bell (pulse hit)", "Strike the Bell", {"tag:BR_TOLL": "pt_1"})
+    add("R Strike the Bell (whiff)", "Strike the Bell", {"miss": "whiff", **W})
+    add("R ★ Grand Knell (ragdoll)", "Strike the Bell", {"tag:BR_TOLL": "grand"})
     return rows
 
 

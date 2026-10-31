@@ -1,4 +1,4 @@
-# Frame data - The Bellringer v0.5
+# Frame data - The Bellringer v0.6
 
 Generated from the actual timelines by `jjsforge.analyze` (WAIT sums; hitstun from each HITBOX). *Advantage* = target stun left when you recover; a follow-up whose first hit comes out faster than that is a true combo.
 
@@ -26,5 +26,8 @@ Generated from the actual timelines by `jjsforge.analyze` (WAIT sums; hitstun fr
 | 4 Bell Toll (launch + bell slam, ragdoll) | 0.22s | 0.22s: 4/1.2, 0.52s: 6/1 | 10 | 0.87s | +0.65s |
 | 4 Bell Toll (whiff) | - | - | 0 | 0.67s | - |
 | 4 ★ Knell Bell Toll (ragdoll) | 0.22s | 0.22s: 4/1.2, 0.52s: 14/1.2 | 18 | 1.02s | +0.70s |
+| R Strike the Bell (pulse hit) | 0.15s | 0.15s: 2/0.8 | 2 | 0.45s | +0.50s |
+| R Strike the Bell (whiff) | - | - | 0 | 0.45s | - |
+| R ★ Grand Knell (ragdoll) | 0.35s | 0.35s: 12/1.2 | 12 | 0.85s | +0.70s |
 
 Rows marked *ragdoll* end in knockback/launch: their advantage is decided by the ragdoll time rather than hitstun.

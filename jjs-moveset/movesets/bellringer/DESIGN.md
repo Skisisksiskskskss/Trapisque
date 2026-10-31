@@ -35,7 +35,7 @@ Front dash that checks for a hit every 0.1 s. On hit: short stun, +1 Toll, M1 st
 | 2 | ★ **Reverb Palm** (Hankyō-shō) | Double-palm thrust that plants a vibration; **0.55 s later an echo detonates** inside the target (4 + 5 dmg). Resets the M1 string. | **Knell**: the echo rings **three times** then bursts into a launch (18 dmg total). |
 | 3 | **Toll Wave** (Kane no Hamon) | Pushes a ring of sound forward (projectile). 4 dmg, pulls the target toward you. | **Hold**: Sustained Note — a slower, larger wave that hits up to 3 times. |
 | 4 | ★ **Bell Toll** (Tsurigane Otoshi) | Rising palm launches the target, then a spectral temple bell slams them back to the ground (4 + 6 dmg). | **Knell**: a giant bell crushes them into a crater (4 + 14 dmg, +awakening). |
-| R | ★ **Strike the Bell** (Kane-uchi) | A resonant clap: short-range pulse, 2 dmg, stun. Combo extender / anti-pressure. | **Knell (3 Tolls)**: **Grand Knell** — a colossal bell drops around you and rings out (AoE, 12 dmg, launch, +awakening). |
+| R | ★ **Strike the Bell** (Kane-uchi) | A resonant clap: short-range pulse, 2 dmg, stun, resets the M1 string. Combo extender / anti-pressure. | **Knell (3 Tolls, consumed on use)**: **Grand Knell** — a colossal bell drops around you and rings everyone inside straight up (AoE, 12 dmg, brief i-frames, +awakening). Doubles as an escape. |
 
 ## Awakening — "Joya no Kane: One Hundred and Eight Tolls"
 
@@ -54,7 +54,7 @@ Verified against frame data (see `FRAMEDATA.md`, generated from the actual timel
 
 1. **First Toll** (BnB): `M1×3 → 2 Reverb Palm → (echo) → M1×4 → 1 Striking Log`
 2. **Rising Knell**: `M1×3 → 4 Bell Toll → 3 Toll Wave (on the bounce)`
-3. **Grand Knell** (T): `M1×3 → R Grand Knell → Dash → M1×4`
+3. **Grand Knell** (T): `M1×3 → R Grand Knell → jump → 1 Falling Log → 3 Toll Wave`
 4. **Thrice-rung** (T): `M1×2 → 1 Striking Log → M1×3 → 2 Knell Reverb Palm → M4`
 5. **Bell Drop**: `M1×3 → M4↑ (uptilt) → jump → 1 Falling Log → 3 Toll Wave`
 

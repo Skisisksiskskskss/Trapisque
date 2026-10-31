@@ -19,6 +19,7 @@ The code must be pasted complete; one missing character breaks it. The `.json` f
 | v0.3 | + **2 ★ Reverb Palm** (palm + delayed echo; Knell = triple echo + launch) | `dist/bellringer_v0.3.txt` |
 | v0.4 | + **3 Toll Wave** (ring-of-sound projectile that pulls; hold = Sustained Note multi-hit) | `dist/bellringer_v0.4.txt` |
 | v0.5 | + **4 ★ Bell Toll** (launch + spectral bell slam; Knell = giant bell crater) — full base kit | `dist/bellringer_v0.5.txt` |
+| v0.6 | + **R ★ Strike the Bell** (clap pulse; 3 Tolls = Grand Knell AoE) | `dist/bellringer_v0.6.txt` |
 
 ## Rebuild from source
 
