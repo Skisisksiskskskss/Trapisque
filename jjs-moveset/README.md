@@ -21,6 +21,7 @@ The code must be pasted complete; one missing character breaks it. The `.json` f
 | v0.5 | + **4 ★ Bell Toll** (launch + spectral bell slam; Knell = giant bell crater) — full base kit | `dist/bellringer_v0.5.txt` |
 | v0.6 | + **R ★ Strike the Bell** (clap pulse; 3 Tolls = Grand Knell AoE) | `dist/bellringer_v0.6.txt` |
 | v0.7 | + **Awakening: Joya no Kane** (bell-drop activation, 100 s aura; awakened M1s/R). Ultimate slots fill in from v0.8 | `dist/bellringer_v0.7.txt` |
+| v0.8 | + **Ult 1 Hundredfold Strikes** (catch, 10 chiming palms, gong launcher) | `dist/bellringer_v0.8.txt` |
 
 ## Rebuild from source
 

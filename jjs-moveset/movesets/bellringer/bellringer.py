@@ -633,6 +633,55 @@ def build_awakening():
                      delay=2.2, color="255,196,92 92,224,186")
 
 
+# ============================================ U1  HUNDREDFOLD STRIKES ====
+def build_hundredfold():
+    """Awakened 1: lunge-catch, hold, 10 chiming palms, gong palm launcher."""
+    br = {}
+    pair = [   # two palms per loop pass, each with its own sound
+        Hitbox(1.4, size=(8, 8, 8), pos=(0, 0, 4.5), stun=0.6, stun_anim=True, blockable=False,
+               ignore_wakeup=True, target="fl_a"),
+        Sfx(S.PUNCH_1, vol=1.8, speed=1.1), Wait(0.15),
+        Hitbox(1.4, size=(8, 8, 8), pos=(0, 0, 4.5), stun=0.6, stun_anim=True, blockable=False,
+               ignore_wakeup=True, target="fl_b"),
+        Sfx(S.PUNCH_2, vol=1.8, speed=1.05), chime(1.3, vol=1.0), Wait(0.15),
+    ]
+    br["flurry"] = Br([
+        Velo((0, 0.01, 0), 0.05), Sfx(S.PUNCH_3, vol=2.2), shake("Light", 0.3, 2),
+        Grab(time=1.75, pos=(0, 0, 4.5), rot=(0, 180, 0), last_hit=1),
+        Anim(A.RAPID_PUNCHES, end=2.2, speed=1.1),
+        trail("Right Arm", 1.6, JADE), trail("Left Arm", 1.6, GOLD),
+        aura(HRP, 1.4, 1.6, GOLD, JADE, op=0.25, hold=False),
+        *pair, Loop(len(pair), 4),                              # 5 passes = 10 palms
+        Anim(A.DIVERGENT_1, start=0.25, speed=1.3), Sfx(S.CURSED_STRIKE_STARTUP, vol=1.8),
+        light("Right Arm", 10, 4, 0.4),
+        Wait(0.25),
+        Hitbox(8, size=(9, 9, 9), pos=(0, 0, 4.5), stun=1.2, stun_anim=True, blockable=False,
+               ignore_wakeup=True, target="gonged"),
+        *gong("big", 2.4), shake("Heavy", 0.6, 5), fov(-12, 0.45), flash(PALE, 0.07),
+        Wait(0.4),
+    ])
+    br["caught"] = Br([Sfx(S.PUNCH_3, vol=2), *spark(1.0, col=JADE)])
+    br["fl_a"] = Br([*spark(0.7, col=GOLD), Velo((0, 0, 1), 0.05, rel_branch=True)])
+    br["fl_b"] = Br([*spark(0.7, col=JADE), sound_ring((0, 0, 0), 0.6, JADE, 0.2)])
+    br["gonged"] = Br([*bell(0.9, time=0.4, op=0.4, grow=1.15, ease="Exponential",
+                             ease_dir="Out"), *burst(1.8), *bell_ring(0.8),
+                       Velo((0, 15, 70), 0.15, rel_branch=True, ragdoll=1.4)])
+    line = [
+        State("NoM1", 0.9), State("NoJump", 0.9), State("NoSprint", 0.9),
+        Sfx(S.CURSED_STRIKE_STARTUP, vol=1.8), chime(0.9, vol=1.4),
+        Anim(A.DIVERGENT_3, speed=1.4), afterimage(0.4, JADE),
+        trail("Right Arm", 0.5, JADE), light("Right Arm", 9, 3, 0.4, JADE),
+        Wait(0.12),
+        Sfx(S.WHOOSH_FAST, vol=1.5), Velo((0, 0, 95), 0.25, fade=True, track=True),
+        Wait(0.06),
+        *_lunge_checks(3, (8, 8, 9), (0, 0, 3.5), 1.5, "flurry", "caught", checks=4,
+                       blockable=True),
+        Velo((0, 0.01, 0), 0.05), State("Stun", 0.45), Wait(0.4),
+    ]
+    return Skill("Hundredfold Strikes", key=1, cooldown=14, line=line, branches=br,
+                 props=AWAKENED(), tooltip="Catch, then 10 palms and a gong")
+
+
 # ============================================================ MILESTONES ====
 def milestone_entries(stage: int):
     """Entries included at each milestone (cumulative)."""
@@ -649,6 +698,8 @@ def milestone_entries(stage: int):
         entries.append(build_special())
     if stage >= 7:
         entries.append(build_awakening())
+    if stage >= 8:
+        entries.append(build_hundredfold())
     return entries
 
 
@@ -660,6 +711,7 @@ MILESTONES = [
     (5, "0.5", "Move 4 - Bell Toll (launcher, Knell)"),
     (6, "0.6", "R - Strike the Bell / Grand Knell"),
     (7, "0.7", "Awakening - Joya no Kane: 108 Tolls"),
+    (8, "0.8", "Ultimate 1 - Hundredfold Strikes"),
 ]
 
 
@@ -706,6 +758,8 @@ def frame_rows(ch: Character):
     add("R Strike the Bell (pulse hit)", "Strike the Bell", {"tag:BR_TOLL": "pt_1"})
     add("R Strike the Bell (whiff)", "Strike the Bell", {"miss": "whiff", **W})
     add("R ★ Grand Knell (ragdoll)", "Strike the Bell", {"tag:BR_TOLL": "grand"})
+    add("U1 Hundredfold Strikes (ragdoll)", "Hundredfold Strikes", {"hit": "flurry"})
+    add("U1 Hundredfold Strikes (whiff)", "Hundredfold Strikes", W)
     return rows
 
 
