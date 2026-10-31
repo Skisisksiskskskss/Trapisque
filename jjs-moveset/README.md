@@ -24,6 +24,7 @@ The code must be pasted complete; one missing character breaks it. The `.json` f
 | v0.8 | + **Ult 1 Hundredfold Strikes** (catch, 10 chiming palms, gong launcher) | `dist/bellringer_v0.8.txt` |
 | v0.9 | + **Ult 2 Kanemaki** (trap the target in a bell, strike it thrice, shatter) | `dist/bellringer_v0.9.txt` |
 | v0.10 | + **Ult 3 Sympathetic Cascade** (stomp, three expanding resonance rings) | `dist/bellringer_v0.10.txt` |
+| v0.11 | + **Ult 4 The 108th Toll** (finisher cinematic) — every slot filled | `dist/bellringer_v0.11.txt` |
 
 ## Rebuild from source
 

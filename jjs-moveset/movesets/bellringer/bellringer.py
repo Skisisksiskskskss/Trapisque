@@ -792,6 +792,66 @@ def build_cascade():
                  props=AWAKENED(), tooltip="Three expanding resonance rings")
 
 
+# ================================================ U4  THE 108TH TOLL ====
+def build_108th_toll():
+    """Awakened 4: palm thrust; on hit, a colossal bell descends, the tolls ring
+    in a heartbeat and the 108th detonates."""
+    tick = [Hitbox(1, size=(8, 8, 8), pos=(0, 0, 6), stun=1.0, stun_anim=True, blockable=False,
+                   ignore_wakeup=True, hit_ragdoll=True, target="tick"),
+            chime(1.25, vol=1.1), sound_ring((0, 2, 6), 1.1, GOLD, 0.2, forward=False),
+            Wait(0.1),
+            chime(1.4, vol=0.9), sound_ring((0, 3, 6), 1.3, JADE, 0.2, forward=False),
+            Wait(0.1)]
+    br = {
+        "held": Br([Sfx(S.PUNCH_3, vol=2.2), *spark(1.2), aura(HRP, 1.0, 2.0, GOLD, JADE, op=0.3,
+                                                             hold=False)]),
+        "tick": Br([*spark(0.6, col=JADE), Visual("Distortion", time=0.15, size=3, alt_size=1.2,
+                                                  amount=1, opacity=0, alt_opacity=1)]),
+        "final": Br([*burst(2.5), *bell(1.0, time=0.5, op=0.4, grow=1.4, ease="Exponential",
+                                        ease_dir="Out"),
+                     Velo((0, 40, 90), 0.2, rel_branch=True, ragdoll=2.5),
+                     Sfx(S.IMPACT_FRAMES, vol=2.2)]),
+        "miss": Br([Anim(A.PIERCING_BLOOD, start=0.7, speed=1.0), Wait(0.5)]),
+    }
+    br["toll108"] = Br([
+        State("IFrame", 2.6), Grab(time=1.8, pos=(0, 0, 6), rot=(0, 180, 0), last_hit=1),
+        flash(DUSK, 0.6), fov(10, 1.2),
+        Sfx(S.CHURCH_TOLLING, vol=2.2, end=2.6, fade_out=0.8, global_=True),
+        Anim(A.HOLLOW_PURPLE, end=2.2, speed=1.2),
+        aura(HRP, 1.8, 2.0, GOLD, JADE, op=0.2, hold=False), light(HRP, 22, 4, 2.0),
+        *bell(3.2, z=3, drop=40, time=1.6, op=0.35, ease="Quad", ease_dir="In"),
+        *tick, Loop(len(tick), 6),                         # 7 tolls x 0.2 s, 1 dmg each
+        Wait(0.2),
+        Anim(A.DIVERGENT_1, start=0.25, speed=1.2), Sfx(S.CURSED_STRIKE_STARTUP, vol=2),
+        Wait(0.25),
+        # --- the 108th toll ----------------------------------------------------
+        *gong("huge", 2.8, global_=True), Sfx(S.DEATH_TOLL, vol=2.4, end=4, fade_out=1.5),
+        flash(IVORY, 0.12), shake("Heavy", 1.2, 9), fov(-20, 0.7),
+        Hitbox(15, size=(14, 14, 14), pos=(0, 0, 6), stun=1.5, stun_anim=True, blockable=False,
+               ignore_wakeup=True, hit_ragdoll=True, debree=8, target="final"),
+        *bell(3.2, z=3, time=0.9, op=0.35, grow=1.25, ease="Exponential", ease_dir="Out"),
+        *bell_ring(3.0, z=6), ripple(3.5, time=1.0),
+        Visual("Mesh", amount=M.CRACKS, time=5, size=0.45, alt_size=1, col=DUSK, opacity=0,
+               alt_opacity=1, pos=(0, GROUND + 0.05, 6), rot=(90, 0, 0),
+               ease="Exponential", ease_dir="In"),
+        Wait(0.6),
+    ])
+    line = [
+        State("NoM1", 1.0), State("NoJump", 1.0), State("NoSprint", 1.0),
+        State("DirectionLock", 0.45),
+        Anim(A.PIERCING_BLOOD, speed=1.6),                   # thrust at ~0.42 s
+        Sfx(S.ENERGY_WINDUP, vol=2), chime(0.6, vol=1.8),
+        glow(0.45, GOLD, 0.4), aura(HRP, 1.4, 0.5, GOLD, JADE, op=0.25, hold=False),
+        light("Right Arm", 10, 4, 0.5), light("Left Arm", 10, 4, 0.5),
+        Wait(0.4),
+        Hitbox(4, size=(8, 8, 9), pos=(0, 0, 4), stun=2.0, stun_anim=True, branch="toll108",
+               target="held"),
+        HitCancel("miss", time=0.1, missed=True, endlag=0.6),
+    ]
+    return Skill("The 108th Toll", key=4, cooldown=30, line=line, branches=br,
+                 props=AWAKENED(), tooltip="Finisher: the bell tolls 108 times")
+
+
 # ============================================================ MILESTONES ====
 def milestone_entries(stage: int):
     """Entries included at each milestone (cumulative)."""
@@ -814,6 +874,8 @@ def milestone_entries(stage: int):
         entries.append(build_kanemaki())
     if stage >= 10:
         entries.append(build_cascade())
+    if stage >= 11:
+        entries.append(build_108th_toll())
     return entries
 
 
@@ -828,6 +890,7 @@ MILESTONES = [
     (8, "0.8", "Ultimate 1 - Hundredfold Strikes"),
     (9, "0.9", "Ultimate 2 - Kanemaki, the Bell of Dojo-ji"),
     (10, "0.10", "Ultimate 3 - Sympathetic Cascade"),
+    (11, "0.11", "Ultimate 4 - The 108th Toll"),
 ]
 
 
@@ -879,6 +942,8 @@ def frame_rows(ch: Character):
     add("U2 Kanemaki (trapped, ragdoll)", "Kanemaki", {"hit": "trapped"})
     add("U2 Kanemaki (whiff)", "Kanemaki", W)
     add("U3 Sympathetic Cascade (all rings)", "Sympathetic Cascade", {})
+    add("U4 The 108th Toll (hit, ragdoll)", "The 108th Toll", {"hit": "toll108"})
+    add("U4 The 108th Toll (whiff)", "The 108th Toll", {"miss": "miss", **W})
     return rows
 
 
