@@ -36,6 +36,7 @@ Net.FunctionNames = {
 	"ClaimGift",
 	"UseBoost",
 	"GetShopInfo", -- odds + scaled cash amounts for the shop UI
+	"ClaimIndex", -- (rarityIndex) claim an Index set reward
 }
 
 local FOLDER_NAME = "Remotes"

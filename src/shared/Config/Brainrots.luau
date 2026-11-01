@@ -522,4 +522,13 @@ function Brainrots.Get(id: string): BrainrotDef?
 	return byId[id]
 end
 
+function Brainrots.OfRarity(rarity: number): { BrainrotDef }
+	local bucket = byRarity[rarity]
+	if bucket then
+		return bucket
+	end
+	local empty: { BrainrotDef } = {}
+	return empty
+end
+
 return Brainrots

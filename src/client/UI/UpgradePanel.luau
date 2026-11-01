@@ -120,7 +120,9 @@ function UpgradePanel.Register(toast: (string, string?) -> ())
 			TextWrapped = true,
 			Parent = rebirthBar,
 		})
-		local rebirthButton = Kit.button({
+		local armed = false
+		local rebirthButton: TextButton
+		rebirthButton = Kit.button({
 			Text = "♻️ REBIRTH",
 			Color = Kit.Colors.Pink,
 			AnchorPoint = Vector2.new(1, 0.5),
@@ -129,6 +131,20 @@ function UpgradePanel.Register(toast: (string, string?) -> ())
 			TextSize = 26,
 			Parent = rebirthBar,
 			OnClick = function()
+				-- Rebirth resets cash and upgrades, so it takes a confirming second tap.
+				if not armed then
+					armed = true
+					rebirthButton.Text = "TAP TO CONFIRM"
+					task.delay(3, function()
+						armed = false
+						if rebirthButton.Parent then
+							rebirthButton.Text = "♻️ REBIRTH"
+						end
+					end)
+					return
+				end
+				armed = false
+				rebirthButton.Text = "♻️ REBIRTH"
 				local ok, message = Net.Function("Rebirth"):InvokeServer()
 				toast(message, if ok then "good" else "warn")
 			end,

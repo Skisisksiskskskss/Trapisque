@@ -133,7 +133,7 @@ function WaveRoll.RollBoss(rng: Rng, params: RollParams, crystalPower: number, m
 	local candidates: { { id: string, size: string } } = {}
 	local bestId, bestSize, bestDistance = "", "Normal", math.huge
 	for rarity = lowest, highest do
-		local bucket: { Brainrots.BrainrotDef } = Brainrots.ByRarity[rarity] or {}
+		local bucket: { Brainrots.BrainrotDef } = Brainrots.OfRarity(rarity)
 		for _, def in bucket do
 			for _, size in Sizes.List do
 				local power = BrainrotStats.Power(def.Id, mutation, size.Name)

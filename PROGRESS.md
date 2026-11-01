@@ -21,8 +21,8 @@ bash scripts/check.sh builds/X.rbxlx   # format check, lint, strict types, unit 
 |---|---|
 | M0 Scaffold, toolchain, design | ✅ done |
 | M1 Core loop playable | ✅ done |
-| M2 Saving, progression, upgrades, rebirth | ⏳ next |
-| M3 Multiplayer stealing, bonk, escapes | ⬜ |
+| M2 Saving, progression, upgrades, rebirth | ✅ done |
+| M3 Multiplayer stealing, bonk, escapes | ⏳ next |
 | M4 Monetization | ⬜ |
 | M5 Retention (daily, offline, events, leaderboards, codes) | ⬜ |
 | M6 UI polish, onboarding, SFX/VFX, mobile pass | ⬜ |
@@ -54,16 +54,22 @@ bash scripts/check.sh builds/X.rbxlx   # format check, lint, strict types, unit 
   - Upgrade and Brainrots panels.
   - Wave, escape, beam, capture and door-smash animations.
   - Owner-only door pass-through, repair prompt, crystal spin, idle brainrot bob, and rainbow cycling.
-- **Quality gate:** stylua, selene, luau-lsp strict type check, 22 unit tests, rojo build, and the headless runtime
-  check.
+- **Quality gate:** stylua, selene, luau-lsp strict type check, 37 unit tests (catalog, rolls, save schema, save
+  locks, economy pacing, builder), rojo build, and the headless runtime check.
+- **M2 additions:** Index panel with set rewards, Settings panel, RewardService, rebirth confirm, and testable
+  SaveStore (`fromBackend`).
 
-## Next up (M2)
+## Next up (M3)
 
-1. Write an economy pacing test (tests/economy.spec.luau) that simulates the real Economy config, and assert tier
-   timings stay in the 4–9h band for the first rebirth.
-2. Build an Index panel (collection book plus index cash bonus display) and the rebirth confirmation.
-3. Add a playtest of saves in the SaveStore memory backend: unit-test the lock logic with a fake backend.
-4. Then M3: StealService (Steal remote, carry, speed checks, deposit), bonk tool, and the cancel-on-owner-leave rule.
+1. StealService:
+   - Handle the `Steal` remote (validation, carry model above the thief's head, 70% speed, timeout, per-tick
+     speed check, deposit in the thief's own base, cancel if the owner leaves).
+   - Set the player attribute `Carrying` (WorldController already reads it).
+2. Bonk Bat tool, built from parts: server-side hit detection, knockback sent to the victim's client, and the
+   carried brainrot flies home.
+3. Add steal and bonk notifications plus stats (Steals / Stolen), and announcements for big steals.
+4. Then M4: MonetizationService (passes, ProcessReceipt with receipts and SaveNow), ShopPanel, and contextual offers
+   (Overcharge, Instant Repair, offline doubling).
 
 ## Known issues / notes
 

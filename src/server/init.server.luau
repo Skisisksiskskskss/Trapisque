@@ -22,6 +22,7 @@ local order = {
 	"BrainrotService",
 	"UpgradeService",
 	"BoostService",
+	"RewardService",
 	"WaveService",
 	"SyncService",
 }
