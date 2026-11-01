@@ -24,6 +24,7 @@ local order = {
 	"BoostService",
 	"RewardService",
 	"WaveService",
+	"RaidService",
 	"SyncService",
 }
 

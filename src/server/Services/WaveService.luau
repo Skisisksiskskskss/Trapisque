@@ -453,7 +453,8 @@ function WaveService.SendWelcomeWave(player: Player)
 		if not player.Parent or hasPending(player) then
 			return
 		end
-		if ServerState.NextWaveAt - now() < 12 then
+		-- Skip the welcome wave if a global wave is about to start anyway.
+		if ServerState.NextWaveAt - now() < GameConfig.WaveInterval * 0.25 then
 			return
 		end
 		launch({ player }, false, player)

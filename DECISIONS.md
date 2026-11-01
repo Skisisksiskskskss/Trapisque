@@ -111,3 +111,8 @@ Newest decisions are appended at the bottom of each section.
   strict mode.
 - **The Rojo project lives at the repo root** next to the existing booklet file, which is left untouched.
 - **Server size is 8 players**, which matches the 8 plots in the ring.
+- **End-to-end testing without Studio (tests/sim.luau):** the real server scripts boot inside Lune with mocked
+  Players, RunService and Net, and fake players run scripted scenarios. It's the closest thing to a playtest this
+  environment allows, and it caught integration bugs that static checks can't.
+- **Welcome-wave cutoff is relative to WaveInterval (25%),** not a fixed 12s, so tuning the wave timer can't break
+  onboarding.

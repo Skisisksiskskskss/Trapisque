@@ -14,6 +14,7 @@ local order = {
 	"EffectsController",
 	"WaveController",
 	"WorldController",
+	"RaidController",
 	"UIController",
 }
 

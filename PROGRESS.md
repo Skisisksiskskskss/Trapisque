@@ -22,8 +22,8 @@ bash scripts/check.sh builds/X.rbxlx   # format check, lint, strict types, unit 
 | M0 Scaffold, toolchain, design | ✅ done |
 | M1 Core loop playable | ✅ done |
 | M2 Saving, progression, upgrades, rebirth | ✅ done |
-| M3 Multiplayer stealing, bonk, escapes | ⏳ next |
-| M4 Monetization | ⬜ |
+| M3 Multiplayer stealing, bonk, escapes | ✅ done |
+| M4 Monetization | ⏳ next |
 | M5 Retention (daily, offline, events, leaderboards, codes) | ⬜ |
 | M6 UI polish, onboarding, SFX/VFX, mobile pass | ⬜ |
 | M7 Launch kit | ⬜ |
@@ -56,23 +56,32 @@ bash scripts/check.sh builds/X.rbxlx   # format check, lint, strict types, unit 
   - Owner-only door pass-through, repair prompt, crystal spin, idle brainrot bob, and rainbow cycling.
 - **Quality gate:** stylua, selene, luau-lsp strict type check, 37 unit tests (catalog, rolls, save schema, save
   locks, economy pacing, builder), rojo build, and the headless runtime check.
+- **M3 additions:** RaidService (steal, carry, bonk, anti-teleport, owner-leave cancel), RaidController (knockback,
+  swing, guide beam), and tests/sim.luau, an end-to-end server simulation in the gate.
 - **M2 additions:** Index panel with set rewards, Settings panel, RewardService, rebirth confirm, and testable
   SaveStore (`fromBackend`).
 
-## Next up (M3)
+## Next up (M4)
 
-1. StealService:
-   - Handle the `Steal` remote (validation, carry model above the thief's head, 70% speed, timeout, per-tick
-     speed check, deposit in the thief's own base, cancel if the owner leaves).
-   - Set the player attribute `Carrying` (WorldController already reads it).
-2. Bonk Bat tool, built from parts: server-side hit detection, knockback sent to the victim's client, and the
-   carried brainrot flies home.
-3. Add steal and bonk notifications plus stats (Steals / Stolen), and announcements for big steals.
-4. Then M4: MonetizationService (passes, ProcessReceipt with receipts and SaveNow), ShopPanel, and contextual offers
-   (Overcharge, Instant Repair, offline doubling).
+1. MonetizationService:
+   - Gamepass ownership is cached into `session.Passes` on join, and PromptGamePassPurchaseFinished grants passes
+     live.
+   - ProcessReceipt: record the receipt in data, grant the product, `DataService.SaveNow`, then return Granted,
+     with idempotency through `DataSchema.HasReceipt`.
+   - Products: Overcharge1/5, IronDoor, LuckyWave, InstantRepair, ServerLuck, cash packs, DoubleOffline.
+   - Check `PolicyService.ArePaidRandomItemsRestricted` and hide Lucky Wave where it's restricted.
+2. GetShopInfo remote: Lucky Wave odds for the player's tier, scaled cash pack amounts, and policy flags.
+3. ShopPanel with Passes / Boosts / Cash / Server tabs, live prices from MarketplaceService, and odds shown on Lucky
+   Wave.
+4. Contextual offers: a boost button with zero count opens a product prompt, and "Fix Now" on the door alarm prompts
+   InstantRepair. Wire them through `UIController.OnMenu("Boost:<name>")` and `"InstantRepair"`.
+5. Overhead tags for VIP and Rebirth. Add the VIP daily gift (with M5 daily).
 
 ## Known issues / notes
 
+- In the Lune harnesses: instances are new wrapper objects per access (cache by path / compare with ==),
+  `Part.Position` isn't derived (sim rewrites part `.Position` reads to `.CFrame.Position`), and Humanoid.Health
+  needs setting.
 - Lune's `CFrame.lookAt` is wrong for some directions. The test harnesses shim it. Real Roblox is fine.
 - Sound ids are empty placeholders (see Config/Sounds.luau). ASSETS.md will list what to search for.
 - Product ids are 0 until the owner creates them (see Config/Products.luau). The README will explain this.

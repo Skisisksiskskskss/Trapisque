@@ -1,5 +1,24 @@
 # CHANGELOG
 
+## M3: Multiplayer, stealing, bonk, escapes (`builds/BeamABrainrot_M3.rbxlx`)
+
+- **Raids:** when a brainrot smashes your door, everyone else can see STEAL prompts on your pedestals. A thief holds
+  the prompt, carries the brainrot above their head at 70% speed, and keeps it only by reaching their own base
+  before the 45s timeout. A glowing beam shows the thief the way home.
+- **Bonk Bat:** every player gets one, built from parts. A bonk knocks the target flying, and a bonked thief drops the
+  brainrot, which flies back home.
+- **Anti-cheat on the server:**
+  - The server checks door state, ownership, distance, the thief's free space, the carry timeout and per-tick
+    movement speed. Teleporting home cancels the steal.
+  - Freshly stolen brainrots are protected for 60s.
+  - A carry is cancelled if the owner leaves, so a brainrot can never be duplicated.
+- **Notifications, alarms and server announcements** for steals, bonks and rare raids. Steals and times-stolen-from
+  are tracked as stats.
+- **End-to-end server simulation (tests/sim.luau):** boots the real server inside Lune with fake players and checks
+  39 behaviours. It covers join, the welcome wave, capture, income and pad collection, the upgrade gates, tier
+  rebuild, global waves, door-locked steal refusal, a full steal, the teleport exploit, bonk drop, cancel when the
+  owner leaves, save and rejoin, rebirth, and inventory and boost validation.
+
 ## M2: Saving, progression, upgrades, rebirth (`builds/BeamABrainrot_M2.rbxlx`)
 
 - **Saves you can trust:** session locks stop two servers writing the same save. Stale locks from crashed servers

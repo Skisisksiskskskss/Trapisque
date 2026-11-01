@@ -93,8 +93,9 @@ end
 local game = roblox.deserializePlace(fs.readFile(placePath))
 local cache = {}
 local function loadModule(module)
-	if cache[module] ~= nil then
-		return cache[module]
+	local key = module:GetFullName()
+	if cache[key] ~= nil then
+		return cache[key]
 	end
 	local chunk = luau.load(module.Source, {
 		debugName = module:GetFullName(),
@@ -122,7 +123,7 @@ local function loadModule(module)
 		},
 	})
 	local result = chunk()
-	cache[module] = result
+	cache[key] = result
 	return result
 end
 
@@ -223,6 +224,32 @@ check("Pedestal brainrots fit and spawn on every slot", function()
 		model.Parent = holder
 		print("    walker " .. i .. " height " .. tostring(model:GetAttribute("Height")))
 	end
+end)
+
+check("Every ModuleScript in the place requires cleanly", function()
+	local roots = {
+		game:GetService("ReplicatedStorage"):FindFirstChild("Shared"),
+		Server,
+		game:GetService("StarterPlayer").StarterPlayerScripts.Client,
+	}
+	local count = 0
+	for _, root in roots do
+		for _, d in root:GetDescendants() do
+			if d:IsA("ModuleScript") then
+				local ok, err = pcall(loadModule, d)
+				assert(ok, d:GetFullName() .. ": " .. tostring(err))
+				count += 1
+			end
+		end
+	end
+	print("    modules loaded: " .. count)
+end)
+
+check("Bonk Bat tool builds", function()
+	local RaidService = loadModule(Server.Services.RaidService)
+	RaidService.Init()
+	local tool = game:GetService("ServerStorage"):FindFirstChild("Bonk Bat")
+	assert(tool and tool:FindFirstChild("Handle"), "tool with handle")
 end)
 
 if dumpPath then

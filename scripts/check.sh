@@ -33,6 +33,9 @@ rojo build default.project.json -o "$OUT"
 echo "== headless runtime check"
 lune run tests/runtime "$OUT"
 
+echo "== end-to-end server simulation"
+lune run tests/sim "$OUT"
+
 if grep -rniE "\bTODO\b|\bFIXME\b|add your code here|\bstub\b" src >/dev/null; then
 	echo "Found TODO/FIXME/stub markers in src:"
 	grep -rniE "\bTODO\b|\bFIXME\b|add your code here|\bstub\b" src
