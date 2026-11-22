@@ -1,0 +1,100 @@
+/* Leviathan Hunt: a night sea. Brass hunter ships, a crimson monster, teal sonar. */
+:root{
+  --bg:#07131f; --bg-2:#0b1c2c; --surface:#102538; --surface-2:#173149; --line:#24425e;
+  --ink:#e9f1f7; --muted:#93a9bd; --accent:#f2b84b; --accent-ink:#1b1206;
+  --good:#4fd1c5; --bad:#ff4f6d; --p1:#f2b84b; --p2:#ff4f6d;
+  --sea:#0e2a42; --sea-2:#10304b; --reef:#15535a; --island:#5f5b3d; --island-edge:#8d8559;
+  --brass:#f2b84b; --monster:#d61f52; --sonar:#4fd1c5; --beam:#ffe08a;
+  --font-display:"Big Shoulders Display","Arial Narrow","Roboto Condensed",system-ui,sans-serif;
+  --font-body:"Barlow","Segoe UI",system-ui,-apple-system,sans-serif;
+}
+body{background:radial-gradient(120% 70% at 50% 0%, #0d2338 0%, var(--bg) 60%)}
+.title-name{font-weight:900;text-transform:uppercase;letter-spacing:.02em;color:var(--ink)}
+.title-name span{color:var(--bad)}
+.topbar .status-main{font-weight:800;text-transform:uppercase;letter-spacing:.03em}
+.scores{display:flex;gap:6px;flex:none}
+.chip{display:flex;align-items:center;gap:5px;padding:6px 9px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-weight:700;font-size:.86rem;font-variant-numeric:tabular-nums;white-space:nowrap}
+.chip svg{width:15px;height:15px}
+.chip.hits{color:var(--brass)}
+.chip.kills{color:var(--bad)}
+
+#board{width:100%;height:100%;display:block;touch-action:manipulation}
+.t-sea{fill:var(--sea)}
+.t-sea.alt{fill:var(--sea-2)}
+.t-reef{fill:var(--reef)}
+.t-island{fill:var(--island);stroke:var(--island-edge);stroke-width:1.2}
+.zone-label{fill:#9fc3e0;font-family:var(--font-display);font-weight:800;font-size:13px;letter-spacing:.12em;text-transform:uppercase;opacity:.75}
+.hl-move{fill:rgba(79,209,197,.26);stroke:#4fd1c5;stroke-width:1.4}
+.hl-ability{fill:rgba(255,179,71,.22);stroke:#ffb347;stroke-width:1.4}
+.hl-beam{fill:rgba(255,224,138,.2);stroke:#ffe08a;stroke-width:1.2}
+.hl-swim{fill:rgba(110,231,183,.22);stroke:#6ee7b7;stroke-width:1.4}
+.hl-dash{fill:rgba(251,191,36,.2);stroke:#fbbf24;stroke-width:1.4}
+.hl-start{fill:rgba(255,79,109,.14);stroke:rgba(255,79,109,.55);stroke-width:1}
+.hl-pending{fill:rgba(255,255,255,.16);stroke:#fff;stroke-width:2.6}
+.haze{fill:rgba(255,79,109,.24);stroke:none}
+.haze.weak{fill:rgba(255,79,109,.13)}
+.wake circle{fill:none;stroke:rgba(233,241,247,.75);stroke-width:1.4}
+.net-mesh{fill:url(#mesh);stroke:rgba(233,241,247,.6);stroke-width:1}
+.net-ttl{fill:#e9f1f7;font-size:9px;font-weight:700;font-family:var(--font-body)}
+.buoy-ring{fill:none;stroke:rgba(255,209,102,.45);stroke-width:1.2}
+.buoy{fill:#ffd166;stroke:#5a3c00;stroke-width:1.2}
+.buoy-dead{stroke:#6d7d8c;stroke-width:2;stroke-linecap:round}
+.ship-body{fill:var(--brass);stroke:#2a1a02;stroke-width:1.5}
+.ship-icon{fill:none;stroke:#2a1a02;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.ship-hp{fill:#ffe9c2;stroke:#2a1a02;stroke-width:.8}
+.ship-hp.lost{fill:#3d2b14}
+.ship.sunk .ship-body{fill:#41505e;stroke:#22303c}
+.ship.sunk .ship-icon{stroke:#22303c}
+.ship .sel-ring{fill:none;stroke:#fff;stroke-width:2;stroke-dasharray:4 3;opacity:0}
+.ship.selected .sel-ring{opacity:1}
+.ship.done .ship-body{fill:#b98d3b}
+.ship.target-ring .sel-ring{opacity:1;stroke:#ff4f6d;stroke-dasharray:none;stroke-width:2.4}
+.unit{transition:transform .32s cubic-bezier(.3,.7,.3,1)}
+.monster-body{fill:var(--monster);stroke:#3d0614;stroke-width:1.5}
+.monster-glow{fill:rgba(214,31,82,.28)}
+.monster-eye{fill:#ffd166}
+.monster-pupil{fill:#2a0610}
+.monster.hidden-from-hunters .monster-body{fill:rgba(214,31,82,.55);stroke-dasharray:3 2;stroke:#ff8fa8}
+.monster.hidden-from-hunters .monster-glow{fill:rgba(214,31,82,.12)}
+.trail{fill:none;stroke:#ff8fa8;stroke-width:2;stroke-dasharray:4 4;stroke-linecap:round;stroke-linejoin:round;opacity:.9}
+.trail-dot{fill:#ff8fa8;stroke:#3d0614;stroke-width:1}
+.trail-num{fill:#1b0710;font-size:8px;font-weight:800;font-family:var(--font-body)}
+.fx-ping{fill:none;stroke:var(--sonar);stroke-width:2.5}
+.fx-beam{stroke:var(--beam);stroke-width:7;stroke-linecap:round;opacity:.65}
+.fx-harpoon{stroke:#fff;stroke-width:2.2;stroke-linecap:round}
+.fx-splash{fill:none;stroke:#bfe6ff;stroke-width:1.8}
+.fx-hit{fill:none;stroke:#ff4f6d;stroke-width:3}
+.hit-layer polygon{fill:transparent;cursor:pointer}
+
+.shiprow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.shipcard{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 4px 6px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);min-height:62px;position:relative}
+.shipcard svg{width:24px;height:24px}
+.shipcard .nm{font-size:.76rem;font-weight:700;line-height:1}
+.shipcard .st{display:flex;gap:3px}
+.shipcard .st i{width:7px;height:7px;border-radius:50%;background:var(--sonar);display:block}
+.shipcard .st i.used{background:#33495e}
+.shipcard[aria-pressed="true"]{border-color:var(--brass);background:var(--surface-2);box-shadow:0 0 0 1px var(--brass) inset}
+.shipcard.sunk{opacity:.4}
+.shipcard .hp{position:absolute;top:5px;right:6px;font-size:.68rem;font-weight:800;color:#ffd9a0}
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.modes button[aria-pressed="true"]{background:var(--surface-2);border-color:var(--brass);color:var(--ink)}
+.orders{display:flex;align-items:center;gap:6px;font-weight:700;font-size:.9rem;color:var(--muted)}
+.orders i{width:11px;height:11px;border-radius:50%;background:var(--brass);display:block}
+.orders i.used{background:#33495e}
+.bar-row{display:flex;gap:8px;align-items:center;justify-content:space-between}
+.toggle{display:flex;align-items:center;gap:6px;font-size:.86rem;font-weight:650;color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:7px 11px;min-height:38px}
+.toggle svg{width:17px;height:17px}
+.toggle[aria-pressed="true"]{color:var(--ink);border-color:#ff8fa8}
+.confirm-row{display:flex;gap:8px}
+.confirm-row .btn{flex:1}
+.legend{display:flex;flex-wrap:wrap;gap:6px 12px;justify-content:center;font-size:.82rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.legend i{width:11px;height:11px;border-radius:3px;display:block}
+.cover-kicker{margin:0;font-size:.8rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.cover.monster-cover h2{color:#ff8fa8}
+.cover.hunter-cover h2{color:var(--brass)}
+.recap{font-size:.92rem;color:var(--muted);text-align:center;margin:0;min-height:1.3em}
+.recap b{color:var(--ink)}
+
+#screen-game .actionbar{min-height:236px;justify-content:flex-end}
+@media (min-height:900px){ #screen-game .actionbar{min-height:250px} }

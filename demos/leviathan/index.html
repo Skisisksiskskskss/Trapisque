@@ -1,0 +1,2415 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Leviathan Hunt</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Barlow:wght@400;500;600;700&display=swap">
+<style>
+/* ---------- Shared game kit: layout shell, controls, overlays ----------
+   Each game sets its own palette and fonts by overriding these tokens on :root. */
+:root{
+  --bg:#101318; --bg-2:#161a21; --surface:#1d222b; --surface-2:#262c37; --line:#343b48;
+  --ink:#eef1f5; --muted:#a3abb8; --accent:#f2c14e; --accent-ink:#17130a;
+  --good:#47d18c; --bad:#ff6b5e; --p1:#5aa2ff; --p2:#ff6b5e;
+  --font-display:system-ui,sans-serif; --font-body:system-ui,-apple-system,"Segoe UI",sans-serif;
+  --radius:16px; --radius-sm:10px;
+  --gutter-l:max(16px, env(safe-area-inset-left, 0px));
+  --gutter-r:max(16px, env(safe-area-inset-right, 0px));
+  padding-top:env(safe-area-inset-top, 0px);
+  padding-bottom:env(safe-area-inset-bottom, 0px);
+  color-scheme:dark;
+}
+[hidden]{display:none !important}
+*,*::before,*::after{box-sizing:border-box}
+html{height:100%;background:var(--bg);-webkit-text-size-adjust:100%}
+body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.45;
+  overscroll-behavior:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{height:100%;display:flex;flex-direction:column;min-height:0;position:relative;overflow:hidden;user-select:none;-webkit-user-select:none}
+.screen{flex:1;display:flex;flex-direction:column;min-height:0}
+
+/* ---------- Title screen ---------- */
+.title-screen{overflow-y:auto;padding-left:var(--gutter-l);padding-right:var(--gutter-r);padding-block:20px 28px;align-items:center}
+.title-inner{width:100%;max-width:460px;display:flex;flex-direction:column;gap:20px;margin:auto 0}
+.title-art{display:flex;justify-content:center}
+.title-art svg{width:min(70vw,260px);height:auto}
+.title-name{font-family:var(--font-display);font-size:clamp(2.3rem,9vw,3.3rem);line-height:.98;margin:0;text-align:center;letter-spacing:-.01em}
+.title-tag{color:var(--muted);text-align:center;margin:0;font-size:1.02rem}
+.opt-group{display:flex;flex-direction:column;gap:7px}
+.opt-label{font-size:.74rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;padding:4px;background:var(--bg-2);border:1px solid var(--line);border-radius:14px}
+.seg button{border:0;background:transparent;border-radius:10px;padding:10px 6px;min-height:44px;font-weight:650;font-size:.95rem;color:var(--muted);line-height:1.15}
+.seg button[aria-pressed="true"]{background:var(--surface-2);color:var(--ink);box-shadow:0 1px 0 rgba(255,255,255,.06) inset, 0 2px 8px rgba(0,0,0,.25)}
+.opt-note{font-size:.86rem;color:var(--muted);margin:0}
+.title-actions{display:flex;flex-direction:column;gap:10px;margin-top:4px}
+
+/* ---------- Buttons ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:10px 18px;border-radius:999px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font-weight:700;font-size:1rem;line-height:1.1;transition:transform .08s, background .15s, border-color .15s, opacity .15s}
+.btn:active{transform:scale(.97)}
+.btn[disabled]{opacity:.4;pointer-events:none}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn-ghost{background:transparent}
+.btn-danger{background:var(--bad);border-color:var(--bad);color:#160807}
+.btn-sm{min-height:38px;padding:7px 14px;font-size:.9rem}
+.btn-wide{width:100%}
+.icon-btn{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;padding:0;flex:none}
+.icon-btn svg{width:22px;height:22px}
+
+/* ---------- Game screen frame ---------- */
+.topbar{display:flex;align-items:center;gap:10px;padding:10px var(--gutter-r) 8px var(--gutter-l);min-height:60px}
+.topbar .status{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.topbar .status-main{font-family:var(--font-display);font-size:1.15rem;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar .status-sub{font-size:.84rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stage{flex:1;min-height:0;position:relative;display:flex;align-items:center;justify-content:center;padding:4px var(--gutter-r) 4px var(--gutter-l)}
+.stage > svg, .stage > .board{max-width:100%;max-height:100%}
+.actionbar{padding:8px var(--gutter-r) 12px var(--gutter-l);display:flex;flex-direction:column;gap:8px}
+.action-row{display:flex;gap:8px;align-items:stretch}
+.action-row > *{flex:1}
+.hint-line{font-size:.9rem;color:var(--muted);text-align:center;min-height:1.3em;margin:0}
+
+/* ---------- Overlays ---------- */
+.cover{position:absolute;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;
+  padding:24px var(--gutter-r) 24px var(--gutter-l);background:var(--bg);animation:kit-fade .18s ease-out}
+.cover .cover-badge{width:78px;height:78px;border-radius:50%;display:grid;place-items:center;background:var(--surface-2);border:2px solid var(--line)}
+.cover .cover-badge svg{width:42px;height:42px}
+.cover h2{font-family:var(--font-display);font-size:clamp(1.9rem,8vw,2.6rem);margin:0;line-height:1.05}
+.cover p{margin:0;color:var(--muted);max-width:32ch}
+.cover .btn{margin-top:10px;min-width:220px}
+.modal-wrap{position:absolute;inset:0;z-index:50;display:flex;align-items:flex-end;justify-content:center;background:rgba(4,6,10,.62);animation:kit-fade .15s ease-out}
+@media (min-width:640px){ .modal-wrap{align-items:center} }
+.modal{width:100%;max-width:560px;max-height:88%;display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:22px 22px 0 0;box-shadow:0 -10px 40px rgba(0,0,0,.4);animation:kit-rise .2s ease-out}
+@media (min-width:640px){ .modal{border-radius:22px} }
+.modal-head{display:flex;align-items:center;gap:10px;padding:16px 18px 8px}
+.modal-head h2{flex:1;margin:0;font-family:var(--font-display);font-size:1.45rem;line-height:1.1}
+.modal-body{padding:6px 18px 12px;overflow-y:auto;min-height:0;user-select:text;-webkit-user-select:text}
+.modal-actions{display:flex;flex-direction:column;gap:8px;padding:10px 18px calc(16px + env(safe-area-inset-bottom, 0px))}
+.banner{position:absolute;left:0;right:0;top:38%;z-index:45;display:flex;flex-direction:column;align-items:center;pointer-events:none;text-align:center;padding:0 var(--gutter-r) 0 var(--gutter-l)}
+.banner-text{font-family:var(--font-display);font-size:clamp(2.6rem,13vw,4.6rem);line-height:1;padding:10px 22px;border-radius:18px;color:var(--ink);text-shadow:0 4px 24px rgba(0,0,0,.55);animation:kit-pop .9s cubic-bezier(.2,.9,.3,1.3) both}
+.banner-sub{margin-top:8px;font-weight:700;color:var(--ink);background:rgba(0,0,0,.55);padding:6px 12px;border-radius:999px;animation:kit-fade .3s .15s both}
+.banner.tone-good .banner-text{color:var(--good)}
+.banner.tone-bad .banner-text{color:var(--bad)}
+.banner.tone-accent .banner-text{color:var(--accent)}
+.toast{position:absolute;left:50%;top:70px;transform:translateX(-50%);z-index:46;max-width:calc(100% - 32px);padding:9px 16px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);font-weight:650;font-size:.94rem;box-shadow:0 8px 24px rgba(0,0,0,.35);animation:kit-drop .2s ease-out;text-align:center}
+.shake{animation:kit-shake .38s linear}
+@keyframes kit-fade{from{opacity:0}to{opacity:1}}
+@keyframes kit-rise{from{transform:translateY(24px);opacity:.4}to{transform:none;opacity:1}}
+@keyframes kit-drop{from{transform:translate(-50%,-10px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
+@keyframes kit-pop{0%{transform:scale(.4);opacity:0}25%{transform:scale(1.08);opacity:1}75%{transform:scale(1);opacity:1}100%{transform:scale(1.02);opacity:0}}
+@keyframes kit-shake{0%,100%{transform:none}20%{transform:translate(-6px,2px)}40%{transform:translate(5px,-3px)}60%{transform:translate(-4px,1px)}80%{transform:translate(3px,2px)}}
+@media (prefers-reduced-motion: reduce){
+  .banner-text{animation-duration:.01s}
+  .shake{animation:none}
+}
+
+/* ---------- Rules text ---------- */
+.rules h3{font-family:var(--font-display);font-size:1.15rem;margin:16px 0 6px}
+.rules h3:first-child{margin-top:4px}
+.rules p{margin:0 0 8px;color:var(--ink)}
+.rules ul,.rules ol{margin:0 0 10px;padding-left:1.2em;display:flex;flex-direction:column;gap:5px}
+.rules li::marker{color:var(--muted)}
+.rules .tip{background:var(--bg-2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;color:var(--muted);font-size:.92rem}
+.rules b{color:var(--ink)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;margin:0 0 10px;align-items:start}
+.kv dt{font-weight:750;white-space:nowrap}
+.kv dd{margin:0;color:var(--muted)}
+.result-stats{display:grid;grid-template-columns:1fr auto;gap:6px 16px;margin:4px 0 6px;font-variant-numeric:tabular-nums}
+.result-stats span:nth-child(even){font-weight:750;text-align:right}
+
+/* Leviathan Hunt: a night sea. Brass hunter ships, a crimson monster, teal sonar. */
+:root{
+  --bg:#07131f; --bg-2:#0b1c2c; --surface:#102538; --surface-2:#173149; --line:#24425e;
+  --ink:#e9f1f7; --muted:#93a9bd; --accent:#f2b84b; --accent-ink:#1b1206;
+  --good:#4fd1c5; --bad:#ff4f6d; --p1:#f2b84b; --p2:#ff4f6d;
+  --sea:#0e2a42; --sea-2:#10304b; --reef:#15535a; --island:#5f5b3d; --island-edge:#8d8559;
+  --brass:#f2b84b; --monster:#d61f52; --sonar:#4fd1c5; --beam:#ffe08a;
+  --font-display:"Big Shoulders Display","Arial Narrow","Roboto Condensed",system-ui,sans-serif;
+  --font-body:"Barlow","Segoe UI",system-ui,-apple-system,sans-serif;
+}
+body{background:radial-gradient(120% 70% at 50% 0%, #0d2338 0%, var(--bg) 60%)}
+.title-name{font-weight:900;text-transform:uppercase;letter-spacing:.02em;color:var(--ink)}
+.title-name span{color:var(--bad)}
+.topbar .status-main{font-weight:800;text-transform:uppercase;letter-spacing:.03em}
+.scores{display:flex;gap:6px;flex:none}
+.chip{display:flex;align-items:center;gap:5px;padding:6px 9px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-weight:700;font-size:.86rem;font-variant-numeric:tabular-nums;white-space:nowrap}
+.chip svg{width:15px;height:15px}
+.chip.hits{color:var(--brass)}
+.chip.kills{color:var(--bad)}
+
+#board{width:100%;height:100%;display:block;touch-action:manipulation}
+.t-sea{fill:var(--sea)}
+.t-sea.alt{fill:var(--sea-2)}
+.t-reef{fill:var(--reef)}
+.t-island{fill:var(--island);stroke:var(--island-edge);stroke-width:1.2}
+.zone-label{fill:#9fc3e0;font-family:var(--font-display);font-weight:800;font-size:13px;letter-spacing:.12em;text-transform:uppercase;opacity:.75}
+.hl-move{fill:rgba(79,209,197,.26);stroke:#4fd1c5;stroke-width:1.4}
+.hl-ability{fill:rgba(255,179,71,.22);stroke:#ffb347;stroke-width:1.4}
+.hl-beam{fill:rgba(255,224,138,.2);stroke:#ffe08a;stroke-width:1.2}
+.hl-swim{fill:rgba(110,231,183,.22);stroke:#6ee7b7;stroke-width:1.4}
+.hl-dash{fill:rgba(251,191,36,.2);stroke:#fbbf24;stroke-width:1.4}
+.hl-start{fill:rgba(255,79,109,.14);stroke:rgba(255,79,109,.55);stroke-width:1}
+.hl-pending{fill:rgba(255,255,255,.16);stroke:#fff;stroke-width:2.6}
+.haze{fill:rgba(255,79,109,.24);stroke:none}
+.haze.weak{fill:rgba(255,79,109,.13)}
+.wake circle{fill:none;stroke:rgba(233,241,247,.75);stroke-width:1.4}
+.net-mesh{fill:url(#mesh);stroke:rgba(233,241,247,.6);stroke-width:1}
+.net-ttl{fill:#e9f1f7;font-size:9px;font-weight:700;font-family:var(--font-body)}
+.buoy-ring{fill:none;stroke:rgba(255,209,102,.45);stroke-width:1.2}
+.buoy{fill:#ffd166;stroke:#5a3c00;stroke-width:1.2}
+.buoy-dead{stroke:#6d7d8c;stroke-width:2;stroke-linecap:round}
+.ship-body{fill:var(--brass);stroke:#2a1a02;stroke-width:1.5}
+.ship-icon{fill:none;stroke:#2a1a02;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.ship-hp{fill:#ffe9c2;stroke:#2a1a02;stroke-width:.8}
+.ship-hp.lost{fill:#3d2b14}
+.ship.sunk .ship-body{fill:#41505e;stroke:#22303c}
+.ship.sunk .ship-icon{stroke:#22303c}
+.ship .sel-ring{fill:none;stroke:#fff;stroke-width:2;stroke-dasharray:4 3;opacity:0}
+.ship.selected .sel-ring{opacity:1}
+.ship.done .ship-body{fill:#b98d3b}
+.ship.target-ring .sel-ring{opacity:1;stroke:#ff4f6d;stroke-dasharray:none;stroke-width:2.4}
+.unit{transition:transform .32s cubic-bezier(.3,.7,.3,1)}
+.monster-body{fill:var(--monster);stroke:#3d0614;stroke-width:1.5}
+.monster-glow{fill:rgba(214,31,82,.28)}
+.monster-eye{fill:#ffd166}
+.monster-pupil{fill:#2a0610}
+.monster.hidden-from-hunters .monster-body{fill:rgba(214,31,82,.55);stroke-dasharray:3 2;stroke:#ff8fa8}
+.monster.hidden-from-hunters .monster-glow{fill:rgba(214,31,82,.12)}
+.trail{fill:none;stroke:#ff8fa8;stroke-width:2;stroke-dasharray:4 4;stroke-linecap:round;stroke-linejoin:round;opacity:.9}
+.trail-dot{fill:#ff8fa8;stroke:#3d0614;stroke-width:1}
+.trail-num{fill:#1b0710;font-size:8px;font-weight:800;font-family:var(--font-body)}
+.fx-ping{fill:none;stroke:var(--sonar);stroke-width:2.5}
+.fx-beam{stroke:var(--beam);stroke-width:7;stroke-linecap:round;opacity:.65}
+.fx-harpoon{stroke:#fff;stroke-width:2.2;stroke-linecap:round}
+.fx-splash{fill:none;stroke:#bfe6ff;stroke-width:1.8}
+.fx-hit{fill:none;stroke:#ff4f6d;stroke-width:3}
+.hit-layer polygon{fill:transparent;cursor:pointer}
+
+.shiprow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.shipcard{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 4px 6px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);min-height:62px;position:relative}
+.shipcard svg{width:24px;height:24px}
+.shipcard .nm{font-size:.76rem;font-weight:700;line-height:1}
+.shipcard .st{display:flex;gap:3px}
+.shipcard .st i{width:7px;height:7px;border-radius:50%;background:var(--sonar);display:block}
+.shipcard .st i.used{background:#33495e}
+.shipcard[aria-pressed="true"]{border-color:var(--brass);background:var(--surface-2);box-shadow:0 0 0 1px var(--brass) inset}
+.shipcard.sunk{opacity:.4}
+.shipcard .hp{position:absolute;top:5px;right:6px;font-size:.68rem;font-weight:800;color:#ffd9a0}
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.modes button[aria-pressed="true"]{background:var(--surface-2);border-color:var(--brass);color:var(--ink)}
+.orders{display:flex;align-items:center;gap:6px;font-weight:700;font-size:.9rem;color:var(--muted)}
+.orders i{width:11px;height:11px;border-radius:50%;background:var(--brass);display:block}
+.orders i.used{background:#33495e}
+.bar-row{display:flex;gap:8px;align-items:center;justify-content:space-between}
+.toggle{display:flex;align-items:center;gap:6px;font-size:.86rem;font-weight:650;color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:7px 11px;min-height:38px}
+.toggle svg{width:17px;height:17px}
+.toggle[aria-pressed="true"]{color:var(--ink);border-color:#ff8fa8}
+.confirm-row{display:flex;gap:8px}
+.confirm-row .btn{flex:1}
+.legend{display:flex;flex-wrap:wrap;gap:6px 12px;justify-content:center;font-size:.82rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.legend i{width:11px;height:11px;border-radius:3px;display:block}
+.cover-kicker{margin:0;font-size:.8rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.cover.monster-cover h2{color:#ff8fa8}
+.cover.hunter-cover h2{color:var(--brass)}
+.recap{font-size:.92rem;color:var(--muted);text-align:center;margin:0;min-height:1.3em}
+.recap b{color:var(--ink)}
+
+#screen-game .actionbar{min-height:236px;justify-content:flex-end}
+@media (min-height:900px){ #screen-game .actionbar{min-height:250px} }
+
+</style>
+</head>
+<body>
+<div id="app" class="app">
+  <section id="screen-title" class="screen title-screen"></section>
+  <section id="screen-game" class="screen" hidden>
+    <header class="topbar">
+      <button id="btn-menu" class="icon-btn" type="button" aria-label="Menu"></button>
+      <div class="status"><div class="status-main" id="st-main">Round 1</div><div class="status-sub" id="st-sub"></div></div>
+      <div class="scores" id="scores"></div>
+    </header>
+    <div class="stage" id="stage"></div>
+    <div class="actionbar" id="actionbar"></div>
+  </section>
+</div>
+<script>
+/* Shared game kit: title screen, menus, pass-the-phone covers, banners, sound.
+   Exposes window.Kit. No game logic lives here. */
+(function (root) {
+  "use strict";
+  var doc = root.document;
+  var NS = "game";
+  var reduceMotion = false;
+  try { reduceMotion = root.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) {}
+
+  function $(sel, scope) { return (scope || doc).querySelector(sel); }
+  function $all(sel, scope) { return Array.prototype.slice.call((scope || doc).querySelectorAll(sel)); }
+
+  function h(tag, attrs) {
+    var node = doc.createElement(tag);
+    if (attrs) {
+      for (var k in attrs) {
+        if (!Object.prototype.hasOwnProperty.call(attrs, k)) continue;
+        var v = attrs[k];
+        if (v == null || v === false) continue;
+        if (k === "class") node.className = v;
+        else if (k === "html") node.innerHTML = v;
+        else if (k === "text") node.textContent = v;
+        else if (k.slice(0, 2) === "on" && typeof v === "function") node.addEventListener(k.slice(2), v);
+        else node.setAttribute(k, v === true ? "" : v);
+      }
+    }
+    for (var i = 2; i < arguments.length; i++) {
+      var c = arguments[i];
+      if (c == null || c === false) continue;
+      if (Array.isArray(c)) c.forEach(function (x) { if (x != null) node.appendChild(typeof x === "string" ? doc.createTextNode(x) : x); });
+      else node.appendChild(typeof c === "string" ? doc.createTextNode(c) : c);
+    }
+    return node;
+  }
+
+  var SVGNS = "http://www.w3.org/2000/svg";
+  function s(tag, attrs) {
+    var node = doc.createElementNS(SVGNS, tag);
+    if (attrs) {
+      for (var k in attrs) {
+        if (!Object.prototype.hasOwnProperty.call(attrs, k)) continue;
+        var v = attrs[k];
+        if (v == null || v === false) continue;
+        if (k === "text") node.textContent = v;
+        else if (k.slice(0, 2) === "on" && typeof v === "function") node.addEventListener(k.slice(2), v);
+        else node.setAttribute(k, v);
+      }
+    }
+    for (var i = 2; i < arguments.length; i++) {
+      var c = arguments[i];
+      if (c == null || c === false) continue;
+      if (Array.isArray(c)) c.forEach(function (x) { if (x) node.appendChild(x); });
+      else node.appendChild(c);
+    }
+    return node;
+  }
+
+  var store = {
+    get: function (k, d) {
+      try { var v = root.localStorage.getItem(NS + ":" + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; }
+    },
+    set: function (k, v) { try { root.localStorage.setItem(NS + ":" + k, JSON.stringify(v)); } catch (e) {} }
+  };
+
+  var speed = 1;
+  function sleep(ms) {
+    var t = reduceMotion ? Math.min(ms, 80) : ms * speed;
+    return new Promise(function (r) { setTimeout(r, t); });
+  }
+  function frame() { return new Promise(function (r) { root.requestAnimationFrame(function () { r(); }); }); }
+
+  /* ---------- Sound: tiny WebAudio synth, starts after the first tap ---------- */
+  var Sound = (function () {
+    var ctx = null, master = null, on = true;
+    function ensure() {
+      if (ctx) { if (ctx.state === "suspended") ctx.resume(); return ctx; }
+      var AC = root.AudioContext || root.webkitAudioContext;
+      if (!AC) return null;
+      ctx = new AC();
+      master = ctx.createGain();
+      master.gain.value = 0.55;
+      master.connect(ctx.destination);
+      return ctx;
+    }
+    function tone(freq, dur, opts) {
+      opts = opts || {};
+      var c = ensure(); if (!c) return;
+      var t0 = c.currentTime + (opts.delay || 0);
+      var o = c.createOscillator();
+      var g = c.createGain();
+      o.type = opts.type || "sine";
+      o.frequency.setValueAtTime(freq, t0);
+      if (opts.to) o.frequency.exponentialRampToValueAtTime(Math.max(20, opts.to), t0 + dur);
+      var peak = opts.gain == null ? 0.25 : opts.gain;
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(peak, t0 + Math.min(0.02, dur / 4));
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      o.connect(g); g.connect(master);
+      o.start(t0); o.stop(t0 + dur + 0.05);
+    }
+    function noise(dur, opts) {
+      opts = opts || {};
+      var c = ensure(); if (!c) return;
+      var t0 = c.currentTime + (opts.delay || 0);
+      var len = Math.max(1, Math.floor(c.sampleRate * dur));
+      var buf = c.createBuffer(1, len, c.sampleRate);
+      var data = buf.getChannelData(0);
+      for (var i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / len);
+      var src = c.createBufferSource();
+      src.buffer = buf;
+      var f = c.createBiquadFilter();
+      f.type = opts.filter || "lowpass";
+      f.frequency.value = opts.freq || 1200;
+      var g = c.createGain();
+      g.gain.setValueAtTime(opts.gain == null ? 0.3 : opts.gain, t0);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      src.connect(f); f.connect(g); g.connect(master);
+      src.start(t0); src.stop(t0 + dur + 0.05);
+    }
+    var lib = {
+      tap: function () { tone(660, 0.06, { type: "triangle", gain: 0.12 }); },
+      select: function () { tone(520, 0.07, { type: "triangle", gain: 0.16 }); tone(780, 0.08, { type: "triangle", gain: 0.12, delay: 0.05 }); },
+      move: function () { tone(300, 0.12, { type: "sine", to: 420, gain: 0.16 }); },
+      slide: function () { noise(0.16, { freq: 900, gain: 0.12 }); },
+      error: function () { tone(180, 0.16, { type: "square", gain: 0.08 }); },
+      hit: function () { noise(0.22, { freq: 700, gain: 0.45 }); tone(140, 0.25, { type: "sawtooth", to: 60, gain: 0.22 }); },
+      miss: function () { noise(0.3, { freq: 2400, filter: "bandpass", gain: 0.22 }); },
+      splash: function () { noise(0.45, { freq: 1600, gain: 0.35 }); tone(220, 0.3, { to: 90, gain: 0.08 }); },
+      ping: function () { tone(1320, 0.5, { type: "sine", gain: 0.2 }); tone(1320, 0.6, { type: "sine", gain: 0.07, delay: 0.32 }); },
+      contact: function () { tone(880, 0.16, { type: "square", gain: 0.1 }); tone(880, 0.16, { type: "square", gain: 0.1, delay: 0.2 }); tone(1175, 0.3, { type: "square", gain: 0.1, delay: 0.4 }); },
+      reveal: function () { tone(392, 0.12, { type: "triangle", gain: 0.16 }); tone(587, 0.18, { type: "triangle", gain: 0.16, delay: 0.1 }); },
+      roar: function () { tone(110, 0.7, { type: "sawtooth", to: 55, gain: 0.25 }); noise(0.6, { freq: 400, gain: 0.25 }); },
+      liar: function () { tone(220, 0.12, { type: "square", gain: 0.14 }); tone(165, 0.35, { type: "square", gain: 0.14, delay: 0.12 }); },
+      win: function () { [523, 659, 784, 1047].forEach(function (f, i) { tone(f, 0.22, { type: "triangle", gain: 0.16, delay: i * 0.11 }); }); },
+      lose: function () { [392, 330, 262, 196].forEach(function (f, i) { tone(f, 0.28, { type: "triangle", gain: 0.14, delay: i * 0.14 }); }); },
+      tick: function () { tone(1000, 0.03, { type: "square", gain: 0.05 }); },
+      whoosh: function () { noise(0.25, { freq: 3000, filter: "bandpass", gain: 0.18 }); },
+      score: function () { tone(880, 0.09, { type: "triangle", gain: 0.14 }); tone(1320, 0.14, { type: "triangle", gain: 0.12, delay: 0.07 }); },
+      zap: function () { tone(1400, 0.18, { type: "sawtooth", to: 300, gain: 0.1 }); }
+    };
+    return {
+      play: function (name) { if (!on) return; try { var f = lib[name]; if (f) f(); } catch (e) {} },
+      unlock: function () { if (on) { try { ensure(); } catch (e) {} } },
+      get on() { return on; },
+      set on(v) { on = !!v; store.set("sound", on); }
+    };
+  })();
+
+  function haptic(ms) { try { if (root.navigator.vibrate) root.navigator.vibrate(ms || 12); } catch (e) {} }
+
+  /* ---------- Overlays ---------- */
+  var app = null;
+  function appRoot() { return app || (app = $("#app")); }
+
+  function cover(opts) {
+    opts = opts || {};
+    return new Promise(function (resolve) {
+      var btn = h("button", { class: "btn btn-primary", type: "button" }, opts.cta || "Tap when ready");
+      var node = h("div", { class: "cover" + (opts.className ? " " + opts.className : ""), role: "dialog", "aria-modal": "true" },
+        opts.badge ? h("div", { class: "cover-badge", html: opts.badge }) : null,
+        opts.kicker ? h("p", { class: "cover-kicker" }, opts.kicker) : null,
+        h("h2", null, opts.title || "Pass the phone"),
+        opts.text ? h("p", null, opts.text) : null,
+        btn);
+      btn.addEventListener("click", function () { Sound.unlock(); Sound.play("tap"); node.remove(); resolve(); });
+      appRoot().appendChild(node);
+      setTimeout(function () { try { btn.focus(); } catch (e) {} }, 30);
+    });
+  }
+
+  function modal(opts) {
+    opts = opts || {};
+    return new Promise(function (resolve) {
+      var wrap;
+      function done(v) { wrap.remove(); doc.removeEventListener("keydown", onKey); resolve(v); }
+      function onKey(e) { if (e.key === "Escape" && opts.dismissible !== false) done(null); }
+      var body = h("div", { class: "modal-body" + (opts.bodyClass ? " " + opts.bodyClass : "") });
+      if (typeof opts.body === "string") body.innerHTML = opts.body; else if (opts.body) body.appendChild(opts.body);
+      var actions = h("div", { class: "modal-actions" });
+      (opts.actions || [{ label: "Close", value: null }]).forEach(function (a) {
+        actions.appendChild(h("button", {
+          class: "btn btn-wide " + (a.kind === "primary" ? "btn-primary" : a.kind === "danger" ? "btn-danger" : "btn-ghost"),
+          type: "button",
+          onclick: function () { Sound.play("tap"); done(a.value); }
+        }, a.label));
+      });
+      var closeBtn = opts.dismissible === false ? null : h("button", { class: "icon-btn", type: "button", "aria-label": "Close", onclick: function () { done(null); },
+        html: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>' });
+      var panel = h("div", { class: "modal", role: "dialog", "aria-modal": "true", "aria-label": opts.title || "Dialog" },
+        h("div", { class: "modal-head" }, h("h2", null, opts.title || ""), closeBtn),
+        body,
+        (opts.actions && opts.actions.length === 0) ? null : actions);
+      wrap = h("div", { class: "modal-wrap", onclick: function (e) { if (e.target === wrap && opts.dismissible !== false) done(null); } }, panel);
+      appRoot().appendChild(wrap);
+      doc.addEventListener("keydown", onKey);
+    });
+  }
+
+  function banner(text, opts) {
+    opts = opts || {};
+    var node = h("div", { class: "banner tone-" + (opts.tone || "accent"), "aria-live": "assertive" },
+      h("div", { class: "banner-text" }, text),
+      opts.sub ? h("div", { class: "banner-sub" }, opts.sub) : null);
+    appRoot().appendChild(node);
+    var ms = opts.ms || 1100;
+    return sleep(ms).then(function () { node.remove(); });
+  }
+
+  var toastTimer = null, toastNode = null;
+  function toast(text, ms) {
+    if (toastNode) toastNode.remove();
+    toastNode = h("div", { class: "toast", role: "status" }, text);
+    appRoot().appendChild(toastNode);
+    clearTimeout(toastTimer);
+    var n = toastNode;
+    toastTimer = setTimeout(function () { if (n) n.remove(); if (toastNode === n) toastNode = null; }, ms || 1900);
+  }
+
+  function shake(node) {
+    if (!node || reduceMotion) return;
+    node.classList.remove("shake");
+    void node.getBoundingClientRect();
+    node.classList.add("shake");
+    setTimeout(function () { node.classList.remove("shake"); }, 420);
+  }
+
+  /* ---------- Title screen with option pickers ---------- */
+  var ICONS = {
+    menu: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>',
+    soundOn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 010 7M19 6a8.5 8.5 0 010 12"/></svg>',
+    soundOff: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>',
+    phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>',
+    eye: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+    help: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M9.5 9.3a2.6 2.6 0 015 1c0 1.8-2.5 2.2-2.5 3.9M12 17.2v.3"/></svg>'
+  };
+
+  var cfg = null;
+  var choice = {};
+
+  function visibleOptions() {
+    return cfg.options.filter(function (o) { return !o.showIf || o.showIf(choice); });
+  }
+
+  function renderTitle() {
+    var host = $("#title-options");
+    host.innerHTML = "";
+    visibleOptions().forEach(function (opt) {
+      var seg = h("div", { class: "seg", role: "group", "aria-label": opt.label });
+      opt.choices.forEach(function (c) {
+        seg.appendChild(h("button", {
+          type: "button",
+          "aria-pressed": choice[opt.id] === c.v ? "true" : "false",
+          onclick: function () {
+            Sound.unlock(); Sound.play("tap");
+            choice[opt.id] = c.v;
+            store.set("choice", choice);
+            renderTitle();
+          }
+        }, c.t));
+      });
+      var note = opt.note ? opt.note(choice) : null;
+      host.appendChild(h("div", { class: "opt-group" },
+        h("span", { class: "opt-label" }, opt.label), seg,
+        note ? h("p", { class: "opt-note" }, note) : null));
+    });
+  }
+
+  function showRules() {
+    return modal({ title: "How to play", body: cfg.rules, bodyClass: "rules", actions: [{ label: "Got it", value: true, kind: "primary" }] });
+  }
+
+  function showScreen(name) {
+    $all(".screen").forEach(function (sc) { sc.hidden = sc.id !== "screen-" + name; });
+  }
+
+  function init(config) {
+    cfg = config;
+    NS = config.ns || NS;
+    Sound.on = store.get("sound", true);
+    var saved = store.get("choice", {});
+    choice = {};
+    cfg.options.forEach(function (o) {
+      var ok = o.choices.some(function (c) { return c.v === saved[o.id]; });
+      choice[o.id] = ok ? saved[o.id] : o.default;
+    });
+    var title = $("#screen-title");
+    title.innerHTML = "";
+    title.appendChild(h("div", { class: "title-inner" },
+      cfg.art ? h("div", { class: "title-art", html: cfg.art }) : null,
+      h("h1", { class: "title-name" }, cfg.title),
+      h("p", { class: "title-tag" }, cfg.tagline),
+      h("div", { id: "title-options", class: "title-options", style: "display:flex;flex-direction:column;gap:14px" }),
+      h("div", { class: "title-actions" },
+        h("button", { class: "btn btn-primary btn-wide", type: "button", id: "btn-start", onclick: function () {
+          Sound.unlock(); Sound.play("select");
+          var c = {}; visibleOptions().forEach(function (o) { c[o.id] = choice[o.id]; });
+          cfg.onStart(c);
+        } }, "Play"),
+        h("button", { class: "btn btn-ghost btn-wide", type: "button", onclick: function () { Sound.unlock(); Sound.play("tap"); showRules(); } }, "How to play"))));
+    renderTitle();
+    showScreen("title");
+    var menuBtn = $("#btn-menu");
+    if (menuBtn) {
+      menuBtn.innerHTML = ICONS.menu;
+      menuBtn.onclick = function () { Sound.play("tap"); openMenu(); };
+    }
+  }
+
+  function openMenu() {
+    return modal({
+      title: "Paused",
+      body: h("p", { style: "margin:0;color:var(--muted)" }, cfg.menuNote ? cfg.menuNote() : "The game is waiting for you."),
+      actions: [
+        { label: "Resume", value: "resume", kind: "primary" },
+        { label: "How to play", value: "rules" },
+        { label: Sound.on ? "Sound: on" : "Sound: off", value: "sound" },
+        { label: "Restart this match", value: "restart" },
+        { label: "Quit to title", value: "quit", kind: "danger" }
+      ]
+    }).then(function (v) {
+      if (v === "rules") return showRules().then(openMenu);
+      if (v === "sound") { Sound.on = !Sound.on; if (Sound.on) Sound.play("select"); return openMenu(); }
+      if (v === "restart") return confirmAsk("Restart this match?", "The current match will be lost.").then(function (ok) { if (ok && cfg.onRestart) cfg.onRestart(); });
+      if (v === "quit") return confirmAsk("Quit to the title screen?", "The current match will be lost.").then(function (ok) { if (ok) quit(); });
+    });
+  }
+
+  function confirmAsk(title, text) {
+    return modal({ title: title, body: h("p", { style: "margin:0;color:var(--muted)" }, text), actions: [
+      { label: "Yes", value: true, kind: "danger" }, { label: "Cancel", value: false }] }).then(function (v) { return v === true; });
+  }
+
+  function quit() {
+    if (cfg.onQuit) cfg.onQuit();
+    $all(".cover,.modal-wrap,.banner,.toast").forEach(function (n) { n.remove(); });
+    renderTitle();
+    showScreen("title");
+  }
+
+  function gameOver(opts) {
+    Sound.play(opts.tone === "bad" ? "lose" : "win");
+    var body = h("div", null,
+      opts.text ? h("p", { style: "margin:0 0 10px;color:var(--muted)" }, opts.text) : null,
+      opts.stats ? (function () {
+        var grid = h("div", { class: "result-stats" });
+        opts.stats.forEach(function (row) { grid.appendChild(h("span", null, row[0])); grid.appendChild(h("span", null, String(row[1]))); });
+        return grid;
+      })() : null);
+    return modal({ title: opts.title, body: body, dismissible: false, actions: [
+      { label: "Rematch", value: "rematch", kind: "primary" },
+      { label: opts.reviewLabel || "Look at the board", value: "review" },
+      { label: "Main menu", value: "menu" }] }).then(function (v) {
+        if (v === "menu") { quit(); return "menu"; }
+        return v;
+      });
+  }
+
+  /* Small seeded RNG so bots can be varied but testable. */
+  function rng(seed) {
+    var a = (seed >>> 0) || 0x9e3779b9;
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  root.Kit = {
+    $: $, $all: $all, h: h, s: s, store: store, sleep: sleep, frame: frame, Sound: Sound, haptic: haptic,
+    cover: cover, modal: modal, banner: banner, toast: toast, shake: shake, init: init, showScreen: showScreen,
+    showRules: showRules, openMenu: openMenu, confirm: confirmAsk, quit: quit, gameOver: gameOver, ICONS: ICONS, rng: rng,
+    get reduceMotion() { return reduceMotion; },
+    get choice() { return choice; }
+  };
+})(typeof window !== "undefined" ? window : globalThis);
+
+/* Leviathan Hunt: rules engine and bots. No DOM, so it runs in Node for tests. */
+(function (root) {
+  "use strict";
+
+  var COLS = 9, ROWS = 11, N = COLS * ROWS;
+  var SEA = 0, REEF = 1, ISLAND = 2;
+  var CFG = {
+    orders: 3, roundLimit: 20, surfaceEvery: 6, killsToWin: 4, woundsToWin: 3,
+    shipHP: 2, netTTL: 3, maxNets: 2, buoys: 6,
+    sonarRange: 2, harpoonRange: 2, beamRange: 4, shipMove: 2, startRows: 4
+  };
+  var SHIP_DEFS = [
+    { id: "sonar", name: "Sonar", ability: "ping", verb: "Ping" },
+    { id: "harpoon", name: "Harpoon", ability: "harpoon", verb: "Harpoon" },
+    { id: "net", name: "Net", ability: "net", verb: "Net" },
+    { id: "light", name: "Lighthouse", ability: "beam", verb: "Beam" }
+  ];
+
+  /* ---------- Hex grid (pointy-top, odd rows shifted right) ---------- */
+  function cOf(i) { return i % COLS; }
+  function rOf(i) { return (i / COLS) | 0; }
+  var NB_EVEN = [[1, 0], [0, -1], [-1, -1], [-1, 0], [-1, 1], [0, 1]];
+  var NB_ODD = [[1, 0], [1, -1], [0, -1], [-1, 0], [0, 1], [1, 1]];
+  function stepDir(i, d) {
+    var c = cOf(i), r = rOf(i);
+    var o = (r & 1 ? NB_ODD : NB_EVEN)[d];
+    var nc = c + o[0], nr = r + o[1];
+    if (nc < 0 || nc >= COLS || nr < 0 || nr >= ROWS) return -1;
+    return nr * COLS + nc;
+  }
+  var NEI = [], DIRN = [];
+  for (var i0 = 0; i0 < N; i0++) {
+    DIRN[i0] = [];
+    NEI[i0] = [];
+    for (var d0 = 0; d0 < 6; d0++) {
+      var t0 = stepDir(i0, d0);
+      DIRN[i0].push(t0);
+      if (t0 >= 0) NEI[i0].push(t0);
+    }
+  }
+  function cube(i) {
+    var c = cOf(i), r = rOf(i);
+    var x = c - ((r - (r & 1)) >> 1);
+    return [x, -x - r, r];
+  }
+  var DIST = new Uint8Array(N * N);
+  (function () {
+    var cs = [];
+    for (var a = 0; a < N; a++) cs.push(cube(a));
+    for (var a2 = 0; a2 < N; a2++) for (var b = 0; b < N; b++) {
+      var A = cs[a2], B = cs[b];
+      DIST[a2 * N + b] = Math.max(Math.abs(A[0] - B[0]), Math.abs(A[1] - B[1]), Math.abs(A[2] - B[2]));
+    }
+  })();
+  function dist(a, b) { return DIST[a * N + b]; }
+  function disk(center, radius) {
+    var out = [];
+    for (var t = 0; t < N; t++) if (dist(center, t) <= radius) out.push(t);
+    return out;
+  }
+
+  /* ---------- RNG ---------- */
+  function rng(seed) {
+    var a = (seed >>> 0) || 0x9e3779b9;
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function pick(rand, arr) { return arr[Math.floor(rand() * arr.length)]; }
+  function shuffle(rand, arr) {
+    for (var k = arr.length - 1; k > 0; k--) { var j = Math.floor(rand() * (k + 1)); var tmp = arr[k]; arr[k] = arr[j]; arr[j] = tmp; }
+    return arr;
+  }
+
+  /* ---------- Map generation ---------- */
+  function connected(terrain, passable) {
+    var start = -1, total = 0;
+    for (var t = 0; t < N; t++) if (passable(terrain[t])) { total++; if (start < 0) start = t; }
+    if (start < 0) return false;
+    var seen = new Uint8Array(N), stack = [start], count = 0;
+    seen[start] = 1;
+    while (stack.length) {
+      var x = stack.pop(); count++;
+      for (var k = 0; k < NEI[x].length; k++) {
+        var y = NEI[x][k];
+        if (!seen[y] && passable(terrain[y])) { seen[y] = 1; stack.push(y); }
+      }
+    }
+    return count === total;
+  }
+
+  function genMap(rand) {
+    for (var attempt = 0; attempt < 400; attempt++) {
+      var terrain = new Uint8Array(N);
+      var clusters = 4 + Math.floor(rand() * 2);
+      for (var k = 0; k < clusters; k++) {
+        var seed = (1 + Math.floor(rand() * 7)) * COLS + Math.floor(rand() * COLS);
+        terrain[seed] = ISLAND;
+        var size = 1 + Math.floor(rand() * 3);
+        var cur = seed;
+        for (var g = 1; g < size; g++) {
+          var nb = pick(rand, NEI[cur]);
+          if (rOf(nb) >= 1 && rOf(nb) <= 8) { terrain[nb] = ISLAND; cur = nb; }
+        }
+      }
+      var reefs = 0, guard = 0;
+      while (reefs < 7 && guard++ < 200) {
+        var rt = (1 + Math.floor(rand() * 8)) * COLS + Math.floor(rand() * COLS);
+        if (terrain[rt] === SEA) { terrain[rt] = REEF; reefs++; }
+      }
+      var ok = true;
+      for (var hb = 9 * COLS; hb < N; hb++) if (terrain[hb] !== SEA) { ok = false; break; }
+      if (!ok) continue;
+      var islands = 0;
+      for (var q = 0; q < N; q++) if (terrain[q] === ISLAND) islands++;
+      if (islands < 6 || islands > 12) continue;
+      if (!connected(terrain, function (v) { return v === SEA; })) continue;
+      if (!connected(terrain, function (v) { return v !== ISLAND; })) continue;
+      var shipStarts = [1, 3, 5, 7].map(function (c) { return 10 * COLS + c; });
+      var cand = [];
+      for (var b = 2 * COLS; b < 9 * COLS; b++) if (terrain[b] === SEA) cand.push(b);
+      shuffle(rand, cand);
+      var buoys = [];
+      for (var bi = 0; bi < cand.length && buoys.length < CFG.buoys; bi++) {
+        var p = cand[bi];
+        var far = buoys.every(function (o) { return dist(o, p) >= 3; });
+        if (far) buoys.push(p);
+      }
+      if (buoys.length < CFG.buoys) continue;
+      var spread = { left: 0, right: 0, top: 0, bottom: 0 };
+      buoys.forEach(function (p) {
+        if (cOf(p) <= 3) spread.left++; if (cOf(p) >= 5) spread.right++;
+        if (rOf(p) <= 4) spread.top++; if (rOf(p) >= 5) spread.bottom++;
+      });
+      if (!spread.left || !spread.right || !spread.top || !spread.bottom) continue;
+      if (zoneFor(terrain, buoys, 3).length < 10) continue;
+      return { terrain: terrain, buoys: buoys, shipStarts: shipStarts };
+    }
+    throw new Error("map generation failed");
+  }
+
+  /* ---------- State ---------- */
+  function newGame(seed) {
+    var rand = rng(seed);
+    var map = genMap(rand);
+    var s = {
+      seed: seed,
+      terrain: map.terrain,
+      round: 1,
+      phase: "start",
+      monster: { pos: -1, wounds: 0, kills: 0, snagged: false, trail: [] },
+      ships: SHIP_DEFS.map(function (d, k) {
+        return { id: d.id, name: d.name, ability: d.ability, verb: d.verb, pos: map.shipStarts[k], hp: CFG.shipHP, sunk: false, moved: false, acted: false };
+      }),
+      buoys: map.buoys.map(function (p) { return { pos: p, alive: true }; }),
+      nets: [],
+      wake: -1,
+      orders: CFG.orders,
+      P: [],
+      revealedAt: -1,
+      winner: null,
+      reason: "",
+      log: []
+    };
+    s.P = startZone(s);
+    return s;
+  }
+
+  function clone(s) {
+    return {
+      seed: s.seed, terrain: s.terrain, round: s.round, phase: s.phase,
+      monster: { pos: s.monster.pos, wounds: s.monster.wounds, kills: s.monster.kills, snagged: s.monster.snagged, trail: s.monster.trail.slice() },
+      ships: s.ships.map(function (x) { return { id: x.id, name: x.name, ability: x.ability, verb: x.verb, pos: x.pos, hp: x.hp, sunk: x.sunk, moved: x.moved, acted: x.acted }; }),
+      buoys: s.buoys.map(function (b) { return { pos: b.pos, alive: b.alive }; }),
+      nets: s.nets.map(function (n) { return { pos: n.pos, ttl: n.ttl }; }),
+      wake: s.wake, orders: s.orders, P: s.P.slice(), revealedAt: s.revealedAt,
+      winner: s.winner, reason: s.reason, log: []
+    };
+  }
+
+  /* The Leviathan starts in the northern waters, at least 3 tiles from every buoy,
+     so it can't feed on the very first turn. */
+  function zoneFor(terrain, buoys, minGap) {
+    var out = [];
+    for (var t = 0; t < CFG.startRows * COLS; t++) {
+      if (terrain[t] === ISLAND) continue;
+      var ok = true;
+      for (var k = 0; k < buoys.length; k++) if (dist(buoys[k], t) < minGap) { ok = false; break; }
+      if (ok) out.push(t);
+    }
+    return out;
+  }
+  function startZone(s) {
+    var bp = s.buoys.map(function (b) { return b.pos; });
+    var z = zoneFor(s.terrain, bp, 3);
+    return z.length >= 8 ? z : zoneFor(s.terrain, bp, 2);
+  }
+
+  function shipAt(s, t) {
+    for (var k = 0; k < s.ships.length; k++) if (!s.ships[k].sunk && s.ships[k].pos === t) return k;
+    return -1;
+  }
+  function buoyAt(s, t) {
+    for (var k = 0; k < s.buoys.length; k++) if (s.buoys[k].alive && s.buoys[k].pos === t) return s.buoys[k];
+    return null;
+  }
+  function netAt(s, t) {
+    for (var k = 0; k < s.nets.length; k++) if (s.nets[k].pos === t) return s.nets[k];
+    return null;
+  }
+  function harpoonIdx(s) { return 1; }
+  function aliveShips(s) { return s.ships.filter(function (x) { return !x.sunk; }); }
+
+  function monsterCanEnter(s, t) {
+    return t >= 0 && s.terrain[t] !== ISLAND && !netAt(s, t) && shipAt(s, t) < 0;
+  }
+  function shipCanEnter(s, t, k) {
+    if (t < 0 || s.terrain[t] !== SEA) return false;
+    var o = shipAt(s, t);
+    if (o >= 0 && o !== k) return false;
+    if (buoyAt(s, t)) return false;
+    if (s.revealedAt === t) return false;
+    return true;
+  }
+
+  /* Public belief updates: what the hunters can deduce. */
+  function expandPublic(s, P) {
+    var mark = new Uint8Array(N), out = [];
+    for (var k = 0; k < P.length; k++) {
+      var t = P[k];
+      if (!mark[t]) { mark[t] = 1; out.push(t); }
+      var nb = NEI[t];
+      for (var j = 0; j < nb.length; j++) {
+        var u = nb[j];
+        if (!mark[u] && monsterCanEnter(s, u)) { mark[u] = 1; out.push(u); }
+      }
+    }
+    return out;
+  }
+  function reach2(s, from) {
+    var mark = new Uint8Array(N), out = [];
+    var nb = NEI[from];
+    for (var j = 0; j < nb.length; j++) {
+      var mid = nb[j];
+      if (!monsterCanEnter(s, mid)) continue;
+      var nb2 = NEI[mid];
+      for (var q = 0; q < nb2.length; q++) {
+        var t = nb2[q];
+        if (mark[t] || t === from || dist(from, t) !== 2 || !monsterCanEnter(s, t)) continue;
+        mark[t] = 1; out.push(t);
+      }
+    }
+    return out;
+  }
+  function removeTiles(P, tiles) {
+    var mark = new Uint8Array(N);
+    tiles.forEach(function (t) { if (t >= 0) mark[t] = 1; });
+    return P.filter(function (t) { return !mark[t]; });
+  }
+  function keepTiles(P, tiles) {
+    var mark = new Uint8Array(N);
+    tiles.forEach(function (t) { if (t >= 0) mark[t] = 1; });
+    return P.filter(function (t) { return mark[t]; });
+  }
+
+  function reveal(s, pos, why, ev) {
+    s.revealedAt = pos;
+    s.P = [pos];
+    ev.push({ t: "reveal", pos: pos, why: why });
+  }
+  function win(s, who, reason) {
+    if (s.winner) return;
+    s.winner = who;
+    s.reason = reason;
+    s.phase = "over";
+  }
+
+  /* ---------- Leviathan ---------- */
+  function setMonsterStart(s, pos) {
+    s.monster.pos = pos;
+    s.monster.trail = [{ round: 0, pos: pos, how: "start" }];
+    s.phase = "monster";
+  }
+
+  function monsterOptions(s) {
+    var m = s.monster.pos, opts = [{ type: "swim", to: m }];
+    NEI[m].forEach(function (t) { if (monsterCanEnter(s, t)) opts.push({ type: "swim", to: t }); });
+    if (!s.monster.snagged) {
+      var seen = new Uint8Array(N);
+      NEI[m].forEach(function (mid) {
+        if (!monsterCanEnter(s, mid)) return;
+        NEI[mid].forEach(function (t) {
+          if (seen[t] || t === m || dist(m, t) !== 2 || !monsterCanEnter(s, t)) return;
+          seen[t] = 1;
+          opts.push({ type: "dash", to: t, via: mid });
+        });
+      });
+    }
+    s.ships.forEach(function (sh, k) {
+      if (!sh.sunk && dist(m, sh.pos) === 1) opts.push({ type: "strike", ship: k });
+    });
+    return opts;
+  }
+
+  function applyMonster(s, act) {
+    var ev = [];
+    var m = s.monster, from = m.pos;
+    s.wake = -1;
+    s.revealedAt = -1;
+    if (act.type === "strike") {
+      var sh = s.ships[act.ship];
+      sh.hp -= 1;
+      ev.push({ t: "strike", ship: act.ship, from: from });
+      reveal(s, from, "strike", ev);
+      if (sh.hp <= 0) {
+        sh.sunk = true;
+        m.kills += 1;
+        ev.push({ t: "sunk", ship: act.ship });
+        if (sh.id === "harpoon") win(s, "monster", "The Harpoon ship sank, so nothing can wound the Leviathan now.");
+      }
+    } else {
+      m.pos = act.to;
+      if (act.type === "dash") {
+        s.wake = from;
+        ev.push({ t: "dash", from: from, to: act.to });
+        s.P = reach2(s, from);
+      } else {
+        ev.push({ t: "swim", from: from, to: act.to });
+        s.P = expandPublic(s, s.P);
+      }
+      var b = buoyAt(s, m.pos);
+      if (b) {
+        b.alive = false;
+        m.kills += 1;
+        ev.push({ t: "devour", pos: m.pos });
+        reveal(s, m.pos, "devour", ev);
+      }
+    }
+    m.snagged = false;
+    m.trail.push({ round: s.round, pos: m.pos, how: act.type });
+    if (!s.winner && s.round % CFG.surfaceEvery === 0 && s.revealedAt !== m.pos) reveal(s, m.pos, "surface", ev);
+    if (!s.winner && m.kills >= CFG.killsToWin) win(s, "monster", "The Leviathan destroyed " + m.kills + " targets.");
+    if (!s.winner) {
+      s.phase = "hunters";
+      s.orders = CFG.orders;
+      s.ships.forEach(function (x) { x.moved = false; x.acted = false; });
+    }
+    s.log.push({ side: "monster", round: s.round, act: act, ev: ev });
+    return ev;
+  }
+
+  /* ---------- Hunters ---------- */
+  function shipMovesRaw(s, k) {
+    var sh = s.ships[k], res = {};
+    var prev = {}; prev[sh.pos] = -1;
+    var frontier = [sh.pos];
+    for (var step = 0; step < CFG.shipMove; step++) {
+      var next = [];
+      frontier.forEach(function (x) {
+        NEI[x].forEach(function (y) {
+          if (prev[y] !== undefined || !shipCanEnter(s, y, k)) return;
+          prev[y] = x;
+          next.push(y);
+        });
+      });
+      frontier = next;
+    }
+    Object.keys(prev).forEach(function (key) {
+      var t = +key;
+      if (t === sh.pos) return;
+      var path = [], cur = t;
+      while (cur !== sh.pos) { path.unshift(cur); cur = prev[cur]; }
+      res[t] = path;
+    });
+    return res;
+  }
+  function shipMoves(s, k) {
+    var sh = s.ships[k];
+    if (sh.sunk || sh.moved || s.orders < 1) return {};
+    return shipMovesRaw(s, k);
+  }
+
+  function abilityTargets(s, k) {
+    var sh = s.ships[k], out = [];
+    if (sh.sunk || sh.acted || s.orders < 1) return out;
+    if (sh.ability === "ping") return [sh.pos];
+    if (sh.ability === "harpoon") {
+      for (var t = 0; t < N; t++) if (t !== sh.pos && dist(sh.pos, t) <= CFG.harpoonRange && s.terrain[t] !== ISLAND && shipAt(s, t) < 0) out.push(t);
+      return out;
+    }
+    if (sh.ability === "net") {
+      NEI[sh.pos].forEach(function (t) { if (s.terrain[t] !== ISLAND && shipAt(s, t) < 0) out.push(t); });
+      return out;
+    }
+    if (sh.ability === "beam") {
+      for (var d = 0; d < 6; d++) if (beamTiles(s, sh.pos, d).length) out.push(d);
+      return out;
+    }
+    return out;
+  }
+
+  function beamTiles(s, from, d) {
+    var out = [], cur = from;
+    for (var k = 0; k < CFG.beamRange; k++) {
+      cur = DIRN[cur][d];
+      if (cur < 0 || s.terrain[cur] === ISLAND) break;
+      out.push(cur);
+    }
+    return out;
+  }
+
+  function applyHunter(s, o) {
+    var ev = [];
+    var sh = s.ships[o.ship];
+    var m = s.monster;
+    var path = o.type === "move" ? (shipMovesRaw(s, o.ship)[o.to] || [o.to]) : null;
+    s.orders -= 1;
+    if (o.type === "move") {
+      var from = sh.pos, walked = [];
+      for (var k = 0; k < path.length; k++) {
+        if (path[k] === m.pos) {
+          ev.push({ t: "bump", ship: o.ship, at: path[k], stop: sh.pos, from: from, path: walked.slice() });
+          reveal(s, m.pos, "bump", ev);
+          break;
+        }
+        sh.pos = path[k];
+        walked.push(path[k]);
+      }
+      sh.moved = true;
+      ev.unshift({ t: "move", ship: o.ship, from: from, path: walked });
+      if (s.revealedAt !== m.pos) s.P = removeTiles(s.P, walked);
+    } else if (o.type === "ping") {
+      var area = disk(sh.pos, CFG.sonarRange);
+      var contact = dist(sh.pos, m.pos) <= CFG.sonarRange;
+      ev.push({ t: "ping", ship: o.ship, at: sh.pos, contact: contact });
+      if (s.revealedAt !== m.pos) s.P = contact ? keepTiles(s.P, area) : removeTiles(s.P, area);
+      sh.acted = true;
+    } else if (o.type === "harpoon") {
+      var hit = o.target === m.pos;
+      ev.push({ t: "harpoon", ship: o.ship, from: sh.pos, target: o.target, hit: hit });
+      sh.acted = true;
+      if (hit) {
+        m.wounds += 1;
+        reveal(s, m.pos, "harpoon", ev);
+        if (m.wounds >= CFG.woundsToWin) win(s, "hunters", "Three harpoons found their mark.");
+      } else if (s.revealedAt !== m.pos) {
+        s.P = removeTiles(s.P, [o.target]);
+      }
+    } else if (o.type === "net") {
+      var snag = o.target === m.pos;
+      s.nets.push({ pos: o.target, ttl: CFG.netTTL });
+      while (s.nets.length > CFG.maxNets) s.nets.shift();
+      ev.push({ t: "net", ship: o.ship, target: o.target, snag: snag });
+      sh.acted = true;
+      if (snag) { m.snagged = true; reveal(s, m.pos, "net", ev); }
+      else if (s.revealedAt !== m.pos) s.P = removeTiles(s.P, [o.target]);
+    } else if (o.type === "beam") {
+      var tiles = beamTiles(s, sh.pos, o.dir);
+      var found = tiles.indexOf(m.pos) >= 0;
+      ev.push({ t: "beam", ship: o.ship, from: sh.pos, dir: o.dir, tiles: tiles, found: found });
+      sh.acted = true;
+      if (found) reveal(s, m.pos, "beam", ev);
+      else if (s.revealedAt !== m.pos) s.P = removeTiles(s.P, tiles);
+    }
+    s.log.push({ side: "hunters", round: s.round, act: o, ev: ev });
+    return ev;
+  }
+
+  function endHunterTurn(s) {
+    var ev = [];
+    s.nets.forEach(function (n) { n.ttl -= 1; });
+    s.nets = s.nets.filter(function (n) { return n.ttl > 0; });
+    if (s.winner) return ev;
+    if (s.round >= CFG.roundLimit) {
+      win(s, "hunters", "Dawn broke before the Leviathan could feed, and it sank back into the deep.");
+      return ev;
+    }
+    s.round += 1;
+    s.phase = "monster";
+    s.orders = 0;
+    return ev;
+  }
+
+  function hasAnyOrder(s) {
+    if (s.orders < 1) return false;
+    for (var k = 0; k < s.ships.length; k++) {
+      var sh = s.ships[k];
+      if (sh.sunk) continue;
+      if (!sh.acted && abilityTargets(s, k).length) return true;
+      if (!sh.moved && Object.keys(shipMoves(s, k)).length) return true;
+    }
+    return false;
+  }
+
+  /* ---------- Bots ---------- */
+  var LEVELS = {
+    easy: { noise: 0.9, lookahead: false, track: "sloppy", greed: 1.3, caution: 0.35, mistakes: 0.3 },
+    normal: { noise: 0.15, lookahead: false, track: "exact", greed: 1.0, caution: 1.0, mistakes: 0.04 },
+    hard: { noise: 0.03, lookahead: true, track: "weighted", greed: 1.0, caution: 1.2, mistakes: 0 }
+  };
+
+  function beliefWeights(s, level) {
+    var P = s.P, w = new Float64Array(N), total = 0;
+    var weighted = LEVELS[level].track === "weighted";
+    var hp = s.ships[1];
+    P.forEach(function (t) {
+      var v = 1;
+      if (weighted && P.length > 1) {
+        var nearB = 99;
+        s.buoys.forEach(function (b) { if (b.alive) nearB = Math.min(nearB, dist(b.pos, t)); });
+        v *= 1 + 0.6 / (1 + nearB);
+        if (!hp.sunk) v *= 0.7 + 0.08 * Math.min(6, dist(hp.pos, t));
+        if (s.terrain[t] === REEF) v *= 1.15;
+      }
+      w[t] = v; total += v;
+    });
+    return { w: w, total: total || 1 };
+  }
+
+  function harpoonReachTiles(s, ordersLeft) {
+    var hk = 1, h = s.ships[hk];
+    if (h.sunk || h.acted || ordersLeft < 1) return null;
+    var spots = [h.pos];
+    if (!h.moved && ordersLeft >= 2) {
+      var mv = shipMovesRaw(s, hk);
+      Object.keys(mv).forEach(function (t) { spots.push(+t); });
+    }
+    var mark = new Uint8Array(N);
+    spots.forEach(function (p) {
+      for (var t = 0; t < N; t++) if (dist(p, t) <= CFG.harpoonRange && s.terrain[t] !== ISLAND) mark[t] = 1;
+    });
+    return mark;
+  }
+
+  function bestShot(P, w, total, mark) {
+    if (!mark) return 0;
+    var best = 0;
+    for (var k = 0; k < P.length; k++) { var t = P[k]; if (mark[t] && w[t] > best) best = w[t]; }
+    return best / total;
+  }
+
+  function entropy(P, w) {
+    var tot = 0, k;
+    for (k = 0; k < P.length; k++) tot += w[P[k]];
+    if (tot <= 0) return 0;
+    var hsum = 0;
+    for (k = 0; k < P.length; k++) { var p = w[P[k]] / tot; if (p > 0) hsum -= p * Math.log(p); }
+    return hsum;
+  }
+
+  function splitValue(s, B, region, ordersAfter) {
+    var P = s.P, mark = new Uint8Array(N);
+    region.forEach(function (t) { mark[t] = 1; });
+    var inP = [], outP = [], mi = 0, mo = 0;
+    P.forEach(function (t) { if (mark[t]) { inP.push(t); mi += B.w[t]; } else { outP.push(t); mo += B.w[t]; } });
+    var tot = mi + mo || 1;
+    var pin = mi / tot;
+    var reach = harpoonReachTiles(s, ordersAfter);
+    var u0 = bestShot(P, B.w, B.total, reach);
+    var uin = mi > 0 ? bestShot(inP, B.w, mi, reach) : 0;
+    var uout = mo > 0 ? bestShot(outP, B.w, mo, reach) : 0;
+    var eu = pin * uin + (1 - pin) * uout;
+    var h0 = entropy(P, B.w);
+    var eh = pin * entropy(inP, B.w) + (1 - pin) * entropy(outP, B.w);
+    return { gain: Math.max(0, eu - u0), info: Math.max(0, h0 - eh), pin: pin };
+  }
+
+  function riskAt(s, B, pos, k) {
+    var sh = s.ships[k], r = 0;
+    NEI[pos].forEach(function (t) { r += B.w[t] / B.total; });
+    var factor = sh.hp >= 2 ? 0.25 : 0.9;
+    if (sh.id === "harpoon") factor = sh.hp >= 2 ? 0.9 : 3.5;
+    return r * factor;
+  }
+
+  function posValue(s, B, k, pos) {
+    var sh = s.ships[k], v = 0, t;
+    if (sh.id === "harpoon") {
+      var near = 0, mid = 0;
+      for (var q = 0; q < s.P.length; q++) {
+        t = s.P[q];
+        var dd = dist(pos, t);
+        if (dd <= 4) near += B.w[t];
+        if (dd <= 6) mid += B.w[t];
+      }
+      v += 1.2 * near / B.total + 0.4 * mid / B.total;
+      var cover = 0;
+      s.buoys.forEach(function (b) { if (b.alive && dist(b.pos, pos) <= 4) cover++; });
+      s.ships.forEach(function (o, j) { if (j !== k && !o.sunk && dist(o.pos, pos) <= 4) cover += 0.5; });
+      v += 0.08 * cover;
+    } else if (sh.id === "sonar") {
+      var mi = 0;
+      for (var q2 = 0; q2 < s.P.length; q2++) { t = s.P[q2]; if (dist(pos, t) <= CFG.sonarRange + 1) mi += B.w[t]; }
+      var frac = mi / B.total;
+      v += 0.6 - Math.abs(frac - 0.5);
+    } else if (sh.id === "light") {
+      var best = 0;
+      for (var d = 0; d < 6; d++) {
+        var m = 0;
+        beamTiles(s, pos, d).forEach(function (x) { m += B.w[x] || 0; });
+        best = Math.max(best, m);
+      }
+      v += 0.8 * best / B.total;
+    } else if (sh.id === "net") {
+      var close = 0;
+      for (var q3 = 0; q3 < s.P.length; q3++) { t = s.P[q3]; if (dist(pos, t) <= 2) close += B.w[t]; }
+      v += 0.6 * close / B.total;
+      var bcover = 0;
+      s.buoys.forEach(function (b) { if (b.alive && dist(b.pos, pos) <= 2) bcover++; });
+      v += 0.05 * bcover;
+    }
+    return v - riskAt(s, B, pos, k);
+  }
+
+  function candidateOrders(s) {
+    var out = [];
+    s.ships.forEach(function (sh, k) {
+      if (sh.sunk) return;
+      if (!sh.moved) {
+        var mv = shipMoves(s, k);
+        Object.keys(mv).forEach(function (t) { out.push({ type: "move", ship: k, to: +t, path: mv[t] }); });
+      }
+      if (!sh.acted) {
+        abilityTargets(s, k).forEach(function (tg) {
+          if (sh.ability === "ping") out.push({ type: "ping", ship: k });
+          else if (sh.ability === "harpoon") out.push({ type: "harpoon", ship: k, target: tg });
+          else if (sh.ability === "net") out.push({ type: "net", ship: k, target: tg });
+          else if (sh.ability === "beam") out.push({ type: "beam", ship: k, dir: tg });
+        });
+      }
+    });
+    return out;
+  }
+
+  function scoreOrder(s, B, o) {
+    var after = s.orders - 1;
+    var sh = s.ships[o.ship];
+    var known = s.revealedAt >= 0;
+    if (o.type === "harpoon") {
+      var p = (B.w[o.target] || 0) / B.total;
+      return 100 * p;
+    }
+    if (o.type === "ping") {
+      if (known) return -1;
+      var sp = splitValue(s, B, disk(sh.pos, CFG.sonarRange), after);
+      return 100 * sp.gain + 9 * sp.info;
+    }
+    if (o.type === "beam") {
+      if (known) return -1;
+      var sb = splitValue(s, B, beamTiles(s, sh.pos, o.dir), after);
+      return 100 * sb.gain + 9 * sb.info;
+    }
+    if (o.type === "net") {
+      var pn = (B.w[o.target] || 0) / B.total;
+      var v = 0;
+      if (!known) {
+        var sn = splitValue(s, B, [o.target], after);
+        v += 100 * sn.gain + 9 * sn.info;
+        var reach = harpoonReachTiles(s, after);
+        v += 60 * pn * (reach && reach[o.target] ? 1 : 0.3);
+      }
+      var b = buoyAt(s, o.target);
+      if (b) {
+        var threat = 0;
+        s.P.forEach(function (t) { if (dist(t, o.target) <= 2) threat += B.w[t]; });
+        v += 30 * threat / B.total;
+      }
+      if (known && dist(s.revealedAt, o.target) === 1) v += 6;
+      return v;
+    }
+    if (o.type === "move") {
+      var before = posValue(s, B, o.ship, sh.pos);
+      var oldPos = sh.pos;
+      sh.pos = o.to;
+      var afterV = posValue(s, B, o.ship, o.to);
+      var gainNow = 0;
+      if (sh.id === "harpoon" && !sh.acted && after >= 1) {
+        var mark = new Uint8Array(N);
+        for (var t = 0; t < N; t++) if (dist(o.to, t) <= CFG.harpoonRange) mark[t] = 1;
+        gainNow = bestShot(s.P, B.w, B.total, mark);
+        var markOld = new Uint8Array(N);
+        for (var t2 = 0; t2 < N; t2++) if (dist(oldPos, t2) <= CFG.harpoonRange) markOld[t2] = 1;
+        gainNow -= bestShot(s.P, B.w, B.total, markOld);
+      }
+      sh.pos = oldPos;
+      var sweep = 0;
+      (o.path || [o.to]).forEach(function (t3) { sweep += (B.w[t3] || 0) / B.total; });
+      return 100 * Math.max(0, gainNow) + 40 * (afterV - before) + 25 * sweep;
+    }
+    return 0;
+  }
+
+  function sloppyP(s) {
+    if (s.revealedAt >= 0 || s.P.length > 40) return s.P;
+    return expandPublic(s, s.P);
+  }
+
+  function hunterOrder(s, level, rand) {
+    var L = LEVELS[level] || LEVELS.normal;
+    if (s.orders < 1) return { type: "end" };
+    var view = s;
+    if (L.track === "sloppy") { view = clone(s); view.P = sloppyP(s); }
+    var B = beliefWeights(view, level);
+    var cands = candidateOrders(view);
+    if (!cands.length) return { type: "end" };
+    var scored = cands.map(function (o) {
+      var v = scoreOrder(view, B, o);
+      return { o: o, v: v + (rand() - 0.5) * 20 * L.noise };
+    });
+    if (L.lookahead) {
+      scored.sort(function (a, b) { return b.v - a.v; });
+      var top = scored.slice(0, 10);
+      top.forEach(function (c) { c.v += 0.6 * lookaheadValue(view, B, c.o, level); });
+    }
+    scored.sort(function (a, b) { return b.v - a.v; });
+    if (L.mistakes && rand() < L.mistakes) {
+      var alt = scored.slice(0, Math.min(5, scored.length));
+      return pick(rand, alt).o;
+    }
+    if (scored[0].v < 0.5 && scored[0].o.type !== "harpoon") {
+      var mv = scored.filter(function (c) { return c.o.type === "move"; })[0];
+      if (!mv || mv.v < 0.2) return { type: "end" };
+      return mv.o;
+    }
+    return scored[0].o;
+  }
+
+  function lookaheadValue(s, B, o, level) {
+    if (s.orders < 2) return 0;
+    if (o.type === "move") {
+      var s2 = clone(s);
+      var sh = s2.ships[o.ship];
+      sh.pos = o.to; sh.moved = true; s2.orders -= 1;
+      s2.P = removeTiles(s2.P, o.path || [o.to]);
+      var B2 = beliefWeights(s2, level);
+      var best = 0;
+      candidateOrders(s2).forEach(function (o2) { if (o2.type !== "move") best = Math.max(best, scoreOrder(s2, B2, o2)); });
+      return best;
+    }
+    if (o.type === "ping" || o.type === "beam") {
+      var region = o.type === "ping" ? disk(s.ships[o.ship].pos, CFG.sonarRange) : beamTiles(s, s.ships[o.ship].pos, o.dir);
+      var mark = new Uint8Array(N);
+      region.forEach(function (t) { mark[t] = 1; });
+      var mi = 0;
+      s.P.forEach(function (t) { if (mark[t]) mi += B.w[t]; });
+      var pin = mi / B.total;
+      var total = 0;
+      [true, false].forEach(function (inside) {
+        var pr = inside ? pin : 1 - pin;
+        if (pr <= 0) return;
+        var s3 = clone(s);
+        s3.ships[o.ship].acted = true; s3.orders -= 1;
+        s3.P = inside ? keepTiles(s.P, region) : removeTiles(s.P, region);
+        if (!s3.P.length) return;
+        var B3 = beliefWeights(s3, level);
+        var best = 0;
+        candidateOrders(s3).forEach(function (o2) { if (o2.type === "harpoon" || o2.type === "move") best = Math.max(best, scoreOrder(s3, B3, o2)); });
+        total += pr * best;
+      });
+      return total;
+    }
+    return 0;
+  }
+
+  /* Leviathan bot */
+  function harpoonThreatMark(s) {
+    var h = s.ships[1], mark = new Uint8Array(N);
+    if (h.sunk) return mark;
+    var spots = [h.pos];
+    var mv = shipMovesRaw(Object.assign({}, s, { revealedAt: -1 }), 1);
+    Object.keys(mv).forEach(function (t) { spots.push(+t); });
+    spots.forEach(function (p) {
+      for (var t = 0; t < N; t++) if (dist(p, t) <= CFG.harpoonRange) mark[t] = 1;
+    });
+    return mark;
+  }
+
+  function monsterStart(s, level, rand) {
+    var L = LEVELS[level] || LEVELS.normal;
+    var zone = startZone(s).filter(function (t) { return s.terrain[t] !== ISLAND; });
+    if (level === "easy") return pick(rand, zone);
+    var best = null, bv = -1e9;
+    zone.forEach(function (t) {
+      var v = 0;
+      s.buoys.forEach(function (b) { v -= 0.35 * Math.min(6, dist(b.pos, t)); });
+      v += 0.2 * dist(s.ships[1].pos, t);
+      if (s.terrain[t] === REEF) v += 0.5;
+      v += (rand() - 0.5) * 3 * (L.noise + 0.4);
+      if (v > bv) { bv = v; best = t; }
+    });
+    return best;
+  }
+
+  /* How likely is a harpoon hit next turn if the Leviathan does this? Plays the
+     hunters' Normal bot against the real position a few times to find out. */
+  function simulateExposure(s, act, sims, rand, hunterLevel) {
+    var hits = 0;
+    for (var k = 0; k < sims; k++) {
+      var c = clone(s);
+      applyMonster(c, act);
+      if (c.winner) return c.winner === "monster" ? -1 : 1;
+      var n = 0;
+      while (!c.winner && c.orders > 0 && n++ < 4) {
+        var o = hunterOrder(c, hunterLevel || "normal", rand);
+        if (o.type === "end") break;
+        var ev = applyHunter(c, o);
+        if (ev.some(function (e) { return e.t === "harpoon" && e.hit; })) { hits++; break; }
+      }
+    }
+    return hits / sims;
+  }
+
+  function monsterMove(s, level, rand) {
+    var L = LEVELS[level] || LEVELS.normal;
+    var opts = monsterOptions(s);
+    var threat = harpoonThreatMark(s);
+    var m = s.monster;
+    var surfacing = s.round % CFG.surfaceEvery === 0;
+    var nextSurface = (s.round + 1) % CFG.surfaceEvery === 0;
+    var woundsLeft = CFG.woundsToWin - m.wounds;
+    var killsLeft = CFG.killsToWin - m.kills;
+    var roundsLeft = Math.max(1, CFG.roundLimit - s.round + 1);
+    var urgency = Math.min(1.5, killsLeft / roundsLeft * 2.2);
+    var greed = L.greed * (1 + 1.6 * urgency);
+    var caution = L.caution * Math.max(0.35, 1 - 0.45 * urgency);
+    var woundCost = woundsLeft <= 1 ? 6 : 2.2;
+    var h = s.ships[1];
+    var safeBuoys = s.buoys.filter(function (b) { return b.alive && (h.sunk || dist(h.pos, b.pos) >= 5); });
+    var scored = opts.map(function (o) {
+      var pos = o.type === "strike" ? m.pos : o.to;
+      var revealed = surfacing;
+      var gain = 0, Pafter;
+      if (o.type === "strike") {
+        revealed = true;
+        var sh = s.ships[o.ship];
+        var sinks = sh.hp <= 1;
+        gain += sinks ? 1 : 0.45;
+        if (sinks && sh.id === "harpoon") gain += 50;
+        if (sinks && killsLeft <= 1) gain += 50;
+      } else if (buoyAt(s, o.to)) {
+        revealed = true;
+        gain += 1;
+        if (killsLeft <= 1) gain += 50;
+      }
+      if (revealed) Pafter = [pos];
+      else if (o.type === "dash") Pafter = reach2(s, m.pos);
+      else Pafter = expandPublic(s, s.P);
+      var inReach = !h.sunk && threat[pos];
+      var exposed = 0;
+      if (inReach) {
+        var cnt = 0;
+        Pafter.forEach(function (t) { if (threat[t]) cnt++; });
+        exposed = revealed ? 0.92 : Math.min(0.9, 2.2 / Math.max(1, cnt));
+      } else if (revealed && !h.sunk) {
+        exposed = dist(h.pos, pos) <= 6 ? 0.12 : 0.03;
+      }
+      var base = greed * 2.2 * gain;
+      var dh = h.sunk ? 8 : dist(h.pos, pos);
+      base += 0.09 * Math.min(dh, 7);
+      var nb = 99;
+      s.buoys.forEach(function (b) { if (b.alive && b.pos !== pos) nb = Math.min(nb, dist(b.pos, pos)); });
+      if (nb < 99) base += (0.12 + 0.25 * urgency) * (6 - Math.min(6, nb));
+      if (L.lookahead || level === "normal") {
+        var ns = 99;
+        safeBuoys.forEach(function (b) { if (b.pos !== pos) ns = Math.min(ns, dist(b.pos, pos)); });
+        if (ns < 99) base += 0.22 * (6 - Math.min(6, ns));
+      }
+      base += 0.12 * Math.log(1 + Pafter.length);
+      if (s.terrain[pos] === REEF) base += 0.08;
+      if (nextSurface && !h.sunk) base += 0.06 * Math.min(dh, 8);
+      s.ships.forEach(function (o2) {
+        if (o2.sunk) return;
+        if (dist(o2.pos, pos) === 1 && o2.id !== "harpoon" && dist(h.pos, pos) > 5) base += 0.1;
+      });
+      if (o.type === "dash" && !revealed && s.revealedAt < 0 && s.P.length > 14) base -= 0.25;
+      return { o: o, base: base, exposed: exposed, v: base - caution * woundCost * exposed + (rand() - 0.5) * 1.2 * L.noise };
+    });
+    scored.sort(function (a, b) { return b.v - a.v; });
+    if (level !== "easy" && !h.sunk) {
+      var K = L.lookahead ? 10 : 5, sims = L.lookahead ? 3 : 1;
+      var top = scored.slice(0, K);
+      top.forEach(function (c) {
+        var e = simulateExposure(s, c.o, sims, rand, L.lookahead ? "hard" : "normal");
+        if (e < 0) { c.v = 1e6; return; }
+        var blended = L.lookahead ? 0.75 * e + 0.25 * c.exposed : 0.5 * e + 0.5 * c.exposed;
+        c.v = c.base - caution * woundCost * blended + (rand() - 0.5) * 1.2 * L.noise;
+      });
+      top.sort(function (a, b) { return b.v - a.v; });
+      scored = top.concat(scored.slice(K));
+    }
+    if (L.mistakes && rand() < L.mistakes) return pick(rand, scored.slice(0, Math.min(4, scored.length))).o;
+    return scored[0].o;
+  }
+
+  var API = {
+    COLS: COLS, ROWS: ROWS, N: N, SEA: SEA, REEF: REEF, ISLAND: ISLAND, CFG: CFG, SHIP_DEFS: SHIP_DEFS,
+    cOf: cOf, rOf: rOf, NEI: NEI, DIRN: DIRN, dist: dist, disk: disk, rng: rng,
+    newGame: newGame, clone: clone, startZone: startZone, setMonsterStart: setMonsterStart,
+    monsterOptions: monsterOptions, applyMonster: applyMonster, shipMoves: shipMoves, shipMovesRaw: shipMovesRaw, abilityTargets: abilityTargets,
+    beamTiles: beamTiles, applyHunter: applyHunter, endHunterTurn: endHunterTurn, hasAnyOrder: hasAnyOrder,
+    shipAt: shipAt, buoyAt: buoyAt, netAt: netAt, reach2: reach2, expandPublic: expandPublic,
+    bots: { hunterOrder: hunterOrder, monsterMove: monsterMove, monsterStart: monsterStart }, LEVELS: LEVELS
+  };
+  root.Leviathan = API;
+  if (typeof module !== "undefined" && module.exports) module.exports = API;
+})(typeof window !== "undefined" ? window : globalThis);
+
+/* Leviathan Hunt: interface, animation and turn flow. */
+(function () {
+  "use strict";
+  var L = window.Leviathan, K = window.Kit, h = K.h, sv = K.s;
+  var R = 20, HW = Math.sqrt(3) * R, PAD = 6;
+  var VBW = PAD * 2 + HW * (L.COLS + 0.5), VBH = PAD * 2 + 2 * R + (L.ROWS - 1) * 1.5 * R;
+  function cx(i) { var r = L.rOf(i); return PAD + HW / 2 + L.cOf(i) * HW + (r & 1 ? HW / 2 : 0); }
+  function cy(i) { return PAD + R + L.rOf(i) * 1.5 * R; }
+  function hexPts(i, rr) {
+    var x = cx(i), y = cy(i), out = [];
+    for (var k = 0; k < 6; k++) {
+      var a = Math.PI / 180 * (60 * k - 30);
+      out.push((x + rr * Math.cos(a)).toFixed(2) + "," + (y + rr * Math.sin(a)).toFixed(2));
+    }
+    return out.join(" ");
+  }
+
+  var ICON = {
+    ping: '<circle cx="12" cy="15.5" r="1.8" fill="currentColor" stroke="none"/><path d="M8.2 11.6a5.4 5.4 0 0 1 7.6 0"/><path d="M5.2 8.4a9.6 9.6 0 0 1 13.6 0"/>',
+    harpoon: '<path d="M5 19L17.5 6.5"/><path d="M18.5 5.5l-6.2 1.3 4.9 4.9z" fill="currentColor"/><path d="M7.5 18.8l-2.3-2.3"/>',
+    net: '<path d="M4 12l8-8 8 8-8 8z"/><path d="M8 8l8 8M16 8l-8 8"/>',
+    beam: '<path d="M10.2 20h3.6l-.8-11h-2z" fill="currentColor"/><path d="M9 9h6M12 5.5V9"/><path d="M15.5 10l4.5-2.2M15.5 12.5l4.5 1.8"/>',
+    hits: '<path d="M4 20L18 6"/><path d="M19.5 4.5l-6.5 1.4 5.1 5.1z" fill="currentColor"/>',
+    kills: '<path d="M12 3c-4.4 0-8 3.2-8 7.3 0 2.4 1.2 4.4 3 5.7V20h10v-4c1.8-1.3 3-3.3 3-5.7C20 6.2 16.4 3 12 3z"/><circle cx="9" cy="11" r="1.6" fill="currentColor"/><circle cx="15" cy="11" r="1.6" fill="currentColor"/>'
+  };
+  function iconSvg(name, cls) {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="' + (cls || "") + '">' + ICON[name] + "</svg>";
+  }
+
+  var TITLE_ART = '<svg viewBox="0 0 260 170" role="img" aria-label="A sea serpent rising beside a hunter ship">' +
+    '<defs><radialGradient id="ta-glow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#ff4f6d" stop-opacity=".55"/><stop offset="1" stop-color="#ff4f6d" stop-opacity="0"/></radialGradient></defs>' +
+    '<circle cx="150" cy="58" r="56" fill="url(#ta-glow)"/>' +
+    '<path d="M118 132c-6-34 6-64 34-78 18-9 36-4 42 8 4 9-2 18-12 17-9-1-12-9-20-8-14 2-22 26-18 61z" fill="#d61f52" stroke="#3d0614" stroke-width="3" stroke-linejoin="round"/>' +
+    '<ellipse cx="178" cy="62" rx="9" ry="6" fill="#ffd166"/><ellipse cx="179" cy="62" rx="2" ry="5" fill="#2a0610"/>' +
+    '<path d="M186 73l4 7 3-6 4 6 2-7" fill="none" stroke="#ffe9c2" stroke-width="2.4" stroke-linejoin="round"/>' +
+    '<path d="M60 118l18 8h28l10-10z" fill="#f2b84b" stroke="#2a1a02" stroke-width="3" stroke-linejoin="round"/><path d="M84 116V86M84 90l18 14H84" fill="none" stroke="#e9f1f7" stroke-width="3" stroke-linejoin="round"/>' +
+    '<path d="M98 108l40-36" stroke="#e9f1f7" stroke-width="3" stroke-linecap="round"/><path d="M141 69l-9 2 7 7z" fill="#e9f1f7"/>' +
+    '<path d="M10 136c14-8 26-8 40 0s26 8 40 0 26-8 40 0 26 8 40 0 26-8 40 0 26 8 40 0" fill="none" stroke="#4fd1c5" stroke-width="4" stroke-linecap="round"/>' +
+    '<path d="M24 152c14-8 26-8 40 0s26 8 40 0 26-8 40 0 26 8 40 0 26-8 40 0" fill="none" stroke="#2a6f8f" stroke-width="4" stroke-linecap="round"/>' +
+    "</svg>";
+
+  var RULES = [
+    "<h3>The goal</h3>",
+    "<p><b>Hunters</b> win with <b>3 harpoon hits</b>, or by holding out until dawn at the end of round 20.</p>",
+    "<p>The <b>Leviathan</b> wins by destroying <b>4 targets</b> (buoys or ships). Sinking the Harpoon ship wins on the spot.</p>",
+    "<h3>The Leviathan's turn</h3><ul>",
+    "<li><b>Swim</b> 1 tile, or stay put. Silent.</li>",
+    "<li><b>Dash</b> 2 tiles. Fast, but it leaves a wake where it started.</li>",
+    "<li><b>Strike</b> a ship next to it for 1 damage. Ships have 2 health.</li>",
+    "<li>Ending a move on a buoy devours it.</li>",
+    "<li>Striking, devouring and the end of every 6th round reveal where it is.</li></ul>",
+    "<h3>The hunters' turn: 3 orders</h3>",
+    "<p>Each ship can move once (up to 2 tiles) and use its tool once. Each costs 1 order.</p>",
+    '<dl class="kv"><dt>Sonar</dt><dd>Pings everything within 2 tiles: contact or clear.</dd>',
+    "<dt>Harpoon</dt><dd>Throws at one tile up to 2 away. The only way to wound the Leviathan.</dd>",
+    "<dt>Net</dt><dd>Drops a net on a tile next to it. Snags the Leviathan if it's there (no dashing next turn). Otherwise the tile is blocked for 3 rounds.</dd>",
+    "<dt>Lighthouse</dt><dd>Lights a straight line 4 tiles long.</dd></dl>",
+    "<p>Sailing through the Leviathan's tile bumps into it and reveals it.</p>",
+    "<h3>The map</h3><ul><li><b>Islands</b> block everything.</li><li><b>Reefs</b> block ships, but the Leviathan can hide in them.</li><li>It starts somewhere in the <b>northern waters</b> (the top 4 rows).</li></ul>",
+    "<h3>The red haze</h3><p>Shows every tile the Leviathan could be on, worked out from every clue so far. Turn it off for a harder hunt.</p>",
+    '<div class="tip"><b>Hunters:</b> keep the Harpoon ship central, ping before you throw, and keep damaged ships away from the haze.<br><b>Leviathan:</b> feed far from the Harpoon ship, dash to break a closing net, and remember you surface every 6th round.</div>'
+  ].join("");
+
+  var G = {
+    state: null, cfg: null, rand: null, viewer: "hunters", locked: false,
+    humanMonster: false, humanHunters: false, level: "normal",
+    sel: 1, shipMode: "move", pending: null, haze: true, recap: "", review: false,
+    resolver: null, monsterOpts: null, startPick: false, token: 0, svg: null, layers: {}
+  };
+
+  /* ---------- Board construction ---------- */
+  function buildBoard() {
+    var stage = K.$("#stage");
+    stage.innerHTML = "";
+    var svg = sv("svg", { id: "board", viewBox: "0 0 " + VBW.toFixed(1) + " " + VBH.toFixed(1), role: "img", "aria-label": "Hex sea board" });
+    svg.appendChild(sv("defs", null,
+      sv("pattern", { id: "mesh", width: "6", height: "6", patternUnits: "userSpaceOnUse", patternTransform: "rotate(45)" },
+        sv("path", { d: "M0 0H6M0 0V6", stroke: "rgba(233,241,247,.55)", "stroke-width": "1", fill: "none" })),
+      sv("pattern", { id: "reefdots", width: "7", height: "7", patternUnits: "userSpaceOnUse" },
+        sv("circle", { cx: "2", cy: "2", r: "1", fill: "rgba(140,230,220,.35)" }),
+        sv("circle", { cx: "5.5", cy: "5.5", r: ".8", fill: "rgba(140,230,220,.25)" }))));
+    var tiles = sv("g", { class: "tiles" });
+    var st = G.state;
+    for (var i = 0; i < L.N; i++) {
+      var t = st.terrain[i];
+      var cls = t === L.ISLAND ? "t-island" : t === L.REEF ? "t-reef" : "t-sea" + ((L.cOf(i) + L.rOf(i)) % 3 === 0 ? " alt" : "");
+      tiles.appendChild(sv("polygon", { points: hexPts(i, R - 0.9), class: cls }));
+      if (t === L.REEF) tiles.appendChild(sv("polygon", { points: hexPts(i, R - 2.5), fill: "url(#reefdots)" }));
+      if (t === L.ISLAND) tiles.appendChild(sv("path", { d: "M" + (cx(i) - 6).toFixed(1) + " " + (cy(i) + 4).toFixed(1) + "q6 -9 12 0", fill: "none", stroke: "#8d8559", "stroke-width": "1.6", "stroke-linecap": "round" }));
+    }
+    svg.appendChild(tiles);
+    ["marks", "units", "over", "fx"].forEach(function (name) {
+      var g = sv("g", { class: name });
+      G.layers[name] = g;
+      svg.appendChild(g);
+    });
+    var hit = sv("g", { class: "hit-layer" });
+    for (var j = 0; j < L.N; j++) hit.appendChild(sv("polygon", { points: hexPts(j, R), "data-i": String(j) }));
+    hit.addEventListener("click", function (e) {
+      var target = e.target.closest ? e.target.closest("polygon") : e.target;
+      if (!target || target.getAttribute("data-i") == null) return;
+      onTile(+target.getAttribute("data-i"));
+    });
+    svg.appendChild(hit);
+    G.layers.hit = hit;
+    stage.appendChild(svg);
+    G.svg = svg;
+    buildUnits();
+  }
+
+  function shipNode(k) {
+    var sh = G.state.ships[k];
+    var g = sv("g", { class: "unit ship", "data-ship": String(k) });
+    g.appendChild(sv("circle", { class: "sel-ring", r: "17.5" }));
+    g.appendChild(sv("circle", { class: "ship-body", r: "13" }));
+    var icon = sv("g", { class: "ship-icon", transform: "translate(-9 -9) scale(.75)" });
+    icon.innerHTML = ICON[sh.ability];
+    g.appendChild(icon);
+    var hp = sv("g", { class: "hp" });
+    for (var q = 0; q < L.CFG.shipHP; q++) hp.appendChild(sv("rect", { class: "ship-hp", x: String(-7 + q * 8), y: "-21", width: "6", height: "4", rx: "1" }));
+    g.appendChild(hp);
+    return g;
+  }
+
+  function monsterNode() {
+    var g = sv("g", { class: "unit monster" });
+    g.appendChild(sv("circle", { class: "monster-glow", r: "19" }));
+    g.appendChild(sv("path", { class: "monster-body", d: "M-13 3c0-9 6-15 13-15s13 6 13 15c0 4-2 7-5 9l-2-4-3 5-3-5-3 5-3-5-2 4c-3-2-5-5-5-9z" }));
+    g.appendChild(sv("ellipse", { class: "monster-eye", cx: "0", cy: "-2", rx: "6.5", ry: "4.3" }));
+    g.appendChild(sv("ellipse", { class: "monster-pupil", cx: "0.6", cy: "-2", rx: "1.5", ry: "3.6" }));
+    return g;
+  }
+
+  function buildUnits() {
+    var u = G.layers.units;
+    u.innerHTML = "";
+    G.shipNodes = G.state.ships.map(function (sh, k) { var n = shipNode(k); u.appendChild(n); return n; });
+    G.monsterNode = monsterNode();
+    u.appendChild(G.monsterNode);
+    placeUnits(true);
+  }
+
+  function setPos(node, i, instant) {
+    if (instant) node.style.transition = "none";
+    node.style.transform = "translate(" + cx(i).toFixed(2) + "px," + cy(i).toFixed(2) + "px)";
+    if (instant) { void node.getBoundingClientRect(); node.style.transition = ""; }
+  }
+
+  function placeUnits(instant) {
+    var st = G.state;
+    st.ships.forEach(function (sh, k) {
+      var n = G.shipNodes[k];
+      setPos(n, sh.pos, instant);
+      n.classList.toggle("sunk", sh.sunk);
+      var hp = n.querySelectorAll(".ship-hp");
+      for (var q = 0; q < hp.length; q++) hp[q].classList.toggle("lost", q >= sh.hp);
+    });
+    var m = G.monsterNode;
+    var show = monsterVisible();
+    m.style.display = show ? "" : "none";
+    if (show && st.monster.pos >= 0) setPos(m, st.monster.pos, instant);
+    m.classList.toggle("hidden-from-hunters", G.viewer === "monster" && st.revealedAt !== st.monster.pos && !st.winner);
+  }
+
+  function monsterVisible() {
+    var st = G.state;
+    if (st.monster.pos < 0) return false;
+    if (st.winner || G.review) return true;
+    if (G.viewer === "monster") return true;
+    return st.revealedAt >= 0 && st.revealedAt === st.monster.pos;
+  }
+
+  /* ---------- Rendering ---------- */
+  function hexEl(i, cls, rr) { return sv("polygon", { points: hexPts(i, rr || R - 1.6), class: cls }); }
+
+  function render() {
+    var st = G.state;
+    if (!st) return;
+    var marks = G.layers.marks;
+    marks.innerHTML = "";
+    var phaseStart = st.phase === "start";
+    if (phaseStart && G.viewer === "monster" && G.startPick) {
+      L.startZone(st).forEach(function (t) { marks.appendChild(hexEl(t, "hl-start")); });
+    }
+    var showHaze = !phaseStart && G.haze && !st.winner && !G.review && (G.viewer === "hunters" || G.humanMonster);
+    if (showHaze && !(st.revealedAt >= 0 && G.viewer === "hunters")) {
+      var weak = st.P.length > 30;
+      st.P.forEach(function (t) { marks.appendChild(hexEl(t, "haze" + (weak ? " weak" : ""))); });
+    }
+    st.nets.forEach(function (n) {
+      marks.appendChild(hexEl(n.pos, "net-mesh", R - 3));
+      marks.appendChild(sv("text", { x: (cx(n.pos) + 8).toFixed(1), y: (cy(n.pos) + 13).toFixed(1), class: "net-ttl", "text-anchor": "middle", text: String(n.ttl) }));
+    });
+    if (st.wake >= 0 && !st.winner) {
+      var wg = sv("g", { class: "wake" });
+      wg.appendChild(sv("circle", { cx: cx(st.wake).toFixed(1), cy: cy(st.wake).toFixed(1), r: "6" }));
+      wg.appendChild(sv("circle", { cx: cx(st.wake).toFixed(1), cy: cy(st.wake).toFixed(1), r: "11" }));
+      wg.appendChild(sv("circle", { cx: cx(st.wake).toFixed(1), cy: cy(st.wake).toFixed(1), r: "16", opacity: ".5" }));
+      marks.appendChild(wg);
+    }
+    st.buoys.forEach(function (b) {
+      var x = cx(b.pos), y = cy(b.pos);
+      if (b.alive) {
+        marks.appendChild(sv("circle", { cx: x.toFixed(1), cy: y.toFixed(1), r: "10", class: "buoy-ring" }));
+        marks.appendChild(sv("path", { d: "M" + (x - 5).toFixed(1) + " " + (y + 3).toFixed(1) + "h10l-2 -8h-6z", class: "buoy" }));
+        marks.appendChild(sv("circle", { cx: x.toFixed(1), cy: (y - 7).toFixed(1), r: "2.4", class: "buoy" }));
+      } else {
+        marks.appendChild(sv("path", { d: "M" + (x - 5) + " " + (y - 5) + "l10 10M" + (x + 5) + " " + (y - 5) + "l-10 10", class: "buoy-dead" }));
+      }
+    });
+    renderHighlights(marks);
+    G.layers.over.innerHTML = "";
+    if (G.review || st.winner) renderTrail(G.layers.over);
+    placeUnits(false);
+    G.shipNodes.forEach(function (n, k) {
+      var sh = st.ships[k];
+      var selectable = G.resolver && G.mode === "hunters" && !sh.sunk;
+      n.classList.toggle("selected", selectable && G.sel === k);
+      n.classList.toggle("done", !sh.sunk && st.phase === "hunters" && sh.moved && sh.acted);
+      var strikable = G.mode === "monster" && G.monsterOpts && G.monsterOpts.some(function (o) { return o.type === "strike" && o.ship === k; });
+      n.classList.toggle("target-ring", !!strikable);
+    });
+    renderStatus();
+    renderBar();
+  }
+
+  function renderHighlights(marks) {
+    var st = G.state;
+    if (G.mode === "hunters" && G.resolver && !G.locked) {
+      var sh = st.ships[G.sel];
+      if (sh && !sh.sunk) {
+        if (G.shipMode === "move" && !sh.moved) {
+          var mv = L.shipMoves(st, G.sel);
+          Object.keys(mv).forEach(function (t) { marks.appendChild(hexEl(+t, "hl-move")); });
+        } else if (G.shipMode === "ability" && !sh.acted) {
+          if (sh.ability === "beam") {
+            L.abilityTargets(st, G.sel).forEach(function (d) {
+              L.beamTiles(st, sh.pos, d).forEach(function (t) { marks.appendChild(hexEl(t, "hl-beam")); });
+            });
+          } else if (sh.ability === "ping") {
+            L.disk(sh.pos, L.CFG.sonarRange).forEach(function (t) { if (st.terrain[t] !== L.ISLAND) marks.appendChild(hexEl(t, "hl-ability")); });
+          } else {
+            L.abilityTargets(st, G.sel).forEach(function (t) { marks.appendChild(hexEl(t, "hl-ability")); });
+          }
+        }
+      }
+      if (G.pending) {
+        var p = G.pending;
+        if (p.type === "move") {
+          (p.path || [p.to]).forEach(function (t) { marks.appendChild(hexEl(t, "hl-pending", R - 3)); });
+        } else if (p.type === "beam") {
+          L.beamTiles(st, st.ships[p.ship].pos, p.dir).forEach(function (t) { marks.appendChild(hexEl(t, "hl-pending", R - 3)); });
+        } else if (p.type === "ping") {
+          L.disk(st.ships[p.ship].pos, L.CFG.sonarRange).forEach(function (t) { if (st.terrain[t] !== L.ISLAND) marks.appendChild(hexEl(t, "hl-pending", R - 3)); });
+        } else if (p.target != null) {
+          marks.appendChild(hexEl(p.target, "hl-pending", R - 2));
+        }
+      }
+    }
+    if (G.mode === "monster" && G.resolver && !G.locked && G.monsterOpts) {
+      G.monsterOpts.forEach(function (o) {
+        if (o.type === "swim" && o.to !== st.monster.pos) marks.appendChild(hexEl(o.to, "hl-swim"));
+        if (o.type === "dash") marks.appendChild(hexEl(o.to, "hl-dash"));
+      });
+      if (G.pending) {
+        var tile = G.pending.type === "strike" ? st.ships[G.pending.ship].pos : G.pending.to;
+        marks.appendChild(hexEl(tile, "hl-pending", R - 2));
+      }
+    }
+    if (G.mode === "start" && G.pending != null) marks.appendChild(hexEl(G.pending, "hl-pending", R - 2));
+  }
+
+  function renderTrail(marks) {
+    var tr = G.state.monster.trail;
+    if (!tr.length) return;
+    var d = "";
+    tr.forEach(function (p, k) { d += (k ? "L" : "M") + cx(p.pos).toFixed(1) + " " + cy(p.pos).toFixed(1); });
+    marks.appendChild(sv("path", { d: d, class: "trail" }));
+    var seen = {};
+    tr.forEach(function (p) {
+      if (seen[p.pos]) return;
+      seen[p.pos] = 1;
+      marks.appendChild(sv("circle", { cx: cx(p.pos).toFixed(1), cy: cy(p.pos).toFixed(1), r: "6", class: "trail-dot" }));
+      marks.appendChild(sv("text", { x: cx(p.pos).toFixed(1), y: (cy(p.pos) + 3).toFixed(1), "text-anchor": "middle", class: "trail-num", text: String(p.round) }));
+    });
+  }
+
+  function renderStatus() {
+    var st = G.state;
+    var main = "", sub = "";
+    if (st.winner) {
+      main = st.winner === "hunters" ? "Hunters win" : "Leviathan wins";
+      sub = G.review ? "Its whole path is drawn in red. Numbers are rounds." : st.reason;
+    } else if (st.phase === "start") {
+      main = "The hunt begins";
+      sub = G.viewer === "monster" ? "Choose where the Leviathan starts" : "The Leviathan is choosing where to start";
+    } else {
+      var surf = L.CFG.surfaceEvery - (st.round % L.CFG.surfaceEvery);
+      if (surf === L.CFG.surfaceEvery) surf = 0;
+      main = st.phase === "monster" ? "Leviathan's turn" : "Hunters' turn";
+      sub = "Round " + st.round + "/" + L.CFG.roundLimit + (surf === 0 ? " · it surfaces now" : " · surfaces in " + surf);
+    }
+    K.$("#st-main").textContent = main;
+    K.$("#st-sub").textContent = sub;
+    var sc = K.$("#scores");
+    sc.innerHTML = "";
+    sc.appendChild(h("span", { class: "chip hits", title: "Harpoon hits", html: iconSvg("hits") + "<span>" + st.monster.wounds + "/" + L.CFG.woundsToWin + "</span>" }));
+    sc.appendChild(h("span", { class: "chip kills", title: "Targets destroyed", html: iconSvg("kills") + "<span>" + st.monster.kills + "/" + L.CFG.killsToWin + "</span>" }));
+  }
+
+  /* ---------- Action bar ---------- */
+  function hazeToggle() {
+    return h("button", { class: "toggle", type: "button", "aria-pressed": G.haze ? "true" : "false", onclick: function () {
+      G.haze = !G.haze; K.store.set("haze", G.haze); K.Sound.play("tap"); render();
+    }, html: K.ICONS.eye + "<span>" + (G.viewer === "monster" ? "Hunters' view" : "Haze") + (G.state && G.state.phase !== "start" ? " · " + G.state.P.length : "") + "</span>" });
+  }
+
+  function renderBar() {
+    var bar = K.$("#actionbar");
+    bar.innerHTML = "";
+    var st = G.state;
+    if (G.review) {
+      bar.appendChild(h("p", { class: "hint-line" }, "The red line is where the Leviathan went. Numbers are rounds."));
+      bar.appendChild(h("div", { class: "action-row" },
+        h("button", { class: "btn btn-primary", type: "button", onclick: function () { K.Sound.play("select"); restart(); } }, "Rematch"),
+        h("button", { class: "btn", type: "button", onclick: function () { K.quit(); } }, "Main menu")));
+      return;
+    }
+    if (G.mode === "start" && G.resolver) {
+      bar.appendChild(h("p", { class: "hint-line" }, G.pending == null ? "Tap a tile in the shaded northern waters to hide there." : "Tap it again, or press Hide here."));
+      bar.appendChild(h("button", { class: "btn btn-primary btn-wide", type: "button", disabled: G.pending == null, onclick: function () { confirmStart(); } }, "Hide here"));
+      return;
+    }
+    if (G.mode === "monster" && G.resolver) { renderMonsterBar(bar); return; }
+    if (G.mode === "hunters" && G.resolver) { renderHunterBar(bar); return; }
+    bar.appendChild(h("p", { class: "recap", html: G.recap || "&nbsp;" }));
+    var row = h("div", { class: "bar-row" }, h("span", { class: "orders" }, G.state.phase === "hunters" ? "Hunters are acting" : st.phase === "monster" ? "The Leviathan moves" : ""));
+    if (!st.winner && (G.viewer === "hunters" || G.humanMonster)) row.appendChild(hazeToggle());
+    bar.appendChild(row);
+  }
+
+  function renderMonsterBar(bar) {
+    var st = G.state;
+    var p = G.pending;
+    var msg;
+    if (!p) msg = "Green: swim (silent). Gold: dash 2 (leaves a wake). Red ring: strike that ship.";
+    else if (p.type === "strike") msg = "Strike the " + st.ships[p.ship].name + " ship? You'll be revealed.";
+    else if (p.type === "dash") msg = "Dash here? A wake will mark where you started." + (L.buoyAt(st, p.to) ? " You'll devour the buoy and be revealed." : "");
+    else if (p.to === st.monster.pos) msg = "Lurk where you are.";
+    else msg = "Swim here." + (L.buoyAt(st, p.to) ? " You'll devour the buoy and be revealed." : "");
+    if (st.round % L.CFG.surfaceEvery === 0) msg += " You surface at the end of this turn.";
+    if (st.monster.snagged) msg = "Snagged: you can't dash this turn. " + msg;
+    bar.appendChild(h("p", { class: "hint-line" }, msg));
+    var row = h("div", { class: "confirm-row" });
+    row.appendChild(h("button", { class: "btn", type: "button", onclick: function () {
+      K.Sound.play("tap");
+      G.pending = { type: "swim", to: st.monster.pos };
+      render();
+    } }, "Lurk here"));
+    row.appendChild(h("button", { class: "btn btn-primary", type: "button", disabled: !p, onclick: confirmMonster },
+      !p ? "Choose a move" : p.type === "strike" ? "Strike!" : p.type === "dash" ? "Dash" : p.to === st.monster.pos ? "Lurk" : "Swim"));
+    bar.appendChild(row);
+    var tools = h("div", { class: "bar-row" },
+      h("div", { class: "legend" },
+        h("span", null, h("i", { style: "background:#6ee7b7" }), "Swim"),
+        h("span", null, h("i", { style: "background:#fbbf24" }), "Dash"),
+        h("span", null, h("i", { style: "background:#ff4f6d" }), "Strike")),
+      hazeToggle());
+    bar.appendChild(tools);
+  }
+
+  function abilityHint(sh) {
+    if (sh.ability === "ping") return "Ping all tiles within 2 of the Sonar ship.";
+    if (sh.ability === "harpoon") return "Tap a tile up to 2 away to throw the harpoon.";
+    if (sh.ability === "net") return "Tap a tile next to the Net ship to drop a net.";
+    return "Tap any lit tile to shine the beam that way.";
+  }
+
+  function renderHunterBar(bar) {
+    var st = G.state;
+    var rowShips = h("div", { class: "shiprow" });
+    st.ships.forEach(function (sh, k) {
+      var st2 = h("span", { class: "st" }, h("i", { class: sh.moved ? "used" : "", title: "Move" }), h("i", { class: sh.acted ? "used" : "", title: sh.verb }));
+      rowShips.appendChild(h("button", {
+        class: "shipcard" + (sh.sunk ? " sunk" : ""), type: "button", "aria-pressed": G.sel === k ? "true" : "false", disabled: sh.sunk,
+        onclick: function () { selectShip(k); }
+      }, h("span", { html: iconSvg(sh.ability) }), h("span", { class: "nm" }, sh.name), sh.sunk ? h("span", { class: "nm" }, "sunk") : st2,
+        h("span", { class: "hp" }, sh.sunk ? "" : "♥" + sh.hp)));
+    });
+    bar.appendChild(rowShips);
+    var sh = st.ships[G.sel];
+    var p = G.pending;
+    var hint;
+    if (p) hint = describeOrder(p);
+    else if (sh.moved && sh.acted) hint = "The " + sh.name + " ship is done this turn. Pick another ship.";
+    else if (G.shipMode === "move") hint = sh.moved ? "Already moved. Switch to " + sh.verb + "." : "Tap a teal tile to sail there (up to 2).";
+    else hint = sh.acted ? "Already used. Switch to Move." : abilityHint(sh);
+    bar.appendChild(h("p", { class: "hint-line" }, hint));
+    if (p) {
+      bar.appendChild(h("div", { class: "confirm-row" },
+        h("button", { class: "btn", type: "button", onclick: function () { K.Sound.play("tap"); G.pending = null; render(); } }, "Cancel"),
+        h("button", { class: "btn btn-primary", type: "button", onclick: confirmHunter }, confirmLabel(p))));
+    } else {
+      bar.appendChild(h("div", { class: "modes" },
+        h("button", { class: "btn btn-sm", type: "button", "aria-pressed": G.shipMode === "move" ? "true" : "false", disabled: sh.moved || st.orders < 1, onclick: function () { G.shipMode = "move"; K.Sound.play("tap"); render(); } }, "Move"),
+        h("button", { class: "btn btn-sm", type: "button", "aria-pressed": G.shipMode === "ability" ? "true" : "false", disabled: sh.acted || st.orders < 1, onclick: function () {
+          G.shipMode = "ability"; K.Sound.play("tap");
+          if (sh.ability === "ping") G.pending = { type: "ping", ship: G.sel };
+          render();
+        } }, sh.verb)));
+    }
+    var pips = h("span", { class: "orders" }, "Orders");
+    for (var q = 0; q < L.CFG.orders; q++) pips.appendChild(h("i", { class: q < st.orders ? "" : "used" }));
+    bar.appendChild(h("div", { class: "bar-row" }, pips, hazeToggle(),
+      h("button", { class: "btn btn-sm", type: "button", onclick: function () { K.Sound.play("tap"); finishHunterTurn(); } }, st.orders > 0 ? "End turn" : "Done")));
+  }
+
+  function confirmLabel(p) {
+    if (p.type === "move") return "Sail here";
+    if (p.type === "ping") return "Ping";
+    if (p.type === "harpoon") return "Throw harpoon";
+    if (p.type === "net") return "Drop net";
+    return "Shine beam";
+  }
+  function describeOrder(p) {
+    var sh = G.state.ships[p.ship];
+    if (p.type === "move") return "Sail the " + sh.name + " ship here.";
+    if (p.type === "ping") return "Ping within 2 tiles of the Sonar ship.";
+    if (p.type === "harpoon") return "Throw the harpoon at the marked tile.";
+    if (p.type === "net") return "Drop a net on the marked tile.";
+    return "Shine the beam along the marked line.";
+  }
+
+  function selectShip(k) {
+    var st = G.state, sh = st.ships[k];
+    if (sh.sunk) return;
+    K.Sound.play("tap");
+    G.sel = k;
+    G.pending = null;
+    G.shipMode = !sh.moved ? "move" : "ability";
+    if (G.shipMode === "ability" && sh.ability === "ping" && !sh.acted) G.pending = { type: "ping", ship: k };
+    render();
+  }
+
+  /* ---------- Input ---------- */
+  function onTile(i) {
+    if (G.locked || !G.resolver) return;
+    var st = G.state;
+    if (G.mode === "start") {
+      if (L.startZone(st).indexOf(i) < 0) { K.Sound.play("error"); K.toast("Start in the shaded northern waters."); return; }
+      if (G.pending === i) { confirmStart(); return; }
+      G.pending = i; K.Sound.play("tap"); render(); return;
+    }
+    if (G.mode === "monster") {
+      var opt = null;
+      G.monsterOpts.forEach(function (o) {
+        if (o.type === "strike" && st.ships[o.ship].pos === i) opt = o;
+        else if ((o.type === "swim" || o.type === "dash") && o.to === i && !opt) opt = o;
+      });
+      if (!opt) { K.Sound.play("error"); return; }
+      if (G.pending && samePending(G.pending, opt)) { confirmMonster(); return; }
+      G.pending = opt; K.Sound.play("tap"); render(); return;
+    }
+    if (G.mode === "hunters") {
+      var shipHere = L.shipAt(st, i);
+      if (shipHere >= 0 && shipHere !== G.sel && !(G.shipMode === "ability" && st.ships[G.sel].ability === "beam")) { selectShip(shipHere); return; }
+      var sh = st.ships[G.sel];
+      var order = null;
+      if (G.shipMode === "move" && !sh.moved) {
+        var mv = L.shipMoves(st, G.sel);
+        if (mv[i]) order = { type: "move", ship: G.sel, to: i, path: mv[i] };
+      } else if (G.shipMode === "ability" && !sh.acted) {
+        if (sh.ability === "ping") order = { type: "ping", ship: G.sel };
+        else if (sh.ability === "beam") {
+          L.abilityTargets(st, G.sel).forEach(function (d) { if (L.beamTiles(st, sh.pos, d).indexOf(i) >= 0) order = { type: "beam", ship: G.sel, dir: d }; });
+        } else if (L.abilityTargets(st, G.sel).indexOf(i) >= 0) order = { type: sh.ability, ship: G.sel, target: i };
+      }
+      if (!order) {
+        if (shipHere === G.sel) return;
+        K.Sound.play("error");
+        return;
+      }
+      if (G.pending && samePending(G.pending, order)) { confirmHunter(); return; }
+      G.pending = order; K.Sound.play("tap"); render();
+    }
+  }
+
+  function samePending(a, b) {
+    return a.type === b.type && a.to === b.to && a.ship === b.ship && a.target === b.target && a.dir === b.dir;
+  }
+
+  function confirmStart() {
+    if (G.pending == null || !G.resolver) return;
+    K.Sound.play("select");
+    var r = G.resolver; G.resolver = null;
+    var pos = G.pending; G.pending = null;
+    r(pos);
+  }
+  function confirmMonster() {
+    if (!G.pending || !G.resolver) return;
+    K.Sound.play("select");
+    var r = G.resolver; G.resolver = null;
+    var act = G.pending; G.pending = null;
+    G.monsterOpts = null;
+    r(act);
+  }
+  function confirmHunter() {
+    if (!G.pending || !G.resolver || G.locked) return;
+    var order = G.pending;
+    G.pending = null;
+    runHunterOrder(order);
+  }
+
+  /* ---------- Animations ---------- */
+  function fx(node, ms) {
+    G.layers.fx.appendChild(node);
+    setTimeout(function () { node.remove(); }, ms || 900);
+    return node;
+  }
+  function animate(node, frames, ms) {
+    if (K.reduceMotion || !node.animate) return K.sleep(ms);
+    try { node.animate(frames, { duration: ms, easing: "ease-out", fill: "forwards" }); } catch (e) {}
+    return K.sleep(ms);
+  }
+
+  async function slideShip(k, path) {
+    var n = G.shipNodes[k];
+    for (var q = 0; q < path.length; q++) {
+      setPos(n, path[q], false);
+      K.Sound.play("slide");
+      await K.sleep(230);
+    }
+  }
+
+  async function pingFx(pos, contact) {
+    K.Sound.play("ping");
+    var c = sv("circle", { cx: "0", cy: "0", r: (2.6 * HW).toFixed(1), class: "fx-ping" });
+    fx(sv("g", { transform: "translate(" + cx(pos).toFixed(1) + " " + cy(pos).toFixed(1) + ")" }, c), 1100);
+    await animate(c, [{ transform: "scale(.08)", opacity: 1 }, { transform: "scale(1)", opacity: 0.2 }], 700);
+    if (contact) { K.Sound.play("contact"); await K.banner("CONTACT", { tone: "bad", sub: "It's within 2 tiles of the Sonar ship", ms: 1300 }); }
+    else await K.banner("CLEAR", { tone: "good", sub: "Nothing within 2 tiles", ms: 1000 });
+  }
+
+  async function beamFx(from, tiles, found) {
+    K.Sound.play("zap");
+    if (!tiles.length) return;
+    var last = tiles[tiles.length - 1];
+    var ln = fx(sv("line", { x1: cx(from).toFixed(1), y1: cy(from).toFixed(1), x2: cx(last).toFixed(1), y2: cy(last).toFixed(1), class: "fx-beam" }), 1200);
+    await animate(ln, [{ opacity: 0 }, { opacity: 0.8 }, { opacity: 0.35 }], 600);
+    if (found) { K.Sound.play("reveal"); await K.banner("SPOTTED", { tone: "bad", sub: "The beam caught it", ms: 1200 }); }
+    else await K.banner("NOTHING", { tone: "good", sub: "The beam lit empty water", ms: 900 });
+  }
+
+  async function harpoonFx(from, target, hit) {
+    K.Sound.play("whoosh");
+    var ln = fx(sv("line", { x1: cx(from).toFixed(1), y1: cy(from).toFixed(1), x2: cx(from).toFixed(1), y2: cy(from).toFixed(1), class: "fx-harpoon" }), 900);
+    if (!K.reduceMotion) {
+      var steps = 8;
+      for (var q = 1; q <= steps; q++) {
+        ln.setAttribute("x2", (cx(from) + (cx(target) - cx(from)) * q / steps).toFixed(1));
+        ln.setAttribute("y2", (cy(from) + (cy(target) - cy(from)) * q / steps).toFixed(1));
+        await K.sleep(28);
+      }
+    }
+    if (hit) {
+      K.Sound.play("hit");
+      fx(sv("circle", { cx: cx(target).toFixed(1), cy: cy(target).toFixed(1), r: "18", class: "fx-hit" }), 900);
+      K.shake(K.$("#stage"));
+      K.haptic(40);
+      await K.banner("HIT!", { tone: "accent", sub: G.state.monster.wounds + " of " + L.CFG.woundsToWin + " hits", ms: 1300 });
+    } else {
+      K.Sound.play("splash");
+      var sp = sv("circle", { cx: "0", cy: "0", r: "16", class: "fx-splash" });
+      fx(sv("g", { transform: "translate(" + cx(target).toFixed(1) + " " + cy(target).toFixed(1) + ")" }, sp), 900);
+      await animate(sp, [{ transform: "scale(.25)", opacity: 1 }, { transform: "scale(1)", opacity: 0 }], 500);
+      K.toast("Splash. Nothing there.");
+    }
+  }
+
+  async function netFx(target, snag) {
+    K.Sound.play("whoosh");
+    await K.sleep(250);
+    if (snag) { K.Sound.play("roar"); K.shake(K.$("#stage")); await K.banner("SNAGGED", { tone: "accent", sub: "It can't dash next turn", ms: 1300 }); }
+    else K.toast("Net set. That tile is blocked for 3 rounds.");
+  }
+
+  function revealSound(why) { if (why === "surface" || why === "bump" || why === "net") K.Sound.play("roar"); }
+
+  /* Hunter events, seen by whoever is looking. */
+  async function animateHunterEvents(ev) {
+    for (var q = 0; q < ev.length; q++) {
+      var e = ev[q];
+      if (e.t === "move") { await slideShip(e.ship, e.path); }
+      else if (e.t === "bump") {
+        render();
+        K.Sound.play("roar"); K.shake(K.$("#stage")); K.haptic(30);
+        await K.banner("BUMP!", { tone: "bad", sub: "Something huge is right there", ms: 1300 });
+      } else if (e.t === "ping") { render(); await pingFx(e.at, e.contact); }
+      else if (e.t === "beam") { render(); await beamFx(e.from, e.tiles, e.found); }
+      else if (e.t === "harpoon") { await harpoonFx(e.from, e.target, e.hit); }
+      else if (e.t === "net") { render(); await netFx(e.target, e.snag); }
+      render();
+    }
+  }
+
+  /* Monster events. publicOnly: show only what the hunters can see. */
+  async function animateMonsterEvents(ev, publicOnly) {
+    var st = G.state;
+    var lines = [];
+    var revealed = ev.some(function (e) { return e.t === "reveal"; });
+    for (var q = 0; q < ev.length; q++) {
+      var e = ev[q];
+      if (e.t === "swim") {
+        if (!publicOnly) { setPos(G.monsterNode, e.to, false); K.Sound.play("move"); await K.sleep(320); }
+        else if (!revealed) lines.push("The Leviathan swam somewhere. The haze spreads.");
+      } else if (e.t === "dash") {
+        if (!publicOnly) { setPos(G.monsterNode, e.to, false); K.Sound.play("whoosh"); await K.sleep(380); }
+        else { if (!revealed) lines.push("<b>A wake!</b> It dashed 2 tiles away from the rings."); render(); K.Sound.play("splash"); await K.sleep(500); }
+      } else if (e.t === "strike") {
+        render();
+        K.Sound.play("hit"); K.shake(K.$("#stage")); K.haptic(50);
+        await K.banner("STRIKE!", { tone: "bad", sub: "The " + st.ships[e.ship].name + " ship is hit", ms: 1300 });
+      } else if (e.t === "sunk") {
+        render();
+        K.Sound.play("splash");
+        await K.banner("SUNK", { tone: "bad", sub: "The " + st.ships[e.ship].name + " ship went down", ms: 1300 });
+      } else if (e.t === "devour") {
+        render();
+        K.Sound.play("roar"); K.shake(K.$("#stage"));
+        await K.banner("DEVOURED", { tone: "bad", sub: "A buoy is gone", ms: 1300 });
+      } else if (e.t === "reveal" && e.why === "surface") {
+        render();
+        revealSound("surface");
+        await K.banner("SURFACED", { tone: "bad", sub: "Every 6th round it must breathe", ms: 1300 });
+      }
+    }
+    G.recap = lines.join(" ");
+    if (publicOnly && lines.length) K.toast(lines.join(" ").replace(/<[^>]+>/g, ""), 2600);
+    render();
+  }
+
+  /* ---------- Turn flow ---------- */
+  function waitFor(mode, setup) {
+    return new Promise(function (resolve) {
+      G.mode = mode;
+      G.pending = null;
+      if (setup) setup();
+      G.resolver = resolve;
+      render();
+    });
+  }
+
+  async function humanStart() {
+    G.startPick = true;
+    var pos = await waitFor("start");
+    G.startPick = false;
+    return pos;
+  }
+
+  async function humanMonsterTurn() {
+    var act = await waitFor("monster", function () { G.monsterOpts = L.monsterOptions(G.state); });
+    G.mode = null;
+    return act;
+  }
+
+  function finishHunterTurn() {
+    if (!G.resolver || G.mode !== "hunters" || G.locked) return;
+    var r = G.resolver; G.resolver = null; G.mode = null; G.pending = null;
+    r();
+  }
+
+  async function runHunterOrder(order) {
+    var token = G.token;
+    G.locked = true;
+    render();
+    var ev = L.applyHunter(G.state, order);
+    await animateHunterEvents(ev);
+    if (token !== G.token) return;
+    G.locked = false;
+    var st = G.state;
+    if (st.winner || st.orders < 1 || !L.hasAnyOrder(st)) {
+      await K.sleep(350);
+      if (token !== G.token) return;
+      finishHunterTurn();
+      return;
+    }
+    var sh = st.ships[G.sel];
+    if (sh.moved && sh.acted) {
+      for (var k = 0; k < st.ships.length; k++) {
+        var o = st.ships[k];
+        if (!o.sunk && (!o.moved || !o.acted)) { G.sel = k; break; }
+      }
+    }
+    sh = st.ships[G.sel];
+    G.shipMode = sh.moved ? "ability" : (order.type === "move" && order.ship === G.sel ? "ability" : "move");
+    if (G.shipMode === "ability" && sh.acted) G.shipMode = "move";
+    render();
+  }
+
+  async function humanHunterTurn() {
+    var st = G.state;
+    G.sel = 1;
+    if (st.ships[1].sunk) G.sel = st.ships.findIndex(function (x) { return !x.sunk; });
+    G.shipMode = "move";
+    await waitFor("hunters");
+  }
+
+  async function botHunterTurn(token) {
+    var st = G.state;
+    G.mode = null;
+    render();
+    await K.sleep(500);
+    var n = 0;
+    while (!st.winner && st.orders > 0 && n++ < 6) {
+      if (token !== G.token) return;
+      var o = L.bots.hunterOrder(st, G.level, G.rand);
+      if (o.type === "end") break;
+      K.$("#st-sub").textContent = "Round " + st.round + " · " + describeBot(o);
+      await K.sleep(420);
+      if (token !== G.token) return;
+      var ev = L.applyHunter(st, o);
+      await animateHunterEvents(ev);
+      await K.sleep(220);
+    }
+  }
+  function describeBot(o) {
+    var sh = G.state.ships[o.ship];
+    if (o.type === "move") return "the " + sh.name + " ship sails";
+    if (o.type === "ping") return "sonar ping";
+    if (o.type === "harpoon") return "harpoon throw";
+    if (o.type === "net") return "dropping a net";
+    return "lighthouse beam";
+  }
+
+  async function botMonsterTurn(token) {
+    G.mode = null;
+    render();
+    await K.sleep(650);
+    if (token !== G.token) return;
+    var act = L.bots.monsterMove(G.state, G.level, G.rand);
+    var ev = L.applyMonster(G.state, act);
+    await animateMonsterEvents(ev, true);
+  }
+
+  async function passTo(viewer) {
+    G.viewer = viewer;
+    G.pending = null;
+    render();
+    if (viewer === "monster") {
+      await K.cover({ className: "monster-cover", kicker: "Round " + G.state.round, title: "Leviathan's turn", text: "Hunters, look away. Leviathan player, take the phone.", cta: "I'm the Leviathan", badge: '<svg viewBox="0 0 24 24" fill="#d61f52"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="11" rx="4" ry="2.8" fill="#ffd166"/><ellipse cx="12.4" cy="11" rx="1" ry="2.4" fill="#2a0610"/></svg>' });
+    } else {
+      await K.cover({ className: "hunter-cover", kicker: "Round " + G.state.round, title: "Hunters' turn", text: "Leviathan player, hand the phone over.", cta: "We're the hunters", badge: '<svg viewBox="0 0 24 24" fill="none" stroke="#f2b84b" stroke-width="2" stroke-linecap="round">' + ICON.harpoon + "</svg>" });
+    }
+  }
+
+  async function runGame(token) {
+    var st = G.state;
+    var local = G.cfg.mode === "local";
+    if (G.humanMonster) {
+      if (local) await passTo("monster");
+      else { G.viewer = "monster"; render(); }
+      if (token !== G.token) return;
+      var pos = await humanStart();
+      if (token !== G.token) return;
+      L.setMonsterStart(st, pos);
+    } else {
+      L.setMonsterStart(st, L.bots.monsterStart(st, G.level, G.rand));
+    }
+    render();
+    while (!st.winner) {
+      if (token !== G.token) return;
+      if (st.phase === "monster") {
+        if (G.humanMonster) {
+          if (local && G.viewer !== "monster") { await passTo("monster"); if (token !== G.token) return; }
+          var act = await humanMonsterTurn();
+          if (token !== G.token) return;
+          G.locked = true;
+          var ev = L.applyMonster(st, act);
+          await animateMonsterEvents(ev, false);
+          G.locked = false;
+          if (local && !st.winner) {
+            await passTo("hunters");
+            if (token !== G.token) return;
+            G.recap = "";
+            await animateMonsterEvents(ev, true);
+          }
+        } else {
+          await botMonsterTurn(token);
+        }
+      } else if (st.phase === "hunters") {
+        if (G.humanHunters) {
+          await humanHunterTurn();
+        } else {
+          await botHunterTurn(token);
+        }
+        if (token !== G.token) return;
+        G.recap = "";
+        L.endHunterTurn(st);
+        render();
+      } else break;
+    }
+    if (token !== G.token) return;
+    await endGame(token);
+  }
+
+  async function endGame(token) {
+    var st = G.state;
+    G.mode = null; G.resolver = null;
+    render();
+    var youWon = null;
+    if (G.cfg.mode === "bot") youWon = (st.winner === "hunters") === (G.cfg.side === "hunters");
+    await K.banner(st.winner === "hunters" ? "HUNTERS WIN" : "LEVIATHAN WINS", { tone: st.winner === "hunters" ? "accent" : "bad", ms: 1500 });
+    if (token !== G.token) return;
+    var title = G.cfg.mode === "bot" ? (youWon ? "You win!" : "You lose") : (st.winner === "hunters" ? "The hunters win" : "The Leviathan wins");
+    var choice = await K.gameOver({
+      title: title,
+      tone: youWon === false ? "bad" : "good",
+      text: st.reason,
+      stats: [["Harpoon hits", st.monster.wounds + " / " + L.CFG.woundsToWin], ["Targets destroyed", st.monster.kills + " / " + L.CFG.killsToWin], ["Rounds played", st.round]],
+      reviewLabel: "See the Leviathan's path"
+    });
+    if (token !== G.token) return;
+    if (choice === "rematch") restart();
+    else if (choice === "review") { G.review = true; render(); }
+  }
+
+  /* ---------- Lifecycle ---------- */
+  function start(cfg) {
+    G.cfg = cfg;
+    G.level = cfg.difficulty || "normal";
+    G.haze = cfg.haze !== "off";
+    var local = cfg.mode === "local";
+    G.humanMonster = local || cfg.side === "monster";
+    G.humanHunters = local || cfg.side !== "monster";
+    G.viewer = G.humanHunters && !local ? "hunters" : G.humanMonster && !local ? "monster" : "monster";
+    newMatch();
+  }
+
+  function newMatch() {
+    G.token++;
+    var seed = (Date.now() ^ Math.floor(Math.random() * 1e9)) >>> 0;
+    G.state = L.newGame(seed);
+    G.rand = L.rng(seed ^ 0x5bd1e995);
+    G.review = false; G.pending = null; G.resolver = null; G.mode = null; G.locked = false; G.recap = "";
+    if (G.cfg.mode === "local") G.viewer = "monster";
+    else G.viewer = G.cfg.side === "monster" ? "monster" : "hunters";
+    K.showScreen("game");
+    buildBoard();
+    render();
+    runGame(G.token);
+  }
+
+  function restart() {
+    K.$all(".cover,.modal-wrap,.banner").forEach(function (n) { n.remove(); });
+    newMatch();
+  }
+
+  function quit() {
+    G.token++;
+    G.resolver = null; G.mode = null;
+  }
+
+  window.__leviathanDebug = { G: G, runHunterOrder: runHunterOrder };
+
+  K.init({
+    ns: "leviathan-hunt",
+    title: "Leviathan Hunt",
+    tagline: "One hidden sea monster. Four hunter ships. Deduction against deception.",
+    art: TITLE_ART,
+    rules: RULES,
+    options: [
+      { id: "mode", label: "Opponent", default: "bot", choices: [{ v: "bot", t: "Bot" }, { v: "local", t: "Friend, same phone" }] },
+      { id: "side", label: "You play", default: "hunters", choices: [{ v: "hunters", t: "Hunters" }, { v: "monster", t: "Leviathan" }], showIf: function (c) { return c.mode === "bot"; } },
+      { id: "difficulty", label: "Bot level", default: "normal", choices: [{ v: "easy", t: "Easy" }, { v: "normal", t: "Normal" }, { v: "hard", t: "Hard" }], showIf: function (c) { return c.mode === "bot"; },
+        note: function (c) { return c.difficulty === "hard" ? "Hard bots plan a move ahead and read your habits." : c.difficulty === "easy" ? "Easy bots make mistakes. Good for learning." : "A fair fight."; } },
+      { id: "haze", label: "Red haze (where it could be)", default: "on", choices: [{ v: "on", t: "Show" }, { v: "off", t: "Hide" }],
+        note: function (c) { return c.mode === "local" ? "Pass the phone between the Leviathan and the hunters. Cover screens hide the monster." : null; } }
+    ],
+    onStart: start,
+    onRestart: restart,
+    onQuit: quit,
+    menuNote: function () { return G.state ? "Round " + G.state.round + " of " + L.CFG.roundLimit + "." : ""; }
+  });
+})();
+
+</script>
+</body>
+</html>
