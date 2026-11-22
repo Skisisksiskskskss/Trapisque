@@ -1,0 +1,76 @@
+/* Liar's Gambit: a masquerade. Plum velvet board, gold and ruby players, masks for hidden pieces. */
+:root{
+  --bg:#150a14; --bg-2:#1d0f1c; --surface:#26131f; --surface-2:#33192a; --line:#4a2a3d;
+  --ink:#f6ece2; --muted:#c2a9b5; --accent:#e9c46a; --accent-ink:#2b1a05;
+  --good:#7bdcb5; --bad:#ff6b6b; --p1:#e9c46a; --p2:#e0566d;
+  --sq-a:#3d1630; --sq-b:#4e1f3d; --frame:#c9a54b;
+  --gold:#e9c46a; --gold-ink:#2b1a05; --ruby:#d94a63; --ruby-ink:#2a060d;
+  --honest:#7bdcb5; --bluff:#f4a261;
+  --font-display:"Cinzel","Trajan Pro",Georgia,serif;
+  --font-body:"Nunito Sans","Segoe UI",system-ui,-apple-system,sans-serif;
+}
+body{background:radial-gradient(110% 70% at 50% -10%, #3a1530 0%, var(--bg) 62%)}
+.title-name{font-weight:800;letter-spacing:.02em;color:var(--gold)}
+.title-name em{font-style:normal;color:var(--ruby)}
+.topbar .status-main{font-weight:700}
+.scores{display:flex;gap:6px;flex:none}
+.chip{display:flex;align-items:center;gap:6px;padding:6px 9px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-weight:800;font-size:.84rem;white-space:nowrap}
+.chip .dot{width:8px;height:8px;border-radius:50%;display:block}
+.chip .tok{display:flex;gap:3px}
+.chip .tok i{width:7px;height:7px;border-radius:50%;background:var(--ink);opacity:.9;display:block}
+.chip .tok i.spent{opacity:.2}
+#board{width:100%;height:100%;display:block}
+.sq-a{fill:var(--sq-a)} .sq-b{fill:var(--sq-b)}
+.home-tint{fill:rgba(233,196,106,.06)}
+.board-frame{fill:none;stroke:var(--frame);stroke-width:2}
+.coord{fill:rgba(246,236,226,.35);font-size:8px;font-family:var(--font-body);font-weight:700}
+.tray-label{fill:var(--muted);font-size:9.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;font-family:var(--font-body)}
+.lm-from{fill:rgba(246,236,226,.09);stroke:rgba(246,236,226,.35);stroke-width:1.2;stroke-dasharray:3 3}
+.lm-to{fill:rgba(246,236,226,.12);stroke:rgba(246,236,226,.7);stroke-width:1.6}
+.lm-to.pending{stroke:var(--bluff);stroke-width:2.4;animation:pulse 1.1s ease-in-out infinite}
+@keyframes pulse{50%{stroke-opacity:.35}}
+.lm-arrow{stroke:rgba(246,236,226,.75);stroke-width:2.2;stroke-linecap:round;fill:none}
+.lm-head{fill:rgba(246,236,226,.75)}
+.dest-honest{fill:var(--honest);opacity:.85}
+.dest-bluff{fill:none;stroke:var(--bluff);stroke-width:2.2}
+.dest-cap-honest{fill:none;stroke:var(--honest);stroke-width:3}
+.dest-cap-bluff{fill:none;stroke:var(--bluff);stroke-width:3;stroke-dasharray:4 3}
+.sel-sq{fill:rgba(233,196,106,.22);stroke:var(--gold);stroke-width:2}
+.pend-sq{fill:rgba(255,255,255,.12);stroke:#fff;stroke-width:2.4}
+.sac-sq{fill:rgba(255,107,107,.16);stroke:var(--bad);stroke-width:2;stroke-dasharray:4 3}
+.piece{transition:transform .28s cubic-bezier(.3,.7,.3,1)}
+.pc-body.gold{fill:var(--gold);stroke:#7a5a14;stroke-width:1.5}
+.pc-body.ruby{fill:var(--ruby);stroke:#6b1424;stroke-width:1.5}
+.pc-icon.gold{fill:var(--gold-ink)}
+.pc-icon.ruby{fill:#fff3f4}
+.pc-mask.gold{fill:#2b1a05;opacity:.82}
+.pc-mask.ruby{fill:#2a060d;opacity:.8}
+.pc-public{fill:none;stroke:#fff;stroke-width:1.6;stroke-dasharray:2.5 2.5;opacity:.9}
+.badge-bg{fill:#120810;stroke:rgba(246,236,226,.7);stroke-width:1}
+.badge-tx{fill:var(--ink);font-size:9px;font-weight:800;font-family:var(--font-body)}
+.badge-bg.warn{stroke:var(--bad);fill:#3a0d12}
+.badge-tx.warn{fill:var(--bad)}
+.badge-bg.cover{stroke:var(--bluff);fill:#2c1505}
+.badge-tx.cover{fill:var(--bluff)}
+.piece.ghost{opacity:.35}
+.hit-layer rect{fill:transparent;cursor:pointer}
+.flip{animation:flip .5s ease-in-out}
+@keyframes flip{0%{transform:scaleX(1)}50%{transform:scaleX(0)}100%{transform:scaleX(1)}}
+.claim-card{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:14px;background:var(--surface);border:1px solid var(--line)}
+.claim-card .k{font-size:.72rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.claim-card .v{font-weight:700}
+.claim-card .v b{color:var(--gold)}
+.tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.78rem;font-weight:800;margin-left:6px;vertical-align:1px}
+.tag.honest{background:rgba(123,220,181,.16);color:var(--honest)}
+.tag.bluff{background:rgba(244,162,97,.16);color:var(--bluff)}
+.btn-liar{background:var(--bad);border-color:var(--bad);color:#200508;font-family:var(--font-display);letter-spacing:.06em}
+.cover.ruby-cover h2{color:var(--ruby)}
+.cover.gold-cover h2{color:var(--gold)}
+.cover-kicker{margin:0;font-size:.8rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+#screen-game .actionbar{min-height:178px;justify-content:flex-end}
+.small-legend{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 12px;font-size:.8rem;color:var(--muted)}
+.small-legend span{display:inline-flex;align-items:center;gap:5px}
+.small-legend i{width:10px;height:10px;border-radius:50%;display:block}
+.icon-row{display:flex;flex-wrap:wrap;gap:8px 14px}
+.icon-row span{display:inline-flex;align-items:center;gap:6px}
+.icon-row svg{width:22px;height:22px}
