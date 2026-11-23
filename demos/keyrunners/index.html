@@ -1,0 +1,2970 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Keyrunners</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@500;600;700;800&display=swap">
+<style>
+/* ---------- Shared game kit: layout shell, controls, overlays ----------
+   Each game sets its own palette and fonts by overriding these tokens on :root. */
+:root{
+  --bg:#101318; --bg-2:#161a21; --surface:#1d222b; --surface-2:#262c37; --line:#343b48;
+  --ink:#eef1f5; --muted:#a3abb8; --accent:#f2c14e; --accent-ink:#17130a;
+  --good:#47d18c; --bad:#ff6b5e; --p1:#5aa2ff; --p2:#ff6b5e;
+  --font-display:system-ui,sans-serif; --font-body:system-ui,-apple-system,"Segoe UI",sans-serif;
+  --radius:16px; --radius-sm:10px;
+  --gutter-l:max(16px, env(safe-area-inset-left, 0px));
+  --gutter-r:max(16px, env(safe-area-inset-right, 0px));
+  padding-top:env(safe-area-inset-top, 0px);
+  padding-bottom:env(safe-area-inset-bottom, 0px);
+  color-scheme:dark;
+}
+[hidden]{display:none !important}
+*,*::before,*::after{box-sizing:border-box}
+html{height:100%;background:var(--bg);-webkit-text-size-adjust:100%}
+body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.45;
+  overscroll-behavior:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{height:100%;display:flex;flex-direction:column;min-height:0;position:relative;overflow:hidden;user-select:none;-webkit-user-select:none}
+.screen{flex:1;display:flex;flex-direction:column;min-height:0}
+
+/* ---------- Title screen ---------- */
+.title-screen{overflow-y:auto;padding-left:var(--gutter-l);padding-right:var(--gutter-r);padding-block:20px 28px;align-items:center}
+.title-inner{width:100%;max-width:460px;display:flex;flex-direction:column;gap:20px;margin:auto 0}
+.title-art{display:flex;justify-content:center}
+.title-art svg{width:min(70vw,260px);height:auto}
+.title-name{font-family:var(--font-display);font-size:clamp(2.3rem,9vw,3.3rem);line-height:.98;margin:0;text-align:center;letter-spacing:-.01em}
+.title-tag{color:var(--muted);text-align:center;margin:0;font-size:1.02rem}
+.opt-group{display:flex;flex-direction:column;gap:7px}
+.opt-label{font-size:.74rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;padding:4px;background:var(--bg-2);border:1px solid var(--line);border-radius:14px}
+.seg button{border:0;background:transparent;border-radius:10px;padding:10px 6px;min-height:44px;font-weight:650;font-size:.95rem;color:var(--muted);line-height:1.15}
+.seg button[aria-pressed="true"]{background:var(--surface-2);color:var(--ink);box-shadow:0 1px 0 rgba(255,255,255,.06) inset, 0 2px 8px rgba(0,0,0,.25)}
+.opt-note{font-size:.86rem;color:var(--muted);margin:0}
+.title-actions{display:flex;flex-direction:column;gap:10px;margin-top:4px}
+
+/* ---------- Buttons ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:10px 18px;border-radius:999px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font-weight:700;font-size:1rem;line-height:1.1;transition:transform .08s, background .15s, border-color .15s, opacity .15s}
+.btn:active{transform:scale(.97)}
+.btn[disabled]{opacity:.4;pointer-events:none}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn-ghost{background:transparent}
+.btn-danger{background:var(--bad);border-color:var(--bad);color:#160807}
+.btn-sm{min-height:38px;padding:7px 14px;font-size:.9rem}
+.btn-wide{width:100%}
+.icon-btn{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;padding:0;flex:none}
+.icon-btn svg{width:22px;height:22px}
+
+/* ---------- Game screen frame ---------- */
+.topbar{display:flex;align-items:center;gap:10px;padding:10px var(--gutter-r) 8px var(--gutter-l);min-height:60px}
+.topbar .status{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.topbar .status-main{font-family:var(--font-display);font-size:1.15rem;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar .status-sub{font-size:.84rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stage{flex:1;min-height:0;position:relative;display:flex;align-items:center;justify-content:center;padding:4px var(--gutter-r) 4px var(--gutter-l)}
+.stage > svg, .stage > .board{max-width:100%;max-height:100%}
+.actionbar{padding:8px var(--gutter-r) 12px var(--gutter-l);display:flex;flex-direction:column;gap:8px}
+.action-row{display:flex;gap:8px;align-items:stretch}
+.action-row > *{flex:1}
+.hint-line{font-size:.9rem;color:var(--muted);text-align:center;min-height:1.3em;margin:0}
+
+/* ---------- Overlays ---------- */
+.cover{position:absolute;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;
+  padding:24px var(--gutter-r) 24px var(--gutter-l);background:var(--bg);animation:kit-fade .18s ease-out}
+.cover .cover-badge{width:78px;height:78px;border-radius:50%;display:grid;place-items:center;background:var(--surface-2);border:2px solid var(--line)}
+.cover .cover-badge svg{width:42px;height:42px}
+.cover h2{font-family:var(--font-display);font-size:clamp(1.9rem,8vw,2.6rem);margin:0;line-height:1.05}
+.cover p{margin:0;color:var(--muted);max-width:32ch}
+.cover .btn{margin-top:10px;min-width:220px}
+.modal-wrap{position:absolute;inset:0;z-index:50;display:flex;align-items:flex-end;justify-content:center;background:rgba(4,6,10,.62);animation:kit-fade .15s ease-out}
+@media (min-width:640px){ .modal-wrap{align-items:center} }
+.modal{width:100%;max-width:560px;max-height:88%;display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:22px 22px 0 0;box-shadow:0 -10px 40px rgba(0,0,0,.4);animation:kit-rise .2s ease-out}
+@media (min-width:640px){ .modal{border-radius:22px} }
+.modal-head{display:flex;align-items:center;gap:10px;padding:16px 18px 8px}
+.modal-head h2{flex:1;margin:0;font-family:var(--font-display);font-size:1.45rem;line-height:1.1}
+.modal-body{padding:6px 18px 12px;overflow-y:auto;min-height:0;user-select:text;-webkit-user-select:text}
+.modal-actions{display:flex;flex-direction:column;gap:8px;padding:10px 18px calc(16px + env(safe-area-inset-bottom, 0px))}
+.banner{position:absolute;left:0;right:0;top:38%;z-index:45;display:flex;flex-direction:column;align-items:center;pointer-events:none;text-align:center;padding:0 var(--gutter-r) 0 var(--gutter-l)}
+.banner-text{font-family:var(--font-display);font-size:clamp(2.6rem,13vw,4.6rem);line-height:1;padding:10px 22px;border-radius:18px;color:var(--ink);text-shadow:0 4px 24px rgba(0,0,0,.55);animation:kit-pop .9s cubic-bezier(.2,.9,.3,1.3) both}
+.banner-sub{margin-top:8px;font-weight:700;color:var(--ink);background:rgba(0,0,0,.55);padding:6px 12px;border-radius:999px;animation:kit-fade .3s .15s both}
+.banner.tone-good .banner-text{color:var(--good)}
+.banner.tone-bad .banner-text{color:var(--bad)}
+.banner.tone-accent .banner-text{color:var(--accent)}
+.toast{position:absolute;left:50%;top:70px;transform:translateX(-50%);z-index:46;max-width:calc(100% - 32px);padding:9px 16px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);font-weight:650;font-size:.94rem;box-shadow:0 8px 24px rgba(0,0,0,.35);animation:kit-drop .2s ease-out;text-align:center}
+.shake{animation:kit-shake .38s linear}
+@keyframes kit-fade{from{opacity:0}to{opacity:1}}
+@keyframes kit-rise{from{transform:translateY(24px);opacity:.4}to{transform:none;opacity:1}}
+@keyframes kit-drop{from{transform:translate(-50%,-10px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
+@keyframes kit-pop{0%{transform:scale(.4);opacity:0}25%{transform:scale(1.08);opacity:1}75%{transform:scale(1);opacity:1}100%{transform:scale(1.02);opacity:0}}
+@keyframes kit-shake{0%,100%{transform:none}20%{transform:translate(-6px,2px)}40%{transform:translate(5px,-3px)}60%{transform:translate(-4px,1px)}80%{transform:translate(3px,2px)}}
+@media (prefers-reduced-motion: reduce){
+  .banner-text{animation-duration:.01s}
+  .shake{animation:none}
+}
+
+/* ---------- Rules text ---------- */
+.rules h3{font-family:var(--font-display);font-size:1.15rem;margin:16px 0 6px}
+.rules h3:first-child{margin-top:4px}
+.rules p{margin:0 0 8px;color:var(--ink)}
+.rules ul,.rules ol{margin:0 0 10px;padding-left:1.2em;display:flex;flex-direction:column;gap:5px}
+.rules li::marker{color:var(--muted)}
+.rules .tip{background:var(--bg-2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;color:var(--muted);font-size:.92rem}
+.rules b{color:var(--ink)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;margin:0 0 10px;align-items:start}
+.kv dt{font-weight:750;white-space:nowrap}
+.kv dd{margin:0;color:var(--muted)}
+.result-stats{display:grid;grid-template-columns:1fr auto;gap:6px 16px;margin:4px 0 6px;font-variant-numeric:tabular-nums}
+.result-stats span:nth-child(even){font-weight:750;text-align:right}
+
+/* Keyrunners: a night heist. Blue crew against red crew on a lit vault floor; gold keys and safes.
+   One deliberate dark look, so every color is set here and color-scheme stays dark. */
+:root{
+  --bg:#0d1016; --bg-2:#131821; --surface:#19202a; --surface-2:#222b37; --line:#2d3746;
+  --ink:#eef2f7; --muted:#97a3b6; --accent:#f2b840; --accent-ink:#1b1305;
+  --good:#46d483; --bad:#ff6457;
+  --blue:#3d8bff; --blue-2:#9cc3ff; --red:#ff5a4c; --red-2:#ffb0a6; --gold:#f2b840; --gold-2:#ffe2a0; --violet:#b48cff;
+  --tile-a:#161d27; --tile-b:#1a222e; --grid:rgba(160,180,210,.07);
+  --font-display:"Bebas Neue","Oswald","Arial Narrow",Impact,sans-serif;
+  --font-body:"Manrope","Segoe UI",system-ui,-apple-system,sans-serif;
+  color-scheme:dark;
+}
+body{background:var(--bg);color:var(--ink)}
+.title-name{font-weight:400;letter-spacing:.04em;font-size:clamp(3rem,15vw,4.4rem)}
+.title-name .k{color:var(--gold)}
+.title-tag{max-width:34ch;margin-inline:auto}
+.btn-primary{background:var(--gold);border-color:var(--gold);color:var(--accent-ink)}
+.topbar .status-main{font-size:1.4rem;letter-spacing:.03em}
+.cover h2{letter-spacing:.03em}
+.cover.s0 h2{color:var(--blue)} .cover.s1 h2{color:var(--red)}
+.cover-kicker{margin:0;font-size:.8rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.banner-text{letter-spacing:.04em}
+.banner.tone-blue .banner-text{color:var(--blue)} .banner.tone-red .banner-text{color:var(--red)}
+
+/* ---------- Top bar chips ---------- */
+.foe{display:flex;align-items:center;gap:7px;padding:5px 10px 5px 6px;border-radius:999px;background:var(--surface);border:1px solid var(--line);flex:none;font-variant-numeric:tabular-nums}
+.foe .dot{width:26px;height:26px;border-radius:50%;display:grid;place-items:center}
+.foe .dot svg{width:16px;height:16px}
+.foe .dot.s0{background:var(--blue)} .foe .dot.s1{background:var(--red)}
+.foe b{font-size:.95rem}
+.foe small{color:var(--muted);font-size:.74rem;font-weight:700}
+
+/* ---------- Board ---------- */
+#board{width:100%;height:100%;display:block;touch-action:manipulation}
+.tl-a{fill:var(--tile-a)} .tl-b{fill:var(--tile-b)}
+.home0{fill:rgba(61,139,255,.09)} .home1{fill:rgba(255,90,76,.09)}
+.gridl{stroke:var(--grid);stroke-width:1}
+.zone{fill:none;stroke-width:1.6;stroke-dasharray:4 4;opacity:.55}
+.zone.s0{stroke:var(--blue)} .zone.s1{stroke:var(--red)}
+.safe-box{stroke-width:2.2}
+.safe-box.s0{fill:rgba(61,139,255,.16);stroke:var(--blue)} .safe-box.s1{fill:rgba(255,90,76,.16);stroke:var(--red)}
+.safe-dial{fill:none;stroke:var(--gold);stroke-width:2.2}
+.safe-tick{stroke:var(--gold);stroke-width:2;stroke-linecap:round}
+.row-label{font:700 9px var(--font-body);fill:var(--muted);opacity:.7;letter-spacing:.08em}
+.smoke{fill:rgba(190,200,215,.20);stroke:rgba(220,228,240,.35);stroke-width:1.2;stroke-dasharray:3 3}
+.trap{fill:none;stroke:var(--violet);stroke-width:2;stroke-linecap:round;opacity:.8}
+.trail{fill:none;stroke-width:2;stroke-linecap:round;stroke-dasharray:3 4;opacity:.55}
+.trail.s0{stroke:var(--blue-2)} .trail.s1{stroke:var(--red-2)}
+
+/* highlights */
+.hl-move{fill:rgba(238,242,247,.30)}
+.hl-cap{fill:none;stroke:var(--bad);stroke-width:2.6}
+.hl-ab{fill:rgba(242,184,64,.12);stroke:var(--gold);stroke-width:2}
+.hl-pass{fill:none;stroke:var(--gold);stroke-width:2.4;stroke-dasharray:5 3}
+.hl-deploy.s0{fill:rgba(61,139,255,.22);stroke:rgba(61,139,255,.6);stroke-width:1.2}
+.hl-deploy.s1{fill:rgba(255,90,76,.22);stroke:rgba(255,90,76,.6);stroke-width:1.2}
+.hl-throw-ok{fill:var(--good)} .hl-throw-bad{fill:var(--bad)} .hl-throw-ground{fill:var(--muted)}
+.hl-reach{fill:rgba(255,100,87,.13);stroke:rgba(255,100,87,.45);stroke-width:1}
+.hl-area{fill:rgba(242,184,64,.18);stroke:var(--gold);stroke-width:1.6;stroke-dasharray:4 3}
+.hl-pick{fill:none;stroke:var(--gold);stroke-width:2.2}
+.hl-dim{fill:rgba(242,184,64,.07)}
+.path-prev{fill:none;stroke:var(--gold);stroke-width:2.2;stroke-dasharray:4 4;stroke-linecap:round}
+
+/* units */
+.tok{transition:transform .34s cubic-bezier(.3,.7,.3,1), opacity .3s}
+.tok-body.s0{fill:var(--blue)} .tok-body.s1{fill:var(--red)}
+.tok-lead{fill:none;stroke:rgba(255,255,255,.85);stroke-width:1.6;stroke-dasharray:3 2.2}
+.tok-carry{fill:rgba(242,184,64,.16);stroke:var(--gold);stroke-width:3;opacity:0}
+.tok.carrier .tok-carry{opacity:1}
+.tok-icon{fill:none;stroke:#fff;stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round}
+.tok-ring{fill:none;stroke:var(--ink);stroke-width:2.4;opacity:0}
+.tok.sel .tok-ring{opacity:1}
+.tok.ready .tok-ready{opacity:1}
+.tok-ready{fill:none;stroke:rgba(255,255,255,.55);stroke-width:1.4;stroke-dasharray:2.5 3;opacity:0}
+.tok.spent .tok-body{opacity:.72}
+.tok.fresh .tok-body{opacity:.6}
+.tok.dying{opacity:0;transition:opacity .35s}
+.tok-key{display:none}
+.tok.k0 .tok-key.k0,.tok.k1 .tok-key.k1{display:inline}
+.key-bow{stroke:var(--accent-ink);stroke-width:1.2}
+.key-bow.k0{fill:var(--blue-2)} .key-bow.k1{fill:var(--red-2)}
+.key-shaft{fill:var(--gold);stroke:var(--accent-ink);stroke-width:1}
+.tok-stun,.tok-brace,.tok-glitch,.tok-armor,.tok-danger,.tok-fresh{display:none}
+.tok.stunned .tok-stun,.tok.braced .tok-brace,.tok.glitched .tok-glitch,.tok.armored .tok-armor,.tok.danger .tok-danger,.tok.fresh .tok-fresh{display:inline}
+.tok-stun path{fill:none;stroke:var(--gold-2);stroke-width:1.8;stroke-linecap:round}
+.tok-brace{fill:none;stroke:var(--gold);stroke-width:2;stroke-dasharray:3 2}
+.tok-glitch{fill:none;stroke:var(--violet);stroke-width:2.2;stroke-dasharray:1.5 2.5}
+.tok-armor{fill:#c9d2de;stroke:#56606e;stroke-width:1}
+.tok-danger circle{fill:var(--bad);stroke:var(--bg);stroke-width:1.5}
+.tok-danger text{fill:#fff;font:800 11px var(--font-body)}
+.tok-fresh{fill:var(--bg);stroke:var(--muted);stroke-width:1}
+.tok-fresh text{fill:var(--ink);font:800 8px var(--font-body)}
+.gkey{pointer-events:none}
+.hit-layer rect{fill:transparent;cursor:pointer}
+@keyframes kr-pulse{0%,100%{opacity:.35}50%{opacity:1}}
+.pulse{animation:kr-pulse 1.1s ease-in-out infinite}
+
+/* effects */
+.fx-hit{fill:rgba(255,120,90,.45);stroke:var(--bad);stroke-width:2}
+.fx-shot{stroke:var(--gold-2);stroke-width:2.4;stroke-linecap:round}
+.fx-ring{fill:none;stroke:var(--blue-2);stroke-width:3}
+.fx-ring.alarm{stroke:var(--gold)}
+.fx-text{font:800 12px var(--font-body);text-anchor:middle}
+
+/* ---------- Action bar ---------- */
+#screen-game .actionbar{gap:6px;padding-top:4px;flex:none}
+.say{font-size:.86rem;text-align:center;margin:0;color:var(--muted);height:2.5em;line-height:1.25;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.say b{color:var(--ink)}
+.say.warn{color:var(--bad);font-weight:700}
+.say.good{color:var(--good);font-weight:700}
+.ctx{height:126px;display:flex;flex-direction:column;gap:6px}
+.ctx > .info{flex:1;min-height:0}
+.ctx .note{margin:0;font-size:.78rem;color:var(--muted);text-align:center}
+.info{display:flex;gap:10px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:7px 10px;min-height:0;width:100%;text-align:left;font:inherit;color:inherit;position:relative;overflow:hidden}
+button.info{cursor:pointer}
+.info .more{position:absolute;top:6px;right:8px;width:17px;height:17px;border-radius:50%;border:1.5px solid var(--muted);color:var(--muted);font:800 .66rem/14px var(--font-body);text-align:center}
+.info .txt .dim{color:var(--muted);opacity:.8;font-size:.74rem}
+.info .badge{width:36px;height:36px;border-radius:50%;flex:none;display:grid;place-items:center}
+.info .badge.s0{background:var(--blue)} .info .badge.s1{background:var(--red)} .info .badge.g{background:var(--surface-2);border:1.5px solid var(--gold)}
+.info .badge svg{width:22px;height:22px}
+.info .txt{flex:1;min-width:0;font-size:.78rem;line-height:1.28;color:var(--muted);padding-right:14px}
+.info .txt b{color:var(--ink);font-size:.88rem}
+.info .txt .nm{display:flex;gap:6px;align-items:baseline;flex-wrap:wrap;margin-bottom:1px}
+.info .txt .tag{font-size:.66rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--gold)}
+.info .txt .st{font-size:.66rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--bad)}
+.info .txt p{margin:0;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.acts{display:flex;gap:6px;flex:none}
+.acts .btn{min-height:36px;padding:5px 8px;font-size:.84rem;flex:1 1 0;min-width:0;white-space:nowrap}
+.acts .btn[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.acts .btn .c{display:inline-grid;place-items:center;min-width:18px;height:18px;border-radius:9px;background:var(--gold);color:var(--accent-ink);font-size:.72rem;font-weight:800;padding:0 4px}
+.hand{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.card{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 3px 6px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);min-height:66px;color:var(--ink)}
+.card svg{width:22px;height:22px}
+.card .nm{font-size:.7rem;font-weight:800;line-height:1.05;text-align:center}
+.card .cost{position:absolute;top:-6px;right:-5px;width:20px;height:20px;border-radius:50%;background:var(--gold);color:var(--accent-ink);font-size:.72rem;font-weight:800;display:grid;place-items:center;border:2px solid var(--bg)}
+.card.gadget{border-style:dashed;border-color:rgba(242,184,64,.55)}
+.card.poor{opacity:.5}
+.card[aria-pressed="true"]{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset;background:var(--surface-2)}
+.card.empty{border-style:dotted;opacity:.35;min-height:66px}
+.next{font-size:.72rem;color:var(--muted);text-align:center;margin:-2px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bottom{display:flex;gap:8px;align-items:center}
+.mana{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.mana .lbl{font-size:.7rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;gap:6px}
+.mana .lbl b{color:var(--gold);font-size:.82rem;letter-spacing:0;font-variant-numeric:tabular-nums}
+.mana .lbl b.neg{color:var(--bad)}
+.pips{display:flex;gap:3px}
+.pip{flex:1;height:8px;border-radius:3px;background:var(--surface-2);border:1px solid var(--line)}
+.pip.on{background:var(--gold);border-color:var(--gold)}
+.pip.debt{background:var(--bad);border-color:var(--bad)}
+.bottom .btn{min-height:44px;padding:8px 14px}
+#btn-undo{flex:none}
+#btn-end{flex:none;min-width:116px}
+
+/* ---------- Crew builder ---------- */
+.deck-screen{overflow-y:auto;padding:12px var(--gutter-r) 0 var(--gutter-l)}
+.deck-inner{width:100%;max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:12px;padding-bottom:12px}
+.deck-head h2{font-family:var(--font-display);font-weight:400;font-size:2.1rem;letter-spacing:.03em;margin:0;line-height:1}
+.deck-head h2.s0{color:var(--blue)} .deck-head h2.s1{color:var(--red)}
+.deck-head p{margin:4px 0 0;color:var(--muted);font-size:.9rem}
+.presets{display:flex;gap:6px;flex-wrap:wrap}
+.presets .btn{min-height:36px;padding:6px 12px;font-size:.84rem}
+.sec-h{display:flex;justify-content:space-between;align-items:baseline;margin:2px 0 6px}
+.sec-h span{font-size:.74rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.sec-h b{font-size:.82rem;color:var(--gold);font-variant-numeric:tabular-nums}
+.pick{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.pick.lead{grid-template-columns:repeat(3,minmax(0,1fr))}
+.pick.gad{grid-template-columns:repeat(3,minmax(0,1fr))}
+.pick .card{min-height:72px}
+.pick .card .tick{position:absolute;top:5px;left:6px;width:14px;height:14px;border-radius:50%;border:1.5px solid var(--line)}
+.pick .card[aria-pressed="true"] .tick{background:var(--gold);border-color:var(--gold)}
+.detail{position:sticky;bottom:0;background:linear-gradient(to bottom, rgba(13,16,22,0), var(--bg) 14px);padding:14px 0 calc(12px + env(safe-area-inset-bottom, 0px));display:flex;flex-direction:column;gap:8px}
+.detail .info{min-height:74px}
+.detail .row{display:flex;gap:8px}
+.detail .row .btn{flex:1}
+
+/* ---------- Rules ---------- */
+.rules .glossary{display:flex;flex-direction:column;gap:8px;margin:6px 0 10px}
+.rules .gl{display:flex;gap:10px;align-items:flex-start}
+.rules .gl .badge{width:30px;height:30px;border-radius:50%;flex:none;display:grid;place-items:center;background:var(--surface-2);border:1px solid var(--line)}
+.rules .gl .badge svg{width:18px;height:18px}
+.rules .gl p{margin:0;font-size:.88rem;color:var(--muted)}
+.rules .gl p b{color:var(--ink)}
+.rules .gl .cost{display:inline-grid;place-items:center;min-width:17px;height:17px;border-radius:9px;background:var(--gold);color:var(--accent-ink);font-size:.7rem;font-weight:800;margin-left:4px;padding:0 4px}
+@media (max-height:740px){
+  .topbar{min-height:50px;padding-top:6px;padding-bottom:4px}
+  .say{height:2.4em;font-size:.76rem;line-height:1.2}
+  .ctx{height:104px}
+  .info .txt{font-size:.72rem;line-height:1.22}
+  .info .txt .dim{display:none}
+  .info .badge{width:28px;height:28px}
+  .info .badge svg{width:18px;height:18px}
+  .card{min-height:52px;padding:5px 3px 4px}
+  .card svg{width:18px;height:18px}
+  .next{display:none}
+  .bottom .btn{min-height:40px}
+}
+@media (prefers-reduced-motion: reduce){ .tok{transition:none} .pulse{animation:none} }
+
+</style>
+</head>
+<body>
+<div id="app" class="app">
+  <section id="screen-title" class="screen title-screen"></section>
+  <section id="screen-deck" class="screen deck-screen" hidden></section>
+  <section id="screen-game" class="screen" hidden>
+    <header class="topbar">
+      <button id="btn-menu" class="icon-btn" type="button" aria-label="Menu"></button>
+      <div class="status"><div class="status-main" id="st-main">Your turn</div><div class="status-sub" id="st-sub"></div></div>
+      <div id="foe"></div>
+    </header>
+    <div class="stage" id="stage"></div>
+    <div class="actionbar" id="actionbar"></div>
+  </section>
+</div>
+<script>
+/* Shared game kit: title screen, menus, pass-the-phone covers, banners, sound.
+   Exposes window.Kit. No game logic lives here. */
+(function (root) {
+  "use strict";
+  var doc = root.document;
+  var NS = "game";
+  var reduceMotion = false;
+  try { reduceMotion = root.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) {}
+
+  function $(sel, scope) { return (scope || doc).querySelector(sel); }
+  function $all(sel, scope) { return Array.prototype.slice.call((scope || doc).querySelectorAll(sel)); }
+
+  function h(tag, attrs) {
+    var node = doc.createElement(tag);
+    if (attrs) {
+      for (var k in attrs) {
+        if (!Object.prototype.hasOwnProperty.call(attrs, k)) continue;
+        var v = attrs[k];
+        if (v == null || v === false) continue;
+        if (k === "class") node.className = v;
+        else if (k === "html") node.innerHTML = v;
+        else if (k === "text") node.textContent = v;
+        else if (k.slice(0, 2) === "on" && typeof v === "function") node.addEventListener(k.slice(2), v);
+        else node.setAttribute(k, v === true ? "" : v);
+      }
+    }
+    for (var i = 2; i < arguments.length; i++) {
+      var c = arguments[i];
+      if (c == null || c === false) continue;
+      if (Array.isArray(c)) c.forEach(function (x) { if (x != null) node.appendChild(typeof x === "string" ? doc.createTextNode(x) : x); });
+      else node.appendChild(typeof c === "string" ? doc.createTextNode(c) : c);
+    }
+    return node;
+  }
+
+  var SVGNS = "http://www.w3.org/2000/svg";
+  function s(tag, attrs) {
+    var node = doc.createElementNS(SVGNS, tag);
+    if (attrs) {
+      for (var k in attrs) {
+        if (!Object.prototype.hasOwnProperty.call(attrs, k)) continue;
+        var v = attrs[k];
+        if (v == null || v === false) continue;
+        if (k === "text") node.textContent = v;
+        else if (k.slice(0, 2) === "on" && typeof v === "function") node.addEventListener(k.slice(2), v);
+        else node.setAttribute(k, v);
+      }
+    }
+    for (var i = 2; i < arguments.length; i++) {
+      var c = arguments[i];
+      if (c == null || c === false) continue;
+      if (Array.isArray(c)) c.forEach(function (x) { if (x) node.appendChild(x); });
+      else node.appendChild(c);
+    }
+    return node;
+  }
+
+  var store = {
+    get: function (k, d) {
+      try { var v = root.localStorage.getItem(NS + ":" + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; }
+    },
+    set: function (k, v) { try { root.localStorage.setItem(NS + ":" + k, JSON.stringify(v)); } catch (e) {} }
+  };
+
+  var speed = 1;
+  function sleep(ms) {
+    var t = reduceMotion ? Math.min(ms, 80) : ms * speed;
+    return new Promise(function (r) { setTimeout(r, t); });
+  }
+  function frame() { return new Promise(function (r) { root.requestAnimationFrame(function () { r(); }); }); }
+
+  /* ---------- Sound: tiny WebAudio synth, starts after the first tap ---------- */
+  var Sound = (function () {
+    var ctx = null, master = null, on = true;
+    function ensure() {
+      if (ctx) { if (ctx.state === "suspended") ctx.resume(); return ctx; }
+      var AC = root.AudioContext || root.webkitAudioContext;
+      if (!AC) return null;
+      ctx = new AC();
+      master = ctx.createGain();
+      master.gain.value = 0.55;
+      master.connect(ctx.destination);
+      return ctx;
+    }
+    function tone(freq, dur, opts) {
+      opts = opts || {};
+      var c = ensure(); if (!c) return;
+      var t0 = c.currentTime + (opts.delay || 0);
+      var o = c.createOscillator();
+      var g = c.createGain();
+      o.type = opts.type || "sine";
+      o.frequency.setValueAtTime(freq, t0);
+      if (opts.to) o.frequency.exponentialRampToValueAtTime(Math.max(20, opts.to), t0 + dur);
+      var peak = opts.gain == null ? 0.25 : opts.gain;
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(peak, t0 + Math.min(0.02, dur / 4));
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      o.connect(g); g.connect(master);
+      o.start(t0); o.stop(t0 + dur + 0.05);
+    }
+    function noise(dur, opts) {
+      opts = opts || {};
+      var c = ensure(); if (!c) return;
+      var t0 = c.currentTime + (opts.delay || 0);
+      var len = Math.max(1, Math.floor(c.sampleRate * dur));
+      var buf = c.createBuffer(1, len, c.sampleRate);
+      var data = buf.getChannelData(0);
+      for (var i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / len);
+      var src = c.createBufferSource();
+      src.buffer = buf;
+      var f = c.createBiquadFilter();
+      f.type = opts.filter || "lowpass";
+      f.frequency.value = opts.freq || 1200;
+      var g = c.createGain();
+      g.gain.setValueAtTime(opts.gain == null ? 0.3 : opts.gain, t0);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      src.connect(f); f.connect(g); g.connect(master);
+      src.start(t0); src.stop(t0 + dur + 0.05);
+    }
+    var lib = {
+      tap: function () { tone(660, 0.06, { type: "triangle", gain: 0.12 }); },
+      select: function () { tone(520, 0.07, { type: "triangle", gain: 0.16 }); tone(780, 0.08, { type: "triangle", gain: 0.12, delay: 0.05 }); },
+      move: function () { tone(300, 0.12, { type: "sine", to: 420, gain: 0.16 }); },
+      slide: function () { noise(0.16, { freq: 900, gain: 0.12 }); },
+      error: function () { tone(180, 0.16, { type: "square", gain: 0.08 }); },
+      hit: function () { noise(0.22, { freq: 700, gain: 0.45 }); tone(140, 0.25, { type: "sawtooth", to: 60, gain: 0.22 }); },
+      miss: function () { noise(0.3, { freq: 2400, filter: "bandpass", gain: 0.22 }); },
+      splash: function () { noise(0.45, { freq: 1600, gain: 0.35 }); tone(220, 0.3, { to: 90, gain: 0.08 }); },
+      ping: function () { tone(1320, 0.5, { type: "sine", gain: 0.2 }); tone(1320, 0.6, { type: "sine", gain: 0.07, delay: 0.32 }); },
+      contact: function () { tone(880, 0.16, { type: "square", gain: 0.1 }); tone(880, 0.16, { type: "square", gain: 0.1, delay: 0.2 }); tone(1175, 0.3, { type: "square", gain: 0.1, delay: 0.4 }); },
+      reveal: function () { tone(392, 0.12, { type: "triangle", gain: 0.16 }); tone(587, 0.18, { type: "triangle", gain: 0.16, delay: 0.1 }); },
+      roar: function () { tone(110, 0.7, { type: "sawtooth", to: 55, gain: 0.25 }); noise(0.6, { freq: 400, gain: 0.25 }); },
+      liar: function () { tone(220, 0.12, { type: "square", gain: 0.14 }); tone(165, 0.35, { type: "square", gain: 0.14, delay: 0.12 }); },
+      win: function () { [523, 659, 784, 1047].forEach(function (f, i) { tone(f, 0.22, { type: "triangle", gain: 0.16, delay: i * 0.11 }); }); },
+      lose: function () { [392, 330, 262, 196].forEach(function (f, i) { tone(f, 0.28, { type: "triangle", gain: 0.14, delay: i * 0.14 }); }); },
+      tick: function () { tone(1000, 0.03, { type: "square", gain: 0.05 }); },
+      whoosh: function () { noise(0.25, { freq: 3000, filter: "bandpass", gain: 0.18 }); },
+      score: function () { tone(880, 0.09, { type: "triangle", gain: 0.14 }); tone(1320, 0.14, { type: "triangle", gain: 0.12, delay: 0.07 }); },
+      zap: function () { tone(1400, 0.18, { type: "sawtooth", to: 300, gain: 0.1 }); }
+    };
+    return {
+      play: function (name) { if (!on) return; try { var f = lib[name]; if (f) f(); } catch (e) {} },
+      unlock: function () { if (on) { try { ensure(); } catch (e) {} } },
+      get on() { return on; },
+      set on(v) { on = !!v; store.set("sound", on); }
+    };
+  })();
+
+  function haptic(ms) { try { if (root.navigator.vibrate) root.navigator.vibrate(ms || 12); } catch (e) {} }
+
+  /* ---------- Overlays ---------- */
+  var app = null;
+  function appRoot() { return app || (app = $("#app")); }
+
+  function cover(opts) {
+    opts = opts || {};
+    return new Promise(function (resolve) {
+      var btn = h("button", { class: "btn btn-primary", type: "button" }, opts.cta || "Tap when ready");
+      var node = h("div", { class: "cover" + (opts.className ? " " + opts.className : ""), role: "dialog", "aria-modal": "true" },
+        opts.badge ? h("div", { class: "cover-badge", html: opts.badge }) : null,
+        opts.kicker ? h("p", { class: "cover-kicker" }, opts.kicker) : null,
+        h("h2", null, opts.title || "Pass the phone"),
+        opts.text ? h("p", null, opts.text) : null,
+        btn);
+      btn.addEventListener("click", function () { Sound.unlock(); Sound.play("tap"); node.remove(); resolve(); });
+      appRoot().appendChild(node);
+      setTimeout(function () { try { btn.focus(); } catch (e) {} }, 30);
+    });
+  }
+
+  function modal(opts) {
+    opts = opts || {};
+    return new Promise(function (resolve) {
+      var wrap;
+      function done(v) { wrap.remove(); doc.removeEventListener("keydown", onKey); resolve(v); }
+      function onKey(e) { if (e.key === "Escape" && opts.dismissible !== false) done(null); }
+      var body = h("div", { class: "modal-body" + (opts.bodyClass ? " " + opts.bodyClass : "") });
+      if (typeof opts.body === "string") body.innerHTML = opts.body; else if (opts.body) body.appendChild(opts.body);
+      var actions = h("div", { class: "modal-actions" });
+      (opts.actions || [{ label: "Close", value: null }]).forEach(function (a) {
+        actions.appendChild(h("button", {
+          class: "btn btn-wide " + (a.kind === "primary" ? "btn-primary" : a.kind === "danger" ? "btn-danger" : "btn-ghost"),
+          type: "button",
+          onclick: function () { Sound.play("tap"); done(a.value); }
+        }, a.label));
+      });
+      var closeBtn = opts.dismissible === false ? null : h("button", { class: "icon-btn", type: "button", "aria-label": "Close", onclick: function () { done(null); },
+        html: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>' });
+      var panel = h("div", { class: "modal", role: "dialog", "aria-modal": "true", "aria-label": opts.title || "Dialog" },
+        h("div", { class: "modal-head" }, h("h2", null, opts.title || ""), closeBtn),
+        body,
+        (opts.actions && opts.actions.length === 0) ? null : actions);
+      wrap = h("div", { class: "modal-wrap", onclick: function (e) { if (e.target === wrap && opts.dismissible !== false) done(null); } }, panel);
+      appRoot().appendChild(wrap);
+      doc.addEventListener("keydown", onKey);
+    });
+  }
+
+  function banner(text, opts) {
+    opts = opts || {};
+    var node = h("div", { class: "banner tone-" + (opts.tone || "accent"), "aria-live": "assertive" },
+      h("div", { class: "banner-text" }, text),
+      opts.sub ? h("div", { class: "banner-sub" }, opts.sub) : null);
+    appRoot().appendChild(node);
+    var ms = opts.ms || 1100;
+    return sleep(ms).then(function () { node.remove(); });
+  }
+
+  var toastTimer = null, toastNode = null;
+  function toast(text, ms) {
+    if (toastNode) toastNode.remove();
+    toastNode = h("div", { class: "toast", role: "status" }, text);
+    appRoot().appendChild(toastNode);
+    clearTimeout(toastTimer);
+    var n = toastNode;
+    toastTimer = setTimeout(function () { if (n) n.remove(); if (toastNode === n) toastNode = null; }, ms || 1900);
+  }
+
+  function shake(node) {
+    if (!node || reduceMotion) return;
+    node.classList.remove("shake");
+    void node.getBoundingClientRect();
+    node.classList.add("shake");
+    setTimeout(function () { node.classList.remove("shake"); }, 420);
+  }
+
+  /* ---------- Title screen with option pickers ---------- */
+  var ICONS = {
+    menu: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>',
+    soundOn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 010 7M19 6a8.5 8.5 0 010 12"/></svg>',
+    soundOff: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>',
+    phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>',
+    eye: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+    help: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M9.5 9.3a2.6 2.6 0 015 1c0 1.8-2.5 2.2-2.5 3.9M12 17.2v.3"/></svg>'
+  };
+
+  var cfg = null;
+  var choice = {};
+
+  function visibleOptions() {
+    return cfg.options.filter(function (o) { return !o.showIf || o.showIf(choice); });
+  }
+
+  function renderTitle() {
+    var host = $("#title-options");
+    host.innerHTML = "";
+    visibleOptions().forEach(function (opt) {
+      var seg = h("div", { class: "seg", role: "group", "aria-label": opt.label });
+      opt.choices.forEach(function (c) {
+        seg.appendChild(h("button", {
+          type: "button",
+          "aria-pressed": choice[opt.id] === c.v ? "true" : "false",
+          onclick: function () {
+            Sound.unlock(); Sound.play("tap");
+            choice[opt.id] = c.v;
+            store.set("choice", choice);
+            renderTitle();
+          }
+        }, c.t));
+      });
+      var note = opt.note ? opt.note(choice) : null;
+      host.appendChild(h("div", { class: "opt-group" },
+        h("span", { class: "opt-label" }, opt.label), seg,
+        note ? h("p", { class: "opt-note" }, note) : null));
+    });
+  }
+
+  function showRules() {
+    return modal({ title: "How to play", body: cfg.rules, bodyClass: "rules", actions: [{ label: "Got it", value: true, kind: "primary" }] });
+  }
+
+  function showScreen(name) {
+    $all(".screen").forEach(function (sc) { sc.hidden = sc.id !== "screen-" + name; });
+  }
+
+  function init(config) {
+    cfg = config;
+    NS = config.ns || NS;
+    Sound.on = store.get("sound", true);
+    var saved = store.get("choice", {});
+    choice = {};
+    cfg.options.forEach(function (o) {
+      var ok = o.choices.some(function (c) { return c.v === saved[o.id]; });
+      choice[o.id] = ok ? saved[o.id] : o.default;
+    });
+    var title = $("#screen-title");
+    title.innerHTML = "";
+    title.appendChild(h("div", { class: "title-inner" },
+      cfg.art ? h("div", { class: "title-art", html: cfg.art }) : null,
+      h("h1", { class: "title-name" }, cfg.title),
+      h("p", { class: "title-tag" }, cfg.tagline),
+      h("div", { id: "title-options", class: "title-options", style: "display:flex;flex-direction:column;gap:14px" }),
+      h("div", { class: "title-actions" },
+        h("button", { class: "btn btn-primary btn-wide", type: "button", id: "btn-start", onclick: function () {
+          Sound.unlock(); Sound.play("select");
+          var c = {}; visibleOptions().forEach(function (o) { c[o.id] = choice[o.id]; });
+          cfg.onStart(c);
+        } }, "Play"),
+        h("button", { class: "btn btn-ghost btn-wide", type: "button", onclick: function () { Sound.unlock(); Sound.play("tap"); showRules(); } }, "How to play"))));
+    renderTitle();
+    showScreen("title");
+    var menuBtn = $("#btn-menu");
+    if (menuBtn) {
+      menuBtn.innerHTML = ICONS.menu;
+      menuBtn.onclick = function () { Sound.play("tap"); openMenu(); };
+    }
+  }
+
+  function openMenu() {
+    return modal({
+      title: "Paused",
+      body: h("p", { style: "margin:0;color:var(--muted)" }, cfg.menuNote ? cfg.menuNote() : "The game is waiting for you."),
+      actions: [
+        { label: "Resume", value: "resume", kind: "primary" },
+        { label: "How to play", value: "rules" },
+        { label: Sound.on ? "Sound: on" : "Sound: off", value: "sound" },
+        { label: "Restart this match", value: "restart" },
+        { label: "Quit to title", value: "quit", kind: "danger" }
+      ]
+    }).then(function (v) {
+      if (v === "rules") return showRules().then(openMenu);
+      if (v === "sound") { Sound.on = !Sound.on; if (Sound.on) Sound.play("select"); return openMenu(); }
+      if (v === "restart") return confirmAsk("Restart this match?", "The current match will be lost.").then(function (ok) { if (ok && cfg.onRestart) cfg.onRestart(); });
+      if (v === "quit") return confirmAsk("Quit to the title screen?", "The current match will be lost.").then(function (ok) { if (ok) quit(); });
+    });
+  }
+
+  function confirmAsk(title, text) {
+    return modal({ title: title, body: h("p", { style: "margin:0;color:var(--muted)" }, text), actions: [
+      { label: "Yes", value: true, kind: "danger" }, { label: "Cancel", value: false }] }).then(function (v) { return v === true; });
+  }
+
+  function quit() {
+    if (cfg.onQuit) cfg.onQuit();
+    $all(".cover,.modal-wrap,.banner,.toast").forEach(function (n) { n.remove(); });
+    renderTitle();
+    showScreen("title");
+  }
+
+  function gameOver(opts) {
+    Sound.play(opts.tone === "bad" ? "lose" : "win");
+    var body = h("div", null,
+      opts.text ? h("p", { style: "margin:0 0 10px;color:var(--muted)" }, opts.text) : null,
+      opts.stats ? (function () {
+        var grid = h("div", { class: "result-stats" });
+        opts.stats.forEach(function (row) { grid.appendChild(h("span", null, row[0])); grid.appendChild(h("span", null, String(row[1]))); });
+        return grid;
+      })() : null);
+    return modal({ title: opts.title, body: body, dismissible: false, actions: [
+      { label: "Rematch", value: "rematch", kind: "primary" },
+      { label: opts.reviewLabel || "Look at the board", value: "review" },
+      { label: "Main menu", value: "menu" }] }).then(function (v) {
+        if (v === "menu") { quit(); return "menu"; }
+        return v;
+      });
+  }
+
+  /* Small seeded RNG so bots can be varied but testable. */
+  function rng(seed) {
+    var a = (seed >>> 0) || 0x9e3779b9;
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  root.Kit = {
+    $: $, $all: $all, h: h, s: s, store: store, sleep: sleep, frame: frame, Sound: Sound, haptic: haptic,
+    cover: cover, modal: modal, banner: banner, toast: toast, shake: shake, init: init, showScreen: showScreen,
+    showRules: showRules, openMenu: openMenu, confirm: confirmAsk, quit: quit, gameOver: gameOver, ICONS: ICONS, rng: rng,
+    get reduceMotion() { return reduceMotion; },
+    get choice() { return choice; }
+  };
+})(typeof window !== "undefined" ? window : globalThis);
+
+/* Keyrunners: rules engine and bot. No DOM, so it runs in Node for tests.
+   Side 0 (Blue) plays from the bottom (home rows 8-9), side 1 (Red) from the top (home rows 0-1).
+   Key k belongs to side k and opens the other side's safe. A side wins at the start of its turn if
+   its own key is on the enemy safe (crack) or the enemy's key is in its back row (stash).
+   Nobody may stand on their own safe, except by capturing an enemy there. */
+(function (root) {
+  "use strict";
+
+  var W = 7, H = 10, N = W * H;
+  var CFG = {
+    firstIncome: 5, income: 5, cap: 10, debt: 3, maxCrew: 6, rounds: 30,
+    moveCost: 1, passCost: 1, throwCost: 2, burnCost: 1, passRange: 2, throwRange: 3, hookRange: 4,
+    stashTo: "safe", crackRange: 1, heavyOwn: true
+  };
+  var BACK = [9, 0];
+  var FWD = [-1, 1];
+  var NAMES = ["Blue", "Red"];
+
+  function idx(c, r) { return r * W + c; }
+  function cOf(i) { return i % W; }
+  function rOf(i) { return (i / W) | 0; }
+  function cheb(a, b) { return Math.max(Math.abs(cOf(a) - cOf(b)), Math.abs(rOf(a) - rOf(b))); }
+  function inB(c, r) { return c >= 0 && c < W && r >= 0 && r < H; }
+
+  var SAFE = [idx(3, 9), idx(3, 0)];
+  var HOME_ROWS = [[8, 9], [0, 1]];
+  var IS_SAFE = new Uint8Array(N);
+  IS_SAFE[SAFE[0]] = 1; IS_SAFE[SAFE[1]] = 1;
+  var IS_HOME = [new Uint8Array(N), new Uint8Array(N)];
+  for (var hs = 0; hs < 2; hs++) HOME_ROWS[hs].forEach(function (r) { for (var c = 0; c < W; c++) IS_HOME[hs][idx(c, r)] = 1; });
+
+  var D8 = [[0, -1], [1, 0], [0, 1], [-1, 0], [1, -1], [1, 1], [-1, 1], [-1, -1]];
+  var KNIGHT = [[1, 2], [2, 1], [-1, 2], [-2, 1], [1, -2], [2, -1], [-1, -2], [-2, -1]];
+  var NB = [], RAY = [], KNT = [];
+  for (var i0 = 0; i0 < N; i0++) {
+    var c0 = cOf(i0), r0 = rOf(i0), nb = [], rays = [], kn = [];
+    for (var d0 = 0; d0 < 8; d0++) {
+      var ray = [], cc = c0 + D8[d0][0], rr = r0 + D8[d0][1];
+      while (inB(cc, rr)) { ray.push(idx(cc, rr)); cc += D8[d0][0]; rr += D8[d0][1]; }
+      rays.push(ray);
+      if (ray.length) nb.push(ray[0]);
+      var kc = c0 + KNIGHT[d0][0], kr = r0 + KNIGHT[d0][1];
+      if (inB(kc, kr)) kn.push(idx(kc, kr));
+    }
+    NB.push(nb); RAY.push(rays); KNT.push(kn);
+  }
+
+  /* ---------- Cards ---------- */
+  var TYPES = {
+    boss: { name: "The Boss", ps: "Can't be captured with 2+ crew next to it.", as: "A crew that moved may move again.", leader: true, move: "step", passive: "untouchable", pname: "Untouchable", ptext: "Can't be captured while 2 or more of your crew stand next to it.",
+      ab: "orders", aname: "Orders", ac: 2, atext: "One of your crew that already moved this turn may move again." },
+    fixer: { name: "The Fixer", ps: "+1 mana every turn.", as: "Deploy next to any of your crew this turn.", leader: true, move: "step", passive: "connected", pname: "Connected", ptext: "You get +1 mana every turn.",
+      ab: "insideman", aname: "Inside Man", ac: 1, atext: "This turn you may deploy next to any of your crew, not just Hideouts." },
+    ghost: { name: "The Ghost", ps: "Moves 2 tiles any way, even with a key.", as: "Swap with one of your crew up to 3 away.", leader: true, move: "king2", carrier: true, passive: "slippery", pname: "Slippery", ptext: "Moves up to 2 tiles in any direction, even carrying a key.",
+      ab: "vanish", aname: "Vanish", ac: 2, atext: "Swap places with one of your crew up to 3 tiles away." },
+
+    lookout: { name: "Lookout", ps: "You can deploy next to it.", as: "Run up to 3 straight. No captures.", cost: 1, move: "step", passive: "hideout", pname: "Hideout", ptext: "You can deploy crew next to it.",
+      ab: "dash", aname: "Dash", ac: 1, atext: "Run up to 3 tiles in a straight line. No captures, and not while carrying a key." },
+    decoy: { name: "Decoy", ps: "Whoever captures it is stunned.", as: "Swap with an ally up to 2 away.", cost: 1, move: "step", passive: "bait", pname: "Bait", ptext: "Whoever captures it is stunned on their next turn.",
+      ab: "switch", aname: "Switch", ac: 1, atext: "Swap places with an ally up to 2 tiles away." },
+    runner: { name: "Runner", ps: "Moves up to 3 straight, even with a key.", as: "Step 1 tile left or right.", cost: 2, move: "rook3", carrier: true, passive: "breakaway", pname: "Breakaway", ptext: "Moves up to 3 tiles straight (no diagonals), even carrying a key.",
+      ab: "juke", aname: "Juke", ac: 1, atext: "Step 1 tile left or right." },
+    catcher: { name: "Catcher", ps: "Catches throws near it, even enemy ones.", as: "Take the key from an ally up to 3 away.", cost: 2, move: "step", passive: "softhands", pname: "Soft Hands", ptext: "Catches your throws that land next to it and steals enemy throws that fly next to it. Can still move after a catch.",
+      ab: "call", aname: "Call for It", ac: 1, atext: "Take the key from an ally up to 3 tiles away." },
+    pickpocket: { name: "Pickpocket", ps: "Moves up to 2 tiles any way.", as: "Take the key from an enemy next to it.", cost: 2, move: "king2", passive: "nimble", pname: "Nimble", ptext: "Moves up to 2 tiles in any direction.",
+      ab: "swipe", aname: "Swipe", ac: 2, atext: "Take the key from an enemy next to it." },
+    acrobat: { name: "Acrobat", ps: "Moves in an L, jumping over units.", as: "Jump a unit next to it. Stuns an enemy.", cost: 2, move: "knight", passive: "leaper", pname: "Leaper", ptext: "Moves in an L like a chess knight, jumping over anything.",
+      ab: "vault", aname: "Vault", ac: 1, atext: "Jump over a unit next to it. An enemy jumped over is stunned. Not while carrying a key." },
+    guard: { name: "Guard", ps: "Enemy key carriers can't stop next to it.", as: "Can't be captured until your next turn.", cost: 2, move: "step", passive: "watchful", pname: "Watchful", ptext: "Enemies carrying a key can't stop next to it.",
+      ab: "brace", aname: "Brace", ac: 1, atext: "Can't be captured until your next turn." },
+    brute: { name: "Brute", ps: "Survives the first hit.", as: "Push an enemy 2 tiles. Stuns it if it hits something.", cost: 3, move: "step", passive: "armored", pname: "Armored", ptext: "Survives the first time it would be captured or taken out.",
+      ab: "shove", aname: "Shove", ac: 2, atext: "Push an enemy next to it 2 tiles away. If it hits something, it's stunned." },
+    sniper: { name: "Sniper", ps: "Can't capture by moving.", as: "Take out an enemy 2-3 tiles away in a clear line.", cost: 3, move: "step", passive: "scope", pname: "Scope", ptext: "Can't capture by moving.",
+      ab: "longshot", aname: "Long Shot", ac: 3, atext: "Take out an enemy 2 or 3 tiles away in a clear straight line. Its key drops." },
+    bodyguard: { name: "Bodyguard", ps: "Your units next to it can't be captured.", as: "Jump next to an ally up to 3 away.", cost: 3, move: "step", passive: "shield", pname: "Shield", ptext: "Your units next to it can't be captured.",
+      ab: "rushin", aname: "Rush In", ac: 1, atext: "Jump next to an ally up to 3 tiles away. Not while carrying a key." },
+    hacker: { name: "Hacker", ps: "Your units within 2 ignore enemy gadgets.", as: "An enemy within 3 loses its passive and abilities.", cost: 3, move: "step", passive: "firewall", pname: "Firewall", ptext: "Your units within 2 tiles of it ignore enemy gadgets.",
+      ab: "glitch", aname: "Glitch", ac: 2, atext: "An enemy up to 3 tiles away loses its passive and can't use abilities until your next turn." },
+    driver: { name: "Getaway Driver", ps: "Moves 3 straight. You can deploy next to it.", as: "Move again after it moves.", cost: 4, move: "rook3", passive: "van", pname: "Getaway Van", ptext: "Moves up to 3 tiles straight. You can deploy crew next to it.",
+      ab: "floorit", aname: "Floor It", ac: 2, atext: "After it moves, move it again. Not while carrying a key." }
+  };
+  var GADGETS = {
+    smoke: { name: "Smoke Bomb", cost: 2, text: "No one in a 3×3 area can be captured until your next turn." },
+    hook: { name: "Grappling Hook", cost: 2, text: "One of your units zips up to 4 tiles in a straight line, even carrying a key or after moving." },
+    tripwire: { name: "Tripwire", cost: 1, text: "Hide a trap on an empty tile outside the enemy home rows. The first enemy to land on it is taken out." },
+    emp: { name: "EMP", cost: 2, text: "Stun every enemy in a 3×3 area." },
+    alarm: { name: "Alarm", cost: 1, text: "Push every enemy within 2 tiles of your safe 1 tile away from it." },
+    bribe: { name: "Bribe", cost: 4, text: "An enemy crew member next to your leader joins your side, keys and all." }
+  };
+  var LEADERS = ["boss", "fixer", "ghost"];
+  var CREW = ["lookout", "decoy", "runner", "catcher", "pickpocket", "acrobat", "guard", "brute", "sniper", "bodyguard", "hacker", "driver"];
+  var GADGET_LIST = ["smoke", "hook", "tripwire", "emp", "alarm", "bribe"];
+  var PRESETS = [
+    { id: "runners", name: "Runners", note: "Fast relays and a slippery leader.", leader: "ghost", crew: ["runner", "catcher", "lookout", "acrobat", "pickpocket", "bodyguard"], gadgets: ["hook", "smoke"] },
+    { id: "fortress", name: "Fortress", note: "Hold the line, then punish.", leader: "boss", crew: ["guard", "brute", "bodyguard", "sniper", "decoy", "catcher"], gadgets: ["alarm", "emp"] },
+    { id: "tricksters", name: "Tricksters", note: "Forward spawns, traps and bribes.", leader: "fixer", crew: ["lookout", "driver", "hacker", "pickpocket", "acrobat", "runner"], gadgets: ["tripwire", "bribe"] },
+    { id: "allround", name: "All-rounders", note: "A bit of everything.", leader: "boss", crew: ["runner", "catcher", "guard", "brute", "sniper", "lookout"], gadgets: ["smoke", "emp"] }
+  ];
+
+  function validDeck(d) {
+    if (!d || LEADERS.indexOf(d.leader) < 0) return false;
+    if (!d.crew || d.crew.length !== 6 || !d.gadgets || d.gadgets.length !== 2) return false;
+    var seen = {};
+    for (var i = 0; i < 6; i++) { if (CREW.indexOf(d.crew[i]) < 0 || seen[d.crew[i]]) return false; seen[d.crew[i]] = 1; }
+    if (GADGET_LIST.indexOf(d.gadgets[0]) < 0 || GADGET_LIST.indexOf(d.gadgets[1]) < 0 || d.gadgets[0] === d.gadgets[1]) return false;
+    return true;
+  }
+
+  /* ---------- Seeded random ---------- */
+  function rng(seed) {
+    var a = (seed >>> 0) || 0x9e3779b9;
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function rnd(st) {
+    st.seed = (st.seed + 0x6D2B79F5) | 0;
+    var t = Math.imul(st.seed ^ (st.seed >>> 15), 1 | st.seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }
+  function shuffle(arr, f) {
+    for (var i = arr.length - 1; i > 0; i--) { var j = Math.floor(f() * (i + 1)); var t = arr[i]; arr[i] = arr[j]; arr[j] = t; }
+    return arr;
+  }
+  function randomDeck(f) {
+    var crew = shuffle(CREW.slice(), f).slice(0, 6), gad = shuffle(GADGET_LIST.slice(), f).slice(0, 2);
+    return { leader: LEADERS[Math.floor(f() * LEADERS.length)], crew: crew, gadgets: gad };
+  }
+
+  /* ---------- State helpers ---------- */
+  var NOEV = { push: function () {} };
+  function mkStats() { return { caps: 0, steals: 0, deploys: 0, passes: 0, throws: 0, gadgets: 0, kos: 0 }; }
+
+  function unit(st, id) {
+    var us = st.units;
+    for (var i = 0; i < us.length; i++) if (us[i].id === id) return us[i];
+    return null;
+  }
+  function at(st, t) { var id = st.board[t]; return id < 0 ? null : unit(st, id); }
+  function holds(st, u) { return st.keys[0].h === u.id || st.keys[1].h === u.id; }
+  function keysOf(st, u) { var o = []; if (st.keys[0].h === u.id) o.push(0); if (st.keys[1].h === u.id) o.push(1); return o; }
+  /* Keys u may pass or throw right now: only its own side's key, and not on a turn that key changed hands. */
+  function looseKeys(st, u) {
+    var K = st.keys[u.side];
+    return K.h === u.id && K.lk !== st.ply ? [u.side] : [];
+  }
+  function stunned(st, u) { return st.ply < u.st; }
+  function glitched(st, u) { return st.ply < u.gl; }
+  function braced(st, u) { return st.ply < u.br; }
+  function passiveOn(st, u, p) { return TYPES[u.type].passive === p && !glitched(st, u); }
+  function inSmoke(st, t) {
+    for (var i = 0; i < st.smokes.length; i++) { var s = st.smokes[i]; if (st.ply < s.until && cheb(s.c, t) <= 1) return true; }
+    return false;
+  }
+  function immune(st, u) {
+    var us = st.units;
+    for (var i = 0; i < us.length; i++) { var b = us[i]; if (b.side === u.side && b.type === "hacker" && !glitched(st, b) && cheb(b.pos, u.pos) <= 2) return true; }
+    return false;
+  }
+  function crewCount(st, s) { var n = 0; for (var i = 0; i < st.units.length; i++) if (st.units[i].side === s && !st.units[i].leader) n++; return n; }
+  function leaderOf(st, s) { for (var i = 0; i < st.units.length; i++) if (st.units[i].side === s && st.units[i].leader) return st.units[i]; return null; }
+  function afford(st, cost) { return st.mana[st.side] - cost >= -CFG.debt; }
+  function canMove(st, u) { return u.side === st.side && u.mv !== st.ply && u.fr !== st.ply && !stunned(st, u); }
+  function canAct(st, u) { return u.side === st.side && u.ac !== st.ply && u.fr !== st.ply && !stunned(st, u) && !glitched(st, u); }
+  function canHandle(st, u) { return u.side === st.side && !stunned(st, u); }
+  function round(st) { return Math.ceil(st.ply / 2); }
+
+  function stun(st, u, ev) {
+    var until = st.ply + (u.side === st.side ? 3 : 2);
+    if (u.st < until) u.st = until;
+    ev.push({ e: "stun", u: u.id, at: u.pos });
+  }
+
+  /* Watchful: is tile t next to a Guard that opposes unit u? */
+  function watched(st, u, t, ignoreId) {
+    var us = st.units;
+    for (var i = 0; i < us.length; i++) {
+      var g = us[i];
+      if (g.side !== u.side && g.type === "guard" && g.id !== ignoreId && !glitched(st, g) && cheb(g.pos, t) === 1) return true;
+    }
+    return false;
+  }
+
+  /* Nobody stands on their own safe, except a unit bringing the enemy's stolen key home. */
+  function home(st, u) { return CFG.stashTo === "safe" ? SAFE[u.side] : -1; }
+  function canEnter(st, u, t) { return t !== SAFE[u.side] || st.keys[1 - u.side].h === u.id; }
+  function stashed(st, s, u) { return CFG.stashTo === "safe" ? u.pos === SAFE[s] : rOf(u.pos) === BACK[s]; }
+
+  function canCapture(st, a, o) {
+    if (o.side === a.side) return false;
+    if (passiveOn(st, a, "scope")) return false;
+    if (braced(st, o) || inSmoke(st, o.pos)) return false;
+    var us = st.units, adjCrew = 0;
+    for (var i = 0; i < us.length; i++) {
+      var b = us[i];
+      if (b.side !== o.side || b === o || cheb(b.pos, o.pos) !== 1) continue;
+      if (b.type === "bodyguard" && !glitched(st, b)) return false;
+      if (!b.leader) adjCrew++;
+    }
+    if (o.type === "boss" && !glitched(st, o) && adjCrew >= 2) return false;
+    return true;
+  }
+
+  function pattern(st, u) {
+    var T = TYPES[u.type];
+    if (glitched(st, u)) return "step";
+    if (!T.carrier && (st.keys[1 - u.side].h === u.id || (CFG.heavyOwn && st.keys[u.side].h === u.id))) return "step";
+    return T.move;
+  }
+
+  /* Tiles unit u may move to this turn (empty tiles and capturable enemies).
+     With `clear`, its own side's units don't block the way (they could step aside first). */
+  function moveTargets(st, u, ignoreFlags, clear) {
+    var out = [];
+    if (!ignoreFlags && !canMove(st, u)) return out;
+    var pat = pattern(st, u), keyed = holds(st, u), b = st.board, p = u.pos;
+    function consider(t) {
+      var oid = b[t];
+      if (oid >= 0) {
+        var o = unit(st, oid);
+        if (o.side !== u.side && canCapture(st, u, o) && !(keyed && watched(st, u, t, oid))) out.push(t);
+        return;
+      }
+      if (!canEnter(st, u, t) || (keyed && watched(st, u, t, -1))) return;
+      out.push(t);
+    }
+    function blocks(t) { var oid = b[t]; return oid >= 0 && !(clear && unit(st, oid).side === u.side); }
+    var j, t;
+    if (pat === "step") { for (j = 0; j < NB[p].length; j++) consider(NB[p][j]); }
+    else if (pat === "knight") { for (j = 0; j < KNT[p].length; j++) consider(KNT[p][j]); }
+    else if (pat === "rook3") {
+      for (var d = 0; d < 4; d++) {
+        var ray = RAY[p][d];
+        for (j = 0; j < 3 && j < ray.length; j++) { t = ray[j]; consider(t); if (blocks(t)) break; }
+      }
+    } else if (pat === "king2") {
+      var seen = {};
+      for (j = 0; j < NB[p].length; j++) {
+        var n1 = NB[p][j];
+        if (!seen[n1]) { seen[n1] = 1; consider(n1); }
+        if (blocks(n1)) continue;
+        for (var q = 0; q < NB[n1].length; q++) { var n2 = NB[n1][q]; if (n2 !== p && !seen[n2]) { seen[n2] = 1; consider(n2); } }
+      }
+    }
+    return out;
+  }
+
+  /* Every tile a unit could land on if an enemy stood there (for threat and coverage maps). */
+  function reach(st, u, out) {
+    var pat = pattern(st, u), b = st.board, p = u.pos, j;
+    if (pat === "step") { for (j = 0; j < NB[p].length; j++) out[NB[p][j]]++; }
+    else if (pat === "knight") { for (j = 0; j < KNT[p].length; j++) out[KNT[p][j]]++; }
+    else if (pat === "rook3") {
+      for (var d = 0; d < 4; d++) { var ray = RAY[p][d]; for (j = 0; j < 3 && j < ray.length; j++) { out[ray[j]]++; if (b[ray[j]] >= 0) break; } }
+    } else {
+      var seen = {};
+      for (j = 0; j < NB[p].length; j++) {
+        var n1 = NB[p][j];
+        if (!seen[n1]) { seen[n1] = 1; out[n1]++; }
+        if (b[n1] >= 0) continue;
+        for (var q = 0; q < NB[n1].length; q++) { var n2 = NB[n1][q]; if (n2 !== p && !seen[n2]) { seen[n2] = 1; out[n2]++; } }
+      }
+    }
+  }
+
+  function passTargets(st, u) {
+    var out = [];
+    if (!canHandle(st, u) || !looseKeys(st, u).length) return out;
+    for (var i = 0; i < st.units.length; i++) {
+      var a = st.units[i];
+      if (a !== u && a.side === u.side && cheb(a.pos, u.pos) <= CFG.passRange) out.push(a.pos);
+    }
+    return out;
+  }
+
+  /* Where a throw from u's tile in direction d over dist tiles ends up. */
+  function throwResolve(st, u, d, dist) {
+    var ray = RAY[u.pos][d];
+    if (ray.length < dist) return null;
+    for (var j = 0; j < dist; j++) {
+      var t = ray[j];
+      if (st.board[t] >= 0) return { to: ray[dist - 1], path: ray.slice(0, j + 1), by: st.board[t], at: t };
+      for (var i = 0; i < st.units.length; i++) {
+        var c = st.units[i];
+        if (c.side !== u.side && c.type === "catcher" && !glitched(st, c) && cheb(c.pos, t) === 1)
+          return { to: ray[dist - 1], path: ray.slice(0, j + 1), by: c.id, at: t, picked: true };
+      }
+    }
+    var land = ray[dist - 1];
+    for (var k = 0; k < st.units.length; k++) {
+      var f = st.units[k];
+      if (f !== u && f.side === u.side && f.type === "catcher" && !glitched(st, f) && cheb(f.pos, land) === 1)
+        return { to: land, path: ray.slice(0, dist), by: f.id, at: land, picked: true };
+    }
+    return { to: land, path: ray.slice(0, dist), by: -1, at: land };
+  }
+  function throwOptions(st, u) {
+    var out = [];
+    if (!canHandle(st, u) || !looseKeys(st, u).length) return out;
+    for (var d = 0; d < 8; d++) for (var dist = 1; dist <= CFG.throwRange; dist++) {
+      var res = throwResolve(st, u, d, dist);
+      if (!res) break;
+      res.d = d; res.dist = dist;
+      out.push(res);
+    }
+    return out;
+  }
+  function findThrow(st, u, to) {
+    for (var d = 0; d < 8; d++) { var ray = RAY[u.pos][d]; for (var j = 0; j < CFG.throwRange && j < ray.length; j++) if (ray[j] === to) return throwResolve(st, u, d, j + 1); }
+    return null;
+  }
+
+  function swapOk(st, a, b) {
+    if (!canEnter(st, a, b.pos) || !canEnter(st, b, a.pos)) return false;
+    if (holds(st, a) && watched(st, a, b.pos, -1)) return false;
+    if (holds(st, b) && watched(st, b, a.pos, -1)) return false;
+    return true;
+  }
+
+  function abilityTargets(st, u) {
+    var out = [];
+    if (!canAct(st, u)) return out;
+    var T = TYPES[u.type], p = u.pos, b = st.board, us = st.units, d, j, t, o, i, ray;
+    switch (T.ab) {
+      case "dash":
+        if (holds(st, u)) break;
+        for (d = 0; d < 8; d++) { ray = RAY[p][d]; for (j = 0; j < 3 && j < ray.length; j++) { t = ray[j]; if (b[t] >= 0) break; if (canEnter(st, u, t)) out.push(t); } }
+        break;
+      case "switch":
+        for (i = 0; i < us.length; i++) { o = us[i]; if (o !== u && o.side === u.side && cheb(o.pos, p) <= 2 && swapOk(st, u, o)) out.push(o.pos); }
+        break;
+      case "vanish":
+        for (i = 0; i < us.length; i++) { o = us[i]; if (o !== u && o.side === u.side && !o.leader && cheb(o.pos, p) <= 3 && swapOk(st, u, o)) out.push(o.pos); }
+        break;
+      case "juke":
+        [-1, 1].forEach(function (dc) {
+          var c = cOf(p) + dc;
+          if (!inB(c, rOf(p))) return;
+          var tt = idx(c, rOf(p));
+          if (b[tt] < 0 && canEnter(st, u, tt) && !(holds(st, u) && watched(st, u, tt, -1))) out.push(tt);
+        });
+        break;
+      case "call":
+        for (i = 0; i < us.length; i++) { o = us[i]; if (o !== u && o.side === u.side && cheb(o.pos, p) <= 3 && looseKeys(st, o).length) out.push(o.pos); }
+        break;
+      case "swipe":
+        for (j = 0; j < NB[p].length; j++) { o = at(st, NB[p][j]); if (o && o.side !== u.side && holds(st, o)) out.push(o.pos); }
+        break;
+      case "vault":
+        if (holds(st, u)) break;
+        for (d = 0; d < 8; d++) { ray = RAY[p][d]; if (ray.length >= 2 && b[ray[0]] >= 0 && b[ray[1]] < 0 && canEnter(st, u, ray[1])) out.push(ray[1]); }
+        break;
+      case "brace":
+        out.push(p);
+        break;
+      case "shove":
+        for (j = 0; j < NB[p].length; j++) { o = at(st, NB[p][j]); if (o && o.side !== u.side) out.push(o.pos); }
+        break;
+      case "longshot":
+        for (d = 0; d < 8; d++) {
+          ray = RAY[p][d];
+          for (j = 0; j < 3 && j < ray.length; j++) {
+            t = ray[j];
+            if (b[t] >= 0) { o = at(st, t); if (j >= 1 && o.side !== u.side) out.push(t); break; }
+          }
+        }
+        break;
+      case "rushin":
+        if (holds(st, u)) break;
+        var mark = {};
+        for (i = 0; i < us.length; i++) {
+          o = us[i];
+          if (o === u || o.side !== u.side || cheb(o.pos, p) > 3) continue;
+          for (j = 0; j < NB[o.pos].length; j++) { t = NB[o.pos][j]; if (b[t] < 0 && !mark[t] && canEnter(st, u, t)) { mark[t] = 1; out.push(t); } }
+        }
+        break;
+      case "glitch":
+        for (i = 0; i < us.length; i++) { o = us[i]; if (o.side !== u.side && cheb(o.pos, p) <= 3) out.push(o.pos); }
+        break;
+      case "floorit":
+        if (holds(st, u) || u.mv !== st.ply) break;
+        out = moveTargets(st, u, true);
+        break;
+      case "orders":
+        for (i = 0; i < us.length; i++) { o = us[i]; if (o.side === u.side && !o.leader && o.mv === st.ply && o.fr !== st.ply && !stunned(st, o)) out.push(o.pos); }
+        break;
+      case "insideman":
+        if (st.inside[u.side] !== st.ply) out.push(p);
+        break;
+    }
+    return out;
+  }
+
+  function deployTiles(st, s) {
+    var out = [], ok = new Uint8Array(N), b = st.board, t, i, j;
+    if (crewCount(st, s) >= CFG.maxCrew) return out;
+    for (t = 0; t < N; t++) if (IS_HOME[s][t] && b[t] < 0 && !IS_SAFE[t]) ok[t] = 1;
+    var inside = st.inside[s] === st.ply;
+    for (i = 0; i < st.units.length; i++) {
+      var u = st.units[i];
+      if (u.side !== s || u.leader) continue;
+      if (!(inside || passiveOn(st, u, "hideout") || passiveOn(st, u, "van"))) continue;
+      for (j = 0; j < NB[u.pos].length; j++) { t = NB[u.pos][j]; if (b[t] < 0 && !IS_SAFE[t]) ok[t] = 1; }
+    }
+    for (t = 0; t < N; t++) if (ok[t]) out.push(t);
+    return out;
+  }
+
+  /* Targets for a gadget card. Hook targets are {u, to}; Alarm has the single target -1. */
+  function gadgetTargets(st, s, g) {
+    var out = [], b = st.board, us = st.units, i, t, o;
+    switch (g) {
+      case "smoke": case "emp":
+        for (t = 0; t < N; t++) out.push(t);
+        break;
+      case "hook":
+        for (i = 0; i < us.length; i++) {
+          var u = us[i];
+          if (u.side !== s || stunned(st, u) || u.fr === st.ply) continue;
+          var keyed = holds(st, u);
+          for (var d = 0; d < 8; d++) {
+            var ray = RAY[u.pos][d];
+            for (var j = 0; j < CFG.hookRange && j < ray.length; j++) {
+              t = ray[j];
+              if (b[t] >= 0) break;
+              if (!canEnter(st, u, t) || (keyed && watched(st, u, t, -1))) continue;
+              out.push({ u: u.id, to: t });
+            }
+          }
+        }
+        break;
+      case "tripwire":
+        for (t = 0; t < N; t++) {
+          if (b[t] >= 0 || IS_SAFE[t] || IS_HOME[1 - s][t]) continue;
+          var mine = false;
+          for (i = 0; i < st.traps.length; i++) if (st.traps[i].t === t && st.traps[i].side === s) mine = true;
+          if (!mine) out.push(t);
+        }
+        break;
+      case "alarm":
+        out.push(-1);
+        break;
+      case "bribe":
+        var L = leaderOf(st, s);
+        if (!L || crewCount(st, s) >= CFG.maxCrew) break;
+        for (i = 0; i < NB[L.pos].length; i++) { o = at(st, NB[L.pos][i]); if (o && o.side !== s && !o.leader && !immune(st, o)) out.push(o.pos); }
+        break;
+    }
+    return out;
+  }
+
+  /* ---------- Effects ---------- */
+  function setWin(st, s, how) {
+    st.winner = s; st.how = how;
+    st.reason = how === "crack" ? NAMES[s] + " cracked " + NAMES[1 - s] + "'s safe." : how === "stash" ? NAMES[s] + " locked " + NAMES[1 - s] + "'s key away." : "Out of time.";
+  }
+
+  function landed(st, u, ev) {
+    for (var k = 0; k < 2; k++) {
+      var K = st.keys[k];
+      if (K.h < 0 && K.at === u.pos) { K.h = u.id; K.at = -1; ev.push({ e: "pickup", u: u.id, k: k, at: u.pos }); }
+    }
+    for (var i = 0; i < st.traps.length; i++) {
+      var tr = st.traps[i];
+      if (tr.t !== u.pos || tr.side === u.side) continue;
+      if (immune(st, u)) break;
+      st.traps.splice(i, 1);
+      st.revealed = true;
+      ev.push({ e: "trap", u: u.id, at: u.pos, side: tr.side });
+      takeOut(st, u, ev, "trap");
+      break;
+    }
+  }
+  function relocate(st, u, t, ev, how) {
+    var from = u.pos;
+    st.board[from] = -1; u.pos = t; st.board[t] = u.id;
+    ev.push({ e: "move", u: u.id, from: from, to: t, how: how || "move" });
+    landed(st, u, ev);
+  }
+  function removeUnit(st, o, ev, cause) {
+    st.board[o.pos] = -1;
+    st.units.splice(st.units.indexOf(o), 1);
+    for (var k = 0; k < 2; k++) if (st.keys[k].h === o.id) { st.keys[k].h = -1; st.keys[k].at = o.pos; ev.push({ e: "drop", k: k, at: o.pos }); }
+    ev.push({ e: "out", u: o.id, at: o.pos, cause: cause, type: o.type, side: o.side, leader: o.leader });
+  }
+  function takeOut(st, o, ev, cause) {
+    if (o.type === "brute" && o.armor && !glitched(st, o)) { o.armor = false; ev.push({ e: "armor", u: o.id, at: o.pos, cause: cause }); return false; }
+    st.stats[1 - o.side].kos++;
+    removeUnit(st, o, ev, cause);
+    return true;
+  }
+  function moveInto(st, u, t, ev, how) {
+    var oid = st.board[t];
+    if (oid >= 0) {
+      var o = unit(st, oid);
+      if (o.type === "brute" && o.armor && !glitched(st, o)) {
+        o.armor = false;
+        ev.push({ e: "bounce", u: u.id, o: o.id, from: u.pos, at: t });
+        return;
+      }
+      var bait = passiveOn(st, o, "bait"), took = [];
+      for (var k = 0; k < 2; k++) if (st.keys[k].h === o.id) { st.keys[k].h = u.id; st.keys[k].lk = st.ply; took.push(k); }
+      st.board[t] = -1;
+      st.units.splice(st.units.indexOf(o), 1);
+      st.stats[u.side].caps++;
+      if (took.length) st.stats[u.side].steals++;
+      ev.push({ e: "capture", u: u.id, o: o.id, at: t, type: o.type, side: o.side, leader: o.leader, keys: took });
+      relocate(st, u, t, ev, how);
+      if (bait && unit(st, u.id)) stun(st, u, ev);
+      return;
+    }
+    relocate(st, u, t, ev, how);
+  }
+  function push(st, o, dc, dr, n, ev, slam) {
+    for (var i = 0; i < n; i++) {
+      var c = cOf(o.pos) + dc, r = rOf(o.pos) + dr;
+      if (!inB(c, r) || st.board[idx(c, r)] >= 0 || idx(c, r) === SAFE[o.side]) { if (slam) { ev.push({ e: "slam", u: o.id, at: o.pos }); stun(st, o, ev); } return; }
+      relocate(st, o, idx(c, r), ev, "push");
+      if (!unit(st, o.id)) return;
+    }
+  }
+  function swapUnits(st, a, b, ev) {
+    var pa = a.pos, pb = b.pos;
+    a.pos = pb; b.pos = pa; st.board[pa] = b.id; st.board[pb] = a.id;
+    ev.push({ e: "swap", a: a.id, b: b.id, pa: pa, pb: pb });
+  }
+  function giveKeys(st, from, to, ev, how) {
+    var ks = looseKeys(st, from);
+    for (var j = 0; j < ks.length; j++) { st.keys[ks[j]].h = to.id; st.keys[ks[j]].lk = st.ply; }
+    ev.push({ e: "pass", from: from.id, to: to.id, a: from.pos, b: to.pos, keys: ks, how: how });
+    return ks;
+  }
+
+  /* ---------- Hands ---------- */
+  function refill(st, s, ev) {
+    if (st.hands[s].length || st.sim) return;
+    if (st.pend[s]) { st.hands[s] = st.pend[s]; st.pend[s] = null; ev.push({ e: "draw", side: s }); return; }
+    var d = st.decks[s], f = function () { return rnd(st); };
+    var crew = shuffle(d.crew.slice(), f), gad = shuffle(d.gadgets.slice(), f);
+    function card(t) { return { k: "crew", t: t }; }
+    st.hands[s] = [card(crew[0]), card(crew[1]), card(crew[2]), { k: "gadget", t: gad[0] }];
+    st.pend[s] = [card(crew[3]), card(crew[4]), card(crew[5]), { k: "gadget", t: gad[1] }];
+    st.drew = true;
+    ev.push({ e: "draw", side: s, shuffle: true });
+  }
+
+  /* ---------- Game flow ---------- */
+  function newGame(opts) {
+    var st = {
+      ply: 1, side: 0, winner: null, how: null, reason: "", units: [], nextId: 1, board: new Int16Array(N),
+      keys: [], mana: [0, 0], decks: opts.decks, hands: [[], []], pend: [null, null], smokes: [], traps: [], inside: [0, 0],
+      seed: (opts.seed >>> 0) || 1, stats: [mkStats(), mkStats()], sim: false, revealed: false, drew: false
+    };
+    for (var t = 0; t < N; t++) st.board[t] = -1;
+    for (var s = 0; s < 2; s++) {
+      var L = { id: st.nextId++, side: s, type: opts.decks[s].leader, leader: true, pos: idx(3, s === 0 ? 8 : 1), mv: 0, ac: 0, fr: 0, st: 0, gl: 0, br: 0, armor: false };
+      st.units.push(L); st.board[L.pos] = L.id;
+      st.keys.push({ h: L.id, at: -1, lk: 0 });
+    }
+    refill(st, 0, NOEV); refill(st, 1, NOEV);
+    st.drew = false;
+    startTurn(st, NOEV);
+    return st;
+  }
+
+  function startTurn(st, ev) {
+    var s = st.side, K = st.keys[s], E = st.keys[1 - s], u;
+    if (K.h >= 0) {
+      u = unit(st, K.h);
+      if (u && u.side === s && cheb(u.pos, SAFE[1 - s]) <= CFG.crackRange) { setWin(st, s, "crack"); ev.push({ e: "crack", side: s, u: u.id, at: u.pos }); return; }
+    }
+    if (E.h >= 0) {
+      u = unit(st, E.h);
+      if (u && u.side === s && stashed(st, s, u)) { setWin(st, s, "stash"); ev.push({ e: "stash", side: s, u: u.id, at: u.pos }); return; }
+    }
+    var inc = st.ply === 1 ? CFG.firstIncome : CFG.income;
+    var L = leaderOf(st, s);
+    if (L && passiveOn(st, L, "connected")) inc += 1;
+    st.mana[s] = Math.min(CFG.cap, st.mana[s] + inc);
+    st.smokes = st.smokes.filter(function (x) { return st.ply < x.until; });
+    refill(st, s, ev);
+    ev.push({ e: "turn", side: s, ply: st.ply, income: inc });
+  }
+
+  function endTurn(st, ev) {
+    ev = ev || NOEV;
+    if (st.winner != null) return ev;
+    st.ply++; st.side = 1 - st.side;
+    if (st.ply > CFG.rounds * 2) { st.winner = "draw"; st.how = "draw"; st.reason = "Round " + CFG.rounds + " ended with both safes shut."; ev.push({ e: "draw-game" }); return ev; }
+    startTurn(st, ev);
+    return ev;
+  }
+
+  function cost(st, a) {
+    switch (a.t) {
+      case "move": return CFG.moveCost;
+      case "pass": return CFG.passCost;
+      case "throw": return CFG.throwCost;
+      case "burn": return CFG.burnCost;
+      case "ab": return TYPES[unit(st, a.u).type].ac;
+      case "deploy": return TYPES[st.hands[st.side][a.c].t].cost;
+      case "gadget": return GADGETS[st.hands[st.side][a.c].t].cost;
+    }
+    return 0;
+  }
+
+  /* Apply a legal action. Returns the list of events it caused. */
+  function apply(st, a, ev) {
+    ev = ev || [];
+    var s = st.side, u = a.u != null ? unit(st, a.u) : null, T, o, card;
+    st.mana[s] -= cost(st, a);
+    switch (a.t) {
+      case "move":
+        u.mv = st.ply;
+        moveInto(st, u, a.to, ev, "move");
+        break;
+      case "pass":
+        o = at(st, a.to);
+        giveKeys(st, u, o, ev, "pass");
+        if (!passiveOn(st, o, "softhands")) o.mv = st.ply;
+        st.stats[s].passes++;
+        break;
+      case "throw":
+        var res = findThrow(st, u, a.to), ks = looseKeys(st, u);
+        st.stats[s].throws++;
+        ev.push({ e: "throw", u: u.id, from: u.pos, to: a.to, at: res.at, by: res.by, path: res.path, keys: ks, picked: !!res.picked });
+        for (var j = 0; j < ks.length; j++) {
+          var K = st.keys[ks[j]];
+          K.lk = st.ply;
+          if (res.by >= 0) K.h = res.by; else { K.h = -1; K.at = res.at; }
+        }
+        if (res.by >= 0) {
+          o = unit(st, res.by);
+          if (o.side === s && !passiveOn(st, o, "softhands")) o.mv = st.ply;
+          if (o.side !== s) st.stats[o.side].steals++;
+        }
+        break;
+      case "ab":
+        T = TYPES[u.type];
+        u.ac = st.ply;
+        ev.push({ e: "ability", u: u.id, ab: T.ab, from: u.pos, at: a.to });
+        doAbility(st, u, T.ab, a.to, ev);
+        break;
+      case "deploy":
+        card = st.hands[s][a.c];
+        st.hands[s].splice(a.c, 1);
+        var nu = { id: st.nextId++, side: s, type: card.t, leader: false, pos: a.to, mv: 0, ac: 0, fr: st.ply, st: 0, gl: 0, br: 0, armor: card.t === "brute" };
+        st.units.push(nu); st.board[a.to] = nu.id;
+        st.stats[s].deploys++;
+        ev.push({ e: "deploy", u: nu.id, at: a.to, type: card.t, side: s });
+        landed(st, nu, ev);
+        refill(st, s, ev);
+        break;
+      case "gadget":
+        card = st.hands[s][a.c];
+        st.hands[s].splice(a.c, 1);
+        st.stats[s].gadgets++;
+        ev.push({ e: "gadget", g: card.t, side: s, at: a.to, u: a.u });
+        doGadget(st, s, card.t, a, ev);
+        refill(st, s, ev);
+        break;
+      case "burn":
+        card = st.hands[s][a.c];
+        st.hands[s].splice(a.c, 1);
+        ev.push({ e: "burn", side: s, card: card });
+        refill(st, s, ev);
+        break;
+    }
+    return ev;
+  }
+
+  function doAbility(st, u, ab, t, ev) {
+    var o = at(st, t), p = u.pos;
+    switch (ab) {
+      case "dash": case "juke": case "rushin": relocate(st, u, t, ev, ab); break;
+      case "floorit": moveInto(st, u, t, ev, ab); break;
+      case "switch": case "vanish": swapUnits(st, u, o, ev); break;
+      case "call": giveKeys(st, o, u, ev, "call"); break;
+      case "swipe":
+        var took = keysOf(st, o);
+        for (var k = 0; k < took.length; k++) { st.keys[took[k]].h = u.id; st.keys[took[k]].lk = st.ply; }
+        st.stats[u.side].steals++;
+        ev.push({ e: "pass", from: o.id, to: u.id, a: o.pos, b: u.pos, keys: took, how: "swipe" });
+        break;
+      case "vault":
+        var mid = at(st, idx((cOf(p) + cOf(t)) / 2, (rOf(p) + rOf(t)) / 2));
+        relocate(st, u, t, ev, "vault");
+        if (mid && mid.side !== u.side) stun(st, mid, ev);
+        break;
+      case "brace": u.br = st.ply + 2; break;
+      case "shove":
+        push(st, o, Math.sign(cOf(t) - cOf(p)), Math.sign(rOf(t) - rOf(p)), 2, ev, true);
+        break;
+      case "longshot": takeOut(st, o, ev, "longshot"); break;
+      case "glitch": o.gl = st.ply + 2; break;
+      case "orders": o.mv = 0; break;
+      case "insideman": st.inside[u.side] = st.ply; break;
+    }
+  }
+
+  function doGadget(st, s, g, a, ev) {
+    var us, i, o;
+    switch (g) {
+      case "smoke": st.smokes.push({ side: s, c: a.to, until: st.ply + 2 }); break;
+      case "hook": relocate(st, unit(st, a.u), a.to, ev, "hook"); break;
+      case "tripwire": st.traps.push({ side: s, t: a.to }); break;
+      case "emp":
+        us = st.units.slice();
+        for (i = 0; i < us.length; i++) { o = us[i]; if (o.side !== s && cheb(o.pos, a.to) <= 1 && !immune(st, o)) stun(st, o, ev); }
+        break;
+      case "alarm":
+        var safe = SAFE[s];
+        us = st.units.filter(function (x) { return x.side !== s && cheb(x.pos, safe) <= 2 && !immune(st, x); });
+        us.sort(function (x, y) { return cheb(y.pos, safe) - cheb(x.pos, safe); });
+        for (i = 0; i < us.length; i++) {
+          o = us[i];
+          if (!unit(st, o.id)) continue;
+          var dc = Math.sign(cOf(o.pos) - cOf(safe)), dr = Math.sign(rOf(o.pos) - rOf(safe));
+          if (!dc && !dr) dr = FWD[s];
+          push(st, o, dc, dr, 1, ev, false);
+        }
+        break;
+      case "bribe":
+        o = at(st, a.to);
+        o.side = s; o.mv = st.ply; o.ac = st.ply; o.fr = st.ply;
+        for (var k = 0; k < 2; k++) if (st.keys[k].h === o.id) st.keys[k].lk = st.ply;
+        ev.push({ e: "bribe", u: o.id, at: o.pos, side: s });
+        break;
+    }
+  }
+
+  /* ---------- Legality (used to check bot plans against the real state) ---------- */
+  function has(list, t) { for (var i = 0; i < list.length; i++) if (list[i] === t) return true; return false; }
+  function isLegal(st, a) {
+    if (st.winner != null) return false;
+    var s = st.side, u = a.u != null ? unit(st, a.u) : null;
+    if (a.t === "deploy" || a.t === "gadget" || a.t === "burn") {
+      var card = st.hands[s][a.c];
+      if (!card) return false;
+      if (a.t === "burn") return afford(st, CFG.burnCost);
+      if (a.t === "deploy") return card.k === "crew" && afford(st, TYPES[card.t].cost) && has(deployTiles(st, s), a.to);
+      if (card.k !== "gadget" || !afford(st, GADGETS[card.t].cost)) return false;
+      var gt = gadgetTargets(st, s, card.t);
+      if (card.t === "hook") return gt.some(function (x) { return x.u === a.u && x.to === a.to; });
+      return has(gt, a.to);
+    }
+    if (!u || u.side !== s) return false;
+    if (a.t === "move") return afford(st, CFG.moveCost) && has(moveTargets(st, u), a.to);
+    if (a.t === "pass") return afford(st, CFG.passCost) && has(passTargets(st, u), a.to);
+    if (a.t === "throw") return afford(st, CFG.throwCost) && throwOptions(st, u).some(function (x) { return x.to === a.to; });
+    if (a.t === "ab") return afford(st, TYPES[u.type].ac) && has(abilityTargets(st, u), a.to);
+    return false;
+  }
+
+  /* ---------- Threats: what side X could do on its next turn ---------- */
+  /* Captures unit u could make if it first stood on tile q (used for two-step threats). */
+  function capturesFrom(st, u, q, out) {
+    var p0 = u.pos, b = st.board;
+    if (q !== p0 && b[q] >= 0) return;
+    b[p0] = -1; u.pos = q; b[q] = u.id;
+    var mt = moveTargets(st, u, true, true);
+    b[q] = -1; u.pos = p0; b[p0] = u.id;
+    for (var j = 0; j < mt.length; j++) if (b[mt[j]] >= 0 && mt[j] !== p0) out.push(mt[j]);
+  }
+
+  /* Tiles from which unit u could still make its normal move after using a movement ability. */
+  function abilitySpots(st, u) {
+    var ab = TYPES[u.type].ab;
+    if (ab === "dash" || ab === "juke" || ab === "rushin" || ab === "vault") return abilityTargets(st, u);
+    if (ab === "floorit") {
+      if (holds(st, u)) return [];
+      var mt = moveTargets(st, u, true, true), out = [];
+      for (var j = 0; j < mt.length; j++) if (st.board[mt[j]] < 0) out.push(mt[j]);
+      return out;
+    }
+    return [];
+  }
+
+  function scanThreats(st, X) {
+    var sp = st.ply, ss = st.side;
+    if (ss !== X) { st.ply = sp + 1; st.side = X; }
+    // stash: X can get the enemy key into its back row; crack: X's own key can reach the enemy safe.
+    var R = { cap: {}, ko: {}, swipe: {}, shove: {}, stash: false, crack: false };
+    var us = st.units, enemyKey = st.keys[1 - X], ownKey = st.keys[X], target = SAFE[1 - X], i, j, t, v;
+    for (i = 0; i < us.length; i++) {
+      var u = us[i];
+      if (u.side !== X || stunned(st, u)) continue;
+      var carrying = enemyKey.h === u.id, own = ownKey.h === u.id;
+      var mt = moveTargets(st, u, false, true);
+      for (j = 0; j < mt.length; j++) {
+        t = mt[j];
+        var vid = st.board[t];
+        if (vid >= 0) {
+          (R.cap[vid] || (R.cap[vid] = [])).push(u.id);
+          if ((CFG.stashTo === "safe" ? t === SAFE[X] : rOf(t) === BACK[X]) && (carrying || enemyKey.h === vid)) R.stash = true;
+          if (cheb(t, target) <= CFG.crackRange && (own || ownKey.h === vid)) R.crack = true;
+        } else {
+          if ((CFG.stashTo === "safe" ? t === SAFE[X] : rOf(t) === BACK[X]) && (carrying || (enemyKey.h < 0 && enemyKey.at === t))) R.stash = true;
+          if (cheb(t, target) <= CFG.crackRange && own) R.crack = true;
+        }
+      }
+      if (canAct(st, u)) {
+        var ab = TYPES[u.type].ab;
+        if (st.mana[X] + CFG.income + CFG.debt >= TYPES[u.type].ac + CFG.moveCost) {
+          var spots = abilitySpots(st, u), extra = [];
+          for (j = 0; j < spots.length; j++) capturesFrom(st, u, spots[j], extra);
+          for (j = 0; j < extra.length; j++) {
+            var xv = st.board[extra[j]];
+            if (xv >= 0 && (!R.cap[xv] || R.cap[xv].indexOf(u.id) < 0)) (R.cap[xv] || (R.cap[xv] = [])).push(u.id);
+          }
+        }
+        if (ab === "longshot" || ab === "swipe" || ab === "shove" || ab === "call") {
+          var at2 = abilityTargets(st, u);
+          for (j = 0; j < at2.length; j++) {
+            v = at(st, at2[j]);
+            if (ab === "longshot") R.ko[v.id] = true;
+            else if (ab === "shove") R.shove[v.id] = true;
+            else if (ab === "swipe") { R.swipe[v.id] = u.pos; if (stashed(st, X, u) && enemyKey.h === v.id) R.stash = true; }
+          }
+        }
+      }
+    }
+    st.ply = sp; st.side = ss;
+    return R;
+  }
+
+  /* Units of `side` the other side could capture or take out on its next turn (for the danger badge). */
+  function dangerTo(st, side) {
+    var R = scanThreats(st, 1 - side), out = {};
+    Object.keys(R.cap).forEach(function (k) { out[k] = true; });
+    Object.keys(R.ko).forEach(function (k) { out[k] = true; });
+    Object.keys(R.swipe).forEach(function (k) { out[k] = true; });
+    return out;
+  }
+
+  /* ---------- Evaluation ---------- */
+  var EV = { keyRow: 2.2, keyBase: 14, keyLost: 3.2, mana: 0.45, debt: 0.7, adv: 0.2, hide: 0.3, guard: 0.7, lane: 0.6, chase: 0.7, hang: 0.55, safeCover: 1.1, lonely: 1.0 };
+
+  function val(u) { return u.leader ? 6 : TYPES[u.type].cost + 2; }
+  function advance(u) { return u.side === 0 ? 9 - rOf(u.pos) : rOf(u.pos); }
+  function isHideout(u) { return u.type === "lookout" || u.type === "driver"; }
+
+  /* Value to `me` of key k when held by a unit of `side` at pos (side -1: lying on the ground). */
+  function keyValAt(me, k, side, pos) {
+    var opp = 1 - me;
+    var mineV, theirsV;
+    var safeStash = CFG.stashTo === "safe";
+    if (k === me) {
+      mineV = EV.keyRow * (9 - cheb(pos, SAFE[opp]));
+      theirsV = -(EV.keyBase + EV.keyLost * (9 - (safeStash ? cheb(pos, SAFE[opp]) : Math.abs(rOf(pos) - BACK[opp]))));
+    } else {
+      mineV = EV.keyBase + EV.keyLost * (9 - (safeStash ? cheb(pos, SAFE[me]) : Math.abs(rOf(pos) - BACK[me])));
+      theirsV = -EV.keyRow * (9 - cheb(pos, SAFE[me]));
+    }
+    if (side === me) return mineV;
+    if (side === opp) return theirsV;
+    return side === -2 ? 0.3 * mineV + 0.7 * theirsV : 0.65 * mineV + 0.35 * theirsV;
+  }
+  function keyTerm(st, me, k) {
+    var K = st.keys[k];
+    if (K.h >= 0) { var u = unit(st, K.h); return keyValAt(me, k, u.side, u.pos); }
+    var dm = 99, dt = 99;
+    for (var i = 0; i < st.units.length; i++) {
+      var v = st.units[i], d = cheb(v.pos, K.at);
+      if (v.side === me) { if (d < dm) dm = d; } else if (d < dt) dt = d;
+    }
+    return keyValAt(me, k, dt <= dm ? -2 : -1, K.at);
+  }
+
+  function handValue(st, me) {
+    var hand = st.hands[me];
+    if (!hand.length) return 3.2;
+    var v = 0, room = crewCount(st, me) < CFG.maxCrew, crew = 0;
+    for (var i = 0; i < hand.length; i++) {
+      var c = hand[i];
+      if (c.k === "crew") { crew++; v += room ? 0.6 + 0.15 * TYPES[c.t].cost : 0.2; } else v += 0.9;
+    }
+    if (!crew && room) v -= 1.2 * hand.length;
+    return v;
+  }
+
+  /* How far each unit can usually strike in one turn, counting its movement ability. */
+  var STRIKE = { boss: 1, fixer: 1, ghost: 4, lookout: 4, decoy: 2, runner: 4, catcher: 1, pickpocket: 3, acrobat: 4, guard: 1, brute: 1, sniper: 3, bodyguard: 4, hacker: 1, driver: 6 };
+  /* Rough danger to a key carrier: enemies that could reach it, minus friends close enough to help. */
+  function exposure(st, h) {
+    var foes = 0, mates = 0, us = st.units;
+    for (var i = 0; i < us.length; i++) {
+      var u = us[i];
+      if (u === h) continue;
+      var d = cheb(u.pos, h.pos);
+      if (u.side !== h.side) { if (d <= STRIKE[u.type] + 1 && !(st.ply + 1 < u.st)) foes++; }
+      else if (d <= 2) mates++;
+    }
+    return Math.max(0, foes - mates);
+  }
+
+  function evaluate(st, me, L) {
+    if (st.winner != null) return st.winner === me ? 1e6 : (st.winner === "draw" ? 0 : -1e6);
+    var opp = 1 - me, us = st.units, sc = 0, i, u, v, tw = L ? L.threat : 1;
+    for (i = 0; i < us.length; i++) {
+      u = us[i];
+      v = val(u) + (u.armor ? 1 : 0);
+      if (!u.leader) v += Math.min(advance(u), 7) * (isHideout(u) ? EV.hide : EV.adv);
+      sc += u.side === me ? v : -v;
+    }
+    var m = st.mana[me];
+    sc += m >= 0 ? EV.mana * Math.min(m, CFG.cap - CFG.income) : EV.debt * m;
+    sc += handValue(st, me);
+    sc += keyTerm(st, me, me) + keyTerm(st, me, opp);
+
+    var KM = st.keys[me], KT = st.keys[opp];
+    var hM = KM.h >= 0 ? unit(st, KM.h) : null, hT = KT.h >= 0 ? unit(st, KT.h) : null;
+    // Wins land at the start of a turn: if theirs is already set up, my turn can't stop it any more.
+    if (hT && hT.side === opp && cheb(hT.pos, SAFE[me]) <= CFG.crackRange) return -1e5;
+    if (hM && hM.side === opp && stashed(st, opp, hM)) return -1e5;
+
+    var T = scanThreats(st, opp);
+    if (T.stash) sc -= 10;
+    if (T.crack) sc -= 6;
+    var cover = null;
+    function covered(t) {
+      if (!cover) { cover = new Uint8Array(N); for (var q = 0; q < us.length; q++) if (us[q].side === me && !(st.ply + 2 < us[q].st)) reach(st, us[q], cover); }
+      return cover[t] > 0;
+    }
+
+    // Risk to every key one of my units carries.
+    var carriers = [];
+    if (hM && hM.side === me) carriers.push(hM);
+    if (hT && hT.side === me && carriers.indexOf(hT) < 0) carriers.push(hT);
+    for (i = 0; i < carriers.length; i++) {
+      var Hc = carriers[i], ks = keysOf(st, Hc), now = 0, risk = 0;
+      for (var a = 0; a < ks.length; a++) now += keyValAt(me, ks[a], me, Hc.pos);
+      if (T.cap[Hc.id]) {
+        var lostC = now;
+        for (a = 0; a < ks.length; a++) lostC -= keyValAt(me, ks[a], opp, Hc.pos);
+        risk = Math.max(risk, lostC * (covered(Hc.pos) ? 0.5 : 1));
+      }
+      if (T.swipe.hasOwnProperty(Hc.id)) {
+        var P = T.swipe[Hc.id], lostS = now;
+        for (a = 0; a < ks.length; a++) lostS -= keyValAt(me, ks[a], opp, P);
+        risk = Math.max(risk, lostS * (covered(P) ? 0.55 : 1));
+      }
+      if (T.ko[Hc.id]) {
+        var lostK = now;
+        for (a = 0; a < ks.length; a++) lostK -= keyValAt(me, ks[a], -2, Hc.pos);
+        risk = Math.max(risk, lostK * 0.8);
+      }
+      sc -= tw * 0.9 * risk;
+      var pending = (Hc === hM && cheb(Hc.pos, SAFE[opp]) <= CFG.crackRange) || (Hc === hT && stashed(st, me, Hc));
+      if (pending && !risk && !T.shove[Hc.id]) sc += 2.5e4;
+    }
+
+    // Hanging pieces: the opponent usually takes the best one.
+    var hang = [];
+    for (i = 0; i < us.length; i++) {
+      u = us[i];
+      if (u.side !== me || carriers.indexOf(u) >= 0) continue;
+      if (T.cap[u.id] || T.ko[u.id]) hang.push((val(u) + (u.armor ? 1 : 0)) * (covered(u.pos) ? 0.45 : 1) * (u.armor && !T.ko[u.id] ? 0.3 : 1));
+    }
+    hang.sort(function (x, y) { return y - x; });
+    if (hang.length) sc -= tw * EV.hang * (hang[0] + 0.3 * (hang[1] || 0));
+
+    // Support for my carrier, pressure on theirs, and a guard on my safe.
+    var adj, lane, near, dH;
+    if (hM && hM.side === me) {
+      adj = 0; lane = 0; dH = cheb(hM.pos, SAFE[opp]);
+      for (i = 0; i < us.length; i++) {
+        u = us[i];
+        if (u === hM) continue;
+        var dd = cheb(u.pos, hM.pos);
+        if (u.side === me) { if (dd === 1) adj++; if (dd <= CFG.passRange && cheb(u.pos, SAFE[opp]) < dH) lane++; }
+      }
+      sc += EV.guard * Math.min(adj, 3) + EV.lane * Math.min(lane, 2);
+    }
+    for (i = 0; i < carriers.length; i++) sc -= tw * EV.lonely * exposure(st, carriers[i]);
+    if (hT && hT.side === opp) {
+      adj = 0; near = 0;
+      for (i = 0; i < us.length; i++) {
+        u = us[i];
+        if (u === hT) continue;
+        var de = cheb(u.pos, hT.pos);
+        if (u.side === opp && de === 1) adj++;
+        if (u.side === me && de <= 2) near++;
+      }
+      sc -= EV.guard * 0.6 * Math.min(adj, 3);
+      sc += EV.chase * Math.min(near, 3);
+      var ds = cheb(hT.pos, SAFE[me]);
+      if (ds <= 3) {
+        var guards = 0;
+        for (i = 0; i < us.length; i++) if (us[i].side === me && cheb(us[i].pos, SAFE[me]) <= 1) guards++;
+        sc += EV.safeCover * Math.min(guards, 3) * (4 - ds) / 3;
+        if (ds === 1 && !covered(SAFE[me])) sc -= 6;
+      }
+    }
+    if (hM && hM.side === opp) {
+      near = 0;
+      for (i = 0; i < us.length; i++) if (us[i].side === me && cheb(us[i].pos, hM.pos) <= 2) near++;
+      sc += EV.chase * Math.min(near, 3);
+    }
+    if (KM.h < 0 || KT.h < 0) {
+      // A loose key: be near it.
+      [KM, KT].forEach(function (K) {
+        if (K.h >= 0) return;
+        var best = 9;
+        for (var q = 0; q < us.length; q++) if (us[q].side === me) best = Math.min(best, cheb(us[q].pos, K.at));
+        sc += 0.8 * (9 - best) / 3;
+      });
+    }
+    return sc;
+  }
+
+  /* ---------- Bot ---------- */
+  var LEVELS = {
+    easy: { beam: 2, depth: 3, noise: 5, threat: 0.3, careless: 0.35, reply: 0, smart: false },
+    normal: { beam: 5, depth: 4, noise: 0.6, threat: 0.9, reply: 0, smart: true },
+    hard: { beam: 10, depth: 7, noise: 0.05, threat: 1, reply: 8, rbeam: 5, rdepth: 6, rmix: 0.85, smart: true }
+  };
+
+  function hashState(st) {
+    var s = st.mana[0] + "," + st.mana[1] + "|" + st.hands[st.side].length + "|" + (st.inside[st.side] === st.ply ? 1 : 0) + "|" + st.smokes.length + "," + st.traps.length + "|";
+    for (var k = 0; k < 2; k++) { var K = st.keys[k]; s += K.h + ":" + K.at + ":" + (K.lk === st.ply ? 1 : 0) + "|"; }
+    var us = st.units;
+    for (var i = 0; i < us.length; i++) {
+      var u = us[i];
+      s += u.id + "@" + u.pos + u.side + (u.mv === st.ply ? "m" : "") + (u.ac === st.ply ? "a" : "") + (st.ply < u.st ? "s" : "") + (st.ply < u.gl ? "g" : "") + (st.ply < u.br ? "b" : "") + (u.armor ? "A" : "") + ",";
+    }
+    return s;
+  }
+
+  function cloneState(st) {
+    var us = st.units, nu = new Array(us.length);
+    for (var i = 0; i < us.length; i++) {
+      var u = us[i];
+      nu[i] = { id: u.id, side: u.side, type: u.type, leader: u.leader, pos: u.pos, mv: u.mv, ac: u.ac, fr: u.fr, st: u.st, gl: u.gl, br: u.br, armor: u.armor };
+    }
+    return {
+      ply: st.ply, side: st.side, winner: st.winner, how: st.how, reason: st.reason, units: nu, nextId: st.nextId, board: st.board.slice(),
+      keys: [{ h: st.keys[0].h, at: st.keys[0].at, lk: st.keys[0].lk }, { h: st.keys[1].h, at: st.keys[1].at, lk: st.keys[1].lk }],
+      mana: st.mana.slice(), decks: st.decks, hands: [st.hands[0].slice(), st.hands[1].slice()],
+      pend: [st.pend[0] ? st.pend[0].slice() : null, st.pend[1] ? st.pend[1].slice() : null],
+      smokes: st.smokes.slice(), traps: st.traps.slice(), inside: st.inside.slice(), seed: st.seed,
+      stats: st.sim ? st.stats : [Object.assign({}, st.stats[0]), Object.assign({}, st.stats[1])], sim: st.sim, revealed: false, drew: false
+    };
+  }
+
+  /* Candidate actions for the search, with obviously pointless targets pruned. */
+  function searchActions(st, L) {
+    var s = st.side, opp = 1 - s, out = [], us = st.units, i, j, u, list;
+    var spend = st.mana[s] + CFG.debt;
+    var KM = st.keys[s], KT = st.keys[opp];
+    var hM = KM.h >= 0 ? unit(st, KM.h) : null, hT = KT.h >= 0 ? unit(st, KT.h) : null;
+    for (i = 0; i < us.length; i++) {
+      u = us[i];
+      if (u.side !== s) continue;
+      if (spend >= CFG.moveCost) { list = moveTargets(st, u); for (j = 0; j < list.length; j++) out.push({ t: "move", u: u.id, to: list[j] }); }
+      if (spend >= CFG.passCost) { list = passTargets(st, u); for (j = 0; j < list.length; j++) out.push({ t: "pass", u: u.id, to: list[j] }); }
+      if (spend >= CFG.throwCost) {
+        list = throwOptions(st, u);
+        for (j = 0; j < list.length; j++) { var r = list[j]; if (r.by >= 0 && unit(st, r.by).side === s && r.by !== u.id) out.push({ t: "throw", u: u.id, to: r.to }); }
+      }
+      var T = TYPES[u.type];
+      if (spend >= T.ac) {
+        list = abilityTargets(st, u);
+        if (T.ab === "glitch" && L.smart) list = list.filter(function (t) { var o = at(st, t); return o && !glitched(st, o) && (o.type !== "sniper"); });
+        for (j = 0; j < list.length; j++) out.push({ t: "ab", u: u.id, to: list[j] });
+      }
+    }
+    var hand = st.hands[s], tiles = null;
+    for (var c = 0; c < hand.length; c++) {
+      var card = hand[c], used = false;
+      if (card.k === "crew") {
+        if (spend >= TYPES[card.t].cost) {
+          if (!tiles) tiles = deployTiles(st, s);
+          for (j = 0; j < tiles.length; j++) out.push({ t: "deploy", c: c, to: tiles[j] });
+          used = tiles.length > 0;
+        }
+      } else if (spend >= GADGETS[card.t].cost) {
+        var gl = gadgetTargets(st, s, card.t);
+        gl = pruneGadget(st, s, card.t, gl, hM, hT);
+        for (j = 0; j < gl.length; j++) {
+          if (card.t === "hook") out.push({ t: "gadget", c: c, u: gl[j].u, to: gl[j].to });
+          else out.push({ t: "gadget", c: c, to: gl[j] });
+        }
+        used = gl.length > 0;
+      }
+      if (!used && spend >= CFG.burnCost) out.push({ t: "burn", c: c });
+      else if (card.k === "gadget" && spend >= CFG.burnCost && hand.length === 1) out.push({ t: "burn", c: c });
+    }
+    return out;
+  }
+
+  function pruneGadget(st, s, g, list, hM, hT) {
+    var opp = 1 - s, out = [], i, t;
+    var myCarrier = hM && hM.side === s ? hM : null, theirCarrier = hT && hT.side === opp ? hT : null;
+    var thief = hM && hM.side === opp ? hM : null;
+    switch (g) {
+      case "smoke":
+        if (!myCarrier) return out;
+        for (i = 0; i < list.length; i++) if (cheb(list[i], myCarrier.pos) <= 1) out.push(list[i]);
+        return out;
+      case "emp":
+        for (i = 0; i < list.length; i++) {
+          t = list[i];
+          var n = 0, key = false;
+          for (var j = 0; j < st.units.length; j++) {
+            var o = st.units[j];
+            if (o.side === opp && cheb(o.pos, t) <= 1) { n++; if (holds(st, o)) key = true; }
+          }
+          if (n >= 2 || key) out.push(t);
+        }
+        return out;
+      case "hook":
+        for (i = 0; i < list.length; i++) {
+          var x = list[i], uu = unit(st, x.u);
+          if (myCarrier && uu === myCarrier) { if (cheb(x.to, SAFE[opp]) < cheb(uu.pos, SAFE[opp])) out.push(x); continue; }
+          var tgt = theirCarrier || thief;
+          if (tgt && cheb(x.to, tgt.pos) === 1) out.push(x);
+        }
+        return out;
+      case "tripwire":
+        var foe = theirCarrier || thief;
+        for (i = 0; i < list.length; i++) {
+          t = list[i];
+          if ((foe && cheb(t, foe.pos) <= 2) || cheb(t, SAFE[s]) === 1) out.push(t);
+        }
+        return out.slice(0, 16);
+      case "alarm":
+        for (i = 0; i < st.units.length; i++) if (st.units[i].side === opp && cheb(st.units[i].pos, SAFE[s]) <= 2) return list;
+        return out;
+      default:
+        return list;
+    }
+  }
+
+  function beamSearch(root, me, L, rand, B, D) {
+    var noise = function () { return L.noise ? (rand() - 0.5) * L.noise : 0; };
+    var start = { st: root, acts: [], score: evaluate(root, me, L) + noise() };
+    var cands = [start], beam = [start], seen = {};
+    seen[hashState(root)] = 1;
+    for (var depth = 0; depth < D; depth++) {
+      var next = [];
+      for (var b = 0; b < beam.length; b++) {
+        var node = beam[b], acts = searchActions(node.st, L);
+        for (var j = 0; j < acts.length; j++) {
+          var c = cloneState(node.st);
+          apply(c, acts[j], NOEV);
+          var path = node.acts.concat([acts[j]]);
+          if (c.winner === me) return [{ st: c, acts: path, score: 1e6 }];
+          if (c.winner != null) continue;
+          var hsh = hashState(c);
+          if (seen[hsh]) continue;
+          seen[hsh] = 1;
+          next.push({ st: c, acts: path, score: evaluate(c, me, L) + noise() });
+        }
+      }
+      if (!next.length) break;
+      next.sort(function (x, y) { return y.score - x.score; });
+      beam = next.slice(0, B);
+      cands = cands.concat(beam);
+    }
+    cands.sort(function (x, y) { return y.score - x.score; });
+    return cands;
+  }
+
+  /* What the bot can see: its own traps, not the enemy's hand or traps. */
+  function botView(st, me) {
+    var v = cloneState(st);
+    v.sim = true;
+    v.stats = [mkStats(), mkStats()];
+    v.traps = v.traps.filter(function (t) { return t.side === me; });
+    v.hands[1 - me] = []; v.pend[1 - me] = null;
+    return v;
+  }
+
+  function replyScore(cst, me, L, rand) {
+    var c = cloneState(cst), opp = 1 - me;
+    endTurn(c, NOEV);
+    if (c.winner != null) return c.winner === me ? 1e6 : c.winner === "draw" ? 0 : -1e6;
+    var rc = beamSearch(c, opp, { noise: 0, threat: 1, smart: true }, rand, L.rbeam, L.rdepth);
+    var best = rc[0];
+    if (best.st.winner != null) return best.st.winner === me ? 1e6 : -1e6;
+    return -best.score;
+  }
+
+  /* Plan a whole turn for the side to move. Returns a list of actions (possibly empty). */
+  function botPlan(st, level, rand) {
+    var L = LEVELS[level] || LEVELS.normal, me = st.side;
+    if (L.careless && rand() < L.careless) L = Object.assign({}, L, { threat: 0 });
+    var root = botView(st, me);
+    var cands = beamSearch(root, me, L, rand, L.beam, L.depth);
+    if (cands[0].score >= 1e6) return cands[0].acts;
+    if (L.reply) {
+      // Check the most promising plans that differ in where the key ends up or how the turn starts.
+      var top = [], sigs = {};
+      for (var c = 0; c < cands.length && top.length < L.reply; c++) {
+        var cs = cands[c].st, kh = cs.keys[me].h, a0 = cands[c].acts[0];
+        var sig = (kh >= 0 ? unit(cs, kh).pos : "g" + cs.keys[me].at) + "|" + (a0 ? a0.t + a0.u + ":" + a0.to + ":" + a0.c : "none");
+        if (sigs[sig]) continue;
+        sigs[sig] = 1;
+        top.push(cands[c]);
+      }
+      var best = null;
+      for (var i = 0; i < top.length; i++) {
+        var r = replyScore(top[i].st, me, L, rand);
+        var v = L.rmix * r + (1 - L.rmix) * top[i].score;
+        if (!best || v > best.v) best = { v: v, acts: top[i].acts };
+      }
+      return best.acts;
+    }
+    return cands[0].acts;
+  }
+
+  var API = {
+    W: W, H: H, N: N, CFG: CFG, BACK: BACK, FWD: FWD, SAFE: SAFE, HOME_ROWS: HOME_ROWS, IS_HOME: IS_HOME, IS_SAFE: IS_SAFE, NAMES: NAMES,
+    TYPES: TYPES, GADGETS: GADGETS, LEADERS: LEADERS, CREW: CREW, GADGET_LIST: GADGET_LIST, PRESETS: PRESETS, LEVELS: LEVELS, RAY: RAY, NB: NB,
+    idx: idx, cOf: cOf, rOf: rOf, cheb: cheb, rng: rng, validDeck: validDeck, randomDeck: randomDeck,
+    newGame: newGame, cloneState: cloneState, unit: unit, at: at, holds: holds, keysOf: keysOf, looseKeys: looseKeys,
+    stunned: stunned, glitched: glitched, braced: braced, inSmoke: inSmoke, immune: immune, canMove: canMove, canAct: canAct, canHandle: canHandle,
+    afford: afford, crewCount: crewCount, leaderOf: leaderOf, round: round, cost: cost,
+    moveTargets: moveTargets, passTargets: passTargets, throwOptions: throwOptions, findThrow: findThrow, abilityTargets: abilityTargets,
+    deployTiles: deployTiles, gadgetTargets: gadgetTargets, apply: apply, endTurn: endTurn, isLegal: isLegal, dangerTo: dangerTo,
+    evaluate: evaluate, bots: { plan: botPlan }
+  };
+  root.Keyrunners = API;
+  if (typeof module !== "undefined" && module.exports) module.exports = API;
+})(typeof window !== "undefined" ? window : globalThis);
+
+/* Keyrunners: interface, crew builder, turn flow, bot playback and pass-the-phone play. */
+(function () {
+  "use strict";
+  var KR = window.Keyrunners, K = window.Kit, h = K.h, sv = K.s;
+  var S = 48, PAD = 4, VBW = KR.W * S + PAD * 2, VBH = KR.H * S + PAD * 2;
+  var NAME = KR.NAMES, T = KR.TYPES, GD = KR.GADGETS;
+
+  var ICON = {
+    boss: '<path d="M4 18.5h16"/><path d="M5 18.5L4 8l5 4 3-6.5L15 12l5-4-1 10.5"/>',
+    fixer: '<rect x="3.5" y="8" width="17" height="11" rx="2"/><path d="M9 8V6.2A1.2 1.2 0 0110.2 5h3.6A1.2 1.2 0 0115 6.2V8M3.5 13h17"/>',
+    ghost: '<path d="M6 20v-8a6 6 0 0112 0v8l-2-1.6-2 1.6-2-1.6-2 1.6-2-1.6z"/><path d="M10 11v1.5M14 11v1.5"/>',
+    lookout: '<circle cx="7" cy="15" r="3.5"/><circle cx="17" cy="15" r="3.5"/><path d="M4.5 12.5L6 6h3l.8 6.5M19.5 12.5L18 6h-3l-.8 6.5M10.5 14h3"/>',
+    decoy: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".7"/>',
+    runner: '<path d="M5 6l6 6-6 6"/><path d="M12 6l6 6-6 6"/>',
+    catcher: '<path d="M7 12.5V7.5a1.5 1.5 0 013 0V11M10 11V5.5a1.5 1.5 0 013 0V11M13 11V6.5a1.5 1.5 0 013 0v5M16 11.5V9.5a1.5 1.5 0 013 0V14a7 7 0 01-7 7h-.5a6 6 0 01-5-2.7l-2.6-4a1.5 1.5 0 012.4-1.8L7 14"/>',
+    pickpocket: '<path d="M2.5 10.5c2.5-2 6-2.5 9.5-.5 3.5-2 7-1.5 9.5.5-.5 4-2.6 5.5-5 5.5-2 0-3.2-1-4.5-2.3C10.7 15 9.5 16 7.5 16c-2.4 0-4.5-1.5-5-5.5z"/><path d="M6.5 11.8h2.5M15 11.8h2.5"/>',
+    acrobat: '<path d="M5 18.5c0-7 4-12.5 9-12.5a4.5 4.5 0 010 9H9"/><path d="M11.5 12.5L9 15l2.5 2.5"/>',
+    guard: '<path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+    brute: '<path d="M4.5 9v6M7.5 6.5v11M16.5 6.5v11M19.5 9v6M7.5 12h9"/>',
+    sniper: '<circle cx="12" cy="12" r="7"/><path d="M12 3v5M12 16v5M3 12h5M16 12h5"/>',
+    bodyguard: '<path d="M12 3l7.5 3v5.5c0 4.8-3.2 8-7.5 9.5-4.3-1.5-7.5-4.7-7.5-9.5V6z"/>',
+    hacker: '<path d="M8 7l-5 5 5 5M16 7l5 5-5 5M13.5 5l-3 14"/>',
+    driver: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="2.2"/><path d="M12 14.2v6.3M10 11.2L4 9.5M14 11.2l6-1.7"/>',
+    smoke: '<path d="M7 18.5a4 4 0 01-.4-8 5.5 5.5 0 0110.6-1.2 3.7 3.7 0 01.3 9.2z"/>',
+    hook: '<path d="M12 3v11M8 6h8"/><path d="M5 12a7 7 0 0014 0"/><path d="M5 12l-1.5 2M19 12l1.5 2"/>',
+    tripwire: '<path d="M3 16l3-4 3 4 3-4 3 4 3-4 3 4"/><path d="M3 20h18"/>',
+    emp: '<path d="M13 2.5L5 13.5h6l-1.5 8 8-11h-6z"/>',
+    alarm: '<path d="M6 16.5V11a6 6 0 0112 0v5.5l2 2H4z"/><path d="M10 20.5a2 2 0 004 0"/>',
+    bribe: '<rect x="3" y="7" width="18" height="10" rx="2"/><circle cx="12" cy="12" r="2.4"/><path d="M6.5 10v4M17.5 10v4"/>',
+    key: '<circle cx="7.5" cy="12" r="4"/><path d="M11.5 12h9M17.5 12v3M20.5 12v3"/>',
+    safe: '<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="12" cy="12" r="4.5"/><path d="M12 7.5v1.8M12 14.7v1.8M7.5 12h1.8M14.7 12h1.8"/>'
+  };
+  function iconSvg(name, color) {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="' + (color || "currentColor") + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICON[name] + "</svg>";
+  }
+
+  var TITLE_ART = '<svg viewBox="0 0 260 160" role="img" aria-label="A blue crew passing a gold key toward a red safe">' +
+    '<g stroke="#2d3746" stroke-width="1">' + [0, 1, 2, 3, 4, 5, 6].map(function (k) { return '<path d="M' + (20 + k * 37) + ' 8v144"/>'; }).join("") +
+    [0, 1, 2, 3, 4].map(function (k) { return '<path d="M20 ' + (8 + k * 36) + 'h222"/>'; }).join("") + "</g>" +
+    '<rect x="172" y="12" width="48" height="48" rx="9" fill="rgba(255,90,76,.16)" stroke="#ff5a4c" stroke-width="2.6"/>' +
+    '<circle cx="196" cy="36" r="12" fill="none" stroke="#f2b840" stroke-width="2.6"/>' +
+    '<path d="M196 21v5M196 46v5M181 36h5M206 36h5" stroke="#f2b840" stroke-width="2.4" stroke-linecap="round"/>' +
+    '<path d="M74 118 Q 96 80 116 86" fill="none" stroke="#f2b840" stroke-width="2.6" stroke-dasharray="5 5" stroke-linecap="round"/>' +
+    '<path d="M140 74 Q 156 46 168 46" fill="none" stroke="#f2b840" stroke-width="2.6" stroke-dasharray="5 5" stroke-linecap="round"/>' +
+    '<circle cx="58" cy="124" r="17" fill="#3d8bff"/><circle cx="58" cy="124" r="17" fill="none" stroke="#f2b840" stroke-width="3"/>' +
+    '<path d="M50 129h16M51 129l-1-8 4 3 4-6 4 6 4-3-1 8" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>' +
+    '<circle cx="128" cy="82" r="17" fill="#3d8bff"/><path d="M121 76l6 6-6 6M128 76l6 6-6 6" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>' +
+    '<g transform="translate(140 62) rotate(-35)"><rect x="1" y="-2.4" width="15" height="4.8" rx="1.5" fill="#f2b840" stroke="#1b1305" stroke-width="1.2"/><rect x="11" y="0" width="3" height="6" fill="#f2b840" stroke="#1b1305" stroke-width="1"/><circle cx="-2" cy="0" r="6" fill="#9cc3ff" stroke="#1b1305" stroke-width="1.4"/></g>' +
+    '<circle cx="216" cy="118" r="15" fill="#ff5a4c" opacity=".9"/><path d="M216 109v18M207 118h18" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".9"/>' +
+    "</svg>";
+
+  function glossary() {
+    var rows = [];
+    function row(name, inner) { rows.push('<div class="gl"><span class="badge">' + iconSvg(name, "#eef2f7") + "</span><p>" + inner + "</p></div>"); }
+    KR.LEADERS.forEach(function (t) { var d = T[t]; row(t, "<b>" + d.name + "</b> (leader). <b>" + d.pname + ":</b> " + d.ptext + " <b>" + d.aname + '</b><span class="cost">' + d.ac + "</span> " + d.atext); });
+    KR.CREW.forEach(function (t) { var d = T[t]; row(t, "<b>" + d.name + '</b><span class="cost">' + d.cost + "</span>. <b>" + d.pname + ":</b> " + d.ptext + " <b>" + d.aname + '</b><span class="cost">' + d.ac + "</span> " + d.atext); });
+    KR.GADGET_LIST.forEach(function (g) { var d = GD[g]; row(g, "<b>" + d.name + '</b><span class="cost">' + d.cost + "</span> " + d.text); });
+    return '<div class="glossary">' + rows.join("") + "</div>";
+  }
+
+  var RULES = [
+    "<h3>The goal</h3>",
+    "<p>Both crews have a <b>safe</b> and a <b>key</b>. Your key opens <b>their</b> safe. You win at the start of your turn if:</p><ul>",
+    "<li><b>Crack:</b> one of your units holding your key is on or next to their safe.</li>",
+    "<li><b>Stash:</b> one of your units holding <b>their</b> key is standing on your own safe.</li></ul>",
+    "<p>Wins land at the start of a turn, so the other side always gets one last turn to stop it.</p>",
+    "<h3>A turn</h3>",
+    "<p>You get <b>5 mana</b> every turn. Unspent mana carries over, up to 10. You can go into debt down to −3, and the debt comes out of your next turn.</p>",
+    '<dl class="kv"><dt>Deploy</dt><dd>Play a crew card onto your two home rows, or next to one of your Lookouts or Getaway Drivers. Your leader never counts. New crew can\'t move or use abilities until your next turn. Up to 6 crew at once.</dd>',
+    "<dt>Move · 1</dt><dd>Each unit moves once a turn, in its own pattern. Moving onto an enemy captures it and takes any key it holds.</dd>",
+    "<dt>Pass · 1</dt><dd>Hand your key to a teammate up to 2 tiles away.</dd>",
+    "<dt>Throw · 2</dt><dd>Throw your key up to 3 tiles in a straight line. The first unit in the way catches it, friend or foe. If nobody does, it lands on the floor for anyone to pick up.</dd>",
+    "<dt>Ability</dt><dd>Each unit can use its ability once a turn, at the cost shown.</dd>",
+    "<dt>Gadget</dt><dd>One card in your hand is always a gadget.</dd></dl>",
+    "<h3>Keys</h3><ul>",
+    "<li>Your leader starts the match holding your key.</li>",
+    "<li>Keys are heavy. A unit carrying one moves only 1 tile and can't use movement abilities. The Runner and the Ghost ignore this.</li>",
+    "<li>You can only pass or throw <b>your own</b> key, and not on a turn it changed hands. A stolen key has to be walked home.</li>",
+    "<li>A unit that catches a pass or throw can't move again that turn (the Catcher can).</li>",
+    "<li>Nobody can stand on their own safe, except to lock a stolen key away.</li></ul>",
+    "<h3>Your deck</h3>",
+    "<p>Before the match, pick a leader, 6 crew and 2 gadgets. You hold 3 crew and 1 gadget, and you only get the next 4 cards once you've used all 4. A card you can't use can be discarded for 1 mana.</p>",
+    "<h3>Every card</h3>",
+    "[[glossary]]",
+    '<div class="tip">Keep your key moving, and keep friends next to whoever carries it. A carrier alone in the middle of the board is the easiest steal in the game. A red <b>!</b> on a unit means the enemy can reach it next turn.</div>'
+  ].join("");
+
+  var G = {
+    st: null, cfg: null, level: "normal", human: [true, false], viewer: 0, decks: [null, null], rand: null,
+    sel: -1, card: -1, mode: null, hookUnit: -1, areaPick: -1, inspect: -1,
+    undo: [], busy: true, token: 0, nodes: {}, layers: {}, say: "", sayCls: "", trails: [], resolver: null, review: false, targets: null, paused: false
+  };
+  async function waitUnpaused(token) { while (G.paused && token === G.token) await K.sleep(150); }
+
+  /* ---------- Geometry (the board turns around for Red in pass-and-play) ---------- */
+  function disp(t) { return G.viewer === 1 ? KR.N - 1 - t : t; }
+  function cx(t) { return PAD + KR.cOf(disp(t)) * S + S / 2; }
+  function cy(t) { return PAD + KR.rOf(disp(t)) * S + S / 2; }
+  function sideWord(s) { return '<b style="color:var(--' + (s ? "red" : "blue") + ')">' + NAME[s] + "</b>"; }
+  function shortName(t) { return T[t].leader ? T[t].name.replace(/^The /, "") : T[t].name; }
+  function uName(u) { return sideWord(u.side) + " " + shortName(u.type); }
+  function isHumanTurn() { return G.st && G.st.winner == null && G.human[G.st.side] && !G.busy && !!G.resolver; }
+  function mySide() { return G.cfg && G.cfg.mode === "local" ? G.st.side : (G.human[0] ? 0 : 1); }
+
+  /* ---------- Board ---------- */
+  function keyGlyph(k, x, y, scale, cls) {
+    var g = sv("g", { class: cls || "", transform: "translate(" + x + " " + y + ") rotate(-35) scale(" + (scale || 1) + ")" });
+    g.appendChild(sv("rect", { class: "key-shaft", x: "1", y: "-1.8", width: "10", height: "3.6", rx: "1.2" }));
+    g.appendChild(sv("rect", { class: "key-shaft", x: "8", y: "0", width: "2.2", height: "4.4" }));
+    g.appendChild(sv("circle", { class: "key-bow k" + k, cx: "-1.8", cy: "0", r: "4.4" }));
+    return g;
+  }
+
+  function buildBoard() {
+    var stage = K.$("#stage");
+    stage.innerHTML = "";
+    var svg = sv("svg", { id: "board", viewBox: "0 0 " + VBW + " " + VBH, role: "img", "aria-label": "Heist floor, 7 by 10 tiles" });
+    var tiles = sv("g");
+    for (var t = 0; t < KR.N; t++) {
+      var x = cx(t) - S / 2, y = cy(t) - S / 2;
+      tiles.appendChild(sv("rect", { x: x, y: y, width: S, height: S, class: (KR.cOf(t) + KR.rOf(t)) % 2 ? "tl-b" : "tl-a" }));
+      if (KR.IS_HOME[0][t]) tiles.appendChild(sv("rect", { x: x, y: y, width: S, height: S, class: "home0" }));
+      if (KR.IS_HOME[1][t]) tiles.appendChild(sv("rect", { x: x, y: y, width: S, height: S, class: "home1" }));
+    }
+    for (var k = 0; k <= KR.W; k++) tiles.appendChild(sv("path", { d: "M" + (PAD + k * S) + " " + PAD + "V" + (PAD + KR.H * S), class: "gridl" }));
+    for (var r = 0; r <= KR.H; r++) tiles.appendChild(sv("path", { d: "M" + PAD + " " + (PAD + r * S) + "H" + (PAD + KR.W * S), class: "gridl" }));
+    [0, 1].forEach(function (s) {
+      var sf = KR.SAFE[s], zone = [];
+      for (var q = 0; q < KR.N; q++) if (KR.cheb(q, sf) <= KR.CFG.crackRange) zone.push(q);
+      var xs = zone.map(function (q) { return cx(q); }), ys = zone.map(function (q) { return cy(q); });
+      var x0 = Math.min.apply(null, xs) - S / 2 + 2, x1 = Math.max.apply(null, xs) + S / 2 - 2;
+      var y0 = Math.min.apply(null, ys) - S / 2 + 2, y1 = Math.max.apply(null, ys) + S / 2 - 2;
+      tiles.appendChild(sv("rect", { x: x0, y: y0, width: x1 - x0, height: y1 - y0, rx: 8, class: "zone s" + s }));
+      var X = cx(sf), Y = cy(sf);
+      tiles.appendChild(sv("rect", { x: X - 19, y: Y - 19, width: 38, height: 38, rx: 7, class: "safe-box s" + s }));
+      tiles.appendChild(sv("circle", { cx: X, cy: Y, r: 9.5, class: "safe-dial" }));
+      tiles.appendChild(sv("path", { d: "M" + X + " " + (Y - 15) + "v4M" + X + " " + (Y + 11) + "v4M" + (X - 15) + " " + Y + "h4M" + (X + 11) + " " + Y + "h4", class: "safe-tick" }));
+    });
+    svg.appendChild(tiles);
+    ["marks", "hl", "units", "fx"].forEach(function (n) { var g = sv("g", { class: n }); G.layers[n] = g; svg.appendChild(g); });
+    var hit = sv("g", { class: "hit-layer" });
+    for (var j = 0; j < KR.N; j++) hit.appendChild(sv("rect", { x: cx(j) - S / 2, y: cy(j) - S / 2, width: S, height: S, "data-t": String(j) }));
+    hit.addEventListener("click", function (e) { var el = e.target; if (el && el.getAttribute("data-t") != null) onTile(+el.getAttribute("data-t")); });
+    svg.appendChild(hit);
+    stage.appendChild(svg);
+    G.nodes = {};
+  }
+
+  function tokNode(u) {
+    var n = G.nodes[u.id];
+    if (n && n.__side !== u.side) { n.remove(); n = null; }
+    if (n) return n;
+    n = sv("g", { class: "tok" });
+    n.__side = u.side;
+    n.appendChild(sv("circle", { class: "tok-ring", r: "22" }));
+    n.appendChild(sv("circle", { class: "tok-ready", r: "22" }));
+    n.appendChild(sv("circle", { class: "tok-brace", r: "23.5" }));
+    n.appendChild(sv("circle", { class: "tok-carry", r: "22.5" }));
+    n.appendChild(sv("circle", { class: "tok-body s" + u.side, r: "18" }));
+    if (u.leader) n.appendChild(sv("circle", { class: "tok-lead", r: "15.2" }));
+    n.appendChild(sv("circle", { class: "tok-glitch", r: "20.5" }));
+    var ic = sv("g", { class: "tok-icon", transform: "translate(-10.2 -10.2) scale(.85)" });
+    ic.innerHTML = ICON[u.type];
+    n.appendChild(ic);
+    n.appendChild(sv("rect", { class: "tok-armor", x: "-7", y: "13", width: "14", height: "6", rx: "2" }));
+    var stunG = sv("g", { class: "tok-stun" });
+    stunG.appendChild(sv("path", { d: "M-9 -22l3-3 3 3 3-3 3 3 3-3 3 3" }));
+    n.appendChild(stunG);
+    n.appendChild(keyGlyph(0, 13, -13, 1.25, "tok-key k0"));
+    n.appendChild(keyGlyph(1, 13, 14, 1.25, "tok-key k1"));
+    var dg = sv("g", { class: "tok-danger", transform: "translate(-14 -14)" });
+    dg.appendChild(sv("circle", { r: "7" }));
+    dg.appendChild(sv("text", { x: "0", y: "4", "text-anchor": "middle", text: "!" }));
+    n.appendChild(dg);
+    var fr = sv("g", { class: "tok-fresh", transform: "translate(0 22)" });
+    fr.appendChild(sv("rect", { x: "-11", y: "-5.5", width: "22", height: "11", rx: "5.5" }));
+    fr.appendChild(sv("text", { x: "0", y: "3", "text-anchor": "middle", text: "NEW" }));
+    n.appendChild(fr);
+    G.layers.units.appendChild(n);
+    G.nodes[u.id] = n;
+    n.style.transform = "translate(" + cx(u.pos) + "px," + cy(u.pos) + "px)";
+    return n;
+  }
+
+  function canDoAnything(st, u) {
+    if (u.side !== st.side) return false;
+    if (KR.canMove(st, u) && KR.moveTargets(st, u).length) return true;
+    if (KR.canAct(st, u) && KR.abilityTargets(st, u).length) return true;
+    if (KR.passTargets(st, u).length || KR.throwOptions(st, u).length) return true;
+    return false;
+  }
+
+  function placeUnits() {
+    var st = G.st, live = {}, human = isHumanTurn();
+    var danger = human ? KR.dangerTo(st, st.side) : {};
+    st.units.forEach(function (u) {
+      live[u.id] = 1;
+      var n = tokNode(u);
+      var mine = u.side === st.side;
+      n.classList.toggle("sel", u.id === G.sel || u.id === G.inspect);
+      n.classList.toggle("k0", st.keys[0].h === u.id);
+      n.classList.toggle("k1", st.keys[1].h === u.id);
+      n.classList.toggle("carrier", st.keys[0].h === u.id || st.keys[1].h === u.id);
+      n.classList.toggle("stunned", KR.stunned(st, u) || (st.ply + 1 < u.st && !mine));
+      n.classList.toggle("braced", KR.braced(st, u));
+      n.classList.toggle("glitched", KR.glitched(st, u));
+      n.classList.toggle("armored", !!u.armor);
+      n.classList.toggle("fresh", mine && u.fr === st.ply);
+      n.classList.toggle("danger", human && mine && !!danger[u.id]);
+      var ready = human && mine && canDoAnything(st, u);
+      n.classList.toggle("ready", ready && u.id !== G.sel);
+      n.classList.toggle("spent", human && mine && !ready);
+      n.style.transform = "translate(" + cx(u.pos) + "px," + cy(u.pos) + "px)";
+    });
+    Object.keys(G.nodes).forEach(function (id) {
+      if (live[id]) return;
+      var n = G.nodes[id];
+      delete G.nodes[id];
+      n.classList.add("dying");
+      setTimeout(function () { n.remove(); }, 420);
+    });
+  }
+
+  function renderMarks() {
+    var g = G.layers.marks, st = G.st;
+    g.innerHTML = "";
+    st.smokes.forEach(function (sm) {
+      if (st.ply >= sm.until) return;
+      var xs = [], ys = [];
+      for (var t = 0; t < KR.N; t++) if (KR.cheb(t, sm.c) <= 1) { xs.push(cx(t)); ys.push(cy(t)); }
+      var x0 = Math.min.apply(null, xs) - S / 2 + 3, y0 = Math.min.apply(null, ys) - S / 2 + 3;
+      g.appendChild(sv("rect", { x: x0, y: y0, width: Math.max.apply(null, xs) + S / 2 - 3 - x0, height: Math.max.apply(null, ys) + S / 2 - 3 - y0, rx: 14, class: "smoke" }));
+    });
+    var viewer = mySide();
+    st.traps.forEach(function (tr) {
+      if (tr.side !== viewer || (G.cfg.mode === "local" && !isHumanTurn() && !G.review)) return;
+      var X = cx(tr.t), Y = cy(tr.t);
+      g.appendChild(sv("path", { d: "M" + (X - 9) + " " + (Y - 9) + "l18 18M" + (X + 9) + " " + (Y - 9) + "l-18 18", class: "trap" }));
+    });
+    G.trails.forEach(function (tr) {
+      g.appendChild(sv("path", { d: "M" + cx(tr.from) + " " + cy(tr.from) + "L" + cx(tr.to) + " " + cy(tr.to), class: "trail s" + tr.side }));
+    });
+    for (var k = 0; k < 2; k++) {
+      var K0 = st.keys[k];
+      if (K0.h < 0) g.appendChild(keyGlyph(k, cx(K0.at) - 4, cy(K0.at), 1.6, "gkey pulse"));
+    }
+  }
+
+  /* ---------- Targets for whatever is selected ---------- */
+  function computeTargets() {
+    var st = G.st, out = { list: [], map: {} };
+    if (!isHumanTurn()) return out;
+    var s = st.side, u = G.sel >= 0 ? KR.unit(st, G.sel) : null;
+    function add(t, cls, act) { out.list.push({ t: t, cls: cls }); if (act) out.map[t] = act; }
+    var spend = st.mana[s] + KR.CFG.debt;
+    if (u && G.mode === "move" && spend >= KR.CFG.moveCost) {
+      KR.moveTargets(st, u).forEach(function (t) { add(t, st.board[t] >= 0 ? "cap" : "move", { t: "move", u: u.id, to: t }); });
+    } else if (u && G.mode === "ab" && spend >= T[u.type].ac) {
+      KR.abilityTargets(st, u).forEach(function (t) { add(t, "ab", { t: "ab", u: u.id, to: t }); });
+    } else if (u && G.mode === "pass" && spend >= KR.CFG.passCost) {
+      KR.passTargets(st, u).forEach(function (t) { add(t, "pass", { t: "pass", u: u.id, to: t }); });
+    } else if (u && G.mode === "throw" && spend >= KR.CFG.throwCost) {
+      KR.throwOptions(st, u).forEach(function (o) {
+        var by = o.by >= 0 ? KR.unit(st, o.by) : null;
+        add(o.to, by ? (by.side === s ? "throw-ok" : "throw-bad") : "throw-ground", { t: "throw", u: u.id, to: o.to });
+      });
+    } else if (G.card >= 0) {
+      var card = st.hands[s][G.card];
+      if (!card) return out;
+      if (card.k === "crew" && spend >= T[card.t].cost) {
+        KR.deployTiles(st, s).forEach(function (t) { add(t, "deploy", { t: "deploy", c: G.card, to: t }); });
+      } else if (card.k === "gadget" && spend >= GD[card.t].cost) {
+        var gt = KR.gadgetTargets(st, s, card.t);
+        if (card.t === "hook") {
+          if (G.hookUnit < 0) {
+            var seen = {};
+            gt.forEach(function (x) { if (!seen[x.u]) { seen[x.u] = 1; var hu = KR.unit(st, x.u); add(hu.pos, "pick", { hook: x.u }); } });
+          } else {
+            gt.forEach(function (x) { if (x.u === G.hookUnit) add(x.to, "ab", { t: "gadget", c: G.card, u: x.u, to: x.to }); });
+          }
+        } else if (card.t === "smoke" || card.t === "emp") {
+          gt.forEach(function (t) { add(t, "dim", G.areaPick === t ? { t: "gadget", c: G.card, to: t } : { area: t }); });
+        } else if (card.t !== "alarm") {
+          gt.forEach(function (t) { add(t, "ab", { t: "gadget", c: G.card, to: t }); });
+        }
+      }
+    }
+    return out;
+  }
+
+  function enemyReach(u) {
+    var c = KR.cloneState(G.st);
+    c.ply += 1; c.side = u.side;
+    var cu = KR.unit(c, u.id);
+    return KR.moveTargets(c, cu, false, true);
+  }
+
+  function renderHL() {
+    var g = G.layers.hl;
+    g.innerHTML = "";
+    var tg = G.targets = computeTargets();
+    if (G.inspect >= 0) {
+      var eu = KR.unit(G.st, G.inspect);
+      if (eu) enemyReach(eu).forEach(function (t) { g.appendChild(sv("rect", { x: cx(t) - S / 2 + 3, y: cy(t) - S / 2 + 3, width: S - 6, height: S - 6, rx: 6, class: "hl-reach" })); });
+    }
+    tg.list.forEach(function (x) {
+      var X = cx(x.t), Y = cy(x.t);
+      if (x.cls === "move") g.appendChild(sv("circle", { cx: X, cy: Y, r: 6.5, class: "hl-move" }));
+      else if (x.cls === "cap") g.appendChild(sv("circle", { cx: X, cy: Y, r: 21, class: "hl-cap" }));
+      else if (x.cls === "pass") g.appendChild(sv("circle", { cx: X, cy: Y, r: 23, class: "hl-pass" }));
+      else if (x.cls === "pick") g.appendChild(sv("circle", { cx: X, cy: Y, r: 23, class: "hl-pick" }));
+      else if (x.cls === "deploy") g.appendChild(sv("rect", { x: X - S / 2 + 4, y: Y - S / 2 + 4, width: S - 8, height: S - 8, rx: 7, class: "hl-deploy s" + G.st.side }));
+      else if (x.cls === "dim") g.appendChild(sv("rect", { x: X - S / 2 + 2, y: Y - S / 2 + 2, width: S - 4, height: S - 4, rx: 5, class: "hl-dim" }));
+      else if (x.cls.indexOf("throw") === 0) {
+        g.appendChild(sv("circle", { cx: X, cy: Y, r: 9, class: "hl-" + x.cls }));
+      } else g.appendChild(sv("rect", { x: X - S / 2 + 4, y: Y - S / 2 + 4, width: S - 8, height: S - 8, rx: 7, class: "hl-ab" }));
+    });
+    if (G.areaPick >= 0) {
+      for (var t = 0; t < KR.N; t++) if (KR.cheb(t, G.areaPick) <= 1) g.appendChild(sv("rect", { x: cx(t) - S / 2 + 2, y: cy(t) - S / 2 + 2, width: S - 4, height: S - 4, rx: 5, class: "hl-area" }));
+    }
+  }
+
+  /* ---------- Top bar and action bar ---------- */
+  function renderTop() {
+    var st = G.st, main, sub;
+    var round = "Round " + KR.round(st) + " of " + KR.CFG.rounds;
+    if (st.winner != null) { main = st.winner === "draw" ? "Draw" : NAME[st.winner] + " wins"; sub = st.reason; }
+    else if (G.human[st.side]) { main = G.cfg.mode === "local" ? NAME[st.side] + "'s turn" : "Your turn"; sub = round; }
+    else { main = NAME[st.side] + " is planning"; sub = round; }
+    K.$("#st-main").textContent = main;
+    K.$("#st-sub").textContent = sub;
+    var foe = K.$("#foe");
+    foe.innerHTML = "";
+    var o = G.cfg.mode === "local" ? 1 - st.side : 1 - mySide();
+    var L = KR.leaderOf(st, o), lt = L ? L.type : G.decks[o].leader;
+    var m = st.mana[o];
+    foe.appendChild(h("div", { class: "foe", title: NAME[o] + "'s mana and cards" },
+      h("span", { class: "dot s" + o, html: iconSvg(lt, "#fff") }),
+      h("b", null, String(m)), h("small", null, "mana"),
+      h("b", null, String(st.hands[o].length)), h("small", null, st.hands[o].length === 1 ? "card" : "cards")));
+  }
+
+  function statusChips(st, u) {
+    var c = [];
+    if (u.fr === st.ply && u.side === st.side) c.push("just arrived");
+    if (KR.stunned(st, u)) c.push("stunned");
+    if (KR.glitched(st, u)) c.push("glitched");
+    if (KR.braced(st, u)) c.push("braced");
+    if (u.armor) c.push("armored");
+    if (u.side === st.side && u.mv === st.ply && u.fr !== st.ply) c.push("moved");
+    if (u.side === st.side && u.ac === st.ply) c.push("ability used");
+    return c;
+  }
+
+  function fullText(kind, t) {
+    var d = kind === "gadget" ? GD[t] : T[t];
+    var body = kind === "gadget" ? "<p>" + d.text + "</p><p>Costs " + d.cost + " mana.</p>" :
+      "<p><b>" + d.pname + ":</b> " + d.ptext + "</p><p><b>" + d.aname + " (" + d.ac + " mana):</b> " + d.atext + "</p>" + (d.cost ? "<p>Deploys for " + d.cost + " mana.</p>" : "<p>Your leader starts the match holding your key.</p>");
+    K.modal({ title: d.name, body: body, bodyClass: "rules", actions: [{ label: "Close", value: null, kind: "primary" }] });
+  }
+
+  function unitInfo(u) {
+    var d = T[u.type], st = G.st;
+    var chips = statusChips(st, u).map(function (x) { return h("span", { class: "st" }, x); });
+    var keys = KR.keysOf(st, u).map(function (k) { return h("span", { class: "tag" }, k === u.side ? "has the key" : "has " + NAME[k] + "'s key"); });
+    var txt = h("div", { class: "txt" },
+      h("div", { class: "nm" }, h("b", null, d.name), u.leader ? h("span", { class: "tag" }, "leader") : null, keys, chips),
+      h("p", { html: "<b>" + d.pname + ":</b> " + d.ps }),
+      h("p", { html: "<b>" + d.aname + " (" + d.ac + "):</b> " + d.as }));
+    return h("button", { class: "info", type: "button", "aria-label": d.name + ": read the full card", onclick: function () { K.Sound.play("tap"); fullText("unit", u.type); } },
+      h("span", { class: "badge s" + u.side, html: iconSvg(u.type, "#fff") }), txt, h("span", { class: "more", "aria-hidden": "true" }, "i"));
+  }
+
+  function cardInfo(card) {
+    var d = card.k === "crew" ? T[card.t] : GD[card.t];
+    var txt = card.k === "crew"
+      ? h("div", { class: "txt" }, h("div", { class: "nm" }, h("b", null, d.name), h("span", { class: "tag" }, "crew · " + d.cost + " mana")),
+          h("p", { html: "<b>" + d.pname + ":</b> " + d.ps }), h("p", { html: "<b>" + d.aname + " (" + d.ac + "):</b> " + d.as }))
+      : h("div", { class: "txt" }, h("div", { class: "nm" }, h("b", null, d.name), h("span", { class: "tag" }, "gadget · " + d.cost + " mana")), h("p", null, d.text));
+    return h("button", { class: "info", type: "button", "aria-label": d.name + ": read the full card", onclick: function () { K.Sound.play("tap"); fullText(card.k === "crew" ? "unit" : "gadget", card.t); } },
+      h("span", { class: "badge g", html: iconSvg(card.t, "#f2b840") }), txt, h("span", { class: "more", "aria-hidden": "true" }, "i"));
+  }
+
+  function keyLine(k, viewer) {
+    var st = G.st, K0 = st.keys[k];
+    var who = k === viewer ? "Your key" : NAME[k] + "'s key";
+    if (K0.h < 0) return "<b>" + who + ":</b> on the floor";
+    var u = KR.unit(st, K0.h), mine = u.side === viewer;
+    var where;
+    if (u.side === k) where = KR.cheb(u.pos, KR.SAFE[1 - k]) + " tiles from " + (k === viewer ? "their" : "your") + " safe";
+    else where = "stolen, " + KR.cheb(u.pos, KR.SAFE[u.side]) + " tiles from " + (mine ? "your" : "their") + " safe";
+    return "<b>" + who + ":</b> " + (mine ? "your " : NAME[u.side] + " ") + shortName(u.type) + ", " + where;
+  }
+
+  function statusCard() {
+    var v = mySide();
+    return h("div", { class: "info static" }, h("span", { class: "badge g", html: iconSvg("key", "#f2b840") }),
+      h("div", { class: "txt" }, h("p", { html: keyLine(v, v) }), h("p", { html: keyLine(1 - v, v) }),
+        h("p", { class: "dim" }, "Crack: your key next to their safe. Stash: their key on your safe.")));
+  }
+
+  function btn(label, cost, opts) {
+    opts = opts || {};
+    return h("button", { class: "btn btn-sm" + (opts.primary ? " btn-primary" : ""), type: "button", disabled: opts.disabled ? true : null, "aria-pressed": opts.pressed == null ? null : (opts.pressed ? "true" : "false"), onclick: opts.onclick },
+      label, cost != null ? h("span", { class: "c" }, String(cost)) : null);
+  }
+
+  function hint() {
+    var st = G.st, s = st.side, o = 1 - s;
+    var their = st.keys[o].h >= 0 ? KR.unit(st, st.keys[o].h) : null;
+    var mine = st.keys[s].h >= 0 ? KR.unit(st, st.keys[s].h) : null;
+    if (their && their.side === o && KR.cheb(their.pos, KR.SAFE[s]) <= KR.CFG.crackRange) return { t: NAME[o] + "'s key is at your safe. Move it or take it out this turn, or " + NAME[o] + " cracks it.", c: "warn" };
+    if (mine && mine.side === o && mine.pos === KR.SAFE[o]) return { t: NAME[o] + " is locking your key away. Win it back this turn or lose.", c: "warn" };
+    if (mine && mine.side === s && KR.cheb(mine.pos, KR.SAFE[o]) <= KR.CFG.crackRange) return { t: "Your key is at their safe. If it's still there when your next turn starts, you crack it.", c: "good" };
+    if (their && their.side === s && their.pos === KR.SAFE[s]) return { t: "Their key is on your safe. Keep it there until your next turn to lock it away.", c: "good" };
+    if (st.mana[s] + KR.CFG.debt < 1) return { t: "You're out of mana. End your turn.", c: "" };
+    if (KR.round(st) === 1 && st.units.filter(function (u) { return u.side === s; }).length === 1) return { t: "Your leader holds your key. Deploy crew from your hand first: tap a card, then a lit tile.", c: "" };
+    return { t: "Tap a unit to act or a card to play.", c: "" };
+  }
+
+  function modeTip() {
+    var st = G.st, u = G.sel >= 0 ? KR.unit(st, G.sel) : null;
+    if (u) {
+      if (G.mode === "move") return "Dots: move there. Red rings: capture.";
+      if (G.mode === "ab") return "Tap a gold tile to use " + T[u.type].aname + ".";
+      if (G.mode === "pass") return "Tap a teammate within 2 tiles to hand over your key.";
+      if (G.mode === "throw") return "Green: a teammate catches it. Red: intercepted. Grey: lands on the floor.";
+      return KR.canMove(st, u) ? "" : "This unit can't move again this turn.";
+    }
+    if (G.card >= 0) {
+      var card = st.hands[st.side][G.card];
+      if (!card) return "";
+      var c = card.k === "crew" ? T[card.t].cost : GD[card.t].cost, spend = st.mana[st.side] + KR.CFG.debt;
+      if (spend < c) return "Not enough mana. You can go down to −" + KR.CFG.debt + ".";
+      if (card.k === "crew") return KR.crewCount(st, st.side) >= KR.CFG.maxCrew ? "You already have 6 crew out." : "Tap a lit tile to deploy. New crew act from your next turn.";
+      if (card.t === "hook") return G.hookUnit < 0 ? "Pick the unit to zip." : "Pick where it lands.";
+      if (card.t === "smoke" || card.t === "emp") return G.areaPick < 0 ? "Tap the middle of the 3×3 area." : "Tap the same tile again to confirm.";
+      if (card.t === "tripwire") return "Tap a tile to hide the trap. Only you can see it.";
+      if (card.t === "bribe") return "Tap an enemy crew member next to your leader.";
+      if (card.t === "alarm") return "Pushes every enemy within 2 tiles of your safe back 1 tile.";
+    }
+    return "";
+  }
+
+  function renderBar() {
+    var bar = K.$("#actionbar"), st = G.st;
+    bar.innerHTML = "";
+    if (G.review || st.winner != null) {
+      bar.appendChild(h("p", { class: "say" }, h("span", { html: G.say || st.reason || "&nbsp;" })));
+      bar.appendChild(h("div", { class: "ctx" }, statusCard()));
+      bar.appendChild(h("div", { class: "bottom" },
+        h("button", { class: "btn btn-primary", type: "button", style: "flex:1", onclick: function () { restart(); } }, "Rematch"),
+        h("button", { class: "btn", type: "button", style: "flex:1", onclick: function () { K.quit(); } }, "Main menu")));
+      return;
+    }
+    var human = isHumanTurn(), s = human ? st.side : mySide();
+    var say = h("p", { class: "say" + (G.sayCls ? " " + G.sayCls : "") }), line = h("span");
+    say.appendChild(line);
+    var tip = human ? modeTip() : "";
+    if (tip) { say.className = "say"; line.textContent = tip; }
+    else if (G.say) line.innerHTML = G.say;
+    else if (human) { var hn = hint(); say.className = "say" + (hn.c ? " " + hn.c : ""); line.textContent = hn.t; }
+    else line.innerHTML = "&nbsp;";
+    bar.appendChild(say);
+
+    var spend = st.mana[s] + KR.CFG.debt;
+    var ctx = h("div", { class: "ctx" });
+    var u = G.sel >= 0 ? KR.unit(st, G.sel) : null;
+    if (human && u) {
+      var d = T[u.type], acts = h("div", { class: "acts" });
+      var abT = KR.abilityTargets(st, u);
+      acts.appendChild(btn("Move", 1, { pressed: G.mode === "move", disabled: !KR.canMove(st, u) || spend < 1 || !KR.moveTargets(st, u).length, onclick: function () { setMode("move"); } }));
+      var abReady = KR.canAct(st, u) && spend >= d.ac && abT.length > 0;
+      var noTarget = d.ab === "brace" || d.ab === "insideman";
+      acts.appendChild(btn(d.aname, d.ac, { pressed: G.mode === "ab", disabled: !abReady, onclick: function () {
+        if (noTarget) doHuman({ t: "ab", u: u.id, to: abT[0] }); else setMode("ab");
+      } }));
+      if (KR.looseKeys(st, u).length) {
+        acts.appendChild(btn("Pass", KR.CFG.passCost, { pressed: G.mode === "pass", disabled: spend < KR.CFG.passCost || !KR.passTargets(st, u).length, onclick: function () { setMode("pass"); } }));
+        acts.appendChild(btn("Throw", KR.CFG.throwCost, { pressed: G.mode === "throw", disabled: spend < KR.CFG.throwCost || !KR.throwOptions(st, u).length, onclick: function () { setMode("throw"); } }));
+      }
+      ctx.appendChild(unitInfo(u));
+      ctx.appendChild(acts);
+    } else if (G.inspect >= 0 && KR.unit(st, G.inspect)) {
+      ctx.appendChild(unitInfo(KR.unit(st, G.inspect)));
+      ctx.appendChild(h("p", { class: "note" }, "Shaded tiles: where it can move or capture on its next turn."));
+    } else if (human && G.card >= 0 && st.hands[s][G.card]) {
+      var card = st.hands[s][G.card], row = h("div", { class: "acts" });
+      var c = card.k === "crew" ? T[card.t].cost : GD[card.t].cost;
+      if (card.t === "alarm") row.appendChild(btn("Sound the alarm", c, { primary: true, disabled: spend < c, onclick: function () { doHuman({ t: "gadget", c: G.card, to: -1 }); } }));
+      row.appendChild(btn("Discard", KR.CFG.burnCost, { disabled: spend < KR.CFG.burnCost, onclick: function () { doHuman({ t: "burn", c: G.card }); } }));
+      ctx.appendChild(cardInfo(card));
+      ctx.appendChild(row);
+    } else {
+      ctx.appendChild(statusCard());
+    }
+    bar.appendChild(ctx);
+
+    var hand = h("div", { class: "hand" }), cards = st.hands[s];
+    var showHand = G.cfg.mode !== "local" || human;
+    for (var i = 0; i < 4; i++) {
+      var cd = showHand ? cards[i] : null;
+      if (!cd) { hand.appendChild(h("div", { class: "card empty", "aria-hidden": "true" })); continue; }
+      (function (idx, cd2) {
+        var cost = cd2.k === "crew" ? T[cd2.t].cost : GD[cd2.t].cost;
+        hand.appendChild(h("button", {
+          class: "card" + (cd2.k === "gadget" ? " gadget" : "") + (st.mana[s] + KR.CFG.debt < cost ? " poor" : ""), type: "button",
+          "aria-pressed": G.card === idx && human ? "true" : "false", disabled: human ? null : true,
+          "aria-label": (cd2.k === "crew" ? T[cd2.t].name : GD[cd2.t].name) + ", " + cost + " mana",
+          onclick: function () { selectCard(idx); }
+        }, h("span", { class: "cost" }, String(cost)), h("span", { html: iconSvg(cd2.t, cd2.k === "gadget" ? "#f2b840" : "#eef2f7") }), h("span", { class: "nm" }, cd2.k === "crew" ? T[cd2.t].name : GD[cd2.t].name)));
+      })(i, cd);
+    }
+    bar.appendChild(hand);
+    var nx = st.pend[s];
+    bar.appendChild(h("p", { class: "next" }, !showHand ? "\u00a0" : nx ? "Up next: " + nx.map(function (c2) { return c2.k === "crew" ? T[c2.t].name : GD[c2.t].name; }).join(" · ") : "Up next: a fresh shuffle of your 8 cards"));
+
+    var m = st.mana[s];
+    var pips = h("div", { class: "pips", "aria-hidden": "true" });
+    for (var p = 0; p < KR.CFG.cap; p++) pips.appendChild(h("i", { class: "pip" + (m > 0 && p < m ? " on" : "") + (m < 0 && p < -m ? " debt" : "") }));
+    var L = KR.leaderOf(st, s), inc = KR.CFG.income + (L && L.type === "fixer" && !KR.glitched(st, L) ? 1 : 0);
+    var mana = h("div", { class: "mana" },
+      h("div", { class: "lbl" }, h("span", null, m < 0 ? "Debt" : "Mana"), h("b", { class: m < 0 ? "neg" : "" }, (m < 0 ? "−" + (-m) : String(m)) + " / " + KR.CFG.cap), h("span", null, "+" + inc + " next")), pips);
+    var undo = h("button", { class: "btn", id: "btn-undo", type: "button", disabled: human && G.undo.length ? null : true, onclick: function () { doUndo(); } }, "Undo");
+    var end = h("button", { class: "btn btn-primary", id: "btn-end", type: "button", disabled: human ? null : true, onclick: function () { endTurnClicked(); } }, "End turn");
+    bar.appendChild(h("div", { class: "bottom" }, mana, undo, end));
+  }
+
+  function render() {
+    if (!G.st) return;
+    renderMarks();
+    renderHL();
+    placeUnits();
+    renderTop();
+    renderBar();
+  }
+
+  /* ---------- Input ---------- */
+  function clearSel() { G.sel = -1; G.card = -1; G.mode = null; G.hookUnit = -1; G.areaPick = -1; G.inspect = -1; }
+  function selectUnit(id) {
+    var keepCard = false;
+    clearSel();
+    G.sel = id;
+    var u = KR.unit(G.st, id);
+    G.mode = KR.canMove(G.st, u) && KR.moveTargets(G.st, u).length ? "move" : null;
+    if (!keepCard) G.say = "";
+    G.sayCls = "";
+    K.Sound.play("select");
+    render();
+  }
+  function selectCard(i) {
+    if (!isHumanTurn()) return;
+    var was = G.card === i;
+    clearSel();
+    if (!was) { G.card = i; K.Sound.play("select"); } else K.Sound.play("tap");
+    G.say = "";
+    render();
+  }
+  function setMode(m) {
+    if (!isHumanTurn()) return;
+    G.mode = G.mode === m ? (m === "move" ? "move" : "move") : m;
+    var u = KR.unit(G.st, G.sel);
+    if (G.mode === "move" && u && !KR.canMove(G.st, u)) G.mode = null;
+    K.Sound.play("tap");
+    render();
+  }
+
+  function onTile(t) {
+    var st = G.st;
+    if (!st) return;
+    var u = KR.at(st, t);
+    if (!isHumanTurn()) {
+      if (u && u.side !== mySide() && !G.review) { G.inspect = G.inspect === u.id ? -1 : u.id; render(); }
+      return;
+    }
+    var act = G.targets && G.targets.map[t];
+    if (act) {
+      if (act.hook != null) { G.hookUnit = act.hook; K.Sound.play("tap"); render(); return; }
+      if (act.area != null) { G.areaPick = act.area; K.Sound.play("tap"); render(); return; }
+      doHuman(act);
+      return;
+    }
+    if (u && u.side === st.side) { if (G.sel === u.id) { clearSel(); render(); } else selectUnit(u.id); return; }
+    if (u) { clearSel(); G.inspect = u.id; K.Sound.play("tap"); render(); return; }
+    if (G.sel >= 0 || G.card >= 0 || G.inspect >= 0) { clearSel(); render(); }
+  }
+
+  async function doHuman(a) {
+    if (!isHumanTurn()) return;
+    if (!KR.isLegal(G.st, a)) { K.Sound.play("error"); K.toast("That move isn't allowed right now."); return; }
+    G.busy = true;
+    G.undo.push({ st: KR.cloneState(G.st), say: G.say });
+    if (G.undo.length > 40) G.undo.shift();
+    G.trails = [];
+    G.st.revealed = false; G.st.drew = false;
+    var keepSel = a.t === "move" || a.t === "ab" || a.t === "pass" || a.t === "throw" ? a.u : -1;
+    clearSel();
+    await perform(a, G.token);
+    if (G.st.revealed || G.st.drew) G.undo = [];
+    G.busy = false;
+    if (keepSel >= 0) {
+      var u = KR.unit(G.st, keepSel);
+      if (u && u.side === G.st.side && canDoAnything(G.st, u)) { G.sel = keepSel; G.mode = KR.canMove(G.st, u) && KR.moveTargets(G.st, u).length ? "move" : null; }
+    }
+    render();
+  }
+
+  function doUndo() {
+    if (!isHumanTurn() || !G.undo.length) return;
+    var snap = G.undo.pop();
+    G.st = snap.st;
+    G.say = snap.say || "";
+    G.sayCls = "";
+    clearSel();
+    K.Sound.play("slide");
+    render();
+  }
+
+  function endTurnClicked() {
+    if (!isHumanTurn()) return;
+    var r = G.resolver;
+    G.resolver = null;
+    G.busy = true;
+    clearSel();
+    K.Sound.play("tap");
+    r();
+  }
+
+  /* ---------- Performing actions, with words and effects ---------- */
+  function describe(a, ev, before, side) {
+    var st = G.st;
+    function nm(id) { var u = KR.unit(st, id) || KR.unit(before, id); return u ? uName(u) : "a unit"; }
+    var parts = [], cls = "";
+    var hidden = G.cfg.mode !== "local" && side !== mySide();
+    ev.forEach(function (e) {
+      switch (e.e) {
+        case "deploy": parts.push(sideWord(e.side) + " deploys a " + shortName(e.type) + "."); break;
+        case "capture":
+          var took = e.keys && e.keys.length;
+          parts.push(nm(e.u) + " captures " + sideWord(e.side) + " " + shortName(e.type) + (took ? (e.keys[0] === side ? " and wins the key back!" : " and steals the key!") : "."));
+          if (took) cls = e.keys[0] === mySide() && G.cfg.mode !== "local" ? "warn" : "good";
+          break;
+        case "bounce": parts.push(nm(e.o) + "'s armor stops " + nm(e.u) + "."); break;
+        case "out": if (e.cause !== "capture") parts.push(sideWord(e.side) + " " + shortName(e.type) + " is taken out" + (e.cause === "trap" ? " by a tripwire!" : "!")); break;
+        case "armor": parts.push(nm(e.u) + "'s armor takes the hit."); break;
+        case "trap": parts.push("Tripwire!"); break;
+        case "pass":
+          if (e.how === "swipe") parts.push(nm(e.to) + " swipes the key from " + nm(e.from) + "!");
+          else if (e.how === "call") parts.push(nm(e.to) + " calls for the key.");
+          else parts.push(nm(e.from) + " passes the key to " + nm(e.to) + ".");
+          break;
+        case "throw":
+          if (e.by < 0) parts.push("The key lands on the floor.");
+          else { var c = KR.unit(st, e.by); parts.push(c && c.side !== side ? "Intercepted! " + nm(e.by) + " grabs the key." : nm(e.by) + " catches the key."); }
+          break;
+        case "pickup": parts.push(nm(e.u) + " picks up the key."); break;
+        case "ability":
+          var ab = T[(KR.unit(st, e.u) || KR.unit(before, e.u)).type].aname;
+          var tgt = KR.unit(before, before.board[e.at]);
+          if (e.ab === "brace") parts.push(nm(e.u) + " braces.");
+          else if (e.ab === "glitch") parts.push(nm(e.u) + " glitches " + (tgt ? uName(tgt) : "a unit") + ".");
+          else if (e.ab === "orders") parts.push(nm(e.u) + " orders " + (tgt ? uName(tgt) : "a unit") + " to move again.");
+          else if (e.ab === "insideman") parts.push(nm(e.u) + ": deploy next to any crew this turn.");
+          else if (e.ab === "switch" || e.ab === "vanish") parts.push(nm(e.u) + " swaps places with " + (tgt ? uName(tgt) : "a unit") + ".");
+          else if (e.ab === "shove") parts.push(nm(e.u) + " shoves " + (tgt ? uName(tgt) : "a unit") + ".");
+          else if (e.ab === "longshot") parts.push(nm(e.u) + " lines up a Long Shot.");
+          else if (e.ab !== "call" && e.ab !== "swipe") parts.push(nm(e.u) + " uses " + ab + ".");
+          break;
+        case "stun": parts.push(nm(e.u) + " is stunned."); break;
+        case "gadget":
+          if (e.g === "tripwire") parts.push(hidden ? sideWord(e.side) + " hides a tripwire somewhere." : "You hide a tripwire. Only you can see it.");
+          else if (e.g === "bribe") parts.push(sideWord(e.side) + " pays a Bribe.");
+          else parts.push(sideWord(e.side) + " uses " + GD[e.g].name + ".");
+          break;
+        case "bribe": parts.push(nm(e.u) + " switches sides!"); break;
+        case "burn": parts.push(sideWord(e.side) + " discards " + (hidden ? "a card" : (e.card.k === "crew" ? T[e.card.t].name : GD[e.card.t].name)) + "."); break;
+        case "draw": if (e.side === side && !hidden) parts.push("New hand."); break;
+      }
+    });
+    if (!parts.length && a.t === "move") parts.push(nm(a.u) + " moves.");
+    return { html: parts.join(" "), cls: cls };
+  }
+
+  function addTrails(ev, side) {
+    ev.forEach(function (e) { if (e.e === "move" && e.how !== "push") G.trails.push({ from: e.from, to: e.to, side: side }); });
+  }
+
+  function fxAt(node, ms) { G.layers.fx.appendChild(node); setTimeout(function () { node.remove(); }, ms || 600); return node; }
+  function anim(node, frames, opts) { if (K.reduceMotion || !node.animate) return; try { node.animate(frames, opts); } catch (e) {} }
+
+  function keyFlight(a, b, k, path) {
+    var g = keyGlyph(k, 0, 0, 1.6, "gkey");
+    var holder = sv("g");
+    holder.appendChild(g);
+    fxAt(holder, 520);
+    var ax = cx(a), ay = cy(a), bx = cx(b), by = cy(b), mx = (ax + bx) / 2, my = (ay + by) / 2 - 22;
+    holder.style.transform = "translate(" + bx + "px," + by + "px)";
+    anim(holder, [{ transform: "translate(" + ax + "px," + ay + "px)" }, { transform: "translate(" + mx + "px," + my + "px)" }, { transform: "translate(" + bx + "px," + by + "px)" }], { duration: 460, easing: "ease-out" });
+  }
+
+  async function effects(ev, before, side) {
+    var wait = 260;
+    ev.forEach(function (e) {
+      switch (e.e) {
+        case "move": K.Sound.play(e.how === "push" ? "slide" : "move"); break;
+        case "capture": case "out":
+          var X = cx(e.at), Y = cy(e.at);
+          var c = fxAt(sv("circle", { cx: X, cy: Y, r: 14, class: "fx-hit" }), 520);
+          anim(c, [{ opacity: 1 }, { opacity: 0 }], { duration: 520 });
+          K.Sound.play("hit"); K.haptic(20); K.shake(K.$("#stage"));
+          wait = Math.max(wait, 420);
+          break;
+        case "bounce": case "armor": K.Sound.play("error"); break;
+        case "pass": if (e.keys && e.keys.length) { keyFlight(e.a, e.b, e.keys[0]); K.Sound.play("whoosh"); wait = Math.max(wait, 480); } break;
+        case "throw": if (e.keys && e.keys.length) { keyFlight(e.from, e.at, e.keys[0]); K.Sound.play("whoosh"); wait = Math.max(wait, 480); } break;
+        case "pickup": K.Sound.play("score"); break;
+        case "ability":
+          if (e.ab === "longshot") {
+            fxAt(sv("path", { d: "M" + cx(e.from) + " " + cy(e.from) + "L" + cx(e.at) + " " + cy(e.at), class: "fx-shot" }), 360);
+            K.Sound.play("zap");
+          } else if (e.ab === "glitch" || e.ab === "brace" || e.ab === "orders" || e.ab === "insideman") K.Sound.play("zap");
+          break;
+        case "stun":
+          var st = sv("text", { x: cx(e.at), y: cy(e.at) - 26, class: "fx-text", fill: "#ffe2a0", text: "stunned" });
+          fxAt(st, 900);
+          anim(st, [{ transform: "translateY(0)", opacity: 1 }, { transform: "translateY(-10px)", opacity: 0 }], { duration: 900, fill: "forwards" });
+          break;
+        case "deploy":
+          K.Sound.play("select");
+          var n = G.nodes[e.u];
+          if (n) anim(n, [{ opacity: 0 }, { opacity: 1 }], { duration: 300 });
+          break;
+        case "gadget":
+          K.Sound.play(e.g === "emp" ? "zap" : e.g === "smoke" ? "splash" : e.g === "alarm" ? "contact" : "whoosh");
+          if (e.g === "emp" || e.g === "alarm") {
+            var at0 = e.g === "alarm" ? KR.SAFE[e.side] : e.at;
+            var ring = fxAt(sv("circle", { cx: cx(at0), cy: cy(at0), r: 20, class: "fx-ring" + (e.g === "alarm" ? " alarm" : "") }), 700);
+            anim(ring, [{ transform: "scale(.4)", opacity: 1 }, { transform: "scale(2.4)", opacity: 0 }], { duration: 700, easing: "ease-out" });
+            ring.style.transformOrigin = cx(at0) + "px " + cy(at0) + "px";
+          }
+          break;
+        case "trap": K.Sound.play("liar"); break;
+        case "bribe": K.Sound.play("score"); break;
+      }
+    });
+    await K.sleep(wait);
+  }
+
+  async function perform(a, token) {
+    var before = KR.cloneState(G.st), side = G.st.side;
+    var ev = KR.apply(G.st, a, []);
+    var d = describe(a, ev, before, side);
+    G.say = d.html; G.sayCls = d.cls;
+    addTrails(ev, side);
+    render();
+    await effects(ev, before, side);
+  }
+
+  /* ---------- Turn flow ---------- */
+  function humanTurn() {
+    return new Promise(function (resolve) {
+      G.resolver = resolve;
+      G.busy = false;
+      G.undo = [];
+      clearSel();
+      render();
+    });
+  }
+
+  async function botTurn(token) {
+    var st = G.st;
+    G.busy = true;
+    G.resolver = null;
+    G.say = NAME[st.side] + " is planning…"; G.sayCls = "";
+    render();
+    await K.sleep(380);
+    await waitUnpaused(token);
+    await K.frame();
+    for (var tries = 0; tries < 4 && G.st.winner == null; tries++) {
+      if (token !== G.token) return;
+      var plan = KR.bots.plan(G.st, G.level, G.rand);
+      var replan = false;
+      for (var i = 0; i < plan.length; i++) {
+        if (token !== G.token) return;
+        if (G.st.winner != null) break;
+        await waitUnpaused(token);
+        if (token !== G.token) return;
+        if (!KR.isLegal(G.st, plan[i])) { replan = true; break; }
+        G.st.revealed = false; G.st.drew = false;
+        await perform(plan[i], token);
+        if (token !== G.token) return;
+        await K.sleep(G.cfg.speed === "fast" ? 160 : 460);
+        if (G.st.revealed || G.st.drew) { replan = true; break; }
+      }
+      if (!replan) break;
+    }
+  }
+
+  async function passCover(side) {
+    G.viewer = side;
+    G.busy = true;
+    buildBoard();
+    var cards = G.st.hands[side].length;
+    await K.cover({ className: "s" + side, kicker: "Round " + KR.round(G.st), title: NAME[side] + "'s turn", text: "Hand the phone to " + NAME[side] + ". " + NAME[1 - side] + ", no peeking at the " + cards + " cards in " + NAME[side] + "'s hand.", cta: "I'm " + NAME[side] });
+  }
+
+  function threatsAtStart() {
+    var st = G.st, s = st.side, o = 1 - s;
+    var their = st.keys[o].h >= 0 ? KR.unit(st, st.keys[o].h) : null;
+    var mine = st.keys[s].h >= 0 ? KR.unit(st, st.keys[s].h) : null;
+    if (their && their.side === o && KR.cheb(their.pos, KR.SAFE[s]) <= KR.CFG.crackRange) return "STOP THEM";
+    if (mine && mine.side === o && mine.pos === KR.SAFE[o]) return "LAST CHANCE";
+    return null;
+  }
+
+  async function runGame(token) {
+    var local = G.cfg.mode === "local";
+    while (G.st.winner == null) {
+      if (token !== G.token) return;
+      var side = G.st.side;
+      G.say = ""; G.sayCls = "";
+      if (G.human[side]) {
+        if (local) { await passCover(side); if (token !== G.token) return; }
+        G.busy = false;
+        var alarm = threatsAtStart();
+        render();
+        if (alarm) { K.Sound.play("ping"); await K.banner(alarm, { tone: "bad", sub: hint().t, ms: 1500 }); }
+        else if (!local) { await K.banner("YOUR TURN", { tone: side ? "red" : "blue", ms: 650 }); }
+        if (token !== G.token) return;
+        await humanTurn();
+      } else {
+        await botTurn(token);
+      }
+      if (token !== G.token) return;
+      if (G.st.winner != null) break;
+      var ev = KR.endTurn(G.st, []);
+      if (local && G.st.winner == null) G.trails = G.trails.filter(function (t) { return t.side !== G.st.side; });
+      if (!G.human[G.st.side] && !local) G.trails = [];
+      if (ev.some(function (e) { return e.e === "crack" || e.e === "stash"; })) break;
+    }
+    if (token !== G.token) return;
+    await endGame(token);
+  }
+
+  async function endGame(token) {
+    var st = G.st;
+    G.busy = true;
+    G.resolver = null;
+    clearSel();
+    if (G.cfg.mode === "local") { G.viewer = st.winner === 1 ? 1 : 0; buildBoard(); }
+    G.say = st.reason;
+    render();
+    var word = st.how === "crack" ? "SAFE CRACKED" : st.how === "stash" ? "KEY STOLEN" : "TIME'S UP";
+    await K.banner(word, { tone: st.winner === "draw" ? "accent" : st.winner ? "red" : "blue", sub: st.reason, ms: 1800 });
+    if (token !== G.token) return;
+    var youWon = G.cfg.mode === "bot" ? st.winner === mySide() : null;
+    var s0 = st.stats[0], s1 = st.stats[1];
+    var choice = await K.gameOver({
+      title: G.cfg.mode === "bot" ? (st.winner === "draw" ? "A draw" : youWon ? "You pulled it off" : "Busted") : (st.winner === "draw" ? "A draw" : NAME[st.winner] + " wins"),
+      tone: youWon === false ? "bad" : "good",
+      text: st.reason,
+      stats: [["Rounds", KR.round(st)], ["Captures (Blue – Red)", s0.caps + " – " + s1.caps], ["Keys stolen", s0.steals + " – " + s1.steals], ["Crew deployed", s0.deploys + " – " + s1.deploys]],
+      reviewLabel: "Look at the board"
+    });
+    if (token !== G.token) return;
+    if (choice === "rematch") restart();
+    else if (choice === "review") { G.review = true; render(); }
+  }
+
+  /* ---------- Crew builder ---------- */
+  function presetDeck(id) { var p = KR.PRESETS.filter(function (x) { return x.id === id; })[0] || KR.PRESETS[0]; return { leader: p.leader, crew: p.crew.slice(), gadgets: p.gadgets.slice() }; }
+
+  function chooseDeck(side, opts) {
+    return new Promise(function (resolve) {
+      var saved = K.store.get("deck" + side, null) || K.store.get("deck0", null);
+      var d = KR.validDeck(saved) ? { leader: saved.leader, crew: saved.crew.slice(), gadgets: saved.gadgets.slice() } : presetDeck(side ? "fortress" : "runners");
+      var focus = { k: "leader", t: d.leader };
+      var host = K.$("#screen-deck");
+      function cardBtn(kind, t, on) {
+        var cost = kind === "crew" ? T[t].cost : kind === "gadget" ? GD[t].cost : null;
+        var name = kind === "gadget" ? GD[t].name : T[t].name;
+        return h("button", { class: "card" + (kind === "gadget" ? " gadget" : ""), type: "button", "aria-pressed": on ? "true" : "false", "aria-label": name,
+          onclick: function () { toggle(kind, t); } },
+          h("span", { class: "tick" }), cost != null ? h("span", { class: "cost" }, String(cost)) : null,
+          h("span", { html: iconSvg(t, kind === "gadget" ? "#f2b840" : "#eef2f7") }), h("span", { class: "nm" }, name));
+      }
+      function toggle(kind, t) {
+        K.Sound.play("tap");
+        focus = { k: kind, t: t };
+        if (kind === "leader") d.leader = t;
+        else {
+          var list = kind === "crew" ? d.crew : d.gadgets, max = kind === "crew" ? 6 : 2, at = list.indexOf(t);
+          if (at >= 0) list.splice(at, 1);
+          else if (list.length < max) list.push(t);
+          else { list.shift(); list.push(t); }
+        }
+        draw();
+      }
+      function done() {
+        if (!KR.validDeck(d)) { K.Sound.play("error"); return; }
+        K.Sound.play("select");
+        K.store.set("deck" + side, d);
+        resolve(d);
+      }
+      function draw() {
+        var scroll = host.scrollTop;
+        host.innerHTML = "";
+        var inner = h("div", { class: "deck-inner" });
+        inner.appendChild(h("div", { class: "deck-head" }, h("h2", { class: "s" + side }, opts.title), h("p", null, opts.sub)));
+        var pre = h("div", { class: "presets" });
+        KR.PRESETS.forEach(function (p) {
+          pre.appendChild(h("button", { class: "btn btn-sm", type: "button", title: p.note, onclick: function () { d = presetDeck(p.id); focus = { k: "leader", t: d.leader }; K.Sound.play("tap"); draw(); } }, p.name));
+        });
+        pre.appendChild(h("button", { class: "btn btn-sm", type: "button", onclick: function () { d = KR.randomDeck(Math.random); focus = { k: "leader", t: d.leader }; K.Sound.play("tap"); draw(); } }, "Random"));
+        inner.appendChild(pre);
+        function section(label, count, max, grid) {
+          inner.appendChild(h("div", null, h("div", { class: "sec-h" }, h("span", null, label), max ? h("b", null, count + " / " + max) : null), grid));
+        }
+        var lg = h("div", { class: "pick lead" });
+        KR.LEADERS.forEach(function (t) { lg.appendChild(cardBtn("leader", t, d.leader === t)); });
+        section("Leader", null, null, lg);
+        var cg = h("div", { class: "pick" });
+        KR.CREW.forEach(function (t) { cg.appendChild(cardBtn("crew", t, d.crew.indexOf(t) >= 0)); });
+        section("Crew", d.crew.length, 6, cg);
+        var gg = h("div", { class: "pick gad" });
+        KR.GADGET_LIST.forEach(function (t) { gg.appendChild(cardBtn("gadget", t, d.gadgets.indexOf(t) >= 0)); });
+        section("Gadgets", d.gadgets.length, 2, gg);
+        var info;
+        if (focus.k === "gadget") info = cardInfo({ k: "gadget", t: focus.t });
+        else if (focus.k === "crew") info = cardInfo({ k: "crew", t: focus.t });
+        else {
+          var L = T[focus.t];
+          info = h("div", { class: "info" }, h("span", { class: "badge s" + side, html: iconSvg(focus.t, "#fff") }),
+            h("div", { class: "txt" }, h("div", { class: "nm" }, h("b", null, L.name), h("span", { class: "tag" }, "leader · starts with your key")),
+              h("p", { html: "<b>" + L.pname + ":</b> " + L.ptext }), h("p", { html: "<b>" + L.aname + " (" + L.ac + "):</b> " + L.atext })));
+        }
+        var ok = KR.validDeck(d);
+        var detail = h("div", { class: "detail" }, info, h("div", { class: "row" },
+          h("button", { class: "btn", type: "button", onclick: function () { K.Sound.play("tap"); K.quit(); } }, "Back"),
+          h("button", { class: "btn btn-primary", type: "button", id: "btn-ready", disabled: ok ? null : true, onclick: done }, ok ? opts.cta : "Pick " + (6 - d.crew.length > 0 ? 6 - d.crew.length + " more crew" : 2 - d.gadgets.length + " more gadget" + (2 - d.gadgets.length === 1 ? "" : "s")))));
+        inner.appendChild(detail);
+        host.appendChild(inner);
+        host.scrollTop = scroll;
+      }
+      K.showScreen("deck");
+      host.scrollTop = 0;
+      draw();
+    });
+  }
+
+  /* ---------- Lifecycle ---------- */
+  async function start(cfg) {
+    G.cfg = cfg;
+    G.level = cfg.difficulty || "normal";
+    var token = ++G.token;
+    if (cfg.mode === "local") {
+      G.human = [true, true];
+      var d0 = await chooseDeck(0, { title: "Blue crew", sub: "Blue picks a leader, 6 crew and 2 gadgets. Red, look away.", cta: "Blue is ready" });
+      if (token !== G.token) return;
+      await K.cover({ className: "s1", kicker: "Crew select", title: "Red's pick", text: "Hand the phone to Red.", cta: "I'm Red" });
+      if (token !== G.token) return;
+      var d1 = await chooseDeck(1, { title: "Red crew", sub: "Red picks a leader, 6 crew and 2 gadgets.", cta: "Red is ready" });
+      if (token !== G.token) return;
+      G.decks = [d0, d1];
+    } else {
+      var me = cfg.side === "red" ? 1 : 0;
+      G.human = [me === 0, me === 1];
+      var dh = await chooseDeck(me, { title: "Your crew", sub: "Pick a leader, 6 crew and 2 gadgets, or start from a ready-made crew.", cta: "Start the heist" });
+      if (token !== G.token) return;
+      var p = KR.PRESETS[Math.floor(Math.random() * KR.PRESETS.length)];
+      var db = { leader: p.leader, crew: p.crew.slice(), gadgets: p.gadgets.slice() };
+      G.decks = me === 0 ? [dh, db] : [db, dh];
+    }
+    newMatch();
+  }
+
+  function newMatch() {
+    G.token++;
+    G.st = KR.newGame({ decks: G.decks, seed: (Date.now() ^ Math.floor(Math.random() * 1e9)) >>> 0 });
+    G.rand = KR.rng((Date.now() * 7 + Math.floor(Math.random() * 1e6)) >>> 0);
+    G.viewer = G.cfg.mode === "local" ? 0 : mySide();
+    G.review = false; G.trails = []; G.say = ""; G.sayCls = ""; G.undo = []; G.resolver = null; G.busy = true;
+    clearSel();
+    K.showScreen("game");
+    buildBoard();
+    render();
+    runGame(G.token);
+  }
+  function restart() { K.$all(".cover,.modal-wrap,.banner").forEach(function (n) { n.remove(); }); newMatch(); }
+  function quit() { G.token++; G.resolver = null; G.busy = true; }
+
+  window.__krDebug = { G: G, KR: KR, doHuman: doHuman, endTurn: endTurnClicked };
+
+  K.init({
+    ns: "keyrunners",
+    title: "Keyrunners",
+    tagline: "Run your key into their safe. Lose it, and they lock it away.",
+    art: TITLE_ART,
+    rules: RULES.replace("[[glossary]]", glossary()),
+    options: [
+      { id: "mode", label: "Opponent", default: "bot", choices: [{ v: "bot", t: "Bot" }, { v: "local", t: "Friend, same phone" }],
+        note: function (c) { return c.mode === "local" ? "Cover screens hide each player's hand and traps between turns." : null; } },
+      { id: "difficulty", label: "Bot level", default: "normal", choices: [{ v: "easy", t: "Easy" }, { v: "normal", t: "Normal" }, { v: "hard", t: "Hard" }], showIf: function (c) { return c.mode === "bot"; },
+        note: function (c) { return c.difficulty === "hard" ? "Plans its turn and checks your best reply before it commits." : c.difficulty === "easy" ? "Often forgets to guard its key." : "Guards its key and punishes a lonely carrier."; } },
+      { id: "side", label: "You play", default: "blue", choices: [{ v: "blue", t: "Blue, first" }, { v: "red", t: "Red, second" }], showIf: function (c) { return c.mode === "bot"; } },
+      { id: "speed", label: "Bot speed", default: "normal", choices: [{ v: "normal", t: "Watch each move" }, { v: "fast", t: "Fast" }], showIf: function (c) { return c.mode === "bot"; } }
+    ],
+    onStart: start,
+    onRestart: restart,
+    onQuit: quit,
+    menuNote: function () { return G.st ? "Round " + KR.round(G.st) + ". Blue " + G.st.mana[0] + " mana, Red " + G.st.mana[1] + " mana." : "Pick your crew to start."; }
+  });
+  // Opening the menu pauses the bot between moves.
+  var menuBtn = K.$("#btn-menu");
+  if (menuBtn) menuBtn.onclick = function () {
+    K.Sound.play("tap");
+    G.paused = true;
+    K.openMenu().then(function () { G.paused = false; }, function () { G.paused = false; });
+  };
+})();
+
+</script>
+</body>
+</html>

@@ -1,8 +1,10 @@
 # Strategy game demos
 
 Playable phone demos of the four highest-scoring pitches from
-[`design/brainstorm.html`](../design/brainstorm.html). Each demo is one
-self-contained HTML file: open it in a phone browser, with nothing to install.
+[`design/brainstorm.html`](../design/brainstorm.html), plus **Keyrunners**, the
+designer's own heist game ([`design/keyrunners.md`](../design/keyrunners.md)).
+Each demo is one self-contained HTML file: open it in a phone browser, with
+nothing to install.
 
 Every demo has:
 
@@ -47,6 +49,7 @@ The four built here are ranks 1 to 4.
 | Liar's Gambit | [claude.ai/artifact/UMTHLFrnUeM9LP7QiaPFMy](https://claude.ai/artifact/UMTHLFrnUeM9LP7QiaPFMy) | `demos/liars/index.html` |
 | Echoes | [claude.ai/artifact/83ejGkseT1t9j6Zn4shpLr](https://claude.ai/artifact/83ejGkseT1t9j6Zn4shpLr) | `demos/echoes/index.html` |
 | Second Guess | [claude.ai/artifact/39PNs9nKTevbZZyzGUGCBP](https://claude.ai/artifact/39PNs9nKTevbZZyzGUGCBP) | `demos/second/index.html` |
+| Keyrunners | [claude.ai/artifact/2P5yPWUcmA829PvyKFi84U](https://claude.ai/artifact/2P5yPWUcmA829PvyKFi84U) | `demos/keyrunners/index.html` |
 
 The claude.ai links are private until shared from each page's Share menu.
 Each `index.html` also works on its own, opened from any web host or straight
@@ -82,6 +85,16 @@ against likely enemy replies, and Hard also re-scores them against the replies
 that would counter its best ideas. Hard beats Normal 19-11, Normal beats Easy
 30-0, and the two colours split 30-29.
 
+**Keyrunners.** The designer's own idea, filled in from a round of questions.
+Each crew has a safe and a key, and the key opens the other crew's safe. Pick a
+leader, 6 crew and 2 gadgets, then deploy, move, pass and throw on a 7x10 board
+with 5 mana a turn. Win by getting your key next to their safe, or by stealing
+their key and walking it onto your own safe. Either win lands at the start of
+your next turn, so the other side always gets one last chance. The bot searches
+whole turns, watches for two-step threats on its key, and on Hard plays out your
+best reply before it commits. The full rules, and what bot testing changed, are
+in [`design/keyrunners.md`](../design/keyrunners.md).
+
 ## Tests
 
 ```
@@ -89,6 +102,8 @@ node demos/src/test/leviathan.sim.js 200           # bot-vs-bot balance + rule i
 node demos/src/test/liars.sim.js 60 hard normal
 node demos/src/test/echoes.sim.js 10
 node demos/src/test/second.sim.js 30
+node demos/src/test/keyrunners.sim.js 10 hard normal   # add CFG='{"throwRange":4}' to try rule changes
+node demos/src/test/ui-smoke-keyrunners.js OUTDIR
 node demos/src/test/ui-smoke-leviathan.js OUTDIR   # drives the built page in headless Chromium
 python3 demos/src/build.py                         # rebuild every demos/<game>/index.html
 ```
