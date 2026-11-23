@@ -39,6 +39,60 @@ Ties are broken by strategic depth, since strategy was the first thing asked for
 
 The four built here are ranks 1 to 4.
 
+## Play
+
+| Game | Link | Single file |
+|---|---|---|
+| Leviathan Hunt | [claude.ai/artifact/UNK9xcCkVLyh2acUw6yUqw](https://claude.ai/artifact/UNK9xcCkVLyh2acUw6yUqw) | `demos/leviathan/index.html` |
+| Liar's Gambit | [claude.ai/artifact/UMTHLFrnUeM9LP7QiaPFMy](https://claude.ai/artifact/UMTHLFrnUeM9LP7QiaPFMy) | `demos/liars/index.html` |
+| Echoes | [claude.ai/artifact/83ejGkseT1t9j6Zn4shpLr](https://claude.ai/artifact/83ejGkseT1t9j6Zn4shpLr) | `demos/echoes/index.html` |
+| Second Guess | [claude.ai/artifact/39PNs9nKTevbZZyzGUGCBP](https://claude.ai/artifact/39PNs9nKTevbZZyzGUGCBP) | `demos/second/index.html` |
+
+The claude.ai links are private until shared from each page's Share menu.
+Each `index.html` also works on its own, opened from any web host or straight
+from the file.
+
+## What each demo does
+
+**Leviathan Hunt.** A hidden sea monster against four hunter ships (Sonar,
+Harpoon, Net, Lighthouse) on a random hex sea. You can play either side against
+the bot, or play both sides on one phone with cover screens. A red haze shows
+every tile the monster could be on, worked out exactly from the clues so far.
+The Hard monster simulates how the hunters would answer each of its moves.
+After 400 bot-vs-bot games, the hunters win 50% at Normal and 45% at Hard.
+
+**Liar's Gambit.** A 6x7 board where every piece is masked, any piece can move in
+any pattern, and the pattern is its claim. Each player has 3 accusations, and a
+wrong call costs one of them plus a piece. The bot keeps an exact probability
+over every possible arrangement of your hidden pieces, estimates how often you
+really bluff, and bluffs about 1 move in 10 itself. Hard beats Normal 57-33 and
+Normal beats Easy 52-35.
+
+**Echoes.** Five rounds of 6 ticks. You get a new hero each round, and every
+earlier hero replays its moves as an echo. Echoes can't be struck, only blocked
+into a paradox. Doors slam when their plate empties. A vault worth 3 sits behind
+a door whose plate is in the contested middle row. The bot searches each round
+and values its echoes by replaying future rounds. Hard beats Normal 6-2 and
+Normal beats Easy 8-0.
+
+**Second Guess.** Both players give secret orders to a Brute, Archer, Scout and
+Mage. Moves resolve together, then attacks land on the squares they were aimed
+at. First to 10 points from the control points wins. The bot samples plans
+against likely enemy replies, and Hard also re-scores them against the replies
+that would counter its best ideas. Hard beats Normal 19-11, Normal beats Easy
+30-0, and the two colours split 30-29.
+
+## Tests
+
+```
+node demos/src/test/leviathan.sim.js 200           # bot-vs-bot balance + rule invariants
+node demos/src/test/liars.sim.js 60 hard normal
+node demos/src/test/echoes.sim.js 10
+node demos/src/test/second.sim.js 30
+node demos/src/test/ui-smoke-leviathan.js OUTDIR   # drives the built page in headless Chromium
+python3 demos/src/build.py                         # rebuild every demos/<game>/index.html
+```
+
 ## Layout
 
 - `demos/<game>/index.html` is the built, playable game.

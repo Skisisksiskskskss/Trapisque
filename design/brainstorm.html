@@ -174,6 +174,22 @@ tbody tr:last-child td{border-bottom:0}
 .steps span{color:var(--muted)}
 .foot{font-size:.85rem;color:var(--muted);max-width:70ch}
 
+/* Demos + scores */
+.demos{display:grid;gap:14px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:720px){ .demos{grid-template-columns:repeat(2,minmax(0,1fr))} }
+.demo{display:flex;flex-direction:column;gap:5px;padding:18px;border-radius:var(--radius);background:var(--surface);border:2px solid var(--ink);text-decoration:none;color:var(--ink);min-width:0;transition:transform .12s}
+.demo:hover{transform:translateY(-2px)}
+.demo-rank{font-size:.74rem;font-weight:750;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.demo-name{font-family:var(--font-display);font-size:1.5rem;font-weight:780;line-height:1.1}
+.demo-line{font-size:.98rem}
+.demo-meta{font-size:.85rem;color:var(--muted)}
+.demo-go{align-self:flex-start;margin-top:6px;padding:9px 18px;border-radius:999px;background:var(--gold);color:var(--on-gold);font-weight:800}
+.score-table td,.score-table th{text-align:center}
+.score-table td:nth-child(2),.score-table th:nth-child(2){text-align:left}
+.score-table tr.top td{font-weight:700}
+.score-table .tot{font-family:var(--font-display);font-weight:800;font-size:1.05rem}
+.built{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:999px;background:var(--gold-soft);color:var(--gold-ink);font-size:.72rem;font-weight:800;vertical-align:1px}
+
 /* Pick bar */
 .pickbar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--ink);color:var(--bg);padding-top:12px;padding-bottom:calc(12px + env(safe-area-inset-bottom, 0px));padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;box-shadow:0 -6px 24px rgba(0,0,0,.18)}
 .pickbar-text{flex:1 1 260px;min-width:0;display:flex;flex-direction:column;gap:1px}
@@ -228,9 +244,9 @@ tbody tr:last-child td{border-bottom:0}
 <div class="wrap">
 
 <header class="hero">
-  <p class="eyebrow">Step 1 of 3 · Brainstorm</p>
+  <p class="eyebrow">Step 2 of 3 · Demos ready</p>
   <h1>Twelve games worth a playtest</h1>
-  <p class="lede">I looked at why Chess, The Battle of Polytopia, Catan and Clash Royale keep people coming back, turned that into ten design rules, and pitched twelve original games that use those rules in different ways. Tap Pick on the ones you like, then copy your picks into the chat.</p>
+  <p class="lede">I looked at why Chess, The Battle of Polytopia, Catan and Clash Royale keep people coming back, turned that into ten design rules, and pitched twelve original games. Then I scored all twelve and built the top four as phone games you can play right now.</p>
   <nav class="index" aria-label="Jump to a pitch">
     <a href="#p1" data-id="1"><span class="n">1</span><span class="nm">Liar's Gambit</span></a>
     <a href="#p2" data-id="2"><span class="n">2</span><span class="nm">Second Guess</span></a>
@@ -247,6 +263,71 @@ tbody tr:last-child td{border-bottom:0}
   </nav>
   <p class="hint">Tap a square to jump to that pitch. A gold dot marks the ones you've picked.</p>
 </header>
+
+<section class="sec" aria-labelledby="play">
+  <div class="sec-head">
+    <p class="eyebrow">Play now</p>
+    <h2 id="play">The four playable demos</h2>
+    <p>Each one opens in your phone's browser. Every game has a bot with Easy, Normal and Hard, plus a mode for two people on one phone.</p>
+  </div>
+  <div class="demos">
+    <a class="demo" href="https://claude.ai/artifact/UNK9xcCkVLyh2acUw6yUqw" target="_blank" rel="noopener">
+      <span class="demo-rank">#1 · 84 points</span>
+      <span class="demo-name">Leviathan Hunt</span>
+      <span class="demo-line">Hunt a hidden sea monster with four ships, or be the monster.</span>
+      <span class="demo-meta">Play either side vs the bot · same phone with cover screens</span>
+      <span class="demo-go">Play</span>
+    </a>
+    <a class="demo" href="https://claude.ai/artifact/UMTHLFrnUeM9LP7QiaPFMy" target="_blank" rel="noopener">
+      <span class="demo-rank">#2 · 83 points</span>
+      <span class="demo-name">Liar's Gambit</span>
+      <span class="demo-line">Masked pieces, every move is a claim, three accusations each.</span>
+      <span class="demo-meta">Bot that reads your claims · same phone with cover screens</span>
+      <span class="demo-go">Play</span>
+    </a>
+    <a class="demo" href="https://claude.ai/artifact/83ejGkseT1t9j6Zn4shpLr" target="_blank" rel="noopener">
+      <span class="demo-rank">#3 · 79 points</span>
+      <span class="demo-name">Echoes</span>
+      <span class="demo-line">Five rounds, and every earlier hero replays its moves as an echo.</span>
+      <span class="demo-meta">Bot that plans across rounds · same phone, nothing hidden</span>
+      <span class="demo-go">Play</span>
+    </a>
+    <a class="demo" href="https://claude.ai/artifact/39PNs9nKTevbZZyzGUGCBP" target="_blank" rel="noopener">
+      <span class="demo-rank">#4 · 77 points</span>
+      <span class="demo-name">Second Guess</span>
+      <span class="demo-line">Plan in secret, then every order resolves at the same time.</span>
+      <span class="demo-meta">Bot that predicts your moves · same phone with cover screens</span>
+      <span class="demo-go">Play</span>
+    </a>
+  </div>
+</section>
+
+<section class="sec" aria-labelledby="scores">
+  <div class="sec-head">
+    <p class="eyebrow">The ranking</p>
+    <h2 id="scores">How all twelve scored</h2>
+    <p>Four factors, each out of 25. <b>Engagement</b> is the “one more game” pull and memorable moments. <b>Creativity</b> is how fresh the hook is. <b>Depth</b> is planning and skill ceiling. <b>Roblox &amp; friends</b> is how well it plays with friends and fits Roblox. Ties go to the deeper game.</p>
+  </div>
+  <div class="table-wrap">
+    <table class="score-table">
+      <thead><tr><th>Rank</th><th>Pitch</th><th>Total</th><th>Engagement</th><th>Creativity</th><th>Depth</th><th>Roblox &amp; friends</th></tr></thead>
+      <tbody>
+        <tr class="top"><td class="num">1</td><td><a href="#p6">Leviathan Hunt</a> <span class="built">Demo</span></td><td class="tot">84</td><td>22</td><td>17</td><td>21</td><td>24</td></tr>
+        <tr class="top"><td class="num">2</td><td><a href="#p1">Liar's Gambit</a> <span class="built">Demo</span></td><td class="tot">83</td><td>21</td><td>22</td><td>22</td><td>18</td></tr>
+        <tr class="top"><td class="num">3</td><td><a href="#p5">Echoes</a> <span class="built">Demo</span></td><td class="tot">79</td><td>18</td><td>24</td><td>24</td><td>13</td></tr>
+        <tr class="top"><td class="num">4</td><td><a href="#p2">Second Guess</a> <span class="built">Demo</span></td><td class="tot">77</td><td>20</td><td>16</td><td>22</td><td>19</td></tr>
+        <tr><td class="num">5</td><td><a href="#p7">Last Lantern</a></td><td class="tot">77</td><td>20</td><td>14</td><td>21</td><td>22</td></tr>
+        <tr><td class="num">6</td><td><a href="#p3">Fusion Duel</a></td><td class="tot">76</td><td>21</td><td>16</td><td>19</td><td>20</td></tr>
+        <tr><td class="num">7</td><td><a href="#p9">Last Realm</a></td><td class="tot">75</td><td>19</td><td>17</td><td>23</td><td>16</td></tr>
+        <tr><td class="num">8</td><td><a href="#p4">Critical Mass</a></td><td class="tot">75</td><td>22</td><td>15</td><td>18</td><td>20</td></tr>
+        <tr><td class="num">9</td><td><a href="#p8">Checkmate FC</a></td><td class="tot">71</td><td>20</td><td>13</td><td>19</td><td>19</td></tr>
+        <tr><td class="num">10</td><td><a href="#p10">Shake On It</a></td><td class="tot">68</td><td>17</td><td>16</td><td>18</td><td>17</td></tr>
+        <tr><td class="num">11</td><td><a href="#p11">Lasso</a></td><td class="tot">68</td><td>20</td><td>13</td><td>16</td><td>19</td></tr>
+        <tr><td class="num">12</td><td><a href="#p12">Trapisque Reloaded</a></td><td class="tot">67</td><td>18</td><td>15</td><td>17</td><td>17</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
 
 <section class="sec" aria-labelledby="why">
   <div class="sec-head">
@@ -738,9 +819,9 @@ tbody tr:last-child td{border-bottom:0}
     <h2 id="next">What happens next</h2>
   </div>
   <ol class="steps">
-    <li><b>You pick 2–3</b><span>Reply in the chat with their numbers, or tap Pick on the cards and use Copy picks.</span></li>
-    <li><b>I build a phone demo of each</b><span>Each one is a single link that opens in your phone's browser, with nothing to install. You can play against a bot, plus pass-and-play where it makes sense.</span></li>
-    <li><b>You playtest and choose one</b><span>Then I build that game for Roblox.</span></li>
+    <li><b>Brainstorm and ranking</b><span>Done. Twelve pitches, each scored out of 100.</span></li>
+    <li><b>Phone demos of the top four</b><span>Done. Play them with the links at the top of this page, against the bot or with a friend on one phone.</span></li>
+    <li><b>You pick one for Roblox</b><span>Tell me which one felt best, and what you'd change, and I'll build it for Roblox.</span></li>
   </ol>
   <p class="foot">All twelve are original concepts. They borrow mechanics from the games above, and none of them reuse those games' names, characters or art.</p>
 </section>
