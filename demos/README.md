@@ -57,12 +57,15 @@ from the file.
 
 ## What each demo does
 
-**Leviathan Hunt.** A hidden sea monster against four hunter ships (Sonar,
-Harpoon, Net, Lighthouse) on a random hex sea. You can play either side against
-the bot, or play both sides on one phone with cover screens. A red haze shows
-every tile the monster could be on, worked out exactly from the clues so far.
-The Hard monster simulates how the hunters would answer each of its moves.
-After 400 bot-vs-bot games, the hunters win 50% at Normal and 45% at Hard.
+**Leviathan Hunt.** Gnasher the Leviathan hides in a random hex sea, and four
+hunters have until dawn to harpoon it three times. The crew are Pip (sonar),
+Captain Hask (harpoon whaler), Big Marta (nets) and Old Lumen (lighthouse beam),
+drawn as blocky Roblox-style characters who talk as they work. There are no
+mode buttons: tap a boat, then tap a dot to sail or a target to use its tool.
+Undo takes back a sail that found nothing. You can play either side against the
+bot, or both sides on one phone with cover screens. A red haze shows every tile
+Gnasher could be on, worked out exactly from the clues so far. In bot-vs-bot
+games the hunters win about 50% at Normal and at Hard.
 
 **Liar's Gambit.** A 6x7 board where every piece is masked, any piece can move in
 any pattern, and the pattern is its claim. Each player has 3 accusations, and a
@@ -85,10 +88,13 @@ against likely enemy replies, and Hard also re-scores them against the replies
 that would counter its best ideas. Hard beats Normal 19-11, Normal beats Easy
 30-0, and the two colours split 30-29.
 
-**Keyrunners.** The designer's own idea, filled in from a round of questions.
+**Keyrunners.** The designer's own idea, filled in from two rounds of questions.
 Each crew has a safe and a key, and the key opens the other crew's safe. Pick a
-leader, 6 crew and 2 gadgets, then deploy, move, pass and throw on a 7x10 board
-with 5 mana a turn. Win by getting your key next to their safe, or by stealing
+leader, 6 crew and 2 gadgets, then deploy, move and throw with 5 mana a turn.
+The board is 9 wide at the ends and 7 in the middle, with pits you can throw
+keys over. Wobblers pass to a neighbor, and a slippery Greaser flings the key to
+the nearest teammate when it's attacked. Everyone is drawn as a blocky,
+Roblox-style figure. Win by getting your key next to their safe, or by stealing
 their key and walking it onto your own safe. Either win lands at the start of
 your next turn, so the other side always gets one last chance. The bot searches
 whole turns, watches for two-step threats on its key, and on Hard plays out your

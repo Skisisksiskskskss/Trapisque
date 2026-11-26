@@ -148,7 +148,8 @@ body{background:var(--bg);color:var(--ink)}
 /* ---------- Top bar chips ---------- */
 .foe{display:flex;align-items:center;gap:7px;padding:5px 10px 5px 6px;border-radius:999px;background:var(--surface);border:1px solid var(--line);flex:none;font-variant-numeric:tabular-nums}
 .foe .dot{width:26px;height:26px;border-radius:50%;display:grid;place-items:center}
-.foe .dot svg{width:16px;height:16px}
+.foe .dot svg{width:22px;height:22px}
+.foe .dot{overflow:hidden}
 .foe .dot.s0{background:var(--blue)} .foe .dot.s1{background:var(--red)}
 .foe b{font-size:.95rem}
 .foe small{color:var(--muted);font-size:.74rem;font-weight:700}
@@ -156,6 +157,10 @@ body{background:var(--bg);color:var(--ink)}
 /* ---------- Board ---------- */
 #board{width:100%;height:100%;display:block;touch-action:manipulation}
 .tl-a{fill:var(--tile-a)} .tl-b{fill:var(--tile-b)}
+.tl-edge{fill:#070a0f}
+.pit{stroke:#2d3746;stroke-width:1.5}
+.pit-lip{fill:none;stroke:rgba(160,180,210,.18);stroke-width:1.6;stroke-linecap:round}
+.fling-path{fill:none;stroke:#7fe7ff;stroke-width:2;stroke-dasharray:3 4;stroke-linecap:round;opacity:.85}
 .home0{fill:rgba(61,139,255,.09)} .home1{fill:rgba(255,90,76,.09)}
 .gridl{stroke:var(--grid);stroke-width:1}
 .zone{fill:none;stroke-width:1.6;stroke-dasharray:4 4;opacity:.55}
@@ -186,17 +191,22 @@ body{background:var(--bg);color:var(--ink)}
 
 /* units */
 .tok{transition:transform .34s cubic-bezier(.3,.7,.3,1), opacity .3s}
-.tok-body.s0{fill:var(--blue)} .tok-body.s1{fill:var(--red)}
-.tok-lead{fill:none;stroke:rgba(255,255,255,.85);stroke-width:1.6;stroke-dasharray:3 2.2}
-.tok-carry{fill:rgba(242,184,64,.16);stroke:var(--gold);stroke-width:3;opacity:0}
+.tok-base{stroke:#0b1622;stroke-width:1.5}
+.tok-base.s0{fill:var(--blue)} .tok-base.s1{fill:var(--red)}
+.tok-base.lead{stroke:var(--gold);stroke-width:2.2}
+.tok-crown{fill:var(--gold);stroke:#0b1622;stroke-width:1.2;stroke-linejoin:round}
+.tok-carry{fill:rgba(242,184,64,.22);stroke:var(--gold);stroke-width:2.6;opacity:0}
 .tok.carrier .tok-carry{opacity:1}
-.tok-icon{fill:none;stroke:#fff;stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round}
-.tok-ring{fill:none;stroke:var(--ink);stroke-width:2.4;opacity:0}
+.tok-ring{fill:none;stroke:var(--ink);stroke-width:2.6;opacity:0}
 .tok.sel .tok-ring{opacity:1}
 .tok.ready .tok-ready{opacity:1}
-.tok-ready{fill:none;stroke:rgba(255,255,255,.55);stroke-width:1.4;stroke-dasharray:2.5 3;opacity:0}
-.tok.spent .tok-body{opacity:.72}
-.tok.fresh .tok-body{opacity:.6}
+.tok-ready{fill:none;stroke:rgba(255,255,255,.6);stroke-width:1.4;stroke-dasharray:2.5 3;opacity:0}
+.tok.spent .tok-fig{opacity:.7}
+.tok.fresh .tok-fig{opacity:.62}
+.tok.wob .tok-fig{animation:kr-wobble 2.4s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 100%}
+@keyframes kr-wobble{0%,100%{rotate:-3deg}50%{rotate:3deg}}
+.tok-slip{fill:none;stroke:#7fe7ff;stroke-width:2;stroke-dasharray:4 3;display:none}
+.tok.slick .tok-slip{display:inline}
 .tok.dying{opacity:0;transition:opacity .35s}
 .tok-key{display:none}
 .tok.k0 .tok-key.k0,.tok.k1 .tok-key.k1{display:inline}
@@ -208,7 +218,7 @@ body{background:var(--bg);color:var(--ink)}
 .tok-stun path{fill:none;stroke:var(--gold-2);stroke-width:1.8;stroke-linecap:round}
 .tok-brace{fill:none;stroke:var(--gold);stroke-width:2;stroke-dasharray:3 2}
 .tok-glitch{fill:none;stroke:var(--violet);stroke-width:2.2;stroke-dasharray:1.5 2.5}
-.tok-armor{fill:#c9d2de;stroke:#56606e;stroke-width:1}
+.tok-armor{fill:#c9d2de;stroke:#0b1622;stroke-width:1.2}
 .tok-danger circle{fill:var(--bad);stroke:var(--bg);stroke-width:1.5}
 .tok-danger text{fill:#fff;font:800 11px var(--font-body)}
 .tok-fresh{fill:var(--bg);stroke:var(--muted);stroke-width:1}
@@ -241,6 +251,8 @@ button.info{cursor:pointer}
 .info .badge{width:36px;height:36px;border-radius:50%;flex:none;display:grid;place-items:center}
 .info .badge.s0{background:var(--blue)} .info .badge.s1{background:var(--red)} .info .badge.g{background:var(--surface-2);border:1.5px solid var(--gold)}
 .info .badge svg{width:22px;height:22px}
+.info .badge{overflow:hidden}
+.info .badge svg.pt{width:36px;height:36px;margin-top:4px}
 .info .txt{flex:1;min-width:0;font-size:.78rem;line-height:1.28;color:var(--muted);padding-right:14px}
 .info .txt b{color:var(--ink);font-size:.88rem}
 .info .txt .nm{display:flex;gap:6px;align-items:baseline;flex-wrap:wrap;margin-bottom:1px}
@@ -254,6 +266,7 @@ button.info{cursor:pointer}
 .hand{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
 .card{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 3px 6px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);min-height:66px;color:var(--ink)}
 .card svg{width:22px;height:22px}
+.card svg.pt{width:34px;height:34px;margin:-4px 0 -3px}
 .card .nm{font-size:.7rem;font-weight:800;line-height:1.05;text-align:center}
 .card .cost{position:absolute;top:-6px;right:-5px;width:20px;height:20px;border-radius:50%;background:var(--gold);color:var(--accent-ink);font-size:.72rem;font-weight:800;display:grid;place-items:center;border:2px solid var(--bg)}
 .card.gadget{border-style:dashed;border-color:rgba(242,184,64,.55)}
@@ -301,6 +314,8 @@ button.info{cursor:pointer}
 .rules .gl{display:flex;gap:10px;align-items:flex-start}
 .rules .gl .badge{width:30px;height:30px;border-radius:50%;flex:none;display:grid;place-items:center;background:var(--surface-2);border:1px solid var(--line)}
 .rules .gl .badge svg{width:18px;height:18px}
+.rules .gl .badge{overflow:hidden}
+.rules .gl .badge svg.pt{width:30px;height:30px;margin-top:4px}
 .rules .gl p{margin:0;font-size:.88rem;color:var(--muted)}
 .rules .gl p b{color:var(--ink)}
 .rules .gl .cost{display:inline-grid;place-items:center;min-width:17px;height:17px;border-radius:9px;background:var(--gold);color:var(--accent-ink);font-size:.7rem;font-weight:800;margin-left:4px;padding:0 4px}
@@ -314,10 +329,11 @@ button.info{cursor:pointer}
   .info .badge svg{width:18px;height:18px}
   .card{min-height:52px;padding:5px 3px 4px}
   .card svg{width:18px;height:18px}
+  .card svg.pt{width:26px;height:26px}
   .next{display:none}
   .bottom .btn{min-height:40px}
 }
-@media (prefers-reduced-motion: reduce){ .tok{transition:none} .pulse{animation:none} }
+@media (prefers-reduced-motion: reduce){ .tok{transition:none} .pulse{animation:none} .tok.wob .tok-fig{animation:none} }
 
 </style>
 </head>
@@ -693,6 +709,215 @@ button.info{cursor:pointer}
       });
   }
 
+
+  /* ---------- Blocky characters: Roblox-style heads and figures drawn as SVG ----------
+     portrait(spec) draws a head and shoulders in a 64x64 box.
+     figure(spec) draws a whole standing figure in a 40x52 box (x -20..20, y -36..16).
+     spec: skin, shirt, pants, hair, hairStyle, hat, hatColor, hatColor2, eyes, brows, mouth,
+           beard, beardColor, extras (array), accent. Every part is optional. */
+  var OUT = "#0b1622";
+  function face(p, ox, oy, k) {
+    // ox, oy: top-left of the head box; k: head size (34 for portraits)
+    var o = "", sc = k / 34;
+    function X(v) { return (ox + v * sc).toFixed(2); }
+    function Y(v) { return (oy + v * sc).toFixed(2); }
+    function S(v) { return (v * sc).toFixed(2); }
+    var eyes = p.eyes || "dot", lx = 11, rx = 23, ey = 15;
+    if (eyes === "wide") {
+      o += '<circle cx="' + X(lx) + '" cy="' + Y(ey) + '" r="' + S(4.2) + '" fill="#fff" stroke="' + OUT + '" stroke-width="' + S(1.2) + '"/><circle cx="' + X(lx + 0.6) + '" cy="' + Y(ey + 0.4) + '" r="' + S(2.1) + '" fill="' + OUT + '"/>';
+      o += '<circle cx="' + X(rx) + '" cy="' + Y(ey) + '" r="' + S(4.2) + '" fill="#fff" stroke="' + OUT + '" stroke-width="' + S(1.2) + '"/><circle cx="' + X(rx + 0.6) + '" cy="' + Y(ey + 0.4) + '" r="' + S(2.1) + '" fill="' + OUT + '"/>';
+    } else if (eyes === "squint") {
+      o += '<path d="M' + X(lx - 3) + " " + Y(ey) + "h" + S(6) + "M" + X(rx - 3) + " " + Y(ey) + "h" + S(6) + '" stroke="' + OUT + '" stroke-width="' + S(2.2) + '" stroke-linecap="round"/>';
+    } else if (eyes === "mask") {
+      o += '<rect x="' + X(4) + '" y="' + Y(ey - 4.5) + '" width="' + S(26) + '" height="' + S(8.5) + '" rx="' + S(3) + '" fill="' + (p.maskColor || OUT) + '"/>';
+      o += '<ellipse cx="' + X(lx) + '" cy="' + Y(ey) + '" rx="' + S(2.6) + '" ry="' + S(2) + '" fill="#fff"/><ellipse cx="' + X(rx) + '" cy="' + Y(ey) + '" rx="' + S(2.6) + '" ry="' + S(2) + '" fill="#fff"/>';
+    } else if (eyes === "shades") {
+      o += '<path d="M' + X(4) + " " + Y(ey - 3.5) + "h" + S(26) + "v" + S(3) + "q" + S(-1) + " " + S(5) + " " + S(-6) + " " + S(5) + "q" + S(-5) + " 0 " + S(-6) + " " + S(-4.5) + "h" + S(-2) + "q" + S(-1) + " " + S(4.5) + " " + S(-6) + " " + S(4.5) + "q" + S(-5) + " 0 " + S(-6) + " " + S(-5) + 'z" fill="' + OUT + '"/>';
+      o += '<path d="M' + X(7) + " " + Y(ey - 2) + "l" + S(3) + " 0" + '" stroke="#9fb3c8" stroke-width="' + S(1.2) + '" stroke-linecap="round"/>';
+    } else {
+      o += '<rect x="' + X(lx - 2.4) + '" y="' + Y(ey - 3) + '" width="' + S(4.8) + '" height="' + S(6) + '" rx="' + S(2) + '" fill="' + OUT + '"/>';
+      if (eyes !== "patch") o += '<rect x="' + X(rx - 2.4) + '" y="' + Y(ey - 3) + '" width="' + S(4.8) + '" height="' + S(6) + '" rx="' + S(2) + '" fill="' + OUT + '"/>';
+      else {
+        o += '<path d="M' + X(0) + " " + Y(9) + "L" + X(34) + " " + Y(4) + '" stroke="' + OUT + '" stroke-width="' + S(1.6) + '"/>';
+        o += '<rect x="' + X(rx - 4.5) + '" y="' + Y(ey - 4.5) + '" width="' + S(9) + '" height="' + S(9) + '" rx="' + S(3) + '" fill="' + OUT + '"/>';
+      }
+    }
+    var brows = p.brows;
+    var bc = p.browColor || OUT;
+    if (brows === "angry") o += '<path d="M' + X(lx - 4) + " " + Y(ey - 7) + "L" + X(lx + 3) + " " + Y(ey - 5) + "M" + X(rx + 4) + " " + Y(ey - 7) + "L" + X(rx - 3) + " " + Y(ey - 5) + '" stroke="' + bc + '" stroke-width="' + S(2.4) + '" stroke-linecap="round"/>';
+    else if (brows === "raised") o += '<path d="M' + X(lx - 4) + " " + Y(ey - 6) + "q" + S(4) + " " + S(-3) + " " + S(8) + " 0M" + X(rx - 4) + " " + Y(ey - 6) + "q" + S(4) + " " + S(-3) + " " + S(8) + ' 0" fill="none" stroke="' + bc + '" stroke-width="' + S(2) + '" stroke-linecap="round"/>';
+    else if (brows === "thick") o += '<rect x="' + X(lx - 4.5) + '" y="' + Y(ey - 8) + '" width="' + S(9) + '" height="' + S(3) + '" rx="' + S(1.4) + '" fill="' + bc + '"/><rect x="' + X(rx - 4.5) + '" y="' + Y(ey - 8) + '" width="' + S(9) + '" height="' + S(3) + '" rx="' + S(1.4) + '" fill="' + bc + '"/>';
+    var mouth = p.mouth || "smile", my = 24;
+    if (mouth === "grin") o += '<path d="M' + X(10) + " " + Y(my - 1) + "h" + S(14) + "q" + S(-1) + " " + S(7) + " " + S(-7) + " " + S(7) + "q" + S(-6) + " 0 " + S(-7) + " " + S(-7) + 'z" fill="#fff" stroke="' + OUT + '" stroke-width="' + S(1.6) + '" stroke-linejoin="round"/>';
+    else if (mouth === "frown") o += '<path d="M' + X(12) + " " + Y(my + 3) + "q" + S(5) + " " + S(-4) + " " + S(10) + ' 0" fill="none" stroke="' + OUT + '" stroke-width="' + S(2.2) + '" stroke-linecap="round"/>';
+    else if (mouth === "flat") o += '<path d="M' + X(13) + " " + Y(my + 1) + "h" + S(8) + '" stroke="' + OUT + '" stroke-width="' + S(2.2) + '" stroke-linecap="round"/>';
+    else if (mouth === "smirk") o += '<path d="M' + X(12) + " " + Y(my + 1) + "q" + S(6) + " " + S(2.5) + " " + S(10) + " " + S(-2) + '" fill="none" stroke="' + OUT + '" stroke-width="' + S(2.2) + '" stroke-linecap="round"/>';
+    else if (mouth === "o") o += '<ellipse cx="' + X(17) + '" cy="' + Y(my + 1.5) + '" rx="' + S(2.6) + '" ry="' + S(3.2) + '" fill="' + OUT + '"/>';
+    else if (mouth !== "none") o += '<path d="M' + X(11.5) + " " + Y(my) + "q" + S(5.5) + " " + S(5.5) + " " + S(11) + ' 0" fill="none" stroke="' + OUT + '" stroke-width="' + S(2.2) + '" stroke-linecap="round"/>';
+    return o;
+  }
+
+  function beardSvg(p, ox, oy, k) {
+    var sc = k / 34, b = p.beard, c = p.beardColor || "#6b4a2b";
+    function X(v) { return (ox + v * sc).toFixed(2); }
+    function Y(v) { return (oy + v * sc).toFixed(2); }
+    function S(v) { return (v * sc).toFixed(2); }
+    if (b === "full") return '<path d="M' + X(0) + " " + Y(17) + "v" + S(6) + "q0 " + S(14) + " " + S(17) + " " + S(14) + "q" + S(17) + " 0 " + S(17) + " " + S(-14) + "v" + S(-6) + "q" + S(-5) + " " + S(5) + " " + S(-17) + " " + S(5) + "q" + S(-12) + " 0 " + S(-17) + ' -5z" fill="' + c + '" stroke="' + OUT + '" stroke-width="' + S(1.6) + '" stroke-linejoin="round"/>' +
+      '<path d="M' + X(10) + " " + Y(22.5) + "q" + S(7) + " " + S(-3.5) + " " + S(14) + ' 0" fill="none" stroke="' + OUT + '" stroke-width="' + S(1.8) + '" stroke-linecap="round"/>';
+    if (b === "mustache") return '<path d="M' + X(8) + " " + Y(22.5) + "q" + S(9) + " " + S(-6) + " " + S(18) + " 0q" + S(-9) + " " + S(3) + " " + S(-18) + ' 0z" fill="' + c + '" stroke="' + OUT + '" stroke-width="' + S(1.2) + '" stroke-linejoin="round"/>';
+    if (b === "stubble") {
+      var o = "";
+      [[8, 26], [11, 29], [15, 30.5], [19, 30.5], [23, 29], [26, 26], [10, 27.5], [24, 27.5]].forEach(function (d) { o += '<circle cx="' + X(d[0]) + '" cy="' + Y(d[1]) + '" r="' + S(0.8) + '" fill="' + c + '"/>'; });
+      return o;
+    }
+    return "";
+  }
+
+  function hatSvg(p, ox, oy, k, layer) {
+    var sc = k / 34, hat = p.hat, c1 = p.hatColor || "#2b3a55", c2 = p.hatColor2 || "#f2b84b", o = "";
+    function X(v) { return (ox + v * sc).toFixed(2); }
+    function Y(v) { return (oy + v * sc).toFixed(2); }
+    function S(v) { return (v * sc).toFixed(2); }
+    var st = ' stroke="' + OUT + '" stroke-width="' + S(1.8) + '" stroke-linejoin="round"';
+    if (layer === "back") {
+      if (p.hairStyle === "braids") {
+        o += '<rect x="' + X(-4) + '" y="' + Y(12) + '" width="' + S(6) + '" height="' + S(24) + '" rx="' + S(2.5) + '" fill="' + (p.hair || "#f2c14e") + '"' + st + "/>";
+        o += '<rect x="' + X(32) + '" y="' + Y(12) + '" width="' + S(6) + '" height="' + S(24) + '" rx="' + S(2.5) + '" fill="' + (p.hair || "#f2c14e") + '"' + st + "/>";
+      }
+      if (p.hairStyle === "long") o += '<path d="M' + X(-3) + " " + Y(6) + "q0 " + S(-8) + " " + S(20) + " " + S(-8) + "q" + S(20) + " 0 " + S(20) + " " + S(8) + "v" + S(28) + "h" + S(-40) + 'z" fill="' + (p.hair || "#3b2a1f") + '"' + st + "/>";
+      if (hat === "hood") o += '<path d="M' + X(-5) + " " + Y(36) + "v" + S(-22) + "q0 " + S(-18) + " " + S(22) + " " + S(-18) + "q" + S(22) + " 0 " + S(22) + " " + S(18) + "v" + S(22) + 'z" fill="' + c1 + '"' + st + "/>";
+      return o;
+    }
+    switch (p.hairStyle) {
+      case "messy": o += '<path d="M' + X(0) + " " + Y(9) + "l" + S(2) + " " + S(-9) + "l" + S(5) + " " + S(5) + "l" + S(4) + " " + S(-8) + "l" + S(5) + " " + S(6) + "l" + S(5) + " " + S(-7) + "l" + S(4) + " " + S(7) + "l" + S(5) + " " + S(-4) + "l" + S(4) + " " + S(10) + 'z" fill="' + (p.hair || "#e0762b") + '"' + st + "/>"; break;
+      case "flat": o += '<path d="M' + X(0) + " " + Y(9) + "v" + S(-4) + "q0 " + S(-5) + " " + S(5) + " " + S(-5) + "h" + S(24) + "q" + S(5) + " 0 " + S(5) + " " + S(5) + "v" + S(4) + 'z" fill="' + (p.hair || "#3b2a1f") + '"' + st + "/>"; break;
+      case "pompadour": o += '<path d="M' + X(-1) + " " + Y(10) + "q" + S(-1) + " " + S(-12) + " " + S(14) + " " + S(-13) + "q" + S(16) + " " + S(-1) + " " + S(22) + " " + S(4) + "q" + S(-8) + " " + S(-1) + " " + S(-12) + " " + S(4) + "q" + S(9) + " " + S(1) + " " + S(12) + " " + S(5) + 'z" fill="' + (p.hair || "#1d1d24") + '"' + st + "/><path d=\"M" + X(8) + " " + Y(-1) + "q" + S(8) + " " + S(-3) + " " + S(16) + " " + S(1) + '" fill="none" stroke="#5b6b8a" stroke-width="' + S(1.3) + '" stroke-linecap="round"/>'; break;
+      case "bald": break;
+      case "spiky": o += '<path d="M' + X(0) + " " + Y(9) + "l" + S(3) + " " + S(-12) + "l" + S(6) + " " + S(7) + "l" + S(5) + " " + S(-11) + "l" + S(5) + " " + S(10) + "l" + S(6) + " " + S(-10) + "l" + S(3) + " " + S(11) + "l" + S(6) + " " + S(-5) + "v" + S(10) + 'z" fill="' + (p.hair || "#2b2b2b") + '"' + st + "/>"; break;
+    }
+    switch (hat) {
+      case "captain":
+        o += '<path d="M' + X(-1) + " " + Y(4) + "v" + S(-6) + "q0 " + S(-7) + " " + S(9) + " " + S(-8) + "h" + S(18) + "q" + S(9) + " " + S(1) + " " + S(9) + " " + S(8) + "v" + S(6) + 'z" fill="' + c1 + '"' + st + "/>";
+        o += '<rect x="' + X(-1) + '" y="' + Y(0) + '" width="' + S(36) + '" height="' + S(4) + '" fill="' + OUT + '"/>';
+        o += '<path d="M' + X(-3) + " " + Y(5) + "h" + S(40) + "q" + S(-2) + " " + S(4) + " " + S(-8) + " " + S(4) + "h" + S(-24) + "q" + S(-6) + " 0 " + S(-8) + ' -4z" fill="' + OUT + '"/>';
+        o += '<circle cx="' + X(17) + '" cy="' + Y(-3) + '" r="' + S(3.4) + '" fill="' + c2 + '" stroke="' + OUT + '" stroke-width="' + S(1.2) + '"/>';
+        break;
+      case "headphones":
+        o += '<path d="M' + X(-1) + " " + Y(16) + "q0 " + S(-21) + " " + S(18) + " " + S(-21) + "q" + S(18) + " 0 " + S(18) + " " + S(21) + '" fill="none" stroke="' + OUT + '" stroke-width="' + S(5) + '"/>';
+        o += '<path d="M' + X(-1) + " " + Y(16) + "q0 " + S(-21) + " " + S(18) + " " + S(-21) + "q" + S(18) + " 0 " + S(18) + " " + S(21) + '" fill="none" stroke="' + c1 + '" stroke-width="' + S(2.4) + '"/>';
+        o += '<rect x="' + X(-5) + '" y="' + Y(11) + '" width="' + S(8) + '" height="' + S(12) + '" rx="' + S(2.5) + '" fill="' + c2 + '"' + st + "/>";
+        o += '<rect x="' + X(31) + '" y="' + Y(11) + '" width="' + S(8) + '" height="' + S(12) + '" rx="' + S(2.5) + '" fill="' + c2 + '"' + st + "/>";
+        o += '<path d="M' + X(-1) + " " + Y(21) + "q" + S(2) + " " + S(8) + " " + S(10) + " " + S(7) + '" fill="none" stroke="' + OUT + '" stroke-width="' + S(1.6) + '" stroke-linecap="round"/><circle cx="' + X(9.5) + '" cy="' + Y(28) + '" r="' + S(1.7) + '" fill="' + OUT + '"/>';
+        break;
+      case "beanie":
+        o += '<path d="M' + X(-1) + " " + Y(9) + "q0 " + S(-15) + " " + S(18) + " " + S(-15) + "q" + S(18) + " 0 " + S(18) + " " + S(15) + 'z" fill="' + c1 + '"' + st + "/>";
+        o += '<rect x="' + X(-2) + '" y="' + Y(5) + '" width="' + S(38) + '" height="' + S(6) + '" rx="' + S(2) + '" fill="' + c2 + '"' + st + "/>";
+        o += '<circle cx="' + X(17) + '" cy="' + Y(-7) + '" r="' + S(3.6) + '" fill="' + c2 + '"' + st + "/>";
+        break;
+      case "souwester":
+        o += '<path d="M' + X(2) + " " + Y(4) + "q0 " + S(-12) + " " + S(15) + " " + S(-12) + "q" + S(15) + " 0 " + S(15) + " " + S(12) + 'z" fill="' + c1 + '"' + st + "/>";
+        o += '<path d="M' + X(-7) + " " + Y(7) + "q" + S(24) + " " + S(-9) + " " + S(48) + " 0q" + S(2) + " " + S(4) + " " + S(-4) + " " + S(5) + "q" + S(-20) + " " + S(-5) + " " + S(-40) + " 0q" + S(-6) + " " + S(-1) + " " + S(-4) + ' -5z" fill="' + c1 + '"' + st + "/>";
+        break;
+      case "fedora":
+        o += '<path d="M' + X(1) + " " + Y(6) + "q" + S(1) + " " + S(-12) + " " + S(16) + " " + S(-12) + "q" + S(15) + " 0 " + S(16) + " " + S(12) + 'z" fill="' + c1 + '"' + st + "/>";
+        o += '<rect x="' + X(1) + '" y="' + Y(2) + '" width="' + S(32) + '" height="' + S(4) + '" fill="' + c2 + '"/>';
+        o += '<path d="M' + X(-6) + " " + Y(8) + "q" + S(23) + " " + S(-6) + " " + S(46) + ' 0z" fill="' + c1 + '"' + st + "/>";
+        break;
+      case "cap":
+        o += '<path d="M' + X(-1) + " " + Y(8) + "q0 " + S(-12) + " " + S(18) + " " + S(-12) + "q" + S(18) + " 0 " + S(18) + " " + S(12) + 'z" fill="' + c1 + '"' + st + "/>";
+        o += '<path d="M' + X(14) + " " + Y(6) + "h" + S(30) + "q" + S(-2) + " " + S(4) + " " + S(-7) + " " + S(4) + "h" + S(-23) + 'z" fill="' + c2 + '"' + st + "/>";
+        break;
+      case "beret":
+        o += '<ellipse cx="' + X(15) + '" cy="' + Y(3) + '" rx="' + S(19) + '" ry="' + S(7) + '" fill="' + c1 + '"' + st + "/>";
+        o += '<rect x="' + X(14) + '" y="' + Y(-6) + '" width="' + S(2.5) + '" height="' + S(4) + '" fill="' + OUT + '"/>';
+        break;
+      case "headband":
+        o += '<rect x="' + X(-1) + '" y="' + Y(3) + '" width="' + S(36) + '" height="' + S(5) + '" fill="' + c1 + '"' + st + "/>";
+        o += '<path d="M' + X(34) + " " + Y(5) + "l" + S(6) + " " + S(-3) + "l" + S(-1) + " " + S(6) + 'z" fill="' + c1 + '"' + st + "/>";
+        break;
+      case "bucket":
+        o += '<path d="M' + X(2) + " " + Y(6) + "l" + S(3) + " " + S(-11) + "h" + S(24) + "l" + S(3) + " " + S(11) + 'z" fill="' + c1 + '"' + st + "/>";
+        o += '<path d="M' + X(-4) + " " + Y(9) + "h" + S(42) + "l" + S(-3) + " " + S(-4) + "h" + S(-36) + 'z" fill="' + c1 + '"' + st + "/>";
+        break;
+      case "hood":
+        o += '<path d="M' + X(-3) + " " + Y(14) + "q0 " + S(-17) + " " + S(20) + " " + S(-17) + "q" + S(20) + " 0 " + S(20) + " " + S(17) + "q" + S(-4) + " " + S(-12) + " " + S(-20) + " " + S(-12) + "q" + S(-16) + " 0 " + S(-20) + ' 12z" fill="' + c1 + '"' + st + "/>";
+        break;
+      case "police":
+        o += '<path d="M' + X(0) + " " + Y(6) + "l" + S(-2) + " " + S(-9) + "q" + S(19) + " " + S(-7) + " " + S(38) + " 0l" + S(-2) + " " + S(9) + 'z" fill="' + c1 + '"' + st + "/>";
+        o += '<path d="M' + X(-1) + " " + Y(6) + "h" + S(36) + "l" + S(-3) + " " + S(4) + "h" + S(-30) + 'z" fill="' + OUT + '"/>';
+        o += '<path d="M' + X(14) + " " + Y(-3) + "l" + S(3) + " " + S(-2) + "l" + S(3) + " " + S(2) + "l" + S(-3) + " " + S(4) + 'z" fill="' + c2 + '" stroke="' + OUT + '" stroke-width="' + S(1) + '"/>';
+        break;
+      case "tophat":
+        o += '<rect x="' + X(4) + '" y="' + Y(-14) + '" width="' + S(26) + '" height="' + S(20) + '" rx="' + S(2) + '" fill="' + c1 + '"' + st + "/>";
+        o += '<rect x="' + X(4) + '" y="' + Y(1) + '" width="' + S(26) + '" height="' + S(4) + '" fill="' + c2 + '"/>';
+        o += '<rect x="' + X(-4) + '" y="' + Y(5) + '" width="' + S(42) + '" height="' + S(4) + '" rx="' + S(2) + '" fill="' + c1 + '"' + st + "/>";
+        break;
+    }
+    return o;
+  }
+
+  function extrasSvg(p, ox, oy, k) {
+    var sc = k / 34, o = "";
+    function X(v) { return (ox + v * sc).toFixed(2); }
+    function Y(v) { return (oy + v * sc).toFixed(2); }
+    function S(v) { return (v * sc).toFixed(2); }
+    (p.extras || []).forEach(function (e) {
+      if (e === "freckles") [[6, 21], [8.5, 22.5], [5.5, 23.5], [28, 21], [25.5, 22.5], [28.5, 23.5]].forEach(function (d) { o += '<circle cx="' + X(d[0]) + '" cy="' + Y(d[1]) + '" r="' + S(0.85) + '" fill="#b4643a"/>'; });
+      if (e === "blush") o += '<ellipse cx="' + X(6) + '" cy="' + Y(21) + '" rx="' + S(3) + '" ry="' + S(1.8) + '" fill="#ff8a8a" opacity=".55"/><ellipse cx="' + X(28) + '" cy="' + Y(21) + '" rx="' + S(3) + '" ry="' + S(1.8) + '" fill="#ff8a8a" opacity=".55"/>';
+      if (e === "glasses") o += '<circle cx="' + X(11) + '" cy="' + Y(15) + '" r="' + S(4.8) + '" fill="rgba(200,230,255,.25)" stroke="' + OUT + '" stroke-width="' + S(1.6) + '"/><circle cx="' + X(23) + '" cy="' + Y(15) + '" r="' + S(4.8) + '" fill="rgba(200,230,255,.25)" stroke="' + OUT + '" stroke-width="' + S(1.6) + '"/><path d="M' + X(15.8) + " " + Y(15) + "h" + S(2.4) + '" stroke="' + OUT + '" stroke-width="' + S(1.6) + '"/>';
+      if (e === "scar") o += '<path d="M' + X(25) + " " + Y(9) + "l" + S(4) + " " + S(10) + "M" + X(25.5) + " " + Y(12) + "l" + S(2.5) + " " + S(-1) + "M" + X(27) + " " + Y(15.5) + "l" + S(2.5) + " " + S(-1) + '" stroke="#9a4a3a" stroke-width="' + S(1.3) + '" stroke-linecap="round"/>';
+      if (e === "cigar") o += '<rect x="' + X(20) + '" y="' + Y(24) + '" width="' + S(10) + '" height="' + S(2.6) + '" rx="' + S(1) + '" fill="#8a5a2b" stroke="' + OUT + '" stroke-width="' + S(1) + '"/><circle cx="' + X(30.5) + '" cy="' + Y(25.3) + '" r="' + S(1.3) + '" fill="#ff8a3d"/>';
+      if (e === "earpiece") o += '<path d="M' + X(34) + " " + Y(15) + "q" + S(3) + " " + S(6) + " " + S(0) + " " + S(14) + '" fill="none" stroke="#c9d4e2" stroke-width="' + S(1.3) + '"/>';
+      if (e === "bandana") o += '<path d="M' + X(0) + " " + Y(21) + "h" + S(34) + "v" + S(6) + "q" + S(-8) + " " + S(10) + " " + S(-17) + " " + S(10) + "q" + S(-9) + " 0 " + S(-17) + ' -10z" fill="' + (p.bandanaColor || "#3b3b46") + '" stroke="' + OUT + '" stroke-width="' + S(1.6) + '" stroke-linejoin="round"/>';
+    });
+    return o;
+  }
+
+  function portrait(p) {
+    p = p || {};
+    var skin = p.skin || "#f2c9a0", hx = 15, hy = 11, k = 34, o = "";
+    o += '<path d="M5 64v-9q0-9 9-9h36q9 0 9 9v9z" fill="' + (p.shirt || "#3d6fb6") + '" stroke="' + OUT + '" stroke-width="2" stroke-linejoin="round"/>';
+    if (p.collar) o += '<path d="M25 46l7 8 7-8z" fill="' + p.collar + '" stroke="' + OUT + '" stroke-width="1.6" stroke-linejoin="round"/>';
+    if (p.buttons) o += '<circle cx="32" cy="58" r="1.6" fill="' + p.buttons + '"/><circle cx="32" cy="63" r="1.6" fill="' + p.buttons + '"/>';
+    o += hatSvg(p, hx, hy, k, "back");
+    o += '<rect x="27" y="40" width="10" height="8" fill="' + skin + '" stroke="' + OUT + '" stroke-width="2"/>';
+    o += '<rect x="' + hx + '" y="' + hy + '" width="' + k + '" height="' + (k - 1) + '" rx="6" fill="' + skin + '" stroke="' + OUT + '" stroke-width="2"/>';
+    o += face(p, hx, hy, k);
+    o += beardSvg(p, hx, hy, k);
+    o += extrasSvg(p, hx, hy, k);
+    o += hatSvg(p, hx, hy, k, "front");
+    return o;
+  }
+
+  /* A whole standing figure: legs, torso, arms and a big blocky head. Feet rest at y=14. */
+  function figure(p) {
+    p = p || {};
+    var skin = p.skin || "#f2c9a0", shirt = p.shirt || "#3d6fb6", pants = p.pants || "#26324a", o = "";
+    var big = p.build === "big", slim = p.build === "slim";
+    var tw = big ? 22 : slim ? 14 : 18, tx = -tw / 2;
+    o += '<ellipse cx="0" cy="14.5" rx="' + (tw / 2 + 4) + '" ry="3" fill="rgba(0,0,0,.35)"/>';
+    o += '<rect x="' + (tx + 1) + '" y="2" width="' + (tw / 2 - 1.5) + '" height="12" rx="1.5" fill="' + pants + '" stroke="' + OUT + '" stroke-width="1.6"/>';
+    o += '<rect x="' + 0.5 + '" y="2" width="' + (tw / 2 - 1.5) + '" height="12" rx="1.5" fill="' + pants + '" stroke="' + OUT + '" stroke-width="1.6"/>';
+    var aw = big ? 7 : 5.5;
+    o += '<rect x="' + (tx - aw + 0.5) + '" y="-12" width="' + aw + '" height="13" rx="2" fill="' + (p.sleeves || shirt) + '" stroke="' + OUT + '" stroke-width="1.6"/>';
+    o += '<rect x="' + (-tx - 0.5) + '" y="-12" width="' + aw + '" height="13" rx="2" fill="' + (p.sleeves || shirt) + '" stroke="' + OUT + '" stroke-width="1.6"/>';
+    o += '<rect x="' + (tx - aw + 1) + '" y="0" width="' + (aw - 1) + '" height="3.5" rx="1.5" fill="' + skin + '" stroke="' + OUT + '" stroke-width="1.2"/>';
+    o += '<rect x="' + (-tx) + '" y="0" width="' + (aw - 1) + '" height="3.5" rx="1.5" fill="' + skin + '" stroke="' + OUT + '" stroke-width="1.2"/>';
+    o += '<rect x="' + tx + '" y="-13" width="' + tw + '" height="16" rx="2.5" fill="' + shirt + '" stroke="' + OUT + '" stroke-width="1.8"/>';
+    if (p.belt) o += '<rect x="' + tx + '" y="0" width="' + tw + '" height="3" fill="' + p.belt + '"/>';
+    if (p.stripe) o += '<rect x="' + tx + '" y="-7" width="' + tw + '" height="3.5" fill="' + p.stripe + '"/>';
+    if (p.collar) o += '<path d="M-3.5 -13l3.5 4 3.5-4z" fill="' + p.collar + '" stroke="' + OUT + '" stroke-width="1.2" stroke-linejoin="round"/>';
+    var k = 24, hx = -12, hy = -37;
+    o += hatSvg(p, hx, hy, k, "back");
+    o += '<rect x="' + hx + '" y="' + hy + '" width="' + k + '" height="' + (k - 1) + '" rx="4" fill="' + skin + '" stroke="' + OUT + '" stroke-width="1.8"/>';
+    o += face(p, hx, hy, k);
+    o += beardSvg(p, hx, hy, k);
+    o += extrasSvg(p, hx, hy, k);
+    o += hatSvg(p, hx, hy, k, "front");
+    if (p.prop) o += p.prop;
+    return o;
+  }
+
   /* Small seeded RNG so bots can be varied but testable. */
   function rng(seed) {
     var a = (seed >>> 0) || 0x9e3779b9;
@@ -706,6 +931,7 @@ button.info{cursor:pointer}
 
   root.Kit = {
     $: $, $all: $all, h: h, s: s, store: store, sleep: sleep, frame: frame, Sound: Sound, haptic: haptic,
+    blocky: { portrait: portrait, figure: figure, OUT: OUT },
     cover: cover, modal: modal, banner: banner, toast: toast, shake: shake, init: init, showScreen: showScreen,
     showRules: showRules, openMenu: openMenu, confirm: confirmAsk, quit: quit, gameOver: gameOver, ICONS: ICONS, rng: rng,
     get reduceMotion() { return reduceMotion; },
@@ -716,15 +942,16 @@ button.info{cursor:pointer}
 /* Keyrunners: rules engine and bot. No DOM, so it runs in Node for tests.
    Side 0 (Blue) plays from the bottom (home rows 8-9), side 1 (Red) from the top (home rows 0-1).
    Key k belongs to side k and opens the other side's safe. A side wins at the start of its turn if
-   its own key is on the enemy safe (crack) or the enemy's key is in its back row (stash).
-   Nobody may stand on their own safe, except by capturing an enemy there. */
+   its own key is on or next to the enemy safe (crack) or the enemy's key is on its own safe (stash).
+   The board is 9 wide in each side's two home rows and 7 wide between them, with pits in the
+   middle. Units can't stand on pits, but keys fly over them. */
 (function (root) {
   "use strict";
 
-  var W = 7, H = 10, N = W * H;
+  var W = 9, H = 10, N = W * H;
   var CFG = {
     firstIncome: 5, income: 5, cap: 10, debt: 3, maxCrew: 6, rounds: 30,
-    moveCost: 1, passCost: 1, throwCost: 2, burnCost: 1, passRange: 2, throwRange: 3, hookRange: 4,
+    moveCost: 1, throwCost: 2, burnCost: 1, passRange: 1, throwRange: 3, hookRange: 4,
     stashTo: "safe", crackRange: 1, heavyOwn: true
   };
   var BACK = [9, 0];
@@ -737,12 +964,17 @@ button.info{cursor:pointer}
   function cheb(a, b) { return Math.max(Math.abs(cOf(a) - cOf(b)), Math.abs(rOf(a) - rOf(b))); }
   function inB(c, r) { return c >= 0 && c < W && r >= 0 && r < H; }
 
-  var SAFE = [idx(3, 9), idx(3, 0)];
+  var SAFE = [idx(4, 9), idx(4, 0)];
+  /* FLOOR: tiles units can stand on. Columns 0 and 8 only exist in the home rows; PIT tiles are holes. */
+  var PITS = [[2, 3], [6, 3], [4, 4], [4, 5], [2, 6], [6, 6]];
+  var FLOOR = new Uint8Array(N), IS_PIT = new Uint8Array(N);
+  for (var ft = 0; ft < N; ft++) { var fr = (ft / W) | 0, fc = ft % W; FLOOR[ft] = (fr <= 1 || fr >= H - 2 || (fc >= 1 && fc <= W - 2)) ? 1 : 0; }
+  PITS.forEach(function (pp) { var t = pp[1] * W + pp[0]; FLOOR[t] = 0; IS_PIT[t] = 1; });
   var HOME_ROWS = [[8, 9], [0, 1]];
   var IS_SAFE = new Uint8Array(N);
   IS_SAFE[SAFE[0]] = 1; IS_SAFE[SAFE[1]] = 1;
   var IS_HOME = [new Uint8Array(N), new Uint8Array(N)];
-  for (var hs = 0; hs < 2; hs++) HOME_ROWS[hs].forEach(function (r) { for (var c = 0; c < W; c++) IS_HOME[hs][idx(c, r)] = 1; });
+  for (var hs = 0; hs < 2; hs++) HOME_ROWS[hs].forEach(function (r) { for (var c = 0; c < W; c++) if (FLOOR[idx(c, r)]) IS_HOME[hs][idx(c, r)] = 1; });
 
   var D8 = [[0, -1], [1, 0], [0, 1], [-1, 0], [1, -1], [1, 1], [-1, 1], [-1, -1]];
   var KNIGHT = [[1, 2], [2, 1], [-1, 2], [-2, 1], [1, -2], [2, -1], [-1, -2], [-2, -1]];
@@ -753,9 +985,9 @@ button.info{cursor:pointer}
       var ray = [], cc = c0 + D8[d0][0], rr = r0 + D8[d0][1];
       while (inB(cc, rr)) { ray.push(idx(cc, rr)); cc += D8[d0][0]; rr += D8[d0][1]; }
       rays.push(ray);
-      if (ray.length) nb.push(ray[0]);
+      if (ray.length && FLOOR[ray[0]]) nb.push(ray[0]);
       var kc = c0 + KNIGHT[d0][0], kr = r0 + KNIGHT[d0][1];
-      if (inB(kc, kr)) kn.push(idx(kc, kr));
+      if (inB(kc, kr) && FLOOR[idx(kc, kr)]) kn.push(idx(kc, kr));
     }
     NB.push(nb); RAY.push(rays); KNT.push(kn);
   }
@@ -766,9 +998,13 @@ button.info{cursor:pointer}
       ab: "orders", aname: "Orders", ac: 2, atext: "One of your crew that already moved this turn may move again." },
     fixer: { name: "The Fixer", ps: "+1 mana every turn.", as: "Deploy next to any of your crew this turn.", leader: true, move: "step", passive: "connected", pname: "Connected", ptext: "You get +1 mana every turn.",
       ab: "insideman", aname: "Inside Man", ac: 1, atext: "This turn you may deploy next to any of your crew, not just Hideouts." },
-    ghost: { name: "The Ghost", ps: "Moves 2 tiles any way, even with a key.", as: "Swap with one of your crew up to 3 away.", leader: true, move: "king2", carrier: true, passive: "slippery", pname: "Slippery", ptext: "Moves up to 2 tiles in any direction, even carrying a key.",
+    ghost: { name: "The Ghost", ps: "Moves 2 tiles any way, even with a key.", as: "Swap with one of your crew up to 3 away.", leader: true, move: "king2", carrier: true, passive: "phantom", pname: "Phantom", ptext: "Moves up to 2 tiles in any direction, even carrying a key.",
       ab: "vanish", aname: "Vanish", ac: 2, atext: "Swap places with one of your crew up to 3 tiles away." },
 
+    wobbler: { name: "Wobbler", ps: "Moves 1 tile in any direction.", as: "Hand your key to a teammate next to you.", cost: 1, move: "step", passive: "wobbly", pname: "Wobbly", ptext: "Moves 1 tile in any direction.",
+      ab: "handoff", aname: "Pass", ac: 1, atext: "Hand your key to a teammate right next to it. Nothing can intercept it." },
+    greaser: { name: "Greaser", ps: "Moves any distance diagonally.", as: "If attacked with a key, it flies to the nearest teammate.", cost: 2, move: "bishop", passive: "greased", pname: "Slick Moves", ptext: "Moves any distance diagonally, like a chess bishop. One diagonal step while carrying a key.",
+      ab: "slip", aname: "Slippery", ac: 1, atext: "Until your next turn, if anyone captures it, takes it out or grabs its key, the key flies to your nearest teammate instead." },
     lookout: { name: "Lookout", ps: "You can deploy next to it.", as: "Run up to 3 straight. No captures.", cost: 1, move: "step", passive: "hideout", pname: "Hideout", ptext: "You can deploy crew next to it.",
       ab: "dash", aname: "Dash", ac: 1, atext: "Run up to 3 tiles in a straight line. No captures, and not while carrying a key." },
     decoy: { name: "Decoy", ps: "Whoever captures it is stunned.", as: "Swap with an ally up to 2 away.", cost: 1, move: "step", passive: "bait", pname: "Bait", ptext: "Whoever captures it is stunned on their next turn.",
@@ -803,13 +1039,13 @@ button.info{cursor:pointer}
     bribe: { name: "Bribe", cost: 4, text: "An enemy crew member next to your leader joins your side, keys and all." }
   };
   var LEADERS = ["boss", "fixer", "ghost"];
-  var CREW = ["lookout", "decoy", "runner", "catcher", "pickpocket", "acrobat", "guard", "brute", "sniper", "bodyguard", "hacker", "driver"];
+  var CREW = ["wobbler", "greaser", "lookout", "decoy", "runner", "catcher", "pickpocket", "acrobat", "guard", "brute", "sniper", "bodyguard", "hacker", "driver"];
   var GADGET_LIST = ["smoke", "hook", "tripwire", "emp", "alarm", "bribe"];
   var PRESETS = [
-    { id: "runners", name: "Runners", note: "Fast relays and a slippery leader.", leader: "ghost", crew: ["runner", "catcher", "lookout", "acrobat", "pickpocket", "bodyguard"], gadgets: ["hook", "smoke"] },
-    { id: "fortress", name: "Fortress", note: "Hold the line, then punish.", leader: "boss", crew: ["guard", "brute", "bodyguard", "sniper", "decoy", "catcher"], gadgets: ["alarm", "emp"] },
-    { id: "tricksters", name: "Tricksters", note: "Forward spawns, traps and bribes.", leader: "fixer", crew: ["lookout", "driver", "hacker", "pickpocket", "acrobat", "runner"], gadgets: ["tripwire", "bribe"] },
-    { id: "allround", name: "All-rounders", note: "A bit of everything.", leader: "boss", crew: ["runner", "catcher", "guard", "brute", "sniper", "lookout"], gadgets: ["smoke", "emp"] }
+    { id: "runners", name: "Runners", note: "Fast relays and a phantom leader.", leader: "ghost", crew: ["runner", "catcher", "wobbler", "acrobat", "greaser", "bodyguard"], gadgets: ["hook", "smoke"] },
+    { id: "fortress", name: "Fortress", note: "Hold the line, then punish.", leader: "boss", crew: ["guard", "brute", "bodyguard", "sniper", "wobbler", "catcher"], gadgets: ["alarm", "emp"] },
+    { id: "tricksters", name: "Tricksters", note: "Forward spawns, traps and bribes.", leader: "fixer", crew: ["lookout", "driver", "hacker", "pickpocket", "greaser", "decoy"], gadgets: ["tripwire", "bribe"] },
+    { id: "allround", name: "All-rounders", note: "A bit of everything.", leader: "boss", crew: ["wobbler", "runner", "catcher", "guard", "sniper", "lookout"], gadgets: ["smoke", "emp"] }
   ];
 
   function validDeck(d) {
@@ -866,6 +1102,7 @@ button.info{cursor:pointer}
   function stunned(st, u) { return st.ply < u.st; }
   function glitched(st, u) { return st.ply < u.gl; }
   function braced(st, u) { return st.ply < u.br; }
+  function slippery(st, u) { return st.ply < (u.sl || 0); }
   function passiveOn(st, u, p) { return TYPES[u.type].passive === p && !glitched(st, u); }
   function inSmoke(st, t) {
     for (var i = 0; i < st.smokes.length; i++) { var s = st.smokes[i]; if (st.ply < s.until && cheb(s.c, t) <= 1) return true; }
@@ -923,7 +1160,7 @@ button.info{cursor:pointer}
   function pattern(st, u) {
     var T = TYPES[u.type];
     if (glitched(st, u)) return "step";
-    if (!T.carrier && (st.keys[1 - u.side].h === u.id || (CFG.heavyOwn && st.keys[u.side].h === u.id))) return "step";
+    if (!T.carrier && (st.keys[1 - u.side].h === u.id || (CFG.heavyOwn && st.keys[u.side].h === u.id))) return T.move === "bishop" ? "diag1" : "step";
     return T.move;
   }
 
@@ -944,13 +1181,15 @@ button.info{cursor:pointer}
       out.push(t);
     }
     function blocks(t) { var oid = b[t]; return oid >= 0 && !(clear && unit(st, oid).side === u.side); }
-    var j, t;
+    var j, t, d, ray;
     if (pat === "step") { for (j = 0; j < NB[p].length; j++) consider(NB[p][j]); }
     else if (pat === "knight") { for (j = 0; j < KNT[p].length; j++) consider(KNT[p][j]); }
-    else if (pat === "rook3") {
-      for (var d = 0; d < 4; d++) {
-        var ray = RAY[p][d];
-        for (j = 0; j < 3 && j < ray.length; j++) { t = ray[j]; consider(t); if (blocks(t)) break; }
+    else if (pat === "diag1") { for (d = 4; d < 8; d++) { ray = RAY[p][d]; if (ray.length && FLOOR[ray[0]]) consider(ray[0]); } }
+    else if (pat === "rook3" || pat === "bishop") {
+      var d0 = pat === "rook3" ? 0 : 4, len = pat === "rook3" ? 3 : 99;
+      for (d = d0; d < d0 + 4; d++) {
+        ray = RAY[p][d];
+        for (j = 0; j < len && j < ray.length; j++) { t = ray[j]; if (!FLOOR[t]) break; consider(t); if (blocks(t)) break; }
       }
     } else if (pat === "king2") {
       var seen = {};
@@ -966,11 +1205,13 @@ button.info{cursor:pointer}
 
   /* Every tile a unit could land on if an enemy stood there (for threat and coverage maps). */
   function reach(st, u, out) {
-    var pat = pattern(st, u), b = st.board, p = u.pos, j;
+    var pat = pattern(st, u), b = st.board, p = u.pos, j, d, ray;
     if (pat === "step") { for (j = 0; j < NB[p].length; j++) out[NB[p][j]]++; }
     else if (pat === "knight") { for (j = 0; j < KNT[p].length; j++) out[KNT[p][j]]++; }
-    else if (pat === "rook3") {
-      for (var d = 0; d < 4; d++) { var ray = RAY[p][d]; for (j = 0; j < 3 && j < ray.length; j++) { out[ray[j]]++; if (b[ray[j]] >= 0) break; } }
+    else if (pat === "diag1") { for (d = 4; d < 8; d++) { ray = RAY[p][d]; if (ray.length && FLOOR[ray[0]]) out[ray[0]]++; } }
+    else if (pat === "rook3" || pat === "bishop") {
+      var d0 = pat === "rook3" ? 0 : 4, len = pat === "rook3" ? 3 : 99;
+      for (d = d0; d < d0 + 4; d++) { ray = RAY[p][d]; for (j = 0; j < len && j < ray.length; j++) { if (!FLOOR[ray[j]]) break; out[ray[j]]++; if (b[ray[j]] >= 0) break; } }
     } else {
       var seen = {};
       for (j = 0; j < NB[p].length; j++) {
@@ -982,22 +1223,15 @@ button.info{cursor:pointer}
     }
   }
 
-  function passTargets(st, u) {
-    var out = [];
-    if (!canHandle(st, u) || !looseKeys(st, u).length) return out;
-    for (var i = 0; i < st.units.length; i++) {
-      var a = st.units[i];
-      if (a !== u && a.side === u.side && cheb(a.pos, u.pos) <= CFG.passRange) out.push(a.pos);
-    }
-    return out;
-  }
 
   /* Where a throw from u's tile in direction d over dist tiles ends up. */
   function throwResolve(st, u, d, dist) {
     var ray = RAY[u.pos][d];
     if (ray.length < dist) return null;
+    if (!FLOOR[ray[dist - 1]]) return null;
     for (var j = 0; j < dist; j++) {
       var t = ray[j];
+      if (!FLOOR[t]) continue;
       if (st.board[t] >= 0) return { to: ray[dist - 1], path: ray.slice(0, j + 1), by: st.board[t], at: t };
       for (var i = 0; i < st.units.length; i++) {
         var c = st.units[i];
@@ -1017,8 +1251,9 @@ button.info{cursor:pointer}
     var out = [];
     if (!canHandle(st, u) || !looseKeys(st, u).length) return out;
     for (var d = 0; d < 8; d++) for (var dist = 1; dist <= CFG.throwRange; dist++) {
+      if (RAY[u.pos][d].length < dist) break;
       var res = throwResolve(st, u, d, dist);
-      if (!res) break;
+      if (!res) continue;
       res.d = d; res.dist = dist;
       out.push(res);
     }
@@ -1043,7 +1278,7 @@ button.info{cursor:pointer}
     switch (T.ab) {
       case "dash":
         if (holds(st, u)) break;
-        for (d = 0; d < 8; d++) { ray = RAY[p][d]; for (j = 0; j < 3 && j < ray.length; j++) { t = ray[j]; if (b[t] >= 0) break; if (canEnter(st, u, t)) out.push(t); } }
+        for (d = 0; d < 8; d++) { ray = RAY[p][d]; for (j = 0; j < 3 && j < ray.length; j++) { t = ray[j]; if (!FLOOR[t] || b[t] >= 0) break; if (canEnter(st, u, t)) out.push(t); } }
         break;
       case "switch":
         for (i = 0; i < us.length; i++) { o = us[i]; if (o !== u && o.side === u.side && cheb(o.pos, p) <= 2 && swapOk(st, u, o)) out.push(o.pos); }
@@ -1056,18 +1291,25 @@ button.info{cursor:pointer}
           var c = cOf(p) + dc;
           if (!inB(c, rOf(p))) return;
           var tt = idx(c, rOf(p));
-          if (b[tt] < 0 && canEnter(st, u, tt) && !(holds(st, u) && watched(st, u, tt, -1))) out.push(tt);
+          if (FLOOR[tt] && b[tt] < 0 && canEnter(st, u, tt) && !(holds(st, u) && watched(st, u, tt, -1))) out.push(tt);
         });
         break;
       case "call":
         for (i = 0; i < us.length; i++) { o = us[i]; if (o !== u && o.side === u.side && cheb(o.pos, p) <= 3 && looseKeys(st, o).length) out.push(o.pos); }
+        break;
+      case "handoff":
+        if (!looseKeys(st, u).length) break;
+        for (j = 0; j < NB[p].length; j++) { o = at(st, NB[p][j]); if (o && o.side === u.side) out.push(o.pos); }
+        break;
+      case "slip":
+        if (!slippery(st, u)) out.push(p);
         break;
       case "swipe":
         for (j = 0; j < NB[p].length; j++) { o = at(st, NB[p][j]); if (o && o.side !== u.side && holds(st, o)) out.push(o.pos); }
         break;
       case "vault":
         if (holds(st, u)) break;
-        for (d = 0; d < 8; d++) { ray = RAY[p][d]; if (ray.length >= 2 && b[ray[0]] >= 0 && b[ray[1]] < 0 && canEnter(st, u, ray[1])) out.push(ray[1]); }
+        for (d = 0; d < 8; d++) { ray = RAY[p][d]; if (ray.length >= 2 && b[ray[0]] >= 0 && FLOOR[ray[1]] && b[ray[1]] < 0 && canEnter(st, u, ray[1])) out.push(ray[1]); }
         break;
       case "brace":
         out.push(p);
@@ -1130,7 +1372,7 @@ button.info{cursor:pointer}
     var out = [], b = st.board, us = st.units, i, t, o;
     switch (g) {
       case "smoke": case "emp":
-        for (t = 0; t < N; t++) out.push(t);
+        for (t = 0; t < N; t++) if (FLOOR[t]) out.push(t);
         break;
       case "hook":
         for (i = 0; i < us.length; i++) {
@@ -1141,6 +1383,7 @@ button.info{cursor:pointer}
             var ray = RAY[u.pos][d];
             for (var j = 0; j < CFG.hookRange && j < ray.length; j++) {
               t = ray[j];
+              if (!FLOOR[t]) continue;
               if (b[t] >= 0) break;
               if (!canEnter(st, u, t) || (keyed && watched(st, u, t, -1))) continue;
               out.push({ u: u.id, to: t });
@@ -1150,7 +1393,7 @@ button.info{cursor:pointer}
         break;
       case "tripwire":
         for (t = 0; t < N; t++) {
-          if (b[t] >= 0 || IS_SAFE[t] || IS_HOME[1 - s][t]) continue;
+          if (!FLOOR[t] || b[t] >= 0 || IS_SAFE[t] || IS_HOME[1 - s][t]) continue;
           var mine = false;
           for (i = 0; i < st.traps.length; i++) if (st.traps[i].t === t && st.traps[i].side === s) mine = true;
           if (!mine) out.push(t);
@@ -1196,7 +1439,38 @@ button.info{cursor:pointer}
     ev.push({ e: "move", u: u.id, from: from, to: t, how: how || "move" });
     landed(st, u, ev);
   }
+  /* A slippery unit that is attacked flings its keys to its nearest teammate. Returns true if it did. */
+  function fling(st, o, ev) {
+    if (!slippery(st, o)) return false;
+    var ks = keysOf(st, o);
+    if (!ks.length) return false;
+    var best = null, bd = 99, us = st.units;
+    for (var i = 0; i < us.length; i++) {
+      var m = us[i];
+      if (m === o || m.side !== o.side) continue;
+      var d = cheb(m.pos, o.pos);
+      if (!best || d < bd || (d === bd && cheb(m.pos, SAFE[1 - o.side]) < cheb(best.pos, SAFE[1 - o.side]))) { best = m; bd = d; }
+    }
+    for (var k = 0; k < ks.length; k++) {
+      var K = st.keys[ks[k]];
+      K.lk = st.ply;
+      if (best) K.h = best.id; else { K.h = -1; K.at = o.pos; }
+    }
+    ev.push({ e: "fling", u: o.id, from: o.pos, to: best ? best.pos : o.pos, by: best ? best.id : -1, keys: ks });
+    return true;
+  }
+  function flingTarget(st, o) {
+    var best = null, bd = 99, us = st.units;
+    for (var i = 0; i < us.length; i++) {
+      var m = us[i];
+      if (m === o || m.side !== o.side) continue;
+      var d = cheb(m.pos, o.pos);
+      if (!best || d < bd || (d === bd && cheb(m.pos, SAFE[1 - o.side]) < cheb(best.pos, SAFE[1 - o.side]))) { best = m; bd = d; }
+    }
+    return best;
+  }
   function removeUnit(st, o, ev, cause) {
+    fling(st, o, ev);
     st.board[o.pos] = -1;
     st.units.splice(st.units.indexOf(o), 1);
     for (var k = 0; k < 2; k++) if (st.keys[k].h === o.id) { st.keys[k].h = -1; st.keys[k].at = o.pos; ev.push({ e: "drop", k: k, at: o.pos }); }
@@ -1218,6 +1492,7 @@ button.info{cursor:pointer}
         return;
       }
       var bait = passiveOn(st, o, "bait"), took = [];
+      fling(st, o, ev);
       for (var k = 0; k < 2; k++) if (st.keys[k].h === o.id) { st.keys[k].h = u.id; st.keys[k].lk = st.ply; took.push(k); }
       st.board[t] = -1;
       st.units.splice(st.units.indexOf(o), 1);
@@ -1233,7 +1508,12 @@ button.info{cursor:pointer}
   function push(st, o, dc, dr, n, ev, slam) {
     for (var i = 0; i < n; i++) {
       var c = cOf(o.pos) + dc, r = rOf(o.pos) + dr;
-      if (!inB(c, r) || st.board[idx(c, r)] >= 0 || idx(c, r) === SAFE[o.side]) { if (slam) { ev.push({ e: "slam", u: o.id, at: o.pos }); stun(st, o, ev); } return; }
+      if (inB(c, r) && IS_PIT[idx(c, r)]) {
+        ev.push({ e: "fall", u: o.id, from: o.pos, at: idx(c, r) });
+        takeOut(st, o, ev, "pit");
+        return;
+      }
+      if (!inB(c, r) || !FLOOR[idx(c, r)] || st.board[idx(c, r)] >= 0 || idx(c, r) === SAFE[o.side]) { if (slam) { ev.push({ e: "slam", u: o.id, at: o.pos }); stun(st, o, ev); } return; }
       relocate(st, o, idx(c, r), ev, "push");
       if (!unit(st, o.id)) return;
     }
@@ -1272,7 +1552,7 @@ button.info{cursor:pointer}
     };
     for (var t = 0; t < N; t++) st.board[t] = -1;
     for (var s = 0; s < 2; s++) {
-      var L = { id: st.nextId++, side: s, type: opts.decks[s].leader, leader: true, pos: idx(3, s === 0 ? 8 : 1), mv: 0, ac: 0, fr: 0, st: 0, gl: 0, br: 0, armor: false };
+      var L = { id: st.nextId++, side: s, type: opts.decks[s].leader, leader: true, pos: idx(4, s === 0 ? 8 : 1), mv: 0, ac: 0, fr: 0, st: 0, gl: 0, br: 0, sl: 0, armor: false };
       st.units.push(L); st.board[L.pos] = L.id;
       st.keys.push({ h: L.id, at: -1, lk: 0 });
     }
@@ -1313,7 +1593,6 @@ button.info{cursor:pointer}
   function cost(st, a) {
     switch (a.t) {
       case "move": return CFG.moveCost;
-      case "pass": return CFG.passCost;
       case "throw": return CFG.throwCost;
       case "burn": return CFG.burnCost;
       case "ab": return TYPES[unit(st, a.u).type].ac;
@@ -1332,12 +1611,6 @@ button.info{cursor:pointer}
       case "move":
         u.mv = st.ply;
         moveInto(st, u, a.to, ev, "move");
-        break;
-      case "pass":
-        o = at(st, a.to);
-        giveKeys(st, u, o, ev, "pass");
-        if (!passiveOn(st, o, "softhands")) o.mv = st.ply;
-        st.stats[s].passes++;
         break;
       case "throw":
         var res = findThrow(st, u, a.to), ks = looseKeys(st, u);
@@ -1363,7 +1636,7 @@ button.info{cursor:pointer}
       case "deploy":
         card = st.hands[s][a.c];
         st.hands[s].splice(a.c, 1);
-        var nu = { id: st.nextId++, side: s, type: card.t, leader: false, pos: a.to, mv: 0, ac: 0, fr: st.ply, st: 0, gl: 0, br: 0, armor: card.t === "brute" };
+        var nu = { id: st.nextId++, side: s, type: card.t, leader: false, pos: a.to, mv: 0, ac: 0, fr: st.ply, st: 0, gl: 0, br: 0, sl: 0, armor: card.t === "brute" };
         st.units.push(nu); st.board[a.to] = nu.id;
         st.stats[s].deploys++;
         ev.push({ e: "deploy", u: nu.id, at: a.to, type: card.t, side: s });
@@ -1395,7 +1668,14 @@ button.info{cursor:pointer}
       case "floorit": moveInto(st, u, t, ev, ab); break;
       case "switch": case "vanish": swapUnits(st, u, o, ev); break;
       case "call": giveKeys(st, o, u, ev, "call"); break;
+      case "handoff":
+        giveKeys(st, u, o, ev, "pass");
+        if (!passiveOn(st, o, "softhands")) o.mv = st.ply;
+        st.stats[u.side].passes++;
+        break;
+      case "slip": u.sl = st.ply + 2; break;
       case "swipe":
+        if (fling(st, o, ev)) break;
         var took = keysOf(st, o);
         for (var k = 0; k < took.length; k++) { st.keys[took[k]].h = u.id; st.keys[took[k]].lk = st.ply; }
         st.stats[u.side].steals++;
@@ -1441,6 +1721,7 @@ button.info{cursor:pointer}
         break;
       case "bribe":
         o = at(st, a.to);
+        fling(st, o, ev);
         o.side = s; o.mv = st.ply; o.ac = st.ply; o.fr = st.ply;
         for (var k = 0; k < 2; k++) if (st.keys[k].h === o.id) st.keys[k].lk = st.ply;
         ev.push({ e: "bribe", u: o.id, at: o.pos, side: s });
@@ -1465,7 +1746,6 @@ button.info{cursor:pointer}
     }
     if (!u || u.side !== s) return false;
     if (a.t === "move") return afford(st, CFG.moveCost) && has(moveTargets(st, u), a.to);
-    if (a.t === "pass") return afford(st, CFG.passCost) && has(passTargets(st, u), a.to);
     if (a.t === "throw") return afford(st, CFG.throwCost) && throwOptions(st, u).some(function (x) { return x.to === a.to; });
     if (a.t === "ab") return afford(st, TYPES[u.type].ac) && has(abilityTargets(st, u), a.to);
     return false;
@@ -1599,7 +1879,7 @@ button.info{cursor:pointer}
   }
 
   /* How far each unit can usually strike in one turn, counting its movement ability. */
-  var STRIKE = { boss: 1, fixer: 1, ghost: 4, lookout: 4, decoy: 2, runner: 4, catcher: 1, pickpocket: 3, acrobat: 4, guard: 1, brute: 1, sniper: 3, bodyguard: 4, hacker: 1, driver: 6 };
+  var STRIKE = { wobbler: 1, greaser: 6, boss: 1, fixer: 1, ghost: 4, lookout: 4, decoy: 2, runner: 4, catcher: 1, pickpocket: 3, acrobat: 4, guard: 1, brute: 1, sniper: 3, bodyguard: 4, hacker: 1, driver: 6 };
   /* Rough danger to a key carrier: enemies that could reach it, minus friends close enough to help. */
   function exposure(st, h) {
     var foes = 0, mates = 0, us = st.units;
@@ -1664,6 +1944,7 @@ button.info{cursor:pointer}
         for (a = 0; a < ks.length; a++) lostK -= keyValAt(me, ks[a], -2, Hc.pos);
         risk = Math.max(risk, lostK * 0.8);
       }
+      if (st.ply + 1 < (Hc.sl || 0) && flingTarget(st, Hc)) risk *= 0.3;
       sc -= tw * 0.9 * risk;
       var pending = (Hc === hM && cheb(Hc.pos, SAFE[opp]) <= CFG.crackRange) || (Hc === hT && stashed(st, me, Hc));
       if (pending && !risk && !T.shove[Hc.id]) sc += 2.5e4;
@@ -1741,7 +2022,7 @@ button.info{cursor:pointer}
     var us = st.units;
     for (var i = 0; i < us.length; i++) {
       var u = us[i];
-      s += u.id + "@" + u.pos + u.side + (u.mv === st.ply ? "m" : "") + (u.ac === st.ply ? "a" : "") + (st.ply < u.st ? "s" : "") + (st.ply < u.gl ? "g" : "") + (st.ply < u.br ? "b" : "") + (u.armor ? "A" : "") + ",";
+      s += u.id + "@" + u.pos + u.side + (u.mv === st.ply ? "m" : "") + (u.ac === st.ply ? "a" : "") + (st.ply < u.st ? "s" : "") + (st.ply < u.gl ? "g" : "") + (st.ply < u.br ? "b" : "") + (st.ply < (u.sl || 0) ? "l" : "") + (u.armor ? "A" : "") + ",";
     }
     return s;
   }
@@ -1750,7 +2031,7 @@ button.info{cursor:pointer}
     var us = st.units, nu = new Array(us.length);
     for (var i = 0; i < us.length; i++) {
       var u = us[i];
-      nu[i] = { id: u.id, side: u.side, type: u.type, leader: u.leader, pos: u.pos, mv: u.mv, ac: u.ac, fr: u.fr, st: u.st, gl: u.gl, br: u.br, armor: u.armor };
+      nu[i] = { id: u.id, side: u.side, type: u.type, leader: u.leader, pos: u.pos, mv: u.mv, ac: u.ac, fr: u.fr, st: u.st, gl: u.gl, br: u.br, sl: u.sl, armor: u.armor };
     }
     return {
       ply: st.ply, side: st.side, winner: st.winner, how: st.how, reason: st.reason, units: nu, nextId: st.nextId, board: st.board.slice(),
@@ -1772,7 +2053,6 @@ button.info{cursor:pointer}
       u = us[i];
       if (u.side !== s) continue;
       if (spend >= CFG.moveCost) { list = moveTargets(st, u); for (j = 0; j < list.length; j++) out.push({ t: "move", u: u.id, to: list[j] }); }
-      if (spend >= CFG.passCost) { list = passTargets(st, u); for (j = 0; j < list.length; j++) out.push({ t: "pass", u: u.id, to: list[j] }); }
       if (spend >= CFG.throwCost) {
         list = throwOptions(st, u);
         for (j = 0; j < list.length; j++) { var r = list[j]; if (r.by >= 0 && unit(st, r.by).side === s && r.by !== u.id) out.push({ t: "throw", u: u.id, to: r.to }); }
@@ -1936,7 +2216,7 @@ button.info{cursor:pointer}
     newGame: newGame, cloneState: cloneState, unit: unit, at: at, holds: holds, keysOf: keysOf, looseKeys: looseKeys,
     stunned: stunned, glitched: glitched, braced: braced, inSmoke: inSmoke, immune: immune, canMove: canMove, canAct: canAct, canHandle: canHandle,
     afford: afford, crewCount: crewCount, leaderOf: leaderOf, round: round, cost: cost,
-    moveTargets: moveTargets, passTargets: passTargets, throwOptions: throwOptions, findThrow: findThrow, abilityTargets: abilityTargets,
+    moveTargets: moveTargets, throwOptions: throwOptions, flingTarget: flingTarget, slippery: slippery, FLOOR: FLOOR, IS_PIT: IS_PIT, PITS: PITS, findThrow: findThrow, abilityTargets: abilityTargets,
     deployTiles: deployTiles, gadgetTargets: gadgetTargets, apply: apply, endTurn: endTurn, isLegal: isLegal, dangerTo: dangerTo,
     evaluate: evaluate, bots: { plan: botPlan }
   };
@@ -1976,24 +2256,62 @@ button.info{cursor:pointer}
     key: '<circle cx="7.5" cy="12" r="4"/><path d="M11.5 12h9M17.5 12v3M20.5 12v3"/>',
     safe: '<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="12" cy="12" r="4.5"/><path d="M12 7.5v1.8M12 14.7v1.8M7.5 12h1.8M14.7 12h1.8"/>'
   };
+  /* Every leader and crew member as a blocky figure. Team color goes on the pants and the base. */
+  var OUTL = "#0b1622";
+  var PROPS = {
+    binoculars: '<rect x="-6" y="-10" width="5" height="6.5" rx="1.6" fill="#2f3b4a" stroke="' + OUTL + '" stroke-width="1.2"/><rect x="1" y="-10" width="5" height="6.5" rx="1.6" fill="#2f3b4a" stroke="' + OUTL + '" stroke-width="1.2"/><circle cx="-3.5" cy="-9" r="1.2" fill="#9fd6ff"/><circle cx="3.5" cy="-9" r="1.2" fill="#9fd6ff"/>',
+    glove: '<path d="M11 -3q7 -3 9 3q1 6 -5 6q-4 0 -4 -4z" fill="#a0632b" stroke="' + OUTL + '" stroke-width="1.3" stroke-linejoin="round"/><path d="M14 -1q2 1 3 3" fill="none" stroke="#6b3f18" stroke-width="1"/>',
+    flashlight: '<path d="M18 1l8 -4v9z" fill="rgba(255,224,138,.55)"/><rect x="11" y="-0.5" width="8" height="3.4" rx="1" fill="#2f3b4a" stroke="' + OUTL + '" stroke-width="1"/>',
+    rifle: '<path d="M-15 7L17 -11" stroke="' + OUTL + '" stroke-width="3.6" stroke-linecap="round"/><path d="M-15 7L17 -11" stroke="#6b4a2b" stroke-width="2" stroke-linecap="round"/><rect x="0" y="-6.5" width="7" height="3" rx="1.2" transform="rotate(-29 3.5 -5)" fill="#2f3b4a" stroke="' + OUTL + '" stroke-width="1"/>',
+    laptop: '<rect x="-7" y="-8" width="14" height="8" rx="1.2" fill="#9fb3c8" stroke="' + OUTL + '" stroke-width="1.3"/><path d="M-4 -5h3M-4 -3h6" stroke="#2bd67b" stroke-width="1.2"/>',
+    wheel: '<circle cx="0" cy="-5" r="6.5" fill="none" stroke="' + OUTL + '" stroke-width="3.4"/><circle cx="0" cy="-5" r="6.5" fill="none" stroke="#4a4e69" stroke-width="1.8"/><path d="M-6 -5h12" stroke="#4a4e69" stroke-width="1.8"/>',
+    briefcase: '<rect x="11" y="-1" width="9" height="7" rx="1.3" fill="#7a4a24" stroke="' + OUTL + '" stroke-width="1.3"/><path d="M13.5 -1v-2h4v2" fill="none" stroke="' + OUTL + '" stroke-width="1.2"/>',
+    key: ""
+  };
+  var LOOKS = {
+    boss: { skin: "#d9a27a", shirt: "#2b2d42", collar: "#f2b84b", hat: "fedora", hatColor: "#1d1d24", hatColor2: "#b3261e", eyes: "dot", brows: "angry", mouth: "smirk", extras: ["cigar"] },
+    fixer: { skin: "#f0d2b6", shirt: "#5b3fa0", collar: "#e9eef5", hairStyle: "flat", hair: "#3b2a1f", eyes: "dot", mouth: "smile", extras: ["glasses"], prop: "briefcase" },
+    ghost: { skin: "#e9eef5", shirt: "#3a4256", hat: "hood", hatColor: "#cfd6e2", eyes: "mask", maskColor: "#0b1622", mouth: "none" },
+    wobbler: { skin: "#f2c9a0", shirt: "#1d1d24", stripe: "#e9eef5", sleeves: "#1d1d24", hat: "beanie", hatColor: "#1d1d24", hatColor2: "#3a4256", eyes: "mask", maskColor: "#0b1622", mouth: "grin" },
+    greaser: { skin: "#e0b48a", shirt: "#1d1d24", collar: "#e9eef5", hairStyle: "pompadour", hair: "#16161d", eyes: "dot", brows: "raised", mouth: "smirk" },
+    lookout: { skin: "#c98b62", shirt: "#4d7a3a", hat: "bucket", hatColor: "#b9a36a", eyes: "dot", mouth: "o", prop: "binoculars" },
+    decoy: { skin: "#d6dbe3", shirt: "#8a94a6", collar: "#e9eef5", hat: "tophat", hatColor: "#2b2d42", hatColor2: "#b3261e", eyes: "dot", mouth: "flat", beard: "mustache", beardColor: "#2b2d42" },
+    runner: { skin: "#8d5a3b", shirt: "#e85d3a", stripe: "#fff1c1", hairStyle: "spiky", hair: "#1d1d24", hat: "headband", hatColor: "#f2c14e", eyes: "dot", mouth: "grin" },
+    catcher: { skin: "#f2c9a0", shirt: "#2f7d6d", hat: "cap", hatColor: "#2f7d6d", hatColor2: "#1d4f45", eyes: "wide", mouth: "smile", prop: "glove" },
+    pickpocket: { skin: "#d9a27a", shirt: "#4a4e69", hat: "cap", hatColor: "#4a4e69", hatColor2: "#22223b", eyes: "dot", brows: "raised", extras: ["bandana"], bandanaColor: "#9a3d3d", mouth: "none" },
+    acrobat: { skin: "#f0d2b6", shirt: "#e85d9e", hairStyle: "flat", hair: "#f2c14e", eyes: "wide", mouth: "grin", build: "slim" },
+    guard: { skin: "#c98b62", shirt: "#26324a", collar: "#9fb3c8", hat: "police", hatColor: "#26324a", hatColor2: "#f2c14e", eyes: "dot", brows: "angry", mouth: "flat", prop: "flashlight" },
+    brute: { skin: "#d9a27a", shirt: "#6b7280", hairStyle: "bald", eyes: "dot", brows: "angry", mouth: "frown", beard: "stubble", beardColor: "#4b3a2e", build: "big" },
+    sniper: { skin: "#f0d2b6", shirt: "#3f5a3a", hat: "beret", hatColor: "#2d3f2a", eyes: "squint", mouth: "flat", prop: "rifle" },
+    bodyguard: { skin: "#8d5a3b", shirt: "#16161d", collar: "#e9eef5", hairStyle: "flat", hair: "#16161d", eyes: "shades", mouth: "flat", extras: ["earpiece"], build: "big" },
+    hacker: { skin: "#f2c9a0", shirt: "#1f3a33", hat: "hood", hatColor: "#1f3a33", eyes: "dot", mouth: "smirk", extras: ["glasses"], prop: "laptop" },
+    driver: { skin: "#e0b48a", shirt: "#9a3d3d", hat: "cap", hatColor: "#1d1d24", hatColor2: "#1d1d24", eyes: "shades", mouth: "smirk", prop: "wheel" }
+  };
+  var TEAM = [{ pants: "#2a5bd7", base: "#3d8bff" }, { pants: "#b8322a", base: "#ff5a4c" }];
+  function figureMarkup(type, side) {
+    var spec = Object.assign({}, LOOKS[type] || {});
+    spec.pants = TEAM[side == null ? 0 : side].pants;
+    spec.prop = PROPS[spec.prop] || "";
+    return K.blocky.figure(spec);
+  }
+  function portraitSvg(type) { return '<svg class="pt" viewBox="0 0 64 64" aria-hidden="true">' + K.blocky.portrait(LOOKS[type] || {}) + "</svg>"; }
   function iconSvg(name, color) {
+    if (LOOKS[name]) return portraitSvg(name);
     return '<svg viewBox="0 0 24 24" fill="none" stroke="' + (color || "currentColor") + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICON[name] + "</svg>";
   }
 
-  var TITLE_ART = '<svg viewBox="0 0 260 160" role="img" aria-label="A blue crew passing a gold key toward a red safe">' +
-    '<g stroke="#2d3746" stroke-width="1">' + [0, 1, 2, 3, 4, 5, 6].map(function (k) { return '<path d="M' + (20 + k * 37) + ' 8v144"/>'; }).join("") +
-    [0, 1, 2, 3, 4].map(function (k) { return '<path d="M20 ' + (8 + k * 36) + 'h222"/>'; }).join("") + "</g>" +
-    '<rect x="172" y="12" width="48" height="48" rx="9" fill="rgba(255,90,76,.16)" stroke="#ff5a4c" stroke-width="2.6"/>' +
-    '<circle cx="196" cy="36" r="12" fill="none" stroke="#f2b840" stroke-width="2.6"/>' +
-    '<path d="M196 21v5M196 46v5M181 36h5M206 36h5" stroke="#f2b840" stroke-width="2.4" stroke-linecap="round"/>' +
-    '<path d="M74 118 Q 96 80 116 86" fill="none" stroke="#f2b840" stroke-width="2.6" stroke-dasharray="5 5" stroke-linecap="round"/>' +
-    '<path d="M140 74 Q 156 46 168 46" fill="none" stroke="#f2b840" stroke-width="2.6" stroke-dasharray="5 5" stroke-linecap="round"/>' +
-    '<circle cx="58" cy="124" r="17" fill="#3d8bff"/><circle cx="58" cy="124" r="17" fill="none" stroke="#f2b840" stroke-width="3"/>' +
-    '<path d="M50 129h16M51 129l-1-8 4 3 4-6 4 6 4-3-1 8" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>' +
-    '<circle cx="128" cy="82" r="17" fill="#3d8bff"/><path d="M121 76l6 6-6 6M128 76l6 6-6 6" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>' +
-    '<g transform="translate(140 62) rotate(-35)"><rect x="1" y="-2.4" width="15" height="4.8" rx="1.5" fill="#f2b840" stroke="#1b1305" stroke-width="1.2"/><rect x="11" y="0" width="3" height="6" fill="#f2b840" stroke="#1b1305" stroke-width="1"/><circle cx="-2" cy="0" r="6" fill="#9cc3ff" stroke="#1b1305" stroke-width="1.4"/></g>' +
-    '<circle cx="216" cy="118" r="15" fill="#ff5a4c" opacity=".9"/><path d="M216 109v18M207 118h18" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".9"/>' +
-    "</svg>";
+  var TITLE_ART = (function () {
+    var o = '<svg viewBox="0 0 280 170" role="img" aria-label="A blue Wobbler throws the key over a pit to a Greaser, in front of the red safe">';
+    o += '<defs><radialGradient id="tpit" cx="50%" cy="40%" r="60%"><stop offset="0" stop-color="#000"/><stop offset="1" stop-color="#1c2430"/></radialGradient></defs>';
+    o += '<rect x="196" y="10" width="64" height="64" rx="12" fill="rgba(255,90,76,.16)" stroke="#ff5a4c" stroke-width="3"/><circle cx="228" cy="42" r="15" fill="none" stroke="#f2b840" stroke-width="3"/><path d="M228 22v6M228 56v6M208 42h6M242 42h6" stroke="#f2b840" stroke-width="3" stroke-linecap="round"/>';
+    o += '<rect x="104" y="118" width="58" height="30" rx="10" fill="url(#tpit)" stroke="#2d3746" stroke-width="2"/>';
+    o += '<path d="M78 92 Q 132 30 184 78" fill="none" stroke="#f2b840" stroke-width="3" stroke-dasharray="6 6" stroke-linecap="round"/>';
+    o += '<g transform="translate(150 50) rotate(-20) scale(1.7)"><rect x="1" y="-1.8" width="10" height="3.6" rx="1.2" fill="#f2b840" stroke="#1b1305" stroke-width="1"/><rect x="8" y="0" width="2.2" height="4.4" fill="#f2b840" stroke="#1b1305" stroke-width="1"/><circle cx="-1.8" cy="0" r="4.4" fill="#9cc3ff" stroke="#1b1305" stroke-width="1.2"/></g>';
+    o += '<g transform="translate(58 122) scale(1.55)"><ellipse cx="0" cy="16" rx="15" ry="5" fill="#3d8bff" stroke="#0b1622" stroke-width="1.5"/>' + figureMarkup("wobbler", 0) + "</g>";
+    o += '<g transform="translate(206 122) scale(1.55)"><ellipse cx="0" cy="16" rx="15" ry="5" fill="#3d8bff" stroke="#0b1622" stroke-width="1.5"/>' + figureMarkup("greaser", 0) + "</g>";
+    o += "</svg>";
+    return o;
+  })();
 
   function glossary() {
     var rows = [];
@@ -2005,6 +2323,8 @@ button.info{cursor:pointer}
   }
 
   var RULES = [
+    "<h3>The board</h3>",
+    "<p>The floor is 9 tiles wide in each side's two home rows and 7 wide in between, with six pits in the middle. Your safe sits in the middle of your back row.</p>",
     "<h3>The goal</h3>",
     "<p>Both crews have a <b>safe</b> and a <b>key</b>. Your key opens <b>their</b> safe. You win at the start of your turn if:</p><ul>",
     "<li><b>Crack:</b> one of your units holding your key is on or next to their safe.</li>",
@@ -2014,14 +2334,15 @@ button.info{cursor:pointer}
     "<p>You get <b>5 mana</b> every turn. Unspent mana carries over, up to 10. You can go into debt down to −3, and the debt comes out of your next turn.</p>",
     '<dl class="kv"><dt>Deploy</dt><dd>Play a crew card onto your two home rows, or next to one of your Lookouts or Getaway Drivers. Your leader never counts. New crew can\'t move or use abilities until your next turn. Up to 6 crew at once.</dd>',
     "<dt>Move · 1</dt><dd>Each unit moves once a turn, in its own pattern. Moving onto an enemy captures it and takes any key it holds.</dd>",
-    "<dt>Pass · 1</dt><dd>Hand your key to a teammate up to 2 tiles away.</dd>",
-    "<dt>Throw · 2</dt><dd>Throw your key up to 3 tiles in a straight line. The first unit in the way catches it, friend or foe. If nobody does, it lands on the floor for anyone to pick up.</dd>",
+    "<dt>Throw · 2</dt><dd>Any unit can throw your key up to 3 tiles in a straight line, right over pits. The first unit in the way catches it, friend or foe. If nobody does, it lands on the floor for anyone to pick up.</dd>",
+    "<dt>Pass</dt><dd>A safe hand-off to the teammate right next to you. Only <b>Wobblers</b> can do it, with their ability.</dd>",
     "<dt>Ability</dt><dd>Each unit can use its ability once a turn, at the cost shown.</dd>",
     "<dt>Gadget</dt><dd>One card in your hand is always a gadget.</dd></dl>",
     "<h3>Keys</h3><ul>",
     "<li>Your leader starts the match holding your key.</li>",
     "<li>Keys are heavy. A unit carrying one moves only 1 tile and can't use movement abilities. The Runner and the Ghost ignore this.</li>",
     "<li>You can only pass or throw <b>your own</b> key, and not on a turn it changed hands. A stolen key has to be walked home.</li>",
+    "<li><b>Pits</b> block movement, but keys fly over them. A unit shoved into a pit falls and is out; its key stays on the edge.</li>",
     "<li>A unit that catches a pass or throw can't move again that turn (the Catcher can).</li>",
     "<li>Nobody can stand on their own safe, except to lock a stolen key away.</li></ul>",
     "<h3>Your deck</h3>",
@@ -2060,16 +2381,28 @@ button.info{cursor:pointer}
   function buildBoard() {
     var stage = K.$("#stage");
     stage.innerHTML = "";
-    var svg = sv("svg", { id: "board", viewBox: "0 0 " + VBW + " " + VBH, role: "img", "aria-label": "Heist floor, 7 by 10 tiles" });
+    var svg = sv("svg", { id: "board", viewBox: "0 0 " + VBW + " " + VBH, role: "img", "aria-label": "Heist floor: 9 wide at each end, 7 wide in the middle, with pits" });
+    svg.appendChild(sv("defs", null,
+      sv("radialGradient", { id: "pitg", cx: "50%", cy: "38%", r: "62%" },
+        sv("stop", { offset: "0", "stop-color": "#000" }), sv("stop", { offset: ".7", "stop-color": "#05070b" }), sv("stop", { offset: "1", "stop-color": "#1c2430" }))));
     var tiles = sv("g");
+    for (var t0 = 0; t0 < KR.N; t0++) {
+      if (!KR.FLOOR[t0] && !KR.IS_PIT[t0]) continue;
+      var x0 = cx(t0) - S / 2, y0 = cy(t0) - S / 2;
+      tiles.appendChild(sv("rect", { x: x0 - 1.5, y: y0 - 1.5, width: S + 3, height: S + 5, rx: 4, class: "tl-edge" }));
+    }
     for (var t = 0; t < KR.N; t++) {
       var x = cx(t) - S / 2, y = cy(t) - S / 2;
-      tiles.appendChild(sv("rect", { x: x, y: y, width: S, height: S, class: (KR.cOf(t) + KR.rOf(t)) % 2 ? "tl-b" : "tl-a" }));
-      if (KR.IS_HOME[0][t]) tiles.appendChild(sv("rect", { x: x, y: y, width: S, height: S, class: "home0" }));
-      if (KR.IS_HOME[1][t]) tiles.appendChild(sv("rect", { x: x, y: y, width: S, height: S, class: "home1" }));
+      if (KR.IS_PIT[t]) {
+        tiles.appendChild(sv("rect", { x: x + 1, y: y + 1, width: S - 2, height: S - 2, rx: 6, fill: "url(#pitg)", class: "pit" }));
+        tiles.appendChild(sv("path", { d: "M" + (x + 6) + " " + (y + 9) + "q" + (S / 2 - 6) + " -6 " + (S - 12) + " 0", class: "pit-lip" }));
+        continue;
+      }
+      if (!KR.FLOOR[t]) continue;
+      tiles.appendChild(sv("rect", { x: x + 0.5, y: y + 0.5, width: S - 1, height: S - 1, rx: 3, class: (KR.cOf(t) + KR.rOf(t)) % 2 ? "tl-b" : "tl-a" }));
+      if (KR.IS_HOME[0][t]) tiles.appendChild(sv("rect", { x: x + 0.5, y: y + 0.5, width: S - 1, height: S - 1, rx: 3, class: "home0" }));
+      if (KR.IS_HOME[1][t]) tiles.appendChild(sv("rect", { x: x + 0.5, y: y + 0.5, width: S - 1, height: S - 1, rx: 3, class: "home1" }));
     }
-    for (var k = 0; k <= KR.W; k++) tiles.appendChild(sv("path", { d: "M" + (PAD + k * S) + " " + PAD + "V" + (PAD + KR.H * S), class: "gridl" }));
-    for (var r = 0; r <= KR.H; r++) tiles.appendChild(sv("path", { d: "M" + PAD + " " + (PAD + r * S) + "H" + (PAD + KR.W * S), class: "gridl" }));
     [0, 1].forEach(function (s) {
       var sf = KR.SAFE[s], zone = [];
       for (var q = 0; q < KR.N; q++) if (KR.cheb(q, sf) <= KR.CFG.crackRange) zone.push(q);
@@ -2085,7 +2418,7 @@ button.info{cursor:pointer}
     svg.appendChild(tiles);
     ["marks", "hl", "units", "fx"].forEach(function (n) { var g = sv("g", { class: n }); G.layers[n] = g; svg.appendChild(g); });
     var hit = sv("g", { class: "hit-layer" });
-    for (var j = 0; j < KR.N; j++) hit.appendChild(sv("rect", { x: cx(j) - S / 2, y: cy(j) - S / 2, width: S, height: S, "data-t": String(j) }));
+    for (var j = 0; j < KR.N; j++) if (KR.FLOOR[j]) hit.appendChild(sv("rect", { x: cx(j) - S / 2, y: cy(j) - S / 2, width: S, height: S, "data-t": String(j) }));
     hit.addEventListener("click", function (e) { var el = e.target; if (el && el.getAttribute("data-t") != null) onTile(+el.getAttribute("data-t")); });
     svg.appendChild(hit);
     stage.appendChild(svg);
@@ -2096,24 +2429,25 @@ button.info{cursor:pointer}
     var n = G.nodes[u.id];
     if (n && n.__side !== u.side) { n.remove(); n = null; }
     if (n) return n;
-    n = sv("g", { class: "tok" });
+    n = sv("g", { class: "tok" + (u.type === "wobbler" ? " wob" : "") });
     n.__side = u.side;
-    n.appendChild(sv("circle", { class: "tok-ring", r: "22" }));
-    n.appendChild(sv("circle", { class: "tok-ready", r: "22" }));
-    n.appendChild(sv("circle", { class: "tok-brace", r: "23.5" }));
-    n.appendChild(sv("circle", { class: "tok-carry", r: "22.5" }));
-    n.appendChild(sv("circle", { class: "tok-body s" + u.side, r: "18" }));
-    if (u.leader) n.appendChild(sv("circle", { class: "tok-lead", r: "15.2" }));
-    n.appendChild(sv("circle", { class: "tok-glitch", r: "20.5" }));
-    var ic = sv("g", { class: "tok-icon", transform: "translate(-10.2 -10.2) scale(.85)" });
-    ic.innerHTML = ICON[u.type];
-    n.appendChild(ic);
-    n.appendChild(sv("rect", { class: "tok-armor", x: "-7", y: "13", width: "14", height: "6", rx: "2" }));
+    n.appendChild(sv("ellipse", { class: "tok-ring", cx: "0", cy: "16", rx: "19", ry: "6.5" }));
+    n.appendChild(sv("ellipse", { class: "tok-ready", cx: "0", cy: "16", rx: "19", ry: "6.5" }));
+    n.appendChild(sv("ellipse", { class: "tok-carry", cx: "0", cy: "16", rx: "19", ry: "6.5" }));
+    n.appendChild(sv("ellipse", { class: "tok-base s" + u.side + (u.leader ? " lead" : ""), cx: "0", cy: "16", rx: "15", ry: "5" }));
+    n.appendChild(sv("ellipse", { class: "tok-brace", cx: "0", cy: "16", rx: "21", ry: "7.5" }));
+    n.appendChild(sv("ellipse", { class: "tok-glitch", cx: "0", cy: "16", rx: "17.5", ry: "6.2" }));
+    n.appendChild(sv("ellipse", { class: "tok-slip", cx: "0", cy: "16", rx: "17.5", ry: "6.2" }));
+    var fig = sv("g", { class: "tok-fig", transform: "translate(0 4) scale(.78)" });
+    fig.innerHTML = figureMarkup(u.type, u.side);
+    n.appendChild(fig);
+    if (u.leader) n.appendChild(sv("path", { class: "tok-crown", d: "M-6 -27l2.5 -5 3.5 3 3.5 -3 2.5 5z" }));
+    n.appendChild(sv("rect", { class: "tok-armor", x: "-17", y: "6", width: "7", height: "8", rx: "2" }));
     var stunG = sv("g", { class: "tok-stun" });
-    stunG.appendChild(sv("path", { d: "M-9 -22l3-3 3 3 3-3 3 3 3-3 3 3" }));
+    stunG.appendChild(sv("path", { d: "M-12 -20l3-3 3 3 3-3 3 3 3-3 3 3 3-3 3 3" }));
     n.appendChild(stunG);
-    n.appendChild(keyGlyph(0, 13, -13, 1.25, "tok-key k0"));
-    n.appendChild(keyGlyph(1, 13, 14, 1.25, "tok-key k1"));
+    n.appendChild(keyGlyph(0, 14, 3, 1.35, "tok-key k0"));
+    n.appendChild(keyGlyph(1, 14, 11, 1.35, "tok-key k1"));
     var dg = sv("g", { class: "tok-danger", transform: "translate(-14 -14)" });
     dg.appendChild(sv("circle", { r: "7" }));
     dg.appendChild(sv("text", { x: "0", y: "4", "text-anchor": "middle", text: "!" }));
@@ -2132,7 +2466,7 @@ button.info{cursor:pointer}
     if (u.side !== st.side) return false;
     if (KR.canMove(st, u) && KR.moveTargets(st, u).length) return true;
     if (KR.canAct(st, u) && KR.abilityTargets(st, u).length) return true;
-    if (KR.passTargets(st, u).length || KR.throwOptions(st, u).length) return true;
+    if (KR.throwOptions(st, u).length) return true;
     return false;
   }
 
@@ -2149,6 +2483,7 @@ button.info{cursor:pointer}
       n.classList.toggle("carrier", st.keys[0].h === u.id || st.keys[1].h === u.id);
       n.classList.toggle("stunned", KR.stunned(st, u) || (st.ply + 1 < u.st && !mine));
       n.classList.toggle("braced", KR.braced(st, u));
+      n.classList.toggle("slick", KR.slippery(st, u) || (st.ply + 1 < (u.sl || 0)));
       n.classList.toggle("glitched", KR.glitched(st, u));
       n.classList.toggle("armored", !!u.armor);
       n.classList.toggle("fresh", mine && u.fr === st.ply);
@@ -2183,6 +2518,12 @@ button.info{cursor:pointer}
       var X = cx(tr.t), Y = cy(tr.t);
       g.appendChild(sv("path", { d: "M" + (X - 9) + " " + (Y - 9) + "l18 18M" + (X + 9) + " " + (Y - 9) + "l-18 18", class: "trap" }));
     });
+    st.units.forEach(function (u) {
+      if (!(KR.slippery(st, u) || st.ply + 1 < (u.sl || 0)) || !KR.holds(st, u)) return;
+      var m = KR.flingTarget(st, u);
+      if (!m) return;
+      g.appendChild(sv("path", { d: "M" + cx(u.pos) + " " + (cy(u.pos) - 6) + "Q" + ((cx(u.pos) + cx(m.pos)) / 2) + " " + (Math.min(cy(u.pos), cy(m.pos)) - 30) + " " + cx(m.pos) + " " + (cy(m.pos) - 6), class: "fling-path" }));
+    });
     G.trails.forEach(function (tr) {
       g.appendChild(sv("path", { d: "M" + cx(tr.from) + " " + cy(tr.from) + "L" + cx(tr.to) + " " + cy(tr.to), class: "trail s" + tr.side }));
     });
@@ -2203,8 +2544,6 @@ button.info{cursor:pointer}
       KR.moveTargets(st, u).forEach(function (t) { add(t, st.board[t] >= 0 ? "cap" : "move", { t: "move", u: u.id, to: t }); });
     } else if (u && G.mode === "ab" && spend >= T[u.type].ac) {
       KR.abilityTargets(st, u).forEach(function (t) { add(t, "ab", { t: "ab", u: u.id, to: t }); });
-    } else if (u && G.mode === "pass" && spend >= KR.CFG.passCost) {
-      KR.passTargets(st, u).forEach(function (t) { add(t, "pass", { t: "pass", u: u.id, to: t }); });
     } else if (u && G.mode === "throw" && spend >= KR.CFG.throwCost) {
       KR.throwOptions(st, u).forEach(function (o) {
         var by = o.by >= 0 ? KR.unit(st, o.by) : null;
@@ -2417,12 +2756,11 @@ button.info{cursor:pointer}
       var abT = KR.abilityTargets(st, u);
       acts.appendChild(btn("Move", 1, { pressed: G.mode === "move", disabled: !KR.canMove(st, u) || spend < 1 || !KR.moveTargets(st, u).length, onclick: function () { setMode("move"); } }));
       var abReady = KR.canAct(st, u) && spend >= d.ac && abT.length > 0;
-      var noTarget = d.ab === "brace" || d.ab === "insideman";
+      var noTarget = d.ab === "brace" || d.ab === "insideman" || d.ab === "slip";
       acts.appendChild(btn(d.aname, d.ac, { pressed: G.mode === "ab", disabled: !abReady, onclick: function () {
         if (noTarget) doHuman({ t: "ab", u: u.id, to: abT[0] }); else setMode("ab");
       } }));
       if (KR.looseKeys(st, u).length) {
-        acts.appendChild(btn("Pass", KR.CFG.passCost, { pressed: G.mode === "pass", disabled: spend < KR.CFG.passCost || !KR.passTargets(st, u).length, onclick: function () { setMode("pass"); } }));
         acts.appendChild(btn("Throw", KR.CFG.throwCost, { pressed: G.mode === "throw", disabled: spend < KR.CFG.throwCost || !KR.throwOptions(st, u).length, onclick: function () { setMode("throw"); } }));
       }
       ctx.appendChild(unitInfo(u));
@@ -2590,6 +2928,8 @@ button.info{cursor:pointer}
         case "out": if (e.cause !== "capture") parts.push(sideWord(e.side) + " " + shortName(e.type) + " is taken out" + (e.cause === "trap" ? " by a tripwire!" : "!")); break;
         case "armor": parts.push(nm(e.u) + "'s armor takes the hit."); break;
         case "trap": parts.push("Tripwire!"); break;
+        case "fling": parts.push("Slippery! The key flies " + (e.by >= 0 ? "to " + nm(e.by) : "loose") + "."); break;
+        case "fall": parts.push(nm(e.u) + " falls into a pit!"); break;
         case "pass":
           if (e.how === "swipe") parts.push(nm(e.to) + " swipes the key from " + nm(e.from) + "!");
           else if (e.how === "call") parts.push(nm(e.to) + " calls for the key.");
@@ -2686,6 +3026,13 @@ button.info{cursor:pointer}
           }
           break;
         case "trap": K.Sound.play("liar"); break;
+        case "fling": keyFlight(e.from, e.to, e.keys[0]); K.Sound.play("whoosh"); wait = Math.max(wait, 520); break;
+        case "fall":
+          K.Sound.play("splash");
+          var fn = G.nodes[e.u];
+          if (fn) { fn.style.transform = "translate(" + cx(e.at) + "px," + cy(e.at) + "px) scale(.3)"; }
+          wait = Math.max(wait, 420);
+          break;
         case "bribe": K.Sound.play("score"); break;
       }
     });

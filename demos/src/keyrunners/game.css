@@ -25,7 +25,8 @@ body{background:var(--bg);color:var(--ink)}
 /* ---------- Top bar chips ---------- */
 .foe{display:flex;align-items:center;gap:7px;padding:5px 10px 5px 6px;border-radius:999px;background:var(--surface);border:1px solid var(--line);flex:none;font-variant-numeric:tabular-nums}
 .foe .dot{width:26px;height:26px;border-radius:50%;display:grid;place-items:center}
-.foe .dot svg{width:16px;height:16px}
+.foe .dot svg{width:22px;height:22px}
+.foe .dot{overflow:hidden}
 .foe .dot.s0{background:var(--blue)} .foe .dot.s1{background:var(--red)}
 .foe b{font-size:.95rem}
 .foe small{color:var(--muted);font-size:.74rem;font-weight:700}
@@ -33,6 +34,10 @@ body{background:var(--bg);color:var(--ink)}
 /* ---------- Board ---------- */
 #board{width:100%;height:100%;display:block;touch-action:manipulation}
 .tl-a{fill:var(--tile-a)} .tl-b{fill:var(--tile-b)}
+.tl-edge{fill:#070a0f}
+.pit{stroke:#2d3746;stroke-width:1.5}
+.pit-lip{fill:none;stroke:rgba(160,180,210,.18);stroke-width:1.6;stroke-linecap:round}
+.fling-path{fill:none;stroke:#7fe7ff;stroke-width:2;stroke-dasharray:3 4;stroke-linecap:round;opacity:.85}
 .home0{fill:rgba(61,139,255,.09)} .home1{fill:rgba(255,90,76,.09)}
 .gridl{stroke:var(--grid);stroke-width:1}
 .zone{fill:none;stroke-width:1.6;stroke-dasharray:4 4;opacity:.55}
@@ -63,17 +68,22 @@ body{background:var(--bg);color:var(--ink)}
 
 /* units */
 .tok{transition:transform .34s cubic-bezier(.3,.7,.3,1), opacity .3s}
-.tok-body.s0{fill:var(--blue)} .tok-body.s1{fill:var(--red)}
-.tok-lead{fill:none;stroke:rgba(255,255,255,.85);stroke-width:1.6;stroke-dasharray:3 2.2}
-.tok-carry{fill:rgba(242,184,64,.16);stroke:var(--gold);stroke-width:3;opacity:0}
+.tok-base{stroke:#0b1622;stroke-width:1.5}
+.tok-base.s0{fill:var(--blue)} .tok-base.s1{fill:var(--red)}
+.tok-base.lead{stroke:var(--gold);stroke-width:2.2}
+.tok-crown{fill:var(--gold);stroke:#0b1622;stroke-width:1.2;stroke-linejoin:round}
+.tok-carry{fill:rgba(242,184,64,.22);stroke:var(--gold);stroke-width:2.6;opacity:0}
 .tok.carrier .tok-carry{opacity:1}
-.tok-icon{fill:none;stroke:#fff;stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round}
-.tok-ring{fill:none;stroke:var(--ink);stroke-width:2.4;opacity:0}
+.tok-ring{fill:none;stroke:var(--ink);stroke-width:2.6;opacity:0}
 .tok.sel .tok-ring{opacity:1}
 .tok.ready .tok-ready{opacity:1}
-.tok-ready{fill:none;stroke:rgba(255,255,255,.55);stroke-width:1.4;stroke-dasharray:2.5 3;opacity:0}
-.tok.spent .tok-body{opacity:.72}
-.tok.fresh .tok-body{opacity:.6}
+.tok-ready{fill:none;stroke:rgba(255,255,255,.6);stroke-width:1.4;stroke-dasharray:2.5 3;opacity:0}
+.tok.spent .tok-fig{opacity:.7}
+.tok.fresh .tok-fig{opacity:.62}
+.tok.wob .tok-fig{animation:kr-wobble 2.4s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 100%}
+@keyframes kr-wobble{0%,100%{rotate:-3deg}50%{rotate:3deg}}
+.tok-slip{fill:none;stroke:#7fe7ff;stroke-width:2;stroke-dasharray:4 3;display:none}
+.tok.slick .tok-slip{display:inline}
 .tok.dying{opacity:0;transition:opacity .35s}
 .tok-key{display:none}
 .tok.k0 .tok-key.k0,.tok.k1 .tok-key.k1{display:inline}
@@ -85,7 +95,7 @@ body{background:var(--bg);color:var(--ink)}
 .tok-stun path{fill:none;stroke:var(--gold-2);stroke-width:1.8;stroke-linecap:round}
 .tok-brace{fill:none;stroke:var(--gold);stroke-width:2;stroke-dasharray:3 2}
 .tok-glitch{fill:none;stroke:var(--violet);stroke-width:2.2;stroke-dasharray:1.5 2.5}
-.tok-armor{fill:#c9d2de;stroke:#56606e;stroke-width:1}
+.tok-armor{fill:#c9d2de;stroke:#0b1622;stroke-width:1.2}
 .tok-danger circle{fill:var(--bad);stroke:var(--bg);stroke-width:1.5}
 .tok-danger text{fill:#fff;font:800 11px var(--font-body)}
 .tok-fresh{fill:var(--bg);stroke:var(--muted);stroke-width:1}
@@ -118,6 +128,8 @@ button.info{cursor:pointer}
 .info .badge{width:36px;height:36px;border-radius:50%;flex:none;display:grid;place-items:center}
 .info .badge.s0{background:var(--blue)} .info .badge.s1{background:var(--red)} .info .badge.g{background:var(--surface-2);border:1.5px solid var(--gold)}
 .info .badge svg{width:22px;height:22px}
+.info .badge{overflow:hidden}
+.info .badge svg.pt{width:36px;height:36px;margin-top:4px}
 .info .txt{flex:1;min-width:0;font-size:.78rem;line-height:1.28;color:var(--muted);padding-right:14px}
 .info .txt b{color:var(--ink);font-size:.88rem}
 .info .txt .nm{display:flex;gap:6px;align-items:baseline;flex-wrap:wrap;margin-bottom:1px}
@@ -131,6 +143,7 @@ button.info{cursor:pointer}
 .hand{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
 .card{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 3px 6px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);min-height:66px;color:var(--ink)}
 .card svg{width:22px;height:22px}
+.card svg.pt{width:34px;height:34px;margin:-4px 0 -3px}
 .card .nm{font-size:.7rem;font-weight:800;line-height:1.05;text-align:center}
 .card .cost{position:absolute;top:-6px;right:-5px;width:20px;height:20px;border-radius:50%;background:var(--gold);color:var(--accent-ink);font-size:.72rem;font-weight:800;display:grid;place-items:center;border:2px solid var(--bg)}
 .card.gadget{border-style:dashed;border-color:rgba(242,184,64,.55)}
@@ -178,6 +191,8 @@ button.info{cursor:pointer}
 .rules .gl{display:flex;gap:10px;align-items:flex-start}
 .rules .gl .badge{width:30px;height:30px;border-radius:50%;flex:none;display:grid;place-items:center;background:var(--surface-2);border:1px solid var(--line)}
 .rules .gl .badge svg{width:18px;height:18px}
+.rules .gl .badge{overflow:hidden}
+.rules .gl .badge svg.pt{width:30px;height:30px;margin-top:4px}
 .rules .gl p{margin:0;font-size:.88rem;color:var(--muted)}
 .rules .gl p b{color:var(--ink)}
 .rules .gl .cost{display:inline-grid;place-items:center;min-width:17px;height:17px;border-radius:9px;background:var(--gold);color:var(--accent-ink);font-size:.7rem;font-weight:800;margin-left:4px;padding:0 4px}
@@ -191,7 +206,8 @@ button.info{cursor:pointer}
   .info .badge svg{width:18px;height:18px}
   .card{min-height:52px;padding:5px 3px 4px}
   .card svg{width:18px;height:18px}
+  .card svg.pt{width:26px;height:26px}
   .next{display:none}
   .bottom .btn{min-height:40px}
 }
-@media (prefers-reduced-motion: reduce){ .tok{transition:none} .pulse{animation:none} }
+@media (prefers-reduced-motion: reduce){ .tok{transition:none} .pulse{animation:none} .tok.wob .tok-fig{animation:none} }

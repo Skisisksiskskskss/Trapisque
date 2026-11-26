@@ -8,6 +8,7 @@ if (process.env.CFG) Object.assign(KR.CFG, JSON.parse(process.env.CFG));
 function check(st) {
   const seen = {};
   st.units.forEach((u) => {
+    if (!KR.FLOOR[u.pos]) throw new Error("unit " + u.id + " is standing on a pit or off the floor");
     if (st.board[u.pos] !== u.id) throw new Error("board out of sync for unit " + u.id);
     if (seen[u.pos]) throw new Error("two units on tile " + u.pos);
     seen[u.pos] = 1;
@@ -17,7 +18,7 @@ function check(st) {
   if (n !== st.units.length) throw new Error("board count mismatch");
   st.keys.forEach((K, k) => {
     if (K.h >= 0) { if (!KR.unit(st, K.h)) throw new Error("key " + k + " held by a missing unit"); }
-    else if (K.at < 0 || st.board[K.at] >= 0) throw new Error("key " + k + " on the ground in a bad place " + K.at);
+    else if (K.at < 0 || st.board[K.at] >= 0 || !KR.FLOOR[K.at]) throw new Error("key " + k + " on the ground in a bad place " + K.at);
   });
   [0, 1].forEach((s) => {
     if (st.mana[s] < -KR.CFG.debt) throw new Error("mana below the debt limit");
@@ -56,7 +57,7 @@ function play(seed, la, lb, da, db, usage) {
           if (a.t === "gadget") usage["gadget " + ev[0].g] = (usage["gadget " + ev[0].g] || 0) + 1;
           if (a.t === "ab") usage["ability " + ev[0].ab] = (usage["ability " + ev[0].ab] || 0) + 1;
           usage["act " + a.t] = (usage["act " + a.t] || 0) + 1;
-          ev.forEach((e) => { if (e.e === "trap" || e.e === "bounce" || e.e === "slam" || e.e === "bribe") usage["event " + e.e] = (usage["event " + e.e] || 0) + 1; });
+          ev.forEach((e) => { if (e.e === "trap" || e.e === "bounce" || e.e === "slam" || e.e === "bribe" || e.e === "fling" || e.e === "fall") usage["event " + e.e] = (usage["event " + e.e] || 0) + 1; });
         }
         if (!firstSteal && ev.some((e) => (e.e === "capture" && e.keys.length) || (e.e === "pass" && e.how === "swipe") || (e.e === "throw" && e.by >= 0 && KR.unit(st, e.by) && KR.unit(st, e.by).side !== st.side))) firstSteal = st.ply;
         check(st);

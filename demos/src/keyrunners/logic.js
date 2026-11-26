@@ -1,15 +1,16 @@
 /* Keyrunners: rules engine and bot. No DOM, so it runs in Node for tests.
    Side 0 (Blue) plays from the bottom (home rows 8-9), side 1 (Red) from the top (home rows 0-1).
    Key k belongs to side k and opens the other side's safe. A side wins at the start of its turn if
-   its own key is on the enemy safe (crack) or the enemy's key is in its back row (stash).
-   Nobody may stand on their own safe, except by capturing an enemy there. */
+   its own key is on or next to the enemy safe (crack) or the enemy's key is on its own safe (stash).
+   The board is 9 wide in each side's two home rows and 7 wide between them, with pits in the
+   middle. Units can't stand on pits, but keys fly over them. */
 (function (root) {
   "use strict";
 
-  var W = 7, H = 10, N = W * H;
+  var W = 9, H = 10, N = W * H;
   var CFG = {
     firstIncome: 5, income: 5, cap: 10, debt: 3, maxCrew: 6, rounds: 30,
-    moveCost: 1, passCost: 1, throwCost: 2, burnCost: 1, passRange: 2, throwRange: 3, hookRange: 4,
+    moveCost: 1, throwCost: 2, burnCost: 1, passRange: 1, throwRange: 3, hookRange: 4,
     stashTo: "safe", crackRange: 1, heavyOwn: true
   };
   var BACK = [9, 0];
@@ -22,12 +23,17 @@
   function cheb(a, b) { return Math.max(Math.abs(cOf(a) - cOf(b)), Math.abs(rOf(a) - rOf(b))); }
   function inB(c, r) { return c >= 0 && c < W && r >= 0 && r < H; }
 
-  var SAFE = [idx(3, 9), idx(3, 0)];
+  var SAFE = [idx(4, 9), idx(4, 0)];
+  /* FLOOR: tiles units can stand on. Columns 0 and 8 only exist in the home rows; PIT tiles are holes. */
+  var PITS = [[2, 3], [6, 3], [4, 4], [4, 5], [2, 6], [6, 6]];
+  var FLOOR = new Uint8Array(N), IS_PIT = new Uint8Array(N);
+  for (var ft = 0; ft < N; ft++) { var fr = (ft / W) | 0, fc = ft % W; FLOOR[ft] = (fr <= 1 || fr >= H - 2 || (fc >= 1 && fc <= W - 2)) ? 1 : 0; }
+  PITS.forEach(function (pp) { var t = pp[1] * W + pp[0]; FLOOR[t] = 0; IS_PIT[t] = 1; });
   var HOME_ROWS = [[8, 9], [0, 1]];
   var IS_SAFE = new Uint8Array(N);
   IS_SAFE[SAFE[0]] = 1; IS_SAFE[SAFE[1]] = 1;
   var IS_HOME = [new Uint8Array(N), new Uint8Array(N)];
-  for (var hs = 0; hs < 2; hs++) HOME_ROWS[hs].forEach(function (r) { for (var c = 0; c < W; c++) IS_HOME[hs][idx(c, r)] = 1; });
+  for (var hs = 0; hs < 2; hs++) HOME_ROWS[hs].forEach(function (r) { for (var c = 0; c < W; c++) if (FLOOR[idx(c, r)]) IS_HOME[hs][idx(c, r)] = 1; });
 
   var D8 = [[0, -1], [1, 0], [0, 1], [-1, 0], [1, -1], [1, 1], [-1, 1], [-1, -1]];
   var KNIGHT = [[1, 2], [2, 1], [-1, 2], [-2, 1], [1, -2], [2, -1], [-1, -2], [-2, -1]];
@@ -38,9 +44,9 @@
       var ray = [], cc = c0 + D8[d0][0], rr = r0 + D8[d0][1];
       while (inB(cc, rr)) { ray.push(idx(cc, rr)); cc += D8[d0][0]; rr += D8[d0][1]; }
       rays.push(ray);
-      if (ray.length) nb.push(ray[0]);
+      if (ray.length && FLOOR[ray[0]]) nb.push(ray[0]);
       var kc = c0 + KNIGHT[d0][0], kr = r0 + KNIGHT[d0][1];
-      if (inB(kc, kr)) kn.push(idx(kc, kr));
+      if (inB(kc, kr) && FLOOR[idx(kc, kr)]) kn.push(idx(kc, kr));
     }
     NB.push(nb); RAY.push(rays); KNT.push(kn);
   }
@@ -51,9 +57,13 @@
       ab: "orders", aname: "Orders", ac: 2, atext: "One of your crew that already moved this turn may move again." },
     fixer: { name: "The Fixer", ps: "+1 mana every turn.", as: "Deploy next to any of your crew this turn.", leader: true, move: "step", passive: "connected", pname: "Connected", ptext: "You get +1 mana every turn.",
       ab: "insideman", aname: "Inside Man", ac: 1, atext: "This turn you may deploy next to any of your crew, not just Hideouts." },
-    ghost: { name: "The Ghost", ps: "Moves 2 tiles any way, even with a key.", as: "Swap with one of your crew up to 3 away.", leader: true, move: "king2", carrier: true, passive: "slippery", pname: "Slippery", ptext: "Moves up to 2 tiles in any direction, even carrying a key.",
+    ghost: { name: "The Ghost", ps: "Moves 2 tiles any way, even with a key.", as: "Swap with one of your crew up to 3 away.", leader: true, move: "king2", carrier: true, passive: "phantom", pname: "Phantom", ptext: "Moves up to 2 tiles in any direction, even carrying a key.",
       ab: "vanish", aname: "Vanish", ac: 2, atext: "Swap places with one of your crew up to 3 tiles away." },
 
+    wobbler: { name: "Wobbler", ps: "Moves 1 tile in any direction.", as: "Hand your key to a teammate next to you.", cost: 1, move: "step", passive: "wobbly", pname: "Wobbly", ptext: "Moves 1 tile in any direction.",
+      ab: "handoff", aname: "Pass", ac: 1, atext: "Hand your key to a teammate right next to it. Nothing can intercept it." },
+    greaser: { name: "Greaser", ps: "Moves any distance diagonally.", as: "If attacked with a key, it flies to the nearest teammate.", cost: 2, move: "bishop", passive: "greased", pname: "Slick Moves", ptext: "Moves any distance diagonally, like a chess bishop. One diagonal step while carrying a key.",
+      ab: "slip", aname: "Slippery", ac: 1, atext: "Until your next turn, if anyone captures it, takes it out or grabs its key, the key flies to your nearest teammate instead." },
     lookout: { name: "Lookout", ps: "You can deploy next to it.", as: "Run up to 3 straight. No captures.", cost: 1, move: "step", passive: "hideout", pname: "Hideout", ptext: "You can deploy crew next to it.",
       ab: "dash", aname: "Dash", ac: 1, atext: "Run up to 3 tiles in a straight line. No captures, and not while carrying a key." },
     decoy: { name: "Decoy", ps: "Whoever captures it is stunned.", as: "Swap with an ally up to 2 away.", cost: 1, move: "step", passive: "bait", pname: "Bait", ptext: "Whoever captures it is stunned on their next turn.",
@@ -88,13 +98,13 @@
     bribe: { name: "Bribe", cost: 4, text: "An enemy crew member next to your leader joins your side, keys and all." }
   };
   var LEADERS = ["boss", "fixer", "ghost"];
-  var CREW = ["lookout", "decoy", "runner", "catcher", "pickpocket", "acrobat", "guard", "brute", "sniper", "bodyguard", "hacker", "driver"];
+  var CREW = ["wobbler", "greaser", "lookout", "decoy", "runner", "catcher", "pickpocket", "acrobat", "guard", "brute", "sniper", "bodyguard", "hacker", "driver"];
   var GADGET_LIST = ["smoke", "hook", "tripwire", "emp", "alarm", "bribe"];
   var PRESETS = [
-    { id: "runners", name: "Runners", note: "Fast relays and a slippery leader.", leader: "ghost", crew: ["runner", "catcher", "lookout", "acrobat", "pickpocket", "bodyguard"], gadgets: ["hook", "smoke"] },
-    { id: "fortress", name: "Fortress", note: "Hold the line, then punish.", leader: "boss", crew: ["guard", "brute", "bodyguard", "sniper", "decoy", "catcher"], gadgets: ["alarm", "emp"] },
-    { id: "tricksters", name: "Tricksters", note: "Forward spawns, traps and bribes.", leader: "fixer", crew: ["lookout", "driver", "hacker", "pickpocket", "acrobat", "runner"], gadgets: ["tripwire", "bribe"] },
-    { id: "allround", name: "All-rounders", note: "A bit of everything.", leader: "boss", crew: ["runner", "catcher", "guard", "brute", "sniper", "lookout"], gadgets: ["smoke", "emp"] }
+    { id: "runners", name: "Runners", note: "Fast relays and a phantom leader.", leader: "ghost", crew: ["runner", "catcher", "wobbler", "acrobat", "greaser", "bodyguard"], gadgets: ["hook", "smoke"] },
+    { id: "fortress", name: "Fortress", note: "Hold the line, then punish.", leader: "boss", crew: ["guard", "brute", "bodyguard", "sniper", "wobbler", "catcher"], gadgets: ["alarm", "emp"] },
+    { id: "tricksters", name: "Tricksters", note: "Forward spawns, traps and bribes.", leader: "fixer", crew: ["lookout", "driver", "hacker", "pickpocket", "greaser", "decoy"], gadgets: ["tripwire", "bribe"] },
+    { id: "allround", name: "All-rounders", note: "A bit of everything.", leader: "boss", crew: ["wobbler", "runner", "catcher", "guard", "sniper", "lookout"], gadgets: ["smoke", "emp"] }
   ];
 
   function validDeck(d) {
@@ -151,6 +161,7 @@
   function stunned(st, u) { return st.ply < u.st; }
   function glitched(st, u) { return st.ply < u.gl; }
   function braced(st, u) { return st.ply < u.br; }
+  function slippery(st, u) { return st.ply < (u.sl || 0); }
   function passiveOn(st, u, p) { return TYPES[u.type].passive === p && !glitched(st, u); }
   function inSmoke(st, t) {
     for (var i = 0; i < st.smokes.length; i++) { var s = st.smokes[i]; if (st.ply < s.until && cheb(s.c, t) <= 1) return true; }
@@ -208,7 +219,7 @@
   function pattern(st, u) {
     var T = TYPES[u.type];
     if (glitched(st, u)) return "step";
-    if (!T.carrier && (st.keys[1 - u.side].h === u.id || (CFG.heavyOwn && st.keys[u.side].h === u.id))) return "step";
+    if (!T.carrier && (st.keys[1 - u.side].h === u.id || (CFG.heavyOwn && st.keys[u.side].h === u.id))) return T.move === "bishop" ? "diag1" : "step";
     return T.move;
   }
 
@@ -229,13 +240,15 @@
       out.push(t);
     }
     function blocks(t) { var oid = b[t]; return oid >= 0 && !(clear && unit(st, oid).side === u.side); }
-    var j, t;
+    var j, t, d, ray;
     if (pat === "step") { for (j = 0; j < NB[p].length; j++) consider(NB[p][j]); }
     else if (pat === "knight") { for (j = 0; j < KNT[p].length; j++) consider(KNT[p][j]); }
-    else if (pat === "rook3") {
-      for (var d = 0; d < 4; d++) {
-        var ray = RAY[p][d];
-        for (j = 0; j < 3 && j < ray.length; j++) { t = ray[j]; consider(t); if (blocks(t)) break; }
+    else if (pat === "diag1") { for (d = 4; d < 8; d++) { ray = RAY[p][d]; if (ray.length && FLOOR[ray[0]]) consider(ray[0]); } }
+    else if (pat === "rook3" || pat === "bishop") {
+      var d0 = pat === "rook3" ? 0 : 4, len = pat === "rook3" ? 3 : 99;
+      for (d = d0; d < d0 + 4; d++) {
+        ray = RAY[p][d];
+        for (j = 0; j < len && j < ray.length; j++) { t = ray[j]; if (!FLOOR[t]) break; consider(t); if (blocks(t)) break; }
       }
     } else if (pat === "king2") {
       var seen = {};
@@ -251,11 +264,13 @@
 
   /* Every tile a unit could land on if an enemy stood there (for threat and coverage maps). */
   function reach(st, u, out) {
-    var pat = pattern(st, u), b = st.board, p = u.pos, j;
+    var pat = pattern(st, u), b = st.board, p = u.pos, j, d, ray;
     if (pat === "step") { for (j = 0; j < NB[p].length; j++) out[NB[p][j]]++; }
     else if (pat === "knight") { for (j = 0; j < KNT[p].length; j++) out[KNT[p][j]]++; }
-    else if (pat === "rook3") {
-      for (var d = 0; d < 4; d++) { var ray = RAY[p][d]; for (j = 0; j < 3 && j < ray.length; j++) { out[ray[j]]++; if (b[ray[j]] >= 0) break; } }
+    else if (pat === "diag1") { for (d = 4; d < 8; d++) { ray = RAY[p][d]; if (ray.length && FLOOR[ray[0]]) out[ray[0]]++; } }
+    else if (pat === "rook3" || pat === "bishop") {
+      var d0 = pat === "rook3" ? 0 : 4, len = pat === "rook3" ? 3 : 99;
+      for (d = d0; d < d0 + 4; d++) { ray = RAY[p][d]; for (j = 0; j < len && j < ray.length; j++) { if (!FLOOR[ray[j]]) break; out[ray[j]]++; if (b[ray[j]] >= 0) break; } }
     } else {
       var seen = {};
       for (j = 0; j < NB[p].length; j++) {
@@ -267,22 +282,15 @@
     }
   }
 
-  function passTargets(st, u) {
-    var out = [];
-    if (!canHandle(st, u) || !looseKeys(st, u).length) return out;
-    for (var i = 0; i < st.units.length; i++) {
-      var a = st.units[i];
-      if (a !== u && a.side === u.side && cheb(a.pos, u.pos) <= CFG.passRange) out.push(a.pos);
-    }
-    return out;
-  }
 
   /* Where a throw from u's tile in direction d over dist tiles ends up. */
   function throwResolve(st, u, d, dist) {
     var ray = RAY[u.pos][d];
     if (ray.length < dist) return null;
+    if (!FLOOR[ray[dist - 1]]) return null;
     for (var j = 0; j < dist; j++) {
       var t = ray[j];
+      if (!FLOOR[t]) continue;
       if (st.board[t] >= 0) return { to: ray[dist - 1], path: ray.slice(0, j + 1), by: st.board[t], at: t };
       for (var i = 0; i < st.units.length; i++) {
         var c = st.units[i];
@@ -302,8 +310,9 @@
     var out = [];
     if (!canHandle(st, u) || !looseKeys(st, u).length) return out;
     for (var d = 0; d < 8; d++) for (var dist = 1; dist <= CFG.throwRange; dist++) {
+      if (RAY[u.pos][d].length < dist) break;
       var res = throwResolve(st, u, d, dist);
-      if (!res) break;
+      if (!res) continue;
       res.d = d; res.dist = dist;
       out.push(res);
     }
@@ -328,7 +337,7 @@
     switch (T.ab) {
       case "dash":
         if (holds(st, u)) break;
-        for (d = 0; d < 8; d++) { ray = RAY[p][d]; for (j = 0; j < 3 && j < ray.length; j++) { t = ray[j]; if (b[t] >= 0) break; if (canEnter(st, u, t)) out.push(t); } }
+        for (d = 0; d < 8; d++) { ray = RAY[p][d]; for (j = 0; j < 3 && j < ray.length; j++) { t = ray[j]; if (!FLOOR[t] || b[t] >= 0) break; if (canEnter(st, u, t)) out.push(t); } }
         break;
       case "switch":
         for (i = 0; i < us.length; i++) { o = us[i]; if (o !== u && o.side === u.side && cheb(o.pos, p) <= 2 && swapOk(st, u, o)) out.push(o.pos); }
@@ -341,18 +350,25 @@
           var c = cOf(p) + dc;
           if (!inB(c, rOf(p))) return;
           var tt = idx(c, rOf(p));
-          if (b[tt] < 0 && canEnter(st, u, tt) && !(holds(st, u) && watched(st, u, tt, -1))) out.push(tt);
+          if (FLOOR[tt] && b[tt] < 0 && canEnter(st, u, tt) && !(holds(st, u) && watched(st, u, tt, -1))) out.push(tt);
         });
         break;
       case "call":
         for (i = 0; i < us.length; i++) { o = us[i]; if (o !== u && o.side === u.side && cheb(o.pos, p) <= 3 && looseKeys(st, o).length) out.push(o.pos); }
+        break;
+      case "handoff":
+        if (!looseKeys(st, u).length) break;
+        for (j = 0; j < NB[p].length; j++) { o = at(st, NB[p][j]); if (o && o.side === u.side) out.push(o.pos); }
+        break;
+      case "slip":
+        if (!slippery(st, u)) out.push(p);
         break;
       case "swipe":
         for (j = 0; j < NB[p].length; j++) { o = at(st, NB[p][j]); if (o && o.side !== u.side && holds(st, o)) out.push(o.pos); }
         break;
       case "vault":
         if (holds(st, u)) break;
-        for (d = 0; d < 8; d++) { ray = RAY[p][d]; if (ray.length >= 2 && b[ray[0]] >= 0 && b[ray[1]] < 0 && canEnter(st, u, ray[1])) out.push(ray[1]); }
+        for (d = 0; d < 8; d++) { ray = RAY[p][d]; if (ray.length >= 2 && b[ray[0]] >= 0 && FLOOR[ray[1]] && b[ray[1]] < 0 && canEnter(st, u, ray[1])) out.push(ray[1]); }
         break;
       case "brace":
         out.push(p);
@@ -415,7 +431,7 @@
     var out = [], b = st.board, us = st.units, i, t, o;
     switch (g) {
       case "smoke": case "emp":
-        for (t = 0; t < N; t++) out.push(t);
+        for (t = 0; t < N; t++) if (FLOOR[t]) out.push(t);
         break;
       case "hook":
         for (i = 0; i < us.length; i++) {
@@ -426,6 +442,7 @@
             var ray = RAY[u.pos][d];
             for (var j = 0; j < CFG.hookRange && j < ray.length; j++) {
               t = ray[j];
+              if (!FLOOR[t]) continue;
               if (b[t] >= 0) break;
               if (!canEnter(st, u, t) || (keyed && watched(st, u, t, -1))) continue;
               out.push({ u: u.id, to: t });
@@ -435,7 +452,7 @@
         break;
       case "tripwire":
         for (t = 0; t < N; t++) {
-          if (b[t] >= 0 || IS_SAFE[t] || IS_HOME[1 - s][t]) continue;
+          if (!FLOOR[t] || b[t] >= 0 || IS_SAFE[t] || IS_HOME[1 - s][t]) continue;
           var mine = false;
           for (i = 0; i < st.traps.length; i++) if (st.traps[i].t === t && st.traps[i].side === s) mine = true;
           if (!mine) out.push(t);
@@ -481,7 +498,38 @@
     ev.push({ e: "move", u: u.id, from: from, to: t, how: how || "move" });
     landed(st, u, ev);
   }
+  /* A slippery unit that is attacked flings its keys to its nearest teammate. Returns true if it did. */
+  function fling(st, o, ev) {
+    if (!slippery(st, o)) return false;
+    var ks = keysOf(st, o);
+    if (!ks.length) return false;
+    var best = null, bd = 99, us = st.units;
+    for (var i = 0; i < us.length; i++) {
+      var m = us[i];
+      if (m === o || m.side !== o.side) continue;
+      var d = cheb(m.pos, o.pos);
+      if (!best || d < bd || (d === bd && cheb(m.pos, SAFE[1 - o.side]) < cheb(best.pos, SAFE[1 - o.side]))) { best = m; bd = d; }
+    }
+    for (var k = 0; k < ks.length; k++) {
+      var K = st.keys[ks[k]];
+      K.lk = st.ply;
+      if (best) K.h = best.id; else { K.h = -1; K.at = o.pos; }
+    }
+    ev.push({ e: "fling", u: o.id, from: o.pos, to: best ? best.pos : o.pos, by: best ? best.id : -1, keys: ks });
+    return true;
+  }
+  function flingTarget(st, o) {
+    var best = null, bd = 99, us = st.units;
+    for (var i = 0; i < us.length; i++) {
+      var m = us[i];
+      if (m === o || m.side !== o.side) continue;
+      var d = cheb(m.pos, o.pos);
+      if (!best || d < bd || (d === bd && cheb(m.pos, SAFE[1 - o.side]) < cheb(best.pos, SAFE[1 - o.side]))) { best = m; bd = d; }
+    }
+    return best;
+  }
   function removeUnit(st, o, ev, cause) {
+    fling(st, o, ev);
     st.board[o.pos] = -1;
     st.units.splice(st.units.indexOf(o), 1);
     for (var k = 0; k < 2; k++) if (st.keys[k].h === o.id) { st.keys[k].h = -1; st.keys[k].at = o.pos; ev.push({ e: "drop", k: k, at: o.pos }); }
@@ -503,6 +551,7 @@
         return;
       }
       var bait = passiveOn(st, o, "bait"), took = [];
+      fling(st, o, ev);
       for (var k = 0; k < 2; k++) if (st.keys[k].h === o.id) { st.keys[k].h = u.id; st.keys[k].lk = st.ply; took.push(k); }
       st.board[t] = -1;
       st.units.splice(st.units.indexOf(o), 1);
@@ -518,7 +567,12 @@
   function push(st, o, dc, dr, n, ev, slam) {
     for (var i = 0; i < n; i++) {
       var c = cOf(o.pos) + dc, r = rOf(o.pos) + dr;
-      if (!inB(c, r) || st.board[idx(c, r)] >= 0 || idx(c, r) === SAFE[o.side]) { if (slam) { ev.push({ e: "slam", u: o.id, at: o.pos }); stun(st, o, ev); } return; }
+      if (inB(c, r) && IS_PIT[idx(c, r)]) {
+        ev.push({ e: "fall", u: o.id, from: o.pos, at: idx(c, r) });
+        takeOut(st, o, ev, "pit");
+        return;
+      }
+      if (!inB(c, r) || !FLOOR[idx(c, r)] || st.board[idx(c, r)] >= 0 || idx(c, r) === SAFE[o.side]) { if (slam) { ev.push({ e: "slam", u: o.id, at: o.pos }); stun(st, o, ev); } return; }
       relocate(st, o, idx(c, r), ev, "push");
       if (!unit(st, o.id)) return;
     }
@@ -557,7 +611,7 @@
     };
     for (var t = 0; t < N; t++) st.board[t] = -1;
     for (var s = 0; s < 2; s++) {
-      var L = { id: st.nextId++, side: s, type: opts.decks[s].leader, leader: true, pos: idx(3, s === 0 ? 8 : 1), mv: 0, ac: 0, fr: 0, st: 0, gl: 0, br: 0, armor: false };
+      var L = { id: st.nextId++, side: s, type: opts.decks[s].leader, leader: true, pos: idx(4, s === 0 ? 8 : 1), mv: 0, ac: 0, fr: 0, st: 0, gl: 0, br: 0, sl: 0, armor: false };
       st.units.push(L); st.board[L.pos] = L.id;
       st.keys.push({ h: L.id, at: -1, lk: 0 });
     }
@@ -598,7 +652,6 @@
   function cost(st, a) {
     switch (a.t) {
       case "move": return CFG.moveCost;
-      case "pass": return CFG.passCost;
       case "throw": return CFG.throwCost;
       case "burn": return CFG.burnCost;
       case "ab": return TYPES[unit(st, a.u).type].ac;
@@ -617,12 +670,6 @@
       case "move":
         u.mv = st.ply;
         moveInto(st, u, a.to, ev, "move");
-        break;
-      case "pass":
-        o = at(st, a.to);
-        giveKeys(st, u, o, ev, "pass");
-        if (!passiveOn(st, o, "softhands")) o.mv = st.ply;
-        st.stats[s].passes++;
         break;
       case "throw":
         var res = findThrow(st, u, a.to), ks = looseKeys(st, u);
@@ -648,7 +695,7 @@
       case "deploy":
         card = st.hands[s][a.c];
         st.hands[s].splice(a.c, 1);
-        var nu = { id: st.nextId++, side: s, type: card.t, leader: false, pos: a.to, mv: 0, ac: 0, fr: st.ply, st: 0, gl: 0, br: 0, armor: card.t === "brute" };
+        var nu = { id: st.nextId++, side: s, type: card.t, leader: false, pos: a.to, mv: 0, ac: 0, fr: st.ply, st: 0, gl: 0, br: 0, sl: 0, armor: card.t === "brute" };
         st.units.push(nu); st.board[a.to] = nu.id;
         st.stats[s].deploys++;
         ev.push({ e: "deploy", u: nu.id, at: a.to, type: card.t, side: s });
@@ -680,7 +727,14 @@
       case "floorit": moveInto(st, u, t, ev, ab); break;
       case "switch": case "vanish": swapUnits(st, u, o, ev); break;
       case "call": giveKeys(st, o, u, ev, "call"); break;
+      case "handoff":
+        giveKeys(st, u, o, ev, "pass");
+        if (!passiveOn(st, o, "softhands")) o.mv = st.ply;
+        st.stats[u.side].passes++;
+        break;
+      case "slip": u.sl = st.ply + 2; break;
       case "swipe":
+        if (fling(st, o, ev)) break;
         var took = keysOf(st, o);
         for (var k = 0; k < took.length; k++) { st.keys[took[k]].h = u.id; st.keys[took[k]].lk = st.ply; }
         st.stats[u.side].steals++;
@@ -726,6 +780,7 @@
         break;
       case "bribe":
         o = at(st, a.to);
+        fling(st, o, ev);
         o.side = s; o.mv = st.ply; o.ac = st.ply; o.fr = st.ply;
         for (var k = 0; k < 2; k++) if (st.keys[k].h === o.id) st.keys[k].lk = st.ply;
         ev.push({ e: "bribe", u: o.id, at: o.pos, side: s });
@@ -750,7 +805,6 @@
     }
     if (!u || u.side !== s) return false;
     if (a.t === "move") return afford(st, CFG.moveCost) && has(moveTargets(st, u), a.to);
-    if (a.t === "pass") return afford(st, CFG.passCost) && has(passTargets(st, u), a.to);
     if (a.t === "throw") return afford(st, CFG.throwCost) && throwOptions(st, u).some(function (x) { return x.to === a.to; });
     if (a.t === "ab") return afford(st, TYPES[u.type].ac) && has(abilityTargets(st, u), a.to);
     return false;
@@ -884,7 +938,7 @@
   }
 
   /* How far each unit can usually strike in one turn, counting its movement ability. */
-  var STRIKE = { boss: 1, fixer: 1, ghost: 4, lookout: 4, decoy: 2, runner: 4, catcher: 1, pickpocket: 3, acrobat: 4, guard: 1, brute: 1, sniper: 3, bodyguard: 4, hacker: 1, driver: 6 };
+  var STRIKE = { wobbler: 1, greaser: 6, boss: 1, fixer: 1, ghost: 4, lookout: 4, decoy: 2, runner: 4, catcher: 1, pickpocket: 3, acrobat: 4, guard: 1, brute: 1, sniper: 3, bodyguard: 4, hacker: 1, driver: 6 };
   /* Rough danger to a key carrier: enemies that could reach it, minus friends close enough to help. */
   function exposure(st, h) {
     var foes = 0, mates = 0, us = st.units;
@@ -949,6 +1003,7 @@
         for (a = 0; a < ks.length; a++) lostK -= keyValAt(me, ks[a], -2, Hc.pos);
         risk = Math.max(risk, lostK * 0.8);
       }
+      if (st.ply + 1 < (Hc.sl || 0) && flingTarget(st, Hc)) risk *= 0.3;
       sc -= tw * 0.9 * risk;
       var pending = (Hc === hM && cheb(Hc.pos, SAFE[opp]) <= CFG.crackRange) || (Hc === hT && stashed(st, me, Hc));
       if (pending && !risk && !T.shove[Hc.id]) sc += 2.5e4;
@@ -1026,7 +1081,7 @@
     var us = st.units;
     for (var i = 0; i < us.length; i++) {
       var u = us[i];
-      s += u.id + "@" + u.pos + u.side + (u.mv === st.ply ? "m" : "") + (u.ac === st.ply ? "a" : "") + (st.ply < u.st ? "s" : "") + (st.ply < u.gl ? "g" : "") + (st.ply < u.br ? "b" : "") + (u.armor ? "A" : "") + ",";
+      s += u.id + "@" + u.pos + u.side + (u.mv === st.ply ? "m" : "") + (u.ac === st.ply ? "a" : "") + (st.ply < u.st ? "s" : "") + (st.ply < u.gl ? "g" : "") + (st.ply < u.br ? "b" : "") + (st.ply < (u.sl || 0) ? "l" : "") + (u.armor ? "A" : "") + ",";
     }
     return s;
   }
@@ -1035,7 +1090,7 @@
     var us = st.units, nu = new Array(us.length);
     for (var i = 0; i < us.length; i++) {
       var u = us[i];
-      nu[i] = { id: u.id, side: u.side, type: u.type, leader: u.leader, pos: u.pos, mv: u.mv, ac: u.ac, fr: u.fr, st: u.st, gl: u.gl, br: u.br, armor: u.armor };
+      nu[i] = { id: u.id, side: u.side, type: u.type, leader: u.leader, pos: u.pos, mv: u.mv, ac: u.ac, fr: u.fr, st: u.st, gl: u.gl, br: u.br, sl: u.sl, armor: u.armor };
     }
     return {
       ply: st.ply, side: st.side, winner: st.winner, how: st.how, reason: st.reason, units: nu, nextId: st.nextId, board: st.board.slice(),
@@ -1057,7 +1112,6 @@
       u = us[i];
       if (u.side !== s) continue;
       if (spend >= CFG.moveCost) { list = moveTargets(st, u); for (j = 0; j < list.length; j++) out.push({ t: "move", u: u.id, to: list[j] }); }
-      if (spend >= CFG.passCost) { list = passTargets(st, u); for (j = 0; j < list.length; j++) out.push({ t: "pass", u: u.id, to: list[j] }); }
       if (spend >= CFG.throwCost) {
         list = throwOptions(st, u);
         for (j = 0; j < list.length; j++) { var r = list[j]; if (r.by >= 0 && unit(st, r.by).side === s && r.by !== u.id) out.push({ t: "throw", u: u.id, to: r.to }); }
@@ -1221,7 +1275,7 @@
     newGame: newGame, cloneState: cloneState, unit: unit, at: at, holds: holds, keysOf: keysOf, looseKeys: looseKeys,
     stunned: stunned, glitched: glitched, braced: braced, inSmoke: inSmoke, immune: immune, canMove: canMove, canAct: canAct, canHandle: canHandle,
     afford: afford, crewCount: crewCount, leaderOf: leaderOf, round: round, cost: cost,
-    moveTargets: moveTargets, passTargets: passTargets, throwOptions: throwOptions, findThrow: findThrow, abilityTargets: abilityTargets,
+    moveTargets: moveTargets, throwOptions: throwOptions, flingTarget: flingTarget, slippery: slippery, FLOOR: FLOOR, IS_PIT: IS_PIT, PITS: PITS, findThrow: findThrow, abilityTargets: abilityTargets,
     deployTiles: deployTiles, gadgetTargets: gadgetTargets, apply: apply, endTurn: endTurn, isLegal: isLegal, dangerTo: dangerTo,
     evaluate: evaluate, bots: { plan: botPlan }
   };

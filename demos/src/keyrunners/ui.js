@@ -30,24 +30,62 @@
     key: '<circle cx="7.5" cy="12" r="4"/><path d="M11.5 12h9M17.5 12v3M20.5 12v3"/>',
     safe: '<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="12" cy="12" r="4.5"/><path d="M12 7.5v1.8M12 14.7v1.8M7.5 12h1.8M14.7 12h1.8"/>'
   };
+  /* Every leader and crew member as a blocky figure. Team color goes on the pants and the base. */
+  var OUTL = "#0b1622";
+  var PROPS = {
+    binoculars: '<rect x="-6" y="-10" width="5" height="6.5" rx="1.6" fill="#2f3b4a" stroke="' + OUTL + '" stroke-width="1.2"/><rect x="1" y="-10" width="5" height="6.5" rx="1.6" fill="#2f3b4a" stroke="' + OUTL + '" stroke-width="1.2"/><circle cx="-3.5" cy="-9" r="1.2" fill="#9fd6ff"/><circle cx="3.5" cy="-9" r="1.2" fill="#9fd6ff"/>',
+    glove: '<path d="M11 -3q7 -3 9 3q1 6 -5 6q-4 0 -4 -4z" fill="#a0632b" stroke="' + OUTL + '" stroke-width="1.3" stroke-linejoin="round"/><path d="M14 -1q2 1 3 3" fill="none" stroke="#6b3f18" stroke-width="1"/>',
+    flashlight: '<path d="M18 1l8 -4v9z" fill="rgba(255,224,138,.55)"/><rect x="11" y="-0.5" width="8" height="3.4" rx="1" fill="#2f3b4a" stroke="' + OUTL + '" stroke-width="1"/>',
+    rifle: '<path d="M-15 7L17 -11" stroke="' + OUTL + '" stroke-width="3.6" stroke-linecap="round"/><path d="M-15 7L17 -11" stroke="#6b4a2b" stroke-width="2" stroke-linecap="round"/><rect x="0" y="-6.5" width="7" height="3" rx="1.2" transform="rotate(-29 3.5 -5)" fill="#2f3b4a" stroke="' + OUTL + '" stroke-width="1"/>',
+    laptop: '<rect x="-7" y="-8" width="14" height="8" rx="1.2" fill="#9fb3c8" stroke="' + OUTL + '" stroke-width="1.3"/><path d="M-4 -5h3M-4 -3h6" stroke="#2bd67b" stroke-width="1.2"/>',
+    wheel: '<circle cx="0" cy="-5" r="6.5" fill="none" stroke="' + OUTL + '" stroke-width="3.4"/><circle cx="0" cy="-5" r="6.5" fill="none" stroke="#4a4e69" stroke-width="1.8"/><path d="M-6 -5h12" stroke="#4a4e69" stroke-width="1.8"/>',
+    briefcase: '<rect x="11" y="-1" width="9" height="7" rx="1.3" fill="#7a4a24" stroke="' + OUTL + '" stroke-width="1.3"/><path d="M13.5 -1v-2h4v2" fill="none" stroke="' + OUTL + '" stroke-width="1.2"/>',
+    key: ""
+  };
+  var LOOKS = {
+    boss: { skin: "#d9a27a", shirt: "#2b2d42", collar: "#f2b84b", hat: "fedora", hatColor: "#1d1d24", hatColor2: "#b3261e", eyes: "dot", brows: "angry", mouth: "smirk", extras: ["cigar"] },
+    fixer: { skin: "#f0d2b6", shirt: "#5b3fa0", collar: "#e9eef5", hairStyle: "flat", hair: "#3b2a1f", eyes: "dot", mouth: "smile", extras: ["glasses"], prop: "briefcase" },
+    ghost: { skin: "#e9eef5", shirt: "#3a4256", hat: "hood", hatColor: "#cfd6e2", eyes: "mask", maskColor: "#0b1622", mouth: "none" },
+    wobbler: { skin: "#f2c9a0", shirt: "#1d1d24", stripe: "#e9eef5", sleeves: "#1d1d24", hat: "beanie", hatColor: "#1d1d24", hatColor2: "#3a4256", eyes: "mask", maskColor: "#0b1622", mouth: "grin" },
+    greaser: { skin: "#e0b48a", shirt: "#1d1d24", collar: "#e9eef5", hairStyle: "pompadour", hair: "#16161d", eyes: "dot", brows: "raised", mouth: "smirk" },
+    lookout: { skin: "#c98b62", shirt: "#4d7a3a", hat: "bucket", hatColor: "#b9a36a", eyes: "dot", mouth: "o", prop: "binoculars" },
+    decoy: { skin: "#d6dbe3", shirt: "#8a94a6", collar: "#e9eef5", hat: "tophat", hatColor: "#2b2d42", hatColor2: "#b3261e", eyes: "dot", mouth: "flat", beard: "mustache", beardColor: "#2b2d42" },
+    runner: { skin: "#8d5a3b", shirt: "#e85d3a", stripe: "#fff1c1", hairStyle: "spiky", hair: "#1d1d24", hat: "headband", hatColor: "#f2c14e", eyes: "dot", mouth: "grin" },
+    catcher: { skin: "#f2c9a0", shirt: "#2f7d6d", hat: "cap", hatColor: "#2f7d6d", hatColor2: "#1d4f45", eyes: "wide", mouth: "smile", prop: "glove" },
+    pickpocket: { skin: "#d9a27a", shirt: "#4a4e69", hat: "cap", hatColor: "#4a4e69", hatColor2: "#22223b", eyes: "dot", brows: "raised", extras: ["bandana"], bandanaColor: "#9a3d3d", mouth: "none" },
+    acrobat: { skin: "#f0d2b6", shirt: "#e85d9e", hairStyle: "flat", hair: "#f2c14e", eyes: "wide", mouth: "grin", build: "slim" },
+    guard: { skin: "#c98b62", shirt: "#26324a", collar: "#9fb3c8", hat: "police", hatColor: "#26324a", hatColor2: "#f2c14e", eyes: "dot", brows: "angry", mouth: "flat", prop: "flashlight" },
+    brute: { skin: "#d9a27a", shirt: "#6b7280", hairStyle: "bald", eyes: "dot", brows: "angry", mouth: "frown", beard: "stubble", beardColor: "#4b3a2e", build: "big" },
+    sniper: { skin: "#f0d2b6", shirt: "#3f5a3a", hat: "beret", hatColor: "#2d3f2a", eyes: "squint", mouth: "flat", prop: "rifle" },
+    bodyguard: { skin: "#8d5a3b", shirt: "#16161d", collar: "#e9eef5", hairStyle: "flat", hair: "#16161d", eyes: "shades", mouth: "flat", extras: ["earpiece"], build: "big" },
+    hacker: { skin: "#f2c9a0", shirt: "#1f3a33", hat: "hood", hatColor: "#1f3a33", eyes: "dot", mouth: "smirk", extras: ["glasses"], prop: "laptop" },
+    driver: { skin: "#e0b48a", shirt: "#9a3d3d", hat: "cap", hatColor: "#1d1d24", hatColor2: "#1d1d24", eyes: "shades", mouth: "smirk", prop: "wheel" }
+  };
+  var TEAM = [{ pants: "#2a5bd7", base: "#3d8bff" }, { pants: "#b8322a", base: "#ff5a4c" }];
+  function figureMarkup(type, side) {
+    var spec = Object.assign({}, LOOKS[type] || {});
+    spec.pants = TEAM[side == null ? 0 : side].pants;
+    spec.prop = PROPS[spec.prop] || "";
+    return K.blocky.figure(spec);
+  }
+  function portraitSvg(type) { return '<svg class="pt" viewBox="0 0 64 64" aria-hidden="true">' + K.blocky.portrait(LOOKS[type] || {}) + "</svg>"; }
   function iconSvg(name, color) {
+    if (LOOKS[name]) return portraitSvg(name);
     return '<svg viewBox="0 0 24 24" fill="none" stroke="' + (color || "currentColor") + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICON[name] + "</svg>";
   }
 
-  var TITLE_ART = '<svg viewBox="0 0 260 160" role="img" aria-label="A blue crew passing a gold key toward a red safe">' +
-    '<g stroke="#2d3746" stroke-width="1">' + [0, 1, 2, 3, 4, 5, 6].map(function (k) { return '<path d="M' + (20 + k * 37) + ' 8v144"/>'; }).join("") +
-    [0, 1, 2, 3, 4].map(function (k) { return '<path d="M20 ' + (8 + k * 36) + 'h222"/>'; }).join("") + "</g>" +
-    '<rect x="172" y="12" width="48" height="48" rx="9" fill="rgba(255,90,76,.16)" stroke="#ff5a4c" stroke-width="2.6"/>' +
-    '<circle cx="196" cy="36" r="12" fill="none" stroke="#f2b840" stroke-width="2.6"/>' +
-    '<path d="M196 21v5M196 46v5M181 36h5M206 36h5" stroke="#f2b840" stroke-width="2.4" stroke-linecap="round"/>' +
-    '<path d="M74 118 Q 96 80 116 86" fill="none" stroke="#f2b840" stroke-width="2.6" stroke-dasharray="5 5" stroke-linecap="round"/>' +
-    '<path d="M140 74 Q 156 46 168 46" fill="none" stroke="#f2b840" stroke-width="2.6" stroke-dasharray="5 5" stroke-linecap="round"/>' +
-    '<circle cx="58" cy="124" r="17" fill="#3d8bff"/><circle cx="58" cy="124" r="17" fill="none" stroke="#f2b840" stroke-width="3"/>' +
-    '<path d="M50 129h16M51 129l-1-8 4 3 4-6 4 6 4-3-1 8" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>' +
-    '<circle cx="128" cy="82" r="17" fill="#3d8bff"/><path d="M121 76l6 6-6 6M128 76l6 6-6 6" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>' +
-    '<g transform="translate(140 62) rotate(-35)"><rect x="1" y="-2.4" width="15" height="4.8" rx="1.5" fill="#f2b840" stroke="#1b1305" stroke-width="1.2"/><rect x="11" y="0" width="3" height="6" fill="#f2b840" stroke="#1b1305" stroke-width="1"/><circle cx="-2" cy="0" r="6" fill="#9cc3ff" stroke="#1b1305" stroke-width="1.4"/></g>' +
-    '<circle cx="216" cy="118" r="15" fill="#ff5a4c" opacity=".9"/><path d="M216 109v18M207 118h18" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".9"/>' +
-    "</svg>";
+  var TITLE_ART = (function () {
+    var o = '<svg viewBox="0 0 280 170" role="img" aria-label="A blue Wobbler throws the key over a pit to a Greaser, in front of the red safe">';
+    o += '<defs><radialGradient id="tpit" cx="50%" cy="40%" r="60%"><stop offset="0" stop-color="#000"/><stop offset="1" stop-color="#1c2430"/></radialGradient></defs>';
+    o += '<rect x="196" y="10" width="64" height="64" rx="12" fill="rgba(255,90,76,.16)" stroke="#ff5a4c" stroke-width="3"/><circle cx="228" cy="42" r="15" fill="none" stroke="#f2b840" stroke-width="3"/><path d="M228 22v6M228 56v6M208 42h6M242 42h6" stroke="#f2b840" stroke-width="3" stroke-linecap="round"/>';
+    o += '<rect x="104" y="118" width="58" height="30" rx="10" fill="url(#tpit)" stroke="#2d3746" stroke-width="2"/>';
+    o += '<path d="M78 92 Q 132 30 184 78" fill="none" stroke="#f2b840" stroke-width="3" stroke-dasharray="6 6" stroke-linecap="round"/>';
+    o += '<g transform="translate(150 50) rotate(-20) scale(1.7)"><rect x="1" y="-1.8" width="10" height="3.6" rx="1.2" fill="#f2b840" stroke="#1b1305" stroke-width="1"/><rect x="8" y="0" width="2.2" height="4.4" fill="#f2b840" stroke="#1b1305" stroke-width="1"/><circle cx="-1.8" cy="0" r="4.4" fill="#9cc3ff" stroke="#1b1305" stroke-width="1.2"/></g>';
+    o += '<g transform="translate(58 122) scale(1.55)"><ellipse cx="0" cy="16" rx="15" ry="5" fill="#3d8bff" stroke="#0b1622" stroke-width="1.5"/>' + figureMarkup("wobbler", 0) + "</g>";
+    o += '<g transform="translate(206 122) scale(1.55)"><ellipse cx="0" cy="16" rx="15" ry="5" fill="#3d8bff" stroke="#0b1622" stroke-width="1.5"/>' + figureMarkup("greaser", 0) + "</g>";
+    o += "</svg>";
+    return o;
+  })();
 
   function glossary() {
     var rows = [];
@@ -59,6 +97,8 @@
   }
 
   var RULES = [
+    "<h3>The board</h3>",
+    "<p>The floor is 9 tiles wide in each side's two home rows and 7 wide in between, with six pits in the middle. Your safe sits in the middle of your back row.</p>",
     "<h3>The goal</h3>",
     "<p>Both crews have a <b>safe</b> and a <b>key</b>. Your key opens <b>their</b> safe. You win at the start of your turn if:</p><ul>",
     "<li><b>Crack:</b> one of your units holding your key is on or next to their safe.</li>",
@@ -68,14 +108,15 @@
     "<p>You get <b>5 mana</b> every turn. Unspent mana carries over, up to 10. You can go into debt down to −3, and the debt comes out of your next turn.</p>",
     '<dl class="kv"><dt>Deploy</dt><dd>Play a crew card onto your two home rows, or next to one of your Lookouts or Getaway Drivers. Your leader never counts. New crew can\'t move or use abilities until your next turn. Up to 6 crew at once.</dd>',
     "<dt>Move · 1</dt><dd>Each unit moves once a turn, in its own pattern. Moving onto an enemy captures it and takes any key it holds.</dd>",
-    "<dt>Pass · 1</dt><dd>Hand your key to a teammate up to 2 tiles away.</dd>",
-    "<dt>Throw · 2</dt><dd>Throw your key up to 3 tiles in a straight line. The first unit in the way catches it, friend or foe. If nobody does, it lands on the floor for anyone to pick up.</dd>",
+    "<dt>Throw · 2</dt><dd>Any unit can throw your key up to 3 tiles in a straight line, right over pits. The first unit in the way catches it, friend or foe. If nobody does, it lands on the floor for anyone to pick up.</dd>",
+    "<dt>Pass</dt><dd>A safe hand-off to the teammate right next to you. Only <b>Wobblers</b> can do it, with their ability.</dd>",
     "<dt>Ability</dt><dd>Each unit can use its ability once a turn, at the cost shown.</dd>",
     "<dt>Gadget</dt><dd>One card in your hand is always a gadget.</dd></dl>",
     "<h3>Keys</h3><ul>",
     "<li>Your leader starts the match holding your key.</li>",
     "<li>Keys are heavy. A unit carrying one moves only 1 tile and can't use movement abilities. The Runner and the Ghost ignore this.</li>",
     "<li>You can only pass or throw <b>your own</b> key, and not on a turn it changed hands. A stolen key has to be walked home.</li>",
+    "<li><b>Pits</b> block movement, but keys fly over them. A unit shoved into a pit falls and is out; its key stays on the edge.</li>",
     "<li>A unit that catches a pass or throw can't move again that turn (the Catcher can).</li>",
     "<li>Nobody can stand on their own safe, except to lock a stolen key away.</li></ul>",
     "<h3>Your deck</h3>",
@@ -114,16 +155,28 @@
   function buildBoard() {
     var stage = K.$("#stage");
     stage.innerHTML = "";
-    var svg = sv("svg", { id: "board", viewBox: "0 0 " + VBW + " " + VBH, role: "img", "aria-label": "Heist floor, 7 by 10 tiles" });
+    var svg = sv("svg", { id: "board", viewBox: "0 0 " + VBW + " " + VBH, role: "img", "aria-label": "Heist floor: 9 wide at each end, 7 wide in the middle, with pits" });
+    svg.appendChild(sv("defs", null,
+      sv("radialGradient", { id: "pitg", cx: "50%", cy: "38%", r: "62%" },
+        sv("stop", { offset: "0", "stop-color": "#000" }), sv("stop", { offset: ".7", "stop-color": "#05070b" }), sv("stop", { offset: "1", "stop-color": "#1c2430" }))));
     var tiles = sv("g");
+    for (var t0 = 0; t0 < KR.N; t0++) {
+      if (!KR.FLOOR[t0] && !KR.IS_PIT[t0]) continue;
+      var x0 = cx(t0) - S / 2, y0 = cy(t0) - S / 2;
+      tiles.appendChild(sv("rect", { x: x0 - 1.5, y: y0 - 1.5, width: S + 3, height: S + 5, rx: 4, class: "tl-edge" }));
+    }
     for (var t = 0; t < KR.N; t++) {
       var x = cx(t) - S / 2, y = cy(t) - S / 2;
-      tiles.appendChild(sv("rect", { x: x, y: y, width: S, height: S, class: (KR.cOf(t) + KR.rOf(t)) % 2 ? "tl-b" : "tl-a" }));
-      if (KR.IS_HOME[0][t]) tiles.appendChild(sv("rect", { x: x, y: y, width: S, height: S, class: "home0" }));
-      if (KR.IS_HOME[1][t]) tiles.appendChild(sv("rect", { x: x, y: y, width: S, height: S, class: "home1" }));
+      if (KR.IS_PIT[t]) {
+        tiles.appendChild(sv("rect", { x: x + 1, y: y + 1, width: S - 2, height: S - 2, rx: 6, fill: "url(#pitg)", class: "pit" }));
+        tiles.appendChild(sv("path", { d: "M" + (x + 6) + " " + (y + 9) + "q" + (S / 2 - 6) + " -6 " + (S - 12) + " 0", class: "pit-lip" }));
+        continue;
+      }
+      if (!KR.FLOOR[t]) continue;
+      tiles.appendChild(sv("rect", { x: x + 0.5, y: y + 0.5, width: S - 1, height: S - 1, rx: 3, class: (KR.cOf(t) + KR.rOf(t)) % 2 ? "tl-b" : "tl-a" }));
+      if (KR.IS_HOME[0][t]) tiles.appendChild(sv("rect", { x: x + 0.5, y: y + 0.5, width: S - 1, height: S - 1, rx: 3, class: "home0" }));
+      if (KR.IS_HOME[1][t]) tiles.appendChild(sv("rect", { x: x + 0.5, y: y + 0.5, width: S - 1, height: S - 1, rx: 3, class: "home1" }));
     }
-    for (var k = 0; k <= KR.W; k++) tiles.appendChild(sv("path", { d: "M" + (PAD + k * S) + " " + PAD + "V" + (PAD + KR.H * S), class: "gridl" }));
-    for (var r = 0; r <= KR.H; r++) tiles.appendChild(sv("path", { d: "M" + PAD + " " + (PAD + r * S) + "H" + (PAD + KR.W * S), class: "gridl" }));
     [0, 1].forEach(function (s) {
       var sf = KR.SAFE[s], zone = [];
       for (var q = 0; q < KR.N; q++) if (KR.cheb(q, sf) <= KR.CFG.crackRange) zone.push(q);
@@ -139,7 +192,7 @@
     svg.appendChild(tiles);
     ["marks", "hl", "units", "fx"].forEach(function (n) { var g = sv("g", { class: n }); G.layers[n] = g; svg.appendChild(g); });
     var hit = sv("g", { class: "hit-layer" });
-    for (var j = 0; j < KR.N; j++) hit.appendChild(sv("rect", { x: cx(j) - S / 2, y: cy(j) - S / 2, width: S, height: S, "data-t": String(j) }));
+    for (var j = 0; j < KR.N; j++) if (KR.FLOOR[j]) hit.appendChild(sv("rect", { x: cx(j) - S / 2, y: cy(j) - S / 2, width: S, height: S, "data-t": String(j) }));
     hit.addEventListener("click", function (e) { var el = e.target; if (el && el.getAttribute("data-t") != null) onTile(+el.getAttribute("data-t")); });
     svg.appendChild(hit);
     stage.appendChild(svg);
@@ -150,24 +203,25 @@
     var n = G.nodes[u.id];
     if (n && n.__side !== u.side) { n.remove(); n = null; }
     if (n) return n;
-    n = sv("g", { class: "tok" });
+    n = sv("g", { class: "tok" + (u.type === "wobbler" ? " wob" : "") });
     n.__side = u.side;
-    n.appendChild(sv("circle", { class: "tok-ring", r: "22" }));
-    n.appendChild(sv("circle", { class: "tok-ready", r: "22" }));
-    n.appendChild(sv("circle", { class: "tok-brace", r: "23.5" }));
-    n.appendChild(sv("circle", { class: "tok-carry", r: "22.5" }));
-    n.appendChild(sv("circle", { class: "tok-body s" + u.side, r: "18" }));
-    if (u.leader) n.appendChild(sv("circle", { class: "tok-lead", r: "15.2" }));
-    n.appendChild(sv("circle", { class: "tok-glitch", r: "20.5" }));
-    var ic = sv("g", { class: "tok-icon", transform: "translate(-10.2 -10.2) scale(.85)" });
-    ic.innerHTML = ICON[u.type];
-    n.appendChild(ic);
-    n.appendChild(sv("rect", { class: "tok-armor", x: "-7", y: "13", width: "14", height: "6", rx: "2" }));
+    n.appendChild(sv("ellipse", { class: "tok-ring", cx: "0", cy: "16", rx: "19", ry: "6.5" }));
+    n.appendChild(sv("ellipse", { class: "tok-ready", cx: "0", cy: "16", rx: "19", ry: "6.5" }));
+    n.appendChild(sv("ellipse", { class: "tok-carry", cx: "0", cy: "16", rx: "19", ry: "6.5" }));
+    n.appendChild(sv("ellipse", { class: "tok-base s" + u.side + (u.leader ? " lead" : ""), cx: "0", cy: "16", rx: "15", ry: "5" }));
+    n.appendChild(sv("ellipse", { class: "tok-brace", cx: "0", cy: "16", rx: "21", ry: "7.5" }));
+    n.appendChild(sv("ellipse", { class: "tok-glitch", cx: "0", cy: "16", rx: "17.5", ry: "6.2" }));
+    n.appendChild(sv("ellipse", { class: "tok-slip", cx: "0", cy: "16", rx: "17.5", ry: "6.2" }));
+    var fig = sv("g", { class: "tok-fig", transform: "translate(0 4) scale(.78)" });
+    fig.innerHTML = figureMarkup(u.type, u.side);
+    n.appendChild(fig);
+    if (u.leader) n.appendChild(sv("path", { class: "tok-crown", d: "M-6 -27l2.5 -5 3.5 3 3.5 -3 2.5 5z" }));
+    n.appendChild(sv("rect", { class: "tok-armor", x: "-17", y: "6", width: "7", height: "8", rx: "2" }));
     var stunG = sv("g", { class: "tok-stun" });
-    stunG.appendChild(sv("path", { d: "M-9 -22l3-3 3 3 3-3 3 3 3-3 3 3" }));
+    stunG.appendChild(sv("path", { d: "M-12 -20l3-3 3 3 3-3 3 3 3-3 3 3 3-3 3 3" }));
     n.appendChild(stunG);
-    n.appendChild(keyGlyph(0, 13, -13, 1.25, "tok-key k0"));
-    n.appendChild(keyGlyph(1, 13, 14, 1.25, "tok-key k1"));
+    n.appendChild(keyGlyph(0, 14, 3, 1.35, "tok-key k0"));
+    n.appendChild(keyGlyph(1, 14, 11, 1.35, "tok-key k1"));
     var dg = sv("g", { class: "tok-danger", transform: "translate(-14 -14)" });
     dg.appendChild(sv("circle", { r: "7" }));
     dg.appendChild(sv("text", { x: "0", y: "4", "text-anchor": "middle", text: "!" }));
@@ -186,7 +240,7 @@
     if (u.side !== st.side) return false;
     if (KR.canMove(st, u) && KR.moveTargets(st, u).length) return true;
     if (KR.canAct(st, u) && KR.abilityTargets(st, u).length) return true;
-    if (KR.passTargets(st, u).length || KR.throwOptions(st, u).length) return true;
+    if (KR.throwOptions(st, u).length) return true;
     return false;
   }
 
@@ -203,6 +257,7 @@
       n.classList.toggle("carrier", st.keys[0].h === u.id || st.keys[1].h === u.id);
       n.classList.toggle("stunned", KR.stunned(st, u) || (st.ply + 1 < u.st && !mine));
       n.classList.toggle("braced", KR.braced(st, u));
+      n.classList.toggle("slick", KR.slippery(st, u) || (st.ply + 1 < (u.sl || 0)));
       n.classList.toggle("glitched", KR.glitched(st, u));
       n.classList.toggle("armored", !!u.armor);
       n.classList.toggle("fresh", mine && u.fr === st.ply);
@@ -237,6 +292,12 @@
       var X = cx(tr.t), Y = cy(tr.t);
       g.appendChild(sv("path", { d: "M" + (X - 9) + " " + (Y - 9) + "l18 18M" + (X + 9) + " " + (Y - 9) + "l-18 18", class: "trap" }));
     });
+    st.units.forEach(function (u) {
+      if (!(KR.slippery(st, u) || st.ply + 1 < (u.sl || 0)) || !KR.holds(st, u)) return;
+      var m = KR.flingTarget(st, u);
+      if (!m) return;
+      g.appendChild(sv("path", { d: "M" + cx(u.pos) + " " + (cy(u.pos) - 6) + "Q" + ((cx(u.pos) + cx(m.pos)) / 2) + " " + (Math.min(cy(u.pos), cy(m.pos)) - 30) + " " + cx(m.pos) + " " + (cy(m.pos) - 6), class: "fling-path" }));
+    });
     G.trails.forEach(function (tr) {
       g.appendChild(sv("path", { d: "M" + cx(tr.from) + " " + cy(tr.from) + "L" + cx(tr.to) + " " + cy(tr.to), class: "trail s" + tr.side }));
     });
@@ -257,8 +318,6 @@
       KR.moveTargets(st, u).forEach(function (t) { add(t, st.board[t] >= 0 ? "cap" : "move", { t: "move", u: u.id, to: t }); });
     } else if (u && G.mode === "ab" && spend >= T[u.type].ac) {
       KR.abilityTargets(st, u).forEach(function (t) { add(t, "ab", { t: "ab", u: u.id, to: t }); });
-    } else if (u && G.mode === "pass" && spend >= KR.CFG.passCost) {
-      KR.passTargets(st, u).forEach(function (t) { add(t, "pass", { t: "pass", u: u.id, to: t }); });
     } else if (u && G.mode === "throw" && spend >= KR.CFG.throwCost) {
       KR.throwOptions(st, u).forEach(function (o) {
         var by = o.by >= 0 ? KR.unit(st, o.by) : null;
@@ -471,12 +530,11 @@
       var abT = KR.abilityTargets(st, u);
       acts.appendChild(btn("Move", 1, { pressed: G.mode === "move", disabled: !KR.canMove(st, u) || spend < 1 || !KR.moveTargets(st, u).length, onclick: function () { setMode("move"); } }));
       var abReady = KR.canAct(st, u) && spend >= d.ac && abT.length > 0;
-      var noTarget = d.ab === "brace" || d.ab === "insideman";
+      var noTarget = d.ab === "brace" || d.ab === "insideman" || d.ab === "slip";
       acts.appendChild(btn(d.aname, d.ac, { pressed: G.mode === "ab", disabled: !abReady, onclick: function () {
         if (noTarget) doHuman({ t: "ab", u: u.id, to: abT[0] }); else setMode("ab");
       } }));
       if (KR.looseKeys(st, u).length) {
-        acts.appendChild(btn("Pass", KR.CFG.passCost, { pressed: G.mode === "pass", disabled: spend < KR.CFG.passCost || !KR.passTargets(st, u).length, onclick: function () { setMode("pass"); } }));
         acts.appendChild(btn("Throw", KR.CFG.throwCost, { pressed: G.mode === "throw", disabled: spend < KR.CFG.throwCost || !KR.throwOptions(st, u).length, onclick: function () { setMode("throw"); } }));
       }
       ctx.appendChild(unitInfo(u));
@@ -644,6 +702,8 @@
         case "out": if (e.cause !== "capture") parts.push(sideWord(e.side) + " " + shortName(e.type) + " is taken out" + (e.cause === "trap" ? " by a tripwire!" : "!")); break;
         case "armor": parts.push(nm(e.u) + "'s armor takes the hit."); break;
         case "trap": parts.push("Tripwire!"); break;
+        case "fling": parts.push("Slippery! The key flies " + (e.by >= 0 ? "to " + nm(e.by) : "loose") + "."); break;
+        case "fall": parts.push(nm(e.u) + " falls into a pit!"); break;
         case "pass":
           if (e.how === "swipe") parts.push(nm(e.to) + " swipes the key from " + nm(e.from) + "!");
           else if (e.how === "call") parts.push(nm(e.to) + " calls for the key.");
@@ -740,6 +800,13 @@
           }
           break;
         case "trap": K.Sound.play("liar"); break;
+        case "fling": keyFlight(e.from, e.to, e.keys[0]); K.Sound.play("whoosh"); wait = Math.max(wait, 520); break;
+        case "fall":
+          K.Sound.play("splash");
+          var fn = G.nodes[e.u];
+          if (fn) { fn.style.transform = "translate(" + cx(e.at) + "px," + cy(e.at) + "px) scale(.3)"; }
+          wait = Math.max(wait, 420);
+          break;
         case "bribe": K.Sound.play("score"); break;
       }
     });
