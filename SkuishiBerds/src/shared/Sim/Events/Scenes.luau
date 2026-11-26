@@ -341,7 +341,10 @@ return {
 					table.insert(s.bones, { kind = "bone", x = W, y = 0, w = 20, h = gapY, vx = -speed })
 				end
 				if H - (gapY + gap) > 40 then
-					table.insert(s.bones, { kind = "bone", x = W, y = gapY + gap, w = 20, h = H - (gapY + gap), vx = -speed })
+					table.insert(
+						s.bones,
+						{ kind = "bone", x = W, y = gapY + gap, w = 20, h = H - (gapY + gap), vx = -speed }
+					)
 				end
 				if rng:next() < 0.3 then
 					table.insert(s.bones, {
@@ -367,7 +370,12 @@ return {
 			local r = bird.radius
 			for _, b in ev.s.bones do
 				if b.kind == "floating" then
-					if bird.x + r > b.x - 10 and bird.x - r < b.x + b.w + 10 and bird.y + r > b.y - 12 and bird.y - r < b.y + 12 then
+					if
+						bird.x + r > b.x - 10
+						and bird.x - r < b.x + b.w + 10
+						and bird.y + r > b.y - 12
+						and bird.y - r < b.y + 12
+					then
 						return "bone", nil
 					end
 				else

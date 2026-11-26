@@ -15,6 +15,7 @@ Theme.Paper = hex("#fafafa")
 Theme.PaperDark = hex("#f0f0f0")
 Theme.Ink = hex("#222222")
 Theme.InkSoft = hex("#666666")
+Theme.HudSoft = hex("#c9c9cf") -- secondary text on the dimmed match backdrop
 Theme.Grid = hex("#000000")
 Theme.White = Color3.new(1, 1, 1)
 Theme.Black = Color3.new(0, 0, 0)

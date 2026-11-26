@@ -159,8 +159,22 @@ Cosmetics.Deaths = {
 	{ id = "glitch", name = "Glitch Out", price = 550, desc = "RGB-splits out of existence." },
 	{ id = "melt", name = "Melt", price = 350, desc = "Drips down the page." },
 	{ id = "stars", name = "Starburst", price = 450, desc = "A ring of shooting stars." },
-	{ id = "firework", name = "Firework Finale", price = 0, robuxOnly = true, productKey = "Death_firework", desc = "Launches up and explodes in color." },
-	{ id = "rubberduck", name = "Squeaky Duck", price = 0, robuxOnly = true, productKey = "Death_rubberduck", desc = "Turns into a rubber duck. Squeak." },
+	{
+		id = "firework",
+		name = "Firework Finale",
+		price = 0,
+		robuxOnly = true,
+		productKey = "Death_firework",
+		desc = "Launches up and explodes in color.",
+	},
+	{
+		id = "rubberduck",
+		name = "Squeaky Duck",
+		price = 0,
+		robuxOnly = true,
+		productKey = "Death_rubberduck",
+		desc = "Turns into a rubber duck. Squeak.",
+	},
 } :: { Item }
 
 Cosmetics.Categories = {

@@ -25,31 +25,34 @@ local BirdState = require(script.Parent.BirdState)
 local World = {}
 World.__index = World
 
-export type World = typeof(setmetatable({} :: {
-	mode: Modes.ModeDef,
-	seed: number,
-	tick: number,
-	startTick: number,
-	speedMult: number,
-	birds: { [number]: BirdState.Bird },
-	birdList: { BirdState.Bird },
-	spikes: { Spikes.Spike },
-	spikeById: { [number]: Spikes.Spike },
-	nextSpikeId: number,
-	event: any?,
-	upcoming: any?,
-	eventSerial: number,
-	testPhaseUntil: number,
-	testPinX: { [number]: number },
-	arenaStrums: number,
-	score: number,
-	isServer: boolean,
-	hooks: { [string]: any },
-	fxRng: any,
-	flip: { progress: number, active: boolean, doneTick: number },
-	suddenDeath: boolean,
-	paused: boolean,
-}, World))
+export type World = typeof(setmetatable(
+	{} :: {
+		mode: Modes.ModeDef,
+		seed: number,
+		tick: number,
+		startTick: number,
+		speedMult: number,
+		birds: { [number]: BirdState.Bird },
+		birdList: { BirdState.Bird },
+		spikes: { Spikes.Spike },
+		spikeById: { [number]: Spikes.Spike },
+		nextSpikeId: number,
+		event: any?,
+		upcoming: any?,
+		eventSerial: number,
+		testPhaseUntil: number,
+		testPinX: { [number]: number },
+		arenaStrums: number,
+		score: number,
+		isServer: boolean,
+		hooks: { [string]: any },
+		fxRng: any,
+		flip: { progress: number, active: boolean, doneTick: number },
+		suddenDeath: boolean,
+		paused: boolean,
+	},
+	World
+))
 
 function World.new(opts: { [string]: any })
 	local self = setmetatable({}, World)

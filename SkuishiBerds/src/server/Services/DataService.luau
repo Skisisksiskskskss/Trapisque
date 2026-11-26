@@ -84,18 +84,22 @@ function DataService.template()
 	}
 end
 
--- Fill in anything missing (new fields added in later updates)
-local function reconcile(data, template)
+-- Fill in anything missing (new fields added in later updates), recursively
+local function fillMissing(data, template)
 	for k, v in template do
 		if data[k] == nil then
 			data[k] = deepCopy(v)
 		elseif type(v) == "table" and type(data[k]) == "table" and k ~= "receipts" and k ~= "receiptOrder" then
-			-- only reconcile dictionary-like tables
+			-- only recurse into dictionary-like tables
 			if next(v) ~= nil and #v == 0 then
-				reconcile(data[k], v)
+				fillMissing(data[k], v)
 			end
 		end
 	end
+end
+
+local function reconcile(data, template)
+	fillMissing(data, template)
 	-- free items added later are granted automatically
 	for category, list in Cosmetics.Categories do
 		data.owned[category] = data.owned[category] or {}
@@ -154,7 +158,12 @@ local function loadProfile(player: Player)
 				return (store :: DataStore):UpdateAsync(key, function(old)
 					old = old or { data = nil, lock = nil }
 					local lock = old.lock
-					if lock and lock.jobId ~= game.JobId and os.time() - (lock.time or 0) < LOCK_TIMEOUT and attempt < 6 then
+					if
+						lock
+						and lock.jobId ~= game.JobId
+						and os.time() - (lock.time or 0) < LOCK_TIMEOUT
+						and attempt < 6
+					then
 						lockedElsewhere = true
 						return nil
 					end

@@ -126,7 +126,10 @@ function Match:createBirds(entries)
 		local pos = layout[slot]
 		local loadout = (e.loadouts and e.loadouts[info.index]) or {}
 		local team
-		if self.mode.versus then
+		if self.mode.versus and e.couch and not self.mode.online then
+			team = slot -- couch duel: the two birds on one device are rivals
+		elseif self.mode.versus then
+			-- an online couch pair plays as one team
 			team = teamBySlotEntry[e] or slot
 			teamBySlotEntry[e] = team
 		else
@@ -827,9 +830,13 @@ function Match:update()
 	-- snapshots for remote rendering
 	if self.world.tick - self.lastSnapshot >= GameConfig.SNAPSHOT_EVERY then
 		self.lastSnapshot = self.world.tick
+		-- entries: { slot, sourceTick, ...state }: a player's bird carries the tick its
+		-- owner recorded that state at, so other clients replay it on the right timeline
 		local snap = {}
 		for _, b in self.world.birdList do
 			local packed = BirdState.pack(b)
+			local st = self.lastState[b.slot]
+			table.insert(packed, 1, if st and not b.isBot then st.tick else self.world.tick)
 			table.insert(packed, 1, b.slot)
 			table.insert(snap, packed)
 		end

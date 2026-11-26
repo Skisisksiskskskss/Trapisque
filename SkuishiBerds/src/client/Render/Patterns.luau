@@ -219,12 +219,20 @@ end
 function draw.confetti(p, rnd, c, a, z)
 	for i = 0, 19 do
 		local alphaVar = math.clamp(a * (0.7 + rnd(i) * 0.6), 0.1, 1)
-		Canvas.rect(p, SPACE, (rnd(i * 7) - 0.5) * 1.6, (rnd(i * 8) - 0.5) * 1.6, (4 + rnd(i) * 5) / 15, (4 + rnd(i + 1) * 5) / 15, {
-			color = c,
-			alpha = alphaVar,
-			z = z,
-			rot = math.deg(rnd(i * 9) * math.pi),
-		})
+		Canvas.rect(
+			p,
+			SPACE,
+			(rnd(i * 7) - 0.5) * 1.6,
+			(rnd(i * 8) - 0.5) * 1.6,
+			(4 + rnd(i) * 5) / 15,
+			(4 + rnd(i + 1) * 5) / 15,
+			{
+				color = c,
+				alpha = alphaVar,
+				z = z,
+				rot = math.deg(rnd(i * 9) * math.pi),
+			}
+		)
 	end
 end
 
@@ -235,7 +243,16 @@ function draw.swirls(p, rnd, c, a, z)
 		-- nested off-center rings read as a swirl at this size
 		for k = 1, 3 do
 			local r = 0.07 * k
-			Canvas.ring(p, SPACE, x + r * 0.3 * (if rnd(i) > 0.5 then 1 else -1), y, r, r, 1.5, { color = c, alpha = a, z = z })
+			Canvas.ring(
+				p,
+				SPACE,
+				x + r * 0.3 * (if rnd(i) > 0.5 then 1 else -1),
+				y,
+				r,
+				r,
+				1.5,
+				{ color = c, alpha = a, z = z }
+			)
 		end
 	end
 end
@@ -246,7 +263,16 @@ function draw.triangles(p, rnd, c, a, z)
 		local x = (rnd(i * 5 + 10) - 0.5) * 1.6
 		local y = (rnd(i * 6 + 10) - 0.5) * 1.6
 		local s = 0.15 + rnd(i) * 0.2
-		Canvas.tri(p, SPACE, x, y, s * 1.7, s * 1.5, apexes[math.floor(rnd(i * 7) * 4) + 1], { color = c, alpha = a, z = z })
+		Canvas.tri(
+			p,
+			SPACE,
+			x,
+			y,
+			s * 1.7,
+			s * 1.5,
+			apexes[math.floor(rnd(i * 7) * 4) + 1],
+			{ color = c, alpha = a, z = z }
+		)
 	end
 end
 
@@ -262,7 +288,15 @@ function draw.galaxy(p, rnd, _c, a, z)
 	local back = Canvas.rect(p, SPACE, 0, 0, 3, 3, { color = Color3.new(1, 1, 1), alpha = math.max(a, 0.7), z = z })
 	g.Parent = back
 	for i = 0, 18 do
-		dot(p, (rnd(i * 3) - 0.5) * 2, (rnd(i * 3 + 1) - 0.5) * 2, 0.03 + rnd(i * 3 + 2) * 0.05, Color3.new(1, 1, 1), 0.9, z)
+		dot(
+			p,
+			(rnd(i * 3) - 0.5) * 2,
+			(rnd(i * 3 + 1) - 0.5) * 2,
+			0.03 + rnd(i * 3 + 2) * 0.05,
+			Color3.new(1, 1, 1),
+			0.9,
+			z
+		)
 	end
 end
 

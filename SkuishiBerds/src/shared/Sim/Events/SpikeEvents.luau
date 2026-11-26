@@ -102,7 +102,11 @@ return {
 				local group = { a }
 				for j = i + 1, #list do
 					local b = list[j]
-					if not merged[b.id] and b.side == a.side and math.abs(Spikes.yAt(a, world.tick) - Spikes.yAt(b, world.tick)) < 80 then
+					if
+						not merged[b.id]
+						and b.side == a.side
+						and math.abs(Spikes.yAt(a, world.tick) - Spikes.yAt(b, world.tick)) < 80
+					then
 						table.insert(group, b)
 						merged[b.id] = true
 					end

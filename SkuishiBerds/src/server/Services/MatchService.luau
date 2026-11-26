@@ -37,8 +37,22 @@ local playerQueue: { [Player]: string } = {}
 local nextMatchId = 1
 
 local BOT_NAMES = {
-	"Chirpy", "Beaky", "Sir Flaps", "Nugget", "Pip", "Wobble", "Doodle", "Squawkers",
-	"Tweetle", "Mochi", "Biscuit", "Pebble", "Noodle", "Bubbles", "Kiwi", "Mango",
+	"Chirpy",
+	"Beaky",
+	"Sir Flaps",
+	"Nugget",
+	"Pip",
+	"Wobble",
+	"Doodle",
+	"Squawkers",
+	"Tweetle",
+	"Mochi",
+	"Biscuit",
+	"Pebble",
+	"Noodle",
+	"Bubbles",
+	"Kiwi",
+	"Mango",
 }
 
 -- Messaging -------------------------------------------------------------------
@@ -464,7 +478,12 @@ function MatchService.init()
 				matches[match.id] = nil
 				for player in match.players do
 					playerMatch[player] = nil
-					MatchService.sendTo(player, "MatchEnd", match.id, { error = true, mode = match.mode.id, score = match.world.score })
+					MatchService.sendTo(
+						player,
+						"MatchEnd",
+						match.id,
+						{ error = true, mode = match.mode.id, score = match.world.score }
+					)
 				end
 			end
 		end

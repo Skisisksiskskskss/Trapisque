@@ -87,7 +87,13 @@ export type EventInstance = {
 	ended: boolean,
 }
 
-function Events.create(name: string, id: number, seed: number, startTick: number, params: { [string]: any }?): EventInstance
+function Events.create(
+	name: string,
+	id: number,
+	seed: number,
+	startTick: number,
+	params: { [string]: any }?
+): EventInstance
 	local def = Events.defs[name]
 	assert(def, "unknown event " .. tostring(name))
 	local meta = def.meta

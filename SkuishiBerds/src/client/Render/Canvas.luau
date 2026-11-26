@@ -126,7 +126,16 @@ function Canvas.diamond(parent: Instance, space: Space, x: number, y: number, d:
 end
 
 -- A line segment; thickness in units
-function Canvas.line(parent: Instance, space: Space, x1: number, y1: number, x2: number, y2: number, thick: number, style): Frame
+function Canvas.line(
+	parent: Instance,
+	space: Space,
+	x1: number,
+	y1: number,
+	x2: number,
+	y2: number,
+	thick: number,
+	style
+): Frame
 	local f = frame(parent)
 	Canvas.setLine(f, space, x1, y1, x2, y2, thick)
 	style = style or {}
@@ -167,7 +176,15 @@ end
 	Clip holder: an axis-aligned frame with ClipsDescendants, in the parent's
 	space. Children inside use their own space mapping (0..1 of the holder).
 ]]
-function Canvas.clipHolder(parent: Instance, space: Space, x: number, y: number, w: number, h: number, z: number?): Frame
+function Canvas.clipHolder(
+	parent: Instance,
+	space: Space,
+	x: number,
+	y: number,
+	w: number,
+	h: number,
+	z: number?
+): Frame
 	local holder = frame(parent, z)
 	holder.AnchorPoint = Vector2.new(0, 0)
 	holder.Position = pos(space, x, y)
@@ -181,7 +198,16 @@ end
 	Right triangle in a w x h box whose top-left is (x, y).
 	corner = where the right angle sits: "BL" | "BR" | "TL" | "TR"
 ]]
-function Canvas.rtri(parent: Instance, space: Space, x: number, y: number, w: number, h: number, cornerName: string, style): Frame
+function Canvas.rtri(
+	parent: Instance,
+	space: Space,
+	x: number,
+	y: number,
+	w: number,
+	h: number,
+	cornerName: string,
+	style
+): Frame
 	local holder = Canvas.clipHolder(parent, space, x, y, w, h, style.z)
 	-- hypotenuse endpoints in box units, and a point inside the triangle
 	local ax, ay, bx, by, ix, iy
@@ -220,7 +246,16 @@ end
 	(cx, cy) = center of the bounding box, w x h = box size.
 	Returns a holder frame containing both halves.
 ]]
-function Canvas.tri(parent: Instance, space: Space, cx: number, cy: number, w: number, h: number, apex: string, style): Frame
+function Canvas.tri(
+	parent: Instance,
+	space: Space,
+	cx: number,
+	cy: number,
+	w: number,
+	h: number,
+	apex: string,
+	style
+): Frame
 	local group = frame(parent, style.z)
 	group.BackgroundTransparency = 1
 	group.Position = pos(space, cx, cy)

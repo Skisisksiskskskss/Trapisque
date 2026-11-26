@@ -141,7 +141,14 @@ Hats.flower = function(b)
 	for i = 0, 5 do
 		local a = i / 6 * math.pi * 2
 		local hue = (i * 40) / 360
-		b.ell(math.cos(a) * 0.35, -1.25 + math.sin(a) * 0.13, 0.25, 0.12, Color3.fromHSV(hue, 0.55, 0.95), { rot = a * DEG })
+		b.ell(
+			math.cos(a) * 0.35,
+			-1.25 + math.sin(a) * 0.13,
+			0.25,
+			0.12,
+			Color3.fromHSV(hue, 0.55, 0.95),
+			{ rot = a * DEG }
+		)
 	end
 	b.circ(0, -1.05, 0.18, c("#ffd700"), { stroke = INK })
 	b.line(0, -1.0, 0, -0.85, 1.5, c("#27ae60"))

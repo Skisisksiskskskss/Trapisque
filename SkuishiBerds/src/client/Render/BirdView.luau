@@ -132,10 +132,28 @@ local function makeBuilder(parent: Instance, fx: number, fy: number, z: number, 
 			local top = if half == "top" then cy - ry - pad else cy
 			local holder = Canvas.clipHolder(parent, S, cx - rx - pad, top, rx * 2 + pad * 2, ry + pad, o.z or z)
 			local inner = Canvas.space(0, 0, 1 / (rx * 2 + pad * 2), 1 / (ry + pad))
-			Canvas.ring(holder, inner, rx + pad, if half == "top" then ry + pad else 0, rx, ry, thick, { color = color, alpha = o.alpha })
+			Canvas.ring(
+				holder,
+				inner,
+				rx + pad,
+				if half == "top" then ry + pad else 0,
+				rx,
+				ry,
+				thick,
+				{ color = color, alpha = o.alpha }
+			)
 			return holder
 		end
-		return Canvas.ring(parent, S, X(x), Y(y), rx, ry, thick, { color = color, alpha = o.alpha, rot = R(o.rot), z = o.z or z })
+		return Canvas.ring(
+			parent,
+			S,
+			X(x),
+			Y(y),
+			rx,
+			ry,
+			thick,
+			{ color = color, alpha = o.alpha, rot = R(o.rot), z = o.z or z }
+		)
 	end
 	function b.anim(fn)
 		table.insert(anims, fn)
