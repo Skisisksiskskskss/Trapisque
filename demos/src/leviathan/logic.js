@@ -5,9 +5,9 @@
   var COLS = 9, ROWS = 11, N = COLS * ROWS;
   var SEA = 0, REEF = 1, ISLAND = 2;
   var CFG = {
-    orders: 3, roundLimit: 20, surfaceEvery: 6, killsToWin: 4, woundsToWin: 3,
+    orders: 4, roundLimit: 20, surfaceEvery: 6, killsToWin: 4, woundsToWin: 3,
     shipHP: 2, netTTL: 3, maxNets: 2, buoys: 6,
-    sonarRange: 2, harpoonRange: 2, beamRange: 4, shipMove: 2, startRows: 4
+    sonarRange: 2, harpoonRange: 3, harpoonMin: 2, harpoonMove: 1, beamRange: 4, beamMin: 3, shipMove: 2, startRows: 4
   };
   var SHIP_DEFS = [
     { id: "sonar", name: "Sonar", ability: "ping", verb: "Ping" },
@@ -222,8 +222,14 @@
     var o = shipAt(s, t);
     if (o >= 0 && o !== k) return false;
     if (buoyAt(s, t)) return false;
-    if (s.revealedAt === t) return false;
+    if (s.revealedAt === t && s.ships[k].id !== "harpoon") return false;
     return true;
+  }
+  function netTiles(s, pos) { return NEI[pos].filter(function (t) { return s.terrain[t] !== ISLAND; }); }
+  function harpoonRing(s, pos) {
+    var out = [];
+    for (var t = 0; t < N; t++) { var d = dist(pos, t); if (d >= CFG.harpoonMin && d <= CFG.harpoonRange && s.terrain[t] !== ISLAND) out.push(t); }
+    return out;
   }
 
   /* Public belief updates: what the hunters can deduce. */
@@ -357,7 +363,8 @@
     var sh = s.ships[k], res = {};
     var prev = {}; prev[sh.pos] = -1;
     var frontier = [sh.pos];
-    for (var step = 0; step < CFG.shipMove; step++) {
+    var steps = sh.id === "harpoon" ? CFG.harpoonMove : CFG.shipMove;
+    for (var step = 0; step < steps; step++) {
       var next = [];
       frontier.forEach(function (x) {
         NEI[x].forEach(function (y) {
@@ -387,16 +394,10 @@
     var sh = s.ships[k], out = [];
     if (sh.sunk || sh.acted || s.orders < 1) return out;
     if (sh.ability === "ping") return [sh.pos];
-    if (sh.ability === "harpoon") {
-      for (var t = 0; t < N; t++) if (t !== sh.pos && dist(sh.pos, t) <= CFG.harpoonRange && s.terrain[t] !== ISLAND && shipAt(s, t) < 0) out.push(t);
-      return out;
-    }
-    if (sh.ability === "net") {
-      NEI[sh.pos].forEach(function (t) { if (s.terrain[t] !== ISLAND && shipAt(s, t) < 0) out.push(t); });
-      return out;
-    }
+    if (sh.ability === "harpoon") return harpoonRing(s, sh.pos).filter(function (t) { return shipAt(s, t) < 0; });
+    if (sh.ability === "net") return [sh.pos];
     if (sh.ability === "beam") {
-      for (var d = 0; d < 6; d++) if (beamTiles(s, sh.pos, d).length) out.push(d);
+      for (var d = 0; d < 6; d++) if (beamTiles(s, sh.pos, d).length >= CFG.beamMin) out.push(d);
       return out;
     }
     return out;
@@ -422,8 +423,15 @@
       var from = sh.pos, walked = [];
       for (var k = 0; k < path.length; k++) {
         if (path[k] === m.pos) {
-          ev.push({ t: "bump", ship: o.ship, at: path[k], stop: sh.pos, from: from, path: walked.slice() });
-          reveal(s, m.pos, "bump", ev);
+          if (sh.id === "harpoon") {
+            m.wounds += 1;
+            ev.push({ t: "ram", ship: o.ship, at: path[k], stop: sh.pos, from: from, path: walked.slice(), hit: true });
+            reveal(s, m.pos, "ram", ev);
+            if (m.wounds >= CFG.woundsToWin) win(s, "hunters", "Three harpoons found their mark.");
+          } else {
+            ev.push({ t: "bump", ship: o.ship, at: path[k], stop: sh.pos, from: from, path: walked.slice() });
+            reveal(s, m.pos, "bump", ev);
+          }
           break;
         }
         sh.pos = path[k];
@@ -450,13 +458,12 @@
         s.P = removeTiles(s.P, [o.target]);
       }
     } else if (o.type === "net") {
-      var snag = o.target === m.pos;
-      s.nets.push({ pos: o.target, ttl: CFG.netTTL });
-      while (s.nets.length > CFG.maxNets) s.nets.shift();
-      ev.push({ t: "net", ship: o.ship, target: o.target, snag: snag });
+      var ring = netTiles(s, sh.pos);
+      var snag = ring.indexOf(m.pos) >= 0;
+      ev.push({ t: "net", ship: o.ship, at: sh.pos, tiles: ring, snag: snag });
       sh.acted = true;
       if (snag) { m.snagged = true; reveal(s, m.pos, "net", ev); }
-      else if (s.revealedAt !== m.pos) s.P = removeTiles(s.P, [o.target]);
+      else if (s.revealedAt !== m.pos) s.P = removeTiles(s.P, ring);
     } else if (o.type === "beam") {
       var tiles = beamTiles(s, sh.pos, o.dir);
       var found = tiles.indexOf(m.pos) >= 0;
@@ -524,14 +531,12 @@
     var hk = 1, h = s.ships[hk];
     if (h.sunk || h.acted || ordersLeft < 1) return null;
     var spots = [h.pos];
-    if (!h.moved && ordersLeft >= 2) {
-      var mv = shipMovesRaw(s, hk);
-      Object.keys(mv).forEach(function (t) { spots.push(+t); });
-    }
     var mark = new Uint8Array(N);
-    spots.forEach(function (p) {
-      for (var t = 0; t < N; t++) if (dist(p, t) <= CFG.harpoonRange && s.terrain[t] !== ISLAND) mark[t] = 1;
-    });
+    if (!h.moved) {
+      var mv = shipMovesRaw(s, hk);
+      Object.keys(mv).forEach(function (t) { mark[+t] = 1; if (ordersLeft >= 2) spots.push(+t); });
+    }
+    spots.forEach(function (p) { harpoonRing(s, p).forEach(function (t) { mark[t] = 1; }); });
     return mark;
   }
 
@@ -654,22 +659,12 @@
       return 100 * sb.gain + 9 * sb.info;
     }
     if (o.type === "net") {
-      var pn = (B.w[o.target] || 0) / B.total;
-      var v = 0;
-      if (!known) {
-        var sn = splitValue(s, B, [o.target], after);
-        v += 100 * sn.gain + 9 * sn.info;
-        var reach = harpoonReachTiles(s, after);
-        v += 60 * pn * (reach && reach[o.target] ? 1 : 0.3);
-      }
-      var b = buoyAt(s, o.target);
-      if (b) {
-        var threat = 0;
-        s.P.forEach(function (t) { if (dist(t, o.target) <= 2) threat += B.w[t]; });
-        v += 30 * threat / B.total;
-      }
-      if (known && dist(s.revealedAt, o.target) === 1) v += 6;
-      return v;
+      var ring = netTiles(s, sh.pos);
+      if (known) return ring.indexOf(s.revealedAt) >= 0 && !s.monster.snagged ? 6 : -1;
+      var sn = splitValue(s, B, ring, after);
+      var pn = 0;
+      ring.forEach(function (t) { pn += B.w[t] || 0; });
+      return 100 * sn.gain + 9 * sn.info + 25 * pn / B.total;
     }
     if (o.type === "move") {
       var before = posValue(s, B, o.ship, sh.pos);
@@ -679,13 +674,17 @@
       var gainNow = 0;
       if (sh.id === "harpoon" && !sh.acted && after >= 1) {
         var mark = new Uint8Array(N);
-        for (var t = 0; t < N; t++) if (dist(o.to, t) <= CFG.harpoonRange) mark[t] = 1;
+        harpoonRing(s, o.to).forEach(function (t) { mark[t] = 1; });
         gainNow = bestShot(s.P, B.w, B.total, mark);
         var markOld = new Uint8Array(N);
-        for (var t2 = 0; t2 < N; t2++) if (dist(oldPos, t2) <= CFG.harpoonRange) markOld[t2] = 1;
+        harpoonRing(s, oldPos).forEach(function (t) { markOld[t] = 1; });
         gainNow -= bestShot(s.P, B.w, B.total, markOld);
       }
       sh.pos = oldPos;
+      if (sh.id === "harpoon") {
+        var ram = (o.path || [o.to]).reduce(function (a, t4) { return a + (B.w[t4] || 0); }, 0) / B.total;
+        if (ram > 0) return 100 * ram + 40 * (afterV - before);
+      }
       var sweep = 0;
       (o.path || [o.to]).forEach(function (t3) { sweep += (B.w[t3] || 0) / B.total; });
       return 100 * Math.max(0, gainNow) + 40 * (afterV - before) + 25 * sweep;
@@ -740,8 +739,8 @@
       candidateOrders(s2).forEach(function (o2) { if (o2.type !== "move") best = Math.max(best, scoreOrder(s2, B2, o2)); });
       return best;
     }
-    if (o.type === "ping" || o.type === "beam") {
-      var region = o.type === "ping" ? disk(s.ships[o.ship].pos, CFG.sonarRange) : beamTiles(s, s.ships[o.ship].pos, o.dir);
+    if (o.type === "ping" || o.type === "beam" || o.type === "net") {
+      var region = o.type === "ping" ? disk(s.ships[o.ship].pos, CFG.sonarRange) : o.type === "net" ? netTiles(s, s.ships[o.ship].pos) : beamTiles(s, s.ships[o.ship].pos, o.dir);
       var mark = new Uint8Array(N);
       region.forEach(function (t) { mark[t] = 1; });
       var mi = 0;
@@ -773,7 +772,7 @@
     var mv = shipMovesRaw(Object.assign({}, s, { revealedAt: -1 }), 1);
     Object.keys(mv).forEach(function (t) { spots.push(+t); });
     spots.forEach(function (p) {
-      for (var t = 0; t < N; t++) if (dist(p, t) <= CFG.harpoonRange) mark[t] = 1;
+      for (var t = 0; t < N; t++) { var d = dist(p, t); if ((p === h.pos && d === 1) || (d >= CFG.harpoonMin && d <= CFG.harpoonRange)) mark[t] = 1; }
     });
     return mark;
   }
@@ -807,7 +806,7 @@
         var o = hunterOrder(c, hunterLevel || "normal", rand);
         if (o.type === "end") break;
         var ev = applyHunter(c, o);
-        if (ev.some(function (e) { return e.t === "harpoon" && e.hit; })) { hits++; break; }
+        if (ev.some(function (e) { return (e.t === "harpoon" && e.hit) || e.t === "ram"; })) { hits++; break; }
       }
     }
     return hits / sims;
@@ -901,7 +900,7 @@
     newGame: newGame, clone: clone, startZone: startZone, setMonsterStart: setMonsterStart,
     monsterOptions: monsterOptions, applyMonster: applyMonster, shipMoves: shipMoves, shipMovesRaw: shipMovesRaw, abilityTargets: abilityTargets,
     beamTiles: beamTiles, applyHunter: applyHunter, endHunterTurn: endHunterTurn, hasAnyOrder: hasAnyOrder,
-    shipAt: shipAt, buoyAt: buoyAt, netAt: netAt, reach2: reach2, expandPublic: expandPublic,
+    shipAt: shipAt, buoyAt: buoyAt, netAt: netAt, reach2: reach2, expandPublic: expandPublic, netTiles: netTiles, harpoonRing: harpoonRing,
     bots: { hunterOrder: hunterOrder, monsterMove: monsterMove, monsterStart: monsterStart }, LEVELS: LEVELS
   };
   root.Leviathan = API;

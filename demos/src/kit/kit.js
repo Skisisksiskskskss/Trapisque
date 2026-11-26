@@ -355,6 +355,215 @@
       });
   }
 
+
+  /* ---------- Blocky characters: Roblox-style heads and figures drawn as SVG ----------
+     portrait(spec) draws a head and shoulders in a 64x64 box.
+     figure(spec) draws a whole standing figure in a 40x52 box (x -20..20, y -36..16).
+     spec: skin, shirt, pants, hair, hairStyle, hat, hatColor, hatColor2, eyes, brows, mouth,
+           beard, beardColor, extras (array), accent. Every part is optional. */
+  var OUT = "#0b1622";
+  function face(p, ox, oy, k) {
+    // ox, oy: top-left of the head box; k: head size (34 for portraits)
+    var o = "", sc = k / 34;
+    function X(v) { return (ox + v * sc).toFixed(2); }
+    function Y(v) { return (oy + v * sc).toFixed(2); }
+    function S(v) { return (v * sc).toFixed(2); }
+    var eyes = p.eyes || "dot", lx = 11, rx = 23, ey = 15;
+    if (eyes === "wide") {
+      o += '<circle cx="' + X(lx) + '" cy="' + Y(ey) + '" r="' + S(4.2) + '" fill="#fff" stroke="' + OUT + '" stroke-width="' + S(1.2) + '"/><circle cx="' + X(lx + 0.6) + '" cy="' + Y(ey + 0.4) + '" r="' + S(2.1) + '" fill="' + OUT + '"/>';
+      o += '<circle cx="' + X(rx) + '" cy="' + Y(ey) + '" r="' + S(4.2) + '" fill="#fff" stroke="' + OUT + '" stroke-width="' + S(1.2) + '"/><circle cx="' + X(rx + 0.6) + '" cy="' + Y(ey + 0.4) + '" r="' + S(2.1) + '" fill="' + OUT + '"/>';
+    } else if (eyes === "squint") {
+      o += '<path d="M' + X(lx - 3) + " " + Y(ey) + "h" + S(6) + "M" + X(rx - 3) + " " + Y(ey) + "h" + S(6) + '" stroke="' + OUT + '" stroke-width="' + S(2.2) + '" stroke-linecap="round"/>';
+    } else if (eyes === "mask") {
+      o += '<rect x="' + X(4) + '" y="' + Y(ey - 4.5) + '" width="' + S(26) + '" height="' + S(8.5) + '" rx="' + S(3) + '" fill="' + (p.maskColor || OUT) + '"/>';
+      o += '<ellipse cx="' + X(lx) + '" cy="' + Y(ey) + '" rx="' + S(2.6) + '" ry="' + S(2) + '" fill="#fff"/><ellipse cx="' + X(rx) + '" cy="' + Y(ey) + '" rx="' + S(2.6) + '" ry="' + S(2) + '" fill="#fff"/>';
+    } else if (eyes === "shades") {
+      o += '<path d="M' + X(4) + " " + Y(ey - 3.5) + "h" + S(26) + "v" + S(3) + "q" + S(-1) + " " + S(5) + " " + S(-6) + " " + S(5) + "q" + S(-5) + " 0 " + S(-6) + " " + S(-4.5) + "h" + S(-2) + "q" + S(-1) + " " + S(4.5) + " " + S(-6) + " " + S(4.5) + "q" + S(-5) + " 0 " + S(-6) + " " + S(-5) + 'z" fill="' + OUT + '"/>';
+      o += '<path d="M' + X(7) + " " + Y(ey - 2) + "l" + S(3) + " 0" + '" stroke="#9fb3c8" stroke-width="' + S(1.2) + '" stroke-linecap="round"/>';
+    } else {
+      o += '<rect x="' + X(lx - 2.4) + '" y="' + Y(ey - 3) + '" width="' + S(4.8) + '" height="' + S(6) + '" rx="' + S(2) + '" fill="' + OUT + '"/>';
+      if (eyes !== "patch") o += '<rect x="' + X(rx - 2.4) + '" y="' + Y(ey - 3) + '" width="' + S(4.8) + '" height="' + S(6) + '" rx="' + S(2) + '" fill="' + OUT + '"/>';
+      else {
+        o += '<path d="M' + X(0) + " " + Y(9) + "L" + X(34) + " " + Y(4) + '" stroke="' + OUT + '" stroke-width="' + S(1.6) + '"/>';
+        o += '<rect x="' + X(rx - 4.5) + '" y="' + Y(ey - 4.5) + '" width="' + S(9) + '" height="' + S(9) + '" rx="' + S(3) + '" fill="' + OUT + '"/>';
+      }
+    }
+    var brows = p.brows;
+    var bc = p.browColor || OUT;
+    if (brows === "angry") o += '<path d="M' + X(lx - 4) + " " + Y(ey - 7) + "L" + X(lx + 3) + " " + Y(ey - 5) + "M" + X(rx + 4) + " " + Y(ey - 7) + "L" + X(rx - 3) + " " + Y(ey - 5) + '" stroke="' + bc + '" stroke-width="' + S(2.4) + '" stroke-linecap="round"/>';
+    else if (brows === "raised") o += '<path d="M' + X(lx - 4) + " " + Y(ey - 6) + "q" + S(4) + " " + S(-3) + " " + S(8) + " 0M" + X(rx - 4) + " " + Y(ey - 6) + "q" + S(4) + " " + S(-3) + " " + S(8) + ' 0" fill="none" stroke="' + bc + '" stroke-width="' + S(2) + '" stroke-linecap="round"/>';
+    else if (brows === "thick") o += '<rect x="' + X(lx - 4.5) + '" y="' + Y(ey - 8) + '" width="' + S(9) + '" height="' + S(3) + '" rx="' + S(1.4) + '" fill="' + bc + '"/><rect x="' + X(rx - 4.5) + '" y="' + Y(ey - 8) + '" width="' + S(9) + '" height="' + S(3) + '" rx="' + S(1.4) + '" fill="' + bc + '"/>';
+    var mouth = p.mouth || "smile", my = 24;
+    if (mouth === "grin") o += '<path d="M' + X(10) + " " + Y(my - 1) + "h" + S(14) + "q" + S(-1) + " " + S(7) + " " + S(-7) + " " + S(7) + "q" + S(-6) + " 0 " + S(-7) + " " + S(-7) + 'z" fill="#fff" stroke="' + OUT + '" stroke-width="' + S(1.6) + '" stroke-linejoin="round"/>';
+    else if (mouth === "frown") o += '<path d="M' + X(12) + " " + Y(my + 3) + "q" + S(5) + " " + S(-4) + " " + S(10) + ' 0" fill="none" stroke="' + OUT + '" stroke-width="' + S(2.2) + '" stroke-linecap="round"/>';
+    else if (mouth === "flat") o += '<path d="M' + X(13) + " " + Y(my + 1) + "h" + S(8) + '" stroke="' + OUT + '" stroke-width="' + S(2.2) + '" stroke-linecap="round"/>';
+    else if (mouth === "smirk") o += '<path d="M' + X(12) + " " + Y(my + 1) + "q" + S(6) + " " + S(2.5) + " " + S(10) + " " + S(-2) + '" fill="none" stroke="' + OUT + '" stroke-width="' + S(2.2) + '" stroke-linecap="round"/>';
+    else if (mouth === "o") o += '<ellipse cx="' + X(17) + '" cy="' + Y(my + 1.5) + '" rx="' + S(2.6) + '" ry="' + S(3.2) + '" fill="' + OUT + '"/>';
+    else if (mouth !== "none") o += '<path d="M' + X(11.5) + " " + Y(my) + "q" + S(5.5) + " " + S(5.5) + " " + S(11) + ' 0" fill="none" stroke="' + OUT + '" stroke-width="' + S(2.2) + '" stroke-linecap="round"/>';
+    return o;
+  }
+
+  function beardSvg(p, ox, oy, k) {
+    var sc = k / 34, b = p.beard, c = p.beardColor || "#6b4a2b";
+    function X(v) { return (ox + v * sc).toFixed(2); }
+    function Y(v) { return (oy + v * sc).toFixed(2); }
+    function S(v) { return (v * sc).toFixed(2); }
+    if (b === "full") return '<path d="M' + X(0) + " " + Y(17) + "v" + S(6) + "q0 " + S(14) + " " + S(17) + " " + S(14) + "q" + S(17) + " 0 " + S(17) + " " + S(-14) + "v" + S(-6) + "q" + S(-5) + " " + S(5) + " " + S(-17) + " " + S(5) + "q" + S(-12) + " 0 " + S(-17) + ' -5z" fill="' + c + '" stroke="' + OUT + '" stroke-width="' + S(1.6) + '" stroke-linejoin="round"/>' +
+      '<path d="M' + X(10) + " " + Y(22.5) + "q" + S(7) + " " + S(-3.5) + " " + S(14) + ' 0" fill="none" stroke="' + OUT + '" stroke-width="' + S(1.8) + '" stroke-linecap="round"/>';
+    if (b === "mustache") return '<path d="M' + X(8) + " " + Y(22.5) + "q" + S(9) + " " + S(-6) + " " + S(18) + " 0q" + S(-9) + " " + S(3) + " " + S(-18) + ' 0z" fill="' + c + '" stroke="' + OUT + '" stroke-width="' + S(1.2) + '" stroke-linejoin="round"/>';
+    if (b === "stubble") {
+      var o = "";
+      [[8, 26], [11, 29], [15, 30.5], [19, 30.5], [23, 29], [26, 26], [10, 27.5], [24, 27.5]].forEach(function (d) { o += '<circle cx="' + X(d[0]) + '" cy="' + Y(d[1]) + '" r="' + S(0.8) + '" fill="' + c + '"/>'; });
+      return o;
+    }
+    return "";
+  }
+
+  function hatSvg(p, ox, oy, k, layer) {
+    var sc = k / 34, hat = p.hat, c1 = p.hatColor || "#2b3a55", c2 = p.hatColor2 || "#f2b84b", o = "";
+    function X(v) { return (ox + v * sc).toFixed(2); }
+    function Y(v) { return (oy + v * sc).toFixed(2); }
+    function S(v) { return (v * sc).toFixed(2); }
+    var st = ' stroke="' + OUT + '" stroke-width="' + S(1.8) + '" stroke-linejoin="round"';
+    if (layer === "back") {
+      if (p.hairStyle === "braids") {
+        o += '<rect x="' + X(-4) + '" y="' + Y(12) + '" width="' + S(6) + '" height="' + S(24) + '" rx="' + S(2.5) + '" fill="' + (p.hair || "#f2c14e") + '"' + st + "/>";
+        o += '<rect x="' + X(32) + '" y="' + Y(12) + '" width="' + S(6) + '" height="' + S(24) + '" rx="' + S(2.5) + '" fill="' + (p.hair || "#f2c14e") + '"' + st + "/>";
+      }
+      if (p.hairStyle === "long") o += '<path d="M' + X(-3) + " " + Y(6) + "q0 " + S(-8) + " " + S(20) + " " + S(-8) + "q" + S(20) + " 0 " + S(20) + " " + S(8) + "v" + S(28) + "h" + S(-40) + 'z" fill="' + (p.hair || "#3b2a1f") + '"' + st + "/>";
+      if (hat === "hood") o += '<path d="M' + X(-5) + " " + Y(36) + "v" + S(-22) + "q0 " + S(-18) + " " + S(22) + " " + S(-18) + "q" + S(22) + " 0 " + S(22) + " " + S(18) + "v" + S(22) + 'z" fill="' + c1 + '"' + st + "/>";
+      return o;
+    }
+    switch (p.hairStyle) {
+      case "messy": o += '<path d="M' + X(0) + " " + Y(9) + "l" + S(2) + " " + S(-9) + "l" + S(5) + " " + S(5) + "l" + S(4) + " " + S(-8) + "l" + S(5) + " " + S(6) + "l" + S(5) + " " + S(-7) + "l" + S(4) + " " + S(7) + "l" + S(5) + " " + S(-4) + "l" + S(4) + " " + S(10) + 'z" fill="' + (p.hair || "#e0762b") + '"' + st + "/>"; break;
+      case "flat": o += '<path d="M' + X(0) + " " + Y(9) + "v" + S(-4) + "q0 " + S(-5) + " " + S(5) + " " + S(-5) + "h" + S(24) + "q" + S(5) + " 0 " + S(5) + " " + S(5) + "v" + S(4) + 'z" fill="' + (p.hair || "#3b2a1f") + '"' + st + "/>"; break;
+      case "pompadour": o += '<path d="M' + X(-1) + " " + Y(10) + "q" + S(-1) + " " + S(-12) + " " + S(14) + " " + S(-13) + "q" + S(16) + " " + S(-1) + " " + S(22) + " " + S(4) + "q" + S(-8) + " " + S(-1) + " " + S(-12) + " " + S(4) + "q" + S(9) + " " + S(1) + " " + S(12) + " " + S(5) + 'z" fill="' + (p.hair || "#1d1d24") + '"' + st + "/><path d=\"M" + X(8) + " " + Y(-1) + "q" + S(8) + " " + S(-3) + " " + S(16) + " " + S(1) + '" fill="none" stroke="#5b6b8a" stroke-width="' + S(1.3) + '" stroke-linecap="round"/>'; break;
+      case "bald": break;
+      case "spiky": o += '<path d="M' + X(0) + " " + Y(9) + "l" + S(3) + " " + S(-12) + "l" + S(6) + " " + S(7) + "l" + S(5) + " " + S(-11) + "l" + S(5) + " " + S(10) + "l" + S(6) + " " + S(-10) + "l" + S(3) + " " + S(11) + "l" + S(6) + " " + S(-5) + "v" + S(10) + 'z" fill="' + (p.hair || "#2b2b2b") + '"' + st + "/>"; break;
+    }
+    switch (hat) {
+      case "captain":
+        o += '<path d="M' + X(-1) + " " + Y(4) + "v" + S(-6) + "q0 " + S(-7) + " " + S(9) + " " + S(-8) + "h" + S(18) + "q" + S(9) + " " + S(1) + " " + S(9) + " " + S(8) + "v" + S(6) + 'z" fill="' + c1 + '"' + st + "/>";
+        o += '<rect x="' + X(-1) + '" y="' + Y(0) + '" width="' + S(36) + '" height="' + S(4) + '" fill="' + OUT + '"/>';
+        o += '<path d="M' + X(-3) + " " + Y(5) + "h" + S(40) + "q" + S(-2) + " " + S(4) + " " + S(-8) + " " + S(4) + "h" + S(-24) + "q" + S(-6) + " 0 " + S(-8) + ' -4z" fill="' + OUT + '"/>';
+        o += '<circle cx="' + X(17) + '" cy="' + Y(-3) + '" r="' + S(3.4) + '" fill="' + c2 + '" stroke="' + OUT + '" stroke-width="' + S(1.2) + '"/>';
+        break;
+      case "headphones":
+        o += '<path d="M' + X(-1) + " " + Y(16) + "q0 " + S(-21) + " " + S(18) + " " + S(-21) + "q" + S(18) + " 0 " + S(18) + " " + S(21) + '" fill="none" stroke="' + OUT + '" stroke-width="' + S(5) + '"/>';
+        o += '<path d="M' + X(-1) + " " + Y(16) + "q0 " + S(-21) + " " + S(18) + " " + S(-21) + "q" + S(18) + " 0 " + S(18) + " " + S(21) + '" fill="none" stroke="' + c1 + '" stroke-width="' + S(2.4) + '"/>';
+        o += '<rect x="' + X(-5) + '" y="' + Y(11) + '" width="' + S(8) + '" height="' + S(12) + '" rx="' + S(2.5) + '" fill="' + c2 + '"' + st + "/>";
+        o += '<rect x="' + X(31) + '" y="' + Y(11) + '" width="' + S(8) + '" height="' + S(12) + '" rx="' + S(2.5) + '" fill="' + c2 + '"' + st + "/>";
+        o += '<path d="M' + X(-1) + " " + Y(21) + "q" + S(2) + " " + S(8) + " " + S(10) + " " + S(7) + '" fill="none" stroke="' + OUT + '" stroke-width="' + S(1.6) + '" stroke-linecap="round"/><circle cx="' + X(9.5) + '" cy="' + Y(28) + '" r="' + S(1.7) + '" fill="' + OUT + '"/>';
+        break;
+      case "beanie":
+        o += '<path d="M' + X(-1) + " " + Y(9) + "q0 " + S(-15) + " " + S(18) + " " + S(-15) + "q" + S(18) + " 0 " + S(18) + " " + S(15) + 'z" fill="' + c1 + '"' + st + "/>";
+        o += '<rect x="' + X(-2) + '" y="' + Y(5) + '" width="' + S(38) + '" height="' + S(6) + '" rx="' + S(2) + '" fill="' + c2 + '"' + st + "/>";
+        o += '<circle cx="' + X(17) + '" cy="' + Y(-7) + '" r="' + S(3.6) + '" fill="' + c2 + '"' + st + "/>";
+        break;
+      case "souwester":
+        o += '<path d="M' + X(2) + " " + Y(4) + "q0 " + S(-12) + " " + S(15) + " " + S(-12) + "q" + S(15) + " 0 " + S(15) + " " + S(12) + 'z" fill="' + c1 + '"' + st + "/>";
+        o += '<path d="M' + X(-7) + " " + Y(7) + "q" + S(24) + " " + S(-9) + " " + S(48) + " 0q" + S(2) + " " + S(4) + " " + S(-4) + " " + S(5) + "q" + S(-20) + " " + S(-5) + " " + S(-40) + " 0q" + S(-6) + " " + S(-1) + " " + S(-4) + ' -5z" fill="' + c1 + '"' + st + "/>";
+        break;
+      case "fedora":
+        o += '<path d="M' + X(1) + " " + Y(6) + "q" + S(1) + " " + S(-12) + " " + S(16) + " " + S(-12) + "q" + S(15) + " 0 " + S(16) + " " + S(12) + 'z" fill="' + c1 + '"' + st + "/>";
+        o += '<rect x="' + X(1) + '" y="' + Y(2) + '" width="' + S(32) + '" height="' + S(4) + '" fill="' + c2 + '"/>';
+        o += '<path d="M' + X(-6) + " " + Y(8) + "q" + S(23) + " " + S(-6) + " " + S(46) + ' 0z" fill="' + c1 + '"' + st + "/>";
+        break;
+      case "cap":
+        o += '<path d="M' + X(-1) + " " + Y(8) + "q0 " + S(-12) + " " + S(18) + " " + S(-12) + "q" + S(18) + " 0 " + S(18) + " " + S(12) + 'z" fill="' + c1 + '"' + st + "/>";
+        o += '<path d="M' + X(14) + " " + Y(6) + "h" + S(30) + "q" + S(-2) + " " + S(4) + " " + S(-7) + " " + S(4) + "h" + S(-23) + 'z" fill="' + c2 + '"' + st + "/>";
+        break;
+      case "beret":
+        o += '<ellipse cx="' + X(15) + '" cy="' + Y(3) + '" rx="' + S(19) + '" ry="' + S(7) + '" fill="' + c1 + '"' + st + "/>";
+        o += '<rect x="' + X(14) + '" y="' + Y(-6) + '" width="' + S(2.5) + '" height="' + S(4) + '" fill="' + OUT + '"/>';
+        break;
+      case "headband":
+        o += '<rect x="' + X(-1) + '" y="' + Y(3) + '" width="' + S(36) + '" height="' + S(5) + '" fill="' + c1 + '"' + st + "/>";
+        o += '<path d="M' + X(34) + " " + Y(5) + "l" + S(6) + " " + S(-3) + "l" + S(-1) + " " + S(6) + 'z" fill="' + c1 + '"' + st + "/>";
+        break;
+      case "bucket":
+        o += '<path d="M' + X(2) + " " + Y(6) + "l" + S(3) + " " + S(-11) + "h" + S(24) + "l" + S(3) + " " + S(11) + 'z" fill="' + c1 + '"' + st + "/>";
+        o += '<path d="M' + X(-4) + " " + Y(9) + "h" + S(42) + "l" + S(-3) + " " + S(-4) + "h" + S(-36) + 'z" fill="' + c1 + '"' + st + "/>";
+        break;
+      case "hood":
+        o += '<path d="M' + X(-3) + " " + Y(14) + "q0 " + S(-17) + " " + S(20) + " " + S(-17) + "q" + S(20) + " 0 " + S(20) + " " + S(17) + "q" + S(-4) + " " + S(-12) + " " + S(-20) + " " + S(-12) + "q" + S(-16) + " 0 " + S(-20) + ' 12z" fill="' + c1 + '"' + st + "/>";
+        break;
+      case "police":
+        o += '<path d="M' + X(0) + " " + Y(6) + "l" + S(-2) + " " + S(-9) + "q" + S(19) + " " + S(-7) + " " + S(38) + " 0l" + S(-2) + " " + S(9) + 'z" fill="' + c1 + '"' + st + "/>";
+        o += '<path d="M' + X(-1) + " " + Y(6) + "h" + S(36) + "l" + S(-3) + " " + S(4) + "h" + S(-30) + 'z" fill="' + OUT + '"/>';
+        o += '<path d="M' + X(14) + " " + Y(-3) + "l" + S(3) + " " + S(-2) + "l" + S(3) + " " + S(2) + "l" + S(-3) + " " + S(4) + 'z" fill="' + c2 + '" stroke="' + OUT + '" stroke-width="' + S(1) + '"/>';
+        break;
+      case "tophat":
+        o += '<rect x="' + X(4) + '" y="' + Y(-14) + '" width="' + S(26) + '" height="' + S(20) + '" rx="' + S(2) + '" fill="' + c1 + '"' + st + "/>";
+        o += '<rect x="' + X(4) + '" y="' + Y(1) + '" width="' + S(26) + '" height="' + S(4) + '" fill="' + c2 + '"/>';
+        o += '<rect x="' + X(-4) + '" y="' + Y(5) + '" width="' + S(42) + '" height="' + S(4) + '" rx="' + S(2) + '" fill="' + c1 + '"' + st + "/>";
+        break;
+    }
+    return o;
+  }
+
+  function extrasSvg(p, ox, oy, k) {
+    var sc = k / 34, o = "";
+    function X(v) { return (ox + v * sc).toFixed(2); }
+    function Y(v) { return (oy + v * sc).toFixed(2); }
+    function S(v) { return (v * sc).toFixed(2); }
+    (p.extras || []).forEach(function (e) {
+      if (e === "freckles") [[6, 21], [8.5, 22.5], [5.5, 23.5], [28, 21], [25.5, 22.5], [28.5, 23.5]].forEach(function (d) { o += '<circle cx="' + X(d[0]) + '" cy="' + Y(d[1]) + '" r="' + S(0.85) + '" fill="#b4643a"/>'; });
+      if (e === "blush") o += '<ellipse cx="' + X(6) + '" cy="' + Y(21) + '" rx="' + S(3) + '" ry="' + S(1.8) + '" fill="#ff8a8a" opacity=".55"/><ellipse cx="' + X(28) + '" cy="' + Y(21) + '" rx="' + S(3) + '" ry="' + S(1.8) + '" fill="#ff8a8a" opacity=".55"/>';
+      if (e === "glasses") o += '<circle cx="' + X(11) + '" cy="' + Y(15) + '" r="' + S(4.8) + '" fill="rgba(200,230,255,.25)" stroke="' + OUT + '" stroke-width="' + S(1.6) + '"/><circle cx="' + X(23) + '" cy="' + Y(15) + '" r="' + S(4.8) + '" fill="rgba(200,230,255,.25)" stroke="' + OUT + '" stroke-width="' + S(1.6) + '"/><path d="M' + X(15.8) + " " + Y(15) + "h" + S(2.4) + '" stroke="' + OUT + '" stroke-width="' + S(1.6) + '"/>';
+      if (e === "scar") o += '<path d="M' + X(25) + " " + Y(9) + "l" + S(4) + " " + S(10) + "M" + X(25.5) + " " + Y(12) + "l" + S(2.5) + " " + S(-1) + "M" + X(27) + " " + Y(15.5) + "l" + S(2.5) + " " + S(-1) + '" stroke="#9a4a3a" stroke-width="' + S(1.3) + '" stroke-linecap="round"/>';
+      if (e === "cigar") o += '<rect x="' + X(20) + '" y="' + Y(24) + '" width="' + S(10) + '" height="' + S(2.6) + '" rx="' + S(1) + '" fill="#8a5a2b" stroke="' + OUT + '" stroke-width="' + S(1) + '"/><circle cx="' + X(30.5) + '" cy="' + Y(25.3) + '" r="' + S(1.3) + '" fill="#ff8a3d"/>';
+      if (e === "earpiece") o += '<path d="M' + X(34) + " " + Y(15) + "q" + S(3) + " " + S(6) + " " + S(0) + " " + S(14) + '" fill="none" stroke="#c9d4e2" stroke-width="' + S(1.3) + '"/>';
+      if (e === "bandana") o += '<path d="M' + X(0) + " " + Y(21) + "h" + S(34) + "v" + S(6) + "q" + S(-8) + " " + S(10) + " " + S(-17) + " " + S(10) + "q" + S(-9) + " 0 " + S(-17) + ' -10z" fill="' + (p.bandanaColor || "#3b3b46") + '" stroke="' + OUT + '" stroke-width="' + S(1.6) + '" stroke-linejoin="round"/>';
+    });
+    return o;
+  }
+
+  function portrait(p) {
+    p = p || {};
+    var skin = p.skin || "#f2c9a0", hx = 15, hy = 11, k = 34, o = "";
+    o += '<path d="M5 64v-9q0-9 9-9h36q9 0 9 9v9z" fill="' + (p.shirt || "#3d6fb6") + '" stroke="' + OUT + '" stroke-width="2" stroke-linejoin="round"/>';
+    if (p.collar) o += '<path d="M25 46l7 8 7-8z" fill="' + p.collar + '" stroke="' + OUT + '" stroke-width="1.6" stroke-linejoin="round"/>';
+    if (p.buttons) o += '<circle cx="32" cy="58" r="1.6" fill="' + p.buttons + '"/><circle cx="32" cy="63" r="1.6" fill="' + p.buttons + '"/>';
+    o += hatSvg(p, hx, hy, k, "back");
+    o += '<rect x="27" y="40" width="10" height="8" fill="' + skin + '" stroke="' + OUT + '" stroke-width="2"/>';
+    o += '<rect x="' + hx + '" y="' + hy + '" width="' + k + '" height="' + (k - 1) + '" rx="6" fill="' + skin + '" stroke="' + OUT + '" stroke-width="2"/>';
+    o += face(p, hx, hy, k);
+    o += beardSvg(p, hx, hy, k);
+    o += extrasSvg(p, hx, hy, k);
+    o += hatSvg(p, hx, hy, k, "front");
+    return o;
+  }
+
+  /* A whole standing figure: legs, torso, arms and a big blocky head. Feet rest at y=14. */
+  function figure(p) {
+    p = p || {};
+    var skin = p.skin || "#f2c9a0", shirt = p.shirt || "#3d6fb6", pants = p.pants || "#26324a", o = "";
+    var big = p.build === "big", slim = p.build === "slim";
+    var tw = big ? 22 : slim ? 14 : 18, tx = -tw / 2;
+    o += '<ellipse cx="0" cy="14.5" rx="' + (tw / 2 + 4) + '" ry="3" fill="rgba(0,0,0,.35)"/>';
+    o += '<rect x="' + (tx + 1) + '" y="2" width="' + (tw / 2 - 1.5) + '" height="12" rx="1.5" fill="' + pants + '" stroke="' + OUT + '" stroke-width="1.6"/>';
+    o += '<rect x="' + 0.5 + '" y="2" width="' + (tw / 2 - 1.5) + '" height="12" rx="1.5" fill="' + pants + '" stroke="' + OUT + '" stroke-width="1.6"/>';
+    var aw = big ? 7 : 5.5;
+    o += '<rect x="' + (tx - aw + 0.5) + '" y="-12" width="' + aw + '" height="13" rx="2" fill="' + (p.sleeves || shirt) + '" stroke="' + OUT + '" stroke-width="1.6"/>';
+    o += '<rect x="' + (-tx - 0.5) + '" y="-12" width="' + aw + '" height="13" rx="2" fill="' + (p.sleeves || shirt) + '" stroke="' + OUT + '" stroke-width="1.6"/>';
+    o += '<rect x="' + (tx - aw + 1) + '" y="0" width="' + (aw - 1) + '" height="3.5" rx="1.5" fill="' + skin + '" stroke="' + OUT + '" stroke-width="1.2"/>';
+    o += '<rect x="' + (-tx) + '" y="0" width="' + (aw - 1) + '" height="3.5" rx="1.5" fill="' + skin + '" stroke="' + OUT + '" stroke-width="1.2"/>';
+    o += '<rect x="' + tx + '" y="-13" width="' + tw + '" height="16" rx="2.5" fill="' + shirt + '" stroke="' + OUT + '" stroke-width="1.8"/>';
+    if (p.belt) o += '<rect x="' + tx + '" y="0" width="' + tw + '" height="3" fill="' + p.belt + '"/>';
+    if (p.stripe) o += '<rect x="' + tx + '" y="-7" width="' + tw + '" height="3.5" fill="' + p.stripe + '"/>';
+    if (p.collar) o += '<path d="M-3.5 -13l3.5 4 3.5-4z" fill="' + p.collar + '" stroke="' + OUT + '" stroke-width="1.2" stroke-linejoin="round"/>';
+    var k = 24, hx = -12, hy = -37;
+    o += hatSvg(p, hx, hy, k, "back");
+    o += '<rect x="' + hx + '" y="' + hy + '" width="' + k + '" height="' + (k - 1) + '" rx="4" fill="' + skin + '" stroke="' + OUT + '" stroke-width="1.8"/>';
+    o += face(p, hx, hy, k);
+    o += beardSvg(p, hx, hy, k);
+    o += extrasSvg(p, hx, hy, k);
+    o += hatSvg(p, hx, hy, k, "front");
+    if (p.prop) o += p.prop;
+    return o;
+  }
+
   /* Small seeded RNG so bots can be varied but testable. */
   function rng(seed) {
     var a = (seed >>> 0) || 0x9e3779b9;
@@ -368,6 +577,7 @@
 
   root.Kit = {
     $: $, $all: $all, h: h, s: s, store: store, sleep: sleep, frame: frame, Sound: Sound, haptic: haptic,
+    blocky: { portrait: portrait, figure: figure, OUT: OUT },
     cover: cover, modal: modal, banner: banner, toast: toast, shake: shake, init: init, showScreen: showScreen,
     showRules: showRules, openMenu: openMenu, confirm: confirmAsk, quit: quit, gameOver: gameOver, ICONS: ICONS, rng: rng,
     get reduceMotion() { return reduceMotion; },

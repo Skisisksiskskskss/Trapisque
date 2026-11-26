@@ -21,7 +21,7 @@ function play(seed, hl, ml, check) {
         const o = L.bots.hunterOrder(s, hl, rand);
         if (o.type === "end") break;
         const ev = L.applyHunter(s, o);
-        ev.forEach((e) => { if (e.t === "harpoon") { shots++; if (e.hit) harpoonHits++; } });
+        ev.forEach((e) => { if (e.t === "harpoon") { shots++; if (e.hit) harpoonHits++; } if (e.t === "ram") { shots++; harpoonHits++; } });
         if (check && !s.winner && !s.P.includes(s.monster.pos)) throw new Error("P lost the monster after " + JSON.stringify(o));
       }
       if (!s.winner) L.endHunterTurn(s);

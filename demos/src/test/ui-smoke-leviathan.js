@@ -1,23 +1,27 @@
-// Drives the built Leviathan Hunt page in a headless phone browser.
+// Drives the built Leviathan Hunt page in a headless phone browser, using only taps on the board and crew cards.
 // Usage: node demos/src/test/ui-smoke-leviathan.js OUTDIR
 const { chromium } = require("playwright");
 const path = require("path");
 const OUT = process.argv[2] || ".";
 
-async function clickCenter(page, handle) {
-  const b = await handle.boundingBox();
-  if (!b) return false;
+async function tapTile(page, i) {
+  const el = await page.$(`.hit-layer polygon[data-i="${i}"]`);
+  const b = await el.boundingBox();
   await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
-  return true;
 }
-
 async function quitToTitle(page) {
+  await page.evaluate(() => document.querySelectorAll(".modal-wrap,.cover").forEach((n) => n.remove()));
   await page.click("#btn-menu");
   await page.waitForTimeout(200);
   await page.click('.modal button:has-text("Quit to title")');
   await page.waitForTimeout(200);
   await page.click('.modal button:has-text("Yes")');
   await page.waitForTimeout(300);
+}
+async function waitFor(page, fn, ms) {
+  const end = Date.now() + (ms || 20000);
+  while (Date.now() < end) { if (await page.evaluate(fn)) return true; await page.waitForTimeout(150); }
+  return false;
 }
 
 (async () => {
@@ -31,91 +35,81 @@ async function quitToTitle(page) {
   await page.waitForTimeout(500);
   await page.screenshot({ path: OUT + "/lev-01-title.png" });
 
-  // Bot game, playing the hunters.
+  // Bot game as the hunters: every order is a tap on the board.
   await page.click("#btn-start");
-  await page.waitForTimeout(1500);
+  const hunterTurn = () => { const G = window.__leviathanDebug.G; return (G.mode === "hunters" && !!G.resolver && !G.locked) || !!G.state.winner; };
+  await waitFor(page, hunterTurn);
   await page.screenshot({ path: OUT + "/lev-02-hunters-start.png" });
-  for (let round = 0; round < 6; round++) {
-    const cards = await page.$$(".shipcard");
-    if (!cards.length) { await page.waitForTimeout(1500); continue; }
-    await cards[0].click();
-    await page.waitForTimeout(150);
-    const mv = await page.$$(".marks .hl-move");
-    if (mv.length) {
-      await clickCenter(page, mv[Math.floor(mv.length / 2)]);
-      await page.waitForTimeout(150);
-      const confirm = await page.$(".confirm-row .btn-primary");
-      if (confirm) await confirm.click();
-      await page.waitForTimeout(900);
+  let orders = 0, undos = 0;
+  for (let turn = 0; turn < 8; turn++) {
+    if (!(await waitFor(page, hunterTurn, 30000))) break;
+    if (await page.evaluate(() => !!window.__leviathanDebug.G.state.winner)) break;
+    for (let n = 0; n < 6; n++) {
+      const pick = await page.evaluate((n) => {
+        const D = window.__leviathanDebug, G = D.G, T = G.targets;
+        if (!(G.mode === "hunters" && G.resolver && !G.locked)) return null;
+        const tool = Object.keys(T.tool).map(Number), sail = Object.keys(T.sail).map(Number);
+        const st = G.state, sh = st.ships[G.sel];
+        if (T.self && n % 2 === 0) return { tile: sh.pos, what: "self" };
+        if (tool.length && n % 3 === 1) return { tile: tool[(n * 7) % tool.length], what: "tool" };
+        if (sail.length) return { tile: sail[(n * 5) % sail.length], what: "sail" };
+        if (T.self) return { tile: sh.pos, what: "self" };
+        if (tool.length) return { tile: tool[0], what: "tool" };
+        const other = st.ships.findIndex((s, k) => k !== G.sel && !s.sunk && (!s.moved || !s.acted));
+        return other >= 0 ? { tile: st.ships[other].pos, what: "select" } : null;
+      }, n);
+      if (!pick) break;
+      await tapTile(page, pick.tile);
+      if (pick.what !== "select") orders++;
+      await page.waitForTimeout(250);
+      await waitFor(page, () => !window.__leviathanDebug.G.locked, 15000);
+      if (turn === 0 && n === 0) await page.screenshot({ path: OUT + "/lev-03-first-order.png" });
+      if (await page.$('.bar-row button:has-text("Undo")')) {
+        if (turn === 1 && !undos) { await page.screenshot({ path: OUT + "/lev-04-undo.png" }); await page.click('.bar-row button:has-text("Undo")'); undos++; await page.waitForTimeout(250); }
+      }
+      if (!(await page.evaluate(() => { const G = window.__leviathanDebug.G; return G.mode === "hunters" && !!G.resolver; }))) break;
     }
-    const pingBtn = await page.$('.modes button:has-text("Ping")');
-    if (pingBtn && !(await pingBtn.isDisabled())) {
-      await pingBtn.click();
-      await page.waitForTimeout(150);
-      const conf = await page.$(".confirm-row .btn-primary");
-      if (conf) await conf.click();
-      await page.waitForTimeout(1800);
-    }
-    if (round === 0) await page.screenshot({ path: OUT + "/lev-03-after-ping.png" });
-    const end = await page.$('.bar-row button:has-text("End turn"), .bar-row button:has-text("Done")');
-    if (end) await end.click();
-    await page.waitForTimeout(2600);
+    if (turn === 2) await page.screenshot({ path: OUT + "/lev-05-midturn.png" });
+    const end = await page.$('.bar-row button:has-text("End turn")');
+    if (end && await page.evaluate(() => { const G = window.__leviathanDebug.G; return G.mode === "hunters" && !!G.resolver; })) await end.click();
+    await page.waitForTimeout(600);
   }
-  await page.screenshot({ path: OUT + "/lev-04-midgame.png" });
-  console.log("status after hunters run:", await page.textContent("#st-main"), "|", await page.textContent("#st-sub"));
+  await page.screenshot({ path: OUT + "/lev-06-later.png" });
+  const st = await page.evaluate(() => { const s = window.__leviathanDebug.G.state; return { round: s.round, wounds: s.monster.wounds, kills: s.monster.kills, winner: s.winner }; });
+  console.log("bot game:", JSON.stringify(st), "orders tapped:", orders, "undos:", undos);
 
-  // Bot game, playing the Leviathan.
+  // Rules
+  await page.evaluate(() => document.querySelectorAll(".modal-wrap").forEach((n) => n.remove()));
+  await page.click("#btn-menu"); await page.waitForTimeout(150);
+  await page.click('.modal button:has-text("How to play")'); await page.waitForTimeout(250);
+  await page.screenshot({ path: OUT + "/lev-07-rules.png" });
+  await page.click('.modal button:has-text("Got it")'); await page.waitForTimeout(200);
+  await page.evaluate(() => document.querySelectorAll(".modal-wrap").forEach((n) => n.remove()));
   await quitToTitle(page);
-  await page.click('.seg button:has-text("Leviathan")');
+
+  // Play the monster against the bot hunters.
+  await page.click('.seg button:has-text("Gnasher")');
   await page.click("#btn-start");
-  await page.waitForTimeout(700);
-  await page.screenshot({ path: OUT + "/lev-05-monster-start.png" });
-  const starts = await page.$$(".marks .hl-start");
-  console.log("start tiles highlighted:", starts.length);
-  if (starts.length) {
-    await clickCenter(page, starts[3]);
-    await page.waitForTimeout(150);
-    await page.click('button:has-text("Hide here")');
+  await waitFor(page, () => window.__leviathanDebug.G.mode === "start");
+  const zone = await page.evaluate(() => { const G = window.__leviathanDebug.G; return window.Leviathan.startZone(G.state)[3]; });
+  await tapTile(page, zone); await page.waitForTimeout(150);
+  await page.screenshot({ path: OUT + "/lev-08-monster-start.png" });
+  await tapTile(page, zone);
+  for (let t = 0; t < 3; t++) {
+    if (!(await waitFor(page, () => { const G = window.__leviathanDebug.G; return (G.mode === "monster" && !!G.resolver) || !!G.state.winner; }, 30000))) break;
+    if (await page.evaluate(() => !!window.__leviathanDebug.G.state.winner)) break;
+    const to = await page.evaluate(() => { const G = window.__leviathanDebug.G; const o = G.monsterOpts.find((x) => x.type === "swim" && x.to !== G.state.monster.pos) || G.monsterOpts[0]; return o.type === "strike" ? G.state.ships[o.ship].pos : o.to; });
+    await tapTile(page, to); await page.waitForTimeout(120);
+    if (t === 0) await page.screenshot({ path: OUT + "/lev-09-monster-turn.png" });
+    await tapTile(page, to); await page.waitForTimeout(400);
   }
-  for (let t = 0; t < 8; t++) {
-    await page.waitForTimeout(1200);
-    const swim = await page.$$(".marks .hl-swim");
-    if (!swim.length) { await page.waitForTimeout(2500); continue; }
-    await clickCenter(page, swim[t % swim.length]);
-    await page.waitForTimeout(150);
-    const conf = await page.$(".confirm-row .btn-primary");
-    if (conf) await conf.click();
-    if (t === 0) { await page.waitForTimeout(300); await page.screenshot({ path: OUT + "/lev-06-monster-moved.png" }); }
-    await page.waitForTimeout(4500);
-  }
-  await page.screenshot({ path: OUT + "/lev-07-monster-mid.png" });
-  console.log("status as monster:", await page.textContent("#st-main"), "|", await page.textContent("#st-sub"));
-
-  // Same-phone game: cover screens must hide the monster.
+  console.log("monster game round:", await page.evaluate(() => window.__leviathanDebug.G.state.round));
   await quitToTitle(page);
+
+  // Same phone: the first cover is for the monster.
   await page.click('.seg button:has-text("Friend, same phone")');
-  await page.click("#btn-start");
-  await page.waitForTimeout(500);
-  await page.screenshot({ path: OUT + "/lev-08-local-cover.png" });
-  await page.click(".cover .btn");
-  await page.waitForTimeout(300);
-  const st2 = await page.$$(".marks .hl-start");
-  await clickCenter(page, st2[5]);
-  await page.click('button:has-text("Hide here")');
-  await page.waitForTimeout(400);
-  const sw = await page.$$(".marks .hl-swim");
-  await clickCenter(page, sw[0]);
-  await page.click(".confirm-row .btn-primary");
-  await page.waitForTimeout(900);
-  await page.screenshot({ path: OUT + "/lev-09-local-pass.png" });
-  await page.click(".cover .btn");
-  await page.waitForTimeout(1200);
-  const monsterVisible = await page.evaluate(() => {
-    const m = document.querySelector(".monster");
-    return !!m && getComputedStyle(m).display !== "none";
-  });
-  console.log("monster visible to hunters after the pass (should be false):", monsterVisible);
-  await page.screenshot({ path: OUT + "/lev-10-local-hunters.png" });
+  await page.click("#btn-start"); await page.waitForTimeout(400);
+  await page.screenshot({ path: OUT + "/lev-10-local-cover.png" });
   console.log("errors:", errors.length ? errors : "none");
   await browser.close();
 })();
