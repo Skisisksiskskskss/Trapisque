@@ -202,7 +202,14 @@ test("every event runs 15s with 4 bot birds without errors", function()
 		for i = 1, 6 do
 			world:addSpike(Spikes.new(world:newSpikeId(), if i % 2 == 0 then -1 else 1, 100 * i, -100, {}))
 		end
-		Engine.scheduleEvent(world, meta.name, 1, Rng.hash(7, meta.index), 5, { big = { 1 }, ghosts = { 2 }, pairs = { 1, 2, 3, 4 } })
+		Engine.scheduleEvent(
+			world,
+			meta.name,
+			1,
+			Rng.hash(7, meta.index),
+			5,
+			{ big = { 1 }, ghosts = { 2 }, pairs = { 1, 2, 3, 4 } }
+		)
 		local ok, err = pcall(runBots, world, 900, 0.8)
 		if not ok then
 			error(meta.name .. ": " .. tostring(err))
@@ -211,7 +218,19 @@ test("every event runs 15s with 4 bot birds without errors", function()
 end)
 
 test("event hazards are identical on two machines (determinism)", function()
-	for _, name in { "METEOR_SHOWER", "ALIEN_SWARM", "RAIL_RUSH", "BONE_ZONE", "GEAR_GRIND", "PHOTON_SHIFT", "ICE_FIELD", "LOG_JAM", "COLOR_RIFT" } do
+	for _, name in
+		{
+			"METEOR_SHOWER",
+			"ALIEN_SWARM",
+			"RAIL_RUSH",
+			"BONE_ZONE",
+			"GEAR_GRIND",
+			"PHOTON_SHIFT",
+			"ICE_FIELD",
+			"LOG_JAM",
+			"COLOR_RIFT",
+		}
+	do
 		local wa = makeWorld("VERSUS", 2, 3, true)
 		local wb = makeWorld("VERSUS", 2, 3, false)
 		Engine.scheduleEvent(wa, name, 1, 999, 5, {})
