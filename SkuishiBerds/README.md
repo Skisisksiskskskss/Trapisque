@@ -54,11 +54,12 @@ can buy gives an edge in Versus (revives are Solo/co-op only).
 
 ## Getting it into Roblox Studio
 
-You need [Rojo](https://rojo.space) 7 (CLI plus the Studio plugin).
+1. **Quickest:** open `SkuishiBerds.rbxl` (in this folder) with Studio's
+   **File → Open from File**. It's built from the current source, so no tools are needed.
 
-1. Build a place file and open it in Studio:
+   If you change the code, rebuild it with [Rojo](https://rojo.space) 7:
    ```
-   rojo build default.project.json -o SkuishiBerds.rbxlx
+   rojo build default.project.json -o SkuishiBerds.rbxl
    ```
    Or, to live-sync while you edit: run `rojo serve`, open a new Baseplate in Studio, and
    press **Connect** in the Rojo plugin.
