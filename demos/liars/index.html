@@ -1,0 +1,1835 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Liar's Gambit</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700;6..12,800&display=swap">
+<style>
+/* ---------- Shared game kit: layout shell, controls, overlays ----------
+   Each game sets its own palette and fonts by overriding these tokens on :root. */
+:root{
+  --bg:#101318; --bg-2:#161a21; --surface:#1d222b; --surface-2:#262c37; --line:#343b48;
+  --ink:#eef1f5; --muted:#a3abb8; --accent:#f2c14e; --accent-ink:#17130a;
+  --good:#47d18c; --bad:#ff6b5e; --p1:#5aa2ff; --p2:#ff6b5e;
+  --font-display:system-ui,sans-serif; --font-body:system-ui,-apple-system,"Segoe UI",sans-serif;
+  --radius:16px; --radius-sm:10px;
+  --gutter-l:max(16px, env(safe-area-inset-left, 0px));
+  --gutter-r:max(16px, env(safe-area-inset-right, 0px));
+  padding-top:env(safe-area-inset-top, 0px);
+  padding-bottom:env(safe-area-inset-bottom, 0px);
+  color-scheme:dark;
+}
+[hidden]{display:none !important}
+*,*::before,*::after{box-sizing:border-box}
+html{height:100%;background:var(--bg);-webkit-text-size-adjust:100%}
+body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.45;
+  overscroll-behavior:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{height:100%;display:flex;flex-direction:column;min-height:0;position:relative;overflow:hidden;user-select:none;-webkit-user-select:none}
+.screen{flex:1;display:flex;flex-direction:column;min-height:0}
+
+/* ---------- Title screen ---------- */
+.title-screen{overflow-y:auto;padding-left:var(--gutter-l);padding-right:var(--gutter-r);padding-block:20px 28px;align-items:center}
+.title-inner{width:100%;max-width:460px;display:flex;flex-direction:column;gap:20px;margin:auto 0}
+.title-art{display:flex;justify-content:center}
+.title-art svg{width:min(70vw,260px);height:auto}
+.title-name{font-family:var(--font-display);font-size:clamp(2.3rem,9vw,3.3rem);line-height:.98;margin:0;text-align:center;letter-spacing:-.01em}
+.title-tag{color:var(--muted);text-align:center;margin:0;font-size:1.02rem}
+.opt-group{display:flex;flex-direction:column;gap:7px}
+.opt-label{font-size:.74rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;padding:4px;background:var(--bg-2);border:1px solid var(--line);border-radius:14px}
+.seg button{border:0;background:transparent;border-radius:10px;padding:10px 6px;min-height:44px;font-weight:650;font-size:.95rem;color:var(--muted);line-height:1.15}
+.seg button[aria-pressed="true"]{background:var(--surface-2);color:var(--ink);box-shadow:0 1px 0 rgba(255,255,255,.06) inset, 0 2px 8px rgba(0,0,0,.25)}
+.opt-note{font-size:.86rem;color:var(--muted);margin:0}
+.title-actions{display:flex;flex-direction:column;gap:10px;margin-top:4px}
+
+/* ---------- Buttons ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:10px 18px;border-radius:999px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font-weight:700;font-size:1rem;line-height:1.1;transition:transform .08s, background .15s, border-color .15s, opacity .15s}
+.btn:active{transform:scale(.97)}
+.btn[disabled]{opacity:.4;pointer-events:none}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn-ghost{background:transparent}
+.btn-danger{background:var(--bad);border-color:var(--bad);color:#160807}
+.btn-sm{min-height:38px;padding:7px 14px;font-size:.9rem}
+.btn-wide{width:100%}
+.icon-btn{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;padding:0;flex:none}
+.icon-btn svg{width:22px;height:22px}
+
+/* ---------- Game screen frame ---------- */
+.topbar{display:flex;align-items:center;gap:10px;padding:10px var(--gutter-r) 8px var(--gutter-l);min-height:60px}
+.topbar .status{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.topbar .status-main{font-family:var(--font-display);font-size:1.15rem;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar .status-sub{font-size:.84rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stage{flex:1;min-height:0;position:relative;display:flex;align-items:center;justify-content:center;padding:4px var(--gutter-r) 4px var(--gutter-l)}
+.stage > svg, .stage > .board{max-width:100%;max-height:100%}
+.actionbar{padding:8px var(--gutter-r) 12px var(--gutter-l);display:flex;flex-direction:column;gap:8px}
+.action-row{display:flex;gap:8px;align-items:stretch}
+.action-row > *{flex:1}
+.hint-line{font-size:.9rem;color:var(--muted);text-align:center;min-height:1.3em;margin:0}
+
+/* ---------- Overlays ---------- */
+.cover{position:absolute;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;
+  padding:24px var(--gutter-r) 24px var(--gutter-l);background:var(--bg);animation:kit-fade .18s ease-out}
+.cover .cover-badge{width:78px;height:78px;border-radius:50%;display:grid;place-items:center;background:var(--surface-2);border:2px solid var(--line)}
+.cover .cover-badge svg{width:42px;height:42px}
+.cover h2{font-family:var(--font-display);font-size:clamp(1.9rem,8vw,2.6rem);margin:0;line-height:1.05}
+.cover p{margin:0;color:var(--muted);max-width:32ch}
+.cover .btn{margin-top:10px;min-width:220px}
+.modal-wrap{position:absolute;inset:0;z-index:50;display:flex;align-items:flex-end;justify-content:center;background:rgba(4,6,10,.62);animation:kit-fade .15s ease-out}
+@media (min-width:640px){ .modal-wrap{align-items:center} }
+.modal{width:100%;max-width:560px;max-height:88%;display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:22px 22px 0 0;box-shadow:0 -10px 40px rgba(0,0,0,.4);animation:kit-rise .2s ease-out}
+@media (min-width:640px){ .modal{border-radius:22px} }
+.modal-head{display:flex;align-items:center;gap:10px;padding:16px 18px 8px}
+.modal-head h2{flex:1;margin:0;font-family:var(--font-display);font-size:1.45rem;line-height:1.1}
+.modal-body{padding:6px 18px 12px;overflow-y:auto;min-height:0;user-select:text;-webkit-user-select:text}
+.modal-actions{display:flex;flex-direction:column;gap:8px;padding:10px 18px calc(16px + env(safe-area-inset-bottom, 0px))}
+.banner{position:absolute;left:0;right:0;top:38%;z-index:45;display:flex;flex-direction:column;align-items:center;pointer-events:none;text-align:center;padding:0 var(--gutter-r) 0 var(--gutter-l)}
+.banner-text{font-family:var(--font-display);font-size:clamp(2.6rem,13vw,4.6rem);line-height:1;padding:10px 22px;border-radius:18px;color:var(--ink);text-shadow:0 4px 24px rgba(0,0,0,.55);animation:kit-pop .9s cubic-bezier(.2,.9,.3,1.3) both}
+.banner-sub{margin-top:8px;font-weight:700;color:var(--ink);background:rgba(0,0,0,.55);padding:6px 12px;border-radius:999px;animation:kit-fade .3s .15s both}
+.banner.tone-good .banner-text{color:var(--good)}
+.banner.tone-bad .banner-text{color:var(--bad)}
+.banner.tone-accent .banner-text{color:var(--accent)}
+.toast{position:absolute;left:50%;top:70px;transform:translateX(-50%);z-index:46;max-width:calc(100% - 32px);padding:9px 16px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);font-weight:650;font-size:.94rem;box-shadow:0 8px 24px rgba(0,0,0,.35);animation:kit-drop .2s ease-out;text-align:center}
+.shake{animation:kit-shake .38s linear}
+@keyframes kit-fade{from{opacity:0}to{opacity:1}}
+@keyframes kit-rise{from{transform:translateY(24px);opacity:.4}to{transform:none;opacity:1}}
+@keyframes kit-drop{from{transform:translate(-50%,-10px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
+@keyframes kit-pop{0%{transform:scale(.4);opacity:0}25%{transform:scale(1.08);opacity:1}75%{transform:scale(1);opacity:1}100%{transform:scale(1.02);opacity:0}}
+@keyframes kit-shake{0%,100%{transform:none}20%{transform:translate(-6px,2px)}40%{transform:translate(5px,-3px)}60%{transform:translate(-4px,1px)}80%{transform:translate(3px,2px)}}
+@media (prefers-reduced-motion: reduce){
+  .banner-text{animation-duration:.01s}
+  .shake{animation:none}
+}
+
+/* ---------- Rules text ---------- */
+.rules h3{font-family:var(--font-display);font-size:1.15rem;margin:16px 0 6px}
+.rules h3:first-child{margin-top:4px}
+.rules p{margin:0 0 8px;color:var(--ink)}
+.rules ul,.rules ol{margin:0 0 10px;padding-left:1.2em;display:flex;flex-direction:column;gap:5px}
+.rules li::marker{color:var(--muted)}
+.rules .tip{background:var(--bg-2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;color:var(--muted);font-size:.92rem}
+.rules b{color:var(--ink)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;margin:0 0 10px;align-items:start}
+.kv dt{font-weight:750;white-space:nowrap}
+.kv dd{margin:0;color:var(--muted)}
+.result-stats{display:grid;grid-template-columns:1fr auto;gap:6px 16px;margin:4px 0 6px;font-variant-numeric:tabular-nums}
+.result-stats span:nth-child(even){font-weight:750;text-align:right}
+
+/* Liar's Gambit: a masquerade. Plum velvet board, gold and ruby players, masks for hidden pieces. */
+:root{
+  --bg:#150a14; --bg-2:#1d0f1c; --surface:#26131f; --surface-2:#33192a; --line:#4a2a3d;
+  --ink:#f6ece2; --muted:#c2a9b5; --accent:#e9c46a; --accent-ink:#2b1a05;
+  --good:#7bdcb5; --bad:#ff6b6b; --p1:#e9c46a; --p2:#e0566d;
+  --sq-a:#3d1630; --sq-b:#4e1f3d; --frame:#c9a54b;
+  --gold:#e9c46a; --gold-ink:#2b1a05; --ruby:#d94a63; --ruby-ink:#2a060d;
+  --honest:#7bdcb5; --bluff:#f4a261;
+  --font-display:"Cinzel","Trajan Pro",Georgia,serif;
+  --font-body:"Nunito Sans","Segoe UI",system-ui,-apple-system,sans-serif;
+}
+body{background:radial-gradient(110% 70% at 50% -10%, #3a1530 0%, var(--bg) 62%)}
+.title-name{font-weight:800;letter-spacing:.02em;color:var(--gold)}
+.title-name em{font-style:normal;color:var(--ruby)}
+.topbar .status-main{font-weight:700}
+.scores{display:flex;gap:6px;flex:none}
+.chip{display:flex;align-items:center;gap:6px;padding:6px 9px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-weight:800;font-size:.84rem;white-space:nowrap}
+.chip .dot{width:8px;height:8px;border-radius:50%;display:block}
+.chip .tok{display:flex;gap:3px}
+.chip .tok i{width:7px;height:7px;border-radius:50%;background:var(--ink);opacity:.9;display:block}
+.chip .tok i.spent{opacity:.2}
+#board{width:100%;height:100%;display:block}
+.sq-a{fill:var(--sq-a)} .sq-b{fill:var(--sq-b)}
+.home-tint{fill:rgba(233,196,106,.06)}
+.board-frame{fill:none;stroke:var(--frame);stroke-width:2}
+.coord{fill:rgba(246,236,226,.35);font-size:8px;font-family:var(--font-body);font-weight:700}
+.tray-label{fill:var(--muted);font-size:9.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;font-family:var(--font-body)}
+.lm-from{fill:rgba(246,236,226,.09);stroke:rgba(246,236,226,.35);stroke-width:1.2;stroke-dasharray:3 3}
+.lm-to{fill:rgba(246,236,226,.12);stroke:rgba(246,236,226,.7);stroke-width:1.6}
+.lm-to.pending{stroke:var(--bluff);stroke-width:2.4;animation:pulse 1.1s ease-in-out infinite}
+@keyframes pulse{50%{stroke-opacity:.35}}
+.lm-arrow{stroke:rgba(246,236,226,.75);stroke-width:2.2;stroke-linecap:round;fill:none}
+.lm-head{fill:rgba(246,236,226,.75)}
+.dest-honest{fill:var(--honest);opacity:.85}
+.dest-bluff{fill:none;stroke:var(--bluff);stroke-width:2.2}
+.dest-cap-honest{fill:none;stroke:var(--honest);stroke-width:3}
+.dest-cap-bluff{fill:none;stroke:var(--bluff);stroke-width:3;stroke-dasharray:4 3}
+.sel-sq{fill:rgba(233,196,106,.22);stroke:var(--gold);stroke-width:2}
+.pend-sq{fill:rgba(255,255,255,.12);stroke:#fff;stroke-width:2.4}
+.sac-sq{fill:rgba(255,107,107,.16);stroke:var(--bad);stroke-width:2;stroke-dasharray:4 3}
+.piece{transition:transform .28s cubic-bezier(.3,.7,.3,1)}
+.pc-body.gold{fill:var(--gold);stroke:#7a5a14;stroke-width:1.5}
+.pc-body.ruby{fill:var(--ruby);stroke:#6b1424;stroke-width:1.5}
+.pc-icon.gold{fill:var(--gold-ink)}
+.pc-icon.ruby{fill:#fff3f4}
+.pc-mask.gold{fill:#2b1a05;opacity:.82}
+.pc-mask.ruby{fill:#2a060d;opacity:.8}
+.pc-public{fill:none;stroke:#fff;stroke-width:1.6;stroke-dasharray:2.5 2.5;opacity:.9}
+.badge-bg{fill:#120810;stroke:rgba(246,236,226,.7);stroke-width:1}
+.badge-tx{fill:var(--ink);font-size:9px;font-weight:800;font-family:var(--font-body)}
+.badge-bg.warn{stroke:var(--bad);fill:#3a0d12}
+.badge-tx.warn{fill:var(--bad)}
+.badge-bg.cover{stroke:var(--bluff);fill:#2c1505}
+.badge-tx.cover{fill:var(--bluff)}
+.piece.ghost{opacity:.35}
+.hit-layer rect{fill:transparent;cursor:pointer}
+.flip{animation:flip .5s ease-in-out}
+@keyframes flip{0%{transform:scaleX(1)}50%{transform:scaleX(0)}100%{transform:scaleX(1)}}
+.claim-card{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:14px;background:var(--surface);border:1px solid var(--line)}
+.claim-card .k{font-size:.72rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.claim-card .v{font-weight:700}
+.claim-card .v b{color:var(--gold)}
+.tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.78rem;font-weight:800;margin-left:6px;vertical-align:1px}
+.tag.honest{background:rgba(123,220,181,.16);color:var(--honest)}
+.tag.bluff{background:rgba(244,162,97,.16);color:var(--bluff)}
+.btn-liar{background:var(--bad);border-color:var(--bad);color:#200508;font-family:var(--font-display);letter-spacing:.06em}
+.cover.ruby-cover h2{color:var(--ruby)}
+.cover.gold-cover h2{color:var(--gold)}
+.cover-kicker{margin:0;font-size:.8rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+#screen-game .actionbar{min-height:178px;justify-content:flex-end}
+.small-legend{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 12px;font-size:.8rem;color:var(--muted)}
+.small-legend span{display:inline-flex;align-items:center;gap:5px}
+.small-legend i{width:10px;height:10px;border-radius:50%;display:block}
+.icon-row{display:flex;flex-wrap:wrap;gap:8px 14px}
+.icon-row span{display:inline-flex;align-items:center;gap:6px}
+.icon-row svg{width:22px;height:22px}
+
+</style>
+</head>
+<body>
+<div id="app" class="app">
+  <section id="screen-title" class="screen title-screen"></section>
+  <section id="screen-game" class="screen" hidden>
+    <header class="topbar">
+      <button id="btn-menu" class="icon-btn" type="button" aria-label="Menu"></button>
+      <div class="status"><div class="status-main" id="st-main">Your move</div><div class="status-sub" id="st-sub"></div></div>
+      <div class="scores" id="scores"></div>
+    </header>
+    <div class="stage" id="stage"></div>
+    <div class="actionbar" id="actionbar"></div>
+  </section>
+</div>
+<script>
+/* Shared game kit: title screen, menus, pass-the-phone covers, banners, sound.
+   Exposes window.Kit. No game logic lives here. */
+(function (root) {
+  "use strict";
+  var doc = root.document;
+  var NS = "game";
+  var reduceMotion = false;
+  try { reduceMotion = root.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) {}
+
+  function $(sel, scope) { return (scope || doc).querySelector(sel); }
+  function $all(sel, scope) { return Array.prototype.slice.call((scope || doc).querySelectorAll(sel)); }
+
+  function h(tag, attrs) {
+    var node = doc.createElement(tag);
+    if (attrs) {
+      for (var k in attrs) {
+        if (!Object.prototype.hasOwnProperty.call(attrs, k)) continue;
+        var v = attrs[k];
+        if (v == null || v === false) continue;
+        if (k === "class") node.className = v;
+        else if (k === "html") node.innerHTML = v;
+        else if (k === "text") node.textContent = v;
+        else if (k.slice(0, 2) === "on" && typeof v === "function") node.addEventListener(k.slice(2), v);
+        else node.setAttribute(k, v === true ? "" : v);
+      }
+    }
+    for (var i = 2; i < arguments.length; i++) {
+      var c = arguments[i];
+      if (c == null || c === false) continue;
+      if (Array.isArray(c)) c.forEach(function (x) { if (x != null) node.appendChild(typeof x === "string" ? doc.createTextNode(x) : x); });
+      else node.appendChild(typeof c === "string" ? doc.createTextNode(c) : c);
+    }
+    return node;
+  }
+
+  var SVGNS = "http://www.w3.org/2000/svg";
+  function s(tag, attrs) {
+    var node = doc.createElementNS(SVGNS, tag);
+    if (attrs) {
+      for (var k in attrs) {
+        if (!Object.prototype.hasOwnProperty.call(attrs, k)) continue;
+        var v = attrs[k];
+        if (v == null || v === false) continue;
+        if (k === "text") node.textContent = v;
+        else if (k.slice(0, 2) === "on" && typeof v === "function") node.addEventListener(k.slice(2), v);
+        else node.setAttribute(k, v);
+      }
+    }
+    for (var i = 2; i < arguments.length; i++) {
+      var c = arguments[i];
+      if (c == null || c === false) continue;
+      if (Array.isArray(c)) c.forEach(function (x) { if (x) node.appendChild(x); });
+      else node.appendChild(c);
+    }
+    return node;
+  }
+
+  var store = {
+    get: function (k, d) {
+      try { var v = root.localStorage.getItem(NS + ":" + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; }
+    },
+    set: function (k, v) { try { root.localStorage.setItem(NS + ":" + k, JSON.stringify(v)); } catch (e) {} }
+  };
+
+  var speed = 1;
+  function sleep(ms) {
+    var t = reduceMotion ? Math.min(ms, 80) : ms * speed;
+    return new Promise(function (r) { setTimeout(r, t); });
+  }
+  function frame() { return new Promise(function (r) { root.requestAnimationFrame(function () { r(); }); }); }
+
+  /* ---------- Sound: tiny WebAudio synth, starts after the first tap ---------- */
+  var Sound = (function () {
+    var ctx = null, master = null, on = true;
+    function ensure() {
+      if (ctx) { if (ctx.state === "suspended") ctx.resume(); return ctx; }
+      var AC = root.AudioContext || root.webkitAudioContext;
+      if (!AC) return null;
+      ctx = new AC();
+      master = ctx.createGain();
+      master.gain.value = 0.55;
+      master.connect(ctx.destination);
+      return ctx;
+    }
+    function tone(freq, dur, opts) {
+      opts = opts || {};
+      var c = ensure(); if (!c) return;
+      var t0 = c.currentTime + (opts.delay || 0);
+      var o = c.createOscillator();
+      var g = c.createGain();
+      o.type = opts.type || "sine";
+      o.frequency.setValueAtTime(freq, t0);
+      if (opts.to) o.frequency.exponentialRampToValueAtTime(Math.max(20, opts.to), t0 + dur);
+      var peak = opts.gain == null ? 0.25 : opts.gain;
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(peak, t0 + Math.min(0.02, dur / 4));
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      o.connect(g); g.connect(master);
+      o.start(t0); o.stop(t0 + dur + 0.05);
+    }
+    function noise(dur, opts) {
+      opts = opts || {};
+      var c = ensure(); if (!c) return;
+      var t0 = c.currentTime + (opts.delay || 0);
+      var len = Math.max(1, Math.floor(c.sampleRate * dur));
+      var buf = c.createBuffer(1, len, c.sampleRate);
+      var data = buf.getChannelData(0);
+      for (var i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / len);
+      var src = c.createBufferSource();
+      src.buffer = buf;
+      var f = c.createBiquadFilter();
+      f.type = opts.filter || "lowpass";
+      f.frequency.value = opts.freq || 1200;
+      var g = c.createGain();
+      g.gain.setValueAtTime(opts.gain == null ? 0.3 : opts.gain, t0);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      src.connect(f); f.connect(g); g.connect(master);
+      src.start(t0); src.stop(t0 + dur + 0.05);
+    }
+    var lib = {
+      tap: function () { tone(660, 0.06, { type: "triangle", gain: 0.12 }); },
+      select: function () { tone(520, 0.07, { type: "triangle", gain: 0.16 }); tone(780, 0.08, { type: "triangle", gain: 0.12, delay: 0.05 }); },
+      move: function () { tone(300, 0.12, { type: "sine", to: 420, gain: 0.16 }); },
+      slide: function () { noise(0.16, { freq: 900, gain: 0.12 }); },
+      error: function () { tone(180, 0.16, { type: "square", gain: 0.08 }); },
+      hit: function () { noise(0.22, { freq: 700, gain: 0.45 }); tone(140, 0.25, { type: "sawtooth", to: 60, gain: 0.22 }); },
+      miss: function () { noise(0.3, { freq: 2400, filter: "bandpass", gain: 0.22 }); },
+      splash: function () { noise(0.45, { freq: 1600, gain: 0.35 }); tone(220, 0.3, { to: 90, gain: 0.08 }); },
+      ping: function () { tone(1320, 0.5, { type: "sine", gain: 0.2 }); tone(1320, 0.6, { type: "sine", gain: 0.07, delay: 0.32 }); },
+      contact: function () { tone(880, 0.16, { type: "square", gain: 0.1 }); tone(880, 0.16, { type: "square", gain: 0.1, delay: 0.2 }); tone(1175, 0.3, { type: "square", gain: 0.1, delay: 0.4 }); },
+      reveal: function () { tone(392, 0.12, { type: "triangle", gain: 0.16 }); tone(587, 0.18, { type: "triangle", gain: 0.16, delay: 0.1 }); },
+      roar: function () { tone(110, 0.7, { type: "sawtooth", to: 55, gain: 0.25 }); noise(0.6, { freq: 400, gain: 0.25 }); },
+      liar: function () { tone(220, 0.12, { type: "square", gain: 0.14 }); tone(165, 0.35, { type: "square", gain: 0.14, delay: 0.12 }); },
+      win: function () { [523, 659, 784, 1047].forEach(function (f, i) { tone(f, 0.22, { type: "triangle", gain: 0.16, delay: i * 0.11 }); }); },
+      lose: function () { [392, 330, 262, 196].forEach(function (f, i) { tone(f, 0.28, { type: "triangle", gain: 0.14, delay: i * 0.14 }); }); },
+      tick: function () { tone(1000, 0.03, { type: "square", gain: 0.05 }); },
+      whoosh: function () { noise(0.25, { freq: 3000, filter: "bandpass", gain: 0.18 }); },
+      score: function () { tone(880, 0.09, { type: "triangle", gain: 0.14 }); tone(1320, 0.14, { type: "triangle", gain: 0.12, delay: 0.07 }); },
+      zap: function () { tone(1400, 0.18, { type: "sawtooth", to: 300, gain: 0.1 }); }
+    };
+    return {
+      play: function (name) { if (!on) return; try { var f = lib[name]; if (f) f(); } catch (e) {} },
+      unlock: function () { if (on) { try { ensure(); } catch (e) {} } },
+      get on() { return on; },
+      set on(v) { on = !!v; store.set("sound", on); }
+    };
+  })();
+
+  function haptic(ms) { try { if (root.navigator.vibrate) root.navigator.vibrate(ms || 12); } catch (e) {} }
+
+  /* ---------- Overlays ---------- */
+  var app = null;
+  function appRoot() { return app || (app = $("#app")); }
+
+  function cover(opts) {
+    opts = opts || {};
+    return new Promise(function (resolve) {
+      var btn = h("button", { class: "btn btn-primary", type: "button" }, opts.cta || "Tap when ready");
+      var node = h("div", { class: "cover" + (opts.className ? " " + opts.className : ""), role: "dialog", "aria-modal": "true" },
+        opts.badge ? h("div", { class: "cover-badge", html: opts.badge }) : null,
+        opts.kicker ? h("p", { class: "cover-kicker" }, opts.kicker) : null,
+        h("h2", null, opts.title || "Pass the phone"),
+        opts.text ? h("p", null, opts.text) : null,
+        btn);
+      btn.addEventListener("click", function () { Sound.unlock(); Sound.play("tap"); node.remove(); resolve(); });
+      appRoot().appendChild(node);
+      setTimeout(function () { try { btn.focus(); } catch (e) {} }, 30);
+    });
+  }
+
+  function modal(opts) {
+    opts = opts || {};
+    return new Promise(function (resolve) {
+      var wrap;
+      function done(v) { wrap.remove(); doc.removeEventListener("keydown", onKey); resolve(v); }
+      function onKey(e) { if (e.key === "Escape" && opts.dismissible !== false) done(null); }
+      var body = h("div", { class: "modal-body" + (opts.bodyClass ? " " + opts.bodyClass : "") });
+      if (typeof opts.body === "string") body.innerHTML = opts.body; else if (opts.body) body.appendChild(opts.body);
+      var actions = h("div", { class: "modal-actions" });
+      (opts.actions || [{ label: "Close", value: null }]).forEach(function (a) {
+        actions.appendChild(h("button", {
+          class: "btn btn-wide " + (a.kind === "primary" ? "btn-primary" : a.kind === "danger" ? "btn-danger" : "btn-ghost"),
+          type: "button",
+          onclick: function () { Sound.play("tap"); done(a.value); }
+        }, a.label));
+      });
+      var closeBtn = opts.dismissible === false ? null : h("button", { class: "icon-btn", type: "button", "aria-label": "Close", onclick: function () { done(null); },
+        html: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>' });
+      var panel = h("div", { class: "modal", role: "dialog", "aria-modal": "true", "aria-label": opts.title || "Dialog" },
+        h("div", { class: "modal-head" }, h("h2", null, opts.title || ""), closeBtn),
+        body,
+        (opts.actions && opts.actions.length === 0) ? null : actions);
+      wrap = h("div", { class: "modal-wrap", onclick: function (e) { if (e.target === wrap && opts.dismissible !== false) done(null); } }, panel);
+      appRoot().appendChild(wrap);
+      doc.addEventListener("keydown", onKey);
+    });
+  }
+
+  function banner(text, opts) {
+    opts = opts || {};
+    var node = h("div", { class: "banner tone-" + (opts.tone || "accent"), "aria-live": "assertive" },
+      h("div", { class: "banner-text" }, text),
+      opts.sub ? h("div", { class: "banner-sub" }, opts.sub) : null);
+    appRoot().appendChild(node);
+    var ms = opts.ms || 1100;
+    return sleep(ms).then(function () { node.remove(); });
+  }
+
+  var toastTimer = null, toastNode = null;
+  function toast(text, ms) {
+    if (toastNode) toastNode.remove();
+    toastNode = h("div", { class: "toast", role: "status" }, text);
+    appRoot().appendChild(toastNode);
+    clearTimeout(toastTimer);
+    var n = toastNode;
+    toastTimer = setTimeout(function () { if (n) n.remove(); if (toastNode === n) toastNode = null; }, ms || 1900);
+  }
+
+  function shake(node) {
+    if (!node || reduceMotion) return;
+    node.classList.remove("shake");
+    void node.getBoundingClientRect();
+    node.classList.add("shake");
+    setTimeout(function () { node.classList.remove("shake"); }, 420);
+  }
+
+  /* ---------- Title screen with option pickers ---------- */
+  var ICONS = {
+    menu: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>',
+    soundOn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 010 7M19 6a8.5 8.5 0 010 12"/></svg>',
+    soundOff: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>',
+    phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>',
+    eye: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+    help: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M9.5 9.3a2.6 2.6 0 015 1c0 1.8-2.5 2.2-2.5 3.9M12 17.2v.3"/></svg>'
+  };
+
+  var cfg = null;
+  var choice = {};
+
+  function visibleOptions() {
+    return cfg.options.filter(function (o) { return !o.showIf || o.showIf(choice); });
+  }
+
+  function renderTitle() {
+    var host = $("#title-options");
+    host.innerHTML = "";
+    visibleOptions().forEach(function (opt) {
+      var seg = h("div", { class: "seg", role: "group", "aria-label": opt.label });
+      opt.choices.forEach(function (c) {
+        seg.appendChild(h("button", {
+          type: "button",
+          "aria-pressed": choice[opt.id] === c.v ? "true" : "false",
+          onclick: function () {
+            Sound.unlock(); Sound.play("tap");
+            choice[opt.id] = c.v;
+            store.set("choice", choice);
+            renderTitle();
+          }
+        }, c.t));
+      });
+      var note = opt.note ? opt.note(choice) : null;
+      host.appendChild(h("div", { class: "opt-group" },
+        h("span", { class: "opt-label" }, opt.label), seg,
+        note ? h("p", { class: "opt-note" }, note) : null));
+    });
+  }
+
+  function showRules() {
+    return modal({ title: "How to play", body: cfg.rules, bodyClass: "rules", actions: [{ label: "Got it", value: true, kind: "primary" }] });
+  }
+
+  function showScreen(name) {
+    $all(".screen").forEach(function (sc) { sc.hidden = sc.id !== "screen-" + name; });
+  }
+
+  function init(config) {
+    cfg = config;
+    NS = config.ns || NS;
+    Sound.on = store.get("sound", true);
+    var saved = store.get("choice", {});
+    choice = {};
+    cfg.options.forEach(function (o) {
+      var ok = o.choices.some(function (c) { return c.v === saved[o.id]; });
+      choice[o.id] = ok ? saved[o.id] : o.default;
+    });
+    var title = $("#screen-title");
+    title.innerHTML = "";
+    title.appendChild(h("div", { class: "title-inner" },
+      cfg.art ? h("div", { class: "title-art", html: cfg.art }) : null,
+      h("h1", { class: "title-name" }, cfg.title),
+      h("p", { class: "title-tag" }, cfg.tagline),
+      h("div", { id: "title-options", class: "title-options", style: "display:flex;flex-direction:column;gap:14px" }),
+      h("div", { class: "title-actions" },
+        h("button", { class: "btn btn-primary btn-wide", type: "button", id: "btn-start", onclick: function () {
+          Sound.unlock(); Sound.play("select");
+          var c = {}; visibleOptions().forEach(function (o) { c[o.id] = choice[o.id]; });
+          cfg.onStart(c);
+        } }, "Play"),
+        h("button", { class: "btn btn-ghost btn-wide", type: "button", onclick: function () { Sound.unlock(); Sound.play("tap"); showRules(); } }, "How to play"))));
+    renderTitle();
+    showScreen("title");
+    var menuBtn = $("#btn-menu");
+    if (menuBtn) {
+      menuBtn.innerHTML = ICONS.menu;
+      menuBtn.onclick = function () { Sound.play("tap"); openMenu(); };
+    }
+  }
+
+  function openMenu() {
+    return modal({
+      title: "Paused",
+      body: h("p", { style: "margin:0;color:var(--muted)" }, cfg.menuNote ? cfg.menuNote() : "The game is waiting for you."),
+      actions: [
+        { label: "Resume", value: "resume", kind: "primary" },
+        { label: "How to play", value: "rules" },
+        { label: Sound.on ? "Sound: on" : "Sound: off", value: "sound" },
+        { label: "Restart this match", value: "restart" },
+        { label: "Quit to title", value: "quit", kind: "danger" }
+      ]
+    }).then(function (v) {
+      if (v === "rules") return showRules().then(openMenu);
+      if (v === "sound") { Sound.on = !Sound.on; if (Sound.on) Sound.play("select"); return openMenu(); }
+      if (v === "restart") return confirmAsk("Restart this match?", "The current match will be lost.").then(function (ok) { if (ok && cfg.onRestart) cfg.onRestart(); });
+      if (v === "quit") return confirmAsk("Quit to the title screen?", "The current match will be lost.").then(function (ok) { if (ok) quit(); });
+    });
+  }
+
+  function confirmAsk(title, text) {
+    return modal({ title: title, body: h("p", { style: "margin:0;color:var(--muted)" }, text), actions: [
+      { label: "Yes", value: true, kind: "danger" }, { label: "Cancel", value: false }] }).then(function (v) { return v === true; });
+  }
+
+  function quit() {
+    if (cfg.onQuit) cfg.onQuit();
+    $all(".cover,.modal-wrap,.banner,.toast").forEach(function (n) { n.remove(); });
+    renderTitle();
+    showScreen("title");
+  }
+
+  function gameOver(opts) {
+    Sound.play(opts.tone === "bad" ? "lose" : "win");
+    var body = h("div", null,
+      opts.text ? h("p", { style: "margin:0 0 10px;color:var(--muted)" }, opts.text) : null,
+      opts.stats ? (function () {
+        var grid = h("div", { class: "result-stats" });
+        opts.stats.forEach(function (row) { grid.appendChild(h("span", null, row[0])); grid.appendChild(h("span", null, String(row[1]))); });
+        return grid;
+      })() : null);
+    return modal({ title: opts.title, body: body, dismissible: false, actions: [
+      { label: "Rematch", value: "rematch", kind: "primary" },
+      { label: opts.reviewLabel || "Look at the board", value: "review" },
+      { label: "Main menu", value: "menu" }] }).then(function (v) {
+        if (v === "menu") { quit(); return "menu"; }
+        return v;
+      });
+  }
+
+  /* Small seeded RNG so bots can be varied but testable. */
+  function rng(seed) {
+    var a = (seed >>> 0) || 0x9e3779b9;
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  root.Kit = {
+    $: $, $all: $all, h: h, s: s, store: store, sleep: sleep, frame: frame, Sound: Sound, haptic: haptic,
+    cover: cover, modal: modal, banner: banner, toast: toast, shake: shake, init: init, showScreen: showScreen,
+    showRules: showRules, openMenu: openMenu, confirm: confirmAsk, quit: quit, gameOver: gameOver, ICONS: ICONS, rng: rng,
+    get reduceMotion() { return reduceMotion; },
+    get choice() { return choice; }
+  };
+})(typeof window !== "undefined" ? window : globalThis);
+
+/* Liar's Gambit: rules engine and bot. No DOM, so it runs in Node for tests.
+   6 columns x 7 rows. Side 0 (Gold) starts on rows 5-6, side 1 (Ruby) on rows 0-1. */
+(function (root) {
+  "use strict";
+
+  var COLS = 6, ROWS = 7, N = COLS * ROWS;
+  var TYPES = ["C", "T", "B", "J", "G"];
+  var BIT = { C: 1, T: 2, B: 4, J: 8, G: 16 };
+  var NAME = { C: "Crown", T: "Tower", B: "Blade", J: "Jumper", G: "Guard" };
+  var VAL = { C: 0, T: 5, B: 4.5, J: 3.5, G: 1.8 };
+  var SET = ["C", "T", "T", "B", "B", "J", "G", "G"];
+  var COUNTS = { C: 1, T: 2, B: 2, J: 1, G: 2 };
+  var RANGE = 3;          /* Towers and Blades slide at most this far */
+  var TOKENS = 3;         /* accusations per player */
+  var PLY_LIMIT = 100;
+  var CROWN_BLUFF = 0.12; /* a Crown bluffs far less often: getting caught loses the game */
+
+  function rowOf(sq) { return (sq / COLS) | 0; }
+  function colOf(sq) { return sq % COLS; }
+  function homeRows(side) { return side === 0 ? [ROWS - 2, ROWS - 1] : [0, 1]; }
+  function backRow(side) { return side === 0 ? ROWS - 1 : 0; }
+  function frontRow(side) { return side === 0 ? ROWS - 2 : 1; }
+
+  function rng(seed) {
+    var a = (seed >>> 0) || 0x9e3779b9;
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function shuffle(rand, arr) {
+    for (var k = arr.length - 1; k > 0; k--) { var j = Math.floor(rand() * (k + 1)); var t = arr[k]; arr[k] = arr[j]; arr[j] = t; }
+    return arr;
+  }
+
+  function maskNames(mask) {
+    var out = [];
+    TYPES.forEach(function (t) { if (mask & BIT[t]) out.push(NAME[t]); });
+    return out;
+  }
+  function claimText(mask) {
+    var n = maskNames(mask);
+    if (n.length === 1) return "a " + n[0];
+    if (n.length === 2) return "a " + n[0] + " or a " + n[1];
+    return n.slice(0, -1).map(function (x) { return "a " + x; }).join(", ") + " or a " + n[n.length - 1];
+  }
+  function sideName(side) { return side === 0 ? "Gold" : "Ruby"; }
+
+  /* ---------- State ---------- */
+  function newGame(seed) {
+    return {
+      seed: seed, board: new Array(N).fill(-1), pieces: [], turn: 0, ply: 0,
+      phase: "setup", lastMove: null, needSacrifice: -1, winner: null, reason: "", graveyard: [],
+      tokens: [TOKENS, TOKENS],
+      stats: { chances: [0, 0], calls: [0, 0] }, log: []
+    };
+  }
+
+  /* arrangement: 8 squares in SET order (C, T, T, B, B, J, G, G) */
+  function placeSide(s, side, arrangement) {
+    SET.forEach(function (type, k) {
+      var sq = arrangement[k];
+      var id = s.pieces.length;
+      s.pieces.push({ id: id, owner: side, type: type, sq: sq, home: sq, alive: true, revealed: false, pending: false, claims: [] });
+      s.board[sq] = id;
+    });
+  }
+
+  function randomSetup(rand, side, style) {
+    var rows = homeRows(side), back = backRow(side), front = frontRow(side);
+    var squares = [];
+    rows.forEach(function (r) { for (var c = 0; c < COLS; c++) squares.push(r * COLS + c); });
+    if (style === "chaos") { shuffle(rand, squares); return squares.slice(0, 8); }
+    var crownCol = 1 + Math.floor(rand() * 4);
+    if (rand() < 0.18) crownCol = rand() < 0.5 ? 0 : COLS - 1;
+    var crownSq = (rand() < 0.15 ? front : back) * COLS + crownCol;
+    var guardSq = (rowOf(crownSq) === back ? front : back) * COLS + crownCol;
+    var rest = shuffle(rand, squares.filter(function (q) { return q !== crownSq && q !== guardSq; }));
+    return [crownSq, rest[0], rest[1], rest[2], rest[3], rest[4], guardSq, rest[5]];
+  }
+
+  function startPlay(s) { s.phase = "play"; s.turn = 0; }
+
+  function pieceAt(s, sq) { var id = s.board[sq]; return id >= 0 ? s.pieces[id] : null; }
+  function alivePieces(s, side) { return s.pieces.filter(function (p) { return p.owner === side && p.alive; }); }
+
+  function pathClear(s, from, to) {
+    var fr = rowOf(from), fc = colOf(from), tr = rowOf(to), tc = colOf(to);
+    var dr = Math.sign(tr - fr), dc = Math.sign(tc - fc);
+    var r = fr + dr, c = fc + dc;
+    while (r !== tr || c !== tc) {
+      if (s.board[r * COLS + c] >= 0) return false;
+      r += dr; c += dc;
+    }
+    return true;
+  }
+
+  /* Which piece types could honestly make this move? */
+  function claimMask(s, from, to) {
+    var dr = rowOf(to) - rowOf(from), dc = colOf(to) - colOf(from);
+    var ar = Math.abs(dr), ac = Math.abs(dc);
+    if (!ar && !ac) return 0;
+    var m = 0;
+    if (ar <= 1 && ac <= 1) m |= BIT.C;
+    if (ar + ac === 1) m |= BIT.G;
+    if ((ar === 0) !== (ac === 0) && Math.max(ar, ac) <= RANGE && pathClear(s, from, to)) m |= BIT.T;
+    if (ar === ac && ar <= RANGE && pathClear(s, from, to)) m |= BIT.B;
+    if ((ar === 1 && ac === 2) || (ar === 2 && ac === 1)) m |= BIT.J;
+    return m;
+  }
+
+  function legalMoves(s, side) {
+    var out = [];
+    for (var i = 0; i < s.pieces.length; i++) {
+      var p = s.pieces[i];
+      if (p.owner !== side || !p.alive) continue;
+      for (var to = 0; to < N; to++) {
+        var occ = s.board[to];
+        if (occ >= 0 && s.pieces[occ].owner === side) continue;
+        var m = claimMask(s, p.sq, to);
+        if (!m) continue;
+        if (p.revealed && !(m & BIT[p.type])) continue;
+        out.push({ pid: p.id, from: p.sq, to: to, claim: m, capture: occ });
+      }
+    }
+    return out;
+  }
+
+  function isHonest(s, mv) { return (mv.claim & BIT[s.pieces[mv.pid].type]) !== 0; }
+
+  function end(s, winner, reason) {
+    if (s.winner != null) return;
+    s.winner = winner; s.reason = reason; s.phase = "over";
+  }
+
+  function applyMove(s, mv) {
+    var p = s.pieces[mv.pid];
+    var cap = s.board[mv.to];
+    s.board[mv.from] = -1;
+    s.board[mv.to] = mv.pid;
+    p.sq = mv.to;
+    if (cap >= 0) { var cp = s.pieces[cap]; cp.alive = false; cp.pending = true; cp.sq = -1; }
+    p.claims.push(mv.claim);
+    s.lastMove = { pid: mv.pid, side: p.owner, from: mv.from, to: mv.to, claim: mv.claim, captured: cap, ply: s.ply, resolved: false, challenged: false, honest: null };
+    s.ply += 1;
+    s.turn = 1 - p.owner;
+  }
+
+  function finalizeCapture(s, lm) {
+    if (lm.captured < 0) return;
+    var cp = s.pieces[lm.captured];
+    if (!cp.pending) return;
+    cp.pending = false;
+    cp.revealed = true;
+    s.graveyard.push(cp.id);
+    if (cp.type === "C") end(s, lm.side, sideName(lm.side) + " captured the " + sideName(cp.owner) + " Crown.");
+  }
+
+  function mustResolve(s) { return !!(s.phase === "play" && s.lastMove && !s.lastMove.resolved && s.lastMove.side !== s.turn); }
+  function crownTaken(s) {
+    var lm = s.lastMove;
+    return !!(lm && !lm.resolved && lm.captured >= 0 && s.pieces[lm.captured].type === "C");
+  }
+  /* You can always call Liar on a capture of your Crown, even with no accusations left. */
+  function canChallenge(s) {
+    if (!mustResolve(s)) return false;
+    if (s.pieces[s.lastMove.pid].revealed) return false;
+    return s.tokens[s.turn] > 0 || crownTaken(s);
+  }
+
+  function accept(s) {
+    var lm = s.lastMove;
+    if (!s.pieces[lm.pid].revealed) s.stats.chances[1 - lm.side] += 1;
+    lm.resolved = true;
+    finalizeCapture(s, lm);
+    if (s.winner == null) checkStuck(s);
+  }
+
+  function challenge(s) {
+    var lm = s.lastMove;
+    var p = s.pieces[lm.pid];
+    var challenger = 1 - lm.side;
+    var honest = (lm.claim & BIT[p.type]) !== 0;
+    s.stats.chances[challenger] += 1; s.stats.calls[challenger] += 1;
+    lm.resolved = true; lm.challenged = true; lm.honest = honest;
+    var res = { honest: honest, pid: p.id, type: p.type, restored: -1 };
+    if (!honest) {
+      s.board[lm.to] = -1;
+      p.alive = false; p.sq = -1; p.revealed = true;
+      s.graveyard.push(p.id);
+      if (lm.captured >= 0) {
+        var cp = s.pieces[lm.captured];
+        cp.alive = true; cp.pending = false; cp.sq = lm.to;
+        s.board[lm.to] = cp.id;
+        res.restored = cp.id;
+      }
+      if (p.type === "C") end(s, challenger, "The " + sideName(lm.side) + " Crown was caught lying.");
+    } else {
+      p.revealed = true;
+      if (s.tokens[challenger] > 0) s.tokens[challenger] -= 1;
+      finalizeCapture(s, lm);
+      if (s.winner == null) {
+        var nonCrown = alivePieces(s, challenger).filter(function (q) { return q.type !== "C"; });
+        if (!nonCrown.length) end(s, lm.side, sideName(challenger) + " had nothing left to give up but its Crown.");
+        else s.needSacrifice = challenger;
+      }
+    }
+    if (s.winner == null && s.needSacrifice < 0) checkStuck(s);
+    return res;
+  }
+
+  function sacrifice(s, pid) {
+    var p = s.pieces[pid];
+    if (!p || p.owner !== s.needSacrifice || !p.alive || p.type === "C") return false;
+    s.board[p.sq] = -1;
+    p.alive = false; p.sq = -1; p.revealed = true;
+    s.graveyard.push(p.id);
+    s.needSacrifice = -1;
+    if (s.winner == null) checkStuck(s);
+    return true;
+  }
+
+  function checkStuck(s) {
+    if (s.phase !== "play") return;
+    if (s.ply >= PLY_LIMIT) {
+      var a = alivePieces(s, 0).length, b = alivePieces(s, 1).length;
+      if (a !== b) end(s, a > b ? 0 : 1, "Move limit reached. " + sideName(a > b ? 0 : 1) + " had more pieces left.");
+      else if (s.tokens[0] !== s.tokens[1]) end(s, s.tokens[0] > s.tokens[1] ? 0 : 1, "Move limit reached with equal pieces. " + sideName(s.tokens[0] > s.tokens[1] ? 0 : 1) + " had more accusations left.");
+      else end(s, "draw", "The move limit arrived with everything even.");
+      return;
+    }
+    if (!legalMoves(s, s.turn).length) end(s, 1 - s.turn, sideName(s.turn) + " has no legal moves.");
+  }
+
+  /* ---------- Beliefs: what `viewer` can infer about the other side's hidden pieces ---------- */
+  function beliefs(s, viewer, beta, opts) {
+    opts = opts || {};
+    var opp = 1 - viewer;
+    var counts = Object.assign({}, COUNTS);
+    var unknown = [];
+    s.pieces.forEach(function (p) {
+      if (p.owner !== opp) return;
+      if (p.revealed) counts[p.type] -= 1;
+      else unknown.push(p);
+    });
+    var LL = unknown.map(function (p) {
+      return TYPES.map(function (t) {
+        var bt = t === "C" ? beta * CROWN_BLUFF : beta;
+        var lh = Math.log(1 - bt), ll = Math.log(bt);
+        var v = 0;
+        for (var k = 0; k < p.claims.length; k++) v += (p.claims[k] & BIT[t]) ? lh : ll;
+        if (t === "C" && opts.crownPrior && rowOf(p.home) === backRow(opp)) v += Math.log(opts.crownPrior);
+        return v;
+      });
+    });
+    var cnt = TYPES.map(function (t) { return Math.max(0, counts[t]); });
+    var marg = unknown.map(function () { return [0, 0, 0, 0, 0]; });
+    var leaves = [], assign = new Array(unknown.length), maxLL = -Infinity;
+    (function rec(k, acc) {
+      if (k === unknown.length) {
+        leaves.push({ a: assign.slice(), ll: acc });
+        if (acc > maxLL) maxLL = acc;
+        return;
+      }
+      for (var t = 0; t < 5; t++) {
+        if (cnt[t] <= 0) continue;
+        cnt[t]--; assign[k] = t;
+        rec(k + 1, acc + LL[k][t]);
+        cnt[t]++;
+      }
+    })(0, 0);
+    var total = 0;
+    leaves.forEach(function (lf) {
+      lf.w = Math.exp(lf.ll - maxLL);
+      total += lf.w;
+      for (var k = 0; k < lf.a.length; k++) marg[k][lf.a[k]] += lf.w;
+    });
+    var probs = {};
+    unknown.forEach(function (p, k) { probs[p.id] = marg[k].map(function (x) { return total > 0 ? x / total : 0; }); });
+    s.pieces.forEach(function (p) {
+      if (p.owner === opp && p.revealed) { var row = [0, 0, 0, 0, 0]; row[TYPES.indexOf(p.type)] = 1; probs[p.id] = row; }
+    });
+    return { probs: probs };
+  }
+
+  function flatBeliefs(s, viewer) {
+    var opp = 1 - viewer, counts = Object.assign({}, COUNTS), unknown = [];
+    s.pieces.forEach(function (p) {
+      if (p.owner !== opp) return;
+      if (p.revealed) counts[p.type]--; else unknown.push(p);
+    });
+    var tot = 0;
+    TYPES.forEach(function (t) { tot += Math.max(0, counts[t]); });
+    var probs = {};
+    unknown.forEach(function (p) { probs[p.id] = TYPES.map(function (t) { return tot ? Math.max(0, counts[t]) / tot : 0; }); });
+    s.pieces.forEach(function (p) { if (p.owner === opp && p.revealed) { var r = [0, 0, 0, 0, 0]; r[TYPES.indexOf(p.type)] = 1; probs[p.id] = r; } });
+    return { probs: probs };
+  }
+
+  function probType(B, pid, t) { var row = B.probs[pid]; return row ? row[TYPES.indexOf(t)] : 0; }
+  function probInMask(B, pid, mask) {
+    var row = B.probs[pid];
+    if (!row) return 0;
+    var v = 0;
+    for (var k = 0; k < 5; k++) if (mask & BIT[TYPES[k]]) v += row[k];
+    return v;
+  }
+  function expVal(B, pid) {
+    var row = B.probs[pid];
+    if (!row) return 0;
+    var v = 0;
+    for (var k = 0; k < 5; k++) v += row[k] * VAL[TYPES[k]];
+    return v;
+  }
+  function lieChance(B, pid, mask, beta) {
+    var row = B.probs[pid];
+    if (!row) return 0;
+    var a = 0, b = 0;
+    for (var k = 0; k < 5; k++) {
+      var bt = TYPES[k] === "C" ? beta * CROWN_BLUFF : beta;
+      if (mask & BIT[TYPES[k]]) b += row[k] * (1 - bt); else a += row[k] * bt;
+    }
+    return a + b > 0 ? a / (a + b) : 0;
+  }
+  function entropy5(row) {
+    var hsum = 0;
+    for (var k = 0; k < 5; k++) if (row[k] > 0) hsum -= row[k] * Math.log(row[k]);
+    return hsum / Math.log(5);
+  }
+
+  /* How often has `side` lied so far? Lies among the moves of its pieces whose type is now known. */
+  function estimateBeta(s, side) {
+    var lies = 0, moves = 0;
+    s.pieces.forEach(function (p) {
+      if (p.owner !== side || !p.revealed) return;
+      p.claims.forEach(function (c) { moves++; if (!(c & BIT[p.type])) lies++; });
+    });
+    return Math.max(0.04, Math.min(0.45, (lies + 1.5) / (moves + 9)));
+  }
+
+  /* ---------- Bot ---------- */
+  var LEVELS = {
+    easy: { beta: 0.25, track: false, noise: 4.0, bluffy: 0.8, appetite: 0, randomCall: 0.1, callMargin: 0, adaptive: false, deceive: false, crownPrior: 1 },
+    normal: { beta: 0.12, track: true, noise: 0.5, bluffy: 0, appetite: 0.3, randomCall: 0, callMargin: 1.2, minLie: 0.3, bluffRate: 0.35, tolerance: 3.5, adaptive: true, adaptiveRate: false, deceive: false, crownPrior: 1.4 },
+    hard: { beta: 0.12, track: true, noise: 0.1, bluffy: 0, appetite: 0.2, randomCall: 0, callMargin: 1.2, minLie: 0.3, bluffRate: 0.3, tolerance: 2.8, adaptive: true, adaptiveRate: false, deceive: false, crownPrior: 1.5 }
+  };
+  var WIN = 1000;
+  var TOKEN_VALUE = [0, 6.5, 4, 2.8];
+  var SEEN_BETA = 0.16; /* how often the opponent is assumed to think we bluff */
+
+  function cloneState(s) {
+    return {
+      seed: s.seed, board: s.board.slice(),
+      pieces: s.pieces.map(function (p) { return { id: p.id, owner: p.owner, type: p.type, sq: p.sq, home: p.home, alive: p.alive, revealed: p.revealed, pending: p.pending, claims: p.claims.slice() }; }),
+      turn: s.turn, ply: s.ply, phase: s.phase, lastMove: s.lastMove ? Object.assign({}, s.lastMove) : null,
+      needSacrifice: s.needSacrifice, winner: s.winner, reason: s.reason, graveyard: s.graveyard.slice(),
+      tokens: s.tokens.slice(), stats: { chances: s.stats.chances.slice(), calls: s.stats.calls.slice() }, log: []
+    };
+  }
+
+  /* The bot's picture of the game: enemy pieces it hasn't seen have type "?". */
+  function maskedView(s, me) {
+    var v = cloneState(s);
+    v.pieces.forEach(function (p) { if (p.owner !== me && !p.revealed) p.type = "?"; });
+    return v;
+  }
+
+  var DEFAULT_W = { danger: 55, hunt: 14, threatIn: 0.35, threatOut: 0.35 };
+  function evaluate(s, me, Bopp, PUB, W) {
+    W = W || DEFAULT_W;
+    if (s.winner != null) return s.winner === me ? WIN : s.winner === "draw" ? 0 : -WIN;
+    var v = 0, myCrown = null, mine = [], theirs = [];
+    var urg = 1 + Math.max(0, s.ply - 40) / 30;
+    s.pieces.forEach(function (p) {
+      if (!p.alive) return;
+      if (p.owner === me) { mine.push(p); if (p.type === "C") myCrown = p; }
+      else theirs.push(p);
+    });
+    mine.forEach(function (p) {
+      if (p.type === "C") return;
+      v += VAL[p.type] * (p.revealed ? 0.85 : 1);
+      v += 0.08 * urg * (me === 0 ? ROWS - 1 - rowOf(p.sq) : rowOf(p.sq));
+    });
+    theirs.forEach(function (q) { v -= expVal(Bopp, q.id) * (q.revealed ? 0.85 : 1); });
+    v += 0.9 * (s.tokens[me] - s.tokens[1 - me]);
+    if (myCrown) {
+      var pi = myCrown.revealed ? 1 : probType(PUB, myCrown.id, "C");
+      var attempt = Math.max(0.3, pi);
+      var safe = 1;
+      theirs.forEach(function (q) {
+        var m = claimMask(s, q.sq, myCrown.sq);
+        if (m) safe *= 1 - attempt * probInMask(Bopp, q.id, m);
+      });
+      v -= W.danger * (1 - safe);
+      if (myCrown.revealed) v -= 4;
+      v -= 7 * pi;
+      var shield = 0, cr = rowOf(myCrown.sq), cc = colOf(myCrown.sq);
+      mine.forEach(function (p) { if (p !== myCrown && Math.abs(rowOf(p.sq) - cr) <= 1 && Math.abs(colOf(p.sq) - cc) <= 1) shield++; });
+      v += 0.25 * Math.min(shield, 3);
+      v -= 0.15 * Math.abs(rowOf(myCrown.sq) - backRow(me));
+    }
+    var fog = 0;
+    mine.forEach(function (p) { if (!p.revealed && PUB.probs[p.id]) fog += entropy5(PUB.probs[p.id]); });
+    v += 0.3 * fog;
+    var hunt = 0, threatOut = 0;
+    theirs.forEach(function (q) {
+      var can = false;
+      mine.forEach(function (p) { if (claimMask(s, p.sq, q.sq) & BIT[p.type]) can = true; });
+      if (can) { hunt = Math.max(hunt, probType(Bopp, q.id, "C")); threatOut += W.threatOut * expVal(Bopp, q.id); }
+    });
+    v += urg * (W.hunt * hunt + threatOut);
+    var threatIn = 0;
+    mine.forEach(function (p) {
+      if (p.type === "C") return;
+      var worst = 0;
+      theirs.forEach(function (q) {
+        var m = claimMask(s, q.sq, p.sq);
+        if (m) worst = Math.max(worst, probInMask(Bopp, q.id, m));
+      });
+      threatIn += W.threatIn * worst * VAL[p.type];
+    });
+    return v - threatIn;
+  }
+
+  /* Which piece would `side` give up? Cheap pieces first, never a likely Crown. */
+  function cheapestSacrifice(s, side, B) {
+    var best = null, bv = 1e9;
+    s.pieces.forEach(function (p) {
+      if (p.owner !== side || !p.alive || p.type === "C") return;
+      var v = (p.type === "?" && B) ? expVal(B, p.id) + 60 * probType(B, p.id, "C") : VAL[p.type] * (p.revealed ? 0.8 : 1);
+      if (v < bv) { bv = v; best = p; }
+    });
+    return best;
+  }
+
+  /* How likely is the opponent to call Liar on this move of mine? */
+  function challengeOdds(s, PUB, mv, beta, adaptive, me) {
+    var opp = 1 - me;
+    if (s.tokens[opp] <= 0) return 0;
+    var lie = lieChance(PUB, mv.pid, mv.claim, beta);
+    var rate = 0.3;
+    if (adaptive) rate = (s.stats.calls[opp] + 1.2) / (s.stats.chances[opp] + 4);
+    var c = rate * (0.4 + 1.8 * lie) + (mv.capture >= 0 ? 0.1 + 0.25 * lie : 0);
+    if (s.tokens[opp] === 1) c *= 0.6;
+    return Math.max(0.02, Math.min(0.92, c));
+  }
+
+  function scoreMove(s, view, me, mv, Bopp, PUB, L, myBeta) {
+    var honest = (mv.claim & BIT[view.pieces[mv.pid].type]) !== 0;
+    var pc = mv.capture >= 0 ? probType(Bopp, mv.capture, "C") : 0;
+    var stand = cloneState(view);
+    applyMove(stand, mv);
+    accept(stand);
+    var PUBafter = (L.deceive && stand.winner == null) ? beliefs(stand, 1 - me, myBeta) : PUB;
+    var vStand = evaluate(stand, me, Bopp, PUBafter, L.W);
+    var chal = cloneState(view);
+    applyMove(chal, mv);
+    challenge(chal);
+    if (chal.winner == null && chal.needSacrifice >= 0) {
+      var victim = cheapestSacrifice(chal, chal.needSacrifice, Bopp);
+      if (victim) sacrifice(chal, victim.id);
+    }
+    var vChal = evaluate(chal, me, Bopp, PUB, L.W);
+    var cn = challengeOdds(s, PUB, mv, myBeta, L.adaptiveRate, me);
+    var crownBranch = honest ? WIN : vChal;
+    var ev = pc * crownBranch + (1 - pc) * ((1 - cn) * vStand + cn * vChal);
+    return { mv: mv, ev: ev, honest: honest, cn: cn, crown: view.pieces[mv.pid].type === "C" };
+  }
+
+  function botMove(s, me, level, rand) {
+    var L = LEVELS[level] || LEVELS.normal;
+    var oppBeta = L.adaptive ? estimateBeta(s, 1 - me) : L.beta;
+    var myBeta = SEEN_BETA;
+    var view = maskedView(s, me);
+    var Bopp = L.track ? beliefs(s, me, oppBeta, { crownPrior: L.crownPrior }) : flatBeliefs(s, me);
+    var PUB = beliefs(s, 1 - me, myBeta);
+    var moves = legalMoves(view, me);
+    if (!moves.length) return null;
+    var best = null, bestHonest = null, bestBluff = null;
+    moves.forEach(function (mv) {
+      var sc = scoreMove(s, view, me, mv, Bopp, PUB, L, myBeta);
+      if (!sc.honest && L.bluffy) sc.ev += L.bluffy * (rand() - 0.3) * 4;
+      if (!sc.honest && L.appetite) sc.ev += L.appetite;
+      sc.ev += (rand() - 0.5) * L.noise;
+      if (!best || sc.ev > best.ev) best = sc;
+      if (sc.honest) { if (!bestHonest || sc.ev > bestHonest.ev) bestHonest = sc; }
+      else if (!sc.crown && sc.cn < 0.6 && (!bestBluff || sc.ev > bestBluff.ev)) bestBluff = sc;
+    });
+    /* Mixed strategy: a bot that never lies can simply be trusted, so now and then
+       it takes a bluff that costs little next to its best honest move. */
+    if (L.bluffRate && bestBluff && bestHonest && bestHonest.ev < 300 && bestBluff.ev >= bestHonest.ev - L.tolerance && rand() < L.bluffRate) return bestBluff.mv;
+    return best.mv;
+  }
+
+  /* Should `me` call Liar on the opponent's last move? Compares the two futures. */
+  function botChallenge(s, me, level, rand) {
+    var L = LEVELS[level] || LEVELS.normal;
+    if (!canChallenge(s)) return false;
+    var lm = s.lastMove;
+    if (crownTaken(s)) return true;
+    var mover = s.pieces[lm.pid];
+    if (L.randomCall) {
+      var urge = L.randomCall + (lm.captured >= 0 ? 0.1 : 0);
+      return rand() < urge;
+    }
+    var oppBeta = L.adaptive ? estimateBeta(s, 1 - me) : L.beta;
+    var B = L.track ? beliefs(s, me, oppBeta, { crownPrior: L.crownPrior }) : flatBeliefs(s, me);
+    var PUB = beliefs(s, 1 - me, SEEN_BETA);
+    var row = B.probs[mover.id] || [0, 0, 0, 0, 0];
+    var pLie = 0, crownOut = 0;
+    for (var k = 0; k < 5; k++) if (!(lm.claim & BIT[TYPES[k]])) { pLie += row[k]; if (TYPES[k] === "C") crownOut += row[k]; }
+    var view = maskedView(s, me);
+    var acc = cloneState(view);
+    accept(acc);
+    var vAccept = evaluate(acc, me, B, PUB);
+    var lie = cloneState(view);
+    var lp = lie.pieces[lm.pid];
+    lie.board[lm.to] = -1; lp.alive = false; lp.sq = -1; lp.revealed = true;
+    if (lm.captured >= 0) { var cp = lie.pieces[lm.captured]; cp.alive = true; cp.pending = false; cp.sq = lm.to; lie.board[lm.to] = cp.id; }
+    lie.lastMove = null;
+    var crownGivenLie = pLie > 0 ? crownOut / pLie : 0;
+    var vLie = crownGivenLie * WIN + (1 - crownGivenLie) * evaluate(lie, me, B, PUB);
+    var tru = cloneState(acc);
+    tru.pieces[lm.pid].revealed = true;
+    tru.tokens[me] = Math.max(0, tru.tokens[me] - 1);
+    var mine = cheapestSacrifice(tru, me, null);
+    if (mine) { tru.board[mine.sq] = -1; tru.pieces[mine.id].alive = false; tru.pieces[mine.id].sq = -1; tru.pieces[mine.id].revealed = true; }
+    var vTruth = mine ? evaluate(tru, me, B, PUB) + 0.5 : -WIN;
+    vTruth -= TOKEN_VALUE[s.tokens[me]] || 0;
+    var evChallenge = pLie * vLie + (1 - pLie) * vTruth;
+    if (L.minLie && pLie < L.minLie && vAccept > -300) return false;
+    var margin = L.callMargin + (rand() - 0.5) * L.noise * 2;
+    return evChallenge > vAccept + margin;
+  }
+
+  function botSacrifice(s, me) {
+    var p = cheapestSacrifice(s, me, null);
+    return p ? p.id : -1;
+  }
+
+  function botSetup(rand, side, level) {
+    return randomSetup(rand, side, level === "easy" ? "chaos" : "normal");
+  }
+
+  /* What a piece's moves so far are all consistent with (31 = no moves yet). */
+  function storyMask(p) {
+    var m = 31;
+    p.claims.forEach(function (c) { m &= c; });
+    return m;
+  }
+
+  var API = {
+    COLS: COLS, ROWS: ROWS, N: N, TYPES: TYPES, BIT: BIT, NAME: NAME, VAL: VAL, SET: SET, COUNTS: COUNTS, RANGE: RANGE, TOKENS: TOKENS, PLY_LIMIT: PLY_LIMIT,
+    rowOf: rowOf, colOf: colOf, homeRows: homeRows, backRow: backRow, rng: rng, maskNames: maskNames, claimText: claimText, sideName: sideName,
+    newGame: newGame, placeSide: placeSide, randomSetup: randomSetup, startPlay: startPlay, pieceAt: pieceAt, alivePieces: alivePieces,
+    claimMask: claimMask, legalMoves: legalMoves, isHonest: isHonest, applyMove: applyMove, mustResolve: mustResolve, crownTaken: crownTaken,
+    canChallenge: canChallenge, accept: accept, challenge: challenge, sacrifice: sacrifice, checkStuck: checkStuck, storyMask: storyMask,
+    beliefs: beliefs, lieChance: lieChance, cloneState: cloneState, estimateBeta: estimateBeta,
+    bots: { move: botMove, challenge: botChallenge, sacrifice: botSacrifice, setup: botSetup }, LEVELS: LEVELS
+  };
+  root.Liars = API;
+  if (typeof module !== "undefined" && module.exports) module.exports = API;
+})(typeof window !== "undefined" ? window : globalThis);
+
+/* Liar's Gambit: interface, animation and turn flow. */
+(function () {
+  "use strict";
+  var LG = window.Liars, K = window.Kit, h = K.h, sv = K.s;
+  var S = 54, TRAY = 30, GAP = 8;
+  var BW = LG.COLS * S, BH = LG.ROWS * S;
+  var BY = TRAY + GAP;
+  var VBW = BW, VBH = TRAY + GAP + BH + GAP + TRAY;
+  var SIDE_CLASS = ["gold", "ruby"];
+
+  var ICON = {
+    C: '<path d="M3.5 18.5h17v2h-17zM4.2 16.8L3 7.5l5 3.8L12 4l4 7.3 5-3.8-1.2 9.3z"/>',
+    T: '<path d="M5 20.5h14v-2.2H5zM7 18.3l1.1-8.6h7.8l1.1 8.6zM6.5 9.7V4h2.4v2.2h1.8V4h2.6v2.2h1.8V4h2.4v5.7z"/>',
+    B: '<path d="M20.5 3.5l-1.3 5.6-8.4 8.4-4.3-4.3 8.4-8.4z"/><path d="M5.3 12.4l6.3 6.3-1.4 1.4-6.3-6.3zM6.9 16.6l1.4 1.4-3.6 3.6-1.4-1.4z"/>',
+    J: '<path d="M6 3.5h3v12.8h7.2v-3.1l5 4.6-5 4.6v-3.1H6z"/>',
+    G: '<path d="M12 2.8l8 3.2v5.6c0 5-3.3 8.8-8 10.6-4.7-1.8-8-5.6-8-10.6V6z"/>',
+    mask: '<path fill-rule="evenodd" d="M1.8 9.2C4.6 7.6 8 7.2 12 8.8c4-1.6 7.4-1.2 10.2.4-.3 5.3-3.6 8.3-6.8 8.3-1.5 0-2.6-.9-3.4-2.2-.8 1.3-1.9 2.2-3.4 2.2-3.2 0-6.5-3-6.8-8.3zM6.6 12.2c0 .9 1 1.5 2.1 1.5s2.1-.6 2.1-1.5-1-1.5-2.1-1.5-2.1.6-2.1 1.5zm6.6 0c0 .9 1 1.5 2.1 1.5s2.1-.6 2.1-1.5-1-1.5-2.1-1.5-2.1.6-2.1 1.5z"/>'
+  };
+  function iconSvg(type, fill) {
+    return '<svg viewBox="0 0 24 24" fill="' + (fill || "currentColor") + '">' + ICON[type] + "</svg>";
+  }
+
+  var TITLE_ART = '<svg viewBox="0 0 260 150" role="img" aria-label="A gold mask and a ruby mask behind a crown">' +
+    '<g transform="translate(30 22) rotate(-10 60 50) scale(4.2)"><path fill="#e9c46a" fill-rule="evenodd" d="' + 'M1.8 9.2C4.6 7.6 8 7.2 12 8.8c4-1.6 7.4-1.2 10.2.4-.3 5.3-3.6 8.3-6.8 8.3-1.5 0-2.6-.9-3.4-2.2-.8 1.3-1.9 2.2-3.4 2.2-3.2 0-6.5-3-6.8-8.3zM6.6 12.2c0 .9 1 1.5 2.1 1.5s2.1-.6 2.1-1.5-1-1.5-2.1-1.5-2.1.6-2.1 1.5zm6.6 0c0 .9 1 1.5 2.1 1.5s2.1-.6 2.1-1.5-1-1.5-2.1-1.5-2.1.6-2.1 1.5z"/></g>' +
+    '<g transform="translate(118 30) rotate(12 60 50) scale(4.2)"><path fill="#d94a63" fill-rule="evenodd" d="' + 'M1.8 9.2C4.6 7.6 8 7.2 12 8.8c4-1.6 7.4-1.2 10.2.4-.3 5.3-3.6 8.3-6.8 8.3-1.5 0-2.6-.9-3.4-2.2-.8 1.3-1.9 2.2-3.4 2.2-3.2 0-6.5-3-6.8-8.3zM6.6 12.2c0 .9 1 1.5 2.1 1.5s2.1-.6 2.1-1.5-1-1.5-2.1-1.5-2.1.6-2.1 1.5zm6.6 0c0 .9 1 1.5 2.1 1.5s2.1-.6 2.1-1.5-1-1.5-2.1-1.5-2.1.6-2.1 1.5z"/></g>' +
+    '<g transform="translate(103 2) scale(2.3)" fill="#f6ece2"><path d="M3.5 18.5h17v2h-17zM4.2 16.8L3 7.5l5 3.8L12 4l4 7.3 5-3.8-1.2 9.3z"/></g>' +
+    "</svg>";
+
+  var RULES = [
+    "<h3>The goal</h3>",
+    "<p>Capture the enemy <b>Crown</b>, or catch it lying.</p>",
+    "<h3>The pieces</h3>",
+    '<div class="icon-row" style="margin-bottom:8px">',
+    "<span>" + iconSvg("C") + "Crown ×1</span><span>" + iconSvg("T") + "Tower ×2</span><span>" + iconSvg("B") + "Blade ×2</span><span>" + iconSvg("J") + "Jumper ×1</span><span>" + iconSvg("G") + "Guard ×2</span></div>",
+    '<dl class="kv"><dt>Crown</dt><dd>1 step in any direction.</dd><dt>Tower</dt><dd>Up to 3 squares straight.</dd><dt>Blade</dt><dd>Up to 3 squares diagonally.</dd><dt>Jumper</dt><dd>An L-shaped jump, over anything.</dd><dt>Guard</dt><dd>1 step straight.</dd></dl>',
+    "<p>Towers and Blades can't pass through pieces. Land on an enemy piece to capture it.</p>",
+    "<h3>The masks</h3>",
+    "<p>You see your own pieces. Your opponent only sees masks.</p>",
+    "<p>On your turn, move <b>any</b> piece in <b>any</b> of those patterns. The way it moves is your claim. A 3-square diagonal slide claims a Blade, even if it's really a Guard.</p>",
+    "<h3>Calling “Liar!”</h3>",
+    "<p>At the start of your turn you can call Liar on your opponent's last move.</p><ul>",
+    "<li><b>If they lied</b>, their piece is destroyed and the move is undone.</li>",
+    "<li><b>If they told the truth</b>, their piece is revealed, you spend one accusation, and you give up a piece of your choice.</li></ul>",
+    "<p>You have <b>3 accusations</b>. If they capture your Crown you can always call Liar, even with none left.</p>",
+    "<p>Revealed pieces can only move honestly. Captured pieces are revealed.</p>",
+    "<h3>Winning</h3>",
+    "<p>Capture their Crown (and survive the call), or catch their Crown lying. After 100 moves, the side with more pieces wins, then the side with more accusations left.</p>",
+    "<h3>Badges</h3>",
+    "<p>A letter on a masked piece shows what all its moves so far are consistent with. A red <b>!</b> means it has contradicted itself, so it has lied at least once. An orange letter on your own piece is the cover story you've been telling with it.</p>",
+    '<div class="tip">Short moves are your Crown\'s best disguise: a 1-step straight move could be a Crown, a Tower or a Guard. With 2 Towers and 2 Blades on each side, big claims are believable. Save your accusations for the moves that matter.</div>'
+  ].join("");
+
+  var G = {
+    state: null, cfg: null, rand: null, level: "normal", viewer: 0, human: [true, false],
+    mode: null, sel: -1, pending: null, resolver: null, token: 0, review: false, setupArr: null, setupSide: 0,
+    nodes: {}, layers: {}, svg: null, prompt: null
+  };
+
+  /* ---------- Geometry ---------- */
+  function dispRC(sq) {
+    var r = LG.rowOf(sq), c = LG.colOf(sq);
+    if (G.viewer === 1) { r = LG.ROWS - 1 - r; c = LG.COLS - 1 - c; }
+    return { r: r, c: c };
+  }
+  function sqXY(sq) { var d = dispRC(sq); return { x: d.c * S + S / 2, y: BY + d.r * S + S / 2 }; }
+  function sqFromDisp(r, c) {
+    if (G.viewer === 1) { r = LG.ROWS - 1 - r; c = LG.COLS - 1 - c; }
+    return r * LG.COLS + c;
+  }
+
+  /* ---------- Board ---------- */
+  function buildBoard() {
+    var stage = K.$("#stage");
+    stage.innerHTML = "";
+    var svg = sv("svg", { id: "board", viewBox: "0 0 " + VBW + " " + VBH, role: "img", "aria-label": "Masquerade board" });
+    var sq = sv("g", { class: "squares" });
+    for (var r = 0; r < LG.ROWS; r++) for (var c = 0; c < LG.COLS; c++) {
+      sq.appendChild(sv("rect", { x: c * S, y: BY + r * S, width: S, height: S, class: (r + c) % 2 ? "sq-b" : "sq-a" }));
+    }
+    sq.appendChild(sv("rect", { x: 0, y: BY, width: BW, height: 2 * S, class: "home-tint" }));
+    sq.appendChild(sv("rect", { x: 0, y: BY + BH - 2 * S, width: BW, height: 2 * S, class: "home-tint" }));
+    sq.appendChild(sv("rect", { x: 1, y: BY + 1, width: BW - 2, height: BH - 2, rx: 3, class: "board-frame" }));
+    svg.appendChild(sq);
+    ["trays", "marks", "pieces", "badges", "fx"].forEach(function (n) { var g = sv("g", { class: n }); G.layers[n] = g; svg.appendChild(g); });
+    var hit = sv("g", { class: "hit-layer" });
+    for (var r2 = 0; r2 < LG.ROWS; r2++) for (var c2 = 0; c2 < LG.COLS; c2++) {
+      hit.appendChild(sv("rect", { x: c2 * S, y: BY + r2 * S, width: S, height: S, "data-r": String(r2), "data-c": String(c2) }));
+    }
+    hit.addEventListener("click", function (e) {
+      var t = e.target;
+      if (!t || t.getAttribute("data-r") == null) return;
+      onSquare(sqFromDisp(+t.getAttribute("data-r"), +t.getAttribute("data-c")));
+    });
+    svg.appendChild(hit);
+    stage.appendChild(svg);
+    G.svg = svg;
+    G.nodes = {};
+  }
+
+  function pieceNode(p) {
+    var n = G.nodes[p.id];
+    if (n) return n;
+    n = sv("g", { class: "piece" });
+    G.layers.pieces.appendChild(n);
+    G.nodes[p.id] = n;
+    return n;
+  }
+
+  function knownTo(p, viewer) { return p.owner === viewer || p.revealed || G.review || G.state.winner != null; }
+
+  function drawPieceContent(n, p) {
+    var cls = SIDE_CLASS[p.owner];
+    var known = knownTo(p, G.viewer);
+    var key = cls + "|" + (known ? p.type : "?") + "|" + (p.revealed ? 1 : 0);
+    if (n.getAttribute("data-key") === key) return;
+    n.setAttribute("data-key", key);
+    n.innerHTML = "";
+    n.appendChild(sv("circle", { r: "21", class: "pc-body " + cls }));
+    if (p.revealed) n.appendChild(sv("circle", { r: "24.5", class: "pc-public" }));
+    var g = sv("g", { transform: "translate(-13 -13) scale(1.083)", class: known ? "pc-icon " + cls : "pc-mask " + cls });
+    g.innerHTML = ICON[known ? p.type : "mask"];
+    n.appendChild(g);
+  }
+
+  function setXY(n, sq, instant) {
+    var p = sqXY(sq);
+    if (instant) n.style.transition = "none";
+    n.style.transform = "translate(" + p.x + "px," + p.y + "px)";
+    if (instant) { void n.getBoundingClientRect(); n.style.transition = ""; }
+  }
+
+  function render(instant) {
+    var st = G.state;
+    if (!st || !G.svg) return;
+    st.pieces.forEach(function (p) {
+      var n = pieceNode(p);
+      if (!p.alive || p.sq < 0) { n.style.display = "none"; return; }
+      n.style.display = "";
+      drawPieceContent(n, p);
+      setXY(n, p.sq, instant);
+      n.classList.toggle("ghost", false);
+    });
+    renderMarks();
+    renderBadges();
+    renderTrays();
+    renderStatus();
+    renderBar();
+  }
+
+  function cellRect(sq, cls, inset) {
+    var d = dispRC(sq);
+    inset = inset || 0;
+    return sv("rect", { x: d.c * S + inset, y: BY + d.r * S + inset, width: S - 2 * inset, height: S - 2 * inset, rx: 4, class: cls });
+  }
+
+  function renderMarks() {
+    var st = G.state, m = G.layers.marks;
+    m.innerHTML = "";
+    var lm = st.lastMove;
+    if (lm && G.mode !== "setup") {
+      m.appendChild(cellRect(lm.from, "lm-from", 3));
+      var pendingCall = !lm.resolved && lm.side !== G.viewer && G.human[G.viewer];
+      m.appendChild(cellRect(lm.to, "lm-to" + (pendingCall ? " pending" : ""), 2));
+    }
+    if (G.mode === "setup") {
+      if (G.sel >= 0) m.appendChild(cellRect(G.sel, "sel-sq", 2));
+      return;
+    }
+    if (G.mode === "sacrifice") {
+      st.pieces.forEach(function (p) { if (p.owner === G.viewer && p.alive && p.type !== "C") m.appendChild(cellRect(p.sq, "sac-sq", 3)); });
+      if (G.pending != null && G.pending.sac != null) m.appendChild(cellRect(st.pieces[G.pending.sac].sq, "pend-sq", 2));
+      return;
+    }
+    if (G.mode === "move" && G.sel >= 0) {
+      var sp = st.pieces[G.sel];
+      m.appendChild(cellRect(sp.sq, "sel-sq", 2));
+      LG.legalMoves(st, G.viewer).forEach(function (mv) {
+        if (mv.pid !== G.sel) return;
+        var honest = LG.isHonest(st, mv);
+        var c = sqXY(mv.to);
+        if (mv.capture >= 0) m.appendChild(sv("circle", { cx: c.x, cy: c.y, r: "23", class: honest ? "dest-cap-honest" : "dest-cap-bluff" }));
+        else if (honest) m.appendChild(sv("circle", { cx: c.x, cy: c.y, r: "7", class: "dest-honest" }));
+        else m.appendChild(sv("circle", { cx: c.x, cy: c.y, r: "7.5", class: "dest-bluff" }));
+      });
+      if (G.pending && G.pending.mv) m.appendChild(cellRect(G.pending.mv.to, "pend-sq", 2));
+    }
+  }
+
+  function renderBadges() {
+    var st = G.state, b = G.layers.badges;
+    b.innerHTML = "";
+    if (G.mode === "setup") return;
+    st.pieces.forEach(function (p) {
+      if (!p.alive || p.sq < 0 || p.revealed || !p.claims.length) return;
+      var story = LG.storyMask(p);
+      var label = null, kind = "";
+      if (p.owner !== G.viewer) {
+        if (G.review || st.winner != null) return;
+        if (story === 0) { label = "!"; kind = "warn"; }
+        else { var names = LG.TYPES.filter(function (t) { return story & LG.BIT[t]; }); if (names.length <= 2) label = names.join(""); }
+      } else {
+        if (story === 0) { label = "!"; kind = "warn"; }
+        else if (!(story & LG.BIT[p.type])) { var nm = LG.TYPES.filter(function (t) { return story & LG.BIT[t]; }); if (nm.length <= 2) { label = nm.join(""); kind = "cover"; } }
+      }
+      if (!label) return;
+      var c = sqXY(p.sq);
+      var w = 8 + 6 * label.length;
+      b.appendChild(sv("rect", { x: c.x + 10, y: c.y - 25, width: w, height: 13, rx: 6.5, class: "badge-bg " + kind }));
+      b.appendChild(sv("text", { x: c.x + 10 + w / 2, y: c.y - 15.5, "text-anchor": "middle", class: "badge-tx " + kind, text: label }));
+    });
+  }
+
+  function renderTrays() {
+    var st = G.state, t = G.layers.trays;
+    t.innerHTML = "";
+    if (G.mode === "setup") return;
+    var top = 1 - G.viewer, bottom = G.viewer;
+    [[top, 0], [bottom, BY + BH + GAP]].forEach(function (pair) {
+      var side = pair[0], y = pair[1];
+      var lost = st.pieces.filter(function (p) { return p.owner === side && !p.alive && !p.pending; });
+      t.appendChild(sv("text", { x: 2, y: y + 19, class: "tray-label", text: (side === G.viewer ? "Your losses" : LG.sideName(side) + " lost") }));
+      lost.forEach(function (p, k) {
+        var x = 108 + k * 26, cy2 = y + 15;
+        t.appendChild(sv("circle", { cx: x, cy: cy2, r: "11", class: "pc-body " + SIDE_CLASS[side] }));
+        var g = sv("g", { transform: "translate(" + (x - 7.2) + " " + (cy2 - 7.2) + ") scale(.6)", class: "pc-icon " + SIDE_CLASS[side] });
+        g.innerHTML = ICON[p.type];
+        t.appendChild(g);
+      });
+    });
+  }
+
+  function renderStatus() {
+    var st = G.state;
+    var main = "", sub = "";
+    var me = G.viewer;
+    if (G.mode === "setup") {
+      main = "Set up your masks";
+      sub = G.cfg.mode === "local" ? LG.sideName(G.setupSide) + " is arranging pieces" : "Hide your Crown well";
+    } else if (st.winner != null) {
+      main = st.winner === "draw" ? "Draw" : LG.sideName(st.winner) + " wins";
+      sub = st.reason;
+    } else if (G.human[st.turn]) {
+      main = G.cfg.mode === "local" ? LG.sideName(st.turn) + "'s turn" : "Your turn";
+      sub = "Move " + (Math.floor(st.ply / 2) + 1) + " · " + (LG.PLY_LIMIT - st.ply) + " plies left";
+    } else {
+      main = LG.sideName(st.turn) + " is thinking";
+      sub = "Move " + (Math.floor(st.ply / 2) + 1);
+    }
+    K.$("#st-main").textContent = main;
+    K.$("#st-sub").textContent = sub;
+    var sc = K.$("#scores");
+    sc.innerHTML = "";
+    if (G.mode === "setup") return;
+    [me, 1 - me].forEach(function (side) {
+      var tok = h("span", { class: "tok" });
+      for (var q = 0; q < LG.TOKENS; q++) tok.appendChild(h("i", { class: q < st.tokens[side] ? "" : "spent" }));
+      sc.appendChild(h("span", { class: "chip", title: LG.sideName(side) + ": pieces and accusations left" },
+        h("span", { class: "dot", style: "background:var(--" + SIDE_CLASS[side] + ")" }),
+        String(LG.alivePieces(st, side).length), tok));
+    });
+  }
+
+  /* ---------- Descriptions ---------- */
+  function moveWords(from, to) {
+    var dr = Math.abs(LG.rowOf(to) - LG.rowOf(from)), dc = Math.abs(LG.colOf(to) - LG.colOf(from));
+    if ((dr === 1 && dc === 2) || (dr === 2 && dc === 1)) return "jumped in an L";
+    var n = Math.max(dr, dc);
+    var dir = dr && dc ? "diagonally" : "straight";
+    return (n === 1 ? "stepped 1 square " : "slid " + n + " squares ") + dir;
+  }
+  function pieceName(p, viewer) { return knownTo(p, viewer) ? LG.NAME[p.type] : "masked piece"; }
+
+  /* ---------- Action bar ---------- */
+  function renderBar() {
+    var bar = K.$("#actionbar");
+    bar.innerHTML = "";
+    var st = G.state;
+    if (G.review) {
+      bar.appendChild(h("p", { class: "hint-line" }, "Every mask is off. Look at what they really were."));
+      bar.appendChild(h("div", { class: "action-row" },
+        h("button", { class: "btn btn-primary", type: "button", onclick: function () { restart(); } }, "Rematch"),
+        h("button", { class: "btn", type: "button", onclick: function () { K.quit(); } }, "Main menu")));
+      return;
+    }
+    if (G.mode === "setup" && G.resolver) {
+      bar.appendChild(h("p", { class: "hint-line" }, G.sel >= 0 ? "Now tap where it should go (or another piece to swap)." : "Tap a piece, then another square in your two rows, to rearrange."));
+      bar.appendChild(h("div", { class: "small-legend" }, "Your opponent will only ever see masks."));
+      bar.appendChild(h("div", { class: "action-row" },
+        h("button", { class: "btn", type: "button", onclick: function () { K.Sound.play("tap"); G.setupArr = LG.randomSetup(G.rand, G.setupSide, "normal"); applyArrangement(G.setupSide, G.setupArr); G.sel = -1; render(true); } }, "Shuffle"),
+        h("button", { class: "btn btn-primary", type: "button", onclick: function () { K.Sound.play("select"); var r = G.resolver; G.resolver = null; G.sel = -1; r(); } }, "Ready")));
+      return;
+    }
+    if (G.mode === "challenge" && G.prompt) { renderChallengeBar(bar); return; }
+    if (G.mode === "sacrifice") {
+      var p = G.pending && G.pending.sac != null ? st.pieces[G.pending.sac] : null;
+      bar.appendChild(h("div", { class: "claim-card" }, h("span", { class: "k" }, "They told the truth"),
+        h("span", { class: "v" }, p ? "Give up your " + LG.NAME[p.type] + "?" : "Give up one of your pieces. Tap it (not your Crown).")));
+      bar.appendChild(h("button", { class: "btn btn-danger btn-wide", type: "button", disabled: !p, onclick: confirmSacrifice }, p ? "Give up this " + LG.NAME[p.type] : "Choose a piece"));
+      return;
+    }
+    if (G.mode === "move" && G.resolver) {
+      var pend = G.pending && G.pending.mv;
+      if (pend) {
+        var honest = LG.isHonest(st, pend);
+        var mp = st.pieces[pend.pid];
+        bar.appendChild(h("div", { class: "claim-card" },
+          h("span", { class: "k" }, "This move claims"),
+          h("span", { class: "v", html: "<b>" + cap(LG.claimText(pend.claim)) + "</b>" + (honest ? '<span class="tag honest">True</span>' : '<span class="tag bluff">Bluff: it\'s your ' + LG.NAME[mp.type] + "</span>") })));
+        bar.appendChild(h("div", { class: "action-row" },
+          h("button", { class: "btn", type: "button", onclick: function () { K.Sound.play("tap"); G.pending = null; render(); } }, "Cancel"),
+          h("button", { class: "btn btn-primary", type: "button", onclick: confirmMove }, pend.capture >= 0 ? "Capture" : "Move")));
+      } else {
+        bar.appendChild(h("p", { class: "hint-line" }, G.sel >= 0 ? "Teal dots are honest moves. Orange rings are bluffs." : "Tap one of your pieces."));
+        bar.appendChild(h("div", { class: "small-legend" },
+          h("span", null, h("i", { style: "background:var(--honest)" }), "Honest"),
+          h("span", null, h("i", { style: "border:2px solid var(--bluff)" }), "Bluff"),
+          h("span", null, "Accusations left: " + st.tokens[G.viewer])));
+      }
+      return;
+    }
+    bar.appendChild(h("p", { class: "hint-line" }, st.winner != null ? "" : "Waiting for " + LG.sideName(st.turn) + "…"));
+  }
+
+  function cap(t) { return t.charAt(0).toUpperCase() + t.slice(1); }
+
+  function renderChallengeBar(bar) {
+    var st = G.state, lm = st.lastMove, pr = G.prompt;
+    var mover = st.pieces[lm.pid];
+    var who = G.cfg.mode === "local" ? LG.sideName(lm.side) : LG.sideName(lm.side);
+    var capText = lm.captured >= 0 ? " and took your " + LG.NAME[st.pieces[lm.captured].type] : "";
+    bar.appendChild(h("div", { class: "claim-card" },
+      h("span", { class: "k" }, who + "'s last move"),
+      h("span", { class: "v", html: "A " + pieceName(mover, G.viewer) + " " + moveWords(lm.from, lm.to) + capText + ". That claims <b>" + LG.claimText(lm.claim) + "</b>." })));
+    if (pr.forced) {
+      bar.appendChild(h("p", { class: "hint-line" }, "They took your Crown. Call Liar, it's your only hope."));
+      bar.appendChild(h("button", { class: "btn btn-liar btn-wide", type: "button", onclick: function () { answerChallenge(true); } }, "LIAR!"));
+      return;
+    }
+    bar.appendChild(h("p", { class: "hint-line" }, "Call it, or just make your move to let it go. " + st.tokens[G.viewer] + " accusation" + (st.tokens[G.viewer] === 1 ? "" : "s") + " left."));
+    bar.appendChild(h("div", { class: "action-row" },
+      h("button", { class: "btn", type: "button", onclick: function () { answerChallenge(false); } }, "Let it go"),
+      h("button", { class: "btn btn-liar", type: "button", onclick: function () { answerChallenge(true); } }, "LIAR!")));
+  }
+
+  /* ---------- Input ---------- */
+  function onSquare(sq) {
+    var st = G.state;
+    if (G.mode === "setup" && G.resolver) { setupTap(sq); return; }
+    if (G.mode === "sacrifice") {
+      var p = LG.pieceAt(st, sq);
+      if (!p || p.owner !== G.viewer || p.type === "C") { K.Sound.play("error"); if (p && p.type === "C") K.toast("You can't give up your Crown."); return; }
+      if (G.pending && G.pending.sac === p.id) { confirmSacrifice(); return; }
+      G.pending = { sac: p.id }; K.Sound.play("tap"); render(); return;
+    }
+    if (G.mode === "challenge" && G.prompt && !G.prompt.forced) {
+      var mine = LG.pieceAt(st, sq);
+      if (mine && mine.owner === G.viewer) { answerChallenge(false, mine.id); return; }
+      return;
+    }
+    if (G.mode !== "move" || !G.resolver) return;
+    var here = LG.pieceAt(st, sq);
+    if (G.pending && G.pending.mv && G.pending.mv.to === sq) { confirmMove(); return; }
+    if (here && here.owner === G.viewer) {
+      G.sel = here.id; G.pending = null; K.Sound.play("tap"); render(); return;
+    }
+    if (G.sel < 0) return;
+    var mv = LG.legalMoves(st, G.viewer).filter(function (m) { return m.pid === G.sel && m.to === sq; })[0];
+    if (!mv) { K.Sound.play("error"); return; }
+    G.pending = { mv: mv }; K.Sound.play("tap"); render();
+  }
+
+  function setupTap(sq) {
+    var side = G.setupSide, arr = G.setupArr;
+    var homes = LG.homeRows(side);
+    if (homes.indexOf(LG.rowOf(sq)) < 0) { K.Sound.play("error"); return; }
+    var idxAt = arr.indexOf(sq);
+    if (G.sel < 0) {
+      if (idxAt < 0) return;
+      G.sel = sq; K.Sound.play("tap"); render(); return;
+    }
+    var from = arr.indexOf(G.sel);
+    if (sq === G.sel) { G.sel = -1; render(); return; }
+    if (idxAt >= 0) { arr[idxAt] = G.sel; arr[from] = sq; }
+    else arr[from] = sq;
+    G.sel = -1;
+    applyArrangement(side, arr);
+    K.Sound.play("move");
+    render();
+  }
+
+  function applyArrangement(side, arr) {
+    var st = G.state;
+    var mine = st.pieces.filter(function (p) { return p.owner === side; });
+    mine.forEach(function (p) { if (p.sq >= 0) st.board[p.sq] = -1; });
+    mine.forEach(function (p, k) { p.sq = arr[k]; p.home = arr[k]; st.board[p.sq] = p.id; });
+  }
+
+  function confirmMove() {
+    if (!G.pending || !G.pending.mv || !G.resolver) return;
+    var r = G.resolver; G.resolver = null;
+    var mv = G.pending.mv; G.pending = null; G.sel = -1;
+    K.Sound.play("select");
+    r(mv);
+  }
+  function confirmSacrifice() {
+    if (!G.pending || G.pending.sac == null || !G.resolver) return;
+    var r = G.resolver; G.resolver = null;
+    var id = G.pending.sac; G.pending = null;
+    r(id);
+  }
+  function answerChallenge(call, thenSelect) {
+    if (!G.resolver || G.mode !== "challenge") return;
+    var r = G.resolver; G.resolver = null;
+    K.Sound.play(call ? "liar" : "tap");
+    r({ call: call, select: thenSelect });
+  }
+
+  function waitFor(mode, setup) {
+    return new Promise(function (resolve) {
+      G.mode = mode; G.pending = null;
+      if (setup) setup();
+      G.resolver = resolve;
+      render();
+    });
+  }
+
+  /* ---------- Resolution with animation ---------- */
+  async function animateMove(mv) {
+    var n = G.nodes[mv.pid];
+    if (n) setXY(n, mv.to, false);
+    K.Sound.play(mv.capture >= 0 ? "hit" : "slide");
+    if (mv.capture >= 0) { var cn = G.nodes[mv.capture]; if (cn) cn.classList.add("ghost"); }
+    await K.sleep(320);
+  }
+
+  async function flipPiece(pid) {
+    var n = G.nodes[pid];
+    if (!n || K.reduceMotion) return;
+    if (n.animate) {
+      try { n.animate([{ opacity: 1 }, { opacity: 0.2 }, { opacity: 1 }], { duration: 420 }); } catch (e) {}
+    }
+    await K.sleep(240);
+  }
+
+  async function resolveChallenge(caller) {
+    var st = G.state, lm = st.lastMove;
+    var mover = st.pieces[lm.pid];
+    var res = LG.challenge(st);
+    K.shake(K.$("#stage"));
+    await K.banner("LIAR!", { tone: "bad", sub: LG.sideName(caller) + " calls it", ms: 1000 });
+    await flipPiece(mover.id);
+    render();
+    if (!res.honest) {
+      K.Sound.play("hit");
+      await K.banner("CAUGHT", { tone: "good", sub: "It was really a " + LG.NAME[res.type] + (res.restored >= 0 ? ". The capture is undone." : "."), ms: 1500 });
+    } else {
+      K.Sound.play("reveal");
+      await K.banner("TRUE", { tone: "accent", sub: "It really is a " + LG.NAME[res.type] + ". " + LG.sideName(caller) + " must give up a piece", ms: 1500 });
+    }
+    render();
+    return res;
+  }
+
+  /* ---------- Turns ---------- */
+  async function humanResolve(side) {
+    var st = G.state;
+    if (!LG.mustResolve(st)) return null;
+    var lm = st.lastMove;
+    if (!LG.canChallenge(st)) {
+      LG.accept(st);
+      if (!st.pieces[lm.pid].revealed && st.tokens[side] === 0) K.toast("No accusations left, so their move stands.");
+      render();
+      return null;
+    }
+    var forced = LG.crownTaken(st);
+    G.prompt = { forced: forced };
+    var ans = await waitFor("challenge");
+    G.prompt = null;
+    if (ans.call) {
+      var res = await resolveChallenge(side);
+      if (st.winner == null && st.needSacrifice === side) {
+        var pid = await waitFor("sacrifice");
+        LG.sacrifice(st, pid);
+        K.Sound.play("splash");
+        render();
+      }
+      return { select: -1 };
+    }
+    LG.accept(st);
+    render();
+    return { select: ans.select };
+  }
+
+  async function humanTurn(side, token) {
+    var st = G.state;
+    var r = await humanResolve(side);
+    if (token !== G.token || st.winner != null) return;
+    var mv = await waitFor("move", function () { G.sel = r && r.select >= 0 ? r.select : -1; });
+    if (token !== G.token) return;
+    G.mode = "anim";
+    LG.applyMove(st, mv);
+    await animateMove(mv);
+    render();
+  }
+
+  async function botTurn(side, token) {
+    var st = G.state;
+    G.mode = "wait";
+    render();
+    await K.sleep(500);
+    if (token !== G.token) return;
+    if (LG.mustResolve(st)) {
+      var call = LG.bots.challenge(st, side, G.level, G.rand);
+      if (call) {
+        K.Sound.play("liar");
+        await resolveChallenge(side);
+        if (token !== G.token) return;
+        if (st.winner == null && st.needSacrifice === side) {
+          var pid = LG.bots.sacrifice(st, side);
+          var victim = st.pieces[pid];
+          LG.sacrifice(st, pid);
+          K.toast(LG.sideName(side) + " gives up its " + LG.NAME[victim.type] + ".", 2200);
+          render();
+          await K.sleep(700);
+        }
+      } else {
+        LG.accept(st);
+        K.toast(LG.sideName(side) + " lets your move stand.", 1500);
+        render();
+        await K.sleep(400);
+      }
+    }
+    if (st.winner != null || token !== G.token) return;
+    await K.sleep(350);
+    var mv = LG.bots.move(st, side, G.level, G.rand);
+    if (!mv) { LG.checkStuck(st); return; }
+    LG.applyMove(st, mv);
+    await animateMove(mv);
+    render();
+  }
+
+  async function passTo(side, kicker) {
+    G.viewer = side;
+    G.mode = "cover";
+    buildBoard();
+    render(true);
+    var st = G.state;
+    await K.cover({
+      className: side === 0 ? "gold-cover" : "ruby-cover",
+      kicker: kicker || "Move " + (Math.floor(st.ply / 2) + 1),
+      title: LG.sideName(side) + "'s turn",
+      text: "Pass the phone to " + LG.sideName(side) + ". " + LG.sideName(1 - side) + ", no peeking.",
+      cta: "I'm " + LG.sideName(side),
+      badge: '<svg viewBox="0 0 24 24" fill="' + (side === 0 ? "#e9c46a" : "#d94a63") + '">' + ICON.mask + "</svg>"
+    });
+  }
+
+  async function humanSetup(side, token) {
+    G.setupSide = side;
+    G.setupArr = LG.randomSetup(G.rand, side, "normal");
+    var st = G.state;
+    if (!st.pieces.some(function (p) { return p.owner === side; })) LG.placeSide(st, side, G.setupArr);
+    else applyArrangement(side, G.setupArr);
+    G.sel = -1;
+    await waitFor("setup");
+  }
+
+  async function runGame(token) {
+    var st = G.state;
+    var local = G.cfg.mode === "local";
+    if (local) {
+      await passTo(0, "Setup");
+      if (token !== G.token) return;
+      await humanSetup(0, token);
+      if (token !== G.token) return;
+      await passTo(1, "Setup");
+      if (token !== G.token) return;
+      await humanSetup(1, token);
+    } else {
+      G.viewer = 0;
+      buildBoard();
+      await humanSetup(0, token);
+      if (token !== G.token) return;
+      LG.placeSide(st, 1, LG.bots.setup(G.rand, 1, G.level));
+    }
+    if (token !== G.token) return;
+    LG.startPlay(st);
+    G.mode = "anim";
+    if (local) await passTo(0);
+    else render(true);
+    while (st.winner == null) {
+      if (token !== G.token) return;
+      var side = st.turn;
+      if (G.human[side]) {
+        if (local && G.viewer !== side) { await passTo(side); if (token !== G.token) return; }
+        await humanTurn(side, token);
+      } else {
+        await botTurn(side, token);
+      }
+      if (token !== G.token) return;
+      if (st.winner == null && st.ply >= LG.PLY_LIMIT && !LG.mustResolve(st)) LG.checkStuck(st);
+    }
+    if (token !== G.token) return;
+    await endGame(token);
+  }
+
+  async function endGame(token) {
+    var st = G.state;
+    G.mode = "over"; G.resolver = null;
+    render(true);
+    var youWon = null;
+    if (G.cfg.mode === "bot") youWon = st.winner === 0;
+    var bannerText = st.winner === "draw" ? "DRAW" : LG.sideName(st.winner).toUpperCase() + " WINS";
+    await K.banner(bannerText, { tone: st.winner === 0 ? "accent" : st.winner === 1 ? "bad" : "accent", ms: 1500 });
+    if (token !== G.token) return;
+    var title = G.cfg.mode === "bot" ? (st.winner === "draw" ? "A draw" : youWon ? "You win!" : "You lose") : (st.winner === "draw" ? "A draw" : LG.sideName(st.winner) + " wins");
+    var lies = [0, 0];
+    st.pieces.forEach(function (p) { p.claims.forEach(function (c) { if (!(c & LG.BIT[p.type])) lies[p.owner]++; }); });
+    var choice = await K.gameOver({
+      title: title,
+      tone: youWon === false ? "bad" : "good",
+      text: st.reason,
+      stats: [["Gold bluffs", lies[0]], ["Ruby bluffs", lies[1]], ["Moves played", st.ply]],
+      reviewLabel: "Unmask everything"
+    });
+    if (token !== G.token) return;
+    if (choice === "rematch") restart();
+    else if (choice === "review") { G.review = true; render(true); }
+  }
+
+  /* ---------- Lifecycle ---------- */
+  function start(cfg) {
+    G.cfg = cfg;
+    G.level = cfg.difficulty || "normal";
+    G.human = cfg.mode === "local" ? [true, true] : [true, false];
+    newMatch();
+  }
+  function newMatch() {
+    G.token++;
+    var seed = (Date.now() ^ Math.floor(Math.random() * 1e9)) >>> 0;
+    G.state = LG.newGame(seed);
+    G.rand = LG.rng(seed ^ 0x2545f491);
+    G.review = false; G.pending = null; G.resolver = null; G.mode = null; G.sel = -1; G.prompt = null; G.viewer = 0;
+    K.showScreen("game");
+    buildBoard();
+    runGame(G.token);
+  }
+  function restart() {
+    K.$all(".cover,.modal-wrap,.banner").forEach(function (n) { n.remove(); });
+    newMatch();
+  }
+  function quit() { G.token++; G.resolver = null; G.mode = null; }
+
+  window.__liarsDebug = { G: G };
+
+  K.init({
+    ns: "liars-gambit",
+    title: "Liar's Gambit",
+    tagline: "Chess where you're allowed to lie. Every piece wears a mask, and every move is a claim.",
+    art: TITLE_ART,
+    rules: RULES,
+    options: [
+      { id: "mode", label: "Opponent", default: "bot", choices: [{ v: "bot", t: "Bot" }, { v: "local", t: "Friend, same phone" }] },
+      { id: "difficulty", label: "Bot level", default: "normal", choices: [{ v: "easy", t: "Easy" }, { v: "normal", t: "Normal" }, { v: "hard", t: "Hard" }], showIf: function (c) { return c.mode === "bot"; },
+        note: function (c) { return c.difficulty === "easy" ? "Bluffs and calls almost at random. Good for learning." : c.difficulty === "hard" ? "Tracks every claim you make and rarely wastes a move." : "Reads your claims, bluffs about 1 move in 10."; } }
+    ],
+    onStart: start,
+    onRestart: restart,
+    onQuit: quit,
+    menuNote: function () { return G.state && G.state.phase === "play" ? "Move " + (Math.floor(G.state.ply / 2) + 1) + "." : ""; }
+  });
+})();
+
+</script>
+</body>
+</html>

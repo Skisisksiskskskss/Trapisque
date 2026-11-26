@@ -1,0 +1,1549 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Echoes</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap">
+<style>
+/* ---------- Shared game kit: layout shell, controls, overlays ----------
+   Each game sets its own palette and fonts by overriding these tokens on :root. */
+:root{
+  --bg:#101318; --bg-2:#161a21; --surface:#1d222b; --surface-2:#262c37; --line:#343b48;
+  --ink:#eef1f5; --muted:#a3abb8; --accent:#f2c14e; --accent-ink:#17130a;
+  --good:#47d18c; --bad:#ff6b5e; --p1:#5aa2ff; --p2:#ff6b5e;
+  --font-display:system-ui,sans-serif; --font-body:system-ui,-apple-system,"Segoe UI",sans-serif;
+  --radius:16px; --radius-sm:10px;
+  --gutter-l:max(16px, env(safe-area-inset-left, 0px));
+  --gutter-r:max(16px, env(safe-area-inset-right, 0px));
+  padding-top:env(safe-area-inset-top, 0px);
+  padding-bottom:env(safe-area-inset-bottom, 0px);
+  color-scheme:dark;
+}
+[hidden]{display:none !important}
+*,*::before,*::after{box-sizing:border-box}
+html{height:100%;background:var(--bg);-webkit-text-size-adjust:100%}
+body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.45;
+  overscroll-behavior:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{height:100%;display:flex;flex-direction:column;min-height:0;position:relative;overflow:hidden;user-select:none;-webkit-user-select:none}
+.screen{flex:1;display:flex;flex-direction:column;min-height:0}
+
+/* ---------- Title screen ---------- */
+.title-screen{overflow-y:auto;padding-left:var(--gutter-l);padding-right:var(--gutter-r);padding-block:20px 28px;align-items:center}
+.title-inner{width:100%;max-width:460px;display:flex;flex-direction:column;gap:20px;margin:auto 0}
+.title-art{display:flex;justify-content:center}
+.title-art svg{width:min(70vw,260px);height:auto}
+.title-name{font-family:var(--font-display);font-size:clamp(2.3rem,9vw,3.3rem);line-height:.98;margin:0;text-align:center;letter-spacing:-.01em}
+.title-tag{color:var(--muted);text-align:center;margin:0;font-size:1.02rem}
+.opt-group{display:flex;flex-direction:column;gap:7px}
+.opt-label{font-size:.74rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;padding:4px;background:var(--bg-2);border:1px solid var(--line);border-radius:14px}
+.seg button{border:0;background:transparent;border-radius:10px;padding:10px 6px;min-height:44px;font-weight:650;font-size:.95rem;color:var(--muted);line-height:1.15}
+.seg button[aria-pressed="true"]{background:var(--surface-2);color:var(--ink);box-shadow:0 1px 0 rgba(255,255,255,.06) inset, 0 2px 8px rgba(0,0,0,.25)}
+.opt-note{font-size:.86rem;color:var(--muted);margin:0}
+.title-actions{display:flex;flex-direction:column;gap:10px;margin-top:4px}
+
+/* ---------- Buttons ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:10px 18px;border-radius:999px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font-weight:700;font-size:1rem;line-height:1.1;transition:transform .08s, background .15s, border-color .15s, opacity .15s}
+.btn:active{transform:scale(.97)}
+.btn[disabled]{opacity:.4;pointer-events:none}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn-ghost{background:transparent}
+.btn-danger{background:var(--bad);border-color:var(--bad);color:#160807}
+.btn-sm{min-height:38px;padding:7px 14px;font-size:.9rem}
+.btn-wide{width:100%}
+.icon-btn{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;padding:0;flex:none}
+.icon-btn svg{width:22px;height:22px}
+
+/* ---------- Game screen frame ---------- */
+.topbar{display:flex;align-items:center;gap:10px;padding:10px var(--gutter-r) 8px var(--gutter-l);min-height:60px}
+.topbar .status{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.topbar .status-main{font-family:var(--font-display);font-size:1.15rem;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar .status-sub{font-size:.84rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stage{flex:1;min-height:0;position:relative;display:flex;align-items:center;justify-content:center;padding:4px var(--gutter-r) 4px var(--gutter-l)}
+.stage > svg, .stage > .board{max-width:100%;max-height:100%}
+.actionbar{padding:8px var(--gutter-r) 12px var(--gutter-l);display:flex;flex-direction:column;gap:8px}
+.action-row{display:flex;gap:8px;align-items:stretch}
+.action-row > *{flex:1}
+.hint-line{font-size:.9rem;color:var(--muted);text-align:center;min-height:1.3em;margin:0}
+
+/* ---------- Overlays ---------- */
+.cover{position:absolute;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;
+  padding:24px var(--gutter-r) 24px var(--gutter-l);background:var(--bg);animation:kit-fade .18s ease-out}
+.cover .cover-badge{width:78px;height:78px;border-radius:50%;display:grid;place-items:center;background:var(--surface-2);border:2px solid var(--line)}
+.cover .cover-badge svg{width:42px;height:42px}
+.cover h2{font-family:var(--font-display);font-size:clamp(1.9rem,8vw,2.6rem);margin:0;line-height:1.05}
+.cover p{margin:0;color:var(--muted);max-width:32ch}
+.cover .btn{margin-top:10px;min-width:220px}
+.modal-wrap{position:absolute;inset:0;z-index:50;display:flex;align-items:flex-end;justify-content:center;background:rgba(4,6,10,.62);animation:kit-fade .15s ease-out}
+@media (min-width:640px){ .modal-wrap{align-items:center} }
+.modal{width:100%;max-width:560px;max-height:88%;display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:22px 22px 0 0;box-shadow:0 -10px 40px rgba(0,0,0,.4);animation:kit-rise .2s ease-out}
+@media (min-width:640px){ .modal{border-radius:22px} }
+.modal-head{display:flex;align-items:center;gap:10px;padding:16px 18px 8px}
+.modal-head h2{flex:1;margin:0;font-family:var(--font-display);font-size:1.45rem;line-height:1.1}
+.modal-body{padding:6px 18px 12px;overflow-y:auto;min-height:0;user-select:text;-webkit-user-select:text}
+.modal-actions{display:flex;flex-direction:column;gap:8px;padding:10px 18px calc(16px + env(safe-area-inset-bottom, 0px))}
+.banner{position:absolute;left:0;right:0;top:38%;z-index:45;display:flex;flex-direction:column;align-items:center;pointer-events:none;text-align:center;padding:0 var(--gutter-r) 0 var(--gutter-l)}
+.banner-text{font-family:var(--font-display);font-size:clamp(2.6rem,13vw,4.6rem);line-height:1;padding:10px 22px;border-radius:18px;color:var(--ink);text-shadow:0 4px 24px rgba(0,0,0,.55);animation:kit-pop .9s cubic-bezier(.2,.9,.3,1.3) both}
+.banner-sub{margin-top:8px;font-weight:700;color:var(--ink);background:rgba(0,0,0,.55);padding:6px 12px;border-radius:999px;animation:kit-fade .3s .15s both}
+.banner.tone-good .banner-text{color:var(--good)}
+.banner.tone-bad .banner-text{color:var(--bad)}
+.banner.tone-accent .banner-text{color:var(--accent)}
+.toast{position:absolute;left:50%;top:70px;transform:translateX(-50%);z-index:46;max-width:calc(100% - 32px);padding:9px 16px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);font-weight:650;font-size:.94rem;box-shadow:0 8px 24px rgba(0,0,0,.35);animation:kit-drop .2s ease-out;text-align:center}
+.shake{animation:kit-shake .38s linear}
+@keyframes kit-fade{from{opacity:0}to{opacity:1}}
+@keyframes kit-rise{from{transform:translateY(24px);opacity:.4}to{transform:none;opacity:1}}
+@keyframes kit-drop{from{transform:translate(-50%,-10px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
+@keyframes kit-pop{0%{transform:scale(.4);opacity:0}25%{transform:scale(1.08);opacity:1}75%{transform:scale(1);opacity:1}100%{transform:scale(1.02);opacity:0}}
+@keyframes kit-shake{0%,100%{transform:none}20%{transform:translate(-6px,2px)}40%{transform:translate(5px,-3px)}60%{transform:translate(-4px,1px)}80%{transform:translate(3px,2px)}}
+@media (prefers-reduced-motion: reduce){
+  .banner-text{animation-duration:.01s}
+  .shake{animation:none}
+}
+
+/* ---------- Rules text ---------- */
+.rules h3{font-family:var(--font-display);font-size:1.15rem;margin:16px 0 6px}
+.rules h3:first-child{margin-top:4px}
+.rules p{margin:0 0 8px;color:var(--ink)}
+.rules ul,.rules ol{margin:0 0 10px;padding-left:1.2em;display:flex;flex-direction:column;gap:5px}
+.rules li::marker{color:var(--muted)}
+.rules .tip{background:var(--bg-2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;color:var(--muted);font-size:.92rem}
+.rules b{color:var(--ink)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;margin:0 0 10px;align-items:start}
+.kv dt{font-weight:750;white-space:nowrap}
+.kv dd{margin:0;color:var(--muted)}
+.result-stats{display:grid;grid-template-columns:1fr auto;gap:6px 16px;margin:4px 0 6px;font-variant-numeric:tabular-nums}
+.result-stats span:nth-child(even){font-weight:750;text-align:right}
+
+/* Echoes: a night arena. Cyan against magenta, gold gems, ghosts of past turns. */
+:root{
+  --bg:#0b0a1f; --bg-2:#12112b; --surface:#191837; --surface-2:#23214a; --line:#34315f;
+  --ink:#eeeefe; --muted:#a9a6d6; --accent:#ffd166; --accent-ink:#1d1405;
+  --good:#5ef2c4; --bad:#ff5d7a;
+  --cyan:#36e2ff; --magenta:#ff4fd8; --gem:#ffd166; --floor:#15143a; --floor-2:#191846; --wall:#2c2a66; --wall-top:#3d3a88;
+  --plate:#5ef2c4; --door:#ffb347;
+  --font-display:"Unbounded","Arial Rounded MT Bold",system-ui,sans-serif;
+  --font-body:"Manrope","Segoe UI",system-ui,-apple-system,sans-serif;
+}
+body{background:radial-gradient(120% 80% at 50% 0%, #1b1850 0%, var(--bg) 60%)}
+.title-name{font-weight:800;letter-spacing:-.02em;background:linear-gradient(90deg,var(--cyan),var(--magenta));-webkit-background-clip:text;background-clip:text;color:transparent}
+.topbar .status-main{font-weight:700;font-size:1.02rem}
+.scores{display:flex;gap:6px;flex:none}
+.chip{display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-weight:800;font-size:.95rem;font-variant-numeric:tabular-nums}
+.chip i{width:9px;height:9px;border-radius:50%;display:block}
+.timeline{display:flex;align-items:center;gap:10px;padding:0 var(--gutter-r) 4px var(--gutter-l)}
+.timeline .rnd{font-family:var(--font-display);font-size:.78rem;font-weight:700;letter-spacing:.04em;color:var(--muted);white-space:nowrap}
+.timeline .ticks{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;flex:1}
+.timeline .ticks span{height:8px;border-radius:4px;background:var(--surface-2)}
+.timeline .ticks span.done{background:#4a4790}
+.timeline .ticks span.now{background:var(--accent)}
+.timeline .who{font-size:.8rem;font-weight:700;color:var(--muted);white-space:nowrap}
+#board{width:100%;height:100%;display:block}
+.fl-a{fill:var(--floor)} .fl-b{fill:var(--floor-2)}
+.wall{fill:var(--wall)} .wall-top{fill:var(--wall-top)}
+.gem{fill:var(--gem)} .gem-val{fill:#1d1405;font-size:10px;font-weight:800;font-family:var(--font-body)}
+.gem-ring{fill:none;stroke:rgba(255,209,102,.35);stroke-width:1.4}
+.plate{fill:none;stroke:var(--plate);stroke-width:2.2}
+.plate-in{fill:rgba(94,242,196,.18)}
+.plate.on{fill:rgba(94,242,196,.35)}
+.door-closed{fill:var(--door)}
+.door-open{fill:none;stroke:var(--door);stroke-width:1.6;stroke-dasharray:3 3;opacity:.7}
+.spawn{fill:none;stroke-width:2;stroke-dasharray:2 3}
+.spawn.c0{stroke:var(--cyan)} .spawn.c1{stroke:var(--magenta)}
+.link{stroke:rgba(94,242,196,.25);stroke-width:1.2;stroke-dasharray:2 4;fill:none}
+.unit{transition:transform .26s cubic-bezier(.3,.7,.3,1), opacity .3s}
+.u-body.c0{fill:var(--cyan)} .u-body.c1{fill:var(--magenta)}
+.u-echo.c0{fill:rgba(54,226,255,.22);stroke:var(--cyan);stroke-width:1.8;stroke-dasharray:3 2}
+.u-echo.c1{fill:rgba(255,79,216,.22);stroke:var(--magenta);stroke-width:1.8;stroke-dasharray:3 2}
+.u-num{font-size:11px;font-weight:800;font-family:var(--font-body)}
+.u-num.live{fill:#0b0a1f}
+.u-num.c0.echo{fill:var(--cyan)} .u-num.c1.echo{fill:var(--magenta)}
+.u-halo{fill:none;stroke:#fff;stroke-width:2;opacity:0}
+.unit.acting .u-halo{opacity:.9}
+.unit.dead{opacity:0}
+.path-c0{stroke:var(--cyan)} .path-c1{stroke:var(--magenta)}
+.fpath{fill:none;stroke-width:1.6;stroke-dasharray:2 3;opacity:.75}
+.fdot{stroke:none;opacity:.9}
+.fdot.c0{fill:var(--cyan)} .fdot.c1{fill:var(--magenta)}
+.ftext{font-size:9.5px;font-weight:800;fill:#0b0a1f;font-family:var(--font-body)}
+.trail{fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;opacity:.45}
+.opt-move{fill:rgba(255,255,255,.1);stroke:rgba(255,255,255,.75);stroke-width:1.6}
+.opt-strike{fill:none;stroke:var(--bad);stroke-width:2.6}
+.pend{fill:rgba(255,255,255,.18);stroke:#fff;stroke-width:2.4}
+.hit-layer rect{fill:transparent;cursor:pointer}
+.float-pts{font-family:var(--font-display);font-size:15px;font-weight:800}
+.fx-strike{stroke:#fff;stroke-width:3;stroke-linecap:round}
+.cover-kicker{margin:0;font-size:.8rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+#screen-game .actionbar{min-height:150px;justify-content:flex-end}
+.legend{display:flex;flex-wrap:wrap;gap:4px 12px;justify-content:center;font-size:.8rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.toggle{display:flex;align-items:center;gap:6px;font-size:.86rem;font-weight:650;color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:7px 11px;min-height:40px}
+.toggle[aria-pressed="true"]{color:var(--ink);border-color:var(--accent)}
+.toggle svg{width:17px;height:17px}
+.bar-row{display:flex;gap:8px;align-items:center;justify-content:space-between}
+.say{font-size:.95rem;text-align:center;margin:0;min-height:2.6em;color:var(--ink)}
+.say b{color:var(--accent)}
+.rules .mini{display:flex;gap:10px;align-items:center;margin:6px 0 10px}
+.rules .mini svg{width:96px;height:auto;flex:none}
+
+</style>
+</head>
+<body>
+<div id="app" class="app">
+  <section id="screen-title" class="screen title-screen"></section>
+  <section id="screen-game" class="screen" hidden>
+    <header class="topbar">
+      <button id="btn-menu" class="icon-btn" type="button" aria-label="Menu"></button>
+      <div class="status"><div class="status-main" id="st-main">Round 1</div><div class="status-sub" id="st-sub"></div></div>
+      <div class="scores" id="scores"></div>
+    </header>
+    <div class="timeline" id="timeline"></div>
+    <div class="stage" id="stage"></div>
+    <div class="actionbar" id="actionbar"></div>
+  </section>
+</div>
+<script>
+/* Shared game kit: title screen, menus, pass-the-phone covers, banners, sound.
+   Exposes window.Kit. No game logic lives here. */
+(function (root) {
+  "use strict";
+  var doc = root.document;
+  var NS = "game";
+  var reduceMotion = false;
+  try { reduceMotion = root.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) {}
+
+  function $(sel, scope) { return (scope || doc).querySelector(sel); }
+  function $all(sel, scope) { return Array.prototype.slice.call((scope || doc).querySelectorAll(sel)); }
+
+  function h(tag, attrs) {
+    var node = doc.createElement(tag);
+    if (attrs) {
+      for (var k in attrs) {
+        if (!Object.prototype.hasOwnProperty.call(attrs, k)) continue;
+        var v = attrs[k];
+        if (v == null || v === false) continue;
+        if (k === "class") node.className = v;
+        else if (k === "html") node.innerHTML = v;
+        else if (k === "text") node.textContent = v;
+        else if (k.slice(0, 2) === "on" && typeof v === "function") node.addEventListener(k.slice(2), v);
+        else node.setAttribute(k, v === true ? "" : v);
+      }
+    }
+    for (var i = 2; i < arguments.length; i++) {
+      var c = arguments[i];
+      if (c == null || c === false) continue;
+      if (Array.isArray(c)) c.forEach(function (x) { if (x != null) node.appendChild(typeof x === "string" ? doc.createTextNode(x) : x); });
+      else node.appendChild(typeof c === "string" ? doc.createTextNode(c) : c);
+    }
+    return node;
+  }
+
+  var SVGNS = "http://www.w3.org/2000/svg";
+  function s(tag, attrs) {
+    var node = doc.createElementNS(SVGNS, tag);
+    if (attrs) {
+      for (var k in attrs) {
+        if (!Object.prototype.hasOwnProperty.call(attrs, k)) continue;
+        var v = attrs[k];
+        if (v == null || v === false) continue;
+        if (k === "text") node.textContent = v;
+        else if (k.slice(0, 2) === "on" && typeof v === "function") node.addEventListener(k.slice(2), v);
+        else node.setAttribute(k, v);
+      }
+    }
+    for (var i = 2; i < arguments.length; i++) {
+      var c = arguments[i];
+      if (c == null || c === false) continue;
+      if (Array.isArray(c)) c.forEach(function (x) { if (x) node.appendChild(x); });
+      else node.appendChild(c);
+    }
+    return node;
+  }
+
+  var store = {
+    get: function (k, d) {
+      try { var v = root.localStorage.getItem(NS + ":" + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; }
+    },
+    set: function (k, v) { try { root.localStorage.setItem(NS + ":" + k, JSON.stringify(v)); } catch (e) {} }
+  };
+
+  var speed = 1;
+  function sleep(ms) {
+    var t = reduceMotion ? Math.min(ms, 80) : ms * speed;
+    return new Promise(function (r) { setTimeout(r, t); });
+  }
+  function frame() { return new Promise(function (r) { root.requestAnimationFrame(function () { r(); }); }); }
+
+  /* ---------- Sound: tiny WebAudio synth, starts after the first tap ---------- */
+  var Sound = (function () {
+    var ctx = null, master = null, on = true;
+    function ensure() {
+      if (ctx) { if (ctx.state === "suspended") ctx.resume(); return ctx; }
+      var AC = root.AudioContext || root.webkitAudioContext;
+      if (!AC) return null;
+      ctx = new AC();
+      master = ctx.createGain();
+      master.gain.value = 0.55;
+      master.connect(ctx.destination);
+      return ctx;
+    }
+    function tone(freq, dur, opts) {
+      opts = opts || {};
+      var c = ensure(); if (!c) return;
+      var t0 = c.currentTime + (opts.delay || 0);
+      var o = c.createOscillator();
+      var g = c.createGain();
+      o.type = opts.type || "sine";
+      o.frequency.setValueAtTime(freq, t0);
+      if (opts.to) o.frequency.exponentialRampToValueAtTime(Math.max(20, opts.to), t0 + dur);
+      var peak = opts.gain == null ? 0.25 : opts.gain;
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(peak, t0 + Math.min(0.02, dur / 4));
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      o.connect(g); g.connect(master);
+      o.start(t0); o.stop(t0 + dur + 0.05);
+    }
+    function noise(dur, opts) {
+      opts = opts || {};
+      var c = ensure(); if (!c) return;
+      var t0 = c.currentTime + (opts.delay || 0);
+      var len = Math.max(1, Math.floor(c.sampleRate * dur));
+      var buf = c.createBuffer(1, len, c.sampleRate);
+      var data = buf.getChannelData(0);
+      for (var i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / len);
+      var src = c.createBufferSource();
+      src.buffer = buf;
+      var f = c.createBiquadFilter();
+      f.type = opts.filter || "lowpass";
+      f.frequency.value = opts.freq || 1200;
+      var g = c.createGain();
+      g.gain.setValueAtTime(opts.gain == null ? 0.3 : opts.gain, t0);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      src.connect(f); f.connect(g); g.connect(master);
+      src.start(t0); src.stop(t0 + dur + 0.05);
+    }
+    var lib = {
+      tap: function () { tone(660, 0.06, { type: "triangle", gain: 0.12 }); },
+      select: function () { tone(520, 0.07, { type: "triangle", gain: 0.16 }); tone(780, 0.08, { type: "triangle", gain: 0.12, delay: 0.05 }); },
+      move: function () { tone(300, 0.12, { type: "sine", to: 420, gain: 0.16 }); },
+      slide: function () { noise(0.16, { freq: 900, gain: 0.12 }); },
+      error: function () { tone(180, 0.16, { type: "square", gain: 0.08 }); },
+      hit: function () { noise(0.22, { freq: 700, gain: 0.45 }); tone(140, 0.25, { type: "sawtooth", to: 60, gain: 0.22 }); },
+      miss: function () { noise(0.3, { freq: 2400, filter: "bandpass", gain: 0.22 }); },
+      splash: function () { noise(0.45, { freq: 1600, gain: 0.35 }); tone(220, 0.3, { to: 90, gain: 0.08 }); },
+      ping: function () { tone(1320, 0.5, { type: "sine", gain: 0.2 }); tone(1320, 0.6, { type: "sine", gain: 0.07, delay: 0.32 }); },
+      contact: function () { tone(880, 0.16, { type: "square", gain: 0.1 }); tone(880, 0.16, { type: "square", gain: 0.1, delay: 0.2 }); tone(1175, 0.3, { type: "square", gain: 0.1, delay: 0.4 }); },
+      reveal: function () { tone(392, 0.12, { type: "triangle", gain: 0.16 }); tone(587, 0.18, { type: "triangle", gain: 0.16, delay: 0.1 }); },
+      roar: function () { tone(110, 0.7, { type: "sawtooth", to: 55, gain: 0.25 }); noise(0.6, { freq: 400, gain: 0.25 }); },
+      liar: function () { tone(220, 0.12, { type: "square", gain: 0.14 }); tone(165, 0.35, { type: "square", gain: 0.14, delay: 0.12 }); },
+      win: function () { [523, 659, 784, 1047].forEach(function (f, i) { tone(f, 0.22, { type: "triangle", gain: 0.16, delay: i * 0.11 }); }); },
+      lose: function () { [392, 330, 262, 196].forEach(function (f, i) { tone(f, 0.28, { type: "triangle", gain: 0.14, delay: i * 0.14 }); }); },
+      tick: function () { tone(1000, 0.03, { type: "square", gain: 0.05 }); },
+      whoosh: function () { noise(0.25, { freq: 3000, filter: "bandpass", gain: 0.18 }); },
+      score: function () { tone(880, 0.09, { type: "triangle", gain: 0.14 }); tone(1320, 0.14, { type: "triangle", gain: 0.12, delay: 0.07 }); },
+      zap: function () { tone(1400, 0.18, { type: "sawtooth", to: 300, gain: 0.1 }); }
+    };
+    return {
+      play: function (name) { if (!on) return; try { var f = lib[name]; if (f) f(); } catch (e) {} },
+      unlock: function () { if (on) { try { ensure(); } catch (e) {} } },
+      get on() { return on; },
+      set on(v) { on = !!v; store.set("sound", on); }
+    };
+  })();
+
+  function haptic(ms) { try { if (root.navigator.vibrate) root.navigator.vibrate(ms || 12); } catch (e) {} }
+
+  /* ---------- Overlays ---------- */
+  var app = null;
+  function appRoot() { return app || (app = $("#app")); }
+
+  function cover(opts) {
+    opts = opts || {};
+    return new Promise(function (resolve) {
+      var btn = h("button", { class: "btn btn-primary", type: "button" }, opts.cta || "Tap when ready");
+      var node = h("div", { class: "cover" + (opts.className ? " " + opts.className : ""), role: "dialog", "aria-modal": "true" },
+        opts.badge ? h("div", { class: "cover-badge", html: opts.badge }) : null,
+        opts.kicker ? h("p", { class: "cover-kicker" }, opts.kicker) : null,
+        h("h2", null, opts.title || "Pass the phone"),
+        opts.text ? h("p", null, opts.text) : null,
+        btn);
+      btn.addEventListener("click", function () { Sound.unlock(); Sound.play("tap"); node.remove(); resolve(); });
+      appRoot().appendChild(node);
+      setTimeout(function () { try { btn.focus(); } catch (e) {} }, 30);
+    });
+  }
+
+  function modal(opts) {
+    opts = opts || {};
+    return new Promise(function (resolve) {
+      var wrap;
+      function done(v) { wrap.remove(); doc.removeEventListener("keydown", onKey); resolve(v); }
+      function onKey(e) { if (e.key === "Escape" && opts.dismissible !== false) done(null); }
+      var body = h("div", { class: "modal-body" + (opts.bodyClass ? " " + opts.bodyClass : "") });
+      if (typeof opts.body === "string") body.innerHTML = opts.body; else if (opts.body) body.appendChild(opts.body);
+      var actions = h("div", { class: "modal-actions" });
+      (opts.actions || [{ label: "Close", value: null }]).forEach(function (a) {
+        actions.appendChild(h("button", {
+          class: "btn btn-wide " + (a.kind === "primary" ? "btn-primary" : a.kind === "danger" ? "btn-danger" : "btn-ghost"),
+          type: "button",
+          onclick: function () { Sound.play("tap"); done(a.value); }
+        }, a.label));
+      });
+      var closeBtn = opts.dismissible === false ? null : h("button", { class: "icon-btn", type: "button", "aria-label": "Close", onclick: function () { done(null); },
+        html: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>' });
+      var panel = h("div", { class: "modal", role: "dialog", "aria-modal": "true", "aria-label": opts.title || "Dialog" },
+        h("div", { class: "modal-head" }, h("h2", null, opts.title || ""), closeBtn),
+        body,
+        (opts.actions && opts.actions.length === 0) ? null : actions);
+      wrap = h("div", { class: "modal-wrap", onclick: function (e) { if (e.target === wrap && opts.dismissible !== false) done(null); } }, panel);
+      appRoot().appendChild(wrap);
+      doc.addEventListener("keydown", onKey);
+    });
+  }
+
+  function banner(text, opts) {
+    opts = opts || {};
+    var node = h("div", { class: "banner tone-" + (opts.tone || "accent"), "aria-live": "assertive" },
+      h("div", { class: "banner-text" }, text),
+      opts.sub ? h("div", { class: "banner-sub" }, opts.sub) : null);
+    appRoot().appendChild(node);
+    var ms = opts.ms || 1100;
+    return sleep(ms).then(function () { node.remove(); });
+  }
+
+  var toastTimer = null, toastNode = null;
+  function toast(text, ms) {
+    if (toastNode) toastNode.remove();
+    toastNode = h("div", { class: "toast", role: "status" }, text);
+    appRoot().appendChild(toastNode);
+    clearTimeout(toastTimer);
+    var n = toastNode;
+    toastTimer = setTimeout(function () { if (n) n.remove(); if (toastNode === n) toastNode = null; }, ms || 1900);
+  }
+
+  function shake(node) {
+    if (!node || reduceMotion) return;
+    node.classList.remove("shake");
+    void node.getBoundingClientRect();
+    node.classList.add("shake");
+    setTimeout(function () { node.classList.remove("shake"); }, 420);
+  }
+
+  /* ---------- Title screen with option pickers ---------- */
+  var ICONS = {
+    menu: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>',
+    soundOn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 010 7M19 6a8.5 8.5 0 010 12"/></svg>',
+    soundOff: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>',
+    phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>',
+    eye: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+    help: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M9.5 9.3a2.6 2.6 0 015 1c0 1.8-2.5 2.2-2.5 3.9M12 17.2v.3"/></svg>'
+  };
+
+  var cfg = null;
+  var choice = {};
+
+  function visibleOptions() {
+    return cfg.options.filter(function (o) { return !o.showIf || o.showIf(choice); });
+  }
+
+  function renderTitle() {
+    var host = $("#title-options");
+    host.innerHTML = "";
+    visibleOptions().forEach(function (opt) {
+      var seg = h("div", { class: "seg", role: "group", "aria-label": opt.label });
+      opt.choices.forEach(function (c) {
+        seg.appendChild(h("button", {
+          type: "button",
+          "aria-pressed": choice[opt.id] === c.v ? "true" : "false",
+          onclick: function () {
+            Sound.unlock(); Sound.play("tap");
+            choice[opt.id] = c.v;
+            store.set("choice", choice);
+            renderTitle();
+          }
+        }, c.t));
+      });
+      var note = opt.note ? opt.note(choice) : null;
+      host.appendChild(h("div", { class: "opt-group" },
+        h("span", { class: "opt-label" }, opt.label), seg,
+        note ? h("p", { class: "opt-note" }, note) : null));
+    });
+  }
+
+  function showRules() {
+    return modal({ title: "How to play", body: cfg.rules, bodyClass: "rules", actions: [{ label: "Got it", value: true, kind: "primary" }] });
+  }
+
+  function showScreen(name) {
+    $all(".screen").forEach(function (sc) { sc.hidden = sc.id !== "screen-" + name; });
+  }
+
+  function init(config) {
+    cfg = config;
+    NS = config.ns || NS;
+    Sound.on = store.get("sound", true);
+    var saved = store.get("choice", {});
+    choice = {};
+    cfg.options.forEach(function (o) {
+      var ok = o.choices.some(function (c) { return c.v === saved[o.id]; });
+      choice[o.id] = ok ? saved[o.id] : o.default;
+    });
+    var title = $("#screen-title");
+    title.innerHTML = "";
+    title.appendChild(h("div", { class: "title-inner" },
+      cfg.art ? h("div", { class: "title-art", html: cfg.art }) : null,
+      h("h1", { class: "title-name" }, cfg.title),
+      h("p", { class: "title-tag" }, cfg.tagline),
+      h("div", { id: "title-options", class: "title-options", style: "display:flex;flex-direction:column;gap:14px" }),
+      h("div", { class: "title-actions" },
+        h("button", { class: "btn btn-primary btn-wide", type: "button", id: "btn-start", onclick: function () {
+          Sound.unlock(); Sound.play("select");
+          var c = {}; visibleOptions().forEach(function (o) { c[o.id] = choice[o.id]; });
+          cfg.onStart(c);
+        } }, "Play"),
+        h("button", { class: "btn btn-ghost btn-wide", type: "button", onclick: function () { Sound.unlock(); Sound.play("tap"); showRules(); } }, "How to play"))));
+    renderTitle();
+    showScreen("title");
+    var menuBtn = $("#btn-menu");
+    if (menuBtn) {
+      menuBtn.innerHTML = ICONS.menu;
+      menuBtn.onclick = function () { Sound.play("tap"); openMenu(); };
+    }
+  }
+
+  function openMenu() {
+    return modal({
+      title: "Paused",
+      body: h("p", { style: "margin:0;color:var(--muted)" }, cfg.menuNote ? cfg.menuNote() : "The game is waiting for you."),
+      actions: [
+        { label: "Resume", value: "resume", kind: "primary" },
+        { label: "How to play", value: "rules" },
+        { label: Sound.on ? "Sound: on" : "Sound: off", value: "sound" },
+        { label: "Restart this match", value: "restart" },
+        { label: "Quit to title", value: "quit", kind: "danger" }
+      ]
+    }).then(function (v) {
+      if (v === "rules") return showRules().then(openMenu);
+      if (v === "sound") { Sound.on = !Sound.on; if (Sound.on) Sound.play("select"); return openMenu(); }
+      if (v === "restart") return confirmAsk("Restart this match?", "The current match will be lost.").then(function (ok) { if (ok && cfg.onRestart) cfg.onRestart(); });
+      if (v === "quit") return confirmAsk("Quit to the title screen?", "The current match will be lost.").then(function (ok) { if (ok) quit(); });
+    });
+  }
+
+  function confirmAsk(title, text) {
+    return modal({ title: title, body: h("p", { style: "margin:0;color:var(--muted)" }, text), actions: [
+      { label: "Yes", value: true, kind: "danger" }, { label: "Cancel", value: false }] }).then(function (v) { return v === true; });
+  }
+
+  function quit() {
+    if (cfg.onQuit) cfg.onQuit();
+    $all(".cover,.modal-wrap,.banner,.toast").forEach(function (n) { n.remove(); });
+    renderTitle();
+    showScreen("title");
+  }
+
+  function gameOver(opts) {
+    Sound.play(opts.tone === "bad" ? "lose" : "win");
+    var body = h("div", null,
+      opts.text ? h("p", { style: "margin:0 0 10px;color:var(--muted)" }, opts.text) : null,
+      opts.stats ? (function () {
+        var grid = h("div", { class: "result-stats" });
+        opts.stats.forEach(function (row) { grid.appendChild(h("span", null, row[0])); grid.appendChild(h("span", null, String(row[1]))); });
+        return grid;
+      })() : null);
+    return modal({ title: opts.title, body: body, dismissible: false, actions: [
+      { label: "Rematch", value: "rematch", kind: "primary" },
+      { label: opts.reviewLabel || "Look at the board", value: "review" },
+      { label: "Main menu", value: "menu" }] }).then(function (v) {
+        if (v === "menu") { quit(); return "menu"; }
+        return v;
+      });
+  }
+
+  /* Small seeded RNG so bots can be varied but testable. */
+  function rng(seed) {
+    var a = (seed >>> 0) || 0x9e3779b9;
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  root.Kit = {
+    $: $, $all: $all, h: h, s: s, store: store, sleep: sleep, frame: frame, Sound: Sound, haptic: haptic,
+    cover: cover, modal: modal, banner: banner, toast: toast, shake: shake, init: init, showScreen: showScreen,
+    showRules: showRules, openMenu: openMenu, confirm: confirmAsk, quit: quit, gameOver: gameOver, ICONS: ICONS, rng: rng,
+    get reduceMotion() { return reduceMotion; },
+    get choice() { return choice; }
+  };
+})(typeof window !== "undefined" ? window : globalThis);
+
+/* Echoes: rules engine and bot. No DOM, so it runs in Node for tests.
+   Side 0 (Cyan) spawns at the bottom, side 1 (Magenta) at the top. */
+(function (root) {
+  "use strict";
+
+  var COLS = 7, ROWS = 7, N = COLS * ROWS;
+  var TICKS = 6, ROUNDS = 5;
+  /* # wall, . floor, s/S spawns (Magenta/Cyan), P gem (1), X centre gem (2),
+     V vault gem (2), D door, O plate */
+  var MAP = [
+    "#..s...",
+    "VD...P.",
+    "#......",
+    "PO#X#OP",
+    "......#",
+    ".P...DV",
+    "...S..#"
+  ];
+  var DIRS = [[0, -1], [1, 0], [0, 1], [-1, 0]]; /* N E S W */
+  var DIR_NAMES = ["north", "east", "south", "west"];
+
+  function idx(c, r) { return r * COLS + c; }
+  function cOf(i) { return i % COLS; }
+  function rOf(i) { return (i / COLS) | 0; }
+  function step(i, d) {
+    var c = cOf(i) + DIRS[d][0], r = rOf(i) + DIRS[d][1];
+    if (c < 0 || c >= COLS || r < 0 || r >= ROWS) return -1;
+    return idx(c, r);
+  }
+
+  var TILE = [], PAD = new Int8Array(N), SPAWN = [-1, -1], PLATE_DOOR = {}, DOOR_PLATE = {};
+  (function parse() {
+    for (var r = 0; r < ROWS; r++) for (var c = 0; c < COLS; c++) {
+      var ch = MAP[r][c], i = idx(c, r);
+      TILE[i] = ch;
+      if (ch === "P") PAD[i] = 1;
+      if (ch === "X") PAD[i] = 2;
+      if (ch === "V") PAD[i] = 3;
+      if (ch === "S") SPAWN[0] = i;
+      if (ch === "s") SPAWN[1] = i;
+    }
+    PLATE_DOOR[idx(1, 3)] = idx(5, 5); DOOR_PLATE[idx(5, 5)] = idx(1, 3);
+    PLATE_DOOR[idx(5, 3)] = idx(1, 1); DOOR_PLATE[idx(1, 1)] = idx(5, 3);
+  })();
+  var PADS = [], PLATES = [], DOORS = [];
+  for (var q0 = 0; q0 < N; q0++) {
+    if (PAD[q0]) PADS.push(q0);
+    if (TILE[q0] === "O") PLATES.push(q0);
+    if (TILE[q0] === "D") DOORS.push(q0);
+  }
+
+  function rng(seed) {
+    var a = (seed >>> 0) || 0x9e3779b9;
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  /* Actions: {k:"move",d}, {k:"wait"}, {k:"strike",d}. Records may end with {k:"ko"}. */
+  function act(k, d) { return d == null ? { k: k } : { k: k, d: d }; }
+
+  /* ---------- State ---------- */
+  function newGame() {
+    var s = { round: 0, tick: 0, units: [], live: [-1, -1], scores: [0, 0], roundScores: [], queue: [], phase: "ready", winner: null, reason: "", log: [], firstOfRound: 0 };
+    startRound(s);
+    return s;
+  }
+
+  function cloneState(s) {
+    return {
+      round: s.round, tick: s.tick,
+      units: s.units.map(function (u) { return { id: u.id, side: u.side, round: u.round, pos: u.pos, alive: u.alive, live: u.live, rec: u.rec.slice(), fate: u.fate }; }),
+      live: s.live.slice(), scores: s.scores.slice(), roundScores: s.roundScores.slice(), queue: s.queue.slice(),
+      phase: s.phase, winner: s.winner, reason: s.reason, log: [], firstOfRound: s.firstOfRound
+    };
+  }
+
+  function startRound(s) {
+    s.round += 1;
+    s.tick = 0;
+    s.units.forEach(function (u) { u.pos = SPAWN[u.side]; u.alive = true; u.live = false; u.fate = null; });
+    s.live = [0, 1].map(function (side) {
+      var u = { id: s.units.length, side: side, round: s.round, pos: SPAWN[side], alive: true, live: true, rec: [], fate: null };
+      s.units.push(u);
+      return u.id;
+    });
+    s.firstOfRound = (s.round - 1) % 2;
+    s.phase = "tick";
+    beginTick(s);
+  }
+
+  /* Who acts next inside the current tick: "echoes" first, then each live hero by initiative. */
+  function beginTick(s) {
+    s.tick += 1;
+    var first = (s.firstOfRound + s.tick - 1) % 2;
+    s.queue = ["echoes", first, 1 - first];
+  }
+
+  function occupant(s, t, exceptId) {
+    for (var k = 0; k < s.units.length; k++) {
+      var u = s.units[k];
+      if (u.alive && u.pos === t && u.id !== exceptId) return u;
+    }
+    return null;
+  }
+  function unitsAt(s, t) { return s.units.filter(function (u) { return u.alive && u.pos === t; }); }
+
+  function doorOpen(s, door) {
+    var plate = DOOR_PLATE[door];
+    return s.units.some(function (u) { return u.alive && u.pos === plate; });
+  }
+
+  /* Walls, closed doors, the enemy spawn and enemy units block. Your own units can share a tile. */
+  function canEnter(s, u, t) {
+    if (t < 0) return false;
+    var ch = TILE[t];
+    if (ch === "#") return false;
+    if (ch === "D" && !doorOpen(s, t)) return false;
+    if (t === SPAWN[1 - u.side]) return false;
+    for (var k = 0; k < s.units.length; k++) {
+      var v = s.units[k];
+      if (v.alive && v.pos === t && v.side !== u.side) return false;
+    }
+    return true;
+  }
+
+  /* Strikes only hit the enemy's live hero. Echoes are from the past and can't be hit,
+     only blocked. */
+  function strikeTargets(s, u, d) {
+    var t = step(u.pos, d);
+    if (t < 0) return [];
+    return unitsAt(s, t).filter(function (v) { return v.side !== u.side && v.live; });
+  }
+
+  function knockOut(s, v, why, ev) {
+    if (!v.alive) return;
+    v.alive = false;
+    v.fate = why;
+    if (v.live) v.rec.push(act("ko"));
+    ev.push({ t: "ko", id: v.id, why: why, at: v.pos });
+  }
+
+  /* After anything moves: doors whose plate emptied slam shut and crush whoever stands in them. */
+  function settleDoors(s, ev, prevOpen) {
+    DOORS.forEach(function (door) {
+      var open = doorOpen(s, door);
+      if (prevOpen && prevOpen[door] && !open) {
+        ev.push({ t: "door", at: door, open: false });
+        unitsAt(s, door).forEach(function (v) { knockOut(s, v, "crushed", ev); });
+      } else if (prevOpen && !prevOpen[door] && open) {
+        ev.push({ t: "door", at: door, open: true });
+      }
+    });
+  }
+  function doorSnapshot(s) {
+    var m = {};
+    DOORS.forEach(function (d) { m[d] = doorOpen(s, d); });
+    return m;
+  }
+
+  function doAction(s, u, a, ev, isEcho) {
+    var before = doorSnapshot(s);
+    if (a.k === "move") {
+      var t = step(u.pos, a.d);
+      if (!canEnter(s, u, t)) {
+        if (isEcho) { knockOut(s, u, "paradox", ev); settleDoors(s, ev, before); return false; }
+        return false;
+      }
+      ev.push({ t: "move", id: u.id, from: u.pos, to: t });
+      u.pos = t;
+    } else if (a.k === "strike") {
+      var hits = strikeTargets(s, u, a.d);
+      ev.push({ t: "strike", id: u.id, from: u.pos, d: a.d, hits: hits.map(function (v) { return v.id; }) });
+      hits.forEach(function (v) { knockOut(s, v, "struck", ev); });
+    } else if (a.k === "wait") {
+      ev.push({ t: "wait", id: u.id });
+    } else if (a.k === "ko") {
+      knockOut(s, u, "fades", ev);
+    }
+    settleDoors(s, ev, before);
+    return true;
+  }
+
+  function runEchoes(s) {
+    var ev = [];
+    var echoes = s.units.filter(function (u) { return !u.live; }).sort(function (a, b) { return a.round - b.round || a.side - b.side; });
+    echoes.forEach(function (u) {
+      if (!u.alive) return;
+      var a = u.rec[s.tick - 1];
+      if (!a) return;
+      doAction(s, u, a, ev, true);
+    });
+    s.queue.shift();
+    return ev;
+  }
+
+  function liveOptions(s, side) {
+    var u = s.units[s.live[side]];
+    var out = [act("wait")];
+    if (!u.alive) return out;
+    for (var d = 0; d < 4; d++) {
+      var t = step(u.pos, d);
+      if (canEnter(s, u, t)) out.push(act("move", d));
+      if (strikeTargets(s, u, d).length) out.push(act("strike", d));
+    }
+    return out;
+  }
+
+  /* Next decision: "echoes", 0, 1, "score" or null when the game is over. */
+  function nextActor(s) {
+    if (s.phase === "over") return null;
+    if (!s.queue.length) return "score";
+    var q = s.queue[0];
+    if (q === "echoes") return "echoes";
+    var u = s.units[s.live[q]];
+    return u.alive ? q : "skip";
+  }
+
+  function applyLive(s, side, a) {
+    var u = s.units[s.live[side]];
+    var ev = [];
+    if (u.alive) {
+      var ok = doAction(s, u, a, ev, false);
+      if (!ok) { a = act("wait"); ev.push({ t: "wait", id: u.id }); }
+      if (u.alive) u.rec.push(a);
+    }
+    s.queue.shift();
+    return ev;
+  }
+
+  function skipDead(s) {
+    var q = s.queue[0];
+    var u = s.units[s.live[q]];
+    if (u.rec.length < s.tick && u.rec[u.rec.length - 1] && u.rec[u.rec.length - 1].k !== "ko") u.rec.push(act("ko"));
+    s.queue.shift();
+  }
+
+  function endTick(s) {
+    if (s.tick < TICKS) { beginTick(s); return null; }
+    var gained = [0, 0], held = [];
+    PADS.forEach(function (p) {
+      var here = unitsAt(s, p);
+      if (!here.length) return;
+      var side = here[0].side;
+      gained[side] += PAD[p];
+      held.push({ pad: p, side: side, id: here[0].id, value: PAD[p] });
+    });
+    s.scores[0] += gained[0]; s.scores[1] += gained[1];
+    s.roundScores.push(gained);
+    var res = { gained: gained, held: held, round: s.round };
+    if (s.round >= ROUNDS) {
+      s.phase = "over";
+      if (s.scores[0] !== s.scores[1]) {
+        s.winner = s.scores[0] > s.scores[1] ? 0 : 1;
+        s.reason = sideName(s.winner) + " held more gems over five rounds.";
+      } else if (gained[0] !== gained[1]) {
+        s.winner = gained[0] > gained[1] ? 0 : 1;
+        s.reason = "Tied on points. " + sideName(s.winner) + " held more in the last round.";
+      } else { s.winner = "draw"; s.reason = "Dead even after five rounds."; }
+    } else {
+      startRound(s);
+    }
+    return res;
+  }
+
+  function sideName(side) { return side === 0 ? "Cyan" : "Magenta"; }
+
+  /* Drive the state forward through automatic steps until a live hero must decide. */
+  function advance(s, sink) {
+    var guard = 0;
+    while (guard++ < 200) {
+      var who = nextActor(s);
+      if (who === null) return null;
+      if (who === "echoes") { var ev = runEchoes(s); if (sink) sink({ type: "echoes", ev: ev }); continue; }
+      if (who === "skip") { skipDead(s); continue; }
+      if (who === "score") { var res = endTick(s); if (sink && res) sink({ type: "score", res: res }); else if (sink) sink({ type: "tick" }); continue; }
+      return who;
+    }
+    return null;
+  }
+
+  /* One automatic step for the interface: echoes acting, a skipped (knocked-out) hero,
+     or the end of a tick/round. Returns null when a live hero must decide. */
+  function stepAuto(s) {
+    var who = nextActor(s);
+    if (who === "echoes") return { type: "echoes", ev: runEchoes(s) };
+    if (who === "skip") { skipDead(s); return { type: "skip" }; }
+    if (who === "score") {
+      var tick = s.tick;
+      var res = endTick(s);
+      return res ? { type: "score", res: res } : { type: "tick", tick: tick };
+    }
+    return null;
+  }
+
+  /* ---------- Bot ---------- */
+  var LEVELS = {
+    easy: { depth: 2, noise: 3.5, future: 0.4, rollout: "wait" },
+    normal: { depth: 5, noise: 0.6, future: 0.75, rollout: "greedy" },
+    hard: { depth: 8, noise: 0.05, future: 0.85, rollout: "greedy" }
+  };
+
+  /* Shortest walking distance on the open map (doors treated as open). */
+  var DIST = (function () {
+    var D = [];
+    for (var a = 0; a < N; a++) {
+      var row = new Int8Array(N).fill(99);
+      if (TILE[a] !== "#") {
+        row[a] = 0;
+        var qq = [a];
+        while (qq.length) {
+          var x = qq.shift();
+          for (var d = 0; d < 4; d++) {
+            var y = step(x, d);
+            if (y < 0 || TILE[y] === "#" || row[y] !== 99) continue;
+            row[y] = row[x] + 1;
+            qq.push(y);
+          }
+        }
+      }
+      D.push(row);
+    }
+    return D;
+  })();
+
+  function greedyAction(s, side) {
+    var u = s.units[s.live[side]];
+    if (!u.alive) return act("wait");
+    for (var d0 = 0; d0 < 4; d0++) if (strikeTargets(s, u, d0).length) return act("strike", d0);
+    if (PAD[u.pos] && !s.units.some(function (v) { return v.alive && v.pos === u.pos && v.id !== u.id && v.side === side; })) return act("wait");
+    if (u.pos === OWN_PLATE[side] && s.round <= ROUNDS - 2) return act("wait");
+    var left = TICKS - s.tick + 1;
+    var best = null, bv = -1e9;
+    var targets = PADS.map(function (p) { return { p: p, val: PAD[p] }; });
+    var mine = OWN_PLATE[side];
+    var plateTaken = s.units.some(function (v) { return v.alive && v.side === side && v.id !== u.id && !v.live && v.rec.length && plateEnd(v) === mine; });
+    if (!plateTaken && s.round <= ROUNDS - 2) targets.push({ p: mine, val: 2.6 });
+    targets.forEach(function (tg) {
+      var p = tg.p;
+      var dd = DIST[u.pos][p];
+      if (dd > left || dd === 0) return;
+      var holder = occupant(s, p, u.id);
+      var mineThere = holder && holder.side === side;
+      var v = tg.val * 2 - dd * 0.3 - (holder ? (mineThere ? 3 : 1.5) : 0);
+      if (v > bv) { bv = v; best = p; }
+    });
+    if (best == null && u.pos === mine && !plateTaken) return act("wait");
+    if (best == null) return act("wait");
+    for (var d = 0; d < 4; d++) {
+      var t = step(u.pos, d);
+      if (t >= 0 && DIST[t][best] < DIST[u.pos][best] && canEnter(s, u, t)) return act("move", d);
+    }
+    return act("wait");
+  }
+  function plateEnd(u) {
+    var pos = SPAWN[u.side];
+    for (var k = 0; k < u.rec.length; k++) { var a = u.rec[k]; if (a.k === "move") { var t = step(pos, a.d); if (t >= 0) pos = t; } }
+    return pos;
+  }
+  function occupantOther(s, u) { return s.units.some(function (v) { return v.alive && v.pos === u.pos && v.id !== u.id; }); }
+
+  /* Points the echoes alone would score in a round if everything replays untouched. */
+  function echoOnlyRound(s) {
+    var c = cloneState(s);
+    c.units.forEach(function (u) { u.pos = SPAWN[u.side]; u.alive = true; u.live = false; u.fate = null; });
+    var gained = [0, 0];
+    for (var t = 1; t <= TICKS; t++) {
+      c.tick = t;
+      var echoes = c.units.slice().sort(function (a, b) { return a.round - b.round || a.side - b.side; });
+      echoes.forEach(function (u) {
+        if (!u.alive) return;
+        var a = u.rec[t - 1];
+        if (!a) return;
+        doAction(c, u, a, [], true);
+      });
+    }
+    PADS.forEach(function (p) { var here = unitsAt(c, p); if (here.length) gained[here[0].side] += PAD[p]; });
+    return gained;
+  }
+
+  function finishRoundWith(s, policy) {
+    var c = cloneState(s);
+    var startRound0 = c.round;
+    var guard = 0;
+    while (c.phase !== "over" && c.round === startRound0 && guard++ < 100) {
+      var who = nextActor(c);
+      if (who === "echoes") { runEchoes(c); continue; }
+      if (who === "skip") { skipDead(c); continue; }
+      if (who === "score") {
+        if (c.tick < TICKS) { beginTick(c); continue; }
+        break;
+      }
+      var a = policy === "greedy" ? greedyAction(c, who) : act("wait");
+      applyLive(c, who, a);
+    }
+    return c;
+  }
+
+  /* Value of a finished round from `me`'s point of view. */
+  /* Each side's own plate is the one that opens the door next to its spawn. */
+  var OWN_PLATE = [DOOR_PLATE[idx(5, 5)], DOOR_PLATE[idx(1, 1)]];
+  var OWN_VAULT = [idx(6, 5), idx(0, 1)];
+
+  function roundValue(c, me, L) {
+    var gained = [0, 0];
+    PADS.forEach(function (p) { var here = unitsAt(c, p); if (here.length) gained[here[0].side] += PAD[p]; });
+    var left = ROUNDS - c.round;
+    var v = gained[me] - gained[1 - me];
+    if (left > 0) {
+      var eo = echoOnlyRound(c);
+      v += L.future * left * (eo[me] - eo[1 - me]);
+      /* A plate held by an echo is worth something even before anyone uses the vault. */
+      [me, 1 - me].forEach(function (side) {
+        var plateHeld = c.units.some(function (u) { return u.alive && u.side === side && u.pos === OWN_PLATE[side]; });
+        var vaultHeld = c.units.some(function (u) { return u.alive && u.side === side && u.pos === OWN_VAULT[side]; });
+        if (plateHeld && !vaultHeld && left >= 2) v += (side === me ? 1 : -1) * L.future * 0.8 * PAD[OWN_VAULT[side]] * (left - 1);
+      });
+    }
+    return v;
+  }
+
+  function search(s, me, depth, alpha, beta, L, deadline) {
+    var who = advanceQuiet(s);
+    var c = s;
+    if (who === null || who === "score") {
+      return roundValue(c, me, L);
+    }
+    if (depth <= 0 || Date.now() > deadline) {
+      var fin = finishRoundWith(c, L.rollout);
+      return roundValue(fin, me, L);
+    }
+    var opts = orderOptions(c, who, liveOptions(c, who));
+    var maximizing = who === me;
+    var best = maximizing ? -Infinity : Infinity;
+    for (var k = 0; k < opts.length; k++) {
+      var nx = cloneState(c);
+      applyLive(nx, who, opts[k]);
+      var val = search(nx, me, depth - 1, alpha, beta, L, deadline);
+      if (maximizing) { if (val > best) best = val; if (best > alpha) alpha = best; }
+      else { if (val < best) best = val; if (best < beta) beta = best; }
+      if (beta <= alpha) break;
+    }
+    return best;
+  }
+
+  /* Like advance() but never crosses into the next round: stops at "score" on the last tick. */
+  function advanceQuiet(s) {
+    var guard = 0;
+    while (guard++ < 60) {
+      var who = nextActor(s);
+      if (who === null) return null;
+      if (who === "echoes") { runEchoes(s); continue; }
+      if (who === "skip") { skipDead(s); continue; }
+      if (who === "score") {
+        if (s.tick < TICKS) { beginTick(s); continue; }
+        return "score";
+      }
+      return who;
+    }
+    return null;
+  }
+
+  function orderOptions(s, side, opts) {
+    var u = s.units[s.live[side]];
+    return opts.map(function (a) {
+      var pri = 0;
+      if (a.k === "strike") pri = 3;
+      else if (a.k === "move") {
+        var t = step(u.pos, a.d);
+        if (PAD[t]) pri = 2;
+        else {
+          var near = 99;
+          PADS.forEach(function (p) { near = Math.min(near, DIST[t][p]); });
+          pri = 1 - near * 0.05;
+        }
+      }
+      return { a: a, pri: pri };
+    }).sort(function (x, y) { return y.pri - x.pri; }).map(function (x) { return x.a; });
+  }
+
+  function botAction(s, side, level, rand) {
+    var L = LEVELS[level] || LEVELS.normal;
+    var opts = liveOptions(s, side);
+    if (opts.length === 1) return opts[0];
+    var deadline = Date.now() + (level === "hard" ? 900 : 400);
+    var scored = opts.map(function (a) {
+      var nx = cloneState(s);
+      applyLive(nx, side, a);
+      var v = search(nx, side, L.depth - 1, -Infinity, Infinity, L, deadline);
+      return { a: a, v: v + (rand() - 0.5) * L.noise };
+    });
+    scored.sort(function (x, y) { return y.v - x.v; });
+    return scored[0].a;
+  }
+
+  /* Where each echo will be after every remaining tick this round, if nothing interferes. */
+  function echoForecast(s) {
+    var out = {};
+    s.units.forEach(function (u) {
+      if (u.live || !u.alive) return;
+      var path = [], pos = u.pos;
+      for (var t = s.tick + (s.queue[0] === "echoes" ? 0 : 1); t <= TICKS; t++) {
+        var a = u.rec[t - 1];
+        if (!a || a.k === "ko") { path.push({ t: t, pos: pos, end: true }); break; }
+        if (a.k === "move") { var nt = step(pos, a.d); if (nt >= 0) pos = nt; }
+        path.push({ t: t, pos: pos, k: a.k, d: a.d });
+      }
+      out[u.id] = path;
+    });
+    return out;
+  }
+
+  var API = {
+    COLS: COLS, ROWS: ROWS, N: N, TICKS: TICKS, ROUNDS: ROUNDS, MAP: MAP, TILE: TILE, PAD: PAD, PADS: PADS, PLATES: PLATES, DOORS: DOORS,
+    SPAWN: SPAWN, PLATE_DOOR: PLATE_DOOR, DOOR_PLATE: DOOR_PLATE, DIRS: DIRS, DIR_NAMES: DIR_NAMES,
+    idx: idx, cOf: cOf, rOf: rOf, step: step, rng: rng, act: act, sideName: sideName,
+    newGame: newGame, cloneState: cloneState, nextActor: nextActor, advance: advance, stepAuto: stepAuto, liveOptions: liveOptions, applyLive: applyLive,
+    doorOpen: doorOpen, canEnter: canEnter, strikeTargets: strikeTargets, echoForecast: echoForecast, echoOnlyRound: echoOnlyRound,
+    bots: { action: botAction }, LEVELS: LEVELS
+  };
+  root.Echoes = API;
+  if (typeof module !== "undefined" && module.exports) module.exports = API;
+})(typeof window !== "undefined" ? window : globalThis);
+
+/* Echoes: interface, animation and turn flow. */
+(function () {
+  "use strict";
+  var E = window.Echoes, K = window.Kit, h = K.h, sv = K.s;
+  var S = 48, PAD = 4;
+  var VB = E.COLS * S + PAD * 2;
+  var SIDE = ["c0", "c1"];
+  var COLORS = ["#36e2ff", "#ff4fd8"];
+
+  var TITLE_ART = '<svg viewBox="0 0 260 150" role="img" aria-label="Two heroes followed by ghostly echoes of themselves">' +
+    '<g fill="none" stroke-width="3" stroke-linecap="round"><path d="M28 118c30-6 40-40 70-44" stroke="#36e2ff" stroke-dasharray="3 7" opacity=".7"/><path d="M232 32c-30 6-40 40-70 44" stroke="#ff4fd8" stroke-dasharray="3 7" opacity=".7"/></g>' +
+    '<circle cx="34" cy="116" r="13" fill="rgba(54,226,255,.15)" stroke="#36e2ff" stroke-width="2" stroke-dasharray="3 2"/><circle cx="64" cy="104" r="14" fill="rgba(54,226,255,.25)" stroke="#36e2ff" stroke-width="2" stroke-dasharray="3 2"/><circle cx="102" cy="76" r="17" fill="#36e2ff"/>' +
+    '<circle cx="226" cy="34" r="13" fill="rgba(255,79,216,.15)" stroke="#ff4fd8" stroke-width="2" stroke-dasharray="3 2"/><circle cx="196" cy="46" r="14" fill="rgba(255,79,216,.25)" stroke="#ff4fd8" stroke-width="2" stroke-dasharray="3 2"/><circle cx="158" cy="74" r="17" fill="#ff4fd8"/>' +
+    '<path d="M130 54l14 21-14 21-14-21z" fill="#ffd166"/><text x="130" y="80" text-anchor="middle" font-size="14" font-weight="800" fill="#1d1405" font-family="Manrope, sans-serif">2</text>' +
+    "</svg>";
+
+  var RULES = [
+    "<h3>The goal</h3>",
+    "<p>Hold gems at the end of each round. Most points after <b>5 rounds</b> wins.</p>",
+    "<h3>Echoes</h3>",
+    "<p>Each round lasts <b>6 ticks</b>, and each round you get a <b>new hero</b>. Every hero from an earlier round comes back as an <b>echo</b> and repeats exactly what it did. By round 5 you have 4 echoes and 1 live hero.</p>",
+    "<p>Dotted lines show where every echo will go this round, with the tick numbers.</p>",
+    "<h3>A tick</h3><ol>",
+    "<li>All echoes act first, oldest first.</li>",
+    "<li>Then each live hero takes its turn. Who goes first alternates every tick.</li></ol>",
+    "<p>On your turn: <b>step</b> one square, <b>wait</b>, or <b>strike</b> an enemy live hero next to you. A struck hero is out for the rest of the round, and its echo will fade at that same tick in later rounds.</p>",
+    "<h3>Paradox</h3>",
+    "<p>Echoes can't be hit, because they're from the past. But if an enemy stands where an echo needs to step, or a door is shut in its face, the echo glitches out of that round. That's a <b>paradox</b>. Your own units can share a square, and enemies can't.</p>",
+    "<h3>The map</h3>",
+    '<dl class="kv"><dt>Gems</dt><dd>Your home gem and the two side gems are worth 1. The centre gem is worth 2.</dd>',
+    "<dt>Vault</dt><dd>Worth <b>3</b>, behind a door next to your spawn.</dd>",
+    "<dt>Plate</dt><dd>Your vault door is open only while somebody stands on its plate in the middle row. If the plate empties, the door slams and crushes anyone in the doorway.</dd></dl>",
+    '<div class="tip">The classic combo: in round 1, walk a hero onto your plate and leave it there. From round 2 on, its echo holds the door open, so a later hero can reach the vault every round. Your opponent will try to stand in your plate-holder\'s path.</div>'
+  ].join("");
+
+  var G = { state: null, cfg: null, rand: null, level: "normal", human: [true, false], resolver: null, token: 0, nodes: {}, layers: {}, showPaths: true, acting: -1, say: "" };
+
+  function cx(i) { return PAD + E.cOf(i) * S + S / 2; }
+  function cy(i) { return PAD + E.rOf(i) * S + S / 2; }
+
+  /* ---------- Board ---------- */
+  function buildBoard() {
+    var stage = K.$("#stage");
+    stage.innerHTML = "";
+    var svg = sv("svg", { id: "board", viewBox: "0 0 " + VB + " " + VB, role: "img", "aria-label": "Arena" });
+    var tiles = sv("g", { class: "tiles" });
+    for (var i = 0; i < E.N; i++) {
+      var x = PAD + E.cOf(i) * S, y = PAD + E.rOf(i) * S, ch = E.TILE[i];
+      if (ch === "#") {
+        tiles.appendChild(sv("rect", { x: x + 1, y: y + 1, width: S - 2, height: S - 2, rx: 6, class: "wall" }));
+        tiles.appendChild(sv("rect", { x: x + 4, y: y + 3, width: S - 8, height: S - 12, rx: 4, class: "wall-top" }));
+        continue;
+      }
+      tiles.appendChild(sv("rect", { x: x + 1, y: y + 1, width: S - 2, height: S - 2, rx: 5, class: (E.cOf(i) + E.rOf(i)) % 2 ? "fl-b" : "fl-a" }));
+      if (ch === "S" || ch === "s") tiles.appendChild(sv("circle", { cx: cx(i), cy: cy(i), r: "17", class: "spawn " + (ch === "S" ? "c0" : "c1") }));
+    }
+    Object.keys(E.PLATE_DOOR).forEach(function (pl) {
+      var door = E.PLATE_DOOR[pl];
+      tiles.appendChild(sv("path", { d: "M" + cx(+pl) + " " + cy(+pl) + "L" + cx(door) + " " + cy(door), class: "link" }));
+    });
+    svg.appendChild(tiles);
+    ["marks", "forecast", "trails", "opts", "units", "fx"].forEach(function (n) { var g = sv("g", { class: n }); G.layers[n] = g; svg.appendChild(g); });
+    var hit = sv("g", { class: "hit-layer" });
+    for (var j = 0; j < E.N; j++) hit.appendChild(sv("rect", { x: PAD + E.cOf(j) * S, y: PAD + E.rOf(j) * S, width: S, height: S, "data-i": String(j) }));
+    hit.addEventListener("click", function (e) {
+      var t = e.target;
+      if (t && t.getAttribute("data-i") != null) onTile(+t.getAttribute("data-i"));
+    });
+    svg.appendChild(hit);
+    stage.appendChild(svg);
+    G.nodes = {};
+  }
+
+  function unitNode(u) {
+    var n = G.nodes[u.id];
+    if (n) return n;
+    n = sv("g", { class: "unit" });
+    G.layers.units.appendChild(n);
+    G.nodes[u.id] = n;
+    return n;
+  }
+
+  function drawUnit(n, u) {
+    var key = (u.live ? "L" : "E") + u.side + u.round;
+    if (n.getAttribute("data-key") === key) return;
+    n.setAttribute("data-key", key);
+    n.innerHTML = "";
+    n.appendChild(sv("circle", { r: "18", class: "u-halo" }));
+    if (u.live) n.appendChild(sv("circle", { r: "15", class: "u-body " + SIDE[u.side] }));
+    else n.appendChild(sv("circle", { r: "14", class: "u-echo " + SIDE[u.side] }));
+    n.appendChild(sv("text", { y: "4", "text-anchor": "middle", class: "u-num " + SIDE[u.side] + (u.live ? " live" : " echo"), text: String(u.round) }));
+  }
+
+  /* ---------- Render ---------- */
+  function render() {
+    var st = G.state;
+    if (!st) return;
+    renderMarks();
+    renderForecast();
+    renderTrails();
+    renderOpts();
+    var stacks = {};
+    st.units.forEach(function (u) {
+      var n = unitNode(u);
+      drawUnit(n, u);
+      n.classList.toggle("dead", !u.alive);
+      n.classList.toggle("acting", G.acting === u.id);
+      if (!u.alive) return;
+      var k = stacks[u.pos] || 0;
+      stacks[u.pos] = k + 1;
+      var off = k === 0 ? [0, 0] : [[7, -6], [-7, 6], [7, 6], [-7, -6]][(k - 1) % 4];
+      n.style.transform = "translate(" + (cx(u.pos) + off[0]) + "px," + (cy(u.pos) + off[1]) + "px)";
+    });
+    renderTop();
+    renderBar();
+  }
+
+  function renderMarks() {
+    var st = G.state, m = G.layers.marks;
+    m.innerHTML = "";
+    E.PADS.forEach(function (p) {
+      var x = cx(p), y = cy(p), r = 11 + E.PAD[p] * 1.5;
+      m.appendChild(sv("circle", { cx: x, cy: y, r: String(r + 6), class: "gem-ring" }));
+      m.appendChild(sv("path", { d: "M" + x + " " + (y - r) + "l" + r + " " + r + "l" + (-r) + " " + r + "l" + (-r) + " " + (-r) + "z", class: "gem" }));
+      m.appendChild(sv("text", { x: x, y: y + 3.5, "text-anchor": "middle", class: "gem-val", text: String(E.PAD[p]) }));
+    });
+    E.PLATES.forEach(function (p) {
+      var on = st.units.some(function (u) { return u.alive && u.pos === p; });
+      m.appendChild(sv("circle", { cx: cx(p), cy: cy(p), r: "15", class: "plate" + (on ? " on" : "") }));
+      m.appendChild(sv("circle", { cx: cx(p), cy: cy(p), r: "9", class: "plate-in" }));
+    });
+    E.DOORS.forEach(function (d) {
+      var open = E.doorOpen(st, d);
+      var x = PAD + E.cOf(d) * S, y = PAD + E.rOf(d) * S;
+      var vertical = E.TILE[d - 1] === "V" || E.TILE[d + 1] === "V";
+      if (open) m.appendChild(sv("rect", { x: x + 4, y: y + 4, width: S - 8, height: S - 8, rx: 4, class: "door-open" }));
+      else if (vertical) m.appendChild(sv("rect", { x: x + S / 2 - 5, y: y + 3, width: 10, height: S - 6, rx: 3, class: "door-closed" }));
+      else m.appendChild(sv("rect", { x: x + 3, y: y + S / 2 - 5, width: S - 6, height: 10, rx: 3, class: "door-closed" }));
+    });
+  }
+
+  function renderForecast() {
+    var g = G.layers.forecast;
+    g.innerHTML = "";
+    if (!G.showPaths || G.state.phase === "over") return;
+    var fc = E.echoForecast(G.state);
+    G.state.units.forEach(function (u) {
+      var path = fc[u.id];
+      if (!path || !path.length) return;
+      var d = "M" + cx(u.pos) + " " + cy(u.pos);
+      var last = u.pos;
+      path.forEach(function (p) { if (p.pos !== last) { d += "L" + cx(p.pos) + " " + cy(p.pos); last = p.pos; } });
+      g.appendChild(sv("path", { d: d, class: "fpath path-" + SIDE[u.side] }));
+      var prev = u.pos;
+      path.forEach(function (p) {
+        if (p.pos === prev && !p.end) return;
+        prev = p.pos;
+        var off = u.side === 0 ? 10 : -10;
+        g.appendChild(sv("circle", { cx: cx(p.pos) + off, cy: cy(p.pos) - 13, r: "7", class: "fdot " + SIDE[u.side] }));
+        g.appendChild(sv("text", { x: cx(p.pos) + off, y: cy(p.pos) - 9.6, "text-anchor": "middle", class: "ftext", text: p.end ? "×" : String(p.t) }));
+      });
+    });
+  }
+
+  function renderTrails() {
+    var g = G.layers.trails;
+    g.innerHTML = "";
+    var st = G.state;
+    if (st.phase === "over") return;
+    st.live.forEach(function (id) {
+      var u = st.units[id];
+      var pos = E.SPAWN[u.side], d = "M" + cx(pos) + " " + cy(pos);
+      u.rec.forEach(function (a) { if (a.k === "move") { var t = E.step(pos, a.d); if (t >= 0) { pos = t; d += "L" + cx(pos) + " " + cy(pos); } } });
+      if (u.rec.length) g.appendChild(sv("path", { d: d, class: "trail path-" + SIDE[u.side] }));
+    });
+  }
+
+  function renderOpts() {
+    var g = G.layers.opts;
+    g.innerHTML = "";
+    if (!G.resolver) return;
+    var st = G.state, side = G.turnSide;
+    var u = st.units[st.live[side]];
+    E.liveOptions(st, side).forEach(function (a) {
+      if (a.k === "move") {
+        var t = E.step(u.pos, a.d);
+        g.appendChild(sv("rect", { x: PAD + E.cOf(t) * S + 4, y: PAD + E.rOf(t) * S + 4, width: S - 8, height: S - 8, rx: 6, class: "opt-move" }));
+      } else if (a.k === "strike") {
+        var t2 = E.step(u.pos, a.d);
+        g.appendChild(sv("circle", { cx: cx(t2), cy: cy(t2), r: "20", class: "opt-strike" }));
+      }
+    });
+  }
+
+  function renderTop() {
+    var st = G.state;
+    var main, sub;
+    if (st.phase === "over") {
+      main = st.winner === "draw" ? "Draw" : E.sideName(st.winner) + " wins";
+      sub = st.reason;
+    } else if (G.resolver) {
+      main = G.cfg.mode === "local" ? E.sideName(G.turnSide) + "'s move" : "Your move";
+      sub = "Round " + st.round + " of " + E.ROUNDS + " · tick " + st.tick + " of " + E.TICKS;
+    } else {
+      main = G.thinking != null ? E.sideName(G.thinking) + " is thinking" : "Round " + st.round + " of " + E.ROUNDS;
+      sub = "Tick " + Math.max(1, st.tick) + " of " + E.TICKS;
+    }
+    K.$("#st-main").textContent = main;
+    K.$("#st-sub").textContent = sub;
+    var sc = K.$("#scores");
+    sc.innerHTML = "";
+    [0, 1].forEach(function (side) {
+      sc.appendChild(h("span", { class: "chip", title: E.sideName(side) + " points" }, h("i", { style: "background:" + COLORS[side] }), String(st.scores[side])));
+    });
+    var tl = K.$("#timeline");
+    tl.innerHTML = "";
+    var ticks = h("div", { class: "ticks" });
+    for (var t = 1; t <= E.TICKS; t++) ticks.appendChild(h("span", { class: t < st.tick ? "done" : t === st.tick ? "now" : "" }));
+    var first = st.tick >= 1 ? (st.firstOfRound + st.tick - 1) % 2 : null;
+    tl.appendChild(h("span", { class: "rnd" }, "R" + st.round + "/" + E.ROUNDS));
+    tl.appendChild(ticks);
+    if (first != null && st.phase !== "over") tl.appendChild(h("span", { class: "who", style: "color:" + COLORS[first] }, E.sideName(first) + " first"));
+  }
+
+  function pathToggle() {
+    return h("button", { class: "toggle", type: "button", "aria-pressed": G.showPaths ? "true" : "false", onclick: function () {
+      G.showPaths = !G.showPaths; K.store.set("paths", G.showPaths); K.Sound.play("tap"); render();
+    }, html: K.ICONS.eye + "<span>Echo paths</span>" });
+  }
+
+  function renderBar() {
+    var bar = K.$("#actionbar");
+    bar.innerHTML = "";
+    var st = G.state;
+    bar.appendChild(h("p", { class: "say", html: G.say || "&nbsp;" }));
+    if (st.phase === "over") {
+      bar.appendChild(h("div", { class: "action-row" },
+        h("button", { class: "btn btn-primary", type: "button", onclick: function () { restart(); } }, "Rematch"),
+        h("button", { class: "btn", type: "button", onclick: function () { K.quit(); } }, "Main menu")));
+      return;
+    }
+    if (G.resolver) {
+      bar.appendChild(h("div", { class: "bar-row" },
+        pathToggle(),
+        h("button", { class: "btn", type: "button", style: "flex:1", onclick: function () { choose(E.act("wait")); } }, "Wait")));
+      return;
+    }
+    bar.appendChild(h("div", { class: "bar-row" }, pathToggle(), h("span", { class: "legend" }, "Solid: live hero · Dashed: echo · Number: its round")));
+  }
+
+  /* ---------- Input ---------- */
+  function onTile(i) {
+    if (!G.resolver) return;
+    var st = G.state, side = G.turnSide;
+    var u = st.units[st.live[side]];
+    var opts = E.liveOptions(st, side);
+    var pick = null;
+    opts.forEach(function (a) {
+      if (a.k === "strike" && E.step(u.pos, a.d) === i) pick = a;
+    });
+    if (!pick) opts.forEach(function (a) { if (a.k === "move" && E.step(u.pos, a.d) === i) pick = a; });
+    if (!pick && i === u.pos) pick = E.act("wait");
+    if (!pick) { K.Sound.play("error"); return; }
+    choose(pick);
+  }
+  function choose(a) {
+    if (!G.resolver) return;
+    var r = G.resolver; G.resolver = null;
+    r(a);
+  }
+
+  /* ---------- Animation of events ---------- */
+  async function showEvents(ev, label) {
+    var moved = false, notes = [];
+    for (var k = 0; k < ev.length; k++) {
+      var e = ev[k];
+      if (e.t === "move") moved = true;
+      if (e.t === "strike" && e.hits.length) {
+        var from = e.from, to = E.step(from, e.d);
+        var ln = sv("line", { x1: cx(from), y1: cy(from), x2: cx(to), y2: cy(to), class: "fx-strike" });
+        G.layers.fx.appendChild(ln);
+        setTimeout(function (n) { return function () { n.remove(); }; }(ln), 350);
+        K.Sound.play("hit");
+      }
+      if (e.t === "ko") {
+        var u = G.state.units[e.id];
+        var who = E.sideName(u.side) + "'s " + (u.live ? "hero" : "round-" + u.round + " echo");
+        if (e.why === "paradox") { notes.push("<b>Paradox!</b> " + who + " was blocked and glitched out."); K.Sound.play("zap"); }
+        else if (e.why === "struck") { notes.push("<b>Struck!</b> " + who + " is out for this round."); }
+        else if (e.why === "crushed") { notes.push("<b>Crushed!</b> A door slammed on " + who + "."); K.Sound.play("hit"); K.shake(K.$("#stage")); }
+        else if (e.why === "fades") { notes.push(who + " fades, as it did when it was struck."); }
+      }
+      if (e.t === "door") K.Sound.play(e.open ? "reveal" : "error");
+    }
+    if (notes.length) G.say = notes.join(" ");
+    render();
+    if (moved) { K.Sound.play("move"); await K.sleep(300); }
+    if (notes.length) await K.sleep(650);
+  }
+
+  async function showScore(res) {
+    G.say = "Round " + res.round + ": " + E.sideName(0) + " <b>+" + res.gained[0] + "</b> · " + E.sideName(1) + " <b>+" + res.gained[1] + "</b>";
+    res.held.forEach(function (hd) {
+      var t = sv("text", { x: cx(hd.pad), y: cy(hd.pad) - 18, "text-anchor": "middle", class: "float-pts", fill: COLORS[hd.side], text: "+" + hd.value });
+      G.layers.fx.appendChild(t);
+      if (t.animate) try { t.animate([{ transform: "translateY(0)", opacity: 1 }, { transform: "translateY(-16px)", opacity: 0 }], { duration: 1300, fill: "forwards" }); } catch (e2) {}
+      setTimeout(function () { t.remove(); }, 1400);
+    });
+    K.Sound.play("score");
+    render();
+    await K.sleep(1400);
+  }
+
+  /* ---------- Turn flow ---------- */
+  function waitHuman(side) {
+    return new Promise(function (resolve) {
+      G.turnSide = side;
+      G.acting = G.state.live[side];
+      G.resolver = resolve;
+      render();
+    });
+  }
+
+  async function runGame(token) {
+    var st = G.state;
+    var lastRound = 0;
+    while (st.phase !== "over") {
+      if (token !== G.token) return;
+      if (st.round !== lastRound) {
+        lastRound = st.round;
+        render();
+        await K.banner("ROUND " + st.round, { tone: "accent", sub: st.round === 1 ? "Six ticks. Grab gems." : "Your round-" + (st.round - 1) + " hero is now an echo", ms: 1300 });
+        if (token !== G.token) return;
+        if (st.round === 2) G.say = "Dotted lines show where every <b>echo</b> will go this round, with tick numbers.";
+        else if (st.round === 1) G.say = G.cfg.mode === "local" ? "Cyan starts at the bottom, Magenta at the top." : "You are <b>Cyan</b>, at the bottom.";
+      }
+      var auto = E.stepAuto(st);
+      if (auto) {
+        if (auto.type === "echoes") await showEvents(auto.ev);
+        else if (auto.type === "score") await showScore(auto.res);
+        continue;
+      }
+      var who = E.nextActor(st);
+      if (who !== 0 && who !== 1) continue;
+      var a;
+      if (G.human[who]) {
+        if (G.cfg.mode === "local") G.say = "<b>" + E.sideName(who) + "</b>, your move.";
+        a = await waitHuman(who);
+        if (token !== G.token) return;
+      } else {
+        G.thinking = who; G.acting = st.live[who];
+        render();
+        await K.sleep(280);
+        if (token !== G.token) return;
+        a = E.bots.action(st, who, G.level, G.rand);
+        G.thinking = null;
+      }
+      G.acting = st.live[who];
+      var ev = E.applyLive(st, who, a);
+      if (a.k === "wait") K.Sound.play("tick");
+      await showEvents(ev);
+      G.acting = -1;
+    }
+    if (token !== G.token) return;
+    await endGame(token);
+  }
+
+  async function endGame(token) {
+    var st = G.state;
+    render();
+    var youWon = G.cfg.mode === "bot" ? st.winner === 0 : null;
+    await K.banner(st.winner === "draw" ? "DRAW" : E.sideName(st.winner).toUpperCase() + " WINS", { tone: st.winner === 1 ? "bad" : "accent", ms: 1500 });
+    if (token !== G.token) return;
+    var rows = st.roundScores.map(function (g, k) { return ["Round " + (k + 1), g[0] + " – " + g[1]]; });
+    rows.push(["Total (Cyan – Magenta)", st.scores[0] + " – " + st.scores[1]]);
+    var choice = await K.gameOver({
+      title: G.cfg.mode === "bot" ? (st.winner === "draw" ? "A draw" : youWon ? "You win!" : "You lose") : (st.winner === "draw" ? "A draw" : E.sideName(st.winner) + " wins"),
+      tone: youWon === false ? "bad" : "good",
+      text: st.reason,
+      stats: rows,
+      reviewLabel: "Look at the board"
+    });
+    if (token !== G.token) return;
+    if (choice === "rematch") restart();
+  }
+
+  /* ---------- Lifecycle ---------- */
+  function start(cfg) {
+    G.cfg = cfg;
+    G.level = cfg.difficulty || "normal";
+    G.human = cfg.mode === "local" ? [true, true] : [true, false];
+    G.showPaths = K.store.get("paths", true);
+    newMatch();
+  }
+  function newMatch() {
+    G.token++;
+    G.state = E.newGame();
+    G.rand = E.rng((Date.now() ^ Math.floor(Math.random() * 1e9)) >>> 0);
+    G.resolver = null; G.say = ""; G.acting = -1; G.thinking = null;
+    K.showScreen("game");
+    buildBoard();
+    render();
+    runGame(G.token);
+  }
+  function restart() {
+    K.$all(".cover,.modal-wrap,.banner").forEach(function (n) { n.remove(); });
+    newMatch();
+  }
+  function quit() { G.token++; G.resolver = null; }
+
+  window.__echoesDebug = { G: G };
+
+  K.init({
+    ns: "echoes",
+    title: "Echoes",
+    tagline: "Your past turns come back to fight for you. Plan across time, and break your rival's.",
+    art: TITLE_ART,
+    rules: RULES,
+    options: [
+      { id: "mode", label: "Opponent", default: "bot", choices: [{ v: "bot", t: "Bot" }, { v: "local", t: "Friend, same phone" }],
+        note: function (c) { return c.mode === "local" ? "Nothing is hidden, so just take turns on the same screen." : null; } },
+      { id: "difficulty", label: "Bot level", default: "normal", choices: [{ v: "easy", t: "Easy" }, { v: "normal", t: "Normal" }, { v: "hard", t: "Hard" }], showIf: function (c) { return c.mode === "bot"; },
+        note: function (c) { return c.difficulty === "hard" ? "Searches deep and plans across rounds." : c.difficulty === "easy" ? "Short-sighted. Good for learning how echoes work." : "Plans a few ticks ahead."; } }
+    ],
+    onStart: start,
+    onRestart: restart,
+    onQuit: quit,
+    menuNote: function () { return G.state ? "Round " + G.state.round + ", tick " + G.state.tick + "." : ""; }
+  });
+})();
+
+</script>
+</body>
+</html>
