@@ -1,0 +1,138 @@
+--[[
+	Modes: rules for every way to play.
+
+	spikeRule:
+	  "bothWalls"   each crossing zaps a spike onto BOTH walls (original Solo)
+	  "perBirdWall" top bird (slot 1) arms the LEFT wall, bottom bird (slot 2) the RIGHT wall (original Friend/Bot)
+	  "aimed"       Versus: the spike flies from where you crossed to the wall you're heading for, at that height,
+	                and only hurts other teams
+	scoring:
+	  "solo"   +1 per crossing
+	  "coop"   +1 once every living bird has strummed (original co-op rule)
+	  "versus" last team flapping wins; strums tracked per bird
+]]
+
+export type ModeDef = {
+	id: string,
+	name: string,
+	tagline: string,
+	online: boolean,
+	couch: boolean,
+	minBirds: number,
+	maxBirds: number,
+	spikeRule: string,
+	scoring: string,
+	lives: number,
+	versus: boolean,
+	allowRevive: boolean,
+	eventGapMult: number,
+	leaderboard: string?,
+	order: number,
+}
+
+local Modes: { [string]: ModeDef } = {
+	SOLO = {
+		id = "SOLO",
+		name = "Solo",
+		tagline = "One bird. Two walls. Pure chaos.",
+		online = false,
+		couch = false,
+		minBirds = 1,
+		maxBirds = 1,
+		spikeRule = "bothWalls",
+		scoring = "solo",
+		lives = 4,
+		versus = false,
+		allowRevive = true,
+		eventGapMult = 1.6,
+		leaderboard = "SoloBest",
+		order = 1,
+	},
+	BOT = {
+		id = "BOT",
+		name = "Bot Buddy",
+		tagline = "Co-op with an AI bird on top.",
+		online = false,
+		couch = false,
+		minBirds = 2,
+		maxBirds = 2,
+		spikeRule = "perBirdWall",
+		scoring = "coop",
+		lives = 4,
+		versus = false,
+		allowRevive = true,
+		eventGapMult = 1,
+		leaderboard = nil,
+		order = 2,
+	},
+	COUCH_COOP = {
+		id = "COUCH_COOP",
+		name = "Couch Co-op",
+		tagline = "Two birds, one screen, shared score.",
+		online = false,
+		couch = true,
+		minBirds = 2,
+		maxBirds = 2,
+		spikeRule = "perBirdWall",
+		scoring = "coop",
+		lives = 4,
+		versus = false,
+		allowRevive = true,
+		eventGapMult = 1,
+		leaderboard = "DuoBest",
+		order = 3,
+	},
+	COUCH_DUEL = {
+		id = "COUCH_DUEL",
+		name = "Couch Duel",
+		tagline = "Same screen. Your strums arm the walls.",
+		online = false,
+		couch = true,
+		minBirds = 2,
+		maxBirds = 2,
+		spikeRule = "aimed",
+		scoring = "versus",
+		lives = 3,
+		versus = true,
+		allowRevive = false,
+		eventGapMult = 1,
+		leaderboard = nil,
+		order = 4,
+	},
+	DUOS = {
+		id = "DUOS",
+		name = "Duos",
+		tagline = "Online co-op: top bird + bottom bird.",
+		online = true,
+		couch = false,
+		minBirds = 2,
+		maxBirds = 2,
+		spikeRule = "perBirdWall",
+		scoring = "coop",
+		lives = 4,
+		versus = false,
+		allowRevive = true,
+		eventGapMult = 1,
+		leaderboard = "DuoBest",
+		order = 5,
+	},
+	VERSUS = {
+		id = "VERSUS",
+		name = "Versus",
+		tagline = "Up to 6 birds. Last one flapping wins.",
+		online = true,
+		couch = false,
+		minBirds = 2,
+		maxBirds = 6,
+		spikeRule = "aimed",
+		scoring = "versus",
+		lives = 3,
+		versus = true,
+		allowRevive = false,
+		eventGapMult = 1,
+		leaderboard = "VersusWins",
+		order = 6,
+	},
+}
+
+return Modes
