@@ -1,0 +1,145 @@
+--[[
+	Events: metadata for every event from the original game (all 69 entries,
+	including the Solo-only horseshoe magnet). Behaviour lives in Sim/Events/*.
+
+	Renamed from the original to avoid other games' names:
+	  SOUL_MODE  -> BONE_ZONE  ("BONE ZONE!")
+	  FROGGER    -> LOG_JAM    ("LOG JAM!")
+	  SUBWAY     -> RAIL_RUSH  ("RAIL RUSH!")
+	  GUNS       -> BLASTERS   ("BLASTERS!", fires eggs)
+	  NEON_TRAILS display "NEON TRAILS!" (was "LIGHT CYCLES!")
+
+	fields:
+	  duration    ticks at 60/s (default 240 = 4 s)
+	  openEnded   the event ends itself (meteors cleared / tree felled); duration is a safety cap
+	  testPhase   birds are pinned horizontally for 3 s ("TESTING POWERS")
+	  noSpikes    crossings during this event don't zap new spikes
+	  solo/notSolo availability filters
+	  ambient     looping ambience sound key, cue = one-shot on start
+]]
+
+export type EventMeta = {
+	name: string,
+	display: string,
+	color: string,
+	duration: number,
+	openEnded: boolean?,
+	testPhase: boolean?,
+	noSpikes: boolean?,
+	soloOnly: boolean?,
+	notSolo: boolean?,
+	ambient: string?,
+	ambientVolume: number?,
+	cue: string?,
+	cueRate: number?,
+	blurb: string,
+	index: number?,
+}
+
+local LIST: { EventMeta } = {
+	{ name = "SPEED_BOOST", display = "SPEED UP!", color = "#ff6b6b", duration = 240, blurb = "Everything flies twice as fast." },
+	{ name = "GRAVITY_FLIP", display = "FLIP!", color = "#9b59b6", duration = 240, testPhase = true, blurb = "Up is down. Down is up. Permanently." },
+	{ name = "SIZE_SWAP", display = "SIZE SWAP!", color = "#3498db", duration = 240, blurb = "Some birds balloon, some shrink." },
+	{ name = "MAGNET", display = "MAGNETIC!", color = "#e74c3c", duration = 240, notSolo = true, blurb = "Birds are pulled toward each other." },
+	{ name = "SOLO_MAGNET", display = "MAGNETIC!", color = "#ff6347", duration = 240, soloOnly = true, cue = "shield", ambient = "ambient_portal", ambientVolume = 0.2, blurb = "A horseshoe magnet bounces around tugging at you." },
+	{ name = "BLASTERS", display = "BLASTERS!", color = "#bdc3c7", duration = 240, cue = "gun_fire", ambient = "ambient_lightning", ambientVolume = 0.18, blurb = "Flapping fires eggs that crack spikes, meteors and aliens." },
+	{ name = "GHOST_MODE", display = "GHOST!", color = "#2ecc71", duration = 240, blurb = "One lucky bird phases through spikes." },
+	{ name = "TURBULENCE", display = "WINDY!", color = "#1abc9c", duration = 240, blurb = "Gusty air shoves you up and down." },
+	{ name = "SPIKE_RAIN", display = "SPIKE RAIN!", color = "#fd79a8", duration = 240, blurb = "Four extra spikes on each wall." },
+	{ name = "ALIEN_SWARM", display = "ALIENS!", color = "#6c5ce7", duration = 240, blurb = "Bouncing aliens. Don't touch." },
+	{ name = "SLOW_MO", display = "SLOW-MO!", color = "#00b894", duration = 240, blurb = "Half speed. Breathe." },
+	{ name = "GRAVITY_BOOST", display = "HEAVY!", color = "#d63031", duration = 240, blurb = "Double gravity." },
+	{ name = "RAINBOW_MODE", display = "RAINBOW!", color = "#ff00ff", duration = 240, blurb = "Taste it." },
+	{ name = "TINY_MODE", display = "SHRINK!", color = "#74b9ff", duration = 240, blurb = "Everyone gets tiny." },
+	{ name = "GIANT_MODE", display = "GROW!", color = "#fd79a8", duration = 240, blurb = "Everyone gets huge." },
+	{ name = "REVERSE_CONTROLS", display = "REVERSE!", color = "#fdcb6e", duration = 240, testPhase = true, blurb = "The whole arena flips like a page." },
+	{ name = "BOUNCY", display = "BOUNCY!", color = "#55efc4", duration = 240, noSpikes = true, blurb = "The middle line turns into a trampoline." },
+	{ name = "LOG_JAM", display = "LOG JAM!", color = "#4a90e2", duration = 720, cue = "flood", ambient = "ambient_bubble", ambientVolume = 0.45, blurb = "The page floods. Ride the logs." },
+	{ name = "SWAP_POSITIONS", display = "SWAP!", color = "#a29bfe", duration = 240, blurb = "Birds trade places." },
+	{ name = "WORMHOLES", display = "WORMHOLES!", color = "#8e44ad", duration = 240, ambient = "ambient_wormhole", ambientVolume = 0.45, blurb = "Two linked portal pairs." },
+	{ name = "BLACK_HOLE", display = "BLACK HOLE!", color = "#2c3e50", duration = 480, ambient = "ambient_blackhole", ambientVolume = 0.6, blurb = "Something in the middle is hungry." },
+	{ name = "LASER_BEAMS", display = "LASERS!", color = "#e74c3c", duration = 240, ambient = "ambient_lightning", ambientVolume = 0.45, blurb = "Rotating lasers sweep from the center." },
+	{ name = "SHIELD", display = "SHIELD UP!", color = "#3498db", duration = 240, ambient = "ambient_portal", ambientVolume = 0.2, blurb = "A free bubble shield until your next hit." },
+	{ name = "TRAMPOLINE", display = "TRAMPOLINE!", color = "#00d2d3", duration = 240, blurb = "The edges bounce you back." },
+	{ name = "MIRROR_WORLD", display = "MIRROR!", color = "#95a5a6", duration = 240, ambient = "ambient_kaleidoscope", ambientVolume = 0.25, blurb = "A ghostly reflection haunts the page." },
+	{ name = "SPIKE_MELT", display = "MELTDOWN!", color = "#e67e22", duration = 240, blurb = "Every spike melts away." },
+	{ name = "SPIKE_SHATTER", display = "SHATTER!", color = "#3498db", duration = 240, blurb = "All spikes explode into shards." },
+	{ name = "SPIKE_VANISH", display = "VANISH!", color = "#9b59b6", duration = 240, blurb = "Spikes fade into nothing." },
+	{ name = "METEOR_SHOWER", display = "METEOR SHOWER!", color = "#ff6b35", duration = 1200, openEnded = true, ambient = "ambient_meteor", ambientVolume = 0.35, blurb = "Meteors rain from the top for 9 seconds." },
+	{ name = "PORTAL_SPIN", display = "PORTAL SPIN!", color = "#8e44ad", duration = 240, ambient = "ambient_portal", ambientVolume = 0.25, blurb = "Birds are dragged into orbit." },
+	{ name = "LIGHTNING_STORM", display = "LIGHTNING!", color = "#f1c40f", duration = 240, ambient = "ambient_lightning", ambientVolume = 0.45, blurb = "Watch for the glow, then dodge the bolt." },
+	{ name = "ROCKET_BOOTS", display = "ROCKET BOOTS!", color = "#ff8c42", duration = 240, testPhase = true, cue = "strum", cueRate = 0.9, ambient = "ambient_portal", ambientVolume = 0.18, blurb = "Hold to thrust. Kept until you get hit." },
+	{ name = "SPEED_BOOTS", display = "SPEED BOOTS!", color = "#ffd166", duration = 240, testPhase = true, cue = "strum", blurb = "Faster, with a dash on every flap. Kept until hit." },
+	{ name = "HOVER_DRONE", display = "HOVER DRONE!", color = "#66d9ef", duration = 540, testPhase = true, ambient = "ambient_bubble", ambientVolume = 0.25, blurb = "Your fall speed is capped. Kept until hit." },
+	{ name = "GRAVITY_SHOE", display = "GRAVITY SHOE!", color = "#b28cff", duration = 240, testPhase = true, cue = "strum", cueRate = 0.95, blurb = "Tapping flips your gravity instead of flapping. Kept until hit." },
+	{ name = "BLIMP_CANOPY", display = "BLIMP CANOPY!", color = "#ff7ab6", duration = 600, ambient = "ambient_meteor", ambientVolume = 0.14, blurb = "Bouncy balloons drift across the sky." },
+	{ name = "BUBBLE_BOUNCE", display = "BUBBLES!", color = "#74ebd5", duration = 240, ambient = "ambient_bubble", ambientVolume = 0.35, blurb = "Floaty bubble gravity." },
+	{ name = "TORNADO", display = "TORNADO!", color = "#95a5a6", duration = 240, ambient = "ambient_tornado", ambientVolume = 0.5, blurb = "A wandering twister pulls you in." },
+	{ name = "KALEIDOSCOPE", display = "KALEIDOSCOPE!", color = "#ff00ff", duration = 240, ambient = "ambient_kaleidoscope", ambientVolume = 0.35, blurb = "Trippy." },
+	{ name = "COLOR_RIFT", display = "COLOR RIFT!", color = "#ff7675", duration = 720, cue = "strum", cueRate = 1.2, ambient = "ambient_kaleidoscope", ambientVolume = 0.28, blurb = "Grab glowing shards for bonus strums." },
+	{ name = "PHOTON_SHIFT", display = "PHOTON SHIFT!", color = "#00ffff", duration = 660, cue = "zap", ambient = "ambient_lightning", ambientVolume = 0.22, blurb = "Pulsing beams knock you sideways." },
+	{ name = "SPIKE_WALK", display = "WALKING SPIKES!", color = "#e91e63", duration = 240, cue = "bounce", cueRate = 0.9, blurb = "Spikes grow legs and wander the walls." },
+	{ name = "SPIKE_MERGE", display = "SPIKE MERGE!", color = "#673ab7", duration = 240, cue = "thunder", cueRate = 0.8, blurb = "Nearby spikes fuse into big ones." },
+	{ name = "SPIKE_SPIN", display = "SPINNING SPIKES!", color = "#ff5722", duration = 240, cue = "strum", blurb = "Spikes spin like saws." },
+	{ name = "SPIKE_SHRINK", display = "TINY SPIKES!", color = "#4caf50", duration = 240, cue = "strum", cueRate = 0.8, blurb = "Spikes shrink for a while." },
+	{ name = "SPIKE_MULTIPLY", display = "SPIKE SPLIT!", color = "#ff9800", duration = 240, cue = "zap", blurb = "Every spike splits into smaller ones." },
+	{ name = "GEAR_GRIND", display = "CLOCKWORK!", color = "#d35400", duration = 240, noSpikes = true, cue = "drill_motor", cueRate = 0.5, ambient = "ambient_tornado", ambientVolume = 0.35, blurb = "Gears roll across the page." },
+	{ name = "LINE_PULSE", display = "PULSE WAVE!", color = "#00bcd4", duration = 240, noSpikes = true, ambient = "ambient_portal", ambientVolume = 0.2, blurb = "Crossing sends out shockwaves." },
+	{ name = "LINE_SPLIT", display = "TRIPLE LINE!", color = "#9c27b0", duration = 240, noSpikes = true, cue = "zap", blurb = "Three lines. Every crossing counts." },
+	{ name = "LINE_MAGNET", display = "LINE PULL!", color = "#ff5722", duration = 240, ambient = "ambient_portal", ambientVolume = 0.25, blurb = "The middle line pulls you in." },
+	{ name = "LINE_TELEPORT", display = "LINE WARP!", color = "#673ab7", duration = 240, noSpikes = true, ambient = "ambient_wormhole", ambientVolume = 0.3, blurb = "Crossing warps you to a random height." },
+	{ name = "WALL_WRAP", display = "WALL WRAP!", color = "#8e44ad", duration = 240, blurb = "Fly through a wall, come out the other side." },
+	{ name = "DRILL", display = "DRILL!", color = "#f39c12", duration = 750, testPhase = true, cue = "flood", ambient = "dirt_fall", ambientVolume = 0.35, blurb = "The page fills with dirt. Tunnel through." },
+	{ name = "SPACE", display = "SPACE!", color = "#2c3e50", duration = 240, blurb = "Zero gravity." },
+	{ name = "HORIZON_BEAMS", display = "LASER LINES!", color = "#e74c3c", duration = 240, ambient = "ambient_lightning", ambientVolume = 0.4, blurb = "Horizontal lasers warn, then fire." },
+	{ name = "BIG_WINGS", display = "BIG WINGS!", color = "#fab1a0", duration = 240, testPhase = true, blurb = "Huge wings, huge flaps." },
+	{ name = "DARKNESS", display = "LIGHTS OUT!", color = "#2d3436", duration = 240, ambient = "ambient_blackhole", ambientVolume = 0.6, blurb = "You can only see near your bird." },
+	{ name = "CRT_MODE", display = "RETRO!", color = "#2ecc71", duration = 240, blurb = "Old TV vibes, with collectible glitches." },
+	{ name = "BINARY_MODE", display = "BINARY!", color = "#000000", duration = 240, blurb = "Black and white only." },
+	{ name = "COLOR_CHAOS", display = "COLOR CHAOS!", color = "#ff7675", duration = 240, cue = "strum", cueRate = 1.2, blurb = "Random gravity, faster birds, wild colors." },
+	{ name = "GLITCH_MODE", display = "GLITCH!", color = "#a29bfe", duration = 240, cue = "zap", cueRate = 0.8, blurb = "The page tears and stutters." },
+	{ name = "QUICKSAND", display = "QUICKSAND!", color = "#9b7a4a", duration = 600, ambient = "ambient_bubble", ambientVolume = 0.22, blurb = "A sandstorm weakens your flaps." },
+	{ name = "RAIL_RUSH", display = "RAIL RUSH!", color = "#34495e", duration = 600, cue = "strum", cueRate = 0.9, ambient = "ambient_meteor", ambientVolume = 0.18, blurb = "Trains blast through. Watch the warning lights." },
+	{ name = "MAGMA_FLOW", display = "MAGMA FLOW!", color = "#d35400", duration = 660, cue = "thunder", cueRate = 0.9, ambient = "ambient_tornado", ambientVolume = 0.22, blurb = "Lava rises from the bottom." },
+	{ name = "ICE_FIELD", display = "ICE FIELD!", color = "#88d9ff", duration = 600, ambient = "ambient_bubble", ambientVolume = 0.2, blurb = "Snowflakes freeze you solid for a second." },
+	{ name = "BONE_ZONE", display = "BONE ZONE!", color = "#ffffff", duration = 840, cue = "strum", cueRate = 0.8, ambient = "ambient_blackhole", ambientVolume = 0.4, blurb = "Walls of bones scroll in. Find the gap." },
+	{ name = "ECHO_CHAMBER", display = "ECHO CHAMBER!", color = "#6f42c1", duration = 720, cue = "zap", ambient = "ambient_kaleidoscope", ambientVolume = 0.35, blurb = "Sound waves knock you around." },
+	{ name = "TIMBER", display = "TIMBER!", color = "#27ae60", duration = 1500, openEnded = true, ambient = "ambient_forest", ambientVolume = 0.8, blurb = "A tree grows in the middle. Bonk it down." },
+	{ name = "NEON_TRAILS", display = "NEON TRAILS!", color = "#00ffcc", duration = 720, cue = "zap", ambient = "ambient_wormhole", ambientVolume = 0.4, blurb = "Every bird leaves a bouncy neon trail." },
+}
+
+local Events = {}
+Events.List = LIST
+Events.ByName = {} :: { [string]: EventMeta }
+Events.Count = #LIST
+
+for i, meta in LIST do
+	meta.index = i
+	Events.ByName[meta.name] = meta
+end
+
+-- Events that can be rolled in a given mode
+function Events.poolFor(isSolo: boolean): { EventMeta }
+	local pool = {}
+	for _, meta in LIST do
+		if isSolo and meta.notSolo then
+			continue
+		end
+		if not isSolo and meta.soloOnly then
+			continue
+		end
+		table.insert(pool, meta)
+	end
+	return pool
+end
+
+-- "#rrggbb" -> r, g, b (0-255)
+function Events.hexToRgb(hex: string): (number, number, number)
+	local h = string.gsub(hex, "#", "")
+	if #h == 3 then
+		h = string.rep(string.sub(h, 1, 1), 2) .. string.rep(string.sub(h, 2, 2), 2) .. string.rep(string.sub(h, 3, 3), 2)
+	end
+	return tonumber(string.sub(h, 1, 2), 16) or 0, tonumber(string.sub(h, 3, 4), 16) or 0, tonumber(string.sub(h, 5, 6), 16) or 0
+end
+
+return Events
