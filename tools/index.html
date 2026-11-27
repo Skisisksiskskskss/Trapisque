@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Trapisque Tools</title>
+  <meta name="description" content="Dice, token wheels, a score tracker and the rules for the Trapisque board game.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Trapisque">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#EDF0F4" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0B0F16" media="(prefers-color-scheme: dark)">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main id="app">
+    <section class="view" id="view-game" aria-labelledby="title-game">
+      <header class="nav" data-nav>
+        <div class="nav-inner gutter wrap">
+          <div class="nav-side">
+            <button class="icon-btn" id="game-undo" data-act="undo" aria-label="Undo" disabled>
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+            </button>
+          </div>
+          <div class="nav-title" aria-hidden="true">Trapisque</div>
+          <div class="nav-side right">
+            <button class="icon-btn" data-act="menu" aria-label="Game options">
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.2"/><circle class="fill" cx="7.8" cy="12" r="1.3"/><circle class="fill" cx="12" cy="12" r="1.3"/><circle class="fill" cx="16.2" cy="12" r="1.3"/></svg>
+            </button>
+          </div>
+        </div>
+      </header>
+      <div class="large-title gutter wrap" data-large-title>
+        <h1 id="title-game">Trapisque</h1>
+        <p class="subtitle" id="game-sub"></p>
+      </div>
+      <div class="content gutter wrap" id="game-body"></div>
+    </section>
+
+    <section class="view" id="view-dice" aria-labelledby="title-dice" hidden>
+      <header class="nav" data-nav>
+        <div class="nav-inner gutter wrap">
+          <div class="nav-side"></div>
+          <div class="nav-title" aria-hidden="true">Dice</div>
+          <div class="nav-side right"></div>
+        </div>
+      </header>
+      <div class="large-title gutter wrap" data-large-title>
+        <h1 id="title-dice">Dice</h1>
+        <p class="subtitle" id="dice-sub"></p>
+      </div>
+      <div class="content gutter wrap">
+        <div id="dice-actor"></div>
+        <div class="segmented" id="dice-mode" role="group" aria-label="What the roll is for">
+          <button type="button" data-act="dice-mode" data-mode="move" aria-pressed="true">Move</button>
+          <button type="button" data-act="dice-mode" data-mode="grog" aria-pressed="false">Grog check</button>
+          <button type="button" data-act="dice-mode" data-mode="wall" aria-pressed="false">Wall check</button>
+        </div>
+        <div class="dice-card card">
+          <button type="button" class="die-stage" id="die-stage" data-act="roll" aria-label="Roll the die">
+            <span class="die-shadow"></span>
+            <span class="die-hop">
+              <span class="die-tilt">
+                <span class="die" id="die">
+                  <span class="core cx"></span><span class="core cy"></span><span class="core cz"></span>
+                  <span class="face f1"><i class="c"></i></span>
+                  <span class="face f2"><i class="tl"></i><i class="br"></i></span>
+                  <span class="face f3"><i class="tl"></i><i class="c"></i><i class="br"></i></span>
+                  <span class="face f4"><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i></span>
+                  <span class="face f5"><i class="tl"></i><i class="tr"></i><i class="c"></i><i class="bl"></i><i class="br"></i></span>
+                  <span class="face f6"><i class="tl"></i><i class="tr"></i><i class="ml"></i><i class="mr"></i><i class="bl"></i><i class="br"></i></span>
+                </span>
+              </span>
+            </span>
+          </button>
+          <div class="readout-wrap" id="dice-readout" aria-live="polite"></div>
+        </div>
+        <div class="mods" id="dice-mods"></div>
+        <button type="button" class="btn btn-gold btn-block" id="roll-btn" data-act="roll">Roll</button>
+        <section class="history-block" id="dice-history" aria-label="Recent rolls"></section>
+      </div>
+    </section>
+
+    <section class="view" id="view-wheels" aria-labelledby="title-wheels" hidden>
+      <header class="nav" data-nav>
+        <div class="nav-inner gutter wrap">
+          <div class="nav-side"></div>
+          <div class="nav-title" aria-hidden="true">Wheels</div>
+          <div class="nav-side right"></div>
+        </div>
+      </header>
+      <div class="large-title gutter wrap" data-large-title>
+        <h1 id="title-wheels">Wheels</h1>
+        <p class="subtitle">Spin the wheel for the token you landed on</p>
+      </div>
+      <div class="content gutter wrap">
+        <div class="segmented family" id="wheel-family" role="group" aria-label="Which wheel">
+          <button type="button" data-act="family" data-family="trap" aria-pressed="true"><span class="dot"></span>Trap</button>
+          <button type="button" data-act="family" data-family="assist" aria-pressed="false"><span class="dot"></span>Assist</button>
+          <button type="button" data-act="family" data-family="neutral" aria-pressed="false"><span class="dot"></span>Neutral</button>
+        </div>
+        <div id="wheel-actor"></div>
+        <div class="wheel-card card">
+          <div class="wheel-stage">
+            <svg class="wheel-pointer" id="wheel-pointer" viewBox="0 0 40 52" aria-hidden="true">
+              <path d="M20 50 7.2 19.5A14 14 0 1 1 32.8 19.5Z"/>
+              <circle cx="20" cy="15" r="5"/>
+            </svg>
+            <button type="button" class="wheel-btn" data-act="spin" aria-label="Spin the wheel">
+              <svg class="wheel" id="wheel-svg" viewBox="0 0 200 200" aria-hidden="true">
+                <defs>
+                  <radialGradient id="hub-grad" cx="38%" cy="32%" r="75%">
+                    <stop class="stop-hi" offset="0"/>
+                    <stop class="stop-mid" offset="0.55"/>
+                    <stop class="stop-lo" offset="1"/>
+                  </radialGradient>
+                </defs>
+                <g id="wheel-rotor"></g>
+                <circle class="hub" cx="100" cy="100" r="15"/>
+                <circle class="hub-cap" cx="100" cy="100" r="5.5"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <button type="button" class="btn btn-gold btn-block" id="spin-btn" data-act="spin">Spin</button>
+        <div id="wheel-result" aria-live="polite"></div>
+        <section class="legend" id="wheel-legend" aria-label="Cards on this wheel"></section>
+      </div>
+    </section>
+
+    <section class="view" id="view-rules" aria-labelledby="title-rules" hidden>
+      <header class="nav" data-nav>
+        <div class="nav-inner gutter wrap">
+          <div class="nav-side"></div>
+          <div class="nav-title" aria-hidden="true">Rules</div>
+          <div class="nav-side right"></div>
+        </div>
+      </header>
+      <div class="large-title gutter wrap" data-large-title>
+        <h1 id="title-rules">Rules</h1>
+        <p class="subtitle">From the Trapisque Rulebook</p>
+      </div>
+      <div class="content gutter wrap">
+        <label class="search" for="rules-search">
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg>
+          <span class="sr">Search the rules</span>
+          <input id="rules-search" type="search" placeholder="Search tokens, characters, modes" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search">
+        </label>
+        <div class="rules-body" id="rules-body"></div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="tabbar" aria-label="Tools">
+    <div class="tabbar-inner gutter">
+      <button type="button" class="tab" data-act="tab" data-tab="game">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><g class="tint"><circle cx="12" cy="6.3" r="3.3"/><path d="M9.3 10.8h5.4l1.8 7.2h-9z"/><rect x="5.5" y="18" width="13" height="3" rx="1.5"/></g></svg>
+        <span>Game</span>
+      </button>
+      <button type="button" class="tab" data-act="tab" data-tab="dice">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect class="tint" x="3.5" y="3.5" width="17" height="17" rx="4.5"/><circle class="fill" cx="8.6" cy="8.6" r="1.5"/><circle class="fill" cx="12" cy="12" r="1.5"/><circle class="fill" cx="15.4" cy="15.4" r="1.5"/></svg>
+        <span>Dice</span>
+      </button>
+      <button type="button" class="tab" data-act="tab" data-tab="wheels">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path class="tint" d="M12 13V5a8 8 0 0 1 8 8z"/><circle cx="12" cy="13" r="8"/><path d="M12 5v16M4 13h16"/><path class="fill" d="M12 6.4 9.5 2.2h5z"/></svg>
+        <span>Wheels</span>
+      </button>
+      <button type="button" class="tab" data-act="tab" data-tab="rules">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path class="tint" d="M12 6.8C10.3 5.4 7.8 4.9 4 5v13.2c3.8-.1 6.3.4 8 1.8 1.7-1.4 4.2-1.9 8-1.8V5c-3.8-.1-6.3.4-8 1.8z"/><path d="M12 6.8V20"/></svg>
+        <span>Rules</span>
+      </button>
+    </div>
+  </nav>
+
+  <div id="sheets"></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="data.js"></script>
+  <script src="logic.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
